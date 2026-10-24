@@ -418,36 +418,35 @@ button{touch-action:manipulation}
 
 
 
-/* Larger offline illustrations: fast on mobile, with no remote photos. */
-.model-visual-stage{min-height:225px;padding:10px;overflow:hidden}
-.gear-visual.vector-visual{display:flex;align-items:center;gap:14px;width:100%;min-height:215px}
-.vector-visual .gear-art{flex:0 0 58%;width:58%;min-width:0;height:218px;min-height:218px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2c3835;border-radius:15px;background:radial-gradient(ellipse at 50% 42%,#26342e 0%,#18211f 60%,#121918 100%)}
-.vector-visual .gear-svg{display:block;width:100%;height:auto;max-height:218px;object-fit:contain}
-.vector-visual .gear-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:7px}
-.vector-visual .gear-copy .gear-type{display:block;color:#c5f36b;font-size:9px;font-weight:850;letter-spacing:1.1px;line-height:1.45;text-transform:uppercase}
-.vector-visual .gear-copy strong{display:block;margin:2px 0;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
-.vector-visual .gear-copy small{display:block;color:#99a7a3;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
-.vector-visual .gear-copy .based-on{color:#e6eee7;font-size:12px}
+/* Compact inline-vector model panel: preserve visible controls on mobile. */
+.model-visual-stage{min-height:0;height:auto;padding:8px;overflow:hidden}
+.gear-visual.vector-visual{display:flex;align-items:center;gap:12px;width:100%;min-height:0;height:auto}
+.vector-visual .gear-art{flex:0 0 52%;width:52%;min-width:0;height:150px;min-height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2c3835;border-radius:13px;background:radial-gradient(ellipse at 50% 42%,#26342e 0%,#18211f 60%,#121918 100%)}
+.vector-visual .gear-svg{display:block;width:100%;height:auto;max-height:148px;object-fit:contain}
+.vector-visual .gear-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px}
+.vector-visual .gear-copy .gear-type{display:block;color:#c5f36b;font-size:8px;font-weight:850;letter-spacing:.8px;line-height:1.4;text-transform:uppercase}
+.vector-visual .gear-copy strong{display:block;margin:1px 0;font-size:16px;line-height:1.22;overflow-wrap:anywhere}
+.vector-visual .gear-copy small{display:block;color:#99a7a3;font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+.vector-visual .gear-copy .based-on{color:#e6eee7;font-size:10px}
 .vector-visual .gear-copy .based-on b{color:#c5f36b}
-.vector-visual .gear-copy .photo-caption{color:#8e9b96;font-size:10px}
+.vector-visual .gear-copy .photo-caption{color:#8e9b96;font-size:8px}
 @media(max-width:720px){
- .model-visual-stage{min-height:205px;padding:8px}
- .gear-visual.vector-visual{gap:10px;min-height:195px}
- .vector-visual .gear-art{flex-basis:57%;width:57%;height:198px;min-height:198px;border-radius:13px}
- .vector-visual .gear-svg{max-height:198px}
- .vector-visual .gear-copy{gap:6px}
- .vector-visual .gear-copy .gear-type{font-size:8px;letter-spacing:.7px}
- .vector-visual .gear-copy strong{font-size:16px}
- .vector-visual .gear-copy small{font-size:9px;line-height:1.45}
- .vector-visual .gear-copy .based-on{font-size:10px}
- .vector-visual .gear-copy .photo-caption{font-size:8px}
+ .model-visual-stage{min-height:0;padding:7px}
+ .gear-visual.vector-visual{gap:9px;min-height:0}
+ .vector-visual .gear-art{flex-basis:51%;width:51%;height:137px;min-height:137px;border-radius:12px}
+ .vector-visual .gear-svg{max-height:135px}
+ .vector-visual .gear-copy{gap:5px}
+ .vector-visual .gear-copy .gear-type{font-size:7px;letter-spacing:.5px}
+ .vector-visual .gear-copy strong{font-size:14px}
+ .vector-visual .gear-copy small{font-size:8px;line-height:1.35}
+ .vector-visual .gear-copy .based-on{font-size:9px}
 }
 @media(max-width:390px){
- .gear-visual.vector-visual{gap:8px}
- .vector-visual .gear-art{flex-basis:54%;width:54%;height:178px;min-height:178px}
- .vector-visual .gear-svg{max-height:178px}
- .vector-visual .gear-copy .gear-type{font-size:7px;letter-spacing:.4px}
- .vector-visual .gear-copy strong{font-size:14px}
- .vector-visual .gear-copy small{font-size:8px}
- .vector-visual .gear-copy .based-on{font-size:9px}
+ .gear-visual.vector-visual{gap:7px}
+ .vector-visual .gear-art{flex-basis:49%;width:49%;height:126px;min-height:126px}
+ .vector-visual .gear-svg{max-height:124px}
+ .vector-visual .gear-copy .gear-type{font-size:6.5px;letter-spacing:.2px}
+ .vector-visual .gear-copy strong{font-size:13px}
+ .vector-visual .gear-copy small{font-size:7.5px}
+ .vector-visual .gear-copy .based-on{font-size:8px}
 }
