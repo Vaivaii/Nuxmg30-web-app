@@ -562,3 +562,39 @@ button{touch-action:manipulation}
  .chain .block b{font-size:7.5px;margin:5px 0 2px}
  .chain .block small{font-size:6px}
 }
+
+
+/* One consistent visual stage for every gear type (AMP, pedals, wah, EQ, delay, reverb and IR). */
+.vector-visual .gear-art{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:190px;
+  min-height:190px;
+  padding:8px 10px;
+  overflow:hidden;
+  box-sizing:border-box;
+  border-radius:12px;
+  background:radial-gradient(ellipse at 50% 44%,#263135 0%,#1a2225 58%,#12181b 100%);
+}
+.vector-visual .gear-art .gear-svg{
+  display:block;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  max-width:100%;
+  max-height:100%;
+  flex:0 1 auto;
+  object-fit:contain;
+  filter:drop-shadow(0 4px 6px #0003);
+}
+.vector-visual .gear-art .amp-svg{width:100%;height:100%}
+@media(max-width:720px){
+  .vector-visual .gear-art{height:178px;min-height:178px;padding:6px 8px}
+  .vector-visual .gear-art .gear-svg{width:100%;height:100%;max-width:100%;max-height:100%}
+}
+@media(max-width:390px){
+  .vector-visual .gear-art{height:166px;min-height:166px;padding:5px 6px}
+}
