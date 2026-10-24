@@ -428,3 +428,39 @@ button{touch-action:manipulation}
 .gear-copy small{display:block;color:#8e9b99;font-size:10px;line-height:1.4}
 @media(max-width:720px){.gear-art{flex-basis:51%;width:51%;min-height:118px}.gear-svg{max-height:145px}.gear-copy .gear-type{font-size:8px;letter-spacing:1px}.gear-copy strong{font-size:15px}.gear-copy small{font-size:9px}}
 @media(max-width:390px){.gear-art{flex-basis:49%;width:49%;min-height:110px}.gear-copy strong{font-size:14px}}
+
+/* Restored product-photo reference layout: larger gear images on phones. */
+.photo-visual{align-items:center;gap:14px}
+.gear-photo-wrap{flex:0 0 56%;width:56%;height:210px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #d2d8d7;border-radius:14px;background:#f7f8f5;box-shadow:0 5px 14px #0002;text-decoration:none}
+.gear-photo{display:block;width:100%;height:100%;object-fit:contain;object-position:center;background:#f7f8f5}
+.gear-photo-failed{display:none;color:#3d4845;font-size:10px;text-align:center;padding:12px}
+.gear-photo-wrap.image-unavailable .gear-photo-failed{display:block}
+.gear-source{margin-top:5px;color:#b5d77c;font-size:9px;font-weight:800;text-decoration:none}
+.gear-source:active{opacity:.65}
+.gear-copy{flex:1;min-width:0;gap:7px}
+.gear-copy .gear-type{font-size:9px;letter-spacing:1px;line-height:1.4}
+.gear-copy strong{font-size:17px;line-height:1.25;overflow-wrap:anywhere}
+.gear-copy small{font-size:10px;line-height:1.45;color:#a4b1ae}
+.gear-copy .based-on{color:#edf4e9;font-size:11px;line-height:1.45}
+.gear-copy .based-on b{color:var(--lime)}
+.gear-copy .photo-caption{font-size:9px;color:#7e908d;line-height:1.4}
+@media(max-width:720px){
+ .model-visual-stage{min-height:205px;padding:10px}
+ .photo-visual{gap:11px}
+ .gear-photo-wrap{flex-basis:56%;width:56%;height:180px}
+ .gear-copy .gear-type{font-size:8px;letter-spacing:.8px}
+ .gear-copy strong{font-size:15px}
+ .gear-copy .based-on{font-size:10px}
+ .gear-copy .photo-caption{font-size:8px}
+ .gear-source{font-size:8px}
+}
+@media(max-width:390px){
+ .model-visual-stage{min-height:190px}
+ .gear-photo-wrap{flex-basis:53%;width:53%;height:160px}
+ .photo-visual{gap:8px}
+ .gear-copy .gear-type{font-size:7px}
+ .gear-copy strong{font-size:13px}
+ .gear-copy small{font-size:8px}
+ .gear-copy .based-on{font-size:9px}
+ .gear-copy .photo-caption{font-size:7px}
+}
