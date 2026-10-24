@@ -512,3 +512,28 @@ button{touch-action:manipulation}
  .knobs .dial-needle{top:10px;height:14px;transform-origin:50% 20px}
  .knobs .knob label{font-size:8px;min-height:18px}
 }
+
+
+/* Final cleanup requested: compact preset summary and centered model basis. */
+#page-editor>.stats{display:none!important}
+.vector-visual .gear-copy-head{position:relative;display:flex;justify-content:center;align-items:center;text-align:center;min-height:24px;padding:2px 54px 7px}
+.vector-visual .gear-copy .gear-type{width:100%;text-align:center;font-size:9px;letter-spacing:.7px}
+.vector-visual .gear-copy .gear-state{position:absolute;right:0;top:0}
+.vector-visual .gear-copy-meta{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;text-align:center}
+.vector-visual .gear-copy .based-on{display:flex;justify-content:center;align-items:baseline;flex-wrap:wrap;gap:5px;text-align:center;line-height:1.45}
+.vector-visual .gear-copy .based-on span{text-align:center}
+.vector-visual .gear-copy .photo-caption{text-align:center}
+.vector-visual .gear-copy{align-items:stretch;width:100%}
+
+/* Correct rotary pointer geometry: needle pivot sits exactly at dial centre. */
+.knobs .dial{position:relative;overflow:visible;background:conic-gradient(from 225deg,var(--lime) 0deg var(--fill),#465155 var(--fill) 270deg,transparent 270deg 360deg)}
+.knobs .dial:before{z-index:0}
+.knobs .dial-needle{position:absolute;z-index:2;top:50%;left:calc(50% - 2px);width:4px;height:23px;border-radius:4px;background:#d8f77b;box-shadow:0 0 4px #c5f36b33;transform:translateY(-100%) rotate(var(--angle));transform-origin:50% 100%}
+.knobs .dial-cap{position:absolute;z-index:3;top:calc(50% - 5px);left:calc(50% - 5px);width:10px;height:10px;border:1px solid #a4b0b0;border-radius:50%;background:linear-gradient(145deg,#e0e8e3,#8b9698);box-shadow:0 1px 2px #0008}
+.knobs .dial-control{position:relative;outline:none;-webkit-tap-highlight-color:transparent}
+.knobs .dial-control:active .dial{filter:brightness(1.08)}
+@media(max-width:420px){
+ .vector-visual .gear-copy-head{padding-left:40px;padding-right:40px}
+ .vector-visual .gear-copy .gear-type{font-size:8px}
+ .knobs .dial-needle{height:20px}
+}
