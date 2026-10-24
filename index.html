@@ -108,6 +108,8 @@ function gearPalette(blockId,modelName){
     if(/roland jc|jazz clean/.test(basis+" "+n)) return {name:"Jazz Chorus-style combo",body:"#20262b",face:"#252d31",grille:"#343d40",accent:"#b5c0c1",kind:"combo"};
     if(/vox|matchless|dr\. z|budda/.test(basis)) return {name:"Boutique / Class A combo",body:"#b8793b",face:"#d3b078",grille:"#49352e",accent:"#e5c990",kind:"combo"};
     if(/fender|bassman|tweed|super-sonic/.test(basis)) return {name:"American combo",body:"#272c2d",face:"#d5c8a5",grille:"#b2a17d",accent:"#e1d6b7",kind:"combo"};
+    if(/mesa\/boogie mark i|mesa mark i/.test(basis)) return {name:"Mesa Mark I-style combo",body:"#252629",face:"#b8b8b3",grille:"#242728",accent:"#c7b17a",kind:"combo"};
+    if(/mesa\/boogie lone star special/.test(basis)) return {name:"Mesa Lone Star-style combo",body:"#24272a",face:"#43484b",grille:"#171a1c",accent:"#c7b17a",kind:"combo"};
     if(/aguilar|darkglass|rocket surgeon|peavey|bass preamp/.test(basis+" "+n)) return {name:"Bass amplifier / preamp",body:"#1c2427",face:"#2e393d",grille:"#151a1c",accent:"#b5eb70",kind:"bass"};
     if(/hiwatt/.test(basis)) return {name:"British clean amp head",body:"#deded4",face:"#f0eee3",grille:"#272a2b",accent:"#d0cdbd",kind:"head"};
     if(/marshall|plexi|jtm|jcm|bluesbreaker/.test(basis+" "+n)) return {name:"British Plexi-style amp stack",body:"#242629",face:"#d5b35c",grille:"#262626",accent:"#e6ca79",kind:"stack"};
@@ -139,6 +141,19 @@ function svgEscape(s){return escapeHtml(String(s));}
 function knobSvg(cx,cy,r,color){
   return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#141819" stroke="'+color+'" stroke-width="2"/><circle cx="'+cx+'" cy="'+cy+'" r="'+(r-4)+'" fill="#485053" stroke="#090b0c"/><path d="M '+cx+' '+(cy-r+4)+' v 7" stroke="#f6f8f0" stroke-width="2" stroke-linecap="round"/>';
 }
+function gearBadge(blockId,modelName){
+  const labels={
+    "WAH|Clyde":"FULLTONE","WAH|Cry BB":"DUNLOP","WAH|V847":"VOX","WAH|Horse Wah":"MORLEY","WAH|Octave-Shift":"DIGITECH",
+    "CMP|Rose Comp":"ROSS","CMP|K Comp":"KEELEY","CMP|Studio Comp":"STUDIO",
+    "EFX|Distortion+":"MXR","EFX|RC Boost":"XOTIC","EFX|AC Boost":"XOTIC","EFX|Dist One":"BOSS DS-1","EFX|T Scream":"IBANEZ","EFX|Blues Drv":"BOSS BD-2","EFX|Morning Drv":"JHS","EFX|Eat Dist":"PRO CO","EFX|Red Dirt":"KEELEY","EFX|Crunch":"JHS","EFX|Muff Fuzz":"EHX","EFX|Katana":"KEELEY","EFX|ST Singer":"NUX","EFX|Red Fuzz":"FUZZ FACE","EFX|Touch Wah":"MU-TRON",
+    "EQ|6-Band EQ":"BOSS GE-6","EQ|Align EQ":"LR BAGGS","EQ|10-Band EQ":"MXR","EQ|Para EQ":"PARAMETRIC",
+    "GATE|Noise Gate":"BOSS NF-1",
+    "MOD|CE-1":"BOSS CE-1","MOD|CE-2":"BOSS CE-2","MOD|St Chorus":"MXR","MOD|Vibrator":"BOSS VB-2","MOD|Detune":"NUX","MOD|Flanger":"BOSS BF-3","MOD|Phase 90":"MXR","MOD|Phase 100":"MXR","MOD|SCF":"TC ELECTRONIC","MOD|U-Vibe":"UNI-VIBE","MOD|Tremolo":"BOSS TR-2","MOD|Rotary":"STRYMON","MOD|Harmonist":"DIGITECH","MOD|SCH-1":"ARION",
+    "DLY|Analog Delay":"BOSS DM-2","DLY|Digital Delay":"BOSS DD-7","DLY|Modulation":"IBANEZ","DLY|Tape Echo":"ROLAND","DLY|Reverse":"TC ELECTRONIC","DLY|Pan Delay":"IBANEZ","DLY|Duotime":"NUX","DLY|Phi Delay":"NUX",
+    "RVB|Room":"MXR","RVB|Hall":"LEXICON","RVB|Plate":"EMT 140","RVB|Spring":"BOSS","RVB|Shimmer":"NEUNABER","RVB|Damp":"NEUNABER"
+  };
+  return labels[blockId+"|"+modelName] || (blockId==="IR" ? "CABINET / IR" : blockId);
+}
 function renderGearSvg(blockId,modelName){
   const style=gearPalette(blockId,modelName),name=svgEscape(modelName),basis=svgEscape(getModelBasis(blockId,modelName));
   if(blockId==="AMP"){
@@ -149,9 +164,16 @@ function renderGearSvg(blockId,modelName){
       let speakers='';for(let i=0;i<4;i++){const x=100+(i%2)*118,y=142+Math.floor(i/2)*47;speakers+='<circle cx="'+x+'" cy="'+y+'" r="20" fill="#0b0e0f" stroke="'+style.accent+'" stroke-opacity=".7" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="13" fill="#31383b" stroke="#71797c"/><circle cx="'+x+'" cy="'+y+'" r="4" fill="#aab2b3"/>'}
       amp='<rect x="42" y="19" width="332" height="67" rx="6" fill="'+style.body+'" stroke="'+style.accent+'" stroke-width="2"/><rect x="50" y="26" width="316" height="53" rx="3" fill="'+style.face+'"/>'+knobs+'<text x="208" y="43" text-anchor="middle" fill="'+style.accent+'" font-size="8" font-weight="800" letter-spacing="1.5">'+name.toUpperCase()+'</text><rect x="44" y="96" width="328" height="112" rx="7" fill="'+style.body+'" stroke="'+style.accent+'" stroke-width="2"/><rect x="53" y="104" width="310" height="96" rx="3" fill="'+style.grille+'"/>'+speakers+'<rect x="52" y="202" width="312" height="3" fill="'+style.accent+'" opacity=".7"/>';
     }else{
-      const speakerCount=/jc-120|twin reverb|ac30|bassman|4×10|4x10/.test(style.name.toLowerCase()+" "+basis.toLowerCase())?4:2;
+      const speakerBasis=(style.name+" "+basis+" "+modelName).toLowerCase();
+      let speakerCount=2;
+      if(/bassman|4×10|4x10/.test(speakerBasis))speakerCount=4;
+      else if(/vibro.king/.test(speakerBasis))speakerCount=3;
+      else if(/deluxe reverb|princeton|tweed deluxe|ac15/.test(speakerBasis))speakerCount=1;
+      else if(/jc-120|twin reverb|ac30|dc-30|matchless/.test(speakerBasis))speakerCount=2;
       let speakers='';
       if(speakerCount===4){for(let j=0;j<4;j++){const x=115+(j%2)*110,y=119+Math.floor(j/2)*44;speakers+='<circle cx="'+x+'" cy="'+y+'" r="16" fill="#202426" stroke="'+style.accent+'" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="9" fill="#6e7777"/><circle cx="'+x+'" cy="'+y+'" r="3" fill="#171a1b"/>'}}
+      else if(speakerCount===3){for(let j=0;j<3;j++){const x=132+j*78;speakers+='<circle cx="'+x+'" cy="142" r="21" fill="#202426" stroke="'+style.accent+'" stroke-width="2"/><circle cx="'+x+'" cy="142" r="14" fill="#667070"/><circle cx="'+x+'" cy="142" r="5" fill="#171a1b"/>'}}
+      else if(speakerCount===1){speakers+='<circle cx="210" cy="140" r="39" fill="#202426" stroke="'+style.accent+'" stroke-width="2"/><circle cx="210" cy="140" r="29" fill="#667070"/><circle cx="210" cy="140" r="9" fill="#171a1b"/>'}
       else {for(let j=0;j<2;j++){const x=151+j*90;speakers+='<circle cx="'+x+'" cy="142" r="30" fill="#202426" stroke="'+style.accent+'" stroke-width="2"/><circle cx="'+x+'" cy="142" r="22" fill="#667070"/><circle cx="'+x+'" cy="142" r="7" fill="#171a1b"/>'}}
       let knobs='';for(let i=0;i<7;i++)knobs+=knobSvg(74+i*46,56,7,style.accent);
       amp='<rect x="38" y="23" width="344" height="184" rx="11" fill="'+style.body+'" stroke="'+style.accent+'" stroke-width="2"/><rect x="47" y="31" width="326" height="48" rx="4" fill="'+style.face+'"/>'+knobs+'<rect x="51" y="83" width="318" height="112" rx="4" fill="'+style.grille+'" stroke="'+style.accent+'" stroke-opacity=".35"/>'+speakers+'<rect x="50" y="198" width="320" height="4" rx="2" fill="'+style.accent+'" opacity=".75"/>';
@@ -176,7 +198,7 @@ function renderGearSvg(blockId,modelName){
   if(style.kind==="wah"){
     return '<svg class="gear-svg" viewBox="0 0 420 220" role="img" aria-label="Ilustrasi wah expression pedal '+name+'"><ellipse cx="210" cy="193" rx="126" ry="8" fill="#000" opacity=".3"/><g transform="rotate(-12 210 105)"><path d="M105 35 Q110 22 128 27 L292 50 Q309 53 305 69 L275 167 Q272 180 255 177 L111 156 Q93 153 98 135 Z" fill="'+style.body+'" stroke="'+style.accent+'" stroke-width="3"/><path d="M126 45 L286 66 L261 153 L112 134 Z" fill="'+style.face+'" stroke="'+style.accent+'" stroke-width="2"/><path d="M130 62 L280 82 M126 77 L276 97 M122 92 L272 112 M118 107 L268 127 M114 122 L264 142" stroke="'+style.grille+'" stroke-width="6" opacity=".8"/></g><text x="210" y="211" text-anchor="middle" fill="#e5e9df" font-size="10">'+name.toUpperCase()+'</text></svg>';
   }
-  const pedalName=(getModelBasis(blockId,modelName)||modelName).split(" ")[0].toUpperCase();
+  const pedalName=svgEscape(gearBadge(blockId,modelName));
   const colors=style;
   let knobs='';
   const knobCount=blockId==="DLY"||blockId==="RVB"?3:3;
