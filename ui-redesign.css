@@ -681,3 +681,17 @@ button{touch-action:manipulation}
  #page-editor .model-step{width:34px;height:36px}
  #page-editor .model-stepper strong{font-size:12px}
 }
+
+
+/* No ACTIVE badge in the gear artwork; the header toggle is the single source of ON/OFF. */
+#page-editor .vector-visual .gear-copy-head{
+  min-height:0!important;
+  padding:3px 0 7px!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+#page-editor .vector-visual .gear-copy .gear-type{
+  width:100%;
+  text-align:center;
+}
+#page-editor .vector-visual .gear-copy .gear-state{display:none!important}
