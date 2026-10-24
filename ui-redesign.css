@@ -481,3 +481,34 @@ button{touch-action:manipulation}
  .knobs .knob label{font-size:8px}
  .knobs .knob-value{font-size:11px}
 }
+
+
+/* Compact polish pass: remove duplicate connection banner and keep local SVGs legible. */
+#connectionStrip.is-hidden-compact{display:none!important}
+.model-visual-stage{padding:0 0 7px;margin:0 0 7px;overflow:visible}
+.gear-visual.vector-visual{gap:0}
+.vector-visual .gear-art{width:100%;min-height:0;padding:5px 8px 3px;overflow:hidden}
+.vector-visual .gear-art .gear-svg{display:block;width:100%;height:auto;max-height:205px;max-width:100%;flex:none;object-fit:contain;filter:drop-shadow(0 4px 6px #0003)}
+.vector-visual .gear-copy{padding:6px 2px 1px;gap:5px}
+.vector-visual .gear-copy-head{justify-content:flex-start;flex-wrap:wrap;gap:6px;padding-bottom:5px}
+.vector-visual .gear-copy .gear-type{font-size:9px;letter-spacing:.55px}
+.vector-visual .gear-copy-meta{justify-content:flex-start;gap:4px 10px}
+.vector-visual .gear-copy .based-on{font-size:10px;line-height:1.4}
+.vector-visual .gear-copy .photo-caption{text-align:left;font-size:9px}
+.knobs .knob{gap:6px}
+.knobs .knob label{min-height:18px;font-size:9px;letter-spacing:.25px}
+.knobs .dial-control{gap:5px;min-height:0;touch-action:none}
+.knobs .dial{width:68px;height:68px}
+.knobs .dial:before{inset:6px}
+.knobs .dial-needle{top:11px;height:16px;transform-origin:50% 23px}
+.knobs .dial-cap{width:9px;height:9px;top:calc(50% - 4.5px);left:calc(50% - 4.5px)}
+.knobs .knob-value{font-size:12px;min-height:15px}
+@media(max-width:420px){
+ .vector-visual .gear-art .gear-svg{max-height:175px}
+ .vector-visual .gear-copy .based-on{font-size:9px}
+ .knobs,.knobs.knobs-many,.knobs.knobs-few{column-gap:5px;row-gap:18px}
+ .knobs .dial{width:60px;height:60px}
+ .knobs .dial:before{inset:5px}
+ .knobs .dial-needle{top:10px;height:14px;transform-origin:50% 20px}
+ .knobs .knob label{font-size:8px;min-height:18px}
+}
