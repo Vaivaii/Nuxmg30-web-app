@@ -598,3 +598,25 @@ button{touch-action:manipulation}
 @media(max-width:390px){
   .vector-visual .gear-art{height:166px;min-height:166px;padding:5px 6px}
 }
+
+
+/* Strong compact sizing for all gear artwork; AMP, pedal, wah, EQ, delay, reverb, IR. */
+#page-editor #modelVisual .gear-visual .gear-art{
+  height:160px!important;min-height:160px!important;max-height:160px!important;
+  padding:6px 8px!important;overflow:hidden!important;box-sizing:border-box!important;
+}
+#page-editor #modelVisual .gear-visual .gear-art .gear-svg{
+  display:block!important;width:100%!important;height:100%!important;
+  min-width:0!important;min-height:0!important;max-width:100%!important;max-height:100%!important;
+  object-fit:contain!important;flex:none!important;
+}
+@media(max-width:720px){
+  #page-editor #modelVisual .gear-visual .gear-art{
+    height:138px!important;min-height:138px!important;max-height:138px!important;padding:5px 6px!important;
+  }
+}
+@media(max-width:390px){
+  #page-editor #modelVisual .gear-visual .gear-art{
+    height:126px!important;min-height:126px!important;max-height:126px!important;padding:4px!important;
+  }
+}
