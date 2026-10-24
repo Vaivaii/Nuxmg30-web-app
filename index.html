@@ -126,18 +126,18 @@ let midiAccess=null, midiInput=null, midiOutput=null, midiConnected=false, lastM
 const MIDI_SW=[0,1,2,3,4,5,6,7,8,9,10,null];
 /* Default MG-30 CC map. The fourth compressor control is CC90; all other CCs are explicit. */
 const MIDI_PARAM_CC=[
-  [11,12],                 // WAH: 2 controls
-  [13,14,15,90],            // CMP: 4 controls
-  [17,18,19,20,21],         // EFX: 5 controls
-  [22,23,24,25,26,27,28,29],// AMP: 8 controls
-  [30,31,32,33,34,35,36,37,38,39,40,41], // EQ: 12 controls
-  [42,43,44,45],            // GATE: 4 controls
-  [46,47,48,49,50,51],      // MOD: 6 controls
-  [52,53,54,55,56,57,58,59], // DLY: 8 controls
-  [60,61,62,63],            // RVB: 4 controls
-  [64,65,66,67,68,69],      // IR: 6 controls
-  [70,71],                  // Send/Return: 2 controls
-  [72]                      // Volume / patch level: 1 control
+  [11,12,13], // WAH: base CC 11, mengikuti editor referensi yang sudah diuji
+  [14,15,16,17], // CMP: base CC 14
+  [18,19,20,21,22,23], // EFX: base CC 18
+  [24,25,26,27,28,29,30,31], // AMP: base CC 24
+  [32,33,34,35,36,37,38,39,40,41,42,43], // EQ: base CC 32
+  [44,45,46,47], // GATE: base CC 44
+  [48,49,50,51,52,53], // MOD: base CC 48
+  [54,55,56,57,58,59,60,61], // DLY: base CC 54
+  [62,63,64,65], // RVB: base CC 62
+  [66,67,68,69,70,71], // IR/CAB: base CC 66
+  [72,73], // S/R: parameter CC 72-73 per catatan file referensi
+  [] // VOL: sengaja nonaktif sampai ada pemetaan yang terverifikasi
 ];
 const MIDI_GAP=45;
 const KNOB_SLOTS=[[11,13,14],[16,17,18,19],[21,22,23,24,25,26],[28,29,30,31,32,33,34,35],[37,38,39,40,41,42,43,44,45,46,47,48],[50,51,52,53],[55,56,57,58,59,60],[62,63,64,65,66,67,68,69],[71,72,73,74],[76,77,78,79,80,81],[83,84],[]];
@@ -483,8 +483,12 @@ $('knobs').querySelectorAll('.dial-control').forEach(el=>{
  el.onpointermove=e=>{
   if(!dragging)return;
   const next=Math.max(0,Math.min(100,Math.round(dragStartValue+(dragStartY-e.clientY)*1.15)));
-  if(next!==current)moved=true;
-  applyValue(next);
+  if(next!==current){
+   moved=true;
+   applyValue(next);
+   // Kirim saat drag berlangsung; sendCC menggabungkan nilai beruntun dan membatasi laju MIDI.
+   if(selected===dragIndex)sendBlockParam(dragIndex,param,current);
+  }
  };
  el.onpointerup=finishDrag;
  el.onpointercancel=finishDrag;
