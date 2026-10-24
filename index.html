@@ -202,7 +202,7 @@ function gearBadge(blockId,modelName){
 function renderGearSvg(blockId,modelName){
   const style=gearPalette(blockId,modelName),name=svgEscape(modelName),basis=svgEscape(getModelBasis(blockId,modelName));
   if(blockId==="AMP"){
-    const isStack=style.kind==="stack"||style.kind==="head",isBass=style.kind==="bass";
+    const isStack=style.kind==="stack"||style.kind==="head"||style.kind==="bass";
     let amp='';
     if(isStack){
       let knobs='';for(let i=0;i<8;i++)knobs+=knobSvg(92+i*39,58,7,style.accent);
@@ -213,7 +213,7 @@ function renderGearSvg(blockId,modelName){
       let speakerCount=2;
       if(/bassman|4×10|4x10/.test(speakerBasis))speakerCount=4;
       else if(/vibro.king/.test(speakerBasis))speakerCount=3;
-      else if(/deluxe reverb|princeton|tweed deluxe|ac15/.test(speakerBasis))speakerCount=1;
+      else if(/deluxe reverb|princeton|tweed deluxe|ac15|mesa.*mark i/.test(speakerBasis))speakerCount=1;
       else if(/jc-120|twin reverb|ac30|dc-30|matchless/.test(speakerBasis))speakerCount=2;
       let speakers='';
       if(speakerCount===4){for(let j=0;j<4;j++){const x=115+(j%2)*110,y=119+Math.floor(j/2)*44;speakers+='<circle cx="'+x+'" cy="'+y+'" r="16" fill="#202426" stroke="'+style.accent+'" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="9" fill="#6e7777"/><circle cx="'+x+'" cy="'+y+'" r="3" fill="#171a1b"/>'}}
