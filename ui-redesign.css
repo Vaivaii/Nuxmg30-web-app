@@ -372,3 +372,24 @@ button{touch-action:manipulation}
  .gear-copy small{font-size:8px}
  .scene-button strong{font-size:9px}
 }
+
+/* Six-column compact rotary controls mimic the mockup while retaining the original range inputs. */
+.knobs.knobs-many{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 6px}
+.knobs.knobs-many .knob{min-width:0}
+.knobs.knobs-many .dial{width:54px;height:54px}
+.knobs.knobs-many .dial:before{inset:5px}
+.knobs.knobs-many .knob label{font-size:8px}
+.knobs.knobs-many .knob input{margin-top:4px}
+@media(max-width:720px){
+ .knobs.knobs-many{gap:9px 4px}
+ .knobs.knobs-many .dial{width:45px;height:45px}
+ .knobs.knobs-many .dial:before{inset:4px}
+ .knobs.knobs-many .dial b{font-size:10px}
+ .knobs.knobs-many .knob label{font-size:7px}
+ .knobs.knobs-many .knob input{margin-top:2px}
+}
+@media(max-width:390px){
+ .knobs.knobs-many .dial{width:39px;height:39px}
+ .knobs.knobs-many .dial:before{inset:3px}
+ .knobs.knobs-many .dial b{font-size:9px}
+}
