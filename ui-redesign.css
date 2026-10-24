@@ -418,35 +418,66 @@ button{touch-action:manipulation}
 
 
 
-/* Compact inline-vector model panel: preserve visible controls on mobile. */
-.model-visual-stage{min-height:0;height:auto;padding:8px;overflow:hidden}
-.gear-visual.vector-visual{display:flex;align-items:center;gap:12px;width:100%;min-height:0;height:auto}
-.vector-visual .gear-art{flex:0 0 52%;width:52%;min-width:0;height:150px;min-height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2c3835;border-radius:13px;background:radial-gradient(ellipse at 50% 42%,#26342e 0%,#18211f 60%,#121918 100%)}
-.vector-visual .gear-svg{display:block;width:100%;height:auto;max-height:148px;object-fit:contain}
-.vector-visual .gear-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px}
-.vector-visual .gear-copy .gear-type{display:block;color:#c5f36b;font-size:8px;font-weight:850;letter-spacing:.8px;line-height:1.4;text-transform:uppercase}
-.vector-visual .gear-copy strong{display:block;margin:1px 0;font-size:16px;line-height:1.22;overflow-wrap:anywhere}
-.vector-visual .gear-copy small{display:block;color:#99a7a3;font-size:9px;line-height:1.4;overflow-wrap:anywhere}
-.vector-visual .gear-copy .based-on{color:#e6eee7;font-size:10px}
-.vector-visual .gear-copy .based-on b{color:#c5f36b}
-.vector-visual .gear-copy .photo-caption{color:#8e9b96;font-size:8px}
+/* Reference-inspired editor: full-width local vector, compact metadata, proper rotary controls. */
+.model-visual-stage{min-height:0;height:auto;padding:0 0 10px;margin:0 0 8px;overflow:hidden;border-bottom:1px solid #293338}
+.gear-visual.vector-visual{display:flex;flex-direction:column;align-items:stretch;gap:0;width:100%;min-height:0;height:auto}
+.vector-visual .gear-art{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:auto;min-height:0;padding:5px 0 8px;overflow:hidden;border:0;border-radius:12px;background:radial-gradient(ellipse at 50% 45%,#293235 0%,#1a2225 58%,#12181b 100%)}
+.vector-visual .gear-svg{display:block;width:100%;height:auto;max-height:170px;object-fit:contain}
+.vector-visual .gear-copy{display:flex;flex-direction:column;gap:7px;flex:1;min-width:0;padding:8px 2px 2px}
+.vector-visual .gear-copy-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:0 0 7px;border-bottom:1px solid #283237}
+.vector-visual .gear-copy .gear-type{display:block;color:#c5f36b;font-size:8px;font-weight:850;letter-spacing:1px;line-height:1.4;text-transform:uppercase}
+.vector-visual .gear-copy .gear-state{flex:none;border:1px solid #364146;border-radius:999px;padding:3px 7px;font-size:8px;font-weight:800;letter-spacing:.5px;color:#a7b3b4}
+.vector-visual .gear-copy .gear-state.is-on{border-color:#647b3b;color:#c5f36b;background:#c5f36b0b}
+.vector-visual .gear-copy .gear-state.is-off{color:#9da6a6}
+.vector-visual .gear-copy-meta{display:flex;align-items:baseline;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;min-width:0}
+.vector-visual .gear-copy small{display:block;color:#8f9c9f;font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+.vector-visual .gear-copy .based-on{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;color:#e5ece7;font-size:10px}
+.vector-visual .gear-copy .based-on b{color:#c5f36b;white-space:nowrap}
+.vector-visual .gear-copy .photo-caption{color:#849195;font-size:8px;text-align:right}
+.vector-visual .gear-copy .photo-caption:empty{display:none}
+
+/* Hardware-inspired rotary knobs. Keep the actual 0–100 values and MIDI path unchanged. */
+.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:23px 12px;margin:18px 0 16px}
+.knobs.knobs-many,.knobs.knobs-few{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:12px;row-gap:23px}
+.knobs .knob{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-width:0;padding:0 2px;gap:8px;text-align:center;overflow:visible}
+.knobs .knob label{display:block;order:0;width:100%;min-height:17px;margin:0;color:#d2dbd7;font-size:10px;font-weight:750;letter-spacing:.55px;line-height:1.35;text-transform:uppercase;overflow-wrap:anywhere}
+.knobs .dial-control{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-width:0;padding:0;border:0;border-radius:12px;background:transparent;color:inherit;touch-action:none;user-select:none;-webkit-user-select:none;cursor:ns-resize;outline-offset:4px}
+.knobs .dial-control:focus-visible .dial{outline:2px solid #c5f36b;outline-offset:4px}
+.knobs .dial{position:relative;display:block;width:76px;height:76px;flex:none;margin:0 auto;border-radius:50%;background:conic-gradient(from 225deg,var(--lime) 0 var(--fill),#465155 var(--fill) 270deg,transparent 270deg 360deg);box-shadow:0 3px 9px #0005,inset 0 0 0 1px #ffffff0a}
+.knobs .dial:before{content:"";position:absolute;inset:7px;border:1px solid #697477;border-radius:50%;background:linear-gradient(145deg,#5c6569 0%,#424a4e 54%,#333b3e 100%);box-shadow:inset 0 2px 4px #ffffff12,inset 0 -4px 7px #0005}
+.knobs .dial-needle{position:absolute;z-index:2;top:13px;left:calc(50% - 2px);width:4px;height:18px;border-radius:5px;background:#d5f777;box-shadow:0 0 5px #c5f36b38;transform:rotate(var(--angle));transform-origin:50% 25px}
+.knobs .dial-cap{position:absolute;z-index:3;top:calc(50% - 5px);left:calc(50% - 5px);width:10px;height:10px;border:1px solid #8b9596;border-radius:50%;background:linear-gradient(145deg,#d7dfdb,#909b9c);box-shadow:0 1px 2px #0007}
+.knobs .knob-value{display:block;min-height:16px;color:#e3ebe6;font-size:12px;font-weight:750;line-height:1.3;font-variant-numeric:tabular-nums}
+@media(min-width:721px){
+ .knobs,.knobs.knobs-many,.knobs.knobs-few{grid-template-columns:repeat(4,minmax(0,1fr));gap:25px 16px}
+ .knobs .dial{width:84px;height:84px}
+ .knobs .dial-needle{top:15px;height:20px;transform-origin:50% 28px}
+}
 @media(max-width:720px){
- .model-visual-stage{min-height:0;padding:7px}
- .gear-visual.vector-visual{gap:9px;min-height:0}
- .vector-visual .gear-art{flex-basis:51%;width:51%;height:137px;min-height:137px;border-radius:12px}
- .vector-visual .gear-svg{max-height:135px}
- .vector-visual .gear-copy{gap:5px}
- .vector-visual .gear-copy .gear-type{font-size:7px;letter-spacing:.5px}
- .vector-visual .gear-copy strong{font-size:14px}
- .vector-visual .gear-copy small{font-size:8px;line-height:1.35}
+ .model-visual-stage{padding:0 0 9px;margin-bottom:8px}
+ .vector-visual .gear-art{padding:2px 0 5px;border-radius:10px}
+ .vector-visual .gear-svg{max-height:168px}
+ .vector-visual .gear-copy{gap:6px;padding:7px 1px 1px}
+ .vector-visual .gear-copy-head{padding-bottom:6px}
+ .vector-visual .gear-copy .gear-type{font-size:7.5px;letter-spacing:.6px}
+ .vector-visual .gear-copy .gear-state{font-size:7.5px;padding:3px 6px}
  .vector-visual .gear-copy .based-on{font-size:9px}
+ .vector-visual .gear-copy .photo-caption{font-size:8px}
+ .knobs,.knobs.knobs-many,.knobs.knobs-few{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 9px;margin-top:15px}
+ .knobs .knob{gap:7px;padding-inline:1px}
+ .knobs .knob label{font-size:9px;min-height:20px;letter-spacing:.3px}
+ .knobs .dial{width:72px;height:72px}
+ .knobs .dial:before{inset:7px}
+ .knobs .dial-needle{top:12px;height:17px;transform-origin:50% 24px}
+ .knobs .knob-value{font-size:12px}
 }
 @media(max-width:390px){
- .gear-visual.vector-visual{gap:7px}
- .vector-visual .gear-art{flex-basis:49%;width:49%;height:126px;min-height:126px}
- .vector-visual .gear-svg{max-height:124px}
- .vector-visual .gear-copy .gear-type{font-size:6.5px;letter-spacing:.2px}
- .vector-visual .gear-copy strong{font-size:13px}
- .vector-visual .gear-copy small{font-size:7.5px}
- .vector-visual .gear-copy .based-on{font-size:8px}
+ .vector-visual .gear-svg{max-height:154px}
+ .vector-visual .gear-copy .based-on{font-size:8.5px}
+ .knobs,.knobs.knobs-many,.knobs.knobs-few{column-gap:6px;row-gap:20px}
+ .knobs .dial{width:66px;height:66px}
+ .knobs .dial:before{inset:6px}
+ .knobs .dial-needle{top:11px;height:15px;transform-origin:50% 22px}
+ .knobs .knob label{font-size:8px}
+ .knobs .knob-value{font-size:11px}
 }
