@@ -537,3 +537,28 @@ button{touch-action:manipulation}
  .vector-visual .gear-copy .gear-type{font-size:8px}
  .knobs .dial-needle{height:20px}
 }
+
+
+/* Compact signal-chain blocks: show more effects per screen without changing behavior. */
+.chain{gap:5px;padding:2px 1px 6px}
+.chain .block{flex:0 0 68px;min-height:78px;padding:7px 6px;border-radius:11px}
+.chain .block .symbol{font-size:16px;line-height:1}
+.chain .block b{font-size:9px;margin:6px 0 3px;letter-spacing:.3px}
+.chain .block small{font-size:7px;line-height:1.25}
+@media(min-width:721px){
+ .chain{gap:6px}
+ .chain .block{flex-basis:74px;min-height:82px;padding:8px 7px}
+}
+@media(max-width:720px){
+ .chain{gap:5px;padding-bottom:5px}
+ .chain .block{flex-basis:62px;min-height:73px;padding:6px 5px;border-radius:10px}
+ .chain .block .symbol{font-size:15px}
+ .chain .block b{font-size:8px;margin:6px 0 3px;letter-spacing:.2px}
+ .chain .block small{font-size:6.5px;line-height:1.2}
+}
+@media(max-width:390px){
+ .chain .block{flex-basis:59px;min-height:70px;padding:6px 4px}
+ .chain .block .symbol{font-size:14px}
+ .chain .block b{font-size:7.5px;margin:5px 0 2px}
+ .chain .block small{font-size:6px}
+}
