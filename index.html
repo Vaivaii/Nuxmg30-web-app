@@ -119,21 +119,66 @@ function gearPalette(blockId,modelName){
   }
   const key=basis+" "+n;
   if(blockId==="IR") return {name:/bass|aguilar|ampeg|markbass|trace|eden/.test(key)?"Bass speaker cabinet":"Cabinet / speaker IR",body:"#262a2d",face:"#383d40",grille:"#191d1f",accent:"#c5f36b",kind:"cab"};
-  if(blockId==="EQ") return {name:"Graphic / parametric equalizer",body:"#353a3d",face:"#555e61",grille:"#202426",accent:"#c5f36b",kind:"eq"};
-  if(blockId==="DLY"&&/space echo|re-101|tape echo/.test(key)) return {name:"Tape echo machine",body:"#343638",face:"#777e80",grille:"#242729",accent:"#d8b26a",kind:"tape"};
-  if(/boss ce|boss ds|boss bd|boss nf|boss dd|boss tr|boss frv|boss ge|boss ps|arion|ibanez|mxr|dunlop|morley|keeley|ross|xotic|jhs|pro co|electro-harmonix|ehx|fulltone|vox v847|tc electronic|neunaber|digitech|digiTech/i.test(key)){
-    if(/mxr|phase 90|distortion\+|ge-6|10-band/.test(key)) return {name:"MXR-style pedal",body:"#df7427",face:"#f28b3e",grille:"#35393a",accent:"#f6d6a1",kind:"pedal"};
-    if(/tube screamer|ibanez/.test(key)) return {name:"Classic green overdrive",body:"#168653",face:"#1b9d64",grille:"#1f2a27",accent:"#bbf4b7",kind:"pedal"};
-    if(/boss ce|boss bd|boss dd|boss tr|boss frv|boss ps/.test(key)) return {name:"Compact stompbox",body:"#2876a6",face:"#3988ba",grille:"#20272b",accent:"#c2e9f7",kind:"pedal"};
-    if(/keeley|ross|compressor/.test(key)) return {name:"Compressor pedal",body:"#a5a8a6",face:"#e3e5de",grille:"#363a38",accent:"#f7f7ed",kind:"pedal"};
-    return {name:"Effect pedal",body:"#353a3e",face:"#52595d",grille:"#212628",accent:"#c5f36b",kind:"pedal"};
+  if(blockId==="EQ"){
+    if(/mxr/.test(basis))return {name:"MXR 10-band equalizer",body:"#272a2d",face:"#3b4144",grille:"#181c1e",accent:"#e4b35f",kind:"eq"};
+    if(/lr baggs/.test(basis))return {name:"LR Baggs acoustic EQ",body:"#8b7150",face:"#b39a76",grille:"#30302d",accent:"#e9d7b5",kind:"eq"};
+    return {name:"Graphic / parametric equalizer",body:"#353a3d",face:"#555e61",grille:"#202426",accent:"#c5f36b",kind:"eq"};
   }
-  if(blockId==="WAH"||blockId==="VOL") return {name:"Expression / wah pedal",body:"#32383d",face:"#515b61",grille:"#212629",accent:"#c5f36b",kind:"wah"};
-  if(blockId==="CMP") return {name:/ross/.test(key)?"Ross-style compressor":/keeley/.test(key)?"Keeley-style compressor":"Studio compressor",body:"#c2c7c4",face:"#e0e5df",grille:"#353b3b",accent:"#c5f36b",kind:"pedal"};
-  if(blockId==="GATE") return {name:"Noise gate pedal",body:"#353d40",face:"#4e585d",grille:"#202628",accent:"#c5f36b",kind:"pedal"};
-  if(blockId==="MOD") return {name:"Modulation stompbox",body:"#2679a7",face:"#398bb7",grille:"#20272b",accent:"#c5f36b",kind:"pedal"};
-  if(blockId==="DLY") return {name:"Delay effect pedal",body:"#6e50a5",face:"#8061bd",grille:"#28252f",accent:"#d6c6ff",kind:"pedal"};
-  if(blockId==="RVB") return {name:"Reverb effect pedal",body:"#69509d",face:"#7e64b4",grille:"#29252f",accent:"#d6c6ff",kind:"pedal"};
+  if(blockId==="WAH"||blockId==="VOL"){
+    if(/fulltone clyde/.test(basis))return {name:"Fulltone wah treadle",body:"#242a2d",face:"#394348",grille:"#1b2124",accent:"#c5f36b",kind:"wah"};
+    if(/dunlop cry baby/.test(basis))return {name:"Cry Baby wah treadle",body:"#26292c",face:"#d5c35e",grille:"#1d2021",accent:"#e9db83",kind:"wah"};
+    if(/vox v847/.test(basis))return {name:"VOX wah treadle",body:"#222729",face:"#343b3d",grille:"#15191b",accent:"#c9cacc",kind:"wah"};
+    if(/morley/.test(basis))return {name:"Morley optical wah treadle",body:"#24292d",face:"#4a5358",grille:"#171b1e",accent:"#d9b45f",kind:"wah"};
+    return {name:"Expression / volume pedal",body:"#32383d",face:"#515b61",grille:"#212629",accent:"#c5f36b",kind:"wah"};
+  }
+  if(blockId==="CMP"){
+    if(/ross/.test(basis))return {name:"Ross compressor pedal",body:"#16814f",face:"#1c995f",grille:"#1a2822",accent:"#c1f1ad",kind:"pedal"};
+    if(/keeley/.test(basis))return {name:"Keeley compressor pedal",body:"#d6d8d3",face:"#ebede7",grille:"#343a3a",accent:"#b6d5c0",kind:"pedal"};
+    return {name:"Studio compressor pedal",body:"#626c70",face:"#7d898c",grille:"#242a2d",accent:"#d7e0df",kind:"pedal"};
+  }
+  if(blockId==="GATE")return {name:"BOSS NF-1-style noise gate",body:"#303a3e",face:"#566267",grille:"#202628",accent:"#9ed4a6",kind:"pedal"};
+  if(blockId==="EFX"){
+    if(/mxr distortion\+/.test(basis))return {name:"MXR Distortion+ style",body:"#d9b42f",face:"#ebd45b",grille:"#3a3521",accent:"#fff0a4",kind:"pedal"};
+    if(/xotic/.test(basis))return {name:"Xotic boost pedal",body:"#b88738",face:"#d4a64e",grille:"#393026",accent:"#ffe0a0",kind:"pedal"};
+    if(/boss ds-1|pro co rat/.test(basis))return {name:"Distortion stompbox",body:"#d64d2f",face:"#eb6642",grille:"#352522",accent:"#ffc4a6",kind:"pedal"};
+    if(/ibanez ts808/.test(basis))return {name:"Tube Screamer overdrive",body:"#147c48",face:"#1b9a5c",grille:"#1c2a21",accent:"#b8f0b6",kind:"pedal"};
+    if(/boss bd-2/.test(basis))return {name:"Blues Driver stompbox",body:"#236ea0",face:"#3488bd",grille:"#1c2831",accent:"#c4e6f8",kind:"pedal"};
+    if(/morning glory|angry charlie/.test(basis))return {name:"JHS overdrive pedal",body:"#447a9b",face:"#6397b6",grille:"#252e32",accent:"#d2e5ef",kind:"pedal"};
+    if(/keeley red dirt/.test(basis))return {name:"Red Dirt overdrive",body:"#7e292b",face:"#a83b3e",grille:"#2c2021",accent:"#f3b2a1",kind:"pedal"};
+    if(/pro co rat/.test(basis))return {name:"RAT distortion pedal",body:"#333638",face:"#4a5052",grille:"#191d1f",accent:"#e5e8e4",kind:"pedal"};
+    if(/big muff|fuzz face/.test(basis))return {name:"Fuzz pedal",body:"#343b30",face:"#515d42",grille:"#20251c",accent:"#d1dfb4",kind:"pedal"};
+    if(/katana/.test(basis))return {name:"Clean boost pedal",body:"#b59a5b",face:"#d0b978",grille:"#38332a",accent:"#fff0b9",kind:"pedal"};
+    if(/steel singer/.test(basis))return {name:"NUX Steel Singer overdrive",body:"#31513e",face:"#426d53",grille:"#1e2a23",accent:"#bde5bf",kind:"pedal"};
+    if(/mu-tron/.test(basis))return {name:"Envelope filter pedal",body:"#353c34",face:"#57684e",grille:"#202720",accent:"#d2e5b7",kind:"pedal"};
+  }
+  if(blockId==="MOD"){
+    if(/mxr m134|arion sch-1/.test(basis))return {name:"Stereo chorus / modulation pedal",body:"#777f82",face:"#aab2b3",grille:"#343a3d",accent:"#e5e8e5",kind:"pedal"};
+    if(/phase 90|phase 100/.test(basis))return {name:"Phaser stompbox",body:"#c65b2c",face:"#e27a42",grille:"#34302c",accent:"#f5cca6",kind:"pedal"};
+    if(/boss ce-1/.test(basis))return {name:"Vintage chorus unit",body:"#8a9a9c",face:"#b8c5c5",grille:"#303a3d",accent:"#e9f1ec",kind:"pedal"};
+    if(/boss ce-2/.test(basis))return {name:"Blue chorus stompbox",body:"#286d9c",face:"#397fb0",grille:"#202c32",accent:"#c6e6f6",kind:"pedal"};
+    if(/vb-2/.test(basis))return {name:"Vibrato stompbox",body:"#4f526b",face:"#6f7292",grille:"#282a35",accent:"#d4d5f3",kind:"pedal"};
+    if(/tc electronic/.test(basis))return {name:"Chorus / flanger pedal",body:"#b7bfc0",face:"#d5dddd",grille:"#353d3e",accent:"#ffffff",kind:"pedal"};
+    if(/stry(mon)? lex/.test(basis))return {name:"Rotary speaker effect",body:"#252b2e",face:"#41484b",grille:"#1b2023",accent:"#cdb77d",kind:"pedal"};
+    if(/harmony|digitech/.test(basis))return {name:"Pitch harmonizer pedal",body:"#28679c",face:"#3c83b8",grille:"#1c2932",accent:"#d0e9fb",kind:"pedal"};
+    if(/uni-vibe/.test(basis))return {name:"Uni-Vibe modulation pedal",body:"#49405d",face:"#65577d",grille:"#24212e",accent:"#d7c6fb",kind:"pedal"};
+    return {name:"NUX modulation effect",body:"#32618a",face:"#4381ae",grille:"#202a32",accent:"#c5e7fb",kind:"pedal"};
+  }
+  if(blockId==="DLY"){
+    if(/dm-2/.test(basis))return {name:"Analog delay stompbox",body:"#906345",face:"#b08461",grille:"#392d25",accent:"#f0d2ad",kind:"pedal"};
+    if(/dd-7/.test(basis))return {name:"Digital delay stompbox",body:"#d7d9d4",face:"#eef0e9",grille:"#3b4244",accent:"#c5f36b",kind:"pedal"};
+    if(/ibanez dml10|dpl-10/.test(basis))return {name:"Modulation / pan delay unit",body:"#5d6878",face:"#818e9c",grille:"#262c35",accent:"#d8e3eb",kind:"pedal"};
+    if(/space echo|re-101|tape echo/.test(key))return {name:"Tape echo machine",body:"#343638",face:"#777e80",grille:"#242729",accent:"#d8b26a",kind:"tape"};
+    if(/alter ego/.test(basis))return {name:"Reverse delay pedal",body:"#373949",face:"#565c77",grille:"#24252f",accent:"#d1c9ff",kind:"pedal"};
+    return {name:/duotime|phi delay/.test(n)?"NUX delay effect":"Delay effect pedal",body:"#6e50a5",face:"#8061bd",grille:"#28252f",accent:"#d6c6ff",kind:"pedal"};
+  }
+  if(blockId==="RVB"){
+    if(/mxr m300/.test(basis))return {name:"Room reverb pedal",body:"#535e62",face:"#768287",grille:"#252d30",accent:"#d8e0e0",kind:"pedal"};
+    if(/lexicon/.test(basis))return {name:"Studio hall reverb",body:"#262b2e",face:"#41484b",grille:"#171b1d",accent:"#c5f36b",kind:"pedal"};
+    if(/emt 140/.test(basis))return {name:"Plate reverb reference",body:"#9da5a8",face:"#c5ccca",grille:"#343a3b",accent:"#edf0eb",kind:"pedal"};
+    if(/frv-1/.test(basis))return {name:"Spring reverb stompbox",body:"#8a3e31",face:"#b2523e",grille:"#302320",accent:"#f0b6a5",kind:"pedal"};
+    if(/neunaber/.test(basis))return {name:"Ambient reverb pedal",body:"#57518c",face:"#7771b2",grille:"#24243a",accent:"#dcd6ff",kind:"pedal"};
+    return {name:"Reverb effect pedal",body:"#69509d",face:"#7e64b4",grille:"#29252f",accent:"#d6c6ff",kind:"pedal"};
+  }
   if(blockId==="S/R") return {name:"External FX loop routing",body:"#262d30",face:"#3a4549",grille:"#182023",accent:"#c5f36b",kind:"routing"};
   return {name:"Effect unit",body:"#303638",face:"#4b5458",grille:"#202628",accent:"#c5f36b",kind:"pedal"};
 }
