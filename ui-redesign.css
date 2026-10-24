@@ -414,3 +414,28 @@ button{touch-action:manipulation}
  .knobs.knobs-many{column-gap:7px;row-gap:17px}
  .knobs.knobs-many .knob label{font-size:7.5px}
 }
+
+
+/* Real product-photo references mapped to the selected MG-30 model */
+.model-visual-stage{min-height:150px}
+.photo-visual{gap:11px;align-items:center}
+.gear-photo-wrap{
+ flex:0 0 54%;width:54%;height:132px;display:flex;align-items:center;justify-content:center;
+ overflow:hidden;border:1px solid #d7ddd7;border-radius:12px;background:#f7f7f4;
+ box-shadow:0 5px 14px #0002;text-decoration:none
+}
+.gear-photo{display:block;width:100%;height:100%;object-fit:contain;object-position:center;background:#f7f7f4}
+.gear-photo-failed{display:none;color:#3d4845;font-size:9px;text-align:center;padding:9px}
+.gear-photo-wrap.image-unavailable .gear-photo-failed{display:block}
+.gear-source{margin-top:3px;color:#b5d77c;font-size:8px;font-weight:700;text-decoration:none}
+.gear-source:active{opacity:.65}
+@media(max-width:720px){
+ .model-visual-stage{min-height:128px}
+ .gear-photo-wrap{flex-basis:52%;width:52%;height:122px}
+ .photo-visual{gap:8px}
+ .gear-copy small{font-size:8px;line-height:1.35}
+ .gear-source{font-size:8px}
+}
+@media(max-width:390px){
+ .gear-photo-wrap{flex-basis:51%;width:51%;height:112px}
+}
