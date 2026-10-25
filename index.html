@@ -250,19 +250,17 @@ function changeSelectedModel(delta){
  const blockIndex=selected,modelName=b.models[next][0];
  st.model=next;st.values={};
  $('modelSelect').value=String(next);
- sendBlockSwitch(blockIndex);
  render();persist();
+ // Samakan perilaku dengan editor referensi: kirim hanya CC switch blok
+ // (CC 0–10, model 1-based + bit bypass), tanpa langsung membaca ulang
+ // seluruh buffer yang dapat menimpa state UI sebelum perangkat stabil.
  if(midiConnected){
-   const token=++modelReadbackToken;
-   modelReadbackQueue=modelReadbackQueue.then(async()=>{
-     if(token!==modelReadbackToken)return;
-     try{
-       await readActiveBuffer({preserveDraftName:true});
-       if(token===modelReadbackToken)setDeviceStatus('Model dan parameter tersinkron: '+modelName);
-     }catch(e){
-       if(token===modelReadbackToken)setDeviceStatus('Model dipilih; pembacaan parameter gagal: '+e.message);
-     }
-   }).catch(()=>{});
+   sendBlockSwitch(blockIndex);
+   flushMidi().then(()=>{
+     setDeviceStatus('Perintah model dikirim: '+b.id+' · '+modelName);
+   }).catch(e=>{
+     setDeviceStatus('Model dipilih di aplikasi; pengiriman MIDI gagal: '+e.message);
+   });
  }
 }
 function persist(){localStorage.setItem('mg30-presets',JSON.stringify(presets));localStorage.setItem('mg30-draft',JSON.stringify({name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex,targetSlot,chainOrder}));}
