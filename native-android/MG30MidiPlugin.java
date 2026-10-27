@@ -179,7 +179,7 @@ public class MG30MidiPlugin extends Plugin {
                 }
                 bytes[i] = (byte) value;
             }
-            port.send(bytes, 0, bytes.length, MidiReceiver.TIMESTAMP_IMMEDIATE);
+            port.send(bytes, 0, bytes.length, 0L);
             JSObject result = new JSObject();
             result.put("sent", true);
             result.put("bytes", bytes.length);
