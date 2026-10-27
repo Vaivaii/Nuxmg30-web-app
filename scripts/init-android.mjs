@@ -14,6 +14,7 @@ if (!existsSync(androidDir)) {
 const javaDir = resolve(androidDir, 'app/src/main/java/com/vaivaii/mg30studio');
 mkdirSync(javaDir, { recursive: true });
 copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaDir, 'MG30AudioPlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30MidiPlugin.java'), resolve(javaDir, 'MG30MidiPlugin.java'));
 
 const mainActivityLines = [
   'package com.vaivaii.mg30studio;',
@@ -29,6 +30,7 @@ const mainActivityLines = [
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',
   '        registerPlugin(MG30AudioPlugin.class);',
+  '        registerPlugin(MG30MidiPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
@@ -67,6 +69,19 @@ manifest = manifest.replace(/<application\b[^>]*>/, tag => {
   const clean = tag.replace(/\sandroid:icon="[^"]*"/g, '').replace(/\sandroid:roundIcon="[^"]*"/g, '');
   return clean.replace(/>$/, ' android:icon="@drawable/ic_launcher" android:roundIcon="@drawable/ic_launcher">');
 });
+
+// TONE3000 OAuth callback for native Android. The URI must also be registered in
+// the TONE3000 developer settings before the native Select flow can complete.
+if (!manifest.includes('android:scheme="mg30studio"')) {
+  manifest = manifest.replace(/(<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\\s\\S]*?)(<\\/activity>)/, (whole, start, end) =>
+    start + '\\n            <intent-filter>\\n' +
+    '                <action android:name="android.intent.action.VIEW" />\\n' +
+    '                <category android:name="android.intent.category.DEFAULT" />\\n' +
+    '                <category android:name="android.intent.category.BROWSABLE" />\\n' +
+    '                <data android:scheme="mg30studio" android:host="oauth" android:pathPrefix="/callback" />\\n' +
+    '            </intent-filter>\\n        ' + end
+  );
+}
 writeFileSync(manifestPath, manifest, 'utf8');
 
 const stylesPath = resolve(androidDir, 'app/src/main/res/values/styles.xml');
