@@ -1,0 +1,23 @@
+{
+  "name": "mg30-studio-apk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Capacitor Android app for NUX MG-30 studio recording experiments",
+  "scripts": {
+    "build": "vite build",
+    "android:init": "npm run build && node scripts/init-android.mjs",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "android:build": "npm run android:init && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "vite": "^7.1.7"
+  }
+}
