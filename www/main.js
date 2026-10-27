@@ -1,6 +1,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import './native-midi.js';
+import './tone3000.js';
 
 const MG30Audio = registerPlugin('MG30Audio');
 const $ = (id) => document.getElementById(id);
