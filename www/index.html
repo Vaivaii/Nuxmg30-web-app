@@ -139,9 +139,9 @@
 <nav class="nav" aria-label="Navigasi utama"><button class="active" data-page="editor"><span class="nav-icon">⌁</span><span>Editor</span></button><button data-page="presets"><span class="nav-icon">▤</span><span>Presets</span></button><button data-page="studio"><span class="nav-icon">♫</span><span>Studio</span></button><button data-page="device"><span class="nav-icon">⌘</span><span>Device</span></button></nav>
 <section id="page-editor"><div class="editor-topbar"><div class="editor-section-label"><span class="eyebrow">TONE WORKSPACE</span><strong>Tone Editor</strong></div><div class="editor-top-actions"><button class="btn" id="saveDeviceBtn" title="Simpan ke MG-30">▣ <span>Simpan ke pedal</span></button><button class="btn primary" id="saveBtn" title="Simpan draft">＋ <span>Simpan draft</span></button></div></div>
 <div class="device-strip is-hidden-compact" id="connectionStrip"><div class="device-orb" id="deviceOrb"></div><div class="device-copy"><strong>NUX MG-30 GEN2</strong><small id="connectionStatusText">Belum terhubung · tekan Hubungkan untuk sinkronisasi</small></div><button class="btn" id="openDeviceFromEditor">Device & MIDI ↗</button></div>
-<div class="hardware-preset-card"><button class="preset-step" id="prevHardwarePreset" title="Preset sebelumnya" aria-label="Preset sebelumnya">‹</button><div class="hardware-preset-main"><div class="hardware-preset-slot" id="hardwarePresetSlot">01A</div><div class="hardware-preset-details"><button type="button" id="presetJumpTrigger" class="hardware-preset-name-trigger" aria-expanded="false" aria-controls="presetJumpMenu"><strong id="hardwarePresetName">Hubungkan untuk membaca preset</strong></button><small id="hardwarePresetSource">Nama preset akan dibaca dari pedal</small></div></div><button class="preset-favorite" id="favoritePresetBtn" title="Tandai favorit" aria-label="Tandai favorit">☆</button><button class="preset-step" id="nextHardwarePreset" title="Preset berikutnya" aria-label="Preset berikutnya">›</button><div class="preset-jump-menu hidden" id="presetJumpMenu" role="dialog" aria-label="Pilih nomor preset"></div></div><div class="stats"><div class="stat"><small>Preset aktif</small><strong id="statName">Slot 01A</strong></div><div class="stat"><small>Efek aktif</small><strong id="statActive">8 / 11</strong></div><div class="stat"><small>Parameter diubah</small><strong id="statChanged">0</strong></div></div>
+<div class="hardware-preset-card"><button class="preset-step" id="prevHardwarePreset" title="Preset sebelumnya" aria-label="Preset sebelumnya">‹</button><div class="hardware-preset-main"><div class="hardware-preset-slot" id="hardwarePresetSlot">01A</div><div class="hardware-preset-details"><button type="button" id="presetJumpTrigger" class="hardware-preset-name-trigger" aria-expanded="false" aria-controls="presetJumpMenu"><strong id="hardwarePresetName">Hubungkan untuk membaca preset</strong></button><small id="hardwarePresetSource">Nama preset akan dibaca dari pedal</small></div></div><button class="preset-favorite" id="favoritePresetBtn" title="Tandai favorit" aria-label="Tandai favorit">☆</button><button class="preset-step" id="nextHardwarePreset" title="Preset berikutnya" aria-label="Preset berikutnya">›</button><div class="preset-jump-menu hidden" id="presetJumpMenu" role="dialog" aria-label="Preset"></div></div><div class="stats"><div class="stat"><small>Preset aktif</small><strong id="statName">Slot 01A</strong></div><div class="stat"><small>Efek aktif</small><strong id="statActive">8 / 11</strong></div><div class="stat"><small>Parameter diubah</small><strong id="statChanged">0</strong></div></div>
 <div class="panel"><div class="panel-head"><div><h3>Signal chain</h3><p>Pilih blok untuk mengedit model dan kontrolnya</p></div><span class="chip">12 BLOCKS</span></div><div class="chain" id="chain"></div></div>
-<div class="editor"><div class="control main-editor-card"><div class="panel-head"><div><h3 id="editorTitle">AMP · Deluxe Rvb</h3><p id="editorSub">Pilih model dan atur parameter</p></div><label class="block-toggle" title="Aktifkan atau bypass blok"><span id="blockStatus">ON</span><input class="switch" id="blockSwitch" type="checkbox" checked aria-label="Aktifkan blok"></label></div><div id="modelVisual" class="model-visual-stage"></div><div class="scene-bar"><div class="scene-bar-head"><strong>Scenes</strong></div><div id="sceneButtons" class="scene-buttons"></div></div><div class="row model-select-row"><span class="model-row-label">MODEL</span><div class="model-stepper"><button type="button" class="model-step" id="modelPrev" aria-label="Model sebelumnya" title="Model sebelumnya">‹</button><strong id="modelCurrentName">Deluxe Rvb</strong><button type="button" class="model-step" id="modelNext" aria-label="Model berikutnya" title="Model berikutnya">›</button></div><select id="modelSelect" class="hidden" aria-hidden="true" tabindex="-1"></select></div><div id="knobs" class="knobs"></div><div class="row preset-name-row"><label for="presetName">Nama draft</label><input type="text" id="presetName" value="Draft 01A"></div><select id="sceneSelect" class="hidden" aria-hidden="true" tabindex="-1"><option>A · Clean</option><option>B · Rhythm</option><option>C · Lead</option></select></div>
+<div class="editor"><div class="control main-editor-card"><div class="panel-head"><div><h3 id="editorTitle">AMP · Deluxe Rvb</h3><p id="editorSub">Pilih model dan atur parameter</p></div><select id="ampQuickSelect" class="amp-quick-select hidden" aria-label="Pilih model amplifier" aria-hidden="true" tabindex="-1"></select><label class="block-toggle" title="Aktifkan atau bypass blok"><span id="blockStatus">ON</span><input class="switch" id="blockSwitch" type="checkbox" checked aria-label="Aktifkan blok"></label></div><div id="modelVisual" class="model-visual-stage"></div><div class="scene-bar"><div class="scene-bar-head"><strong>Scenes</strong></div><div id="sceneButtons" class="scene-buttons"></div></div><div class="row model-select-row"><span class="model-row-label">MODEL</span><div class="model-stepper"><button type="button" class="model-step" id="modelPrev" aria-label="Model sebelumnya" title="Model sebelumnya">‹</button><strong id="modelCurrentName">Deluxe Rvb</strong><button type="button" class="model-step" id="modelNext" aria-label="Model berikutnya" title="Model berikutnya">›</button></div><select id="modelSelect" class="hidden" aria-hidden="true" tabindex="-1"></select></div><div id="knobs" class="knobs"></div><div class="row preset-name-row"><label for="presetName">Nama draft</label><input type="text" id="presetName" value="Draft 01A"></div><select id="sceneSelect" class="hidden" aria-hidden="true" tabindex="-1"><option>A · Clean</option><option>B · Rhythm</option><option>C · Lead</option></select></div>
 <details class="control quick-panel"><summary><span>Quick actions & informasi</span><small>Draft lokal · Ekspor · Status fitur</small></summary><div class="quick-panel-body"><button class="btn" id="duplicateBtn">⧉ Duplikat preset</button> <button class="btn" id="exportBtn">↧ Ekspor JSON</button><div class="notice"><b>Catatan kompatibilitas.</b> Perubahan model dan slider tetap menggunakan jalur MIDI yang sudah ada. Pemetaan parameter firmware GEN2 belum diverifikasi sepenuhnya.</div><div class="switch-row"><span>Draft tersimpan otomatis</span><span class="chip">LOCAL</span></div><div class="switch-row"><span>Hardware GEN2</span><span class="chip">BELUM DIVERIFIKASI</span></div></div></details></div></section>
 <section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library / 02</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div><div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
 <section id="page-studio" class="hidden studio-page">
@@ -373,18 +373,17 @@ function sendBlockParam(index,param,value){
   if(!Number.isInteger(cc))return;
   sendCC(cc,encodeParameterValue(param,value));
 }
+function scheduleHardwareUiRefresh(){
+ if(hardwareUiRefreshTimer)clearTimeout(hardwareUiRefreshTimer);
+ hardwareUiRefreshTimer=setTimeout(()=>{hardwareUiRefreshTimer=null;render();persist()},70);
+}
 function syncIncomingBlockSwitch(cc,rawValue){
-  // The device reports a block's 1-based model number; bit 6 means bypass.
-  const index=Number(cc),value=Number(rawValue);
-  if(!Number.isInteger(index)||index<0||index>10||!BLOCKS[index]||!states[index])return;
-  const modelNumber=value&0x3F;
-  if(modelNumber>=1&&modelNumber<=BLOCKS[index].models.length){
-    states[index].model=modelNumber-1;
-    states[index].on=(value&0x40)===0;
-  }
-  if(selected!==index)selected=index;
-  render();
-  persist();
+ // State CCs update individual blocks; they do not determine the current editor focus.
+ const index=Number(cc),value=Number(rawValue);
+ if(!Number.isInteger(index)||index<0||index>10||!BLOCKS[index]||!states[index])return;
+ const modelNumber=value&0x3F;
+ if(modelNumber>=1&&modelNumber<=BLOCKS[index].models.length){states[index].model=modelNumber-1;states[index].on=(value&0x40)===0}
+ scheduleHardwareUiRefresh();
 }
 function syncIncomingParameterCC(cc,rawValue){
   const index=MIDI_PARAM_CC.findIndex(list=>list.includes(cc));
@@ -411,66 +410,81 @@ function syncIncomingParameterCC(cc,rawValue){
 function midiFrame(body){return midiSend([0xF0,...body,0xF7])}
 function waitForSysEx(match,timeout=2200){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{midiInput.removeEventListener('midimessage',handler);reject(new Error('Tidak ada balasan SysEx dari MG-30'))},timeout);function handler(e){const a=Array.from(e.data);if(a[0]!==0xF0||a[a.length-1]!==0xF7)return;const body=a.slice(1,-1);if(match(body)){clearTimeout(timer);midiInput.removeEventListener('midimessage',handler);resolve(body)}}midiInput.addEventListener('midimessage',handler)})}
 async function readActiveProgramScene(){
- if(!midiConnected)throw new Error('MG-30 belum terhubung.');
- const pending=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x15&&b[4]===0x02&&b.length>=10,1600);
- const sent=await midiFrame([0x43,0x58,0x70,0x15,0x00]);
- if(!sent)throw new Error('Gagal meminta status preset/scene dari MG-30.');
- const reply=await pending,scene=Number(reply[9]),program=Number(reply[6]);
- if(!Number.isInteger(scene)||scene<0||scene>2)throw new Error('Indeks scene dari perangkat tidak valid: '+scene);
- return {program,scene};
+ if(sceneStatusReadPromise)return sceneStatusReadPromise;
+ sceneStatusReadPromise=(async()=>{
+  if(!midiConnected)throw new Error('MG-30 belum terhubung.');
+  const pending=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x15&&b[4]===0x02&&b.length>=10,1800);
+  const sent=await midiFrame([0x43,0x58,0x70,0x15,0x00]);
+  if(!sent)throw new Error('Gagal meminta status preset/scene dari MG-30.');
+  const reply=await pending,scene=Number(reply[9]),program=Number(reply[6]);
+  if(!Number.isInteger(scene)||scene<0||scene>2)throw new Error('Indeks scene dari perangkat tidak valid: '+scene);
+  if(!Number.isInteger(program)||program<0||program>127)throw new Error('Nomor preset dari perangkat tidak valid: '+program);
+  return {program,scene};
+ })();
+ try{return await sceneStatusReadPromise}finally{sceneStatusReadPromise=null}
 }
 async function readSysExPart(cmd,prog,part){if(!midiConnected)throw new Error('Hubungkan MG-30 terlebih dahulu');await flushMidi();const reply=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===cmd&&b[4]===0x02&&b[6]===part);await midiFrame([0x43,0x58,0x70,cmd,0x00,prog,part,0,0,0,0,0,0]);return reply}
 function bitSlot(body,k){const p=6+21*Math.floor(k/2)+8*(k%2);let v=0;for(let i=0;i<7;i++){const bit=p+i,byte=body[7+Math.floor(bit/7)];v=(v<<1)|((byte>>(6-bit%7))&1)}return v}
 async function readActiveBuffer(options={}){
- const preservedDraftName=options.preserveDraftName?$('presetName').value:null;
- let sceneIndex=Number.isInteger(options.sceneIndex)?options.sceneIndex:activeSceneIndex;
- if(sceneIndex<0||sceneIndex>2)sceneIndex=0;
- if(midiConnected&&options.skipSceneStatus!==true){
-  try{
-   const status=await readActiveProgramScene();
-   sceneIndex=status.scene;
-   if(options.sceneIndex!==undefined&&status.scene!==options.sceneIndex)
-    setDeviceStatus('Perangkat melaporkan Scene '+(status.scene+1)+'; editor mengikuti scene aktif dari MG-30.');
-  }catch(error){
-   if(options.sceneIndex===undefined)setDeviceStatus('Status scene belum terbaca; scene terakhir dipertahankan: '+error.message);
+ if(activeBufferReadPromise)return activeBufferReadPromise;
+ activeBufferReadPromise=(async()=>{
+  const preservedDraftName=options.preserveDraftName?$('presetName').value:null;
+  let status=null,sceneIndex=Number.isInteger(options.sceneIndex)?options.sceneIndex:activeSceneIndex;
+  if(sceneIndex<0||sceneIndex>2)sceneIndex=0;
+  if(midiConnected&&options.skipSceneStatus!==true){
+   try{status=await readActiveProgramScene();sceneIndex=status.scene}
+   catch(error){if(options.sceneIndex===undefined)setDeviceStatus('Status preset/scene belum terbaca: '+error.message)}
   }
- }
- const parts=await readPresetParts(0x0C,0);
- const body=parts[sceneIndex]||parts[0];
- if(!body||body.length<220)throw new Error('Balasan Scene '+(sceneIndex+1)+' terlalu pendek ('+(body?body.length:0)+' byte). Format SysEx tidak cocok.');
- const nextStates=states.map(s=>({...s,values:{...s.values}}));
- let validModels=0;
- for(let i=0;i<11;i++){
-  const v=bitSlot(body,i),model=v&0x3F;
-  if(model>=1&&model<=BLOCKS[i].models.length){validModels++;nextStates[i].model=model-1;nextStates[i].on=!(v&0x40)}
-  const labels=BLOCKS[i].models[nextStates[i].model][1].split(',').map(s=>s.trim()),slots=KNOB_SLOTS[i];
-  for(let k=0;k<Math.min(labels.length,slots.length);k++){
-   let value=bitSlot(body,slots[k]);if(selectorParam(labels[k]))value&=0x0F;
-   nextStates[i].values[labels[k]]=normalizeParameterValue(labels[k],value);
+  const program=Number.isInteger(options.program)?options.program:(status?status.program:targetSlot);
+  // The 0x0C part 0 is the active edit buffer. Parts 1/2 aren't verified as Scene 2/3 snapshots.
+  const body=await readSysExPart(0x0C,program,0);
+  if(!body||body.length<220)throw new Error('Balasan edit buffer terlalu pendek ('+(body?body.length:0)+' byte). Format SysEx belum cocok.');
+  const nextStates=states.map(s=>({...s,values:{...s.values}}));let validModels=0;
+  for(let i=0;i<11;i++){
+   const v=bitSlot(body,i),model=v&0x3F;
+   if(model>=1&&model<=BLOCKS[i].models.length){validModels++;nextStates[i].model=model-1;nextStates[i].on=(v&0x40)===0}
+   const labels=BLOCKS[i].models[nextStates[i].model][1].split(',').map(s=>s.trim()),slots=KNOB_SLOTS[i];
+   for(let k=0;k<Math.min(labels.length,slots.length);k++){
+    let value=bitSlot(body,slots[k]);if(selectorParam(labels[k]))value&=0x0F;
+    nextStates[i].values[labels[k]]=normalizeParameterValue(labels[k],value);
+   }
   }
- }
- if(validModels<8)throw new Error('Data Scene '+(sceneIndex+1)+' diterima, tetapi hanya '+validModels+'/11 model dikenali. Format belum cocok; tampilan sebelumnya dipertahankan.');
- states=nextStates;
- const chain=Array.from({length:12},(_,i)=>bitSlot(body,94+i));
- if(chain.every(v=>v<BLOCKS.length)&&new Set(chain).size===BLOCKS.length)chainOrder=chain;
- let name='';
- for(let i=0;i<16;i++){const ch=bitSlot(body,106+i);if(!ch)break;name+=String.fromCharCode(ch)}
- hardwarePresetName=name||'';hardwarePresetNameLoaded=!!name;
- if(name)$('presetName').value=name;
- if(Number.isInteger(body[5])&&body[5]>=0&&body[5]<128){targetSlot=body[5];$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker()}
- activeSceneIndex=sceneIndex;
- $('sceneSelect').selectedIndex=sceneIndex;
- render();renderSceneButtons();
- if(options.preserveDraftName)$('presetName').value=preservedDraftName;
- persist();
- return name;
+  if(validModels<8)throw new Error('Edit buffer diterima, tetapi hanya '+validModels+'/11 model dikenali. Format GEN2 perlu diverifikasi; tampilan sebelumnya dipertahankan.');
+  states=nextStates;
+  const chain=Array.from({length:12},(_,i)=>bitSlot(body,94+i));
+  if(chain.every(v=>v<BLOCKS.length)&&new Set(chain).size===BLOCKS.length)chainOrder=chain;
+  let name='';for(let i=0;i<16;i++){const ch=bitSlot(body,106+i);if(!ch)break;name+=String.fromCharCode(ch)}
+  hardwarePresetName=name||'';hardwarePresetNameLoaded=!!name;if(name)$('presetName').value=name;
+  const resolvedProgram=status?status.program:program;
+  if(Number.isInteger(resolvedProgram)&&resolvedProgram>=0&&resolvedProgram<128){targetSlot=resolvedProgram;$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker()}
+  activeSceneIndex=sceneIndex;$('sceneSelect').selectedIndex=sceneIndex;
+  render();renderSceneButtons();
+  if(options.preserveDraftName)$('presetName').value=preservedDraftName;
+  persist();return name;
+ })();
+ try{return await activeBufferReadPromise}finally{activeBufferReadPromise=null}
 }
+async function pollHardwareState(forceBuffer=false){
+ if(!midiConnected||hardwareSyncBusy||sceneSwitchPending)return;
+ hardwareSyncBusy=true;
+ try{
+  const status=await readActiveProgramScene(),presetChanged=status.program!==targetSlot,sceneChanged=status.scene!==activeSceneIndex;
+  if(!presetChanged&&!sceneChanged&&!forceBuffer)return;
+  if(presetChanged){hardwarePresetName='';hardwarePresetNameLoaded=false;targetSlot=status.program;renderSlotPicker();renderHardwarePreset()}
+  activeSceneIndex=status.scene;$('sceneSelect').selectedIndex=status.scene;renderSceneButtons();
+  await readActiveBuffer({preserveDraftName:!presetChanged,skipSceneStatus:true,sceneIndex:status.scene,program:status.program});
+  if(presetChanged||sceneChanged)setDeviceStatus((presetChanged?'Preset '+slotName(status.program)+' berubah':'Scene '+(status.scene+1)+' aktif')+' · edit buffer dibaca ulang dari MG-30.');
+ }catch(error){if(forceBuffer)setDeviceStatus('Sinkronisasi hardware belum berhasil: '+error.message)}
+ finally{hardwareSyncBusy=false}
+}
+function startHardwareStatePolling(){stopHardwareStatePolling();if(midiConnected)hardwareSyncTimer=setInterval(()=>pollHardwareState(false),1500)}
+function stopHardwareStatePolling(){if(hardwareSyncTimer){clearInterval(hardwareSyncTimer);hardwareSyncTimer=null}}
 function setBitSlot(body,k,v){const p=6+21*Math.floor(k/2)+8*(k%2);for(let i=0;i<7;i++){const bit=p+i,idx=7+Math.floor(bit/7),sh=6-bit%7,b=(v>>(6-i))&1;body[idx]=(body[idx]&~(1<<sh))|(b<<sh)}}
 async function readPresetParts(cmd=0x0C,prog=0){const parts=[];for(let p=0;p<3;p++)parts.push(await readSysExPart(cmd,prog,p));return parts}
 async function writeHardwarePreset(prog,parts){await flushMidi();for(let part=0;part<3;part++){const body=parts[part].slice();body[3]=0x0B;body[4]=0x01;body[5]=prog;body[6]=part;await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x0B&&b[4]===0x03&&b[6]===part,1600).catch(()=>null);midiOutput.send([0xF0,...body,0xF7]);return ack})}await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x07&&b[4]===0x03,1600).catch(()=>null);midiOutput.send([0xF0,0x43,0x58,0x70,0x07,0x01,prog,prog,0,0,0,0,0,0xF7]);return ack});const check=await readPresetParts(0x0B,prog);return check.every((b,i)=>b.slice(7).every((v,j)=>v===parts[i][7+j]))}
 async function saveToDevice(){if(!midiConnected){setDeviceStatus('Belum terhubung. Tekan Hubungkan MG-30 terlebih dahulu.');toast('Belum terhubung ke MG-30');return}if(!confirm('Timpa preset hardware '+slotName()+'? Pastikan sudah backup.')){setDeviceStatus('Simpan dibatalkan.');return}try{setDeviceStatus('Menyimpan: menunggu antrean MIDI…');await flushMidi();setDeviceStatus('Menyimpan: membaca edit buffer…');const parts=await readPresetParts(0x0C,0);const name=currentName().slice(0,16);for(let i=0;i<16;i++)setBitSlot(parts[0],106+i,i<name.length?name.charCodeAt(i)&127:0);setDeviceStatus('Menyimpan preset '+slotName()+' ke perangkat…');const ok=await writeHardwarePreset(targetSlot,parts);if(!ok)throw new Error('Read-back tidak cocok; preset TIDAK dinyatakan tersimpan');setDeviceStatus('Berhasil disimpan dan diverifikasi: '+slotName());toast('Preset '+slotName()+' berhasil disimpan')}catch(e){setDeviceStatus('GAGAL SIMPAN: '+e.message);toast('Gagal simpan: '+e.message)}}
 async function selectHardwareSlot(prog,fromDevice=false){targetSlot=Math.max(0,Math.min(127,prog));if(!fromDevice){hardwarePresetName='';hardwarePresetNameLoaded=false}renderHardwarePreset();$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker();persist();if(!fromDevice){if(!midiConnected){setDeviceStatus('Belum terhubung. Slot '+slotName()+' baru dipilih di aplikasi.');toast('Hubungkan MG-30 agar preset ikut berubah');return}suppressProgramChangeUntil=performance.now()+1600;setDeviceStatus('Mengirim Program Change '+slotName()+'…');await midiSend([0xC0,targetSlot]);await delay(400)}try{setDeviceStatus('Membaca model, parameter, dan chain preset '+slotName()+'…');const name=await readActiveBuffer();setDeviceStatus('Sinkronisasi selesai: '+slotName()+(name?' · '+name:''));toast('Preset '+slotName()+' dibaca ke aplikasi')}catch(e){setDeviceStatus('Sinkronisasi gagal: '+e.message);toast('Gagal baca preset: '+e.message)}}
-async function connectMG30(){if(!navigator.requestMIDIAccess){setDeviceStatus('Web MIDI tidak didukung');toast('Coba Chrome/Chromium yang mendukung Web MIDI');return}try{setDeviceStatus('Meminta izin MIDI…');midiAccess=await navigator.requestMIDIAccess({sysex:true});const ports=()=>{const ins=[...midiAccess.inputs.values()],outs=[...midiAccess.outputs.values()];let input=ins.find(p=>/MG-?30|NUX/i.test(p.name||'')),output=outs.find(p=>/MG-?30|NUX/i.test(p.name||''));if(!input&&ins.length===1)input=ins[0];if(!output&&outs.length===1)output=outs[0];return {input,output}};let p=ports();if(!p.input||!p.output){const choices=[...midiAccess.inputs.values()].map(x=>'IN: '+x.name).concat([...midiAccess.outputs.values()].map(x=>'OUT: '+x.name));setDeviceStatus('Port MG-30 tidak ditemukan');toast(choices.length?choices.join(' · '):'Tidak ada port MIDI. Periksa kabel data/OTG.');return}midiInput=p.input;midiOutput=p.output;midiConnected=true;midiInput.onmidimessage=e=>{const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil)selectHardwareSlot(d[1]&127,true);else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2&&value!==activeSceneIndex&&!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;renderSceneButtons();persist();readActiveBuffer({preserveDraftName:true,sceneIndex:value}).catch(err=>setDeviceStatus('Scene dipilih tetapi konfigurasi belum terbaca: '+err.message));}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}};midiAccess.onstatechange=()=>{const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');midiConnected=ok;setDeviceStatus(ok?'Terhubung':'Perangkat terputus')};setDeviceStatus('Terhubung. Membaca preset aktif…');$('midiSupport').textContent='API tersedia';toast('Terhubung: '+(midiOutput.name||'MIDI device'));await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));renderChain();}catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}}
+async function connectMG30(){if(!navigator.requestMIDIAccess){setDeviceStatus('Web MIDI tidak didukung');toast('Coba Chrome/Chromium yang mendukung Web MIDI');return}try{setDeviceStatus('Meminta izin MIDI…');midiAccess=await navigator.requestMIDIAccess({sysex:true});const ports=()=>{const ins=[...midiAccess.inputs.values()],outs=[...midiAccess.outputs.values()];let input=ins.find(p=>/MG-?30|NUX/i.test(p.name||'')),output=outs.find(p=>/MG-?30|NUX/i.test(p.name||''));if(!input&&ins.length===1)input=ins[0];if(!output&&outs.length===1)output=outs[0];return {input,output}};let p=ports();if(!p.input||!p.output){const choices=[...midiAccess.inputs.values()].map(x=>'IN: '+x.name).concat([...midiAccess.outputs.values()].map(x=>'OUT: '+x.name));setDeviceStatus('Port MG-30 tidak ditemukan');toast(choices.length?choices.join(' · '):'Tidak ada port MIDI. Periksa kabel data/OTG.');return}midiInput=p.input;midiOutput=p.output;midiConnected=true;midiInput.onmidimessage=e=>{const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80){if(!sceneSwitchPending)pollHardwareState(true)}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}};midiAccess.onstatechange=()=>{const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();setDeviceStatus(ok?'Terhubung':'Perangkat terputus')};setDeviceStatus('Terhubung. Membaca preset aktif…');$('midiSupport').textContent='API tersedia';toast('Terhubung: '+(midiOutput.name||'MIDI device'));await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));renderChain();startHardwareStatePolling();}catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}}
 
 let selected=3,changed=new Set(),presets=[],modelReadbackQueue=Promise.resolve(),modelReadbackToken=0;
 try{presets=JSON.parse(localStorage.getItem('mg30-presets')||'[]');if(!Array.isArray(presets))presets=[]}catch{presets=[]}
@@ -480,7 +494,7 @@ let chainOrder=BLOCKS.map((_,i)=>i);
 presets=presets.filter(p=>!p.builtIn);
 localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
-let activeSceneIndex=0,sceneSwitchPending=false;
+let activeSceneIndex=0,sceneSwitchPending=false,hardwareSyncBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null;
 let targetSlot=0;
 let hardwarePresetName='',hardwarePresetNameLoaded=false;
 let favoriteSlots=new Set();try{favoriteSlots=new Set(JSON.parse(localStorage.getItem('mg30-favorite-slots')||'[]').map(Number))}catch{}
@@ -530,33 +544,23 @@ function renderSceneButtons(){
   const index=Number(btn.dataset.scene);
   if(!Number.isInteger(index)||index<0||index>2||sceneSwitchPending)return;
   const previous=activeSceneIndex;
-  if(!midiConnected){
-   activeSceneIndex=index;picker.selectedIndex=index;renderSceneButtons();persist();
-   setDeviceStatus('Scene '+(index+1)+' dipilih lokal. Hubungkan MG-30 untuk membaca konfigurasi scene.');
-   toast('Scene lokal dipilih · MG-30 belum terhubung');return;
-  }
+  if(!midiConnected){activeSceneIndex=index;picker.selectedIndex=index;renderSceneButtons();persist();setDeviceStatus('Scene '+(index+1)+' dipilih lokal saja. Hubungkan MG-30 untuk mengganti scene hardware.');toast('Pilihan lokal · MG-30 belum terhubung');return}
+  let confirmedStatus=null;
   sceneSwitchPending=true;holder.querySelectorAll('button').forEach(b=>b.disabled=true);
-  setDeviceStatus('Mengirim Scene '+(index+1)+' ke MG-30…');
+  setDeviceStatus('Meminta MG-30 berpindah ke Scene '+(index+1)+'…');
   try{
-   const sent=await midiSend([0xB0,80,index]);
-   if(!sent)throw new Error('Port MIDI tidak aktif.');
-   await flushMidi();await delay(320);
-   await readActiveBuffer({preserveDraftName:true,sceneIndex:index});
-   renderSceneButtons();
-   if(activeSceneIndex===index){
-    setDeviceStatus('Scene '+(index+1)+' aktif · amp, pedal, dan knob disinkronkan dari konfigurasi scene.');
-    toast('Scene '+(index+1)+' disinkronkan');
-   }else{
-    setDeviceStatus('MG-30 melaporkan Scene '+(activeSceneIndex+1)+' aktif; editor mengikuti status perangkat.');
-    toast('Editor mengikuti Scene '+(activeSceneIndex+1));
-   }
+   const sent=await midiSend([0xB0,80,index]);if(!sent)throw new Error('Port MIDI tidak aktif.');
+   await flushMidi();await delay(300);
+   confirmedStatus=await readActiveProgramScene();
+   activeSceneIndex=confirmedStatus.scene;picker.selectedIndex=confirmedStatus.scene;renderSceneButtons();
+   if(confirmedStatus.scene!==index){setDeviceStatus('Perintah dikirim, tetapi MG-30 masih melaporkan Scene '+(confirmedStatus.scene+1)+'. Pergantian scene belum terkonfirmasi.');toast('MG-30 belum mengonfirmasi scene');return}
+   await readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:confirmedStatus.scene,program:confirmedStatus.program});
+   setDeviceStatus('Scene '+(confirmedStatus.scene+1)+' dikonfirmasi MG-30 · edit buffer dibaca ulang.');toast('Scene '+(confirmedStatus.scene+1)+' disinkronkan');
   }catch(error){
-   activeSceneIndex=previous;picker.selectedIndex=previous;renderSceneButtons();persist();
-   setDeviceStatus('Scene tidak dapat disinkronkan: '+error.message);
-   toast('Gagal membaca konfigurasi scene');
-  }finally{
-   sceneSwitchPending=false;holder.querySelectorAll('button').forEach(b=>b.disabled=false);
-  }
+   if(confirmedStatus){activeSceneIndex=confirmedStatus.scene;picker.selectedIndex=confirmedStatus.scene}
+   else{activeSceneIndex=previous;picker.selectedIndex=previous}
+   renderSceneButtons();persist();setDeviceStatus('Sinkronisasi scene gagal: '+error.message);toast('Scene belum tersinkron');
+  }finally{sceneSwitchPending=false;holder.querySelectorAll('button').forEach(b=>b.disabled=false)}
  });
 }
 /* Local illustrations + researched model references. No remote photos are loaded. */
@@ -760,10 +764,8 @@ function renderBlockIcon(blockId){
  return '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">'+(shapes[blockId]||'<circle cx="16" cy="16" r="10"/>')+'</svg>';
 }
 function renderChain(){const order=[...new Set((Array.isArray(chainOrder)?chainOrder:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<BLOCKS.length))];for(let i=0;i<BLOCKS.length;i++)if(!order.includes(i))order.push(i);$('chain').innerHTML=order.map(i=>{const b=BLOCKS[i];return '<button class="block '+(i===selected?'selected ':'')+(!states[i].on?'off':'')+'" data-i="'+i+'"><span class="symbol">'+renderBlockIcon(b.id)+'</span><b>'+b.id+'</b><small>'+b.models[states[i].model][0]+'</small><small>'+(states[i].on?'● ON':'○ OFF')+'</small></button>'}).join('');$('chain').querySelectorAll('button').forEach(x=>x.onclick=()=>{const index=+x.dataset.i;selected=index;render();persist();if(index<11)sendBlockSwitch(index)});$('statActive').textContent=states.filter(s=>s.on).length+' / '+BLOCKS.length}
-function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id+' · '+b.models[s.model][0];$('editorSub').textContent='Model '+(s.model+1)+' · perubahan lokal';$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();$('knobs').className='knobs '+(params().length>=6?'knobs-many':'knobs-few');$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+m[0]+'</option>').join('');$('modelCurrentName').textContent=b.models[s.model][0];$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
-const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}};
-swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.25){e.preventDefault();changeSelectedModel(dx<0?1:-1)}};
-swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=params().map((p,i)=>{let v=s.values[p]??50;return '<div class="knob"><label>'+p+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(p)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>'}).join('');
+function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id+' · '+b.models[s.model][0];$('editorSub').textContent='Model '+(s.model+1)+' · perubahan lokal';$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();$('knobs').className='knobs '+(params().length>=6?'knobs-many':'knobs-few');$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+m[0]+'</option>').join('');const ampQuick=$('ampQuickSelect');if(ampQuick){ampQuick.innerHTML=BLOCKS[3].models.map((m,i)=>'<option value="'+i+'" '+(i===states[3].model?'selected':'')+'>'+m[0]+'</option>').join('');ampQuick.value=String(states[3].model);ampQuick.classList.toggle('hidden',b.id!=="AMP");ampQuick.setAttribute("aria-hidden",b.id!=="AMP"?"true":"false");ampQuick.tabIndex=b.id==="AMP"?0:-1;}$('modelCurrentName').textContent=b.models[s.model][0];$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
+const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=params().map((p,i)=>{let v=s.values[p]??50;return '<div class="knob"><label>'+p+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(p)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>'}).join('');
 $('knobs').querySelectorAll('.dial-control').forEach(el=>{
  const param=el.dataset.p;
  let current=Number(s.values[param]??50),dragStartY=0,dragStartValue=current,dragging=false,moved=false,dragIndex=selected;
@@ -809,7 +811,7 @@ $('knobs').querySelectorAll('.dial-control').forEach(el=>{
   e.preventDefault();applyValue(next);sendBlockParam(selected,param,current);
  };
 });
-$('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(next-s.model)};$('blockSwitch').onchange=e=>{s.on=e.target.checked;sendBlockSwitch(selected);renderChain();$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);renderModelVisual();persist()};$('presetName').oninput=()=>{$('statName').textContent=currentName();persist()}}
+$('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(next-s.model)};$('ampQuickSelect').onchange=e=>{if(selected!==3)return;const next=Number(e.target.value);if(Number.isInteger(next))changeSelectedModel(next-states[3].model)};$('blockSwitch').onchange=e=>{s.on=e.target.checked;sendBlockSwitch(selected);renderChain();$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);renderModelVisual();persist()};$('presetName').oninput=()=>{$('statName').textContent=currentName();persist()}}
 function renderPresets(){let q=$('search').value.toLowerCase(),list=presets.filter(p=>p.name.toLowerCase().includes(q));$('presetCount').textContent=presets.length+' draft lokal';$('presetList').innerHTML=list.length?list.map(p=>'<div class="preset"><div><strong>'+escapeHtml(p.name)+'</strong><p>Draft lokal · slot '+slotName(p.targetSlot??0)+' · '+new Date(p.date).toLocaleString()+'</p></div><div class="preset-actions"><button class="btn" data-load="'+p.id+'">Muat</button><button class="btn" data-del="'+p.id+'">Hapus</button></div></div>').join(''):'<div class="empty">Belum ada draft lokal yang cocok. Simpan draft setelah mengatur model dan parameter.</div>';$('presetList').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{let p=presets.find(x=>x.id===b.dataset.load);if(p){states=p.states;selected=p.selected??3;targetSlot=p.targetSlot??0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=p.name;renderSlotPicker();render();showPage('editor');toast('Draft dimuat')}});$('presetList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{presets=presets.filter(x=>x.id!==b.dataset.del);persist();renderPresets()})}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons()}
@@ -819,7 +821,7 @@ function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('saveBtn').onclick=savePreset;$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('saveBtn').onclick=savePreset;$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('backupBtn').onclick=()=>download('mg30-studio-backup.json',presets);$('search').oninput=renderPresets;$('importFile').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());presets=Array.isArray(d)?d:[...presets,{id:String(Date.now()),name:d.name||'Imported preset',date:new Date().toISOString(),states:d.states||states,selected:d.selected||3}];persist();renderPresets();toast('Impor selesai')}catch{toast('File JSON tidak valid')}e.target.value=''};$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let ok='requestMIDIAccess'in navigator;$('midiSupport').textContent=ok?'API tersedia':'Tidak tersedia';toast(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API')};$('midiSupport').textContent=('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia';
 function buildPresetJumpMenu(){
  const menu=$('presetJumpMenu');if(!menu)return;
- menu.innerHTML='<div class="preset-jump-menu-head"><strong>Loncat ke preset</strong><button type="button" id="presetJumpClose" aria-label="Tutup menu preset">×</button></div><div class="preset-jump-grid">'+Array.from({length:128},(_,i)=>'<button type="button" class="preset-jump-option '+(i===targetSlot?'active':'')+'" data-preset-jump="'+i+'">'+slotName(i)+'</button>').join('')+'</div>';
+ menu.innerHTML='<div class="preset-jump-menu-head"><strong>Preset</strong><button type="button" id="presetJumpClose" aria-label="Tutup menu preset">×</button></div><div class="preset-jump-grid">'+Array.from({length:128},(_,i)=>'<button type="button" class="preset-jump-option '+(i===targetSlot?'active':'')+'" data-preset-jump="'+i+'">'+slotName(i)+'</button>').join('')+'</div>';
  menu.querySelector('#presetJumpClose').onclick=()=>togglePresetJumpMenu(false);
  menu.querySelectorAll('[data-preset-jump]').forEach(btn=>btn.onclick=async()=>{
   const slot=Number(btn.dataset.presetJump);togglePresetJumpMenu(false);
