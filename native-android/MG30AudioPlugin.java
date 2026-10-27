@@ -1,7 +1,10 @@
 package com.vaivaii.mg30studio;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -11,12 +14,14 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.SystemClock;
 
+import androidx.activity.result.ActivityResult;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
@@ -24,7 +29,10 @@ import com.getcapacitor.annotation.PermissionCallback;
 import org.json.JSONException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -89,6 +97,104 @@ public class MG30AudioPlugin extends Plugin {
         result.put("devices", devices);
         result.put("note", "Device capability metadata is advisory. A recording test is needed to confirm actual routing.");
         call.resolve(result);
+    }
+
+    @PluginMethod
+    public void listTakes(PluginCall call) {
+        File directory = getMusicDirectory();
+        File[] files = directory == null ? null : directory.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".wav"));
+        JSArray listed = new JSArray();
+        if (files != null) {
+            Arrays.sort(files, (left, right) -> Long.compare(right.lastModified(), left.lastModified()));
+            for (File file : files) {
+                if (!file.isFile()) continue;
+                try {
+                    listed.put(takeDetails(file));
+                } catch (IOException ignored) {
+                    // Skip an incomplete file rather than hiding the remaining takes.
+                }
+            }
+        }
+        JSObject result = new JSObject();
+        result.put("takes", listed);
+        result.put("count", listed.length());
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void renameTake(PluginCall call) {
+        File file = resolveTakeFile(call.getString("path"));
+        if (file == null || !file.exists() || !file.isFile()) {
+            call.reject("File rekaman tidak ditemukan di penyimpanan aplikasi.");
+            return;
+        }
+        String newName = call.getString("newName", "").trim();
+        newName = newName.replaceAll("[\\\\/:*?\\"<>|\\\\p{Cntrl}]", "_").replaceAll("\\\\s+", " ");
+        newName = newName.replaceAll("(?i)\\\\.wav$", "").trim();
+        while (newName.startsWith(".")) newName = newName.substring(1);
+        if (newName.isEmpty()) {
+            call.reject("Nama rekaman tidak boleh kosong.");
+            return;
+        }
+        if (newName.length() > 90) newName = newName.substring(0, 90).trim();
+        File renamed = new File(file.getParentFile(), newName + ".wav");
+        if (renamed.exists() && !renamed.equals(file)) {
+            call.reject("Nama file itu sudah digunakan. Pilih nama lain.");
+            return;
+        }
+        if (!file.equals(renamed) && !file.renameTo(renamed)) {
+            call.reject("Android tidak bisa mengganti nama file ini.");
+            return;
+        }
+        try {
+            call.resolve(takeDetails(renamed));
+        } catch (IOException e) {
+            call.reject("Nama berubah, tetapi metadata rekaman gagal dibaca: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void exportTake(PluginCall call) {
+        File file = resolveTakeFile(call.getString("path"));
+        if (file == null || !file.exists() || !file.isFile()) {
+            call.reject("File rekaman tidak ditemukan untuk diekspor.");
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("audio/wav");
+        intent.putExtra(Intent.EXTRA_TITLE, file.getName());
+        startActivityForResult(call, intent, "handleExportTakeResult");
+    }
+
+    @ActivityCallback
+    private void handleExportTakeResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (result == null || result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) {
+            call.reject("Ekspor dibatalkan.");
+            return;
+        }
+        Uri destination = result.getData().getData();
+        File source = resolveTakeFile(call.getString("path"));
+        if (source == null || !source.exists()) {
+            call.reject("File rekaman tidak ditemukan lagi.");
+            return;
+        }
+        try (InputStream input = new FileInputStream(source);
+             OutputStream output = getContext().getContentResolver().openOutputStream(destination, "w")) {
+            if (output == null) throw new IOException("Lokasi tujuan tidak dapat ditulis.");
+            byte[] buffer = new byte[64 * 1024];
+            int read;
+            while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
+            output.flush();
+            JSObject response = new JSObject();
+            response.put("success", true);
+            response.put("fileName", source.getName());
+            response.put("destinationUri", destination.toString());
+            call.resolve(response);
+        } catch (IOException e) {
+            call.reject("Ekspor rekaman gagal: " + e.getMessage());
+        }
     }
 
     @PluginMethod
@@ -262,8 +368,7 @@ public class MG30AudioPlugin extends Plugin {
         }
 
         try {
-            File dir = getContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC);
-            if (dir == null) dir = new File(getContext().getFilesDir(), "Music");
+            File dir = getMusicDirectory();
             if (!dir.exists() && !dir.mkdirs()) {
                 try { selectedRecord.stop(); } catch (Exception ignored) {}
                 selectedRecord.release();
@@ -464,6 +569,77 @@ public class MG30AudioPlugin extends Plugin {
         } catch (IOException e) {
             call.reject("Take terhenti tetapi header WAV gagal ditulis: " + e.getMessage());
         }
+    }
+
+    private File getMusicDirectory() {
+        File dir = getContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC);
+        if (dir == null) dir = new File(getContext().getFilesDir(), "Music");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    private File resolveTakeFile(String path) {
+        if (path == null || path.trim().isEmpty()) return null;
+        try {
+            File directory = getMusicDirectory().getCanonicalFile();
+            File requested = new File(path).getCanonicalFile();
+            if (requested.getParentFile() == null || !requested.getParentFile().equals(directory) ||
+                !requested.getName().toLowerCase(Locale.ROOT).endsWith(".wav")) return null;
+            return requested;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private JSObject takeDetails(File file) throws IOException {
+        int sampleRate = 48000;
+        int channels = 2;
+        int bits = 24;
+        long dataBytes = Math.max(0, file.length() - 44);
+        try (RandomAccessFile input = new RandomAccessFile(file, "r")) {
+            if (input.length() >= 44) {
+                input.seek(22);
+                channels = readShortLE(input);
+                sampleRate = readIntLE(input);
+                input.seek(34);
+                bits = readShortLE(input);
+                input.seek(40);
+                long declared = Integer.toUnsignedLong(readIntLE(input));
+                if (declared <= input.length() - 44) dataBytes = declared;
+            }
+        } catch (IOException ignored) {
+            // Use safe defaults if the WAV header from an older take is incomplete.
+        }
+        if (channels < 1 || channels > 8) channels = 2;
+        if (sampleRate < 8000 || sampleRate > 384000) sampleRate = 48000;
+        if (bits != 16 && bits != 24 && bits != 32) bits = 24;
+        JSObject item = new JSObject();
+        item.put("path", file.getAbsolutePath());
+        item.put("fileName", file.getName());
+        item.put("sampleRate", sampleRate);
+        item.put("channels", channels);
+        item.put("bitDepth", bits);
+        item.put("dataBytes", dataBytes);
+        item.put("durationSeconds", dataBytes / (double) (sampleRate * channels * (bits / 8)));
+        item.put("lastModified", file.lastModified());
+        item.put("routeName", "USB-Audio · NUX MG-30");
+        return item;
+    }
+
+    private static int readShortLE(RandomAccessFile input) throws IOException {
+        int lo = input.read();
+        int hi = input.read();
+        if (lo < 0 || hi < 0) throw new IOException("Incomplete WAV header");
+        return lo | (hi << 8);
+    }
+
+    private static int readIntLE(RandomAccessFile input) throws IOException {
+        int b0 = input.read();
+        int b1 = input.read();
+        int b2 = input.read();
+        int b3 = input.read();
+        if ((b0 | b1 | b2 | b3) < 0) throw new IOException("Incomplete WAV header");
+        return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
     }
 
     private static boolean isUsbInput(AudioDeviceInfo device) {
