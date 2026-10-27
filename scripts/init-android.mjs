@@ -14,6 +14,7 @@ if (!existsSync(androidDir)) {
 const javaDir = resolve(androidDir, 'app/src/main/java/com/vaivaii/mg30studio');
 mkdirSync(javaDir, { recursive: true });
 copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaDir, 'MG30AudioPlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30CameraPlugin.java'), resolve(javaDir, 'MG30CameraPlugin.java'));
 
 const mainActivityLines = [
   'package com.vaivaii.mg30studio;',
@@ -29,6 +30,7 @@ const mainActivityLines = [
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',
   '        registerPlugin(MG30AudioPlugin.class);',
+  '        registerPlugin(MG30CameraPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
@@ -56,9 +58,17 @@ writeFileSync(resolve(javaDir, 'MainActivity.java'), mainActivityLines.join('\n'
 
 const manifestPath = resolve(androidDir, 'app/src/main/AndroidManifest.xml');
 let manifest = readFileSync(manifestPath, 'utf8');
-if (!manifest.includes('android.permission.RECORD_AUDIO')) {
-  manifest = manifest.replace(/(<manifest\b[^>]*>)/, '$1\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-feature android:name="android.hardware.usb.host" android:required="false" />');
-}
+const requiredEntries = [
+ ['android.permission.RECORD_AUDIO','    <uses-permission android:name="android.permission.RECORD_AUDIO" />'],
+ ['android.permission.CAMERA','    <uses-permission android:name="android.permission.CAMERA" />'],
+ ['android.hardware.usb.host','    <uses-feature android:name="android.hardware.usb.host" android:required="false" />'],
+ ['android.hardware.camera.any','    <uses-feature android:name="android.hardware.camera.any" android:required="false" />']
+];
+for (const [marker, entry] of requiredEntries) if (!manifest.includes(marker)) manifest = manifest.replace(/(<manifest\b[^>]*>)/, '$1\n' + entry);
+manifest = manifest.replace(/<application\b[^>]*>/, tag => {
+ const clean = tag.replace(/\sandroid:icon="[^"]*"/g,'').replace(/\sandroid:roundIcon="[^"]*"/g,'');
+ return clean.replace(/>$/,' android:icon="@drawable/ic_launcher" android:roundIcon="@drawable/ic_launcher">');
+});
 writeFileSync(manifestPath, manifest, 'utf8');
 
 const stylesPath = resolve(androidDir, 'app/src/main/res/values/styles.xml');
@@ -89,6 +99,20 @@ if (existsSync(stylesPath)) {
     writeFileSync(stylesPath, styles, 'utf8');
   }
 }
+
+
+const drawableDir = resolve(androidDir, 'app/src/main/res/drawable');
+mkdirSync(drawableDir, { recursive: true });
+const launcherIcon = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+<path android:fillColor="#0B1012" android:pathData="M0,0h108v108h-108z"/>
+<path android:fillColor="#C5F36B" android:pathData="M54,9 C33,9 21,25 24,43 C26,61 43,82 54,94 C65,82 82,61 84,43 C87,25 75,9 54,9Z"/>
+<path android:fillColor="#0B1012" android:pathData="M54,19 C40,19 31,30 33,42 C35,54 47,70 54,78 C61,70 73,54 75,42 C77,30 68,19 54,19Z"/>
+<path android:fillColor="#C5F36B" android:pathData="M29,49h12l5,-10l8,25l7,-18l4,7h14v5h-17l-2,-3l-6,16l-8,-23l-2,7h-15z"/>
+<path android:fillColor="#F1F5F4" android:pathData="M30,84h48v3h-48z"/>
+</vector>
+`;
+writeFileSync(resolve(drawableDir, 'ic_launcher.xml'), launcherIcon, 'utf8');
 
 run(['cap', 'sync', 'android']);
 console.log('MG30 Studio Android platform ready. USB audio plugin installed; hardware audio compatibility still needs a real-device test.');
