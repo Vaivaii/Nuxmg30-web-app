@@ -56,9 +56,9 @@ if (existsSync(stylesPath)) {
       if (itemStart >= 0) {
         const itemEnd = theme.indexOf('</item>', itemStart);
         if (itemEnd >= 0) theme = theme.slice(0, itemStart) + item + theme.slice(itemEnd + 7);
-        else theme = theme.replace('</style>', '        ' + item + '\\n    </style>');
+        else theme = theme.replace('</style>', '        ' + item + '\n    </style>');
       } else {
-        theme = theme.replace('</style>', '        ' + item + '\\n    </style>');
+        theme = theme.replace('</style>', '        ' + item + '\n    </style>');
       }
     }
     styles = styles.replace(themeMatch[0], theme);
