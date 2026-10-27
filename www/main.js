@@ -98,12 +98,14 @@ function setCurrentPlayback(take, autoplay = false) {
   const nextSrc = playbackPathFor(take);
   if (audio.src !== nextSrc) audio.src = nextSrc;
   $('guitarPlayBtn').disabled = false;
+  $('guitarStopBtn').disabled = false;
   $('guitarPlayGlyph').textContent = audio.paused ? '▶' : 'Ⅱ';
   $('guitarPlayLabel').textContent = audio.paused ? 'PLAY' : 'PAUSE';
   if (autoplay) audio.play().catch((error) => setStatus('recordStatus', 'Tidak dapat memutar take: ' + (error?.message || 'audio playback gagal'), 'warn'));
 }
 function renderTakes() {
   $('takeCount').textContent = takes.length + (takes.length === 1 ? ' take' : ' take');
+  $('guitarStopBtn').disabled = !recording && takes.length === 0;
   if (!takes.length) {
     $('takeList').innerHTML = '<div class="studio-empty">Belum ada rekaman tersimpan. Setelah Stop, file akan otomatis disimpan.</div>';
     $('guitarPlayBtn').disabled = true;
@@ -192,7 +194,12 @@ async function saveRenamedTake(index, rawName) {
   try {
     const result = await MG30Audio.renameTake({ path: take.path, newName: name });
     takes[index] = { ...take, ...result };
-    if (activePlaybackPath === take.path) activePlaybackPath = result.path;
+    const wasActiveTake = activePlaybackPath === take.path;
+    if (wasActiveTake) {
+      stopPlayback(true);
+      activePlaybackPath = result.path;
+      setCurrentPlayback(result, false);
+    }
     renderTakes();
     $('renameTakeDialog').close();
     setStatus('recordStatus', 'Nama rekaman diubah menjadi ' + result.fileName, 'ok');
@@ -308,7 +315,7 @@ async function stopGuitarRecording() {
     setStatus('recordStatus', error?.message || 'Gagal menyimpan take WAV.', 'warn');
   } finally {
     $('guitarRecordBtn').disabled = false;
-    $('guitarStopBtn').disabled = true;
+    $('guitarStopBtn').disabled = takes.length === 0;
     $('guitarRecordBtn').classList.remove('is-recording');
     $('guitarPlayBtn').disabled = takes.length === 0;
   }
