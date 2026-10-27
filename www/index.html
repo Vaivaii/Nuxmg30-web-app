@@ -918,7 +918,7 @@ function inspectNamFileData(fileName,data){
  const submodels=Array.isArray(data.config.submodels)?data.config.submodels:[];
  const detail=submodels.map(item=>item&&item.model?item.model:{});
  const weightCounts=detail.map(item=>Array.isArray(item.weights)?item.weights.length:0);
- const totalWeights=Array.isArray(data.weights)?data.weights.length:weightCounts.reduce((sum,n)=>sum+n,0);
+ const rootWeightCount=Array.isArray(data.weights)?data.weights.length:0;const totalWeights=rootWeightCount>0?rootWeightCount:weightCounts.reduce((sum,n)=>sum+n,0);
  const nestedArchitectures=detail.map(item=>String(item.architecture||"Unknown"));
  const a2LitePattern=data.architecture==="SlimmableContainer"&&Number(data.sample_rate)===48000&&detail.length===2&&detail.every((item,i)=>nestedArchitectures[i]==="WaveNet"&&weightCounts[i]>0);
  return {fileName,modelName:String(metadata.name||fileName.replace(/\.nam$/i,"")),architecture:String(data.architecture),version:String(data.version||"Unknown"),sampleRate:Number(data.sample_rate)||0,trainer:String(metadata.trainer||metadata.modeled_by||""),gearModel:String(metadata.gear_model||metadata.gear_make||""),submodelCount:detail.length,totalWeights,tag:a2LitePattern?"NAM · A2-LITE":"NAM · FORMAT LAIN",note:a2LitePattern?"Struktur cocok dengan sampel NAM A2-Lite yang sudah kamu uji langsung pada MG-30. Ini hanya pemeriksaan lokal; model belum dikirim ke pedal.":"Arsitektur dibaca dari file lokal. Kesesuaian dengan NAM native MG-30 belum disimpulkan. File tidak dikirim ke perangkat."};
