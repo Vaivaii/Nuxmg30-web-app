@@ -169,6 +169,15 @@
       <span id="backingFileName" class="studio-file-name hidden"></span>
     </div>
     <audio id="backingAudio" class="studio-audio-player hidden" preload="metadata"></audio>
+    <div id="backingPlaybackControls" class="studio-backing-player hidden">
+      <button class="studio-backing-transport" id="backingPlayBtn" type="button" aria-label="Putar backing track" title="Putar">▶</button>
+      <div class="studio-backing-timeline">
+        <input id="backingSeek" type="range" min="0" max="1000" value="0" aria-label="Posisi backing track">
+        <div><span id="backingElapsed">00:00</span><span id="backingDuration">--:--</span></div>
+      </div>
+      <button class="studio-backing-transport studio-backing-stop" id="backingStopBtn" type="button" aria-label="Hentikan backing track" title="Stop">■</button>
+    </div>
+    <div id="backingPlaybackStatus" class="studio-playback-status hidden" role="status" aria-live="polite"></div>
     <div id="backingVolumeRow" class="studio-backing-volume hidden">
       <div><label for="backingVolume">Volume backing</label><strong id="backingVolumeValue">80%</strong></div>
       <input id="backingVolume" type="range" min="0" max="100" value="80" aria-label="Volume backing track">

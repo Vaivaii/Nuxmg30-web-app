@@ -22,6 +22,7 @@ const mainActivityLines = [
   'import android.os.Build;',
   'import android.os.Bundle;',
   'import android.view.WindowManager;',
+  'import androidx.core.view.WindowCompat;',
   'import com.getcapacitor.BridgeActivity;',
   '',
   'public class MainActivity extends BridgeActivity {',
@@ -30,6 +31,7 @@ const mainActivityLines = [
   '        registerPlugin(MG30AudioPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
+  '        getWindow().getDecorView().post(this::applySystemBars);',
   '    }',
   '',
   '    @Override',
@@ -40,6 +42,7 @@ const mainActivityLines = [
   '',
   '    private void applySystemBars() {',
   '        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {',
+  '            WindowCompat.setDecorFitsSystemWindows(getWindow(), true);',
   '            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);',
   '            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);',
   '            getWindow().setStatusBarColor(Color.rgb(11, 16, 18));',
@@ -68,7 +71,8 @@ if (existsSync(stylesPath)) {
       '<item name="android:statusBarColor">#0b1012</item>',
       '<item name="android:navigationBarColor">#0b1012</item>',
       '<item name="android:windowLightStatusBar">false</item>',
-      '<item name="android:windowLightNavigationBar">false</item>'
+      '<item name="android:windowLightNavigationBar">false</item>',
+      '<item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>'
     ]) {
       const itemName = item.match(/name="([^"]+)"/)[1];
       const startTag = '<item name="' + itemName + '">';

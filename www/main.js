@@ -336,17 +336,95 @@ function parseYoutubeId(value) {
 $('audioCheckBtn')?.addEventListener('click', inspectAudio);
 $('guitarRecordBtn')?.addEventListener('click', startGuitarRecording);
 $('guitarStopBtn')?.addEventListener('click', stopGuitarRecording);
+function formatAudioTime(value) {
+  if (!Number.isFinite(value) || value < 0) return '00:00';
+  const total = Math.floor(value);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+}
+function refreshBackingControls() {
+  const audio = $('backingAudio');
+  if (!audio) return;
+  const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+  $('backingElapsed').textContent = formatAudioTime(audio.currentTime || 0);
+  $('backingDuration').textContent = duration ? formatAudioTime(duration) : '--:--';
+  $('backingSeek').value = duration ? String(Math.round((audio.currentTime / duration) * 1000)) : '0';
+  $('backingPlayBtn').textContent = audio.paused ? '▶' : 'Ⅱ';
+  $('backingPlayBtn').setAttribute('aria-label', audio.paused ? 'Putar backing track' : 'Jeda backing track');
+  $('backingPlayBtn').title = audio.paused ? 'Putar' : 'Jeda';
+}
+function setBackingStatus(message, kind = '') {
+  const node = $('backingPlaybackStatus');
+  if (!node) return;
+  node.textContent = message;
+  node.classList.remove('hidden', 'ok', 'warn');
+  if (kind) node.classList.add(kind);
+}
 $('backingFileInput')?.addEventListener('change', (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   if (backingObjectUrl) URL.revokeObjectURL(backingObjectUrl);
+  const audio = $('backingAudio');
+  audio.pause();
   backingObjectUrl = URL.createObjectURL(file);
-  $('backingAudio').src = backingObjectUrl;
-  $('backingAudio').classList.remove('hidden');
+  audio.src = backingObjectUrl;
+  audio.volume = Number($('backingVolume')?.value ?? 80) / 100;
+  audio.load();
+  $('backingPlaybackControls')?.classList.remove('hidden');
   $('backingVolumeRow')?.classList.remove('hidden');
   $('backingFileName').textContent = file.name + ' · ' + bytesLabel(file.size);
   $('backingFileName').classList.remove('hidden');
   $('backingFileName').classList.add('ok');
+  $('backingSeek').value = '0';
+  $('backingElapsed').textContent = '00:00';
+  $('backingDuration').textContent = '--:--';
+  $('backingPlayBtn').disabled = false;
+  setBackingStatus('Backing siap diputar. Tekan ▶ untuk mulai.', 'ok');
+});
+$('backingPlayBtn')?.addEventListener('click', async () => {
+  const audio = $('backingAudio');
+  if (!audio?.src) {
+    setBackingStatus('Pilih file audio terlebih dahulu.', 'warn');
+    return;
+  }
+  if (audio.paused) {
+    try {
+      await audio.play();
+      setBackingStatus('Backing sedang diputar.', 'ok');
+    } catch (error) {
+      setBackingStatus('File dipilih, tetapi WebView tidak bisa memutarnya. Coba WAV PCM atau MP3; beberapa file FLAC tidak didukung perangkat ini.', 'warn');
+    }
+  } else {
+    audio.pause();
+  }
+  refreshBackingControls();
+});
+$('backingStopBtn')?.addEventListener('click', () => {
+  const audio = $('backingAudio');
+  audio.pause();
+  try { audio.currentTime = 0; } catch (_) {}
+  refreshBackingControls();
+  setBackingStatus('Backing dihentikan.');
+});
+$('backingSeek')?.addEventListener('input', (event) => {
+  const audio = $('backingAudio');
+  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    audio.currentTime = (Number(event.target.value) / 1000) * audio.duration;
+    refreshBackingControls();
+  }
+});
+$('backingAudio')?.addEventListener('loadedmetadata', refreshBackingControls);
+$('backingAudio')?.addEventListener('durationchange', refreshBackingControls);
+$('backingAudio')?.addEventListener('timeupdate', refreshBackingControls);
+$('backingAudio')?.addEventListener('play', refreshBackingControls);
+$('backingAudio')?.addEventListener('pause', refreshBackingControls);
+$('backingAudio')?.addEventListener('ended', () => {
+  refreshBackingControls();
+  setBackingStatus('Backing selesai diputar.');
+});
+$('backingAudio')?.addEventListener('error', () => {
+  setBackingStatus('Format audio ini tidak bisa diputar di Android WebView. Konversi ke MP3 atau WAV PCM lalu impor ulang.', 'warn');
 });
 $('backingVolume')?.addEventListener('input', (event) => {
   const value = Number(event.target.value);
