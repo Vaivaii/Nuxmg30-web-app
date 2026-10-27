@@ -51,11 +51,15 @@ if (existsSync(stylesPath)) {
       '<item name="android:windowLightNavigationBar">false</item>'
     ]) {
       const itemName = item.match(/name="([^"]+)"/)[1];
-      const escaped = itemName.replace(/[.*+?^${}()|[\]\\]/g, '\\run(['cap', 'sync', 'android']);
-console.log('MG30 Studio Android platform ready. USB audio plugin installed; hardware audio compatibility still needs a real-device test.');');
-      const itemRegex = new RegExp('<item name="' + escaped + '">[\\s\\S]*?<\\/item>');
-      if (itemRegex.test(theme)) theme = theme.replace(itemRegex, item);
-      else theme = theme.replace('</style>', '        ' + item + '\\n    </style>');
+      const startTag = '<item name="' + itemName + '">';
+      const itemStart = theme.indexOf(startTag);
+      if (itemStart >= 0) {
+        const itemEnd = theme.indexOf('</item>', itemStart);
+        if (itemEnd >= 0) theme = theme.slice(0, itemStart) + item + theme.slice(itemEnd + 7);
+        else theme = theme.replace('</style>', '        ' + item + '\\n    </style>');
+      } else {
+        theme = theme.replace('</style>', '        ' + item + '\\n    </style>');
+      }
     }
     styles = styles.replace(themeMatch[0], theme);
     writeFileSync(stylesPath, styles, 'utf8');
