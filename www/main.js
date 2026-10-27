@@ -182,6 +182,7 @@ $('backingFileInput')?.addEventListener('change', (event) => {
   backingObjectUrl = URL.createObjectURL(file);
   $('backingAudio').src = backingObjectUrl;
   $('backingAudio').classList.remove('hidden');
+  $('backingVolumeRow')?.classList.remove('hidden');
   $('backingFileName').textContent = file.name + ' · ' + bytesLabel(file.size);
   $('backingFileName').classList.remove('hidden');
   $('backingFileName').classList.add('ok');
@@ -247,7 +248,8 @@ async function searchYoutubeInStudio() {
   if (!key) {
     showYoutubeApiSettings(true);
     setYoutubeKeyStatus(false);
-    $('youtubeResults').innerHTML = '<div class="studio-empty">Untuk menampilkan hasil pencarian di dalam Studio, masukkan YouTube Data API v3 key sekali saja melalui tombol API Key. Setelah tersimpan, hasil bisa dipilih langsung tanpa salin-tempel link.</div>';
+    $('youtubeResults').classList.remove('hidden');
+    $('youtubeResults').innerHTML = '<div class="studio-empty">Pencarian langsung perlu YouTube Data API v3 key. Simpan key lewat tombol API Key, lalu cari lagi. Hasil video akan bisa diketuk langsung di sini.</div>';
     return;
   }
   if (youtubeSearchController) youtubeSearchController.abort();
@@ -255,6 +257,7 @@ async function searchYoutubeInStudio() {
   const button = $('youtubeSearchBtn');
   button.disabled = true;
   button.textContent = 'Mencari…';
+  $('youtubeResults').classList.remove('hidden');
   $('youtubeResults').innerHTML = '<div class="studio-empty">Mencari video di YouTube…</div>';
   try {
     const params = new URLSearchParams({
@@ -268,6 +271,7 @@ async function searchYoutubeInStudio() {
     if (!response.ok || data.error) {
       const reason = data.error?.errors?.[0]?.reason || '';
       const message = data.error?.message || ('HTTP ' + response.status);
+      $('youtubeResults').classList.remove('hidden');
       $('youtubeResults').innerHTML = '<div class="studio-empty">Pencarian YouTube gagal: ' + safeText(message) +
         (reason === 'keyInvalid' ? '<br>Periksa API key.' : '') +
         (reason === 'quotaExceeded' ? '<br>Kuota YouTube Data API hari ini habis.' : '') +
@@ -277,6 +281,7 @@ async function searchYoutubeInStudio() {
     renderYoutubeResults(data.items || []);
   } catch (error) {
     if (error?.name !== 'AbortError') {
+      $('youtubeResults').classList.remove('hidden');
       $('youtubeResults').innerHTML = '<div class="studio-empty">Tidak bisa menghubungi YouTube Data API. Periksa koneksi, API key, dan aktivasi YouTube Data API v3.</div>';
     }
   } finally {
