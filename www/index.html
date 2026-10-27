@@ -412,7 +412,7 @@ function quantizeParameterValue(param,value){
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function setDeviceStatus(message){const el=$('deviceStatus');if(el)el.textContent=message;const op=$('operationStatus');if(op)op.textContent=message;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(message&&message.length<58?message:'Belum terhubung · tekan Hubungkan untuk sinkronisasi');const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);const pill=document.querySelector('.actions .pill');if(pill)pill.innerHTML='<span class="dot"></span>'+(midiConnected?'MIDI connected':'Offline draft')}
 function enqueueMidi(fn){const run=async()=>{const wait=MIDI_GAP-(performance.now()-lastMidiSend);if(wait>0)await delay(wait);const out=await fn();lastMidiSend=performance.now();return out};const p=midiChain.then(run);midiChain=p.catch(()=>{});return p}
-function midiSend(data){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(()=>{midiOutput.send(data);return true})}
+function midiSend(data){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{await midiOutput.send(data);return true})}
 function sendCC(cc,value){if(!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
 async function flushCC(){try{while(pendingCC.size){const batch=[...pendingCC.entries()];pendingCC.clear();for(const [cc,value] of batch)await midiSend([0xB0,cc,value])}}finally{flushingCC=false;if(pendingCC.size){flushingCC=true;flushCC()}}}
 async function flushMidi(){while(flushingCC||pendingCC.size)await delay(10);await midiChain}
@@ -585,7 +585,59 @@ async function selectHardwareSlot(prog,fromDevice=false){
   toast('Gagal sinkron preset: '+error.message);
  }
 }
-async function connectMG30(){if(!navigator.requestMIDIAccess){setDeviceStatus('Web MIDI tidak didukung');toast('Coba Chrome/Chromium yang mendukung Web MIDI');return}try{setDeviceStatus('Meminta izin MIDI…');midiAccess=await navigator.requestMIDIAccess({sysex:true});const ports=()=>{const ins=[...midiAccess.inputs.values()],outs=[...midiAccess.outputs.values()];let input=ins.find(p=>/MG-?30|NUX/i.test(p.name||'')),output=outs.find(p=>/MG-?30|NUX/i.test(p.name||''));if(!input&&ins.length===1)input=ins[0];if(!output&&outs.length===1)output=outs[0];return {input,output}};let p=ports();if(!p.input||!p.output){const choices=[...midiAccess.inputs.values()].map(x=>'IN: '+x.name).concat([...midiAccess.outputs.values()].map(x=>'OUT: '+x.name));setDeviceStatus('Port MG-30 tidak ditemukan');toast(choices.length?choices.join(' · '):'Tidak ada port MIDI. Periksa kabel data/OTG.');return}midiInput=p.input;midiOutput=p.output;midiConnected=true;midiInput.onmidimessage=e=>{const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}};midiAccess.onstatechange=()=>{const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();setDeviceStatus(ok?'Terhubung':'Perangkat terputus')};setDeviceStatus('Terhubung. Membaca preset aktif…');$('midiSupport').textContent='API tersedia';toast('Terhubung: '+(midiOutput.name||'MIDI device'));await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));renderChain();startHardwareStatePolling();}catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}}
+function handleMG30MidiMessage(e){const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
+async function connectMG30(){
+ const nativeMidi=window.NUXNativeMidi;
+ if(nativeMidi&&nativeMidi.available){
+  try{
+   setDeviceStatus('Mencari port USB-MIDI Android…');
+   const connection=await nativeMidi.connect();
+   midiAccess=connection.access;midiInput=connection.input;midiOutput=connection.output;midiConnected=true;
+   midiInput.onmidimessage=handleMG30MidiMessage;
+   midiAccess.onstatechange=()=>{
+    const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
+    midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
+    setDeviceStatus(ok?'Terhubung via USB-MIDI Android':'Perangkat MIDI terputus');
+   };
+   setDeviceStatus('Terhubung via USB-MIDI Android. Membaca preset aktif…');
+   $('midiSupport').textContent='Native USB-MIDI';
+   toast('Terhubung: '+(connection.deviceName||midiOutput.name||'NUX MG-30'));
+   await readActiveBuffer().then(n=>setDeviceStatus('Terhubung via OTG · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('USB-MIDI terhubung, baca buffer gagal: '+e.message));
+   renderChain();startHardwareStatePolling();
+  }catch(e){midiConnected=false;setDeviceStatus('USB-MIDI Android gagal terhubung');toast('Koneksi OTG gagal: '+(e.message||e))}
+  return;
+ }
+ if(!navigator.requestMIDIAccess){setDeviceStatus('Web MIDI tidak didukung');toast('Di browser ini Web MIDI tidak tersedia. Gunakan APK MG30 Studio untuk USB-MIDI melalui Android.');return}
+ try{
+  setDeviceStatus('Meminta izin MIDI…');
+  midiAccess=await navigator.requestMIDIAccess({sysex:true});
+  const ports=()=>{
+   const ins=[...midiAccess.inputs.values()],outs=[...midiAccess.outputs.values()];
+   let input=ins.find(p=>/MG-?30|NUX/i.test(p.name||'')),output=outs.find(p=>/MG-?30|NUX/i.test(p.name||''));
+   if(!input&&ins.length===1)input=ins[0];
+   if(!output&&outs.length===1)output=outs[0];
+   return {input,output};
+  };
+  const p=ports();
+  if(!p.input||!p.output){
+   const choices=[...midiAccess.inputs.values()].map(x=>'IN: '+x.name).concat([...midiAccess.outputs.values()].map(x=>'OUT: '+x.name));
+   setDeviceStatus('Port MG-30 tidak ditemukan');
+   toast(choices.length?choices.join(' · '):'Tidak ada port MIDI. Periksa kabel data/OTG.');
+   return;
+  }
+  midiInput=p.input;midiOutput=p.output;midiConnected=true;
+  midiInput.onmidimessage=handleMG30MidiMessage;
+  midiAccess.onstatechange=()=>{
+   const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
+   midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
+   setDeviceStatus(ok?'Terhubung':'Perangkat terputus');
+  };
+  setDeviceStatus('Terhubung. Membaca preset aktif…');
+  $('midiSupport').textContent='API tersedia';toast('Terhubung: '+(midiOutput.name||'MIDI device'));
+  await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));
+  renderChain();startHardwareStatePolling();
+ }catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}
+}
 
 let selected=3,changed=new Set(),presets=[],modelReadbackQueue=Promise.resolve(),modelReadbackToken=0;
 try{presets=JSON.parse(localStorage.getItem('mg30-presets')||'[]');if(!Array.isArray(presets))presets=[]}catch{presets=[]}
