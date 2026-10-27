@@ -45,14 +45,25 @@ Additionally, produce a **final performance video** with the mixed guitar + back
 
 ## Proposed Android architecture
 
-### Camera capture
+### Camera capture — Camera2 manual processing controls
 
-Use Android CameraX in a small native Capacitor plugin (e.g. `MG30CameraPlugin`) for reliable camera preview, lens switching, lifecycle handling, and video-only MP4 capture. Avoid depending solely on `getUserMedia()` in WebView for a native APK feature that needs robust lifecycle and file management.
+The user's priority is to reduce manufacturer-applied noise reduction and sharpening. Prefer a native Android Camera2 implementation in a Capacitor plugin (e.g. `MG30CameraPlugin`) over a browser-only camera stream. CameraX may be used only if the selected capture pipeline exposes the required Camera2 interop controls and the actual video recording request can be verified to apply them; do not assume that setting a CameraX preview request also changes the video encoder's request.
 
-- CameraX video capture should have microphone audio disabled.
-- Request camera permission only when the Camera tab is opened and the user starts camera setup.
-- Save the MP4 into an app-specific session directory and return a stable file path plus metadata.
-- Ensure preview stops/releases camera resources when leaving the Camera tab or backgrounding the app.
+On each selected front/back camera, query `CameraCharacteristics` and supported request keys/modes before configuring capture:
+
+- Set `CaptureRequest.NOISE_REDUCTION_MODE = NOISE_REDUCTION_MODE_OFF` if supported.
+- Set `CaptureRequest.EDGE_MODE = EDGE_MODE_OFF` to disable edge enhancement/sharpening if supported.
+- Inspect and, where supported, set `CaptureRequest.SHADING_MODE`, `COLOR_CORRECTION_ABERRATION_MODE`, `DISTORTION_CORRECTION_MODE`, and `TONEMAP_MODE` deliberately; do not blindly disable controls that could break color/exposure or are unsupported.
+- Use the same intended processing policy for the repeating preview and the recording session. Read back `CaptureResult` metadata where available to confirm the modes actually applied, and show a status such as **OFF applied**, **not supported**, or **could not verify** for each setting.
+- Provide a simple **Natural / processing reduced** camera profile. The default recording profile should request NR OFF and edge enhancement OFF, with manual controls only where the device supports them.
+- Record video-only MP4 (no microphone audio) through a native Camera2/MediaCodec pipeline, or a thoroughly verified CameraX interop path. Save it into an app-specific session directory and return a stable file path plus metadata.
+- Request camera permission only when the Camera tab is opened and the user starts camera setup. Release camera resources when leaving the tab or backgrounding the app.
+
+**Important limitation:** Camera2 can request that Android camera-pipeline noise reduction and edge enhancement be OFF, but it cannot guarantee that every manufacturer ISP operation is disabled. Some devices report only limited/legacy camera capability, omit optional modes, or apply fixed processing in sensor/ISP/encoder paths. A processed YUV/PRIVATE video stream is not RAW sensor output. Therefore the app must query capabilities and verify results on the actual phone; it must not claim "all manufacturer processing removed" unless the hardware path proves that.
+
+References:
+- Android `CaptureRequest` — `NOISE_REDUCTION_MODE` and `EDGE_MODE`: https://developer.android.com/reference/android/hardware/camera2/CaptureRequest
+- Android `CameraCharacteristics` — available noise-reduction modes: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics
 
 ### Audio capture and mixing
 
@@ -119,7 +130,7 @@ Persist the session manifest locally so a process interruption does not make com
 
 ## Test matrix
 
-- Front and rear cameras, portrait and landscape.
+- Front and rear cameras, portrait and landscape.\n- Camera2 noise-reduction and edge-enhancement OFF supported / unsupported behavior for each lens.\n- Confirm the recording capture request—not only the preview—uses NR OFF and EDGE OFF where supported.
 - Camera permission denied, then granted.
 - USB MG-30 connected before recording; detached during recording.
 - Backing MP3 and WAV; unsupported audio format error.
