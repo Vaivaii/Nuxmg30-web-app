@@ -702,3 +702,75 @@ button{touch-action:manipulation}
 html,body{background:#0b1012}
 body{overscroll-behavior-y:contain}
 .top{scroll-margin-top:0}
+
+/* Compact single-column Studio: diagnostics and YouTube controls are collapsed by default. */
+html,body{background:#0b1012}
+.studio-page .studio-hero-compact{align-items:center;margin:0 2px 10px}
+.studio-page .studio-hero-compact h2{font-size:25px;margin:2px 0}
+.studio-format-chip{white-space:nowrap;font-size:10px;border-color:#35422d;color:#c5f36b;background:#131a12}
+.studio-page .studio-connect-card,.studio-page .studio-backing-panel,.studio-page .studio-recorder-panel{padding:12px;margin:0 0 10px;border-radius:16px}
+.studio-connect-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.studio-connect-copy{display:grid;gap:3px;min-width:0}
+.studio-connect-copy strong{font-size:14px;color:#edf3e7}
+.studio-connect-copy small{font-size:10px;line-height:1.4;color:#8e9987}
+.studio-overline{font-size:9px;font-weight:850;letter-spacing:1.4px;color:#c5f36b}
+.studio-test-btn{min-width:88px;min-height:39px;padding:8px 12px}
+.studio-inline-status{margin-top:9px;padding:8px 10px;background:#111611;border:1px solid #2e382c;border-radius:9px;color:#a9b5a0;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.studio-inline-status.ok{color:#d7f2af;border-color:#405331}
+.studio-inline-status.warn{color:#f5d3a2;border-color:#645038}
+.studio-device-details,.studio-take-details,.studio-youtube-details{margin-top:8px;border-top:1px solid #293128;padding-top:8px}
+.studio-device-details summary,.studio-take-details summary,.studio-youtube-details summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:26px;cursor:pointer;list-style:none;color:#b6c0ae;font-size:11px;font-weight:700}
+.studio-device-details summary::-webkit-details-marker,.studio-take-details summary::-webkit-details-marker,.studio-youtube-details summary::-webkit-details-marker{display:none}
+.studio-device-details summary::after,.studio-take-details summary::after,.studio-youtube-details summary::after{content:"＋";font-size:14px;color:#c5f36b}
+.studio-device-details[open] summary::after,.studio-take-details[open] summary::after,.studio-youtube-details[open] summary::after{content:"−"}
+.studio-device-details .audio-device-list{margin-top:9px;max-height:260px;overflow-y:auto}
+.studio-device-details .audio-device-card{padding:8px 9px}
+.studio-device-details .audio-device-card small{font-size:10px}
+.studio-page .studio-compact-panel-head{margin:0 0 10px;align-items:center}
+.studio-page .studio-compact-panel-head h3{font-size:15px;margin:0 0 2px}
+.studio-page .studio-compact-panel-head p{font-size:10px;line-height:1.4;margin:0;color:#899486}
+.studio-page .track-number{width:28px;height:28px;font-size:10px}
+.studio-backing-actions{display:flex;align-items:center;gap:10px;min-height:37px}
+.studio-pick-file{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;min-height:36px;font-size:11px;background:#20271d;white-space:nowrap}
+.studio-file-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a9b49f;font-size:10px}
+.studio-file-name.ok{color:#d7f2af}
+.studio-audio-player{display:block;width:100%;height:38px;min-height:38px;margin-top:8px}
+.studio-youtube-details{margin-top:11px}
+.studio-youtube-details summary{min-height:34px}
+.studio-youtube-key-status{margin-left:auto;color:#84927b;font-size:9px;font-weight:500;text-align:right}
+.studio-youtube-key-status.is-configured{color:#c5f36b}
+.studio-youtube-search-content{padding-top:8px}
+.studio-api-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;color:#86917e;font-size:10px}
+.studio-api-toggle{min-height:28px;padding:5px 9px;font-size:10px}
+.studio-api-settings{padding:10px;margin:0 0 9px}
+.studio-api-settings input{height:37px}
+.studio-api-settings p{font-size:10px}
+.studio-api-actions{margin-top:7px}
+.studio-api-actions .btn{min-height:30px;padding:6px 9px}
+.studio-search-row{gap:7px;margin-bottom:7px}
+.studio-search-row input{height:39px;font-size:12px;padding:0 10px}
+.studio-search-row .btn{height:39px;min-height:39px;padding:7px 11px;font-size:11px}
+.youtube-results{max-height:270px;overflow:auto;margin:8px 0}
+.youtube-result{gap:8px;padding:7px}
+.youtube-result img{width:82px;height:47px}
+.youtube-result-copy strong{font-size:10px}
+.youtube-result-copy small{font-size:9px}
+.studio-page .studio-video-wrap{margin-top:9px;aspect-ratio:16/9}
+.studio-page .studio-footnote{font-size:9px;line-height:1.4;margin:8px 0 0}
+.studio-page .studio-track-card{padding:10px}
+.studio-page .studio-track-top strong{font-size:10px}
+.studio-page .studio-track-top small{font-size:10px}
+.studio-page .studio-guitar-meter{height:28px;margin-top:8px}
+.studio-page .studio-transport{grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.studio-page .studio-transport .btn{min-height:42px;font-size:11px;padding:8px 9px}
+.studio-page .studio-stop-btn:disabled{opacity:.32}
+.studio-page .studio-take-details{margin-top:9px}
+.studio-page .studio-take-list{gap:6px;margin-top:8px}
+.studio-page .studio-take{padding:8px 9px}
+.studio-page .studio-take-icon{width:28px;height:28px}
+.studio-page .studio-empty{padding:8px;font-size:10px}
+@media(max-width:430px){
+  .studio-format-chip{max-width:105px;white-space:normal;text-align:center;line-height:1.3}
+  .studio-page .studio-hero-compact h2{font-size:23px}
+  .studio-youtube-key-status{max-width:130px}
+}

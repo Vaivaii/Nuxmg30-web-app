@@ -38,5 +38,29 @@ if (!manifest.includes('android.permission.RECORD_AUDIO')) {
 }
 writeFileSync(manifestPath, manifest, 'utf8');
 
+const stylesPath = resolve(androidDir, 'app/src/main/res/values/styles.xml');
+if (existsSync(stylesPath)) {
+  let styles = readFileSync(stylesPath, 'utf8');
+  const themeMatch = styles.match(/<style name="[^"]*NoActionBar[^"]*"[^>]*>[\s\S]*?<\/style>/);
+  if (themeMatch) {
+    let theme = themeMatch[0];
+    for (const item of [
+      '<item name="android:statusBarColor">#0b1012</item>',
+      '<item name="android:navigationBarColor">#0b1012</item>',
+      '<item name="android:windowLightStatusBar">false</item>',
+      '<item name="android:windowLightNavigationBar">false</item>'
+    ]) {
+      const itemName = item.match(/name="([^"]+)"/)[1];
+      const escaped = itemName.replace(/[.*+?^${}()|[\]\\]/g, '\\run(['cap', 'sync', 'android']);
+console.log('MG30 Studio Android platform ready. USB audio plugin installed; hardware audio compatibility still needs a real-device test.');');
+      const itemRegex = new RegExp('<item name="' + escaped + '">[\\s\\S]*?<\\/item>');
+      if (itemRegex.test(theme)) theme = theme.replace(itemRegex, item);
+      else theme = theme.replace('</style>', '        ' + item + '\\n    </style>');
+    }
+    styles = styles.replace(themeMatch[0], theme);
+    writeFileSync(stylesPath, styles, 'utf8');
+  }
+}
+
 run(['cap', 'sync', 'android']);
 console.log('MG30 Studio Android platform ready. USB audio plugin installed; hardware audio compatibility still needs a real-device test.');

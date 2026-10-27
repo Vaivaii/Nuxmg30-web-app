@@ -144,89 +144,85 @@
 <div class="editor"><div class="control main-editor-card"><div class="panel-head"><div><h3 id="editorTitle">AMP · Deluxe Rvb</h3><p id="editorSub">Pilih model dan atur parameter</p></div><label class="block-toggle" title="Aktifkan atau bypass blok"><span id="blockStatus">ON</span><input class="switch" id="blockSwitch" type="checkbox" checked aria-label="Aktifkan blok"></label></div><div id="modelVisual" class="model-visual-stage"></div><div class="row model-select-row"><span class="model-row-label">MODEL</span><div class="model-stepper"><button type="button" class="model-step" id="modelPrev" aria-label="Model sebelumnya" title="Model sebelumnya">‹</button><strong id="modelCurrentName">Deluxe Rvb</strong><button type="button" class="model-step" id="modelNext" aria-label="Model berikutnya" title="Model berikutnya">›</button></div><select id="modelSelect" class="hidden" aria-hidden="true" tabindex="-1"></select></div><div id="knobs" class="knobs"></div><div class="scene-bar"><div class="scene-bar-head"><strong>Scenes</strong><small>Pilih karakter tone</small></div><div id="sceneButtons" class="scene-buttons"></div><div class="scene-note">Pemilihan tampilan scene tersimpan lokal; pemetaan perintah scene hardware belum diverifikasi.</div></div><div class="row preset-name-row"><label for="presetName">Nama draft</label><input type="text" id="presetName" value="Draft 01A"></div><select id="sceneSelect" class="hidden" aria-hidden="true" tabindex="-1"><option>A · Clean</option><option>B · Rhythm</option><option>C · Lead</option></select></div>
 <details class="control quick-panel"><summary><span>Quick actions & informasi</span><small>Draft lokal · Ekspor · Status fitur</small></summary><div class="quick-panel-body"><button class="btn" id="duplicateBtn">⧉ Duplikat preset</button> <button class="btn" id="exportBtn">↧ Ekspor JSON</button><div class="notice"><b>Catatan kompatibilitas.</b> Perubahan model dan slider tetap menggunakan jalur MIDI yang sudah ada. Pemetaan parameter firmware GEN2 belum diverifikasi sepenuhnya.</div><div class="switch-row"><span>Draft tersimpan otomatis</span><span class="chip">LOCAL</span></div><div class="switch-row"><span>Hardware GEN2</span><span class="chip">BELUM DIVERIFIKASI</span></div></div></details></div></section>
 <section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library / 02</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div><div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
-<section id="page-studio" class="hidden">
-  <div class="hero">
-    <div><div class="eyebrow">STUDIO / 03</div><h2>MG30 Studio</h2><p>Jam bersama, rekam gitar melalui USB, dan kelola backing track secara terpisah.</p></div>
-    <span class="chip studio-status-chip">CHARCOAL × LIME</span>
+<section id="page-studio" class="hidden studio-page">
+  <div class="hero studio-hero-compact">
+    <div><div class="eyebrow">MG30 STUDIO</div><h2>Jam & Record</h2><p>Backing dan gitar direkam sebagai take terpisah.</p></div>
+    <span class="chip studio-format-chip">48 kHz · WAV 24-bit</span>
   </div>
-  <div class="studio-app-grid">
-    <div class="panel studio-audio-panel">
-      <div class="panel-head">
-        <div><h3>USB Audio Engine</h3><p>Deteksi jalur audio Android sebelum rekaman.</p></div>
-        <span class="chip" id="audioEngineBadge">BELUM DITES</span>
-      </div>
-      <div class="studio-notice"><strong>Langkah pertama</strong><p>Hubungkan MG-30 ke Android memakai kabel USB data dan OTG. Tes ini memeriksa input USB yang dilihat sistem Android; keberhasilan MIDI saja belum membuktikan audio USB aktif.</p></div>
-      <button class="btn primary studio-wide-btn" id="audioCheckBtn" type="button">⌁ Tes kompatibilitas USB Audio</button>
-      <div id="audioStatus" class="studio-result" role="status" aria-live="polite">Belum ada tes. Jalankan pemeriksaan saat MG-30 terhubung.</div>
-      <div id="audioDeviceList" class="audio-device-list"><div class="studio-empty">Daftar perangkat input akan tampil di sini setelah pemeriksaan.</div></div>
-      <p class="studio-footnote">Format yang dilaporkan Android belum tentu sama dengan format internal USB hardware. Hasil uji rekaman akan menunjukkan jalur perangkat yang benar-benar dipakai dan format WAV yang dibuat aplikasi.</p>
-    </div>
 
-    <div class="panel studio-audio-panel">
-      <div class="panel-head">
-        <div><h3>Track 01 · Backing</h3><p>Impor berkas audio milikmu untuk play-along.</p></div>
-        <span class="track-number">01</span>
-      </div>
-      <label class="studio-file-picker" for="backingFileInput"><span class="studio-file-icon">♫</span><span><strong>Pilih MP3 / WAV</strong><small>Audio dari penyimpanan perangkat</small></span><span class="studio-file-arrow">＋</span></label>
+  <div class="panel studio-connect-card">
+    <div class="studio-connect-row">
+      <div class="studio-connect-copy"><span class="studio-overline">USB AUDIO INPUT</span><strong>NUX MG-30</strong><small id="guitarTrackMeta">Belum diuji · sambungkan USB OTG</small></div>
+      <button class="btn primary studio-test-btn" id="audioCheckBtn" type="button">Tes USB</button>
+    </div>
+    <div id="audioEngineBadge" class="hidden">BELUM DITES</div>
+    <div id="audioStatus" class="studio-inline-status" role="status" aria-live="polite">Sambungkan MG-30 lalu tekan Tes USB.</div>
+    <details class="studio-device-details">
+      <summary>Detail perangkat & format USB</summary>
+      <div id="audioDeviceList" class="audio-device-list"><div class="studio-empty">Detail akan muncul setelah pemeriksaan.</div></div>
+    </details>
+  </div>
+
+  <div class="panel studio-backing-panel">
+    <div class="panel-head studio-compact-panel-head">
+      <div><h3>Track 01 · Backing</h3><p>MP3 / WAV atau cari referensi di YouTube.</p></div>
+      <span class="track-number">01</span>
+    </div>
+    <div class="studio-backing-actions">
+      <label class="btn studio-pick-file" for="backingFileInput">＋ Pilih file</label>
       <input class="hidden" type="file" id="backingFileInput" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg">
-      <div id="backingFileName" class="studio-result">Belum ada backing track yang dipilih.</div>
-      <audio id="backingAudio" class="studio-audio-player" controls preload="metadata"></audio>
-      <div class="studio-slider-row"><label for="backingVolume">Volume backing</label><strong id="backingVolumeValue">80%</strong></div>
-      <input id="backingVolume" class="studio-range" type="range" min="0" max="100" value="80" aria-label="Volume backing track">
-      <p class="studio-footnote">Backing diputar sebagai sumber terpisah. File tidak diunggah dan tidak dikirim ke layanan apa pun.</p>
+      <span id="backingFileName" class="studio-file-name hidden"></span>
     </div>
+    <audio id="backingAudio" class="studio-audio-player hidden" controls preload="metadata"></audio>
 
-    <div class="panel studio-audio-panel studio-youtube-panel">
-      <div class="panel-head">
-        <div><h3>YouTube · Play Along</h3><p>Cari lagu, lalu putar melalui player resmi.</p></div>
-        <span class="chip">ONLINE</span>
-      </div>
-      <div class="studio-youtube-tools">
-        <button class="btn studio-api-toggle" id="youtubeApiToggle" type="button">⚙ API Key</button>
-        <span id="youtubeKeyStatus" class="studio-youtube-key-status">Pencarian langsung perlu API key</span>
-      </div>
-      <div id="youtubeApiSettings" class="studio-api-settings hidden">
-        <label for="youtubeApiKeyInput">YouTube Data API v3 key</label>
-        <input id="youtubeApiKeyInput" type="password" autocomplete="off" placeholder="Tempel API key Google Cloud…">
-        <div class="studio-api-actions">
-          <button class="btn primary" id="youtubeApiSaveBtn" type="button">Simpan key</button>
-          <button class="btn" id="youtubeApiClearBtn" type="button">Hapus</button>
-          <button class="btn" id="youtubeApiConsoleBtn" type="button">Buat API key ↗</button>
+    <details id="youtubeSearchDetails" class="studio-youtube-details">
+      <summary><span>⌕ Cari lagu di YouTube</span><span id="youtubeKeyStatus" class="studio-youtube-key-status">API key belum disetel</span></summary>
+      <div class="studio-youtube-search-content">
+        <div class="studio-api-line"><span>Hasil langsung di Studio</span><button class="btn studio-api-toggle" id="youtubeApiToggle" type="button">API Key</button></div>
+        <div id="youtubeApiSettings" class="studio-api-settings hidden">
+          <label for="youtubeApiKeyInput">YouTube Data API v3 key</label>
+          <input id="youtubeApiKeyInput" type="password" autocomplete="off" placeholder="Tempel API key Google Cloud…">
+          <div class="studio-api-actions">
+            <button class="btn primary" id="youtubeApiSaveBtn" type="button">Simpan</button>
+            <button class="btn" id="youtubeApiClearBtn" type="button">Hapus</button>
+            <button class="btn" id="youtubeApiConsoleBtn" type="button">Google Cloud ↗</button>
+          </div>
+          <p>Aktifkan YouTube Data API v3. Key disimpan hanya di perangkat ini.</p>
         </div>
-        <p>Aktifkan YouTube Data API v3 di Google Cloud, lalu tempel key di sini. Key disimpan di perangkat ini dan hanya dipakai untuk meminta hasil pencarian ke Google.</p>
+        <div class="studio-search-row">
+          <input id="youtubeSearchInput" type="search" placeholder="Judul lagu atau artis…" autocomplete="off" aria-label="Cari lagu di YouTube">
+          <button class="btn primary" id="youtubeSearchBtn" type="button">Cari</button>
+        </div>
+        <div id="youtubeResults" class="youtube-results hidden" aria-live="polite"></div>
+        <div class="studio-search-row studio-url-row">
+          <input id="youtubeUrlInput" type="url" placeholder="Atau tempel link YouTube…" autocomplete="url" aria-label="Link video YouTube">
+          <button class="btn" id="youtubeLoadBtn" type="button">Putar</button>
+        </div>
       </div>
-      <div class="studio-search-row">
-        <input id="youtubeSearchInput" type="search" placeholder="Cari lagu atau artis…" autocomplete="off" aria-label="Cari lagu di YouTube">
-        <button class="btn primary" id="youtubeSearchBtn" type="button">Cari</button>
-      </div>
-      <div id="youtubeResults" class="youtube-results" aria-live="polite"></div>
-      <div class="studio-video-wrap"><iframe id="youtubePlayer" title="Pemutar YouTube resmi" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
-      <div class="studio-search-row studio-url-row">
-        <input id="youtubeUrlInput" type="url" placeholder="Atau tempel link YouTube…" autocomplete="url" aria-label="Link video YouTube">
-        <button class="btn" id="youtubeLoadBtn" type="button">Putar link</button>
-      </div>
-      <p class="studio-footnote">YouTube digunakan untuk pencarian dan pemutaran referensi. Aplikasi tidak mengekstrak atau menyimpan audio YouTube sebagai track backing. Untuk track 01, gunakan file audio yang kamu miliki atau berhak gunakan.</p>
-    </div>
+    </details>
+    <div id="studioVideoWrap" class="studio-video-wrap hidden"><iframe id="youtubePlayer" title="Pemutar YouTube resmi" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <p class="studio-footnote">YouTube untuk referensi bermain. Audio track backing harus dari file audio yang kamu miliki atau berhak gunakan.</p>
+  </div>
 
-    <div class="panel studio-recorder-panel">
-      <div class="panel-head">
-        <div><h3>Track 02 · Guitar</h3><p>Rekam input USB MG-30 secara langsung.</p></div>
-        <span class="track-number track-number-lime">02</span>
-      </div>
-      <div class="studio-track-card">
-        <div class="studio-track-top"><span class="studio-track-dot"></span><div><strong>GUITAR USB IN</strong><small id="guitarTrackMeta">Menunggu tes perangkat audio</small></div><span class="studio-track-tag">WAV</span></div>
-        <div class="studio-guitar-meter" id="guitarTrackMeter"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      </div>
-      <div class="studio-transport">
-        <button class="btn primary studio-record-btn" id="guitarRecordBtn" type="button">● Rekam gitar</button>
-        <button class="btn studio-stop-btn" id="guitarStopBtn" type="button" disabled>■ Stop & simpan</button>
-      </div>
-      <div id="recordStatus" class="studio-result" role="status" aria-live="polite">Pemeriksaan perangkat harus dilakukan sebelum merekam.</div>
-      <audio id="guitarPlayback" class="studio-audio-player" controls preload="metadata"></audio>
-      <div class="studio-takes-heading"><strong>Rekaman sesi ini</strong><small id="takeCount">0 take</small></div>
-      <div id="takeList" class="studio-take-list"><div class="studio-empty">Take gitar akan muncul setelah rekaman pertama selesai.</div></div>
-      <p class="studio-footnote">Rekaman disimpan sebagai WAV di folder Music milik aplikasi MG30 Studio. Pastikan jalur input yang terdeteksi benar-benar USB MG-30 sebelum mulai.</p>
+  <div class="panel studio-recorder-panel studio-recorder-compact">
+    <div class="panel-head studio-compact-panel-head">
+      <div><h3>Track 02 · Guitar</h3><p>Input USB MG-30 · simpan sebagai WAV PCM 24-bit.</p></div>
+      <span class="track-number track-number-lime">02</span>
     </div>
+    <div class="studio-track-card">
+      <div class="studio-track-top"><span class="studio-track-dot"></span><div><strong>GUITAR USB IN</strong><small>Target capture: 48 kHz · PCM 24-bit WAV</small></div><span class="studio-track-tag">WAV</span></div>
+      <div class="studio-guitar-meter" id="guitarTrackMeter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="studio-transport">
+      <button class="btn primary studio-record-btn" id="guitarRecordBtn" type="button" disabled>● Rekam gitar</button>
+      <button class="btn studio-stop-btn" id="guitarStopBtn" type="button" disabled>■ Stop & simpan</button>
+    </div>
+    <div id="recordStatus" class="studio-inline-status" role="status" aria-live="polite">Tes input USB terlebih dahulu.</div>
+    <audio id="guitarPlayback" class="studio-audio-player hidden" controls preload="metadata"></audio>
+    <details class="studio-take-details">
+      <summary><span>Rekaman sesi ini</span><span id="takeCount">0 take</span></summary>
+      <div id="takeList" class="studio-take-list"><div class="studio-empty">Belum ada rekaman.</div></div>
+    </details>
   </div>
 </section><section id="page-device" class="hidden"><div class="hero"><div><div class="eyebrow">DEVICE / 04</div><h2>Device & Settings</h2><p>Status koneksi, kontrol MIDI, dan keamanan data.</p></div></div><div class="panel"><div class="panel-head"><div><h3>Status koneksi</h3><p>Web MIDI memerlukan browser dan hardware yang kompatibel.</p></div><span class="chip">SAFE MODE</span></div><div class="switch-row"><span>Koneksi perangkat</span><span id="deviceStatus" class="chip">Belum terhubung</span></div><div class="switch-row"><span>Browser Web MIDI API</span><span id="midiSupport" class="chip">Memeriksa…</span></div><div class="switch-row"><span>USB MIDI hardware</span><span class="chip">Belum diuji</span></div><div class="switch-row"><span>SysEx read / write</span><span id="sysexStatus" class="chip">Menunggu koneksi</span></div><button class="btn primary" id="connectMidiDevice">Hubungkan / pilih ulang perangkat</button> <button class="btn" id="readBuffer">Baca buffer aktif</button><button class="btn" id="checkMidi">Periksa dukungan browser</button><button class="btn backup-link" id="goBackup">▣ Backup & Restore</button><div class="notice"><b>Penting:</b> Android Chrome tidak selalu menyediakan Web MIDI/USB MIDI dengan cara yang dibutuhkan. Pengujian dari situs ini tidak membuktikan kompatibilitas NUX MG-30 GEN2. Firmware 5.0.2 yang menjadi acuan protokol bersifat reverse-engineered, bukan dokumentasi resmi.</div></div></section>
 <section id="page-backup" class="hidden"><div class="hero"><div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup & Restore</h2><p>Ekspor atau impor draft preset dalam JSON.</p></div><button class="btn" id="backToDevice">← Device & Settings</button></div><div class="panel"><div class="panel-head"><div><h3>Backup lokal</h3><p>File ini bukan dump preset hardware.</p></div></div><button class="btn primary" id="backupBtn">Ekspor semua preset</button> <label class="btn" for="importFile">Impor JSON</label><input class="hidden" type="file" id="importFile" accept=".json,application/json"><div class="notice"><b>Catatan:</b> backup berisi format kerja prototipe MG30 Studio. Simpan file di tempat aman.</div></div></section>

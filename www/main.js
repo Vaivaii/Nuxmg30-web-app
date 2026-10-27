@@ -17,7 +17,7 @@ async function applyNativeStatusBar() {
   try {
     await StatusBar.setOverlaysWebView({ overlay: false });
     await StatusBar.setBackgroundColor({ color: '#0b1012' });
-    await StatusBar.setStyle({ style: Style.Dark });
+    await StatusBar.setStyle({ style: Style.Light });
     await StatusBar.show();
   } catch (error) {
     console.warn('Status bar styling is limited by this Android version:', error);
@@ -69,8 +69,8 @@ async function inspectAudio() {
     $('audioDeviceList').innerHTML = devices.length ? devices.map(displayDevice).join('') : '<div class="studio-empty">Android belum melaporkan input audio apa pun.</div>';
     if (result.usbInputFound) {
       $('audioEngineBadge').textContent = 'USB INPUT ADA';
-      setStatus('audioStatus', 'Input USB ditemukan. Ini baru tes deteksi; lanjutkan rekaman percobaan untuk memverifikasi jalur yang benar-benar dipakai.', 'ok');
-      $('guitarTrackMeta').textContent = 'Input USB terdeteksi · siap diuji dengan rekaman';
+      setStatus('audioStatus', 'USB MG-30 terdeteksi. Tekan Rekam; aplikasi akan mencoba beberapa konfigurasi dan hanya lanjut jika rute aktif benar-benar USB.', 'ok');
+      $('guitarTrackMeta').textContent = 'USB terdeteksi · target rekaman 48 kHz / PCM 24-bit WAV';
       $('guitarRecordBtn').disabled = false;
     } else {
       $('audioEngineBadge').textContent = 'USB BELUM ADA';
@@ -103,6 +103,7 @@ function renderTakes() {
       if (!take) return;
       const webPath = Capacitor.convertFileSrc ? Capacitor.convertFileSrc(take.path) : take.path;
       $('guitarPlayback').src = webPath;
+      $('guitarPlayback').classList.remove('hidden');
       $('guitarPlayback').play().catch(() => {});
     });
   });
@@ -120,10 +121,11 @@ async function startGuitarRecording() {
     recording = true;
     $('guitarStopBtn').disabled = false;
     $('guitarTrackMeter').classList.add('is-recording');
-    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · ' + (result.encodingName || ('PCM ' + result.bitDepth + '-bit')) + ' · ' + result.channels + ' channel';
-    setStatus('recordStatus', 'RECORDING · input aktual: ' + (result.routeName || 'USB audio') + ' · ' + (result.encodingName || ('PCM ' + result.bitDepth + '-bit')) + ' / ' + result.sampleRate + ' Hz.', 'ok');
+    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit';
+    setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format belum dilaporkan') + '.', 'ok');
   } catch (error) {
     setStatus('recordStatus', error?.message || 'Tidak dapat memulai rekaman USB.', 'warn');
+    $('guitarTrackMeta').textContent = 'USB terdeteksi, tetapi rute rekaman belum berhasil';
   } finally {
     $('guitarRecordBtn').disabled = recording;
   }
@@ -142,7 +144,8 @@ async function stopGuitarRecording() {
       renderTakes();
       const webPath = Capacitor.convertFileSrc ? Capacitor.convertFileSrc(take.path) : take.path;
       $('guitarPlayback').src = webPath;
-      $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · ' + (take.encodingName || ('PCM ' + take.bitDepth + '-bit')) + ' · ' + take.channels + ' channel';
+      $('guitarPlayback').classList.remove('hidden');
+      $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
       setStatus('recordStatus', 'Take tersimpan: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Dengarkan hasilnya lewat pemutar di bawah.', 'ok');
     } else {
       setStatus('recordStatus', 'Rekaman berhenti tetapi file take tidak dikembalikan oleh audio engine.', 'warn');
@@ -178,7 +181,9 @@ $('backingFileInput')?.addEventListener('change', (event) => {
   if (backingObjectUrl) URL.revokeObjectURL(backingObjectUrl);
   backingObjectUrl = URL.createObjectURL(file);
   $('backingAudio').src = backingObjectUrl;
-  $('backingFileName').textContent = file.name + ' · ' + bytesLabel(file.size) + ' · siap diputar terpisah dari track gitar.';
+  $('backingAudio').classList.remove('hidden');
+  $('backingFileName').textContent = file.name + ' · ' + bytesLabel(file.size);
+  $('backingFileName').classList.remove('hidden');
   $('backingFileName').classList.add('ok');
 });
 $('backingVolume')?.addEventListener('input', (event) => {
@@ -204,8 +209,10 @@ function showYoutubeApiSettings(show = true) {
 function loadYoutubeVideo(videoId) {
   if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId || '')) return;
   $('youtubePlayer').src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&playsinline=1&rel=0';
+  $('studioVideoWrap')?.classList.remove('hidden');
   $('youtubePlayer').title = 'Pemutar YouTube · ' + (document.querySelector('[data-youtube-id="' + videoId + '"] .youtube-result-copy strong')?.textContent || 'Video');
-  $('youtubePlayer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('youtubeResults')?.classList.add('hidden');
+  if ($('youtubeSearchDetails')) $('youtubeSearchDetails').open = false;
 }
 function safeHttpsUrl(value) {
   try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; } catch (_) { return ''; }
@@ -217,7 +224,8 @@ function renderYoutubeResults(items) {
     holder.innerHTML = '<div class="studio-empty">Tidak ada video yang cocok. Coba judul atau nama artis yang lebih spesifik.</div>';
     return;
   }
-  holder.innerHTML = items.map((item) => {
+  holder.classList.remove('hidden');
+  holder.innerHTML = items.slice(0, 6).map((item) => {
     const id = item.id?.videoId;
     const snippet = item.snippet || {};
     if (!id || !/^[a-zA-Z0-9_-]{11}$/.test(id)) return '';

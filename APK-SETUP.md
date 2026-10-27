@@ -26,9 +26,9 @@ A GitHub Actions workflow also builds a debug APK when changes are pushed to thi
 
 ## Hardware test required
 
-The USB audio engine is a first-pass compatibility probe, not a claim that every MG-30/Android combination works. Connect the real MG-30 over data-capable USB OTG, open the APK, tap **Tes kompatibilitas USB Audio**, then attempt a short recording. The app reports the actual Android-routed input and the capture WAV format.
+The USB recorder tries 48 kHz and PCM 32-bit integer first, because Android's USB audio host documentation defines the common UAC representation of 24 useful bits left-justified in a 32-bit word. When routed successfully, the app packs those samples into integer PCM 24-bit WAV. It only continues when Android reports the active input route is USB; it never silently accepts the phone microphone. Some Android builds may still refuse the route. In that case the next engineering step is a direct USB Audio Class driver rather than another metadata-only change.
 
-Android may resample or convert the USB stream. A WAV recorded as 24-bit is not proof that the MG-30's USB transport itself was 24-bit. This first pass tries packed PCM 24-bit only if Android reports that format for the USB input, then falls back to PCM 16-bit when necessary.
+Fallback sources include PCM float or PCM 16-bit where the Android HAL exposes those formats. The saved file remains integer PCM 24-bit WAV, but its effective source resolution and bit-perfect status depend on the actual capture path, so the app reports which source format it used.
 
 ## Backing and YouTube behaviour
 
