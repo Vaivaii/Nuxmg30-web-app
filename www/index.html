@@ -257,7 +257,7 @@ const BLOCKS=[
 {id:'WAH',icon:'⌁',models:[['Clyde','pedal'],['Cry BB','pedal'],['V847','pedal'],['Horse Wah','pedal, contour, range'],['Octave-Shift','pedal, updown']]},
 {id:'CMP',icon:'◉',models:[['Rose Comp','sustain, level'],['K Comp','sustain, level, clipping'],['Studio Comp','threshold, ratio, gain, release']]},
 {id:'EFX',icon:'ϟ',models:[['Distortion+','output, sensitivity'],['RC Boost','gain, volume, bass, treble'],['AC Boost','gain, volume, bass, treble'],['Dist One','level, tone, drive'],['T Scream','drive, tone, level'],['Blues Drv','level, tone, gain'],['Morning Drv','volume, drive, tone'],['Eat Dist','distortion, filter, volume'],['Red Dirt','drive, tone, level'],['Crunch','volume, tone, gain'],['Muff Fuzz','volume, tone, sustain'],['Katana','boost, volume'],['ST Singer','volume, gain, filter'],['Red Fuzz','gain, tone, output'],['Touch Wah','mode, decay, sens, updown, level'],['Full-OD HP · IMAGE','volume, drive, tone'],['Horseman OD · IMAGE','gain, treble, output'],['NOB ODR · IMAGE','drive, level, spectrum'],['RIV BLUEFLOG · IMAGE','level, gain, tone'],['TURBO OD · IMAGE','level, tone, drive']]},
-{id:'AMP',icon:'▥',models:['Jazz Clean','Deluxe Rvb','Bass Mate','Tweedy','Twin Rvb','Hiwire','Cali Crunch','Class A15','Class A30','Plexi 100','Plexi 45','Brit 800','1987 X 50','Slo 100','Fireman HBE','Dual Rect','Die VH4','Vibro King','Budda','Mr Z 38','Super Rvb','Brit Blues','Match','Brit 2000','Uber','Agl','Bassguy','Mld','Optima Air','Stageman','Dglass','Starlift','Vivo','F Princeton','L Star'].map(n=>[n,'gain, master, bass, middle, treble, presence, bias, level']).concat([['Deluxe Rvb · IMAGE','gain, volume, bass, treble'],['Class A30 · IMAGE','gain, volume, bass, treble'],['Fireman HBE · IMAGE','gain, volume, bass, middle, treble'],['PV 5150 · IMAGE','gain, volume, bass, middle, treble, presence, mod depth'],['MB T-Rect Modern · IMAGE','gain, volume, bass, middle, treble'],['ORA Rock Lead · IMAGE','gain, volume, bass, middle, treble'],['RIV Knuckle · IMAGE','gain, volume, bass, middle, treble'],['XTC Blue · IMAGE','gain, volume, bass, middle, treble, presence, mod depth, level'],['XTC Red · IMAGE','gain, volume, bass, middle, treble, presence, mod depth, level']])},
+{id:'AMP',icon:'▥',models:['Jazz Clean','Deluxe Rvb','Bass Mate','Tweedy','Twin Rvb','Hiwire','Cali Crunch','Class A15','Class A30','Plexi 100','Plexi 45','Brit 800','1987 X 50','Slo 100','Fireman HBE','Dual Rect','Die VH4','Vibro King','Budda','Mr Z 38','Super Rvb','Brit Blues','Match','Brit 2000','Uber','Agl','Bassguy','Mld','Optima Air','Stageman','Dglass','Starlift','Vivo','F Princeton','L Star'].map(n=>[n,'gain, master, bass, middle, treble, presence, bias, level']).concat([['Deluxe Rvb · IMAGE','gain, volume, bass, treble'],['Class A30 · IMAGE','gain, volume, bass, treble'],['Fireman HBE · IMAGE','gain, volume, bass, middle, treble'],['PV 5150 · IMAGE','gain, volume, bass, middle, treble, presence, mod depth'],['MB T-Rect Modern · IMAGE','gain, volume, bass, middle, treble'],['ORA Rock Lead · IMAGE','gain, volume, bass, middle, treble'],['RIV Knuckle · IMAGE','gain, volume, bass, middle, treble'],['XTC Blue · IMAGE','gain, volume, bass, middle, treble, presence, mod depth, level'],['XTC Red · IMAGE','gain, volume, bass, middle, treble, presence, mod depth, level']]).concat([['NAM Profile · ID 60','Control 1, Control 2, Control 3, Control 4'],['NAM Profile · ID 61','Control 1, Control 2, Control 3, Control 4']])},
 {id:'EQ',icon:'≋',models:[['6-Band EQ','100, 220, 500, 1.2k, 2.6k, 6.4k, level'],['Align EQ','hpf, 110, 340, 660, 1300, 2600, 5000, volume'],['10-Band EQ','vol, 31.25, 62.5, 125, 250, 500, 1k, 2k, 4k, 8k, 16k, gain'],['Para EQ','freq1, gain1, q1, freq2, gain2, q2, freq3, gain3, q3']]},
 {id:'GATE',icon:'⌗',models:[['Noise Gate','sens, decay']]},
 {id:'MOD',icon:'∿',models:[['CE-1','intensity, depth, rate, subd'],['CE-2','rate, depth, subd'],['St Chorus','intensity, width, rate, subd'],['Vibrator','rate, depth, subd'],['Detune','shift-l, mix, shift-r'],['Flanger','level, rate, width, feedback, subd'],['Phase 90','speed, subd'],['Phase 100','intensity, speed, subd'],['SCF','speed, width, chfl, intensity, subd'],['U-Vibe','speed, volume, intensity, chvib, subd'],['Tremolo','rate, depth, subd'],['Rotary','balance, speed, subd'],['Harmonist','key, minor, harmo, blend'],['SCH-1','rate, depth, tone, subd'],['Mono Octave','sub, dry, up']]},
@@ -267,6 +267,30 @@ const BLOCKS=[
 {id:'S/R',icon:'⇄',models:[['Send/Return','send, return']]},
 {id:'VOL',icon:'◖',models:[['Volume','level']]}
 ];
+// Captured from NUX MG-30 GEN2 during NAM selection only. These are observed
+// device model values, not inferred slot numbers or decoded NAM filenames.
+const AMP_NAM_DEVICE_IDS=[60,61];
+const AMP_STANDARD_MODEL_COUNT=BLOCKS[3].models.length-AMP_NAM_DEVICE_IDS.length;
+const AMP_NAM_INDEX_BY_DEVICE_ID=new Map(AMP_NAM_DEVICE_IDS.map(id=>[
+ id,BLOCKS[3].models.findIndex(m=>m[0]==='NAM Profile · ID '+id)
+]));
+const AMP_DEVICE_ID_BY_MODEL_INDEX=new Map([
+ ...Array.from({length:AMP_STANDARD_MODEL_COUNT},(_,i)=>[i,i+1]),
+ ...AMP_NAM_DEVICE_IDS.map(id=>[AMP_NAM_INDEX_BY_DEVICE_ID.get(id),id])
+]);
+function deviceModelIndex(blockIndex,deviceValue){
+ const value=Number(deviceValue)&0x3F;
+ if(blockIndex===3){
+  if(AMP_NAM_INDEX_BY_DEVICE_ID.has(value))return AMP_NAM_INDEX_BY_DEVICE_ID.get(value);
+  const index=value-1;
+  return index>=0&&index<AMP_STANDARD_MODEL_COUNT?index:-1;
+ }
+ return value>=1&&value<=BLOCKS[blockIndex].models.length?value-1:-1;
+}
+function deviceModelValue(blockIndex,modelIndex){
+ if(blockIndex===3)return AMP_DEVICE_ID_BY_MODEL_INDEX.get(modelIndex)??null;
+ return modelIndex+1;
+}
 const MODEL_PARAMETER_OVERRIDES={
   WAH:{
     "Clyde":"contour, range","Cry BB":"contour, range","V847":"contour, range",
@@ -364,7 +388,7 @@ function midiSend(data){if(!midiOutput||!midiConnected)return Promise.resolve(fa
 function sendCC(cc,value){if(!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
 async function flushCC(){try{while(pendingCC.size){const batch=[...pendingCC.entries()];pendingCC.clear();for(const [cc,value] of batch)await midiSend([0xB0,cc,value])}}finally{flushingCC=false;if(pendingCC.size){flushingCC=true;flushCC()}}}
 async function flushMidi(){while(flushingCC||pendingCC.size)await delay(10);await midiChain}
-function sendBlockSwitch(index){const cc=MIDI_SW[index];if(cc==null)return;const st=states[index];sendCC(cc,(st.model+1)+(st.on?0:64))}
+function sendBlockSwitch(index){const cc=MIDI_SW[index];if(cc==null)return;const st=states[index];const modelValue=deviceModelValue(index,st.model);if(modelValue==null)return;sendCC(cc,modelValue+(st.on?0:64))}
 function sendBlockParam(index,param,value){
   const block=BLOCKS[index],state=states[index],ccs=MIDI_PARAM_CC[index];
   if(!block||!state||!ccs||!midiConnected)return;
@@ -384,7 +408,8 @@ function syncIncomingBlockSwitch(cc,rawValue){
  const index=Number(cc),value=Number(rawValue);
  if(!Number.isInteger(index)||index<0||index>10||!BLOCKS[index]||!states[index])return;
  const modelNumber=value&0x3F;
- if(modelNumber>=1&&modelNumber<=BLOCKS[index].models.length){states[index].model=modelNumber-1;states[index].on=(value&0x40)===0}
+ const modelIndex=deviceModelIndex(index,modelNumber);
+ if(modelIndex>=0){states[index].model=modelIndex;states[index].on=(value&0x40)===0}
  scheduleHardwareUiRefresh();
 }
 function syncIncomingParameterCC(cc,rawValue){
@@ -450,8 +475,8 @@ async function readActiveBuffer(options={}){
   const candidate=states.map(s=>({...s,values:{...s.values}})); 
   let validModels=0;
   for(let i=0;i<11;i++){
-   const v=bitSlot(body,i),model=v&0x3F;
-   if(model>=1&&model<=BLOCKS[i].models.length){validModels++;candidate[i].model=model-1;candidate[i].on=(v&0x40)===0}
+   const v=bitSlot(body,i),model=v&0x3F,modelIndex=deviceModelIndex(i,model);
+   if(modelIndex>=0){validModels++;candidate[i].model=modelIndex;candidate[i].on=(v&0x40)===0}
   }
   if(validModels<8){
    if(sceneIndex!==0)throw new Error('Data Scene '+(sceneIndex+1)+' belum cocok dengan layout GEN2 ('+validModels+'/11 model valid). State amp/pedal sebelumnya dipertahankan.');
