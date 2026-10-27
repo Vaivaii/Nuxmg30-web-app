@@ -145,15 +145,10 @@
 <details class="control quick-panel"><summary><span>Quick actions & informasi</span><small>Draft lokal · Ekspor · Status fitur</small></summary><div class="quick-panel-body"><button class="btn" id="duplicateBtn">⧉ Duplikat preset</button> <button class="btn" id="exportBtn">↧ Ekspor JSON</button><div class="notice"><b>Catatan kompatibilitas.</b> Perubahan model dan slider tetap menggunakan jalur MIDI yang sudah ada. Pemetaan parameter firmware GEN2 belum diverifikasi sepenuhnya.</div><div class="switch-row"><span>Draft tersimpan otomatis</span><span class="chip">LOCAL</span></div><div class="switch-row"><span>Hardware GEN2</span><span class="chip">BELUM DIVERIFIKASI</span></div></div></details></div></section>
 <section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library / 02</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div><div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
 <section id="page-studio" class="hidden studio-page">
-  <div class="hero studio-hero-compact">
-    <div><div class="eyebrow">MG30 STUDIO</div><h2>Jam & Record</h2><p>Backing dan gitar direkam sebagai take terpisah.</p></div>
-    <span class="chip studio-format-chip">48 kHz · WAV 24-bit</span>
-  </div>
-
   <div class="panel studio-connect-card">
     <div class="studio-connect-row">
-      <div class="studio-connect-copy"><span class="studio-overline">USB AUDIO INPUT</span><strong>NUX MG-30</strong><small id="guitarTrackMeta">Belum diuji · sambungkan USB OTG</small></div>
-      <button class="btn primary studio-test-btn" id="audioCheckBtn" type="button">Tes USB</button>
+      <div class="studio-connect-copy"><span class="studio-overline">MG30 STUDIO · USB AUDIO</span><strong>NUX MG-30</strong><small id="guitarTrackMeta">Belum diuji · sambungkan USB OTG</small></div>
+      <button class="btn primary studio-test-btn" id="audioCheckBtn" type="button" aria-label="Tes koneksi USB audio">↻ Tes USB</button>
     </div>
     <div id="audioEngineBadge" class="hidden">BELUM DITES</div>
     <div id="audioStatus" class="studio-inline-status" role="status" aria-live="polite">Sambungkan MG-30 lalu tekan Tes USB.</div>
@@ -173,7 +168,7 @@
       <input class="hidden" type="file" id="backingFileInput" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg">
       <span id="backingFileName" class="studio-file-name hidden"></span>
     </div>
-    <audio id="backingAudio" class="studio-audio-player hidden" controls preload="metadata"></audio>
+    <audio id="backingAudio" class="studio-audio-player hidden" preload="metadata"></audio>
     <div id="backingVolumeRow" class="studio-backing-volume hidden">
       <div><label for="backingVolume">Volume backing</label><strong id="backingVolumeValue">80%</strong></div>
       <input id="backingVolume" type="range" min="0" max="100" value="80" aria-label="Volume backing track">
@@ -210,24 +205,39 @@
 
   <div class="panel studio-recorder-panel studio-recorder-compact">
     <div class="panel-head studio-compact-panel-head">
-      <div><h3>Track 02 · Guitar</h3><p>Input USB MG-30 · simpan sebagai WAV PCM 24-bit.</p></div>
+      <div><h3>Track 02 · Guitar</h3><p>Rekam langsung dari USB MG-30.</p></div>
       <span class="track-number track-number-lime">02</span>
     </div>
     <div class="studio-track-card">
-      <div class="studio-track-top"><span class="studio-track-dot"></span><div><strong>GUITAR USB IN</strong><small>Target capture: 48 kHz · PCM 24-bit WAV</small></div><span class="studio-track-tag">WAV</span></div>
+      <div class="studio-track-top"><span class="studio-track-dot"></span><div><strong>GUITAR USB IN</strong><small id="guitarFormatMeta">Target file: WAV PCM 24-bit · 48 kHz</small></div><span class="studio-track-tag">WAV</span></div>
       <div class="studio-guitar-meter" id="guitarTrackMeter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
     </div>
-    <div class="studio-transport">
-      <button class="btn primary studio-record-btn" id="guitarRecordBtn" type="button" disabled>● Rekam gitar</button>
-      <button class="btn studio-stop-btn" id="guitarStopBtn" type="button" disabled>■ Stop & simpan</button>
+    <div class="studio-transport studio-transport-icons">
+      <button class="studio-transport-btn studio-record-icon" id="guitarRecordBtn" type="button" disabled aria-label="Mulai rekaman" title="Rekam"><span class="transport-glyph">●</span><small>REC</small></button>
+      <button class="studio-transport-btn studio-play-icon" id="guitarPlayBtn" type="button" disabled aria-label="Putar rekaman" title="Putar"><span class="transport-glyph" id="guitarPlayGlyph">▶</span><small id="guitarPlayLabel">PLAY</small></button>
+      <button class="studio-transport-btn studio-stop-icon" id="guitarStopBtn" type="button" disabled aria-label="Stop dan simpan rekaman" title="Stop / Simpan"><span class="transport-glyph">■</span><small>STOP</small></button>
     </div>
     <div id="recordStatus" class="studio-inline-status" role="status" aria-live="polite">Tes input USB terlebih dahulu.</div>
-    <audio id="guitarPlayback" class="studio-audio-player hidden" controls preload="metadata"></audio>
-    <details class="studio-take-details">
-      <summary><span>Rekaman sesi ini</span><span id="takeCount">0 take</span></summary>
-      <div id="takeList" class="studio-take-list"><div class="studio-empty">Belum ada rekaman.</div></div>
+    <audio id="guitarPlayback" class="hidden" preload="metadata"></audio>
+    <details class="studio-take-details" open>
+      <summary><span>Rekaman tersimpan</span><span id="takeCount">0 take</span></summary>
+      <div id="takeList" class="studio-take-list"><div class="studio-empty">Rekaman akan muncul di sini dan tetap ada saat aplikasi dibuka lagi.</div></div>
     </details>
   </div>
+
+  <dialog id="renameTakeDialog" class="studio-dialog">
+    <form method="dialog" id="renameTakeForm">
+      <div class="studio-dialog-title">Ganti nama rekaman</div>
+      <p>Nama file akan diperbarui di penyimpanan aplikasi.</p>
+      <label for="renameTakeInput">Nama take</label>
+      <input id="renameTakeInput" type="text" maxlength="90" autocomplete="off" placeholder="Contoh: Solo chorus take 1">
+      <div id="renameTakeError" class="studio-dialog-error" role="status"></div>
+      <div class="studio-dialog-actions">
+        <button class="btn" type="button" id="renameTakeCancel">Batal</button>
+        <button class="btn primary" type="button" id="renameTakeSave">Simpan</button>
+      </div>
+    </form>
+  </dialog>
 </section><section id="page-device" class="hidden"><div class="hero"><div><div class="eyebrow">DEVICE / 04</div><h2>Device & Settings</h2><p>Status koneksi, kontrol MIDI, dan keamanan data.</p></div></div><div class="panel"><div class="panel-head"><div><h3>Status koneksi</h3><p>Web MIDI memerlukan browser dan hardware yang kompatibel.</p></div><span class="chip">SAFE MODE</span></div><div class="switch-row"><span>Koneksi perangkat</span><span id="deviceStatus" class="chip">Belum terhubung</span></div><div class="switch-row"><span>Browser Web MIDI API</span><span id="midiSupport" class="chip">Memeriksa…</span></div><div class="switch-row"><span>USB MIDI hardware</span><span class="chip">Belum diuji</span></div><div class="switch-row"><span>SysEx read / write</span><span id="sysexStatus" class="chip">Menunggu koneksi</span></div><button class="btn primary" id="connectMidiDevice">Hubungkan / pilih ulang perangkat</button> <button class="btn" id="readBuffer">Baca buffer aktif</button><button class="btn" id="checkMidi">Periksa dukungan browser</button><button class="btn backup-link" id="goBackup">▣ Backup & Restore</button><div class="notice"><b>Penting:</b> Android Chrome tidak selalu menyediakan Web MIDI/USB MIDI dengan cara yang dibutuhkan. Pengujian dari situs ini tidak membuktikan kompatibilitas NUX MG-30 GEN2. Firmware 5.0.2 yang menjadi acuan protokol bersifat reverse-engineered, bukan dokumentasi resmi.</div></div></section>
 <section id="page-backup" class="hidden"><div class="hero"><div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup & Restore</h2><p>Ekspor atau impor draft preset dalam JSON.</p></div><button class="btn" id="backToDevice">← Device & Settings</button></div><div class="panel"><div class="panel-head"><div><h3>Backup lokal</h3><p>File ini bukan dump preset hardware.</p></div></div><button class="btn primary" id="backupBtn">Ekspor semua preset</button> <label class="btn" for="importFile">Impor JSON</label><input class="hidden" type="file" id="importFile" accept=".json,application/json"><div class="notice"><b>Catatan:</b> backup berisi format kerja prototipe MG30 Studio. Simpan file di tempat aman.</div></div></section>
 <div class="footer">MG-30 Web Editor · Draft lokal · Fitur perangkat tetap dalam tahap pengujian</div></div><div id="toast" class="toast"></div>

@@ -40,3 +40,11 @@ A local MP3/WAV file is loaded as the separate backing source. YouTube search op
 - Takes are listed in the current Studio session; persistent take-library browsing/export is a follow-up.
 - The sample uses native Android AudioRecord. Some USB audio interfaces require a specialised USB Audio Class driver; if MG-30 does not appear as a routed USB input on the target handset, use that result to plan a dedicated USB host audio engine rather than silently recording the phone microphone.
 - Existing preset and SysEx code is copied into \`www/index.html\` as an APK bundle baseline and remains unchanged in the repository root.
+
+
+## Recording storage, take management, export
+
+- Tapping Stop ends the recording and writes a WAV into the app-specific Music directory. The take list is reloaded from that directory when Studio opens, so it survives closing/reopening the app.
+- Use the pencil icon on a take to rename the underlying WAV file.
+- Use the download/export icon to copy a take to a user-selected folder via Android's Save dialog. The original in app storage stays in place.
+- The main recorder transport uses custom Record / Play / Stop controls. The browser's native audio controls (including its download menu) are intentionally hidden to keep the UI compact.
