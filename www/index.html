@@ -445,7 +445,7 @@ async function readActiveBuffer(options={}){
   const parts=await readPresetParts(0x0C,program);
   const body=parts[sceneIndex]||parts[0];
   if(!body||body.length<220)throw new Error('Balasan Scene '+(sceneIndex+1)+' terlalu pendek ('+(body?body.length:0)+' byte). Format SysEx belum cocok.');
-  const candidate=states.map(s=>({...s,values:{...s.values}}); 
+  const candidate=states.map(s=>({...s,values:{...s.values}})); 
   let validModels=0;
   for(let i=0;i<11;i++){
    const v=bitSlot(body,i),model=v&0x3F;
