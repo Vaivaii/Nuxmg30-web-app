@@ -26,6 +26,8 @@ import org.json.JSONException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,12 +300,19 @@ public class MG30AudioPlugin extends Plugin {
                 byte[] pcm24 = new byte[sampleCount * 3];
                 try {
                     if (captureEncoding == AudioFormat.ENCODING_PCM_32BIT) {
-                        int[] samples = new int[sampleCount];
+                        int rawSize = sampleCount * 4;
+                        ByteBuffer rawBuffer = ByteBuffer.allocateDirect(rawSize).order(ByteOrder.LITTLE_ENDIAN);
+                        byte[] rawSamples = new byte[rawSize];
                         while (recording) {
-                            int read = recordRef.read(samples, 0, samples.length, AudioRecord.READ_BLOCKING);
+                            rawBuffer.clear();
+                            int read = recordRef.read(rawBuffer, rawSize, AudioRecord.READ_BLOCKING);
                             if (read > 0) {
-                                packInt32LeftJustified24(samples, read, pcm24);
-                                int bytes = read * 3;
+                                // AudioRecord ByteBuffer reads preserve the configured 32-bit sample layout.
+                                rawBuffer.position(0);
+                                rawBuffer.get(rawSamples, 0, read);
+                                int samplesRead = read / 4;
+                                packInt32LeftJustified24(rawSamples, samplesRead, pcm24);
+                                int bytes = samplesRead * 3;
                                 outputRef.write(pcm24, 0, bytes);
                                 pcmBytesWritten += bytes;
                             } else if (read < 0 && read != AudioRecord.ERROR_DEAD_OBJECT) {
@@ -382,13 +391,15 @@ public class MG30AudioPlugin extends Plugin {
         return "PCM 16-bit fallback";
     }
 
-    private static void packInt32LeftJustified24(int[] samples, int count, byte[] target) {
+    private static void packInt32LeftJustified24(byte[] samples, int count, byte[] target) {
+        // Android USB UAC: 24 useful bits are left-justified in each 32-bit word.
+        // The first byte in the little-endian word is padding; keep the remaining 3 bytes.
         for (int i = 0; i < count; i++) {
-            int value = samples[i] >> 8;
-            int p = i * 3;
-            target[p] = (byte) (value & 0xff);
-            target[p + 1] = (byte) ((value >> 8) & 0xff);
-            target[p + 2] = (byte) ((value >> 16) & 0xff);
+            int source = i * 4;
+            int targetOffset = i * 3;
+            target[targetOffset] = samples[source + 1];
+            target[targetOffset + 1] = samples[source + 2];
+            target[targetOffset + 2] = samples[source + 3];
         }
     }
 
