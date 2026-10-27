@@ -42,6 +42,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -556,29 +557,6 @@ public class MG30CameraPlugin extends Plugin implements TextureView.SurfaceTextu
         return best == null ? video : best;
     }
 
-    private void configureTransform(int viewWidth, int viewHeight) {
-        if (texture == null || viewWidth <= 0 || viewHeight <= 0 || currentPreviewSize == null || characteristics == null) return;
-        int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
-        displayRotationDegrees = rotation == Surface.ROTATION_90 ? 90 :
-            rotation == Surface.ROTATION_180 ? 180 : rotation == Surface.ROTATION_270 ? 270 : 0;
-        Integer sensor = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        int sensorDegrees = sensor == null ? 0 : sensor;
-        int orientation = actualFront ? (sensorDegrees + displayRotationDegrees) % 360 :
-            (sensorDegrees - displayRotationDegrees + 360) % 360;
-        boolean swap = orientation == 90 || orientation == 270;
-        float rawW = swap ? currentPreviewSize.getHeight() : currentPreviewSize.getWidth();
-        float rawH = swap ? currentPreviewSize.getWidth() : currentPreviewSize.getHeight();
-        float scale = Math.max(viewWidth / rawW, viewHeight / rawH);
-        float cx = viewWidth / 2f, cy = viewHeight / 2f;
-        Matrix matrix = new Matrix();
-        matrix.postTranslate(-currentPreviewSize.getWidth()/2f, -currentPreviewSize.getHeight()/2f);
-        matrix.postRotate(orientation);
-        matrix.postScale(scale, scale);
-        matrix.postTranslate(cx, cy);
-        if (actualFront) matrix.postScale(-1f, 1f, cx, cy);
-        texture.setTransform(matrix);
-    }
-
     @PluginMethod public void startRecording(PluginCall call) {
         if (device == null || previewSurface == null || recording) { call.reject("Aktifkan kamera sebelum merekam."); return; }
         try {
@@ -621,7 +599,9 @@ public class MG30CameraPlugin extends Plugin implements TextureView.SurfaceTextu
         closeAll();
         JSObject out = new JSObject(); out.put("closed", true);
         if (stopped != null) out.put("stoppedRecording", stopped);
-        call.resolve(out);
+        // Resolve only after the full-screen native overlay has been removed; this prevents
+        // a rapid front/back switch from reusing a TextureView that is still being detached.
+        getActivity().runOnUiThread(() -> call.resolve(out));
     }
 
     private void configure(boolean forRecording, PluginCall startCall) {
@@ -651,10 +631,8 @@ public class MG30CameraPlugin extends Plugin implements TextureView.SurfaceTextu
                             out.put("fileName", activeVideoFile.getName()); out.put("videoWidth", currentVideoSize.getWidth()); out.put("videoHeight", currentVideoSize.getHeight());
                             startCall.resolve(out);
                         } else {
-                            getActivity().runOnUiThread(() -> {
-                                configureTransform(texture == null ? 0 : texture.getWidth(), texture == null ? 0 : texture.getHeight());
-                                if (openCallReady()) { /* the open call is resolved below via handler */ }
-                            });
+                            getActivity().runOnUiThread(() ->
+                                configureTransform(texture == null ? 0 : texture.getWidth(), texture == null ? 0 : texture.getHeight()));
                             resolveOpenWhenReady();
                         }
                     } catch (Exception e) {
@@ -669,8 +647,6 @@ public class MG30CameraPlugin extends Plugin implements TextureView.SurfaceTextu
             }, handler);
         } catch (Exception e) { if (startCall != null) startCall.reject(message(e)); rejectOpen(message(e)); }
     }
-
-    private boolean openCallReady() { return pendingOpen != null; }
 
     private void resolveOpenWhenReady() {
         if (pendingOpen == null) return;
