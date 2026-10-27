@@ -129,8 +129,17 @@ public class MG30AudioPlugin extends Plugin {
             return;
         }
         String newName = call.getString("newName", "").trim();
-        newName = newName.replaceAll("[\\\\/:*?\\"<>|\\\\p{Cntrl}]", "_").replaceAll("\\\\s+", " ");
-        newName = newName.replaceAll("(?i)\\\\.wav$", "").trim();
+        StringBuilder cleanName = new StringBuilder();
+        for (int i = 0; i < newName.length(); i++) {
+            char ch = newName.charAt(i);
+            if (ch == '/' || ch == '\\' || ch == ':' || ch == '*' || ch == '?' ||
+                ch == '"' || ch == '<' || ch == '>' || ch == '|' || Character.isISOControl(ch)) {
+                cleanName.append('_');
+            } else {
+                cleanName.append(ch);
+            }
+        }
+        newName = cleanName.toString().replaceAll("\\s+", " ").replaceAll("(?i)\\.wav$", "").trim();
         while (newName.startsWith(".")) newName = newName.substring(1);
         if (newName.isEmpty()) {
             call.reject("Nama rekaman tidak boleh kosong.");
