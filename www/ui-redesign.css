@@ -212,7 +212,7 @@ button{touch-action:manipulation}
   .actions .pill .dot{margin:0;width:8px;height:8px}
   .nav{
     position:fixed;z-index:60;left:0;right:0;bottom:0;width:100%;margin:0;
-    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;
     padding:7px 8px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #2b363b;
     background:#0b1012f2;backdrop-filter:blur(22px);box-shadow:0 -8px 28px #0004
   }
