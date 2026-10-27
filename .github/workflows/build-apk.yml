@@ -5,6 +5,7 @@ on:
     branches:
       - android/mg30-studio-apk
       - android/mg30-studio-apk-gen2-image-nam
+      - android/nam-slot-readback-probe
     paths:
       - 'www/**'
       - 'native-android/**'
