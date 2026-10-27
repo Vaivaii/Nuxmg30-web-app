@@ -222,8 +222,9 @@ public class MG30AudioPlugin extends Plugin {
             recording = true;
             final RandomAccessFile outputRef = output;
             final AudioRecord recordRef = selectedRecord;
+            final int captureBufferSize = selectedBuffer;
             captureThread = new Thread(() -> {
-                byte[] buffer = new byte[Math.max(4096, selectedBuffer)];
+                byte[] buffer = new byte[Math.max(4096, captureBufferSize)];
                 try {
                     while (recording) {
                         int read = recordRef.read(buffer, 0, buffer.length, AudioRecord.READ_BLOCKING);
