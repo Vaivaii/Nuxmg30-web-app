@@ -14,7 +14,6 @@ if (!existsSync(androidDir)) {
 const javaDir = resolve(androidDir, 'app/src/main/java/com/vaivaii/mg30studio');
 mkdirSync(javaDir, { recursive: true });
 copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaDir, 'MG30AudioPlugin.java'));
-copyFileSync(resolve(root, 'native-android/MG30CameraPlugin.java'), resolve(javaDir, 'MG30CameraPlugin.java'));
 
 const mainActivityLines = [
   'package com.vaivaii.mg30studio;',
@@ -30,7 +29,6 @@ const mainActivityLines = [
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',
   '        registerPlugin(MG30AudioPlugin.class);',
-  '        registerPlugin(MG30CameraPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
@@ -59,15 +57,15 @@ writeFileSync(resolve(javaDir, 'MainActivity.java'), mainActivityLines.join('\n'
 const manifestPath = resolve(androidDir, 'app/src/main/AndroidManifest.xml');
 let manifest = readFileSync(manifestPath, 'utf8');
 const requiredEntries = [
- ['android.permission.RECORD_AUDIO','    <uses-permission android:name="android.permission.RECORD_AUDIO" />'],
- ['android.permission.CAMERA','    <uses-permission android:name="android.permission.CAMERA" />'],
- ['android.hardware.usb.host','    <uses-feature android:name="android.hardware.usb.host" android:required="false" />'],
- ['android.hardware.camera.any','    <uses-feature android:name="android.hardware.camera.any" android:required="false" />']
+  ['android.permission.RECORD_AUDIO', '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'],
+  ['android.hardware.usb.host', '    <uses-feature android:name="android.hardware.usb.host" android:required="false" />']
 ];
-for (const [marker, entry] of requiredEntries) if (!manifest.includes(marker)) manifest = manifest.replace(/(<manifest\b[^>]*>)/, '$1\n' + entry);
+for (const [marker, entry] of requiredEntries) {
+  if (!manifest.includes(marker)) manifest = manifest.replace(/(<manifest\b[^>]*>)/, '$1\n' + entry);
+}
 manifest = manifest.replace(/<application\b[^>]*>/, tag => {
- const clean = tag.replace(/\sandroid:icon="[^"]*"/g,'').replace(/\sandroid:roundIcon="[^"]*"/g,'');
- return clean.replace(/>$/,' android:icon="@drawable/ic_launcher" android:roundIcon="@drawable/ic_launcher">');
+  const clean = tag.replace(/\sandroid:icon="[^"]*"/g, '').replace(/\sandroid:roundIcon="[^"]*"/g, '');
+  return clean.replace(/>$/, ' android:icon="@drawable/ic_launcher" android:roundIcon="@drawable/ic_launcher">');
 });
 writeFileSync(manifestPath, manifest, 'utf8');
 
