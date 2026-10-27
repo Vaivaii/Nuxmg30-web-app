@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d0f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — prototipe editor tone NUX MG-30."><title>NUX MG-30 GEN2 · Studio</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — prototipe editor tone NUX MG-30."><title>NUX MG-30 GEN2 · Studio</title>
 <style>
 :root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px}.block{flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}}
 .slot-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.slot-picker label{font-size:10px;color:var(--muted);font-weight:800}.slot-picker select{min-width:80px;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.slot-buttons{display:flex;gap:7px}.slot-btn{width:42px;height:40px;border:1px solid var(--line);background:#1b2019;color:var(--muted);border-radius:10px;font-weight:800}.slot-btn.active{background:var(--lime);border-color:var(--lime);color:#11160b}.slot-note{margin:12px 0 0;color:var(--muted);font-size:10px}
@@ -73,6 +73,28 @@
 .studio-take .btn{font-size:10px;padding:7px 9px;min-height:32px}
 @media(max-width:760px){.studio-app-grid{grid-template-columns:minmax(0,1fr);gap:12px}.studio-audio-panel,.studio-recorder-panel{padding:14px}.studio-url-row{align-items:stretch}.studio-transport{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){.studio-guitar-meter.is-recording span{animation:none}}
+
+
+/* Inline YouTube search, results, and Android edge-to-edge colour matching. */
+.studio-youtube-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.studio-api-toggle{min-height:34px;font-size:11px;padding:7px 10px}
+.studio-youtube-key-status{font-size:10px;color:#8d9985;text-align:right}
+.studio-api-settings{padding:13px;margin:0 0 12px;border:1px solid #35402e;border-radius:12px;background:#111611}
+.studio-api-settings label{display:block;color:#c5f36b;font-size:11px;font-weight:800;margin-bottom:7px}
+.studio-api-settings input{width:100%;height:42px;border:1px solid #333d30;background:#0c100d;color:#eff3e9;border-radius:10px;padding:0 11px;font:inherit;font-size:12px}
+.studio-api-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.studio-api-actions .btn{font-size:10px;padding:8px 10px}
+.studio-api-settings p{font-size:10px;line-height:1.5;color:#8e9987;margin:10px 0 0}
+.youtube-results{display:grid;gap:7px;margin-top:9px;margin-bottom:10px}
+.youtube-result{display:flex;align-items:center;gap:10px;width:100%;padding:8px;text-align:left;border:1px solid #30392d;border-radius:11px;background:#131913;color:#eff3e9;cursor:pointer}
+.youtube-result:active{transform:scale(.995)}
+.youtube-result img{width:104px;height:59px;object-fit:cover;border-radius:7px;background:#222b21;flex:0 0 auto}
+.youtube-result-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+.youtube-result-copy strong{font-size:11px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.youtube-result-copy small{font-size:10px;color:#8e9987;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.youtube-result-copy .youtube-result-action{color:#c5f36b}
+.youtube-results .studio-empty{margin:0}
+@media(max-width:390px){.youtube-result img{width:88px;height:50px}.studio-youtube-key-status{max-width:150px}}
 
 </style><link rel="stylesheet" href="ui-redesign.css?v=param-quantize-1"><style id="gear-visual-compact-override">
 /* Higher-specificity local override: make every gear illustration visibly more compact. */
@@ -159,15 +181,30 @@
         <div><h3>YouTube · Play Along</h3><p>Cari lagu, lalu putar melalui player resmi.</p></div>
         <span class="chip">ONLINE</span>
       </div>
+      <div class="studio-youtube-tools">
+        <button class="btn studio-api-toggle" id="youtubeApiToggle" type="button">⚙ API Key</button>
+        <span id="youtubeKeyStatus" class="studio-youtube-key-status">Pencarian langsung perlu API key</span>
+      </div>
+      <div id="youtubeApiSettings" class="studio-api-settings hidden">
+        <label for="youtubeApiKeyInput">YouTube Data API v3 key</label>
+        <input id="youtubeApiKeyInput" type="password" autocomplete="off" placeholder="Tempel API key Google Cloud…">
+        <div class="studio-api-actions">
+          <button class="btn primary" id="youtubeApiSaveBtn" type="button">Simpan key</button>
+          <button class="btn" id="youtubeApiClearBtn" type="button">Hapus</button>
+          <button class="btn" id="youtubeApiConsoleBtn" type="button">Buat API key ↗</button>
+        </div>
+        <p>Aktifkan YouTube Data API v3 di Google Cloud, lalu tempel key di sini. Key disimpan di perangkat ini dan hanya dipakai untuk meminta hasil pencarian ke Google.</p>
+      </div>
       <div class="studio-search-row">
         <input id="youtubeSearchInput" type="search" placeholder="Cari lagu atau artis…" autocomplete="off" aria-label="Cari lagu di YouTube">
         <button class="btn primary" id="youtubeSearchBtn" type="button">Cari</button>
       </div>
-      <div class="studio-search-row studio-url-row">
-        <input id="youtubeUrlInput" type="url" placeholder="Tempel link video YouTube…" autocomplete="url" aria-label="Link video YouTube">
-        <button class="btn" id="youtubeLoadBtn" type="button">Putar</button>
-      </div>
+      <div id="youtubeResults" class="youtube-results" aria-live="polite"></div>
       <div class="studio-video-wrap"><iframe id="youtubePlayer" title="Pemutar YouTube resmi" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      <div class="studio-search-row studio-url-row">
+        <input id="youtubeUrlInput" type="url" placeholder="Atau tempel link YouTube…" autocomplete="url" aria-label="Link video YouTube">
+        <button class="btn" id="youtubeLoadBtn" type="button">Putar link</button>
+      </div>
       <p class="studio-footnote">YouTube digunakan untuk pencarian dan pemutaran referensi. Aplikasi tidak mengekstrak atau menyimpan audio YouTube sebagai track backing. Untuk track 01, gunakan file audio yang kamu miliki atau berhak gunakan.</p>
     </div>
 

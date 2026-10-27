@@ -48,6 +48,8 @@ public class MG30AudioPlugin extends Plugin {
     private int activeChannels = 2;
     private int activeBits = 16;
     private int activeEncoding = AudioFormat.ENCODING_PCM_16BIT;
+    private int activeWavFormatCode = 1;
+    private boolean activeFloatCapture = false;
     private String activeRouteName = "USB audio";
     private String captureError = "";
 
@@ -138,47 +140,66 @@ public class MG30AudioPlugin extends Plugin {
             rates.add(44100);
         }
         int[] countOptions = usb.getChannelCounts();
-        int channels = contains(countOptions, 2) ? 2 : 1;
+        int channels = contains(countOptions, 2) || countOptions.length == 0 ? 2 : 1;
         int channelMask = channels == 2 ? AudioFormat.CHANNEL_IN_STEREO : AudioFormat.CHANNEL_IN_MONO;
+        int[] advertisedEncodings = Build.VERSION.SDK_INT >= 31 ? usb.getEncodings() : new int[0];
 
+        // Prefer the format the MG-30 actually advertises. The screenshot from the
+        // target handset reports PCM_FLOAT and PCM_32BIT, so forcing PCM_16BIT
+        // as the only choice can make AudioRecord fail to initialize.
         ArrayList<Integer> encodings = new ArrayList<>();
-        if (call.getBoolean("prefer24Bit", true) && Build.VERSION.SDK_INT >= 31 &&
-            contains(usb.getEncodings(), AudioFormat.ENCODING_PCM_24BIT_PACKED)) {
-            encodings.add(AudioFormat.ENCODING_PCM_24BIT_PACKED);
+        if (Build.VERSION.SDK_INT >= 23 &&
+            (advertisedEncodings.length == 0 || contains(advertisedEncodings, AudioFormat.ENCODING_PCM_FLOAT))) {
+            encodings.add(AudioFormat.ENCODING_PCM_FLOAT);
         }
-        encodings.add(AudioFormat.ENCODING_PCM_16BIT);
+        // AudioRecord's typed capture methods are well defined for float and 16-bit PCM.
+        // Try 16-bit only as a fallback when Android cannot open the float stream.
+        if (advertisedEncodings.length == 0 || contains(advertisedEncodings, AudioFormat.ENCODING_PCM_16BIT)) {
+            encodings.add(AudioFormat.ENCODING_PCM_16BIT);
+        }
+        if (encodings.isEmpty()) encodings.add(AudioFormat.ENCODING_PCM_16BIT);
+
+        ArrayList<Integer> sources = new ArrayList<>();
+        if (Build.VERSION.SDK_INT >= 24) sources.add(MediaRecorder.AudioSource.UNPROCESSED);
+        sources.add(MediaRecorder.AudioSource.MIC);
 
         AudioRecord selectedRecord = null;
         int selectedRate = 48000;
         int selectedEncoding = AudioFormat.ENCODING_PCM_16BIT;
         int selectedBuffer = 0;
-        for (int encoding : encodings) {
-            for (int rate : rates) {
-                int min = AudioRecord.getMinBufferSize(rate, channelMask, encoding);
-                if (min <= 0) continue;
-                int bufferSize = Math.max(min * 2, rate * channels * (encoding == AudioFormat.ENCODING_PCM_24BIT_PACKED ? 3 : 2) / 4);
-                try {
-                    AudioFormat format = new AudioFormat.Builder()
-                        .setSampleRate(rate)
-                        .setChannelMask(channelMask)
-                        .setEncoding(encoding)
-                        .build();
-                    AudioRecord candidate = new AudioRecord.Builder()
-                        .setAudioSource(Build.VERSION.SDK_INT >= 24 ? MediaRecorder.AudioSource.UNPROCESSED : MediaRecorder.AudioSource.MIC)
-                        .setAudioFormat(format)
-                        .setBufferSizeInBytes(bufferSize)
-                        .build();
-                    if (candidate.getState() == AudioRecord.STATE_INITIALIZED && candidate.setPreferredDevice(usb)) {
-                        selectedRecord = candidate;
-                        selectedRate = rate;
-                        selectedEncoding = encoding;
-                        selectedBuffer = bufferSize;
-                        break;
+        for (int source : sources) {
+            for (int encoding : encodings) {
+                for (int rate : rates) {
+                    int min = AudioRecord.getMinBufferSize(rate, channelMask, encoding);
+                    if (min <= 0) continue;
+                    int bytesPerSample = encoding == AudioFormat.ENCODING_PCM_FLOAT ? 4 : 2;
+                    int bufferSize = Math.max(min * 2, rate * channels * bytesPerSample / 8);
+                    try {
+                        AudioFormat format = new AudioFormat.Builder()
+                            .setSampleRate(rate)
+                            .setChannelMask(channelMask)
+                            .setEncoding(encoding)
+                            .build();
+                        AudioRecord candidate = new AudioRecord.Builder()
+                            .setAudioSource(source)
+                            .setAudioFormat(format)
+                            .setBufferSizeInBytes(bufferSize)
+                            .build();
+                        if (candidate.getState() == AudioRecord.STATE_INITIALIZED) {
+                            // A preferred device is advisory; validate the actual route after startRecording().
+                            candidate.setPreferredDevice(usb);
+                            selectedRecord = candidate;
+                            selectedRate = rate;
+                            selectedEncoding = encoding;
+                            selectedBuffer = bufferSize;
+                            break;
+                        }
+                        candidate.release();
+                    } catch (IllegalArgumentException | SecurityException ignored) {
+                        // An Android audio HAL can list a format that AudioRecord cannot open.
                     }
-                    candidate.release();
-                } catch (IllegalArgumentException | SecurityException ignored) {
-                    // Some Android audio HALs advertise formats they cannot actually open.
                 }
+                if (selectedRecord != null) break;
             }
             if (selectedRecord != null) break;
         }
@@ -189,8 +210,13 @@ public class MG30AudioPlugin extends Plugin {
 
         try {
             selectedRecord.startRecording();
-            SystemClock.sleep(180);
-            AudioDeviceInfo routed = Build.VERSION.SDK_INT >= 23 ? selectedRecord.getRoutedDevice() : null;
+            AudioDeviceInfo routed = null;
+            long routeDeadline = SystemClock.elapsedRealtime() + 1800;
+            while (SystemClock.elapsedRealtime() < routeDeadline) {
+                routed = Build.VERSION.SDK_INT >= 23 ? selectedRecord.getRoutedDevice() : null;
+                if (routed != null && isUsbInput(routed)) break;
+                SystemClock.sleep(100);
+            }
             if (routed == null || !isUsbInput(routed)) {
                 selectedRecord.stop();
                 selectedRecord.release();
@@ -211,7 +237,9 @@ public class MG30AudioPlugin extends Plugin {
             activeSampleRate = selectedRate;
             activeChannels = channels;
             activeEncoding = selectedEncoding;
-            activeBits = selectedEncoding == AudioFormat.ENCODING_PCM_24BIT_PACKED ? 24 : 16;
+            activeFloatCapture = selectedEncoding == AudioFormat.ENCODING_PCM_FLOAT;
+            activeBits = activeFloatCapture ? 32 : 16;
+            activeWavFormatCode = activeFloatCapture ? 3 : 1; // IEEE float WAV or integer PCM WAV
             activeRouteName = routed.getProductName() == null ? typeName(routed.getType()) : routed.getProductName().toString();
             pcmBytesWritten = 0;
             captureError = "";
@@ -223,17 +251,45 @@ public class MG30AudioPlugin extends Plugin {
             final RandomAccessFile outputRef = output;
             final AudioRecord recordRef = selectedRecord;
             final int captureBufferSize = selectedBuffer;
+            final boolean floatCapture = activeFloatCapture;
             captureThread = new Thread(() -> {
-                byte[] buffer = new byte[Math.max(4096, captureBufferSize)];
                 try {
-                    while (recording) {
-                        int read = recordRef.read(buffer, 0, buffer.length, AudioRecord.READ_BLOCKING);
-                        if (read > 0) {
-                            outputRef.write(buffer, 0, read);
-                            pcmBytesWritten += read;
-                        } else if (read < 0 && read != AudioRecord.ERROR_DEAD_OBJECT) {
-                            captureError = "AudioRecord read error: " + read;
-                            break;
+                    if (floatCapture) {
+                        // AudioRecord.read(float[]) is the supported typed path for PCM_FLOAT.
+                        float[] samples = new float[Math.max(2048, captureBufferSize / 16)];
+                        byte[] littleEndian = new byte[samples.length * 4];
+                        java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.wrap(littleEndian).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                        while (recording) {
+                            int read = recordRef.read(samples, 0, samples.length, AudioRecord.READ_BLOCKING);
+                            if (read > 0) {
+                                byteBuffer.clear();
+                                byteBuffer.asFloatBuffer().put(samples, 0, read);
+                                int bytes = read * 4;
+                                outputRef.write(littleEndian, 0, bytes);
+                                pcmBytesWritten += bytes;
+                            } else if (read < 0 && read != AudioRecord.ERROR_DEAD_OBJECT) {
+                                captureError = "AudioRecord float read error: " + read;
+                                break;
+                            }
+                        }
+                    } else {
+                        short[] samples = new short[Math.max(2048, captureBufferSize / 4)];
+                        byte[] littleEndian = new byte[samples.length * 2];
+                        while (recording) {
+                            int read = recordRef.read(samples, 0, samples.length, AudioRecord.READ_BLOCKING);
+                            if (read > 0) {
+                                for (int i = 0; i < read; i++) {
+                                    int value = samples[i];
+                                    littleEndian[i * 2] = (byte) (value & 0xff);
+                                    littleEndian[i * 2 + 1] = (byte) ((value >> 8) & 0xff);
+                                }
+                                int bytes = read * 2;
+                                outputRef.write(littleEndian, 0, bytes);
+                                pcmBytesWritten += bytes;
+                            } else if (read < 0 && read != AudioRecord.ERROR_DEAD_OBJECT) {
+                                captureError = "AudioRecord PCM16 read error: " + read;
+                                break;
+                            }
                         }
                     }
                 } catch (IOException e) {
@@ -250,9 +306,11 @@ public class MG30AudioPlugin extends Plugin {
             result.put("sampleRate", activeSampleRate);
             result.put("channels", activeChannels);
             result.put("bitDepth", activeBits);
+            result.put("encodingName", activeFloatCapture ? "PCM float (32-bit)" : "PCM integer (16-bit)");
+            result.put("wavFormat", activeFloatCapture ? "IEEE float WAV" : "PCM WAV");
             result.put("routeName", activeRouteName);
             result.put("fileName", activeFile.getName());
-            result.put("note", "PCM bit depth is the Android AudioRecord capture format, not a guarantee of the MG-30's internal USB transport format.");
+            result.put("note", "File format reports the Android AudioRecord capture stream, not a guarantee of the MG-30's internal USB transport bit depth.");
             call.resolve(result);
         } catch (Exception e) {
             recording = false;
@@ -283,13 +341,15 @@ public class MG30AudioPlugin extends Plugin {
         try {
             long dataBytes = activeFile.length() - 44;
             if (dataBytes < 0) dataBytes = 0;
-            writeWavHeader(activeFile, dataBytes, activeSampleRate, activeChannels, activeBits);
+            writeWavHeader(activeFile, dataBytes, activeSampleRate, activeChannels, activeBits, activeWavFormatCode);
             JSObject result = new JSObject();
             result.put("path", activeFile.getAbsolutePath());
             result.put("fileName", activeFile.getName());
             result.put("sampleRate", activeSampleRate);
             result.put("channels", activeChannels);
             result.put("bitDepth", activeBits);
+            result.put("encodingName", activeFloatCapture ? "PCM float (32-bit)" : "PCM integer (16-bit)");
+            result.put("wavFormat", activeFloatCapture ? "IEEE float WAV" : "PCM WAV");
             result.put("dataBytes", dataBytes);
             result.put("durationSeconds", dataBytes / (double) (activeSampleRate * activeChannels * (activeBits / 8)));
             result.put("routeName", activeRouteName);
@@ -334,7 +394,7 @@ public class MG30AudioPlugin extends Plugin {
         if ((supported.length == 0 || contains(supported, rate)) && !rates.contains(rate)) rates.add(rate);
     }
 
-    private static void writeWavHeader(File file, long dataLength, int rate, int channels, int bits) throws IOException {
+    private static void writeWavHeader(File file, long dataLength, int rate, int channels, int bits, int formatCode) throws IOException {
         long byteRate = (long) rate * channels * bits / 8;
         try (RandomAccessFile out = new RandomAccessFile(file, "rw")) {
             out.seek(0);
@@ -343,7 +403,7 @@ public class MG30AudioPlugin extends Plugin {
             out.writeBytes("WAVE");
             out.writeBytes("fmt ");
             writeIntLE(out, 16);
-            writeShortLE(out, 1);
+            writeShortLE(out, formatCode);
             writeShortLE(out, channels);
             writeIntLE(out, rate);
             writeIntLE(out, (int) byteRate);

@@ -1,5 +1,6 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 const MG30Audio = registerPlugin('MG30Audio');
 const $ = (id) => document.getElementById(id);
@@ -9,6 +10,20 @@ let backingObjectUrl = null;
 let recording = false;
 let takeNumber = 0;
 const takes = [];
+const YOUTUBE_API_KEY_STORAGE = 'mg30-youtube-data-api-key';
+let youtubeSearchController = null;
+async function applyNativeStatusBar() {
+  if (!isNative() || Capacitor.getPlatform() !== 'android') return;
+  try {
+    await StatusBar.setOverlaysWebView({ overlay: false });
+    await StatusBar.setBackgroundColor({ color: '#0b1012' });
+    await StatusBar.setStyle({ style: Style.Dark });
+    await StatusBar.show();
+  } catch (error) {
+    console.warn('Status bar styling is limited by this Android version:', error);
+  }
+}
+applyNativeStatusBar();
 
 function setStatus(id, message, kind = '') {
   const node = $(id);
@@ -32,7 +47,7 @@ function displayDevice(device) {
   const usb = device.isUsb;
   const rates = (device.sampleRates || []).length ? device.sampleRates.join(' / ') + ' Hz' : 'Rate tidak dilaporkan Android';
   const channels = (device.channelCounts || []).length ? device.channelCounts.join(' / ') + ' channel' : 'Kanal belum dilaporkan';
-  const enc = (device.encodings || []).map((x) => x === 2 ? 'PCM 16-bit' : (x === 4 ? 'PCM float' : (x === 21 ? 'PCM 24-bit packed' : 'encoding ' + x)));
+  const enc = (device.encodings || []).map((x) => x === 2 ? 'PCM 16-bit' : (x === 4 ? 'PCM float 32-bit' : (x === 21 ? 'PCM 24-bit packed' : (x === 22 ? 'PCM 32-bit integer' : 'encoding ' + x))));
   return '<div class="audio-device-card"><div><strong>' + safeText(device.name || 'Audio input') + '</strong><small>' +
     safeText(device.typeName || device.type || 'Input audio') + ' · ' + safeText(rates) + ' · ' + safeText(channels) +
     (enc.length ? '<br>' + safeText(enc.join(', ')) : '') + '</small></div><span class="audio-device-tag">' +
@@ -105,8 +120,8 @@ async function startGuitarRecording() {
     recording = true;
     $('guitarStopBtn').disabled = false;
     $('guitarTrackMeter').classList.add('is-recording');
-    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · PCM ' + result.bitDepth + '-bit · ' + result.channels + ' channel';
-    setStatus('recordStatus', 'RECORDING · input aktual: ' + (result.routeName || 'USB audio') + ' · PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz.', 'ok');
+    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · ' + (result.encodingName || ('PCM ' + result.bitDepth + '-bit')) + ' · ' + result.channels + ' channel';
+    setStatus('recordStatus', 'RECORDING · input aktual: ' + (result.routeName || 'USB audio') + ' · ' + (result.encodingName || ('PCM ' + result.bitDepth + '-bit')) + ' / ' + result.sampleRate + ' Hz.', 'ok');
   } catch (error) {
     setStatus('recordStatus', error?.message || 'Tidak dapat memulai rekaman USB.', 'warn');
   } finally {
@@ -127,7 +142,7 @@ async function stopGuitarRecording() {
       renderTakes();
       const webPath = Capacitor.convertFileSrc ? Capacitor.convertFileSrc(take.path) : take.path;
       $('guitarPlayback').src = webPath;
-      $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · PCM ' + take.bitDepth + '-bit · ' + take.channels + ' channel';
+      $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · ' + (take.encodingName || ('PCM ' + take.bitDepth + '-bit')) + ' · ' + take.channels + ' channel';
       setStatus('recordStatus', 'Take tersimpan: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Dengarkan hasilnya lewat pemutar di bawah.', 'ok');
     } else {
       setStatus('recordStatus', 'Rekaman berhenti tetapi file take tidak dikembalikan oleh audio engine.', 'warn');
@@ -172,18 +187,116 @@ $('backingVolume')?.addEventListener('input', (event) => {
   $('backingAudio').volume = value / 100;
 });
 $('backingAudio') && ($('backingAudio').volume = 0.8);
-$('youtubeSearchBtn')?.addEventListener('click', () => {
-  const query = $('youtubeSearchInput').value.trim();
-  if (!query) {
-    setStatus('audioStatus', 'Masukkan judul lagu atau artis di kolom YouTube terlebih dahulu.');
-    $('youtubeSearchInput').focus();
+function savedYoutubeKey() {
+  try { return localStorage.getItem(YOUTUBE_API_KEY_STORAGE) || ''; } catch (_) { return ''; }
+}
+function setYoutubeKeyStatus(saved) {
+  const node = $('youtubeKeyStatus');
+  if (node) {
+    node.textContent = saved ? 'API key tersimpan di perangkat' : 'Pencarian langsung perlu API key';
+    node.classList.toggle('is-configured', !!saved);
+  }
+}
+function showYoutubeApiSettings(show = true) {
+  $('youtubeApiSettings')?.classList.toggle('hidden', !show);
+  if (show && $('youtubeApiKeyInput')) $('youtubeApiKeyInput').value = savedYoutubeKey();
+}
+function loadYoutubeVideo(videoId) {
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId || '')) return;
+  $('youtubePlayer').src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&playsinline=1&rel=0';
+  $('youtubePlayer').title = 'Pemutar YouTube · ' + (document.querySelector('[data-youtube-id="' + videoId + '"] .youtube-result-copy strong')?.textContent || 'Video');
+  $('youtubePlayer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function safeHttpsUrl(value) {
+  try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; } catch (_) { return ''; }
+}
+function renderYoutubeResults(items) {
+  const holder = $('youtubeResults');
+  if (!holder) return;
+  if (!items.length) {
+    holder.innerHTML = '<div class="studio-empty">Tidak ada video yang cocok. Coba judul atau nama artis yang lebih spesifik.</div>';
     return;
   }
-  openExternal('https://www.youtube.com/results?search_query=' + encodeURIComponent(query));
+  holder.innerHTML = items.map((item) => {
+    const id = item.id?.videoId;
+    const snippet = item.snippet || {};
+    if (!id || !/^[a-zA-Z0-9_-]{11}$/.test(id)) return '';
+    const thumbnails = snippet.thumbnails || {};
+    const thumbnail = safeHttpsUrl((thumbnails.medium || thumbnails.default || thumbnails.high || {}).url || '');
+    return '<button class="youtube-result" type="button" data-youtube-id="' + safeText(id) + '">' +
+      (thumbnail ? '<img loading="lazy" src="' + safeText(thumbnail) + '" alt="">' : '<span class="studio-file-icon">▶</span>') +
+      '<span class="youtube-result-copy"><strong>' + safeText(snippet.title || 'Video YouTube') + '</strong>' +
+      '<small>' + safeText(snippet.channelTitle || 'YouTube') + '</small><small class="youtube-result-action">Ketuk untuk memutar ↗</small></span></button>';
+  }).join('');
+  holder.querySelectorAll('[data-youtube-id]').forEach((button) => {
+    button.addEventListener('click', () => loadYoutubeVideo(button.dataset.youtubeId));
+  });
+}
+async function searchYoutubeInStudio() {
+  const query = $('youtubeSearchInput').value.trim();
+  if (!query) { $('youtubeSearchInput').focus(); return; }
+  const key = savedYoutubeKey();
+  if (!key) {
+    showYoutubeApiSettings(true);
+    setYoutubeKeyStatus(false);
+    $('youtubeResults').innerHTML = '<div class="studio-empty">Untuk menampilkan hasil pencarian di dalam Studio, masukkan YouTube Data API v3 key sekali saja melalui tombol API Key. Setelah tersimpan, hasil bisa dipilih langsung tanpa salin-tempel link.</div>';
+    return;
+  }
+  if (youtubeSearchController) youtubeSearchController.abort();
+  youtubeSearchController = new AbortController();
+  const button = $('youtubeSearchBtn');
+  button.disabled = true;
+  button.textContent = 'Mencari…';
+  $('youtubeResults').innerHTML = '<div class="studio-empty">Mencari video di YouTube…</div>';
+  try {
+    const params = new URLSearchParams({
+      part: 'snippet', type: 'video', maxResults: '12', q: query,
+      videoEmbeddable: 'true', key
+    });
+    const response = await fetch('https://www.googleapis.com/youtube/v3/search?' + params.toString(), {
+      method: 'GET', signal: youtubeSearchController.signal
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      const reason = data.error?.errors?.[0]?.reason || '';
+      const message = data.error?.message || ('HTTP ' + response.status);
+      $('youtubeResults').innerHTML = '<div class="studio-empty">Pencarian YouTube gagal: ' + safeText(message) +
+        (reason === 'keyInvalid' ? '<br>Periksa API key.' : '') +
+        (reason === 'quotaExceeded' ? '<br>Kuota YouTube Data API hari ini habis.' : '') +
+        '</div>';
+      return;
+    }
+    renderYoutubeResults(data.items || []);
+  } catch (error) {
+    if (error?.name !== 'AbortError') {
+      $('youtubeResults').innerHTML = '<div class="studio-empty">Tidak bisa menghubungi YouTube Data API. Periksa koneksi, API key, dan aktivasi YouTube Data API v3.</div>';
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Cari';
+  }
+}
+$('youtubeApiToggle')?.addEventListener('click', () => showYoutubeApiSettings($('youtubeApiSettings').classList.contains('hidden')));
+$('youtubeApiSaveBtn')?.addEventListener('click', () => {
+  const key = $('youtubeApiKeyInput').value.trim();
+  if (!key) { $('youtubeApiKeyInput').focus(); return; }
+  try { localStorage.setItem(YOUTUBE_API_KEY_STORAGE, key); } catch (_) {}
+  setYoutubeKeyStatus(true);
+  showYoutubeApiSettings(false);
+  $('youtubeResults').innerHTML = '<div class="studio-empty">API key tersimpan. Sekarang cari judul lagu atau artis lagi.</div>';
 });
+$('youtubeApiClearBtn')?.addEventListener('click', () => {
+  try { localStorage.removeItem(YOUTUBE_API_KEY_STORAGE); } catch (_) {}
+  $('youtubeApiKeyInput').value = '';
+  setYoutubeKeyStatus(false);
+  $('youtubeResults').innerHTML = '<div class="studio-empty">API key dihapus dari perangkat ini.</div>';
+});
+$('youtubeApiConsoleBtn')?.addEventListener('click', () => openExternal('https://console.cloud.google.com/apis/credentials'));
+$('youtubeSearchBtn')?.addEventListener('click', searchYoutubeInStudio);
 $('youtubeSearchInput')?.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') $('youtubeSearchBtn').click();
+  if (event.key === 'Enter') searchYoutubeInStudio();
 });
+setYoutubeKeyStatus(!!savedYoutubeKey());
 $('youtubeLoadBtn')?.addEventListener('click', () => {
   const id = parseYoutubeId($('youtubeUrlInput').value);
   if (!id) {
@@ -192,7 +305,7 @@ $('youtubeLoadBtn')?.addEventListener('click', () => {
     return;
   }
   $('youtubeUrlInput').setCustomValidity('');
-  $('youtubePlayer').src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?playsinline=1&rel=0';
+  loadYoutubeVideo(id);
 });
 $('youtubeUrlInput')?.addEventListener('input', () => $('youtubeUrlInput').setCustomValidity(''));
 $('backingAudio')?.addEventListener('error', () => setStatus('backingFileName', 'Browser tidak bisa memutar format file ini. Coba WAV PCM atau MP3.', 'warn'));
