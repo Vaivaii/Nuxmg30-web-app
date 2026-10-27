@@ -73,13 +73,13 @@ manifest = manifest.replace(/<application\b[^>]*>/, tag => {
 // TONE3000 OAuth callback for native Android. The URI must also be registered in
 // the TONE3000 developer settings before the native Select flow can complete.
 if (!manifest.includes('android:scheme="mg30studio"')) {
-  manifest = manifest.replace(/(<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\\s\\S]*?)(<\\/activity>)/, (whole, start, end) =>
-    start + '\\n            <intent-filter>\\n' +
-    '                <action android:name="android.intent.action.VIEW" />\\n' +
-    '                <category android:name="android.intent.category.DEFAULT" />\\n' +
-    '                <category android:name="android.intent.category.BROWSABLE" />\\n' +
-    '                <data android:scheme="mg30studio" android:host="oauth" android:pathPrefix="/callback" />\\n' +
-    '            </intent-filter>\\n        ' + end
+  manifest = manifest.replace(/(<activity\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\s\S]*?)(<\/activity>)/, (whole, start, end) =>
+    start + '\n            <intent-filter>\n' +
+    '                <action android:name="android.intent.action.VIEW" />\n' +
+    '                <category android:name="android.intent.category.DEFAULT" />\n' +
+    '                <category android:name="android.intent.category.BROWSABLE" />\n' +
+    '                <data android:scheme="mg30studio" android:host="oauth" android:pathPrefix="/callback" />\n' +
+    '            </intent-filter>\n        ' + end
   );
 }
 writeFileSync(manifestPath, manifest, 'utf8');
