@@ -130,15 +130,11 @@ public class MG30MidiPlugin extends Plugin {
                     @Override
                     public void onSend(byte[] message, int offset, int count, long timestamp) {
                         JSArray values = new JSArray();
-                        try {
-                            for (int i = offset; i < offset + count; i++) values.put(message[i] & 0xFF);
-                            JSObject payload = new JSObject();
-                            payload.put("data", values);
-                            payload.put("deviceName", activeDeviceName);
-                            notifyListeners("midiData", payload);
-                        } catch (JSONException ignored) {
-                            // Invalid event is discarded; never let a JS bridge failure stop the MIDI receiver.
-                        }
+                        for (int i = offset; i < offset + count; i++) values.put(message[i] & 0xFF);
+                        JSObject payload = new JSObject();
+                        payload.put("data", values);
+                        payload.put("deviceName", activeDeviceName);
+                        notifyListeners("midiData", payload);
                     }
                 };
                 output.connect(receiver);
