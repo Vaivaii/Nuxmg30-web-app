@@ -50,8 +50,8 @@ function createPanel() {
   panel.innerHTML = `
     <div class="t3k-head">
       <div><h3>TONE3000 · katalog NAM</h3>
-      <p>Pilih tone dari katalog TONE3000, baca metadata dan unduh model A2 yang tersedia. Integrasi ini memakai API resmi dengan autentikasi pengguna.</p></div>
-      <span class="t3k-mark">API RESMI</span>
+      <p>Powered by TONE3000. Pilih tone melalui katalog resmi, lalu ambil model A2 setelah pengguna mengotorisasi akun TONE3000.</p></div>
+      <span class="t3k-mark">T3K</span>
     </div>
     <label for="t3kClientId"><small>Publishable key TONE3000</small></label>
     <div class="t3k-form">
@@ -244,8 +244,8 @@ async function loadSelectedTone(toneId) {
   setStatus('Memuat metadata tone dan daftar model A2…');
   try {
     const [toneBody, modelBody] = await Promise.all([
-      apiJSON('/tones/' + encodeURIComponent(id)),
-      apiJSON('/models?tone_id=' + encodeURIComponent(id) + '&architecture=2&page_size=50'),
+      apiJSON('/tones/' + encodeURIComponent(id) + '?architecture=2'),
+      apiJSON('/models?tone_id=' + encodeURIComponent(id) + '&architecture=2&page=1&page_size=50'),
     ]);
     const tone = toneBody?.data || toneBody?.tone || toneBody;
     const allModels = Array.isArray(modelBody?.data) ? modelBody.data : (Array.isArray(modelBody?.models) ? modelBody.models : []);
@@ -344,7 +344,8 @@ async function processCallback(rawUrl) {
   const state = url.searchParams.get('state');
   const toneId = url.searchParams.get('tone_id');
   const error = url.searchParams.get('error');
-  const isCallback = code || state || toneId || error;
+  const canceled = url.searchParams.get('canceled') === 'true';
+  const isCallback = code || state || toneId || error || canceled;
   if (!isCallback) return;
   if (!panelReady && !createPanel()) return;
 
@@ -366,6 +367,7 @@ async function processCallback(rawUrl) {
       clean.hash = '';
       history.replaceState({}, document.title, clean.href);
     }
+    if (canceled) { setStatus('Pemilihan tone dibatalkan. Kamu bisa membuka katalog lagi kapan saja.'); return; }
     if (toneId) await loadSelectedTone(toneId);
     else setStatus('Autentikasi TONE3000 berhasil. Pilih tone dari katalog untuk memuat model.');
   } catch (callbackError) {
