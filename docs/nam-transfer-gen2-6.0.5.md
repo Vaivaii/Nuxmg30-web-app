@@ -1,66 +1,62 @@
-# MG-30 Gen 2 firmware 6.0.5 — NAM transfer investigation
+# NUX MG-30 Gen 2 NAM transfer — QuickTone 2.6.7.16
 
-Scope: original NUX MG-30 (Gen 2 firmware 6.0.5), not MG-30 MKII. This work remains isolated on branch android/nam-transfer-tone3000; do not modify main or the Android Capacitor branches.
+Scope: original NUX MG-30 Gen 2, firmware 6.0.5; not MG-30 MKII. Investigation branch: android/nam-transfer-tone3000. QuickTone.exe was inspected statically; it was not executed. Do not modify main or the other Android branches.
 
-## Paired captures and slot mapping
+## Confirmed source and model parsing
 
-Two USBPcap imports were mapped to their source models:
+The uploaded QuickTone.exe identifies as QuickTone 2.6.7.16 by Cherub Technology. Its file chooser accepts .nam and .namb inputs. Static analysis identified separate parser paths for NAM JSON and NAMB binary, including SlimmableContainer handling, WaveNet model checks, and weight-array extraction.
 
-- namimport1.pcapng: Friedman DS40.nam, slot 9, selector 0x10.
-- namimport2.pcapng: Mesa Boogie Mark V Rythm Amp Only.nam, slot 10, selector 0x12.
+For the two supplied imports:
+- namimport1.pcapng was Friedman DS40.nam in UI slot 9.
+- namimport2.pcapng was Mesa Boogie Mark V Rythm Amp Only.nam in UI slot 10.
+- Both files are SlimmableContainer models whose first submodel has 1,871 A2-Lite float weights; the second submodel is the larger A2-Full model.
+- The transfer data on the wire is exactly the first A2-Lite submodel's 1,871 little-endian IEEE-754 float32 weights. No extra model metadata or NAMB file header is transmitted in this data region.
 
-Each capture contains 83 outgoing SysEx messages: one 167-byte setup message, 61 full-size 177-byte transfer messages, one final short 58-byte transfer message, and 20 slot readback requests. The offset-zero full-size transfer message is duplicated, giving 60 unique full-size transfer offsets. The short final frame has offset 8160 and an all-zero data region. All imported messages use vendor prefix F0 43 58 70 58 ... F7. Data messages use command 01, subcommand 04; associated device ACKs use command 03.
+## Exact payload layout recovered from QuickTone.exe
 
-The transfer offset fields are 7-bit counters. The values increase by 17, and multiplying each counter by 8 gives the byte offset for a 136-byte data window: 0, 136, 272, ... . The 60 unique transfer windows end at byte offset 8024.
+Static disassembly found the packet-building path:
+- VA 0x4AE040 constructs the transfer operation and uses a fixed 0x2000-byte (8,192-byte) buffer.
+- It walks the buffer in 0x88-byte (136-byte) chunks.
+- VA 0x4A4B10 builds each packet; VA 0x4A49E0 is the 8-bit-to-7-bit packer.
+- The packer uses a continuous LSB-first bit stream, not the common per-seven-byte high-bit mask scheme.
 
-## Source model structure
+The 8,192-byte transfer buffer is:
+- Bytes 0..7,483: 1,871 A2-Lite float32 weights, exactly as represented in the first submodel's weights array.
+- Bytes 7,484..8,191: 708 zero-padding bytes.
 
-Both source models are version 0.7.0, architecture SlimmableContainer, with two nested WaveNet submodels:
-- first submodel: A2-Lite, max_value: 0.5, 1,871 float weights
-- second submodel: A2-Full, max_value: 1.0, 12,146 float weights
+Every decoded transfer packet begins with a 12-byte descriptor, followed by the corresponding data chunk:
+- byte 0: 0 in both captures; field meaning not yet established
+- byte 1: zero-based slot index (8 for UI slot 9; 9 for UI slot 10)
+- byte 2: 1
+- byte 3: 3 for the captured A2-Lite transfer path; semantic label not yet established
+- bytes 4..7: transfer byte offset, unsigned 32-bit little-endian
+- bytes 8..11: total buffer size, unsigned 32-bit little-endian (8,192)
+- bytes 12 onward: up to 136 bytes from the 8,192-byte transfer buffer
 
-Per the target behavior supplied by the user, the original MG-30 Gen 2 uses NAM A2-Lite. The investigation therefore selects the first submodel and does not send the A2-Full weights.
+For every frame, QuickTone packs descriptor + data together as continuous LSB-first 8-to-7 bitstream, then wraps it with:
+F0 43 58 70 58 01 + packed bytes + F7
 
-## Weight size and transfer-window correlation
+For a full chunk, the raw descriptor+payload is 148 bytes; the packed region is 170 bytes, making a 177-byte SysEx message (6-byte prefix + 170 packed bytes + F7). The last chunk starts at offset 8,160 and contains only 32 payload bytes; it becomes a 58-byte SysEx message.
 
-A2-Lite has exactly 1,871 float32 weights, which occupy 7,484 bytes. Both capture streams show model-dependent transfer data in the windows starting at offsets 0 through 7,480 (56 windows). The last of those windows contains four meaningful bytes through offset 7,483; the remaining part is padding. The four later windows starting at offsets 7,616, 7,752, 7,888, and 8,024 have all-zero payloads.
+## Byte-for-byte validation against both captures
 
-This is strong evidence that the variable transfer region corresponds to an approximately 7,484-byte A2-Lite weight-sized object, rather than the whole source JSON model. It does **not** prove that the wire bytes are the source float32 weights unchanged.
+The offline validator in docs/research/quicktone-mg30-codec-analysis.py reconstructs the same frame format from each NAM source and compares it against the captured USBPcap messages.
 
-## .namb candidate and validation tests
+Results for both Friedman/slot 9 and Mesa/slot 10:
+- 1,871 weights / 7,484 bytes recovered.
+- 8,192-byte transfer buffer reconstructed with exactly 708 zero bytes after the weights.
+- 61 unique data offsets, from 0 through 8,160 in steps of 136.
+- 62 transfer frames observed because offset 0 appears twice (one extra copy; whether caused by retry/timing is still to be confirmed).
+- Every decoded payload block matches the source weights + zero padding.
+- Every generated full or final-short frame matches the corresponding captured message byte-for-byte, including the duplicate offset-zero copies.
+- Reconstructed-buffer mismatch count: zero bytes for both models.
 
-TONE3000's public nam-binary-loader documents a compact .namb format and a nam2namb converter that can select a SlimmableContainer submodel with --slim. The canonical A2-Lite .namb layout is 7,980 bytes, with its 1,871 float32 weights occupying 7,484 bytes beginning at offset 496. This makes .namb a useful comparison candidate, but not a confirmed NUX format. NUX's public NAM A2 Native overview describes MG-30 Gen 2 as native A2-Lite, while legacy A1 models are handled through conversion to proprietary device formats; it does not identify .namb as the MG-30 transfer format. Since these two captures came from A2-Lite models, the A1 conversion path should not be assumed to be part of this import.
+This settles the weight encoding and packet framing. It does not yet establish the complete device-side transaction lifecycle: the initial 167-byte command with subcommand 0C, ACK/retry timing, any slot commit/verification step, and final readback sequence must still be traced and tested before enabling app-to-device transfer.
 
-Candidate A2-Lite outputs were generated from both supplied files for offline comparison:
-- Friedman: 7,980-byte .namb, 1,871 weights, weight offset 496; CRC32 verified.
-- Mesa: 7,980-byte .namb, 1,871 weights, weight offset 496; CRC32 verified.
-- Separate raw little-endian float32 weight blobs: 7,484 bytes each.
+## References and prior work
 
-The following hypotheses were tested against each capture: the usual 7-bit MIDI encoding with a bitmask at the start of each group, the corresponding bitmask-at-end variant, and four continuous 7-bit bitstream bit-order variants. None matched the captured transfer blocks byte-for-byte as a direct encoding of the original ordered weights. A candidate reorder based on TONE3000's public A2-Lite embedded runtime weight-loader order also did not match under the two mask-based encodings.
+- TONE3000 compact NAM binary format: https://github.com/tone-3000/nam-binary-loader
+- TONE3000 A2 embedded runtime: https://github.com/tone-3000/embedded
+- NUX explanation of native A2-Lite versus legacy A1 conversion: https://www.nux.us/es/pages/nam-a2-native
 
-Therefore, the remaining transformation is not simply “take the .nam weights and apply one common 7-bit encoding.” Possibilities still include NUX/QuickTone-specific serialization, a different packing variant, reordered/transformed values, or another conversion step. Do not infer a successful conversion from the correct byte count alone.
-
-References:
-- https://github.com/tone-3000/nam-binary-loader
-- https://github.com/tone-3000/embedded
-- https://github.com/MilanMarocchi/teensy_nam_pedal/blob/main/docs/MODELS.md (community reference for raw 1,871-float A2-Lite blobs; not an NUX file specification)
-- https://www.nux.us/es/pages/nam-a2-native (NUX overview: MG-30 Gen 2 native A2-Lite and A1 conversion distinction)
-
-## Confirmed flow details still needing interpretation
-
-- Initial setup message: 167 bytes, subcommand 0C.
-- Transfer data messages: 177 bytes, subcommand 04, followed by the offset and the 156-byte 7-bit-safe data region.
-- Each data packet is acknowledged with a 21-byte device reply; 63 ACK messages were reconstructed in the full capture.
-- After transfer, QuickTone sends two rounds of ten slot readback requests (selectors 00, 02, 04, ... 12) and receives ten 167-byte replies per round. Corresponding replies from the two rounds match byte-for-byte.
-- Trailing MIDI CC events B0 4E 03 and B0 03 3D remain unexplained.
-
-## Next steps
-
-1. Inspect NUX/QuickTone's exact 8-to-7 serialization or any model-specific conversion, using these two model/capture pairs as test fixtures.
-2. Validate any candidate conversion against both Friedman and Mesa; it must reproduce both captures at the right slot selectors and offsets.
-3. Identify transfer completion/commit behavior and any checksum or validation fields.
-4. Only then implement the native Android USB-MIDI send path and test a known safe model on the physical MG-30.
-
-## TONE3000 integration
-
-The existing integration in www/tone3000.js already supports the API selection flow and saving downloaded model files inside the native app. The “Kirim ke MG-30” action remains deliberately disabled until the conversion and transfer path is validated. Do not rebuild or replace the TONE3000 integration; extend it only after the protocol is understood.
+Existing TONE3000 integration in www/tone3000.js remains intact. “Kirim ke MG-30” stays disabled until the remaining transaction control flow is validated. Do not rebuild or replace that integration, and do not execute transfer against a real device until a complete safe transaction path has been implemented and tested.
