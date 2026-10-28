@@ -167,13 +167,13 @@
 <section id="page-ir-import" class="hidden">
 <div class="hero"><div><div class="eyebrow">IR IMPORT / EXPERIMENTAL</div><h2>Custom IR Import</h2><p>Uji transfer WAV IR langsung ke NUX MG-30 Gen 2 lewat USB OTG.</p></div></div>
 <div class="panel ir-import-panel">
- <div class="panel-head"><div><h3>1. Pilih file IR WAV</h3><p>WAV RIFF, mono/stereo, PCM 8/16/24/32-bit atau Float32; sample rate 8–192 kHz (akan dikonversi ke 48 kHz).</p></div><span class="chip">EXPERIMENTAL</span></div>
+ <div class="panel-head"><div><h3>1. Pilih file IR WAV</h3><p>WAV RIFF, mono/stereo. PCM 8/16/24/32-bit atau Float32; 8–192 kHz akan dikonversi ke 48 kHz. Stereo memakai kanal kiri.</p></div><span class="chip">EXPERIMENTAL</span></div>
  <label class="studio-file-picker" for="irTransferFileInput"><span class="studio-file-icon">IR</span><span><strong id="irTransferFileTitle">Pilih file IR WAV</strong><small id="irTransferFileMeta">File diproses lokal pada aplikasi.</small></span><span class="studio-file-arrow">↗</span></label>
  <input class="hidden" type="file" id="irTransferFileInput" accept=".wav,audio/wav,audio/x-wav">
  <div class="nam-page-actions" style="margin-top:10px"><button class="btn" type="button" id="irTransferChooseBtn">Pilih file WAV</button></div>
  <div class="ir-import-fields">
   <label for="irTransferName">Nama IR di perangkat (maks. 20 karakter)<input id="irTransferName" type="text" maxlength="20" value="Custom IR" autocomplete="off"></label>
-  <label for="irTransferParameter">Argumen transfer (desimal)<input id="irTransferParameter" type="number" min="0" max="127" step="1" value="91" inputmode="numeric"><small class="ir-field-help">Nilai 91 (0x5B) terlihat pada capture yang dipasangkan dengan WAV referensi. Nilai 1 juga terlihat pada capture lain. Arti argumen ini belum diketahui dan BUKAN nomor slot yang sudah terverifikasi.</small></label>
+  <label for="irTransferParameter">ID/parameter IR pada protokol (0–127)<input id="irTransferParameter" type="number" min="0" max="127" step="1" value="91" inputmode="numeric"><small class="ir-field-help">Capture QuickTone menunjukkan nilai 1, 71, dan 91 pada impor berbeda. Belum terbukti apakah angka ini sama dengan indeks yang tampil di koleksi IR. Jangan menganggap 91 pasti slot 91.</small></label>
  </div>
  <div class="nam-page-actions" style="margin-top:12px"><button class="btn" type="button" id="irTransferValidateBtn" disabled>Validasi &amp; siapkan paket</button><button class="btn primary" type="button" id="irTransferSendBtn" disabled>Kirim IR ke MG-30</button></div>
  <div id="irTransferPreview" class="studio-result">Paket belum divalidasi. Pilih file WAV terlebih dahulu.</div>
