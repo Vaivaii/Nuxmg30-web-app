@@ -1189,8 +1189,6 @@ async function scanNamDeviceSlots(){
   button.dataset.busy='0';button.disabled=false;button.textContent='Baca ulang 10 nama NAM';
  }
 }
-async function copyNamSlotScan()
-
 async function copyNamSlotScan(){
  const output=$('namSlotRawOutput');
  const exportData={device:'NUX MG-30 GEN2',operation:'NAM slot metadata readback',protocol:'F0 43 58 70 58 + command 00 + packed 12-byte descriptor (slot 0-9, field2=4, field3=0, offset=0, size=0) + 136 zero bytes; response metadata payload is 128 bytes with a 32-byte ASCII slot label',selectors:namSlotScanResults.map(row=>({slot:row.slot,selector:namSlotSelectorLabel(row.selector)})),slots:namSlotScanResults.map(row=>({slot:row.slot,selector:namSlotSelectorLabel(row.selector),received:!!row.received,nameRead:!!row.nameRead,deviceName:row.name||'',error:row.error||null,payloadLength:row.data?row.data.length:0,nonzeroBytes:row.nonzero??null,fingerprint:row.fingerprint||null,payloadHex:row.data?row.data.map(v=>v.toString(16).padStart(2,'0')).join(' '):null}))};
