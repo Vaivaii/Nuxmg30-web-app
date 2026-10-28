@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
-import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer } from './nam-transfer.js';
+import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer, safeMG30SlotLabel } from './nam-transfer.js';
 
 const T3K = 'https://www.tone3000.com/api/v1';
 const PREFIX = 'mg30-t3k-';
@@ -407,6 +407,122 @@ async function sendModel(index, button) {
   }
 }
 
+let selectedLocalNamFile = null;
+
+function initLocalNamImport() {
+  const fileInput = $('namTransferFileInput');
+  const chooseButton = $('namTransferChooseBtn');
+  const sendButton = $('namTransferSendBtn');
+  const slotSelect = $('namTransferSlot');
+  const status = $('namTransferStatus');
+  const fileTitle = $('namTransferFileTitle');
+  const fileMeta = $('namTransferFileMeta');
+  if (!fileInput || !chooseButton || !sendButton || !slotSelect || !status || fileInput.dataset.bound === 'true') return;
+  fileInput.dataset.bound = 'true';
+
+  const setLocalStatus = message => { status.textContent = String(message || ''); };
+  const renderSelection = file => {
+    fileTitle.textContent = file ? file.name : 'Pilih file NAM untuk dikirim';
+    fileMeta.textContent = file ? (file.size.toLocaleString() + ' byte · file dibaca lokal di perangkat') :
+      'Mendukung .nam (JSON SlimmableContainer) dan .namb A2-Lite 1.871 bobot';
+  };
+
+  chooseButton.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    selectedLocalNamFile = null;
+    sendButton.disabled = true;
+    if (!file) {
+      renderSelection(null);
+      setLocalStatus('Belum ada file dipilih.');
+      return;
+    }
+    renderSelection(file);
+    if (file.size <= 0 || file.size > 20 * 1024 * 1024) {
+      setLocalStatus('Ukuran file kosong atau terlalu besar untuk diproses.');
+      fileInput.value = '';
+      return;
+    }
+    try {
+      setLocalStatus('Memeriksa arsitektur dan bobot A2-Lite…');
+      const bytes = await file.arrayBuffer();
+      const weightBytes = extractMG30A2LiteWeights(bytes);
+      selectedLocalNamFile = {
+        file,
+        bytes,
+        weightBytes,
+        label: safeMG30SlotLabel(file.name),
+      };
+      sendButton.disabled = !Native();
+      setLocalStatus('Valid: A2-Lite, 1.871 bobot (' + weightBytes.length.toLocaleString() +
+        ' byte). ' + (Native()
+          ? 'Pilih slot tujuan dan tekan Kirim NAM ke MG-30.'
+          : 'File bisa diperiksa di browser, tetapi transfer hanya tersedia di APK Android melalui USB OTG.'));
+    } catch (error) {
+      selectedLocalNamFile = null;
+      sendButton.disabled = true;
+      setLocalStatus('File tidak cocok untuk MG-30 Gen 2 A2-Lite: ' + (error?.message || error));
+    }
+  });
+
+  sendButton.addEventListener('click', async () => {
+    const selected = selectedLocalNamFile;
+    const slotNumber = Number(slotSelect.value || 0);
+    if (!selected) {
+      setLocalStatus('Pilih dan validasi file NAM terlebih dahulu.');
+      return;
+    }
+    if (!Native() || !window.NUXNativeMidi) {
+      setLocalStatus('Transfer langsung memerlukan APK Android dan USB OTG ke MG-30.');
+      return;
+    }
+    if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
+      setLocalStatus('Pilih slot tujuan 1–10.');
+      return;
+    }
+    const fileName = selected.file.name.replace(/[\\/:*?"<>|]/g, '_');
+    if (!window.confirm('Kirim "' + selected.label + '" ke MG-30 slot ' + slotNumber +
+      '? Model lama di slot ini akan ditimpa. Cadangkan dahulu atau gunakan slot uji.')) return;
+
+    sendButton.disabled = true;
+    chooseButton.disabled = true;
+    slotSelect.disabled = true;
+    fileInput.disabled = true;
+    try {
+      setLocalStatus('Menyimpan salinan model dan menyiapkan transfer…');
+      await NativeMidi.saveModel({ fileName, base64: toBase64(selected.bytes) });
+      const plan = buildMG30A2LiteTransferPlan(selected.weightBytes, selected.label, slotNumber);
+      const connection = await window.NUXNativeMidi.connect();
+      const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
+        if (progress.stage === 'write') {
+          setLocalStatus('Slot ' + slotNumber + ': ACK ' + progress.completed + '/' + progress.total +
+            ' · ' + progress.label + '. Jangan cabut USB OTG.');
+        } else if (progress.stage === 'retry') {
+          setLocalStatus('ACK belum diterima untuk ' + progress.label +
+            '; percobaan ulang ' + progress.attempt + '. Jangan cabut USB OTG.');
+        } else if (progress.stage === 'readback') {
+          setLocalStatus('Memeriksa metadata slot: putaran ' + progress.round + '/2, slot ' +
+            progress.slot + '/10.');
+        }
+      });
+      setLocalStatus('Transfer selesai ke slot ' + result.slotNumber + ' (' + result.label + '). Semua ' +
+        result.acknowledgedWriteFrames + ' frame tulis mendapat ACK dan nama slot cocok pada dua putaran readback. ' +
+        'Perangkat tidak menyediakan readback bobot; coba mainkan model untuk memastikan suara.');
+    } catch (error) {
+      setLocalStatus('Transfer tidak selesai: ' + (error?.message || error) +
+        '. Jika proses sudah mulai menulis, slot mungkin berisi data parsial; periksa perangkat sebelum mengulang.');
+    } finally {
+      sendButton.disabled = !selectedLocalNamFile || !Native();
+      chooseButton.disabled = false;
+      slotSelect.disabled = false;
+      fileInput.disabled = false;
+    }
+  });
+
+  if (!Native()) sendButton.disabled = true;
+  renderSelection(null);
+}
+
 async function processCallback(rawUrl) {
   let url;
   try { url = new URL(rawUrl); } catch { return; }
@@ -450,6 +566,7 @@ async function initTone3000() {
     setTimeout(initTone3000, 250);
     return;
   }
+  initLocalNamImport();
   if (Native()) {
     App.addListener('appUrlOpen', event => processCallback(event?.url));
     try {
