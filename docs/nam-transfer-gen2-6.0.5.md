@@ -9,7 +9,7 @@ Two USBPcap imports were mapped to their source models:
 - namimport1.pcapng: Friedman DS40.nam, slot 9, selector 0x10.
 - namimport2.pcapng: Mesa Boogie Mark V Rythm Amp Only.nam, slot 10, selector 0x12.
 
-Each capture contains 83 outgoing SysEx messages. The import flow uses 61 transfer messages, with the offset-zero transfer message duplicated; this produces 60 unique transfer offsets. All imported messages use vendor prefix F0 43 58 70 58 ... F7. Data messages use command 01, subcommand 04; associated device ACKs use command 03.
+Each capture contains 83 outgoing SysEx messages: one 167-byte setup message, 61 full-size 177-byte transfer messages, one final short 58-byte transfer message, and 20 slot readback requests. The offset-zero full-size transfer message is duplicated, giving 60 unique full-size transfer offsets. The short final frame has offset 8160 and an all-zero data region. All imported messages use vendor prefix F0 43 58 70 58 ... F7. Data messages use command 01, subcommand 04; associated device ACKs use command 03.
 
 The transfer offset fields are 7-bit counters. The values increase by 17, and multiplying each counter by 8 gives the byte offset for a 136-byte data window: 0, 136, 272, ... . The 60 unique transfer windows end at byte offset 8024.
 
