@@ -13,12 +13,18 @@ const MAX_SEND_ATTEMPTS = 2;
 // This 96-byte metadata tail is stable across the two captured native A2-Lite imports.
 // Field semantics are not fully decoded; treat it as a recovered device metadata template.
 const METADATA_TAIL = Uint8Array.from(
-  ('03 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' +
-   '00 00 00 00 00 00 80 3f 00 00 00 00 00 00 00 00 ' +
-   '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' +
-   '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' +
-   '32 32 32 32 32 00 00 00 00 00 00 00 00 00 00 00 ' +
-   '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00')
+  ('03 01 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 80 3f ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 32 32 32 32 ' +
+   '32 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00 ' +
+   '00 00 00 00 00 00 00 00')
     .trim().split(/\s+/).map(value => parseInt(value, 16))
 );
 
