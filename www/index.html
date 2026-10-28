@@ -1060,20 +1060,72 @@ function renderNamSlotScan(records){
  const rows=records||NAM_DEVICE_SELECTORS.map((selector,index)=>({slot:index+1,selector,received:false}));
  holder.innerHTML=rows.map(row=>{
   const profile=AMP_NAM_SLOT_PROFILES[row.slot-1];
-  const state=row.received?'Respons diterima':row.error?'Timeout / gagal':'Belum dibaca';
+  const state=row.error?'Gagal membaca':row.nameRead?(row.nameAvailable?'Nama terbaca':'Metadata terbaca'):(row.received?'Respons diterima':'Belum dibaca');
   const stateClass=row.received?'is-read':row.error?'is-error':'';
   let detail='Record belum diminta.';
   let fingerprint='Fingerprint: —';
-  if(row.received){
+  let deviceName='Belum disinkronkan dari perangkat.';
+  if(row.nameRead){
+   deviceName=row.nameAvailable&&row.name?row.name:'Nama belum tersedia pada record perangkat.';
+   detail='Slot perangkat '+row.slot+' · metadata '+(row.data?row.data.length:0)+' byte · '+(row.nonzero??0)+' byte nonzero';
+   if(row.error) detail=String(row.error);
+   fingerprint=row.fingerprint?'Fingerprint '+row.fingerprint:'Metadata nama tidak tersedia';
+  }else if(row.received){
    detail='Selector '+namSlotSelectorLabel(row.selector)+' · '+row.data.length+' byte payload · '+row.nonzero+' byte nonzero';
    fingerprint='Fingerprint '+row.fingerprint;
   }else if(row.error){detail=String(row.error)}
-  const mappedName=profile?profile.name:'NAM Slot '+String(row.slot).padStart(2,'0');
+  const mappedName=row.nameRead&&row.nameAvailable&&row.name?row.name:(profile?profile.name:'NAM Slot '+String(row.slot).padStart(2,'0'));
   const deviceId=profile?profile.id:'—';
-  return '<div class="nam-device-slot"><div class="nam-device-slot-head"><strong>NAM Slot '+String(row.slot).padStart(2,'0')+'</strong><span class="nam-device-slot-state '+stateClass+'">'+state+'</span></div><small class="nam-device-slot-meta">QuickTone ID '+deviceId+' · Selector '+namSlotSelectorLabel(row.selector)+'</small><small class="nam-device-slot-meta">'+escapeHtml(detail)+'</small><span class="nam-device-slot-hash">'+escapeHtml(fingerprint)+'</span><label class="nam-slot-name-field"><span>Nama di pilihan AMP</span><input type="text" maxlength="72" data-nam-slot-name="'+row.slot+'" aria-label="Nama untuk NAM Slot '+row.slot+'" value="'+escapeHtml(mappedName)+'"></label></div>';
+  return '<div class="nam-device-slot"><div class="nam-device-slot-head"><strong>NAM Slot '+String(row.slot).padStart(2,'0')+'</strong><span class="nam-device-slot-state '+stateClass+'">'+state+'</span></div><small class="nam-device-slot-meta">Nama di MG-30: '+escapeHtml(deviceName)+'</small><small class="nam-device-slot-meta">QuickTone ID lokal '+deviceId+(row.nameRead?' · slot native '+row.slot:' · Selector '+namSlotSelectorLabel(row.selector))+'</small><small class="nam-device-slot-meta">'+escapeHtml(detail)+'</small><span class="nam-device-slot-hash">'+escapeHtml(fingerprint)+'</span><label class="nam-slot-name-field"><span>Nama model di aplikasi</span><input type="text" maxlength="72" data-nam-slot-name="'+row.slot+'" aria-label="Nama aplikasi untuk NAM Slot '+row.slot+'" value="'+escapeHtml(mappedName)+'"></label></div>';
  }).join('');
  holder.querySelectorAll('[data-nam-slot-name]').forEach(input=>input.addEventListener('change',()=>saveAmpNamSlotName(input.dataset.namSlotName,input.value)));
 }
+function normalizeNativeNamSlotRows(slots){
+ return (Array.isArray(slots)?slots:[]).map(slot=>{
+  const data=Array.from(slot.metadata||[]);
+  return {
+   slot:Number(slot.slotNumber)||0,
+   selector:(Number(slot.slotNumber)||1)-1,
+   received:slot.received!==false,
+   nameRead:true,
+   name:String(slot.name||''),
+   nameAvailable:Boolean(slot.nameAvailable&&slot.name),
+   data,
+   nonzero:Number.isFinite(slot.nonzero)?slot.nonzero:data.reduce((n,v)=>n+(v!==0?1:0),0),
+   fingerprint:data.length?namSlotFingerprint(data):'',
+   error:slot.error||null
+  };
+ }).filter(row=>row.slot>=1&&row.slot<=10);
+}
+function applyNativeNamSlotNames(slots,source){
+ const rows=normalizeNativeNamSlotRows(slots);
+ if(!rows.length)return;
+ namSlotScanResults=rows;
+ const saved={};for(const profile of AMP_NAM_SLOT_PROFILES)saved[String(profile.id)]=profile.name;
+ for(const row of rows){
+  const profile=AMP_NAM_SLOT_PROFILES[row.slot-1];
+  if(profile&&row.received&&row.nameAvailable){
+   profile.name=row.name;
+   const model=BLOCKS[3]?.models?.[AMP_STANDARD_MODEL_COUNT+row.slot-1];
+   if(model)model[0]=row.name;
+   saved[String(profile.id)]=row.name;
+  }
+ }
+ try{localStorage.setItem('mg30-nam-slot-names',JSON.stringify(saved))}catch{}
+ render();
+ renderNamSlotScan(rows);
+ const received=rows.filter(row=>row.received).length;
+ const named=rows.filter(row=>row.received&&row.nameAvailable).length;
+ const status=$('namSlotsStatus');
+ if(status)status.textContent='Sinkronisasi '+(source==='transfer'?'setelah impor':'pembacaan perangkat')+': '+named+'/10 slot memiliki nama NAM terbaca; '+received+'/10 record metadata terbaca. Nama dibaca langsung dari MG-30.';
+ const copy=$('copyNamSlotsBtn');if(copy)copy.disabled=received===0;
+}
+window.addEventListener('mg30-nam-names-sync',event=>{
+ const detail=event?.detail||{};
+ if(Array.isArray(detail.slots))applyNativeNamSlotNames(detail.slots,detail.source||'transfer');
+});
+
+
 async function readNamDeviceSlotRecord(selector){
  if(!midiConnected||!midiInput||!midiOutput)throw new Error('Hubungkan MG-30 terlebih dahulu.');
  await flushMidi();
@@ -1087,14 +1139,36 @@ async function readNamDeviceSlotRecord(selector){
 }
 async function scanNamDeviceSlots(){
  const button=$('readNamSlotsBtn'),copyButton=$('copyNamSlotsBtn'),status=$('namSlotsStatus');
- if(!midiConnected){status.textContent='MG-30 belum terhubung. Hubungkan perangkat sebelum membaca slot NAM.';toast('Hubungkan MG-30 sebelum membaca slot NAM');return}
  if(button.dataset.busy==='1')return;
- button.dataset.busy='1';button.disabled=true;button.textContent='Membaca…';copyButton.disabled=true;
- const rows=[];
+ button.dataset.busy='1';button.disabled=true;button.textContent='Membaca nama…';copyButton.disabled=true;
  try{
+  // The Android bridge is the same native USB-MIDI connection used by the
+  // working NAM importer. Read actual 128-byte metadata records twice and
+  // verify they are stable before showing the model names.
+  if(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames){
+   status.textContent='Menghubungkan MG-30 dan membaca metadata nama NAM (2 putaran)…';
+   const connection=await window.NUXNativeMidi.connect();
+   const result=await window.NUXNAMTransfer.readMG30NAMSlotNames(connection,progress=>{
+    if(progress.stage==='name-read'){
+     status.textContent='Membaca nama dari MG-30: putaran '+progress.round+'/2 · slot '+progress.slot+'/10…';
+    }else if(progress.stage==='name-read-error'){
+     status.textContent='Slot '+progress.slot+' tidak merespons pada putaran '+progress.round+'. Melanjutkan pembacaan slot lainnya…';
+    }
+   });
+   applyNativeNamSlotNames(result.slots,'read');
+   const received=result.slots.filter(row=>row.received).length;
+   if(received===10)toast('Nama 10 slot NAM disinkronkan dari MG-30');
+   else toast('Metadata terbaca pada '+received+'/10 slot; periksa status setiap slot');
+   return;
+  }
+
+  // Browser fallback retains the older raw-record reader; it cannot decode
+  // the confirmed native import labels, so make that limitation explicit.
+  if(!midiConnected){status.textContent='MG-30 belum terhubung. Pada APK Android, gunakan bridge USB-MIDI asli untuk membaca nama NAM.';toast('Hubungkan MG-30 terlebih dahulu');return}
+  const rows=[];
   for(let i=0;i<NAM_DEVICE_SELECTORS.length;i++){
    const selector=NAM_DEVICE_SELECTORS[i];
-   status.textContent='Membaca record NAM '+(i+1)+' dari 10 ('+namSlotSelectorLabel(selector)+')…';
+   status.textContent='Membaca record mentah '+(i+1)+' dari 10 ('+namSlotSelectorLabel(selector)+')…';
    let row={slot:i+1,selector,received:false};
    try{
     const result=await readNamDeviceSlotRecord(selector);
@@ -1104,17 +1178,22 @@ async function scanNamDeviceSlots(){
    await delay(35);
   }
   const received=rows.filter(r=>r.received).length;
-  status.textContent='Selesai: '+received+'/10 record merespons. Nama dan status terisi/kosong masih belum didekode.';
+  status.textContent='Selesai: '+received+'/10 record mentah merespons. Pembacaan nama native memerlukan APK Android.';
   copyButton.disabled=received===0;
-  if(received===10)toast('10 record NAM berhasil dibaca (read-only)');
+  if(received===10)toast('10 record mentah dibaca');
   else toast('Pembacaan selesai: '+received+'/10 record');
+ }catch(error){
+  status.textContent='Gagal menyinkronkan nama NAM dari MG-30: '+String(error&&error.message||error);
+  toast('Gagal membaca nama NAM');
  }finally{
-  button.dataset.busy='0';button.disabled=false;button.textContent='Baca ulang 10 slot NAM';
+  button.dataset.busy='0';button.disabled=false;button.textContent='Baca ulang 10 nama NAM';
  }
 }
+async function copyNamSlotScan()
+
 async function copyNamSlotScan(){
  const output=$('namSlotRawOutput');
- const exportData={device:'NUX MG-30 GEN2',operation:'read-only NAM slot record scan',protocol:'F0 43 58 70 58 00 00 <selector> 10 + 167 zero bytes',selectors:NAM_DEVICE_SELECTORS,slots:namSlotScanResults.map(row=>({slot:row.slot,selector:namSlotSelectorLabel(row.selector),received:!!row.received,error:row.error||null,payloadLength:row.data?row.data.length:0,nonzeroBytes:row.nonzero??null,fingerprint:row.fingerprint||null,payloadHex:row.data?row.data.map(v=>v.toString(16).padStart(2,'0')).join(' '):null}))};
+ const exportData={device:'NUX MG-30 GEN2',operation:'NAM slot metadata readback',protocol:'F0 43 58 70 58 + command 00 + packed 12-byte descriptor (slot 0-9, field2=4, field3=0, offset=0, size=0) + 136 zero bytes; response metadata payload is 128 bytes with a 32-byte ASCII slot label',selectors:namSlotScanResults.map(row=>({slot:row.slot,selector:namSlotSelectorLabel(row.selector)})),slots:namSlotScanResults.map(row=>({slot:row.slot,selector:namSlotSelectorLabel(row.selector),received:!!row.received,nameRead:!!row.nameRead,deviceName:row.name||'',error:row.error||null,payloadLength:row.data?row.data.length:0,nonzeroBytes:row.nonzero??null,fingerprint:row.fingerprint||null,payloadHex:row.data?row.data.map(v=>v.toString(16).padStart(2,'0')).join(' '):null}))};
  const textData=JSON.stringify(exportData,null,2);
  try{
   if(!navigator.clipboard||!navigator.clipboard.writeText)throw new Error('Clipboard API unavailable');
