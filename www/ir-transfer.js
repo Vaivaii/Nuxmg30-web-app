@@ -132,37 +132,31 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function initUI(){
  const $=id=>document.getElementById(id);
  const file=$('irTransferFileInput');
- const required=['irTransferSendBtn','irTransferValidateBtn','irTransferPreview','irTransferStatus','irTransferChooseBtn'];
+ const required=['irTransferSendBtn','irTransferValidateBtn','irTransferPreview','irTransferStatus','irTransferChooseBtn','irTransferReadTargetBtn','irTransferTargetStatus','irTransferParameter'];
  if(!file||required.some(id=>!$(id)))return;
- let selectedFile=null,prepared=null,busy=false;
+ let selectedFile=null,prepared=null,busy=false,targetId=null;
  const status=(message,kind='')=>{
-   const n=$('irTransferStatus');
-   n.textContent=message;
-   n.classList.remove('ok','warn');
-   if(kind)n.classList.add(kind);
+   const n=$('irTransferStatus');n.textContent=message;n.classList.remove('ok','warn');if(kind)n.classList.add(kind);
  };
  const preview=(message,kind='')=>{
-   const n=$('irTransferPreview');
-   n.textContent=message;
-   n.classList.remove('ok','warn');
-   if(kind)n.classList.add(kind);
+   const n=$('irTransferPreview');n.textContent=message;n.classList.remove('ok','warn');if(kind)n.classList.add(kind);
  };
  const progress=(pct,label)=>{
-   $('irTransferProgressBar').style.width=Math.max(0,Math.min(100,pct))+'%';
-   $('irTransferProgressLabel').textContent=label||'';
+   $('irTransferProgressBar').style.width=Math.max(0,Math.min(100,pct))+'%';$('irTransferProgressLabel').textContent=label||'';
  };
  const busySet=value=>{
    busy=value;
-   $('irTransferValidateBtn').disabled=value||!selectedFile;
+   $('irTransferValidateBtn').disabled=value||!selectedFile||targetId===null;
+   $('irTransferReadTargetBtn').disabled=value;
    $('irTransferChooseBtn').disabled=value;
-   $('irTransferSendBtn').disabled=value||!prepared;
+   $('irTransferSendBtn').disabled=value||!prepared||targetId===null;
    $('irTransferName').disabled=value;
    $('irTransferParameter').disabled=value;
    file.disabled=value;
  };
- const invalidate=(message='Paket belum divalidasi. Tekan Validasi & siapkan paket untuk memeriksa WAV.')=>{
+ const invalidate=(message='Paket belum divalidasi. Baca ID/konteks IR dari MG-30, lalu validasi WAV.')=>{
    prepared=null;
-   $('irTransferValidateBtn').disabled=busy||!selectedFile;
+   $('irTransferValidateBtn').disabled=busy||!selectedFile||targetId===null;
    $('irTransferSendBtn').disabled=true;
    preview(message);
    progress(0,'Belum dimulai');
@@ -170,105 +164,134 @@ function initUI(){
  const nextPaint=()=>new Promise(resolve=>setTimeout(resolve,30));
 
  $('irTransferChooseBtn').addEventListener('click',()=>file.click());
+ $('irTransferReadTargetBtn').addEventListener('click',async()=>{
+   if(busy)return;
+   if(!window.NUXNativeMidi?.available){
+     status('Membaca konteks IR memerlukan APK Android MG30 Studio dengan USB-MIDI native.','warn');
+     preview('Pembacaan konteks IR hanya tersedia di APK Android tersambung ke MG-30.','warn');
+     return;
+   }
+   busySet(true);prepared=null;
+   preview('Membaca konteks IR dari MG-30 melalui tiga permintaan 0C 00…');
+   progress(0,'Membaca konteks IR…');
+   status('Menyambungkan USB-MIDI dan membaca tiga balasan 0C 02. Tidak ada data IR yang ditulis.');
+   await nextPaint();
+   try{
+     const conn=await window.NUXNativeMidi.connect();
+     const context=await readMG30IRContext(conn,info=>{
+       progress(info.completed/3*100,'Konteks IR '+info.completed+'/3 · ID balasan '+info.id);
+     });
+     targetId=context.id;
+     $('irTransferParameter').value=String(targetId);
+     $('irTransferTargetStatus').textContent='ID/konteks terbaca: '+targetId+' (0x'+targetId.toString(16).toUpperCase().padStart(2,'0')+'), konsisten pada 3/3 balasan 0C 02. ID ini berasal dari perangkat; pemetaan pastinya ke indeks daftar User belum dipastikan.';
+     preview('ID/konteks IR berhasil dibaca: '+targetId+' (0x'+targetId.toString(16).toUpperCase()+'). Sekarang tekan “Validasi & siapkan paket”. Belum ada data IR yang dikirim.','ok');
+     status('Pembacaan konteks berhasil. Belum ada data IR yang dikirim ke pedal.','ok');
+     progress(100,'ID/konteks terbaca · belum ada penulisan IR');
+   }catch(error){
+     targetId=null;prepared=null;$('irTransferParameter').value='Belum dibaca';
+     $('irTransferTargetStatus').textContent='ID/konteks belum terbaca. Pengiriman dinonaktifkan.';
+     const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
+     preview('GAGAL MEMBACA KONTEKS IR\n'+message,'warn');
+     status('Tidak dapat membaca konteks IR. Tidak ada data IR yang dikirim.','warn');
+     progress(0,'Pembacaan konteks gagal');
+   }finally{busySet(false);}
+ });
+
  file.addEventListener('change',()=>{
    selectedFile=file.files&&file.files[0]||null;
    invalidate(selectedFile
-     ?'File dipilih. Tekan “Validasi & siapkan paket” untuk memeriksa format dan menyusun paket.'
+     ?(targetId===null?'File dipilih. Sebelum validasi, tekan “Baca ID/konteks IR dari MG-30”.':'File dipilih. Tekan “Validasi & siapkan paket” untuk menyusun paket pada ID konteks yang sudah dibaca.')
      :'Belum ada file yang dipilih. Pilih file WAV terlebih dahulu.');
    if(!selectedFile){
      $('irTransferFileTitle').textContent='Pilih file IR WAV';
-     $('irTransferFileMeta').textContent='WAV 48 kHz · PCM16/24/32 atau Float32';
+     $('irTransferFileMeta').textContent='WAV · PCM 8/16/24/32-bit atau Float32 · 8–192 kHz';
      status('Belum ada file WAV.');
      return;
    }
    $('irTransferFileTitle').textContent=selectedFile.name;
    $('irTransferFileMeta').textContent=(selectedFile.size/1024).toFixed(1)+' KB · siap divalidasi';
    if(!$('irTransferName').dataset.edited){
-     try{$('irTransferName').value=safeName(selectedFile.name);}
-     catch{$('irTransferName').value='Custom IR';}
+     try{$('irTransferName').value=safeName(selectedFile.name);}catch{$('irTransferName').value='Custom IR';}
    }
-   status('File dipilih: '+selectedFile.name+'. Belum ada data yang dikirim ke pedal.','ok');
+   status('File dipilih: '+selectedFile.name+'. '+(targetId===null?'Baca ID/konteks IR dari pedal sebelum menyusun paket.':'ID/konteks IR saat ini: '+targetId+'.'), 'ok');
  });
  $('irTransferName').addEventListener('input',()=>{
    $('irTransferName').dataset.edited='1';
-   invalidate();
+   invalidate('Nama IR diubah. Validasi ulang sebelum mengirim.');
  });
- $('irTransferParameter').addEventListener('input',()=>invalidate());
 
  $('irTransferValidateBtn').addEventListener('click',async()=>{
    if(busy)return;
+   if(targetId===null){
+     preview('VALIDASI DIBLOKIR\nBaca ID/konteks IR dari MG-30 terlebih dahulu. Aplikasi tidak akan menebak parameter transfer.','warn');
+     status('Baca ID/konteks IR dari perangkat sebelum validasi.','warn');
+     return;
+   }
    if(!selectedFile){
      preview('Validasi gagal: pilih file WAV terlebih dahulu.','warn');
      status('Pilih file WAV terlebih dahulu.','warn');
      return;
    }
-   busySet(true);
-   preview('Validasi berjalan: membaca file WAV…');
-   status('Validasi berjalan di perangkat ini. Tidak ada data yang dikirim ke MG-30.');
-   progress(0,'Membaca file WAV…');
-   await nextPaint();
+   busySet(true);preview('Validasi berjalan: membaca file WAV…');status('Validasi berjalan secara lokal. Tidak ada data IR yang dikirim ke MG-30.');progress(0,'Membaca file WAV…');await nextPaint();
    try{
      const wav=readMG30IRWav(await selectedFile.arrayBuffer());
      preview('WAV terbaca: '+wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame. Menghitung normalisasi dan kurva…');
-     progress(20,'Menghitung paket secara lokal…');
-     await nextPaint();
-     const plan=buildMG30IRTransferPlan({
-       samples:wav.samples,
-       fileName:selectedFile.name,
-       irName:$('irTransferName').value,
-       parameter:Number($('irTransferParameter').value)
-     });
+     progress(20,'Menghitung paket secara lokal…');await nextPaint();
+     const plan=buildMG30IRTransferPlan({samples:wav.samples,fileName:selectedFile.name,irName:$('irTransferName').value,parameter:targetId});
      prepared={wav,plan};
-     const detail=wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame · '+(wav.count/wav.rate).toFixed(2)+' detik · 75 paket · gain '+plan.gain.toPrecision(8)+' · nama "'+plan.name+'" · argumen transfer '+plan.parameter+' (0x'+plan.parameter.toString(16).toUpperCase().padStart(2,'0')+')';
+     const detail=wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame · '+(wav.count/wav.rate).toFixed(2)+' detik · 75 paket · gain '+plan.gain.toPrecision(8)+' · nama "'+plan.name+'" · ID/konteks '+plan.parameter+' (0x'+plan.parameter.toString(16).toUpperCase().padStart(2,'0')+')';
      preview('VALIDASI BERHASIL\n'+detail,'ok');
-     progress(100,'75 paket disiapkan secara lokal · belum dikirim');
-     status('Validasi berhasil. Paket hanya disiapkan di aplikasi; belum ada perubahan pada MG-30.','ok');
+     progress(100,'75 paket disiapkan · ID/konteks '+targetId+' · belum dikirim');
+     status('Validasi berhasil. Paket siap untuk ID/konteks yang dibaca dari pedal; belum ada data yang dikirim.','ok');
    }catch(error){
-     prepared=null;
-     const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
-     preview('VALIDASI GAGAL\n'+message,'warn');
-     status('Validasi gagal: '+message,'warn');
-     progress(0,'Validasi gagal');
-   }finally{
-     busySet(false);
-   }
+     prepared=null;const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
+     preview('VALIDASI GAGAL\n'+message,'warn');status('Validasi gagal: '+message,'warn');progress(0,'Validasi gagal');
+   }finally{busySet(false);}
  });
 
  $('irTransferSendBtn').addEventListener('click',async()=>{
-   if(!prepared||busy)return;
+   if(!prepared||busy||targetId===null)return;
    if(!window.NUXNativeMidi?.available){
      status('Pengiriman IR memerlukan APK Android MG30 Studio dengan USB-MIDI native.','warn');
      preview('Paket sudah divalidasi, tetapi pengiriman hanya tersedia di APK Android.');
      return;
    }
    const p=prepared.plan;
-   const warning='Impor IR "'+p.name+'" ke jalur Third Party / User pada MG-30 Gen 2?\n\n75 pesan SysEx memakai rangkaian 10/09/11. Parameter '+p.parameter+' diambil dari capture QuickTone yang diberi label "ir user import", tetapi makna persis dan pemetaan slotnya belum dipastikan. Pastikan Anda punya cadangan dan siap menguji data pada target yang aman.\n\nJika transfer terputus, data dapat terkirim sebagian. ACK bukan bukti bahwa IR muncul pada daftar. Lanjutkan?';
-   if(!confirm(warning)){
-     status('Pengiriman dibatalkan. Tidak ada pesan IR baru yang dikirim.');
-     return;
-   }
-   busySet(true);
-   progress(0,'Menyambungkan USB-MIDI…');
-   preview('Pengiriman berjalan. Jangan cabut kabel OTG atau matikan pedal.');
-   status('Menyambungkan ke MG-30…');
-   await nextPaint();
+   const warning='Impor IR "'+p.name+'" ke jalur Third Party / User pada MG-30 Gen 2?\n\n75 pesan SysEx memakai rangkaian 10/09/11. ID/konteks '+p.parameter+' (0x'+p.parameter.toString(16).toUpperCase()+') dibaca dari 3 balasan 0C 02. Pemetaan tepatnya ke indeks daftar User belum dipastikan. Cadangkan data penting dan pastikan target aman sebelum mengirim.\n\nJika transfer terputus, data dapat terkirim sebagian. ACK bukan bukti bahwa IR muncul pada daftar. Lanjutkan?';
+   if(!confirm(warning)){status('Pengiriman dibatalkan. Tidak ada pesan IR baru yang dikirim.');return;}
+   busySet(true);progress(0,'Menyambungkan USB-MIDI…');preview('Memverifikasi ulang konteks IR sebelum menulis. Jangan cabut kabel OTG.');status('Menyambungkan ke MG-30…');await nextPaint();
+   let startedTransfer=false;
    try{
      const conn=await window.NUXNativeMidi.connect();
-     status('Mengirim paket satu per satu dan menunggu ACK. Jangan cabut USB OTG.');
+     status('Memverifikasi ulang ID/konteks IR melalui 0C 00…');
+     const context=await readMG30IRContext(conn);
+     if(context.id!==targetId){
+       targetId=context.id;$('irTransferParameter').value=String(targetId);prepared=null;
+       $('irTransferTargetStatus').textContent='ID/konteks berubah menjadi '+targetId+' (0x'+targetId.toString(16).toUpperCase()+'). Validasi ulang sebelum mengirim.';
+       preview('PENGIRIMAN DIBATALKAN\nID/konteks berubah sejak validasi. ID terbaru '+targetId+'. Validasi ulang; belum ada paket IR yang dikirim.','warn');
+       status('ID/konteks berubah. Pengiriman dibatalkan sebelum paket IR dikirim.','warn');
+       return;
+     }
+     status('Mengirim paket 10/09/11 satu per satu dan menunggu ACK. Jangan cabut USB OTG.');
+     startedTransfer=true;
      const result=await sendMG30IRTransfer(conn,p,info=>{
        progress(info.completed/75*100,info.phase+': '+info.phaseCompleted+'/'+info.phaseTotal+' · total '+info.completed+'/75 · ACK '+info.ackStatus);
        status('Transfer berlangsung: '+info.completed+' dari 75 paket telah mendapat respons.');
      });
-     progress(100,'75/75 paket mendapat respons');
-     preview('RESPONS PROTOKOL LENGKAP\nMG-30 merespons seluruh 75 paket untuk jalur Third Party / User. Ini belum membuktikan bahwa IR tersimpan atau muncul dalam daftar User. Periksa pemilih IR pada amp/cab dan pastikan opsi USER / Third Party menampilkan nama IR. Jika tidak muncul, jangan coba ID acak; kita perlu membandingkan urutan paket impor User yang sama dari QuickTone.','ok');
-     status('Semua 75 paket mendapat respons protokol untuk Third Party / User IR "'+result.name+'". Penyimpanan dan kemunculan di daftar User belum diverifikasi.','ok');
+     progress(100,'75/75 paket mendapat respons · ID/konteks '+targetId);
+     preview('RESPONS PROTOKOL LENGKAP\nMG-30 merespons seluruh 75 paket pada ID/konteks '+targetId+'. Ini belum membuktikan bahwa IR tersimpan atau muncul di daftar Third Party / User. Periksa pemilih IR pada amp/cab setelah transfer.','ok');
+     status('Semua 75 paket mendapat respons protokol untuk Third Party / User IR "'+result.name+'". Penyimpanan dan kemunculan di daftar belum diverifikasi.','ok');
    }catch(error){
      const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
-     preview('TRANSFER BERHENTI\n'+message+'\nData mungkin sudah terkirim sebagian. Jangan anggap IR berhasil.','warn');
-     status('Transfer berhenti: '+message+'. Jangan anggap IR berhasil; data mungkin parsial.','warn');
-   }finally{
-     busySet(false);
-   }
+     if(!startedTransfer){
+       preview('PRA-PENGIRIMAN GAGAL\n'+message+'\nTidak ada paket IR yang dikirim. Periksa koneksi atau pilih kembali target IR.','warn');
+       status('Tidak dapat memverifikasi konteks perangkat; pengiriman IR tidak dimulai. '+message,'warn');
+     }else{
+       preview('TRANSFER BERHENTI\n'+message+'\nData mungkin sudah terkirim sebagian. Jangan anggap IR berhasil.','warn');
+       status('Transfer berhenti: '+message+'. Jangan anggap IR berhasil; data mungkin parsial.','warn');
+     }
+   }finally{busySet(false);}
  });
+ busySet(false);
 }
 if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initUI,{once:true});else initUI()}
