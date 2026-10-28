@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
+import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer } from './nam-transfer.js';
 
 const T3K = 'https://www.tone3000.com/api/v1';
 const PREFIX = 'mg30-t3k-';
@@ -26,6 +27,8 @@ function stylePanel() {
     .t3k-mark{display:inline-flex;align-items:center;gap:6px;border:1px solid #3a6450;border-radius:999px;padding:4px 9px;color:#b6f2ce;font-size:.72rem;white-space:nowrap}
     .t3k-form{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.t3k-form input{flex:1;min-width:180px}
     .t3k-panel input{box-sizing:border-box;width:100%;padding:11px 12px;border:1px solid var(--border,#39464b);border-radius:10px;background:var(--input,#0b1114);color:inherit}
+    .t3k-panel select{box-sizing:border-box;min-width:140px;flex:1;padding:10px 12px;border:1px solid var(--border,#39464b);border-radius:10px;background:var(--input,#0b1114);color:inherit;font:inherit}
+    .t3k-transfer-actions select{max-width:220px}
     .t3k-panel button{border:1px solid var(--border,#3a454a);border-radius:10px;padding:10px 13px;background:var(--button,#202a2f);color:inherit;font:inherit;font-weight:650;cursor:pointer}
     .t3k-panel button.primary{background:#c5f36b;border-color:#c5f36b;color:#0b1012}.t3k-panel button:disabled{opacity:.45;cursor:not-allowed}
     .t3k-status{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.035);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
@@ -64,7 +67,7 @@ function createPanel() {
     </div>
     <div class="t3k-status" id="t3kStatus" role="status" aria-live="polite">Siap. Masukkan publishable key dari pengaturan developer TONE3000 terlebih dahulu.</div>
     <div id="t3kToneDetails" class="t3k-tone"></div>
-    <p class="t3k-warning">Catatan kompatibilitas: katalog difilter ke format NAM dan arsitektur A2, tetapi hal itu belum menjamin setiap model sesuai dengan batas A2-Lite pada MG-30 Gen 2 firmware 6.0.5. Pengiriman langsung ke perangkat tetap dikunci sampai payload dan protokol transfer tervalidasi.</p>
+    <p class="t3k-warning">Eksperimental untuk MG-30 Gen 2 firmware 6.0.5 (bukan MKII). Transfer A2-Lite sudah cocok byte-per-byte dengan capture QuickTone, tetapi implementasi Android ini belum diuji langsung pada perangkat. Pilih slot secara sengaja dan cadangkan model di slot tersebut terlebih dahulu; proses akan menimpa isi slot.</p>
     <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">Dokumentasi API TONE3000</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">Ketentuan API</a></p>
   `;
   localPanel.insertAdjacentElement('beforebegin', panel);
@@ -272,16 +275,24 @@ async function loadSelectedTone(toneId) {
       const size = typeof model.size === 'number' ? (model.size + ' bytes') : (model.size?.label || model.size?.name || model.size || 'Ukuran tidak tersedia');
       const architecture = model.architecture_version ?? model.architecture ?? 'A2 (difilter API)';
       const fileName = model.name || ('tone-' + id + '-model-' + (index + 1) + '.nam');
+      const slotOptions = '<option value="">Pilih slot tujuan</option>' +
+        Array.from({ length: 10 }, (_, slot) => '<option value="' + (slot + 1) + '">Slot ' + (slot + 1) + '</option>').join('');
       card.innerHTML = '<div class="t3k-card-head"><div><strong>' + safe(fileName) + '</strong><small>Arsitektur: ' + safe(architecture) + ' · Ukuran: ' + safe(size) + '</small></div></div>' +
-        '<small>Model URL hanya digunakan untuk unduhan yang diminta pengguna; katalog tidak disalin atau dimirror.</small>' +
-        '<div class="t3k-actions"><button class="primary" type="button" data-t3k-save="' + index + '">Simpan model di aplikasi</button>' +
-        '<button type="button" disabled title="Menunggu validasi format transfer">Kirim ke MG-30 (menunggu protokol)</button></div>';
+        '<small>Model hanya diunduh saat kamu memilih Simpan atau Kirim. Transfer menargetkan submodel A2-Lite 1.871 bobot.</small>' +
+        '<div class="t3k-actions"><button class="primary" type="button" data-t3k-save="' + index + '">Simpan model di aplikasi</button></div>' +
+        '<div class="t3k-actions t3k-transfer-actions"><select data-t3k-slot="' + index + '" aria-label="Slot tujuan untuk ' + safe(fileName) + '">' + slotOptions + '</select>' +
+        '<button type="button" data-t3k-send="' + index + '"' + (Native() ? '' : ' disabled title="Transfer langsung tersedia di aplikasi Android"') + '>Kirim ke MG-30</button></div>';
       holder.appendChild(card);
     });
     holder.querySelectorAll('[data-t3k-save]').forEach(button => {
       button.addEventListener('click', () => saveModel(Number(button.dataset.t3kSave), button));
     });
-    setStatus('Tone siap. Pilih model untuk menyimpan file ke aplikasi. Pengiriman ke perangkat belum diaktifkan karena payload transfer belum tervalidasi.');
+    holder.querySelectorAll('[data-t3k-send]').forEach(button => {
+      button.addEventListener('click', () => sendModel(Number(button.dataset.t3kSend), button));
+    });
+    setStatus(Native()
+      ? 'Tone siap. Pilih slot tujuan, cadangkan model lama di slot tersebut, lalu gunakan Kirim ke MG-30 untuk transfer A2-Lite.'
+      : 'Tone siap. Simpan model bisa dilakukan di browser; transfer langsung membutuhkan APK Android dan USB OTG.');
   } catch (error) {
     setStatus('Gagal memuat tone/model: ' + (error?.message || error));
   }
@@ -334,6 +345,65 @@ async function saveModel(index, button) {
     setStatus('Gagal menyimpan model: ' + (error?.message || error));
   } finally {
     if (button) { button.disabled = false; button.textContent = 'Simpan model di aplikasi'; }
+  }
+}
+
+async function sendModel(index, button) {
+  const model = selectedTone?.models?.[index];
+  if (!model?.model_url) {
+    setStatus('URL model tidak tersedia untuk pilihan ini.');
+    return;
+  }
+  if (!Native()) {
+    setStatus('Transfer langsung hanya tersedia di APK Android dengan koneksi USB OTG ke MG-30.');
+    return;
+  }
+  const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
+  const slotNumber = Number(slotSelect?.value || 0);
+  if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
+    setStatus('Pilih slot tujuan 1–10 sebelum memulai transfer.');
+    return;
+  }
+  const rawLabel = String(model.name || ('TONE3000 tone ' + selectedTone.id + ' model ' + (index + 1))).replace(/\.(nam|namb)$/i, '').trim();
+  if (!window.confirm('Kirim "' + rawLabel + '" ke MG-30 slot ' + slotNumber + '? Isi slot tersebut akan ditimpa. Pastikan kamu sudah mencadangkan model lama di slot ini.')) return;
+
+  if (button) { button.disabled = true; button.textContent = 'Menyiapkan transfer…'; }
+  if (slotSelect) slotSelect.disabled = true;
+  try {
+    setStatus('Mengunduh model dari TONE3000…');
+    const token = await ensureAccessToken();
+    const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+    if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
+    const blob = await response.blob();
+    if (!blob.size) throw new Error('File model yang diterima kosong.');
+    const modelBytes = await blob.arrayBuffer();
+    const weightBytes = extractMG30A2LiteWeights(modelBytes);
+    const plan = buildMG30A2LiteTransferPlan(weightBytes, rawLabel, slotNumber);
+
+    let fileName = String(model.name || ('tone-' + selectedTone.id + '-model-' + (index + 1) + '.nam')).trim();
+    fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
+    if (!/\.(nam|namb|image)$/i.test(fileName)) fileName += '.nam';
+    const saved = await NativeMidi.saveModel({ fileName, base64: toBase64(modelBytes) });
+    setStatus('Model valid (' + weightBytes.length + ' byte bobot A2-Lite) dan tersimpan sebagai ' + saved.fileName + '. Membuka USB-MIDI…');
+
+    const connection = await window.NUXNativeMidi.connect();
+    const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
+      if (progress.stage === 'write') {
+        setStatus('Transfer ke slot ' + slotNumber + ': ACK frame ' + progress.completed + '/' + progress.total + ' (' + progress.label + '). Jangan cabut USB OTG.');
+      } else if (progress.stage === 'retry') {
+        setStatus('ACK belum diterima untuk ' + progress.label + '; mencoba ulang ' + progress.attempt + '. Jangan cabut USB OTG.');
+      } else if (progress.stage === 'readback') {
+        setStatus('Bobot sudah dikirim. Memeriksa metadata slot MG-30: putaran ' + progress.round + '/2, slot ' + progress.slot + '/10.');
+      }
+    });
+    setStatus('Transfer selesai ke slot ' + result.slotNumber + ' (' + result.label + '). Semua ' +
+      result.acknowledgedWriteFrames + ' frame tulis mendapat ACK dan nama slot terverifikasi pada dua putaran readback. Bobot tidak dapat dibaca kembali oleh protokol ini; coba preset di perangkat untuk validasi akhir.');
+  } catch (error) {
+    setStatus('Transfer tidak selesai: ' + (error?.message || error) +
+      '. Model sudah diunduh/disimpan bila tahap itu berhasil. Jika terhenti saat penulisan, slot tujuan mungkin berisi data parsial; periksa perangkat dan ulangi transfer ke slot yang sama setelah koneksi stabil.');
+  } finally {
+    if (button) { button.disabled = false; button.textContent = 'Kirim ke MG-30'; }
+    if (slotSelect) slotSelect.disabled = false;
   }
 }
 
