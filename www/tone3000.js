@@ -31,6 +31,7 @@ function stylePanel() {
     .t3k-panel input{box-sizing:border-box;width:100%;padding:11px 12px;border:1px solid var(--border,#39464b);border-radius:10px;background:var(--input,#0b1114);color:inherit}
     .t3k-panel select{box-sizing:border-box;min-width:140px;flex:1;padding:10px 12px;border:1px solid var(--border,#39464b);border-radius:10px;background:var(--input,#0b1114);color:inherit;font:inherit}
     .t3k-transfer-actions select{max-width:220px}
+    .t3k-redirect-note{display:block;margin:-4px 0 12px;color:var(--muted,#a6b1b4);font-size:.75rem;line-height:1.5;overflow-wrap:anywhere}
     .t3k-panel button{border:1px solid var(--border,#3a454a);border-radius:10px;padding:10px 13px;background:var(--button,#202a2f);color:inherit;font:inherit;font-weight:650;cursor:pointer}
     .t3k-panel button.primary{background:#c5f36b;border-color:#c5f36b;color:#0b1012}.t3k-panel button:disabled{opacity:.45;cursor:not-allowed}
     .t3k-status{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.035);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
@@ -62,6 +63,14 @@ function createPanel() {
       <input id="t3kClientId" type="password" autocomplete="off" spellcheck="false" placeholder="t3k_pub_…">
       <button id="t3kSaveKey" type="button">Simpan key</button>
     </div>
+    <label for="t3kRedirectUri"><small>Redirect URI Android (harus sama persis dengan TONE3000 API Settings)</small></label>
+    <div class="t3k-form">
+      <select id="t3kRedirectUri" aria-label="Pilih Redirect URI yang terdaftar di TONE3000">
+        <option value="tone3000-example://oauth/callback">tone3000-example://oauth/callback · URI contoh resmi</option>
+        <option value="mg30studio://oauth/callback">mg30studio://oauth/callback · URI MG30 Studio lama</option>
+      </select>
+    </div>
+    <small class="t3k-redirect-note">Penting: daftarkan salah satu URI di atas pada TONE3000 → Settings → API Keys. Pilih URI yang persis sama dengan daftar redirect key-mu; tanpa kecocokan, TONE3000 tidak bisa mengembalikan aplikasi.</small>
     <div class="t3k-form t3k-target-row">
       <label for="t3kTargetSlot">Slot tujuan MG-30</label>
       <select id="t3kTargetSlot" aria-label="Pilih slot tujuan TONE3000">
@@ -85,6 +94,12 @@ function createPanel() {
   panelReady = true;
 
   $('t3kClientId').value = localStorage.getItem(PREFIX + 'client_id') || '';
+  $('t3kRedirectUri').value = localStorage.getItem(PREFIX + 'redirect_uri_config') || 'tone3000-example://oauth/callback';
+  $('t3kRedirectUri').addEventListener('change', () => {
+    const uri = $('t3kRedirectUri').value;
+    localStorage.setItem(PREFIX + 'redirect_uri_config', uri);
+    setStatus('Redirect URI dipilih: ' + uri + '. Pastikan URI ini terdaftar persis di pengaturan API key TONE3000 sebelum membuka katalog.');
+  });
   $('t3kTargetSlot').value = localStorage.getItem(PREFIX + 'target_slot') || '';
   $('t3kTargetSlot').addEventListener('change', () => {
     const slot = Number($('t3kTargetSlot').value || 0);
@@ -131,7 +146,10 @@ async function sha256Base64Url(value) {
 }
 
 function getRedirectUri() {
-  if (Native()) return 'mg30studio://oauth/callback';
+  if (Native()) {
+    return localStorage.getItem(PREFIX + 'redirect_uri_config') ||
+      'tone3000-example://oauth/callback';
+  }
   const url = new URL(window.location.href);
   url.search = '';
   url.hash = '';
@@ -181,12 +199,12 @@ async function startSelectFlow() {
       prompt: 'select_tone',
       format: 'nam',
       architecture: '2',
-      gears: 'amp_amp-cab',
+      gears: 'amp-cab',
       menubar: 'true',
       locale: 'id',
     });
     const url = 'https://www.tone3000.com/api/v1/oauth/authorize?' + params.toString();
-    setStatus('Membuka TONE3000. Setelah memilih tone, aplikasi akan kembali dan otomatis mengimpor model yang cocok ke slot ' + (targetSlot || 'yang dipilih') + '…');
+    setStatus('Membuka TONE3000 dengan redirect URI ' + redirectUri + '. Setelah memilih tone, aplikasi akan kembali dan mengimpor model cocok ke slot ' + (targetSlot || 'yang dipilih') + '. Pastikan URI ini terdaftar pada API key.');
     if (Native()) await Browser.open({ url, presentationStyle: 'fullscreen' });
     else window.location.assign(url);
   } catch (error) {
@@ -727,6 +745,19 @@ async function initTone3000() {
       if (launch?.url) await processCallback(launch.url);
     } catch (error) {
       console.warn('TONE3000 launch URL check failed', error);
+    }
+    try {
+      await App.addListener('appStateChange', async event => {
+        if (!event?.isActive) return;
+        try {
+          const launch = await App.getLaunchUrl();
+          if (launch?.url) await processCallback(launch.url);
+        } catch (error) {
+          console.warn('TONE3000 resume URL check failed', error);
+        }
+      });
+    } catch (error) {
+      console.warn('TONE3000 appStateChange listener failed', error);
     }
   }
   await processCallback(window.location.href);

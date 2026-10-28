@@ -82,6 +82,19 @@ if (!manifest.includes('android:scheme="mg30studio"')) {
     '            </intent-filter>\n        ' + end
   );
 }
+
+// The selected native redirect URI must also be registered on the TONE3000 API key.
+// Support the officially documented example scheme alongside the previous app-specific scheme.
+if (!manifest.includes('android:scheme="tone3000-example"')) {
+  manifest = manifest.replace(/(<activity\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\s\S]*?)(<\/activity>)/, (whole, start, end) =>
+    start + '\n            <intent-filter>\n' +
+    '                <action android:name="android.intent.action.VIEW" />\n' +
+    '                <category android:name="android.intent.category.DEFAULT" />\n' +
+    '                <category android:name="android.intent.category.BROWSABLE" />\n' +
+    '                <data android:scheme="tone3000-example" android:host="oauth" android:pathPrefix="/callback" />\n' +
+    '            </intent-filter>\n        ' + end
+  );
+}
 writeFileSync(manifestPath, manifest, 'utf8');
 
 const stylesPath = resolve(androidDir, 'app/src/main/res/values/styles.xml');
