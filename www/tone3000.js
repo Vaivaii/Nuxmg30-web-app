@@ -302,7 +302,7 @@ async function loadSelectedTone(toneId, options = {}) {
       const slotOptions = '<option value="">Pilih slot tujuan</option>' +
         Array.from({ length: 10 }, (_, slot) => '<option value="' + (slot + 1) + '">Slot ' + (slot + 1) + '</option>').join('');
       card.innerHTML = '<div class="t3k-card-head"><div><strong>' + safe(fileName) + '</strong><small>Arsitektur: ' + safe(architecture) + ' · Ukuran: ' + safe(size) + '</small></div></div>' +
-        '<small>Model hanya diunduh saat kamu memilih Simpan atau Kirim. Transfer menargetkan submodel A2-Lite 1.871 bobot.</small>' +
+        '<small>Setelah tone dipilih, aplikasi mencoba mengunduh model A2-Lite yang cocok untuk MG-30. Kamu juga bisa memakai tombol Kirim ke MG-30 untuk memilih model dan slot secara manual.</small>' +
         '<div class="t3k-actions"><button class="primary" type="button" data-t3k-save="' + index + '">Simpan model di aplikasi</button></div>' +
         '<div class="t3k-actions t3k-transfer-actions"><select data-t3k-slot="' + index + '" aria-label="Slot tujuan untuk ' + safe(fileName) + '">' + slotOptions + '</select>' +
         '<button type="button" data-t3k-send="' + index + '"' + (Native() ? '' : ' disabled title="Transfer langsung tersedia di aplikasi Android"') + '>Kirim ke MG-30</button></div>';
