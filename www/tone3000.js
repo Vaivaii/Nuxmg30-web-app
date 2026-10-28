@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
-import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer, safeMG30SlotLabel } from './nam-transfer.js';
+import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer, safeMG30SlotLabel, readMG30NAMSlotNames } from './nam-transfer.js';
 
 const T3K = 'https://www.tone3000.com/api/v1';
 const PREFIX = 'mg30-t3k-';
@@ -11,6 +11,7 @@ const $ = id => document.getElementById(id);
 let panelReady = false;
 let selectedTone = null;
 const modelBytesCache = new WeakMap();
+window.NUXNAMTransfer = Object.freeze({ readMG30NAMSlotNames });
 
 const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -145,12 +146,19 @@ async function startSelectFlow() {
   }
   const targetSlot = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
   if (Native() && (!Number.isInteger(targetSlot) || targetSlot < 1 || targetSlot > 10)) {
-    setStatus('Pilih slot tujuan 1–10 terlebih dahulu. Setelah memilih tone, aplikasi akan mengunduh dan mengirim model yang cocok ke slot itu.');
+    setStatus('Pilih slot tujuan 1–10 terlebih dahulu.');
     $('t3kTargetSlot')?.focus();
     return;
   }
   if (Number.isInteger(targetSlot) && targetSlot >= 1 && targetSlot <= 10) {
     localStorage.setItem(PREFIX + 'target_slot', String(targetSlot));
+  }
+  if (Native() && !window.confirm(
+    'Setelah memilih tone di TONE3000, aplikasi akan mengunduh model A2-Lite yang cocok dan langsung mengimpornya ke MG-30 slot ' +
+    targetSlot + '. Slot ini akan ditimpa. Lanjutkan?'
+  )) {
+    setStatus('Pemilihan tone dibatalkan. Tidak ada model yang ditulis ke perangkat.');
+    return;
   }
   try {
     $('t3kChooseTone').disabled = true;
@@ -163,7 +171,6 @@ async function startSelectFlow() {
     localStorage.setItem(PREFIX + 'code_verifier', verifier);
     localStorage.setItem(PREFIX + 'state', state);
     localStorage.setItem(PREFIX + 'redirect_uri', redirectUri);
-
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -179,18 +186,16 @@ async function startSelectFlow() {
       locale: 'id',
     });
     const url = 'https://www.tone3000.com/api/v1/oauth/authorize?' + params.toString();
-    setStatus('Membuka katalog TONE3000. Setelah memilih tone, aplikasi akan kembali dan memuat metadata model.');
-    if (Native()) {
-      await Browser.open({ url, presentationStyle: 'fullscreen' });
-    } else {
-      window.location.assign(url);
-    }
+    setStatus('Membuka TONE3000. Setelah memilih tone, aplikasi akan kembali dan otomatis mengimpor model yang cocok ke slot ' + (targetSlot || 'yang dipilih') + '…');
+    if (Native()) await Browser.open({ url, presentationStyle: 'fullscreen' });
+    else window.location.assign(url);
   } catch (error) {
     setStatus('Gagal membuka TONE3000: ' + (error?.message || error));
   } finally {
     if ($('t3kChooseTone')) $('t3kChooseTone').disabled = false;
   }
 }
+
 
 async function exchangeAuthorizationCode(code) {
   const clientId = localStorage.getItem(PREFIX + 'client_id');
@@ -275,8 +280,13 @@ async function loadSelectedTone(toneId, options = {}) {
       apiJSON('/models?tone_id=' + encodeURIComponent(id) + '&architecture=2&page=1&page_size=50'),
     ]);
     const tone = toneBody?.data || toneBody?.tone || toneBody;
-    const allModels = Array.isArray(modelBody?.data) ? modelBody.data : (Array.isArray(modelBody?.models) ? modelBody.models : []);
-    const models = allModels.filter(item => item && item.model_url);
+    const allModels = Array.isArray(modelBody?.data) ? modelBody.data
+      : Array.isArray(modelBody?.models) ? modelBody.models
+      : Array.isArray(modelBody?.items) ? modelBody.items
+      : Array.isArray(modelBody?.data?.items) ? modelBody.data.items
+      : [];
+    const models = allModels.filter(item => item && (item.model_url || item.modelUrl));
+    models.forEach(model => { if (!model.model_url && model.modelUrl) model.model_url = model.modelUrl; });
     selectedTone = { id, tone, models };
     localStorage.setItem(PREFIX + 'selected_tone_id', id);
     const title = tone?.name || tone?.title || ('TONE3000 tone #' + id);
@@ -385,26 +395,30 @@ async function saveModel(index, button) {
   }
 }
 
-async function sendModel(index, button) {
+async function sendModel(index, button, options = {}) {
   const model = selectedTone?.models?.[index];
   if (!model?.model_url) {
     setStatus('URL model tidak tersedia untuk pilihan ini.');
-    return;
+    return false;
   }
   if (!Native()) {
     setStatus('Transfer langsung hanya tersedia di APK Android dengan koneksi USB OTG ke MG-30.');
-    return;
+    return false;
   }
   const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
-  const slotNumber = Number(slotSelect?.value || 0);
+  const slotNumber = Number(slotSelect?.value || $('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
   if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
     setStatus('Pilih slot tujuan 1–10 sebelum memulai transfer.');
-    return;
+    return false;
   }
-  const rawLabel = String(model.name || ('TONE3000 tone ' + selectedTone.id + ' model ' + (index + 1))).replace(/\.(nam|namb)$/i, '').trim();
-  if (!window.confirm('Kirim "' + rawLabel + '" ke MG-30 slot ' + slotNumber + '? Isi slot tersebut akan ditimpa. Pastikan kamu sudah mencadangkan model lama di slot ini.')) {
+  const rawLabel = String(model.name || ('TONE3000 tone ' + selectedTone.id + ' model ' + (index + 1)))
+    .replace(/\.(nam|namb)$/i, '').trim();
+  if (!options.confirmed && !window.confirm(
+    'Kirim "' + rawLabel + '" ke MG-30 slot ' + slotNumber +
+    '? Isi slot tersebut akan ditimpa. Pastikan model lama sudah dicadangkan.'
+  )) {
     setStatus('Transfer dibatalkan. Model belum ditulis ke slot ' + slotNumber + '.');
-    return;
+    return false;
   }
 
   if (button) { button.disabled = true; button.textContent = 'Menyiapkan transfer…'; }
@@ -412,9 +426,8 @@ async function sendModel(index, button) {
   try {
     setStatus('Mengunduh model dari TONE3000…');
     let modelBytes = modelBytesCache.get(model);
-    if (modelBytes) {
-      modelBytesCache.delete(model);
-    } else {
+    if (modelBytes) modelBytesCache.delete(model);
+    else {
       const token = await ensureAccessToken();
       const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
       if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
@@ -422,36 +435,46 @@ async function sendModel(index, button) {
       if (!blob.size) throw new Error('File model yang diterima kosong.');
       modelBytes = await blob.arrayBuffer();
     }
+
     const weightBytes = extractMG30A2LiteWeights(modelBytes);
     const plan = buildMG30A2LiteTransferPlan(weightBytes, rawLabel, slotNumber);
-
     let fileName = String(model.name || ('tone-' + selectedTone.id + '-model-' + (index + 1) + '.nam')).trim();
     fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
     if (!/\.(nam|namb|image)$/i.test(fileName)) fileName += '.nam';
-    const saved = await NativeMidi.saveModel({ fileName, base64: toBase64(modelBytes) });
-    setStatus('Model valid (' + weightBytes.length + ' byte bobot A2-Lite) dan tersimpan sebagai ' + saved.fileName + '. Membuka USB-MIDI…');
 
+    const saved = await NativeMidi.saveModel({ fileName, base64: toBase64(modelBytes) });
+    setStatus('Model valid (' + weightBytes.length + ' byte bobot A2-Lite), tersimpan sebagai ' +
+      saved.fileName + '. Membuka USB-MIDI…');
     const connection = await window.NUXNativeMidi.connect();
     const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
       if (progress.stage === 'write') {
-        setStatus('Transfer ke slot ' + slotNumber + ': ACK frame ' + progress.completed + '/' + progress.total + ' (' + progress.label + '). Jangan cabut USB OTG.');
+        setStatus('Transfer ke slot ' + slotNumber + ': ACK frame ' + progress.completed + '/' +
+          progress.total + ' (' + progress.label + '). Jangan cabut USB OTG.');
       } else if (progress.stage === 'retry') {
         setStatus('ACK belum diterima untuk ' + progress.label + '; mencoba ulang ' + progress.attempt + '. Jangan cabut USB OTG.');
       } else if (progress.stage === 'readback') {
-        setStatus('Bobot sudah dikirim. Memeriksa metadata slot MG-30: putaran ' + progress.round + '/2, slot ' + progress.slot + '/10.');
+        setStatus('Bobot sudah dikirim. Sinkronisasi nama perangkat: putaran ' + progress.round +
+          '/2, slot ' + progress.slot + '/10.');
       }
     });
+    window.dispatchEvent(new CustomEvent('mg30-nam-names-sync', {
+      detail: { slots: result.slots, source: 'transfer' }
+    }));
     setStatus('Transfer selesai ke slot ' + result.slotNumber + ' (' + result.label + '). Semua ' +
-      result.acknowledgedWriteFrames + ' frame tulis mendapat ACK dan nama slot terverifikasi pada dua putaran readback. Bobot tidak dapat dibaca kembali oleh protokol ini; coba preset di perangkat untuk validasi akhir.');
+      result.acknowledgedWriteFrames + ' frame tulis mendapat ACK; nama slot disinkronkan dari MG-30. ' +
+      'Isi bobot tidak bisa dibaca balik oleh protokol ini, jadi suara tetap perlu diperiksa.');
+    return true;
   } catch (error) {
     setStatus('Transfer tidak selesai: ' + (error?.message || error) +
-      '. Model sudah diunduh/disimpan bila tahap itu berhasil. Jika terhenti saat penulisan, slot tujuan mungkin berisi data parsial; periksa perangkat dan ulangi transfer ke slot yang sama setelah koneksi stabil.');
+      '. Model sudah diunduh/disimpan bila tahap itu berhasil. Jika penulisan sudah dimulai, slot mungkin berisi data parsial; periksa perangkat sebelum mencoba lagi.');
+    return false;
   } finally {
     if (button) { button.disabled = false; button.textContent = 'Kirim ke MG-30'; }
     if (slotSelect) slotSelect.disabled = false;
   }
-
 }
+
+async function autoImportFirstCompatibleModel
 
 async function autoImportFirstCompatibleModel(slotNumber) {
   if (!Native() || !window.NUXNativeMidi) {
@@ -463,37 +486,50 @@ async function autoImportFirstCompatibleModel(slotNumber) {
     setStatus('Pilih slot tujuan 1–10 sebelum transfer.');
     return;
   }
-  const limit = Math.min(models.length, 10);
+  if (!models.length) {
+    setStatus('Tone dipilih, tetapi TONE3000 tidak mengembalikan daftar file model. Periksa akses akun/API lalu coba lagi.');
+    return;
+  }
+
   let lastError = '';
-  for (let index = 0; index < limit; index++) {
+  let candidatesChecked = 0;
+  for (let index = 0; index < models.length; index++) {
     const model = models[index];
     if (!model?.model_url) continue;
     const label = String(model.name || ('model ' + (index + 1)));
+    let modelBytes;
     try {
-      setStatus('Tone dipilih. Mengunduh dan memeriksa model ' + (index + 1) + '/' + limit +
-        ' (' + label + ') untuk mencari A2-Lite yang cocok…');
+      candidatesChecked++;
+      setStatus('Tone dipilih. Mengunduh dan memeriksa model ' + (index + 1) + '/' +
+        models.length + ' (' + label + ') untuk mencari A2-Lite yang cocok…');
       const token = await ensureAccessToken();
       const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
       if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
-      const modelBytes = await response.arrayBuffer();
+      modelBytes = await response.arrayBuffer();
       if (!modelBytes.byteLength) throw new Error('File model yang diterima kosong.');
       extractMG30A2LiteWeights(modelBytes);
-      modelBytesCache.set(model, modelBytes);
-      const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
-      if (slotSelect) slotSelect.value = String(slotNumber);
-      const button = document.querySelector('[data-t3k-send="' + index + '"]');
-      setStatus('Model A2-Lite yang cocok ditemukan. Meminta konfirmasi sebelum menimpa slot ' + slotNumber + '…');
-      await sendModel(index, button);
-      return;
     } catch (error) {
       modelBytesCache.delete(model);
       lastError = label + ': ' + (error?.message || error);
+      continue;
     }
+    modelBytesCache.set(model, modelBytes);
+    const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
+    if (slotSelect) slotSelect.value = String(slotNumber);
+    const button = document.querySelector('[data-t3k-send="' + index + '"]');
+    setStatus('Model A2-Lite cocok ditemukan (' + label + '). Mengimpor langsung ke slot ' + slotNumber + '…');
+    // User confirmed the target-slot overwrite before the TONE3000 browser opened.
+    // Do not require a second confirmation after returning from the selected tone.
+    await sendModel(index, button, { confirmed: true });
+    return;
   }
-  setStatus('Tone berhasil dipilih, tetapi tidak ditemukan file A2-Lite 1.871 bobot yang bisa diimpor dari ' +
-    limit + ' model pertama. ' + (lastError ? 'Pemeriksaan terakhir: ' + lastError + '. ' : '') +
-    'Coba pilih tone NAM A2 lain atau unduh file .nam dan gunakan impor file lokal.');
+  setStatus('Tone berhasil dipilih, tetapi dari ' + candidatesChecked +
+    ' file model yang diperiksa tidak ditemukan A2-Lite native (1.871 bobot). ' +
+    (lastError ? 'Detail: ' + lastError + '. ' : '') +
+    'Coba tone NAM A2 lain atau gunakan impor file lokal.');
 }
+
+let selectedLocalNamFile = null;
 
 let selectedLocalNamFile = null;
 
@@ -611,25 +647,39 @@ function initLocalNamImport() {
   renderSelection(null);
 }
 
+const handledCallbackStates = new Set();
 async function processCallback(rawUrl) {
   let url;
-  try { url = new URL(rawUrl); } catch { return; }
-  const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
-  const toneId = url.searchParams.get('tone_id');
-  const error = url.searchParams.get('error');
-  const canceled = url.searchParams.get('canceled') === 'true';
-  const isCallback = code || state || toneId || error || canceled;
+  try { url = new URL(rawUrl); } catch {
+    if ($('t3kStatus')) setStatus('Callback TONE3000 tidak terbaca sebagai URL yang valid.');
+    return;
+  }
+  const query = new URLSearchParams(url.search || '');
+  const hash = new URLSearchParams(String(url.hash || '').replace(/^#\\??/, ''));
+  const param = name => query.get(name) || hash.get(name);
+  const code = param('code');
+  const state = param('state');
+  const toneId = param('tone_id') || param('toneId');
+  const error = param('error');
+  const errorDescription = param('error_description');
+  const canceled = param('canceled') === 'true';
+  const isCallback = Boolean(code || state || toneId || error || canceled);
   if (!isCallback) return;
   if (!panelReady && !createPanel()) return;
+  if (state && handledCallbackStates.has(state)) return;
 
   const expected = localStorage.getItem(PREFIX + 'state');
   if (!state || !expected || state !== expected) {
-    setStatus('Callback TONE3000 ditolak karena state tidak cocok. Mulai ulang proses pilih tone.');
+    setStatus('Callback TONE3000 diterima, tetapi parameter state tidak cocok. Proses dihentikan demi keamanan. Buka kembali TONE3000 dari aplikasi.');
     return;
   }
+  handledCallbackStates.add(state);
+  if (handledCallbackStates.size > 8) {
+    handledCallbackStates.delete(handledCallbackStates.values().next().value);
+  }
+
   try {
-    if (error) throw new Error(url.searchParams.get('error_description') || error);
+    if (error) throw new Error(errorDescription || error);
     if (code) await exchangeAuthorizationCode(code);
     localStorage.removeItem(PREFIX + 'state');
     localStorage.removeItem(PREFIX + 'code_verifier');
@@ -641,15 +691,27 @@ async function processCallback(rawUrl) {
       clean.hash = '';
       history.replaceState({}, document.title, clean.href);
     }
-    if (canceled) { setStatus('Pemilihan tone dibatalkan. Kamu bisa membuka katalog lagi kapan saja.'); return; }
+    if (canceled) {
+      setStatus('Pemilihan tone dibatalkan. Tidak ada model yang ditulis ke perangkat.');
+      return;
+    }
     if (toneId) {
       const targetSlot = Number(localStorage.getItem(PREFIX + 'target_slot') || $('t3kTargetSlot')?.value || 0);
-      await loadSelectedTone(toneId, { autoImportSlot: Native() && targetSlot >= 1 && targetSlot <= 10 ? targetSlot : 0 });
-    } else setStatus('Autentikasi TONE3000 berhasil. Pilih tone dari katalog untuk memuat model.');
+      if (Native() && (!Number.isInteger(targetSlot) || targetSlot < 1 || targetSlot > 10)) {
+        setStatus('Tone TONE3000 terpilih (ID ' + toneId + '), tetapi slot tujuan tidak ditemukan. Pilih slot 1–10 dan ulangi.');
+        return;
+      }
+      setStatus('Callback berhasil. Memuat tone ' + toneId + ' untuk impor ke slot ' + (targetSlot || '—') + '…');
+      await loadSelectedTone(toneId, { autoImportSlot: Native() ? targetSlot : 0 });
+    } else {
+      setStatus('TONE3000 kembali tanpa tone_id. Login bisa berhasil, tetapi pilihan tone tidak dikirim di callback. Coba ulangi pemilihan tone; jika berulang, periksa redirect URI mg30studio://oauth/callback pada pengaturan API TONE3000.');
+    }
   } catch (callbackError) {
-    setStatus('Autentikasi TONE3000 gagal: ' + (callbackError?.message || callbackError));
+    setStatus('Autentikasi/impor TONE3000 gagal: ' + (callbackError?.message || callbackError));
   }
 }
+
+async function initTone3000()
 
 async function initTone3000() {
   if (!createPanel()) {
@@ -658,11 +720,19 @@ async function initTone3000() {
   }
   initLocalNamImport();
   if (Native()) {
-    App.addListener('appUrlOpen', event => processCallback(event?.url));
+    try {
+      await App.addListener('appUrlOpen', event => {
+        if (event?.url) void processCallback(event.url);
+      });
+    } catch (error) {
+      setStatus('Listener callback Android gagal dipasang: ' + (error?.message || error));
+    }
     try {
       const launch = await App.getLaunchUrl();
       if (launch?.url) await processCallback(launch.url);
-    } catch {}
+    } catch (error) {
+      console.warn('TONE3000 launch URL check failed', error);
+    }
   }
   await processCallback(window.location.href);
   const savedId = localStorage.getItem(PREFIX + 'selected_tone_id');
