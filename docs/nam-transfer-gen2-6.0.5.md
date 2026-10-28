@@ -71,12 +71,23 @@ For both Friedman/slot 9 and Mesa/slot 10, the test regenerated all outgoing mes
 
 This resolves the A2-Lite weight packing. The remaining risk is not the encoding: it is safely reproducing the full native transaction in the Android application, including ACK wait/retry timing, metadata template policy for downloaded TONE3000 models, error/cancel handling, and confirming on hardware that slot contents/name are correct. QuickTone's duplicate offset-zero behavior also still needs a deliberate implementation/test decision.
 
-## Next steps
+## Current app implementation on the isolated branch
 
-1. Add the codec/transaction builder in the isolated app branch, with independent tests against both captures before enabling the UI.
-2. Implement per-frame ACK matching and timeout/cancel handling; only mark success after all data ACKs and slot readback validation.
-3. Decide whether to preserve a known-safe metadata template or identify all metadata fields and their meanings.
-4. Perform a physical MG-30 Gen 2 test with a user-selected slot before enabling normal use.
+The following implementation has now been added to this branch:
+- www/nam-transfer.js contains the NAM/.namb A2-Lite extraction, frame builder, ACK matching, retry/timeout handling, two-round metadata readback, and slot-name check.
+- www/tone3000.js adds a native-only “Kirim ke MG-30” action with a required slot choice and explicit overwrite confirmation. It downloads and keeps the original selected model file in app-private storage before attempting transfer.
+- www/native-midi.js reuses an already-open USB-MIDI connection instead of reopening ports when the TONE3000 panel initiates the send.
+
+The send button is now enabled in the native Android app as an **experimental transfer action**, but the app has not yet been tested against a physical MG-30 with this implementation. The two captures validate the codec and transaction shape offline; they do not prove that Android's MIDI transport timing or the hardcoded 96-byte metadata tail will behave identically on a real device. A failed transfer may leave a partially written target slot.
+
+The success status specifically verifies every write ACK plus stable slot metadata and matching slot name across two readback rounds. Since the device protocol does not read the model weights back, success must not be described as byte-verified model storage. The user should audition the new slot before relying on it.
+
+## Remaining hardware validation
+
+1. Build the APK from android/nam-transfer-tone3000 and install it on the Android device connected to the original MG-30 Gen 2.
+2. Back up or choose a disposable target slot; explicitly confirm the selected slot in the UI.
+3. Transfer one known A2-Lite model and observe ACK progress, completion, and the slot label on the device/QuickTone.
+4. Audition the slot. Only after this end-to-end test should the action be treated as stable.
 
 ## References
 
