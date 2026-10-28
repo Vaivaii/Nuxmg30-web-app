@@ -58,20 +58,17 @@ export function readMG30IRWav(input){
  if(count<=0||targetCount<N)throw Error('WAV terlalu pendek. Setelah dikonversi ke 48 kHz tersedia sekitar '+targetCount+' frame; dibutuhkan sedikitnya '+N+' frame.');
  const mono=new Float32Array(count);
  for(let i=0;i<count;i++){
-  const base=dp+i*fmt.align;
-  let mixed=0;
-  for(let ch=0;ch<fmt.channels;ch++){
-   const p=base+ch*bps;
-   let x;
-   if(fmt.format===3)x=v.getFloat32(p,true);
-   else if(fmt.bits===8)x=(b[p]-128)/128;
-   else if(fmt.bits===16)x=v.getInt16(p,true)/32768;
-   else if(fmt.bits===24){x=b[p]|(b[p+1]<<8)|(b[p+2]<<16);if(x&0x800000)x-=0x1000000;x/=8388608}
-   else x=v.getInt32(p,true)/2147483648;
-   if(!Number.isFinite(x))throw Error('Sampel WAV tidak valid pada frame '+i+'.');
-   mixed+=x;
-  }
-  mono[i]=f32(mixed/fmt.channels);
+  // QuickTone's second known stereo capture matches the FIRST (left) channel,
+  // not an average of both channels. Keep the original channel convention.
+  const p=dp+i*fmt.align;
+  let x;
+  if(fmt.format===3)x=v.getFloat32(p,true);
+  else if(fmt.bits===8)x=(b[p]-128)/128;
+  else if(fmt.bits===16)x=v.getInt16(p,true)/32768;
+  else if(fmt.bits===24){x=b[p]|(b[p+1]<<8)|(b[p+2]<<16);if(x&0x800000)x-=0x1000000;x/=8388608}
+  else x=v.getInt32(p,true)/2147483648;
+  if(!Number.isFinite(x))throw Error('Sampel WAV tidak valid pada frame '+i+'.');
+  mono[i]=f32(x);
  }
  // The observed MG-30 import path consumes 2048 float32 samples. Normalize the
  // first 2048 frames to the 48 kHz clock used by the matching QuickTone capture.
@@ -79,7 +76,7 @@ export function readMG30IRWav(input){
  return{
   samples,count,rate:fmt.rate,channels:fmt.channels,format:fmt.format,bits:fmt.bits,
   normalizedRate:48000,normalizedFrames:targetCount,
-  description:(fmt.channels===1?'Mono':'Stereo · downmix ke mono')+' · '+(fmt.format===3?'Float32':'PCM '+fmt.bits+'-bit')+' · '+fmt.rate+' Hz'+(fmt.rate!==48000?' → 48 kHz':'')
+  description:(fmt.channels===1?'Mono':'Stereo · kanal kiri dipakai')+' · '+(fmt.format===3?'Float32':'PCM '+fmt.bits+'-bit')+' · '+fmt.rate+' Hz'+(fmt.rate!==48000?' → 48 kHz':'')
  };
 }
 function fft(samples){const re=new Float32Array(FFT),im=new Float32Array(FFT);for(let i=0;i<N;i++)re[i]=f32(samples[i]);let j=0;for(let i=1;i<FFT;i++){let bit=FFT>>>1;while(j&bit){j^=bit;bit>>>=1}j^=bit;if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t}}
@@ -98,7 +95,7 @@ function curveFrames(curve,param){const v=new Uint16Array(640);v.set(curve);cons
 export function buildMG30IRTransferPlan({samples,fileName,irName,parameter=71}){if(!samples||samples.length<N)throw Error('Pilih WAV yang valid dahulu.');const param=Number(parameter);if(!Number.isInteger(param)||param<0||param>127)throw Error('Parameter transfer harus bilangan 0–127.');const name=safeName(irName||fileName||'Custom IR'),gain=gainFor(samples.subarray? samples.subarray(0,N):samples),wave=waveformFrames(samples,param,gain),curve=curveFrames(curveFor(wave.wire),param),frames=[...wave.frames,nameFrame(name,param),...curve];if(frames.length!==75)throw Error('Rencana transfer harus berisi 75 paket.');return{name,parameter:param,gain,frames}}
 function waitAck(input,cmd,timeout=3000){let timer,done=false,handler=()=>{},cancel=()=>{};const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);input.removeEventListener('midimessage',handler)};const promise=new Promise((resolve,reject)=>{handler=e=>{const d=Array.from(e?.data||[]);if(d.length<8||d[0]!==240||d[1]!==67||d[2]!==88||d[3]!==112||d[4]!==cmd||d[5]!==3||d[d.length-1]!==247)return;cleanup();resolve({status:d[6]})};cancel=()=>{cleanup();resolve(null)};input.addEventListener('midimessage',handler);timer=setTimeout(()=>{cleanup();reject(Error('Timeout ACK untuk fase '+cmd.toString(16)))},timeout)});return{promise,cancel}}
 async function sendFrame(conn,frame,cmd,label){const p=waitAck(conn.input,cmd);try{await conn.output.send(frame)}catch(e){p.cancel();throw Error('Pengiriman '+label+' gagal: '+(e?.message||e))}const ack=await p.promise;if(!ack)throw Error('ACK dibatalkan: '+label);return ack}
-export async function sendMG30IRTransfer(conn,plan,onProgress=()=>{}){if(!conn?.input?.addEventListener||!conn?.output?.send||plan?.frames?.length!==75)throw Error('Koneksi MIDI/rencana IR belum siap.');const phases=[['waveform',16,0,64],['name',9,64,65],['curve',17,65,75]];let done=0;for(const[phase,cmd,start,end]of phases)for(let i=start;i<end;i++){const ack=await sendFrame(conn,plan.frames[i],cmd,phase+' '+(i-start+1)+'/'+(end-start));done++;onProgress({phase,phaseCompleted:i-start+1,phaseTotal:end-start,completed:done,total:75,ackStatus:ack.status})}return{success:true,completedFrames:done,totalFrames:75,name:plan.name,parameter:plan.parameter}}
+export async function sendMG30IRTransfer(conn,plan,onProgress=()=>{}){if(!conn?.input?.addEventListener||!conn?.output?.send||plan?.frames?.length!==75)throw Error('Koneksi MIDI/rencana IR belum siap.');const phases=[['waveform',16,0,64],['name',9,64,65],['curve',17,65,75]];let done=0;for(const[phase,cmd,start,end]of phases)for(let i=start;i<end;i++){const ack=await sendFrame(conn,plan.frames[i],cmd,phase+' '+(i-start+1)+'/'+(end-start));const phaseCompleted=i-start+1,finalFrame=i===end-1;const expected=phase==='name'?0:(finalFrame?3:2);if(ack.status!==expected)throw Error('ACK '+phase+' '+phaseCompleted+'/'+(end-start)+' berstatus '+ack.status+', padahal capture QuickTone menunjukkan '+expected+'. Transfer dihentikan; cek slot/perangkat dan jangan anggap impor berhasil.');done++;onProgress({phase,phaseCompleted,phaseTotal:end-start,completed:done,total:75,ackStatus:ack.status,expectedStatus:expected})}return{success:true,completedFrames:done,totalFrames:75,name:plan.name,parameter:plan.parameter}}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function initUI(){
  const $=id=>document.getElementById(id);
