@@ -474,8 +474,6 @@ async function sendModel(index, button, options = {}) {
   }
 }
 
-async function autoImportFirstCompatibleModel
-
 async function autoImportFirstCompatibleModel(slotNumber) {
   if (!Native() || !window.NUXNativeMidi) {
     setStatus('Impor langsung membutuhkan APK Android dan MG-30 melalui USB OTG.');
@@ -528,8 +526,6 @@ async function autoImportFirstCompatibleModel(slotNumber) {
     (lastError ? 'Detail: ' + lastError + '. ' : '') +
     'Coba tone NAM A2 lain atau gunakan impor file lokal.');
 }
-
-let selectedLocalNamFile = null;
 
 let selectedLocalNamFile = null;
 
@@ -710,8 +706,6 @@ async function processCallback(rawUrl) {
     setStatus('Autentikasi/impor TONE3000 gagal: ' + (callbackError?.message || callbackError));
   }
 }
-
-async function initTone3000()
 
 async function initTone3000() {
   if (!createPanel()) {
