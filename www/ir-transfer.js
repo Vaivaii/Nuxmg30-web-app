@@ -94,6 +94,38 @@ function nameFrame(name,param){const b=new Uint8Array(32),enc=new TextEncoder().
 function curveFrames(curve,param){const v=new Uint16Array(640);v.set(curve);const frames=[];for(let f=0;f<10;f++){const out=frameHeader(0x11,param,f*64);for(let i=f*64;i<(f+1)*64;i++)out.push(...enc16(v[i]));out.push(0xF7);if(out.length!==205)throw Error('Panjang paket kurva tidak cocok.');frames.push(Uint8Array.from(out))}return frames}
 export function buildMG30IRTransferPlan({samples,fileName,irName,parameter=1}){if(!samples||samples.length<N)throw Error('Pilih WAV yang valid dahulu.');const param=Number(parameter);if(!Number.isInteger(param)||param<0||param>127)throw Error('Parameter transfer harus bilangan 0–127.');const name=safeName(irName||fileName||'Custom IR'),gain=gainFor(samples.subarray? samples.subarray(0,N):samples),wave=waveformFrames(samples,param,gain),curve=curveFrames(curveFor(wave.wire),param),frames=[...wave.frames,nameFrame(name,param),...curve];if(frames.length!==75)throw Error('Rencana transfer harus berisi 75 paket.');return{name,parameter:param,gain,frames}}
 function waitAck(input,cmd,timeout=3000){let timer,done=false,handler=()=>{},cancel=()=>{};const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);input.removeEventListener('midimessage',handler)};const promise=new Promise((resolve,reject)=>{handler=e=>{const d=Array.from(e?.data||[]);if(d.length<8||d[0]!==240||d[1]!==67||d[2]!==88||d[3]!==112||d[4]!==cmd||d[5]!==3||d[d.length-1]!==247)return;cleanup();resolve({status:d[6]})};cancel=()=>{cleanup();resolve(null)};input.addEventListener('midimessage',handler);timer=setTimeout(()=>{cleanup();reject(Error('Timeout ACK untuk fase '+cmd.toString(16)))},timeout)});return{promise,cancel}}
+function waitIRContextReply(input,page,timeout=2500){
+ let timer,done=false;
+ const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);input.removeEventListener('midimessage',handler)};
+ const handler=e=>{
+  const d=Array.from(e?.data||[]);
+  if(d.length!==222||d[0]!==0xF0||d[1]!==0x43||d[2]!==0x58||d[3]!==0x70||d[4]!==0x0C||d[5]!==0x02||d[7]!==page||d[d.length-1]!==0xF7)return;
+  if(d[6]>127){cleanup();rejectRef(Error('ID konteks IR di luar rentang protokol.'));return}
+  cleanup();resolveRef({id:d[6],page,data:d});
+ };
+ let resolveRef,rejectRef;
+ const promise=new Promise((resolve,reject)=>{resolveRef=resolve;rejectRef=reject;input.addEventListener('midimessage',handler);timer=setTimeout(()=>{cleanup();reject(Error('Tidak menerima balasan 0C 02 untuk halaman '+page+'. Pastikan MG-30 aktif dan koneksi USB-MIDI stabil.'))},timeout)});
+ return{promise,cancel:()=>{cleanup()}};
+}
+export async function readMG30IRContext(conn,onProgress=()=>{}){
+ if(!conn?.input?.addEventListener||!conn?.output?.send)throw Error('Koneksi USB-MIDI belum siap untuk membaca konteks IR.');
+ const ids=[];
+ for(let page=0;page<3;page++){
+  const waiter=waitIRContextReply(conn.input,page);
+  const request=Uint8Array.from([0xF0,0x43,0x58,0x70,0x0C,0x00,0x00,page,0x00,0x00,0x00,0x00,0x00,0x00,0xF7]);
+  try{
+   await conn.output.send(request);
+   const reply=await waiter.promise;
+   ids.push(reply.id);
+   onProgress({page,completed:page+1,total:3,id:reply.id});
+  }catch(error){
+   waiter.cancel();
+   throw error;
+  }
+ }
+ if(ids.some(id=>id!==ids[0]))throw Error('ID konteks berubah di antara balasan 0C 02: '+ids.join(', ')+'. Tidak aman melanjutkan transfer.');
+ return{id:ids[0],pages:ids};
+}
 async function sendFrame(conn,frame,cmd,label){const p=waitAck(conn.input,cmd);try{await conn.output.send(frame)}catch(e){p.cancel();throw Error('Pengiriman '+label+' gagal: '+(e?.message||e))}const ack=await p.promise;if(!ack)throw Error('ACK dibatalkan: '+label);return ack}
 export async function sendMG30IRTransfer(conn,plan,onProgress=()=>{}){if(!conn?.input?.addEventListener||!conn?.output?.send||plan?.frames?.length!==75)throw Error('Koneksi MIDI/rencana IR belum siap.');const phases=[['waveform',16,0,64],['name',9,64,65],['curve',17,65,75]];let done=0;for(const[phase,cmd,start,end]of phases)for(let i=start;i<end;i++){const ack=await sendFrame(conn,plan.frames[i],cmd,phase+' '+(i-start+1)+'/'+(end-start));const phaseCompleted=i-start+1,finalFrame=i===end-1;const expected=phase==='name'?0:(finalFrame?3:2);if(ack.status!==expected)throw Error('ACK '+phase+' '+phaseCompleted+'/'+(end-start)+' berstatus '+ack.status+', padahal capture QuickTone menunjukkan '+expected+'. Transfer dihentikan; cek slot/perangkat dan jangan anggap impor berhasil.');done++;onProgress({phase,phaseCompleted,phaseTotal:end-start,completed:done,total:75,ackStatus:ack.status,expectedStatus:expected})}return{success:true,completedFrames:done,totalFrames:75,name:plan.name,parameter:plan.parameter}}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
