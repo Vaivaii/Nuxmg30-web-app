@@ -10,6 +10,7 @@ const Native = () => Capacitor.isNativePlatform();
 const $ = id => document.getElementById(id);
 let panelReady = false;
 let selectedTone = null;
+const modelBytesCache = new WeakMap();
 
 const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -35,16 +36,15 @@ function stylePanel() {
     .t3k-tone{display:grid;gap:10px;margin-top:12px}.t3k-card{padding:12px;border-radius:12px;border:1px solid var(--border,#293238);background:rgba(255,255,255,.025)}
     .t3k-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.t3k-card strong{display:block}.t3k-card small{display:block;color:var(--muted,#a6b1b4);margin-top:4px;line-height:1.4}
     .t3k-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.t3k-link{color:#c5f36b;text-decoration:underline}.t3k-warning{border-left:3px solid #c5f36b;padding-left:10px}
-    @media(max-width:560px){.t3k-panel{padding:14px}.t3k-form button{width:100%}.t3k-card-head{display:block}}
+    .t3k-target-row{align-items:center}.t3k-target-row label{display:block;color:var(--muted,#a6b1b4);font-size:.85rem;font-weight:650}.t3k-target-row select{flex:0 1 210px;max-width:220px}
+    @media(max-width:560px){.t3k-panel{padding:14px}.t3k-form button{width:100%}.t3k-card-head{display:block}.t3k-target-row select{flex:1;max-width:none}}
   `;
   document.head.appendChild(style);
 }
 
 function createPanel() {
-  const localHeading = [...document.querySelectorAll('.panel h3')]
-    .find(node => node.textContent.trim().includes('Profil NAM lokal'));
-  if (!localHeading) return false;
-  const localPanel = localHeading.closest('.panel');
+  const localPanel = $('namImportTransferPanel');
+  if (!localPanel) return false;
   if (document.getElementById('tone3000Panel')) return true;
 
   const panel = document.createElement('section');
@@ -53,7 +53,7 @@ function createPanel() {
   panel.innerHTML = `
     <div class="t3k-head">
       <div><h3>TONE3000 · katalog NAM</h3>
-      <p>Powered by TONE3000. Pilih tone melalui katalog resmi, lalu ambil model A2 setelah pengguna mengotorisasi akun TONE3000.</p></div>
+      <p>Pilih slot tujuan, lalu pilih tone di katalog TONE3000. Setelah kembali ke aplikasi, model A2-Lite yang cocok akan diunduh dan dikirim otomatis ke slot tersebut.</p></div>
       <span class="t3k-mark">T3K</span>
     </div>
     <label for="t3kClientId"><small>Publishable key TONE3000</small></label>
@@ -61,20 +61,35 @@ function createPanel() {
       <input id="t3kClientId" type="password" autocomplete="off" spellcheck="false" placeholder="t3k_pub_…">
       <button id="t3kSaveKey" type="button">Simpan key</button>
     </div>
+    <div class="t3k-form t3k-target-row">
+      <label for="t3kTargetSlot">Slot tujuan MG-30</label>
+      <select id="t3kTargetSlot" aria-label="Pilih slot tujuan TONE3000">
+        <option value="">Pilih slot tujuan</option>
+        <option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option>
+        <option value="4">Slot 4</option><option value="5">Slot 5</option><option value="6">Slot 6</option>
+        <option value="7">Slot 7</option><option value="8">Slot 8</option><option value="9">Slot 9</option><option value="10">Slot 10</option>
+      </select>
+    </div>
     <div class="t3k-actions">
-      <button id="t3kChooseTone" class="primary" type="button">Pilih NAM dari TONE3000</button>
+      <button id="t3kChooseTone" class="primary" type="button">Pilih tone & impor ke MG-30</button>
       <button id="t3kSignOut" type="button">Putuskan akun</button>
     </div>
     <div class="t3k-status" id="t3kStatus" role="status" aria-live="polite">Siap. Masukkan publishable key dari pengaturan developer TONE3000 terlebih dahulu.</div>
     <div id="t3kToneDetails" class="t3k-tone"></div>
-    <p class="t3k-warning">Eksperimental untuk MG-30 Gen 2 firmware 6.0.5 (bukan MKII). Transfer A2-Lite sudah cocok byte-per-byte dengan capture QuickTone, tetapi implementasi Android ini belum diuji langsung pada perangkat. Pilih slot secara sengaja dan cadangkan model di slot tersebut terlebih dahulu; proses akan menimpa isi slot.</p>
+    <p class="t3k-warning">Untuk NUX MG-30 Gen 2 firmware 6.0.5 (bukan MKII). Transfer NAM lokal sudah berhasil diuji di perangkat; jalur impor otomatis TONE3000 tetap perlu diuji. Proses menimpa slot tujuan—cadangkan model penting terlebih dahulu.</p>
     <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">Dokumentasi API TONE3000</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">Ketentuan API</a></p>
   `;
-  localPanel.insertAdjacentElement('beforebegin', panel);
+  localPanel.insertAdjacentElement('afterend', panel);
   stylePanel();
   panelReady = true;
 
   $('t3kClientId').value = localStorage.getItem(PREFIX + 'client_id') || '';
+  $('t3kTargetSlot').value = localStorage.getItem(PREFIX + 'target_slot') || '';
+  $('t3kTargetSlot').addEventListener('change', () => {
+    const slot = Number($('t3kTargetSlot').value || 0);
+    if (Number.isInteger(slot) && slot >= 1 && slot <= 10) localStorage.setItem(PREFIX + 'target_slot', String(slot));
+    else localStorage.removeItem(PREFIX + 'target_slot');
+  });
   $('t3kSaveKey').addEventListener('click', () => {
     const key = $('t3kClientId').value.trim();
     if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(key)) {
@@ -125,8 +140,17 @@ function getRedirectUri() {
 async function startSelectFlow() {
   const clientId = (localStorage.getItem(PREFIX + 'client_id') || $('t3kClientId')?.value || '').trim();
   if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(clientId)) {
-    setStatus('Simpan publishable key TONE3000 yang valid sebelum membuka katalog.');
+    setStatus('Masukkan publishable key TONE3000 yang valid sebelum membuka katalog.');
     return;
+  }
+  const targetSlot = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
+  if (Native() && (!Number.isInteger(targetSlot) || targetSlot < 1 || targetSlot > 10)) {
+    setStatus('Pilih slot tujuan 1–10 terlebih dahulu. Setelah memilih tone, aplikasi akan mengunduh dan mengirim model yang cocok ke slot itu.');
+    $('t3kTargetSlot')?.focus();
+    return;
+  }
+  if (Number.isInteger(targetSlot) && targetSlot >= 1 && targetSlot <= 10) {
+    localStorage.setItem(PREFIX + 'target_slot', String(targetSlot));
   }
   try {
     $('t3kChooseTone').disabled = true;
@@ -238,7 +262,7 @@ async function apiJSON(path) {
   return body;
 }
 
-async function loadSelectedTone(toneId) {
+async function loadSelectedTone(toneId, options = {}) {
   const id = String(toneId || '').trim();
   if (!/^\d+$/.test(id)) return;
   const holder = $('t3kToneDetails');
@@ -284,6 +308,17 @@ async function loadSelectedTone(toneId) {
         '<button type="button" data-t3k-send="' + index + '"' + (Native() ? '' : ' disabled title="Transfer langsung tersedia di aplikasi Android"') + '>Kirim ke MG-30</button></div>';
       holder.appendChild(card);
     });
+    const defaultSlot = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
+    holder.querySelectorAll('[data-t3k-slot]').forEach(select => {
+      if (Number.isInteger(defaultSlot) && defaultSlot >= 1 && defaultSlot <= 10) select.value = String(defaultSlot);
+      select.addEventListener('change', () => {
+        const slot = Number(select.value || 0);
+        if (Number.isInteger(slot) && slot >= 1 && slot <= 10) {
+          if ($('t3kTargetSlot')) $('t3kTargetSlot').value = String(slot);
+          localStorage.setItem(PREFIX + 'target_slot', String(slot));
+        }
+      });
+    });
     holder.querySelectorAll('[data-t3k-save]').forEach(button => {
       button.addEventListener('click', () => saveModel(Number(button.dataset.t3kSave), button));
     });
@@ -291,8 +326,10 @@ async function loadSelectedTone(toneId) {
       button.addEventListener('click', () => sendModel(Number(button.dataset.t3kSend), button));
     });
     setStatus(Native()
-      ? 'Tone siap. Pilih slot tujuan, cadangkan model lama di slot tersebut, lalu gunakan Kirim ke MG-30 untuk transfer A2-Lite.'
-      : 'Tone siap. Simpan model bisa dilakukan di browser; transfer langsung membutuhkan APK Android dan USB OTG.');
+      ? 'Tone siap. Aplikasi akan mencari model A2-Lite yang cocok lalu mengimpor ke slot tujuan. Jika ada beberapa model, pilih model yang ingin dikirim.'
+      : 'Tone siap. Kamu bisa menyimpan model di browser; transfer langsung membutuhkan APK Android dan USB OTG.');
+    const autoSlot = Number(options.autoImportSlot || 0);
+    if (Native() && autoSlot >= 1 && autoSlot <= 10) await autoImportFirstCompatibleModel(autoSlot);
   } catch (error) {
     setStatus('Gagal memuat tone/model: ' + (error?.message || error));
   }
@@ -365,18 +402,26 @@ async function sendModel(index, button) {
     return;
   }
   const rawLabel = String(model.name || ('TONE3000 tone ' + selectedTone.id + ' model ' + (index + 1))).replace(/\.(nam|namb)$/i, '').trim();
-  if (!window.confirm('Kirim "' + rawLabel + '" ke MG-30 slot ' + slotNumber + '? Isi slot tersebut akan ditimpa. Pastikan kamu sudah mencadangkan model lama di slot ini.')) return;
+  if (!window.confirm('Kirim "' + rawLabel + '" ke MG-30 slot ' + slotNumber + '? Isi slot tersebut akan ditimpa. Pastikan kamu sudah mencadangkan model lama di slot ini.')) {
+    setStatus('Transfer dibatalkan. Model belum ditulis ke slot ' + slotNumber + '.');
+    return;
+  }
 
   if (button) { button.disabled = true; button.textContent = 'Menyiapkan transfer…'; }
   if (slotSelect) slotSelect.disabled = true;
   try {
     setStatus('Mengunduh model dari TONE3000…');
-    const token = await ensureAccessToken();
-    const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
-    if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
-    const blob = await response.blob();
-    if (!blob.size) throw new Error('File model yang diterima kosong.');
-    const modelBytes = await blob.arrayBuffer();
+    let modelBytes = modelBytesCache.get(model);
+    if (modelBytes) {
+      modelBytesCache.delete(model);
+    } else {
+      const token = await ensureAccessToken();
+      const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+      if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
+      const blob = await response.blob();
+      if (!blob.size) throw new Error('File model yang diterima kosong.');
+      modelBytes = await blob.arrayBuffer();
+    }
     const weightBytes = extractMG30A2LiteWeights(modelBytes);
     const plan = buildMG30A2LiteTransferPlan(weightBytes, rawLabel, slotNumber);
 
@@ -405,6 +450,49 @@ async function sendModel(index, button) {
     if (button) { button.disabled = false; button.textContent = 'Kirim ke MG-30'; }
     if (slotSelect) slotSelect.disabled = false;
   }
+
+}
+
+async function autoImportFirstCompatibleModel(slotNumber) {
+  if (!Native() || !window.NUXNativeMidi) {
+    setStatus('Impor langsung membutuhkan APK Android dan MG-30 melalui USB OTG.');
+    return;
+  }
+  const models = selectedTone?.models || [];
+  if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
+    setStatus('Pilih slot tujuan 1–10 sebelum transfer.');
+    return;
+  }
+  const limit = Math.min(models.length, 10);
+  let lastError = '';
+  for (let index = 0; index < limit; index++) {
+    const model = models[index];
+    if (!model?.model_url) continue;
+    const label = String(model.name || ('model ' + (index + 1)));
+    try {
+      setStatus('Tone dipilih. Mengunduh dan memeriksa model ' + (index + 1) + '/' + limit +
+        ' (' + label + ') untuk mencari A2-Lite yang cocok…');
+      const token = await ensureAccessToken();
+      const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+      if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
+      const modelBytes = await response.arrayBuffer();
+      if (!modelBytes.byteLength) throw new Error('File model yang diterima kosong.');
+      extractMG30A2LiteWeights(modelBytes);
+      modelBytesCache.set(model, modelBytes);
+      const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
+      if (slotSelect) slotSelect.value = String(slotNumber);
+      const button = document.querySelector('[data-t3k-send="' + index + '"]');
+      setStatus('Model A2-Lite yang cocok ditemukan. Meminta konfirmasi sebelum menimpa slot ' + slotNumber + '…');
+      await sendModel(index, button);
+      return;
+    } catch (error) {
+      modelBytesCache.delete(model);
+      lastError = label + ': ' + (error?.message || error);
+    }
+  }
+  setStatus('Tone berhasil dipilih, tetapi tidak ditemukan file A2-Lite 1.871 bobot yang bisa diimpor dari ' +
+    limit + ' model pertama. ' + (lastError ? 'Pemeriksaan terakhir: ' + lastError + '. ' : '') +
+    'Coba pilih tone NAM A2 lain atau unduh file .nam dan gunakan impor file lokal.');
 }
 
 let selectedLocalNamFile = null;
@@ -554,8 +642,10 @@ async function processCallback(rawUrl) {
       history.replaceState({}, document.title, clean.href);
     }
     if (canceled) { setStatus('Pemilihan tone dibatalkan. Kamu bisa membuka katalog lagi kapan saja.'); return; }
-    if (toneId) await loadSelectedTone(toneId);
-    else setStatus('Autentikasi TONE3000 berhasil. Pilih tone dari katalog untuk memuat model.');
+    if (toneId) {
+      const targetSlot = Number(localStorage.getItem(PREFIX + 'target_slot') || $('t3kTargetSlot')?.value || 0);
+      await loadSelectedTone(toneId, { autoImportSlot: Native() && targetSlot >= 1 && targetSlot <= 10 ? targetSlot : 0 });
+    } else setStatus('Autentikasi TONE3000 berhasil. Pilih tone dari katalog untuk memuat model.');
   } catch (callbackError) {
     setStatus('Autentikasi TONE3000 gagal: ' + (callbackError?.message || callbackError));
   }
