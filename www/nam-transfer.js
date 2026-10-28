@@ -264,7 +264,8 @@ export function buildMG30A2LiteTransferPlan(weightBytes, label, uiSlot) {
 }
 
 function waitForMatchingMessage(input, predicate, timeoutMs, description) {
-  return new Promise((resolve, reject) => {
+  let cancelWait = () => {};
+  const promise = new Promise((resolve, reject) => {
     let settled = false;
     let timer;
     const cleanup = () => {
@@ -283,12 +284,18 @@ function waitForMatchingMessage(input, predicate, timeoutMs, description) {
         resolve(parsed);
       }
     };
+    cancelWait = () => {
+      if (settled) return;
+      cleanup();
+      resolve(null);
+    };
     input.addEventListener('midimessage', onMessage);
     timer = setTimeout(() => {
       cleanup();
       reject(new Error('Timeout menunggu ' + description + '.'));
     }, timeoutMs);
   });
+  return { promise, cancel: () => cancelWait() };
 }
 
 async function sendAndWait(connection, frame, predicate, description) {
@@ -296,11 +303,10 @@ async function sendAndWait(connection, frame, predicate, description) {
   try {
     await connection.output.send(frame);
   } catch (error) {
-    // Cancel the pending wait if Android rejected the USB-MIDI write immediately.
-    // A late reply will be ignored because waitForMatchingMessage times out and cleans up.
+    pending.cancel();
     throw new Error('Gagal mengirim ' + description + ': ' + (error?.message || error));
   }
-  return await pending;
+  return await pending.promise;
 }
 
 function ackMatches(parsed, descriptor) {
