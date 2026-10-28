@@ -164,6 +164,7 @@ def analyze(label: str, nam_path: Path, capture_path: Path, slot_number: int) ->
         "transfer_buffer_sha256": hashlib.sha256(transfer).hexdigest(),
         "metadata_write_exact": metadata_exact, "metadata_label_captured": metadata[0]["payload"][:32].split(b"\0", 1)[0].decode("utf-8", "replace"),
         "metadata_template_tail_matches": metadata[0]["payload"][32:] == tail,
+        "metadata_tail_hex": tail.hex(" "),
         "data_frames": len(data), "unique_data_offsets": len(set(m["offset"] for m in data)),
         "duplicate_offset_zero_count": sum(m["offset"] == 0 for m in data),
         "all_data_frames_exact_regenerated_in_order": data_byte_exact,
