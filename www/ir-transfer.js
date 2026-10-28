@@ -4,20 +4,83 @@ const PREFIX=[0xF0,0x43,0x58,0x70], N=2048, FFT=16384, W=600, H=305, SENT=-99999
 const bytesOf=x=>x instanceof Uint8Array?x:x instanceof ArrayBuffer?new Uint8Array(x):ArrayBuffer.isView(x)?new Uint8Array(x.buffer,x.byteOffset,x.byteLength):(()=>{throw Error('Data byte WAV tidak valid.')})();
 function enc16(v){if(!Number.isInteger(v)||v<0||v>65535)throw Error('Nilai uint16 tidak valid.');const w=((v&255)<<8)|(v>>>8);return[(w>>>14)&3,(w>>>7)&127,w&127]}
 function safeName(s){s=String(s||'Custom IR').replace(/\\/g,'/').split('/').pop().replace(/\.wav$/i,'').trim();if(s.normalize)s=s.normalize('NFKD').replace(/\p{M}/gu,'');s=Array.from(s,c=>{let n=c.charCodeAt(0);return n>=32&&n<=126?c:'_'}).join('').slice(0,20).trim();if(!s)throw Error('Nama IR kosong atau tidak valid.');return s}
+function resampleMonoTo48k(input,sourceRate,targetCount){
+ if(sourceRate===48000)return input.slice(0,targetCount);
+ const output=new Float32Array(targetCount);
+ const ratio=48000/sourceRate;
+ const cutoff=Math.min(1,ratio)*0.94;
+ const radius=18;
+ const sinc=x=>Math.abs(x)<1e-8?1:Math.sin(Math.PI*x)/(Math.PI*x);
+ for(let i=0;i<targetCount;i++){
+  const center=i/ratio;
+  const left=Math.max(0,Math.floor(center)-radius+1);
+  const right=Math.min(input.length-1,Math.floor(center)+radius);
+  let sum=0,weight=0;
+  for(let k=left;k<=right;k++){
+   const distance=center-k;
+   const normalized=distance/radius;
+   if(Math.abs(normalized)>=1)continue;
+   const window=0.5+0.5*Math.cos(Math.PI*normalized);
+   const w=cutoff*sinc(distance*cutoff)*window;
+   sum+=input[k]*w;
+   weight+=w;
+  }
+  output[i]=f32(weight!==0?sum/weight:input[Math.min(input.length-1,Math.round(center))]||0);
+ }
+ return output;
+}
 export function readMG30IRWav(input){
  const b=bytesOf(input),v=new DataView(b.buffer,b.byteOffset,b.byteLength),tag=o=>String.fromCharCode(b[o],b[o+1],b[o+2],b[o+3]);
- if(b.length<44||tag(0)!=='RIFF'||tag(8)!=='WAVE')throw Error('File bukan WAV RIFF yang valid.');
+ if(b.length<44||tag(0)!=='RIFF'||tag(8)!=='WAVE')throw Error('File bukan WAV RIFF yang valid. Pastikan file benar-benar WAV, bukan file audio lain yang hanya diganti ekstensi.');
  let off=12,fmt=null,dp=-1,ds=0;
- while(off+8<=b.length){const id=tag(off),sz=v.getUint32(off+4,true),st=off+8;if(st+sz>b.length)throw Error('Chunk WAV terpotong.');
-  if(id==='fmt '){if(sz<16)throw Error('Header format WAV terlalu pendek.');fmt={format:v.getUint16(st,true),channels:v.getUint16(st+2,true),rate:v.getUint32(st+4,true),align:v.getUint16(st+12,true),bits:v.getUint16(st+14,true)};if(fmt.format===65534&&sz>=40)fmt.format=v.getUint16(st+24,true)}
-  if(id==='data'){dp=st;ds=sz}off=st+sz+(sz&1)}
- if(!fmt||dp<0)throw Error('Chunk fmt/data tidak ditemukan.');
- if(![1,3].includes(fmt.format)||fmt.rate!==48000||![1,2].includes(fmt.channels)||![16,24,32].includes(fmt.bits)||(fmt.format===3&&fmt.bits!==32))throw Error('Dukungan WAV: mono/stereo, 48 kHz, PCM16/24/32 atau Float32.');
- const bps=fmt.bits/8;if(fmt.align!==fmt.channels*bps||ds%fmt.align)throw Error('Struktur sampel WAV tidak konsisten.');
- const count=ds/fmt.align;if(count<N)throw Error('WAV harus memiliki sedikitnya 2048 frame sampel.');
- const samples=new Float32Array(count);
- for(let i=0;i<count;i++){let p=dp+i*fmt.align,x;if(fmt.format===3)x=v.getFloat32(p,true);else if(fmt.bits===16)x=v.getInt16(p,true)/32768;else if(fmt.bits===24){x=b[p]|(b[p+1]<<8)|(b[p+2]<<16);if(x&0x800000)x-=0x1000000;x/=8388608}else x=v.getInt32(p,true)/2147483648;if(!Number.isFinite(x))throw Error('Sampel WAV tidak valid.');samples[i]=f32(x)}
- return{samples,count,rate:fmt.rate,channels:fmt.channels,format:fmt.format,bits:fmt.bits,description:(fmt.channels===1?'Mono':'Stereo')+' · '+(fmt.format===3?'Float32':'PCM '+fmt.bits+'-bit')+' · 48 kHz'}
+ while(off+8<=b.length){
+  const id=tag(off),sz=v.getUint32(off+4,true),st=off+8;
+  if(st+sz>b.length)throw Error('Chunk WAV terpotong atau ukuran file tidak sesuai.');
+  if(id==='fmt '){
+   if(sz<16)throw Error('Header format WAV terlalu pendek.');
+   fmt={format:v.getUint16(st,true),channels:v.getUint16(st+2,true),rate:v.getUint32(st+4,true),align:v.getUint16(st+12,true),bits:v.getUint16(st+14,true)};
+   if(fmt.format===65534&&sz>=40)fmt.format=v.getUint16(st+24,true);
+  }
+  if(id==='data'){dp=st;ds=sz}
+  off=st+sz+(sz&1);
+ }
+ if(!fmt||dp<0)throw Error('Chunk fmt/data tidak ditemukan dalam WAV.');
+ const supportedFormat=[1,3].includes(fmt.format);
+ const supportedBits=[8,16,24,32].includes(fmt.bits)&&(fmt.format!==3||fmt.bits===32);
+ const supportedRate=Number.isFinite(fmt.rate)&&fmt.rate>=8000&&fmt.rate<=192000;
+ if(!supportedFormat||!supportedRate||![1,2].includes(fmt.channels)||!supportedBits){
+  throw Error('Format WAV tidak didukung. Terdeteksi: format '+fmt.format+', '+fmt.channels+' kanal, '+fmt.rate+' Hz, '+fmt.bits+' bit. Dukungan: PCM 8/16/24/32-bit atau Float32, mono/stereo, sample rate 8–192 kHz.');
+ }
+ const bps=fmt.bits/8;
+ if(fmt.align!==fmt.channels*bps||!fmt.align||ds%fmt.align)throw Error('Struktur WAV tidak konsisten: blockAlign atau ukuran data tidak cocok dengan kanal/bit-depth.');
+ const count=ds/fmt.align;
+ const targetCount=Math.round(count*48000/fmt.rate);
+ if(count<=0||targetCount<N)throw Error('WAV terlalu pendek. Setelah dikonversi ke 48 kHz tersedia sekitar '+targetCount+' frame; dibutuhkan sedikitnya '+N+' frame.');
+ const mono=new Float32Array(count);
+ for(let i=0;i<count;i++){
+  const base=dp+i*fmt.align;
+  let mixed=0;
+  for(let ch=0;ch<fmt.channels;ch++){
+   const p=base+ch*bps;
+   let x;
+   if(fmt.format===3)x=v.getFloat32(p,true);
+   else if(fmt.bits===8)x=(b[p]-128)/128;
+   else if(fmt.bits===16)x=v.getInt16(p,true)/32768;
+   else if(fmt.bits===24){x=b[p]|(b[p+1]<<8)|(b[p+2]<<16);if(x&0x800000)x-=0x1000000;x/=8388608}
+   else x=v.getInt32(p,true)/2147483648;
+   if(!Number.isFinite(x))throw Error('Sampel WAV tidak valid pada frame '+i+'.');
+   mixed+=x;
+  }
+  mono[i]=f32(mixed/fmt.channels);
+ }
+ // The observed MG-30 import path consumes 2048 float32 samples. Normalize the
+ // first 2048 frames to the 48 kHz clock used by the matching QuickTone capture.
+ const samples=resampleMonoTo48k(mono,fmt.rate,N);
+ return{
+  samples,count,rate:fmt.rate,channels:fmt.channels,format:fmt.format,bits:fmt.bits,
+  normalizedRate:48000,normalizedFrames:targetCount,
+  description:(fmt.channels===1?'Mono':'Stereo · downmix ke mono')+' · '+(fmt.format===3?'Float32':'PCM '+fmt.bits+'-bit')+' · '+fmt.rate+' Hz'+(fmt.rate!==48000?' → 48 kHz':'')
+ };
 }
 function fft(samples){const re=new Float32Array(FFT),im=new Float32Array(FFT);for(let i=0;i<N;i++)re[i]=f32(samples[i]);let j=0;for(let i=1;i<FFT;i++){let bit=FFT>>>1;while(j&bit){j^=bit;bit>>>=1}j^=bit;if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t}}
  for(let size=2;size<=FFT;size<<=1){const half=size>>>1,step=-2*Math.PI/size;for(let k=0;k<half;k++){const wr=f32(Math.cos(step*k)),wi=f32(Math.sin(step*k));for(let start=k;start<FFT;start+=size){const o=start+half,r=re[o],q=im[o],tr=f32(f32(r*wr)-f32(q*wi)),ti=f32(f32(r*wi)+f32(q*wr)),ur=re[start],ui=im[start];re[start]=f32(ur+tr);im[start]=f32(ui+ti);re[o]=f32(ur-tr);im[o]=f32(ui-ti)}}}return{re,im}}
