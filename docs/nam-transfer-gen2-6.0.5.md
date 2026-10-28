@@ -60,7 +60,7 @@ Thus each capture contains 83 outgoing SysEx messages (1 metadata write + 62 dat
 
 ## Byte-exact validation
 
-The offline script docs/research/quicktone-mg30-codec-analysis.py validates A2-Lite weight data and generates matching data frames. A companion transaction report was generated offline by /mnt/data/quicktone_mg30_transaction_analysis.py; it does not send MIDI or execute QuickTone.
+The offline script docs/research/quicktone-mg30-codec-analysis.py validates A2-Lite weight data and generates matching data frames. The transaction-level companion validator is docs/research/quicktone-mg30-transaction-analysis.py. Both are offline-only: they do not send MIDI or execute QuickTone.
 
 For both Friedman/slot 9 and Mesa/slot 10, the test regenerated all outgoing messages:
 - Metadata/name write: exact byte-for-byte match after replacing the first 32 payload bytes with the captured slot label and using the matching 96-byte metadata template.
