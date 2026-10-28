@@ -130,8 +130,12 @@ function initUI(){
   try{
    const wav=readMG30IRWav(await selectedFile.arrayBuffer());
    preview('WAV terbaca: '+wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame. Menghitung normalisasi dan kurva…');progress(20,'Menghitung paket secara lokal…');await nextPaint();
-   const plan=buildMG30IRTransferPlan({samples:wav.samples,fileName:selectedFile.name,irName:$('irTransferName').value,parameter:targetId});prepared={wav,plan};
-   const detail=wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame · '+(wav.count/wav.rate).toFixed(2)+' detik · 75 paket · gain '+plan.gain.toPrecision(8)+' · nama "'+plan.name+'" · parameter transfer '+plan.parameter+' (0x'+plan.parameter.toString(16).toUpperCase().padStart(2,'0')+')';
+   const uiParameter=Number($('irTransferParameter').value);if(!Number.isInteger(uiParameter)||uiParameter<0||uiParameter>127)throw Error('Parameter transfer harus bilangan 0–127.');targetId=uiParameter;
+   const plan=buildMG30IRTransferPlan({samples:wav.samples,fileName:selectedFile.name,irName:$('irTransferName').value,parameter:uiParameter});
+   const encodedParam=enc16(uiParameter),waveHeader=plan.frames[0],nameHeader=plan.frames[64],curveHeader=plan.frames[65];
+   if(waveHeader[6]!==encodedParam[0]||waveHeader[7]!==encodedParam[1]||waveHeader[8]!==encodedParam[2]||nameHeader[6]!==uiParameter||curveHeader[6]!==encodedParam[0]||curveHeader[7]!==encodedParam[1]||curveHeader[8]!==encodedParam[2])throw Error('Parameter header waveform/nama/curve tidak konsisten. Paket tidak disiapkan.');
+   prepared={wav,plan};
+   const detail=wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame · '+(wav.count/wav.rate).toFixed(2)+' detik · 75 paket · gain '+plan.gain.toPrecision(8)+' · nama "'+plan.name+'" · parameter transfer '+plan.parameter+' (0x'+plan.parameter.toString(16).toUpperCase().padStart(2,'0')+') · header terverifikasi';
    preview('VALIDASI BERHASIL\n'+detail,'ok');progress(100,'75 paket disiapkan · parameter transfer '+targetId+' · belum dikirim');status('Validasi berhasil. Paket memakai parameter 1 dari capture User; belum ada data yang dikirim.','ok');
   }catch(error){prepared=null;const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');preview('VALIDASI GAGAL\n'+message,'warn');status('Validasi gagal: '+message,'warn');progress(0,'Validasi gagal')}
   finally{busySet(false)}
