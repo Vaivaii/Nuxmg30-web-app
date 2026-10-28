@@ -651,7 +651,8 @@ async function processCallback(rawUrl) {
     return;
   }
   const query = new URLSearchParams(url.search || '');
-  const hash = new URLSearchParams(String(url.hash || '').replace(/^#\\??/, ''));
+  const hashText = String(url.hash || '').replace(/^#/, '').replace(/^\?/, '');
+  const hash = new URLSearchParams(hashText);
   const param = name => query.get(name) || hash.get(name);
   const code = param('code');
   const state = param('state');
