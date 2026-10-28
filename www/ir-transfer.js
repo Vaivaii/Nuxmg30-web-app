@@ -210,7 +210,7 @@ function initUI(){
      return;
    }
    const p=prepared.plan;
-   const warning='Kirim IR "'+p.name+'" ke MG-30 Gen 2?\n\n75 pesan SysEx. Argumen transfer '+p.parameter+' (0x'+p.parameter.toString(16).toUpperCase()+') diamati pada format protokol, tetapi maknanya dan target slotnya belum diketahui. Nilai ini BUKAN nomor slot yang terverifikasi. Hanya lanjut bila siap menguji dan punya cadangan.\n\nJika transfer terputus, data dapat terkirim sebagian. Lanjutkan?';
+   const warning='Impor IR "'+p.name+'" ke jalur Third Party / User pada MG-30 Gen 2?\n\n75 pesan SysEx. Argumen transfer '+p.parameter+' (0x'+p.parameter.toString(16).toUpperCase()+') diamati pada format protokol, tetapi maknanya dan target slotnya belum diketahui. Nilai ini BUKAN nomor slot yang terverifikasi. Hanya lanjut bila siap menguji dan punya cadangan.\n\nJika transfer terputus, data dapat terkirim sebagian. Lanjutkan?';
    if(!confirm(warning)){
      status('Pengiriman dibatalkan. Tidak ada pesan IR baru yang dikirim.');
      return;
@@ -228,8 +228,8 @@ function initUI(){
        status('Transfer berlangsung: '+info.completed+' dari 75 paket telah mendapat respons.');
      });
      progress(100,'75/75 paket mendapat respons');
-     preview('ACK TRANSFER LENGKAP\nMG-30 merespons seluruh 75 paket dengan status yang sesuai capture. Aplikasi belum membaca kembali koleksi IR, jadi belum bisa memastikan nama/isi tersimpan di slot yang diharapkan. Periksa Cabinet/IR → User atau Third-party IR pada perangkat/QuickTone. Jika entri tidak muncul, jangan coba ID acak; perlu capture impor yang sama dari QuickTone untuk membandingkan paket.','ok');
-     status('Semua 75 paket mendapat respons yang sesuai protokol untuk "'+result.name+'". Penyimpanan dan posisi IR belum diverifikasi melalui read-back.','ok');
+     preview('RESPONS PROTOKOL LENGKAP\nMG-30 merespons seluruh 75 paket untuk jalur Third Party / User. Ini belum membuktikan bahwa IR tersimpan atau muncul dalam daftar User. Periksa pemilih IR pada amp/cab dan pastikan opsi USER / Third Party menampilkan nama IR. Jika tidak muncul, jangan coba ID acak; kita perlu membandingkan urutan paket impor User yang sama dari QuickTone.','ok');
+     status('Semua 75 paket mendapat respons protokol untuk Third Party / User IR "'+result.name+'". Penyimpanan dan kemunculan di daftar User belum diverifikasi.','ok');
    }catch(error){
      const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
      preview('TRANSFER BERHENTI\n'+message+'\nData mungkin sudah terkirim sebagian. Jangan anggap IR berhasil.','warn');
