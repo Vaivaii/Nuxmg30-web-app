@@ -128,13 +128,13 @@ function initUI(){
      });
      prepared={wav,plan};
      const detail=wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame · '+(wav.count/wav.rate).toFixed(2)+' detik · 75 paket · gain '+plan.gain.toPrecision(8)+' · nama "'+plan.name+'" · argumen transfer '+plan.parameter+' (0x'+plan.parameter.toString(16).toUpperCase().padStart(2,'0')+')';
-     preview('VALIDASI BERHASIL\\n'+detail,'ok');
+     preview('VALIDASI BERHASIL\n'+detail,'ok');
      progress(100,'75 paket disiapkan secara lokal · belum dikirim');
      status('Validasi berhasil. Paket hanya disiapkan di aplikasi; belum ada perubahan pada MG-30.','ok');
    }catch(error){
      prepared=null;
      const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
-     preview('VALIDASI GAGAL\\n'+message,'warn');
+     preview('VALIDASI GAGAL\n'+message,'warn');
      status('Validasi gagal: '+message,'warn');
      progress(0,'Validasi gagal');
    }finally{
