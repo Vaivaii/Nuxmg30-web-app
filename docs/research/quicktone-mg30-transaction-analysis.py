@@ -178,6 +178,16 @@ def analyze(label: str, nam_path: Path, capture_path: Path, slot_number: int) ->
     }
 
 
+def read_js_metadata_tail(repo_root: Path) -> bytes:
+    source = (repo_root / "www" / "nam-transfer.js").read_text(encoding="utf-8")
+    marker = "const METADATA_TAIL = Uint8Array.from("
+    if marker not in source:
+        raise ValueError("www/nam-transfer.js does not contain METADATA_TAIL")
+    block = source.split(marker, 1)[1].split(");", 1)[0]
+    pieces = __import__("re").findall(r"'([^']*)'", block)
+    return bytes.fromhex(" ".join(pieces))
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--friedman-nam", type=Path, default=Path("/mnt/data/Friedman DS40.nam"))
@@ -190,8 +200,18 @@ def main() -> None:
         analyze("Friedman DS40", a.friedman_nam, a.friedman_capture, 9),
         analyze("Mesa Boogie Mark V", a.mesa_nam, a.mesa_capture, 10),
     ]
+    repo_root = Path(__file__).resolve().parents[2]
+    js_tail = read_js_metadata_tail(repo_root)
+    captured_tails = [bytes.fromhex(r["metadata_tail_hex"]) for r in results]
+    metadata_tail_validation = {
+        "app_tail_length_bytes": len(js_tail),
+        "matches_friedman_capture": len(captured_tails) > 0 and js_tail == captured_tails[0],
+        "matches_mesa_capture": len(captured_tails) > 1 and js_tail == captured_tails[1],
+        "tail_hex": js_tail.hex(" "),
+    }
     report = {
         "kind": "static offline USBPcap validation; does not execute QuickTone or send MIDI",
+        "app_metadata_tail_validation": metadata_tail_validation,
         "codec": "continuous LSB-first 8-to-7 packing over descriptor plus chunk",
         "outer_command": {"0": "outbound slot metadata query", "1": "metadata write / model data", "2": "slot metadata reply", "3": "ACK"},
         "descriptor": "[zero, slot-index, field2, field3, uint32le offset, uint32le size]",
