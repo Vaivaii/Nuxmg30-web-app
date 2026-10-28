@@ -132,6 +132,9 @@ if (Capacitor.isNativePlatform()) {
     available: true,
     isConnected: () => connected,
     async connect() {
+      if (connected && outputPort) {
+        return { input: inputPort, output: outputPort, access: accessShim, deviceName: liveDeviceName };
+      }
       const result = await NativeMidi.listDevices();
       const devices = Array.isArray(result?.devices) ? result.devices : [];
       const hasPorts = device => Number(device.inputPortCount) > 0 && Number(device.outputPortCount) > 0;
