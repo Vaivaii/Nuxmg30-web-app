@@ -173,9 +173,9 @@
  <div class="nam-page-actions" style="margin-top:10px"><button class="btn" type="button" id="irTransferChooseBtn">Pilih file WAV</button></div>
  <div class="ir-import-fields">
   <label for="irTransferName">Nama IR untuk Third Party / User (maks. 20 karakter)<input id="irTransferName" type="text" maxlength="20" value="Custom IR" autocomplete="off"></label>
-  <label for="irTransferParameter">Parameter jalur Third Party / User<input id="irTransferParameter" type="number" min="0" max="127" step="1" value="1" inputmode="numeric"><small class="ir-field-help">Nilai awal 1 diambil dari capture yang diberi label “ir user import” dengan paket 10/09/11. Nilai 91 dan 71 berasal dari capture lain. Arti pasti parameter ini tetap belum terbukti; jangan menganggapnya nomor slot.</small></label>
+  <label for="irTransferParameter">ID/konteks IR dari pedal<input id="irTransferParameter" type="text" value="Belum dibaca" readonly><small class="ir-field-help">Dibaca langsung dengan permintaan 0C 00. Nilai ini bukan asumsi nomor slot; aplikasi akan memakai ID yang dikembalikan MG-30 pada konteks IR saat ini.</small></label>
  </div>
- <div class="nam-page-actions" style="margin-top:12px"><button class="btn" type="button" id="irTransferValidateBtn" disabled>Validasi &amp; siapkan paket</button><button class="btn primary" type="button" id="irTransferSendBtn" disabled>Impor ke Third Party / User</button></div>
+ <div class="nam-page-actions" style="margin-top:12px"><button class="btn" type="button" id="irTransferReadTargetBtn">Baca ID/konteks IR dari MG-30</button></div><p class="slot-note" id="irTransferTargetStatus">ID tujuan belum dibaca. Baca konteks IR dari pedal sebelum validasi dan pengiriman.</p><div class="nam-page-actions" style="margin-top:12px"><button class="btn" type="button" id="irTransferValidateBtn" disabled>Validasi &amp; siapkan paket</button><button class="btn primary" type="button" id="irTransferSendBtn" disabled>Impor ke Third Party / User</button></div>
  <div id="irTransferPreview" class="studio-result">Paket belum divalidasi. Pilih file WAV terlebih dahulu.</div>
  <div class="ir-transfer-progress" aria-hidden="true"><div id="irTransferProgressBar"></div></div>
  <p class="slot-note" id="irTransferProgressLabel">Belum dimulai</p>
