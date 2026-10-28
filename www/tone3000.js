@@ -38,6 +38,16 @@ function stylePanel() {
     .t3k-tone{display:grid;gap:10px;margin-top:12px}.t3k-card{padding:12px;border-radius:12px;border:1px solid var(--border,#293238);background:rgba(255,255,255,.025)}
     .t3k-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.t3k-card strong{display:block}.t3k-card small{display:block;color:var(--muted,#a6b1b4);margin-top:4px;line-height:1.4}
     .t3k-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.t3k-link{color:#c5f36b;text-decoration:underline}.t3k-warning{border-left:3px solid #c5f36b;padding-left:10px}
+    .t3k-settings-panel{padding:0;overflow:hidden}
+    .t3k-settings-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;cursor:pointer;list-style:none}
+    .t3k-settings-summary::-webkit-details-marker{display:none}
+    .t3k-settings-summary>span:first-child{display:grid;gap:3px}
+    .t3k-settings-summary strong{font-size:.96rem}
+    .t3k-settings-summary small{color:var(--muted,#a6b1b4);font-size:.78rem;line-height:1.4}
+    .t3k-settings-panel[open] .t3k-settings-summary{border-bottom:1px solid var(--border,#293238)}
+    .t3k-settings-body{padding:16px 18px}
+    .t3k-settings-body>p{margin-top:0}
+
     .t3k-target-row{align-items:center}.t3k-target-row label{display:block;color:var(--muted,#a6b1b4);font-size:.85rem;font-weight:650}.t3k-target-row select{flex:0 1 210px;max-width:220px}
     @media(max-width:560px){.t3k-panel{padding:14px}.t3k-form button{width:100%}.t3k-card-head{display:block}.t3k-target-row select{flex:1;max-width:none}}
   `;
@@ -46,50 +56,74 @@ function stylePanel() {
 
 function createPanel() {
   const localPanel = $('namImportTransferPanel');
-  if (!localPanel) return false;
-  if (document.getElementById('tone3000Panel')) return true;
+  const settingsMount = $('tone3000SettingsMount');
+  if (!localPanel || !settingsMount) return false;
+  if (document.getElementById('tone3000Panel') && document.getElementById('tone3000SettingsPanel')) return true;
 
-  const panel = document.createElement('section');
-  panel.id = 'tone3000Panel';
-  panel.className = 'panel t3k-panel';
-  panel.innerHTML = `
-    <div class="t3k-head">
-      <div><h3>TONE3000 · katalog NAM</h3>
-      <p>Pilih slot tujuan, lalu pilih tone di katalog TONE3000. Setelah kembali ke aplikasi, model A2-Lite yang cocok akan diunduh dan dikirim otomatis ke slot tersebut.</p></div>
-      <span class="t3k-mark">T3K</span>
-    </div>
-    <label for="t3kClientId"><small>Publishable key TONE3000</small></label>
-    <div class="t3k-form">
-      <input id="t3kClientId" type="password" autocomplete="off" spellcheck="false" placeholder="t3k_pub_…">
-      <button id="t3kSaveKey" type="button">Simpan key</button>
-    </div>
-    <label for="t3kRedirectUri"><small>Redirect URI Android (harus sama persis dengan TONE3000 API Settings)</small></label>
-    <div class="t3k-form">
-      <select id="t3kRedirectUri" aria-label="Pilih Redirect URI yang terdaftar di TONE3000">
-        <option value="tone3000-example://oauth/callback">tone3000-example://oauth/callback · URI contoh resmi</option>
-        <option value="mg30studio://oauth/callback">mg30studio://oauth/callback · URI MG30 Studio lama</option>
-      </select>
-    </div>
-    <small class="t3k-redirect-note">Penting: daftarkan salah satu URI di atas pada TONE3000 → Settings → API Keys. Pilih URI yang persis sama dengan daftar redirect key-mu; tanpa kecocokan, TONE3000 tidak bisa mengembalikan aplikasi.</small>
-    <div class="t3k-form t3k-target-row">
-      <label for="t3kTargetSlot">Slot tujuan MG-30</label>
-      <select id="t3kTargetSlot" aria-label="Pilih slot tujuan TONE3000">
-        <option value="">Pilih slot tujuan</option>
-        <option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option>
-        <option value="4">Slot 4</option><option value="5">Slot 5</option><option value="6">Slot 6</option>
-        <option value="7">Slot 7</option><option value="8">Slot 8</option><option value="9">Slot 9</option><option value="10">Slot 10</option>
-      </select>
-    </div>
-    <div class="t3k-actions">
-      <button id="t3kChooseTone" class="primary" type="button">Pilih tone & impor ke MG-30</button>
-      <button id="t3kSignOut" type="button">Putuskan akun</button>
-    </div>
-    <div class="t3k-status" id="t3kStatus" role="status" aria-live="polite">Siap. Masukkan publishable key dari pengaturan developer TONE3000 terlebih dahulu.</div>
-    <div id="t3kToneDetails" class="t3k-tone"></div>
-    <p class="t3k-warning">Untuk NUX MG-30 Gen 2 firmware 6.0.5 (bukan MKII). Transfer NAM lokal sudah berhasil diuji di perangkat; jalur impor otomatis TONE3000 tetap perlu diuji. Proses menimpa slot tujuan—cadangkan model penting terlebih dahulu.</p>
-    <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">Dokumentasi API TONE3000</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">Ketentuan API</a></p>
-  `;
-  localPanel.insertAdjacentElement('afterend', panel);
+  // The NAM tab only contains the tone picker/import flow. Credentials and
+  // redirect configuration live in a collapsed section on the Device tab.
+  if (!document.getElementById('tone3000Panel')) {
+    const panel = document.createElement('section');
+    panel.id = 'tone3000Panel';
+    panel.className = 'panel t3k-panel';
+    panel.innerHTML = `
+      <div class="t3k-head">
+        <div><h3>TONE3000 · impor NAM</h3>
+        <p>Pilih slot tujuan, buka katalog TONE3000, lalu pilih tone. Setelah kembali, aplikasi mencari model A2-Lite yang cocok dan mengimpornya ke MG-30.</p></div>
+        <span class="t3k-mark">T3K</span>
+      </div>
+      <div class="t3k-form t3k-target-row">
+        <label for="t3kTargetSlot">Slot tujuan MG-30</label>
+        <select id="t3kTargetSlot" aria-label="Pilih slot tujuan TONE3000">
+          <option value="">Pilih slot tujuan</option>
+          <option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option>
+          <option value="4">Slot 4</option><option value="5">Slot 5</option><option value="6">Slot 6</option>
+          <option value="7">Slot 7</option><option value="8">Slot 8</option><option value="9">Slot 9</option><option value="10">Slot 10</option>
+        </select>
+      </div>
+      <div class="t3k-actions">
+        <button id="t3kChooseTone" class="primary" type="button">Pilih tone dari TONE3000</button>
+      </div>
+      <div class="t3k-status" id="t3kStatus" role="status" aria-live="polite">Siap. Pengaturan API tersedia di tab Device → Pengaturan TONE3000.</div>
+      <div id="t3kToneDetails" class="t3k-tone"></div>
+      <p class="t3k-warning">Mengimpor NAM akan menimpa slot tujuan. Pastikan model yang ada sudah dicadangkan sebelum melanjutkan.</p>
+    `;
+    localPanel.insertAdjacentElement('afterend', panel);
+  }
+
+  if (!document.getElementById('tone3000SettingsPanel')) {
+    const settings = document.createElement('details');
+    settings.id = 'tone3000SettingsPanel';
+    settings.className = 'panel t3k-panel t3k-settings-panel';
+    settings.innerHTML = `
+      <summary class="t3k-settings-summary">
+        <span><strong>Pengaturan TONE3000</strong><small>Publishable key dan Redirect URI · disembunyikan saat tertutup</small></span>
+        <span class="t3k-mark">API</span>
+      </summary>
+      <div class="t3k-settings-body">
+        <p>Konfigurasi ini cukup diatur sekali. Gunakan publishable key, bukan Secret Key. Nilai key disimpan lokal di perangkat ini dan kolomnya selalu tersamarkan.</p>
+        <label for="t3kClientId"><small>Publishable key TONE3000</small></label>
+        <div class="t3k-form">
+          <input id="t3kClientId" type="password" autocomplete="off" spellcheck="false" placeholder="t3k_pub_…" aria-label="Publishable key TONE3000">
+          <button id="t3kSaveKey" type="button">Simpan key</button>
+        </div>
+        <label for="t3kRedirectUri"><small>Redirect URI Android</small></label>
+        <div class="t3k-form">
+          <select id="t3kRedirectUri" aria-label="Pilih Redirect URI yang terdaftar di TONE3000">
+            <option value="tone3000-example://oauth/callback">tone3000-example://oauth/callback</option>
+            <option value="mg30studio://oauth/callback">mg30studio://oauth/callback</option>
+          </select>
+        </div>
+        <small class="t3k-redirect-note">URI di sini harus sama persis dengan salah satu URI pada TONE3000 → Settings → API Keys.</small>
+        <div class="t3k-actions">
+          <button id="t3kSignOut" type="button">Putuskan akun TONE3000</button>
+        </div>
+        <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">Dokumentasi API TONE3000</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">Ketentuan API</a></p>
+      </div>
+    `;
+    settingsMount.appendChild(settings);
+  }
+
   stylePanel();
   panelReady = true;
 
@@ -98,7 +132,7 @@ function createPanel() {
   $('t3kRedirectUri').addEventListener('change', () => {
     const uri = $('t3kRedirectUri').value;
     localStorage.setItem(PREFIX + 'redirect_uri_config', uri);
-    setStatus('Redirect URI dipilih: ' + uri + '. Pastikan URI ini terdaftar persis di pengaturan API key TONE3000 sebelum membuka katalog.');
+    setStatus('Redirect URI dipilih: ' + uri + '. Pastikan URI ini terdaftar persis pada API key TONE3000.');
   });
   $('t3kTargetSlot').value = localStorage.getItem(PREFIX + 'target_slot') || '';
   $('t3kTargetSlot').addEventListener('change', () => {
@@ -113,7 +147,7 @@ function createPanel() {
       return;
     }
     localStorage.setItem(PREFIX + 'client_id', key);
-    setStatus('Publishable key disimpan di perangkat ini. Selanjutnya pilih tone untuk memulai autentikasi.');
+    setStatus('Publishable key disimpan. Kembali ke tab NAM untuk memilih tone.');
   });
   $('t3kChooseTone').addEventListener('click', startSelectFlow);
   $('t3kSignOut').addEventListener('click', signOut);
