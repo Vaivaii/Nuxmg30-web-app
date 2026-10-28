@@ -228,8 +228,8 @@ function initUI(){
        status('Transfer berlangsung: '+info.completed+' dari 75 paket telah mendapat respons.');
      });
      progress(100,'75/75 paket mendapat respons');
-     preview('TRANSFER SELESAI\nSemua 75 paket mendapat ACK. Ini hanya mengonfirmasi respons protokol, bukan membuktikan isi IR atau slot tujuan. Uji suara pada pedal sebelum dipakai.','ok');
-     status('Semua paket mendapat ACK untuk "'+result.name+'". Hasil audio dan target slot belum diverifikasi.','ok');
+     preview('ACK TRANSFER LENGKAP\nMG-30 merespons seluruh 75 paket dengan status yang sesuai capture. Aplikasi belum membaca kembali koleksi IR, jadi belum bisa memastikan nama/isi tersimpan di slot yang diharapkan. Periksa Cabinet/IR → User atau Third-party IR pada perangkat/QuickTone. Jika entri tidak muncul, jangan coba ID acak; perlu capture impor yang sama dari QuickTone untuk membandingkan paket.','ok');
+     status('Semua 75 paket mendapat respons yang sesuai protokol untuk "'+result.name+'". Penyimpanan dan posisi IR belum diverifikasi melalui read-back.','ok');
    }catch(error){
      const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
      preview('TRANSFER BERHENTI\n'+message+'\nData mungkin sudah terkirim sebagian. Jangan anggap IR berhasil.','warn');
