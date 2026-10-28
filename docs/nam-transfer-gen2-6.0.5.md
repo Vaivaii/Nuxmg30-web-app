@@ -29,7 +29,7 @@ This is strong evidence that the variable transfer region corresponds to an appr
 
 ## .namb candidate and validation tests
 
-TONE3000's public nam-binary-loader documents a compact .namb format and a nam2namb converter that can select a SlimmableContainer submodel with --slim. The canonical A2-Lite .namb layout is 7,980 bytes, with its 1,871 float32 weights occupying 7,484 bytes beginning at offset 496. This supports using .namb as a useful intermediate candidate, but does not establish that MG-30 accepts the complete .namb container.
+TONE3000's public nam-binary-loader documents a compact .namb format and a nam2namb converter that can select a SlimmableContainer submodel with --slim. The canonical A2-Lite .namb layout is 7,980 bytes, with its 1,871 float32 weights occupying 7,484 bytes beginning at offset 496. This makes .namb a useful comparison candidate, but not a confirmed NUX format. NUX's public NAM A2 Native overview describes MG-30 Gen 2 as native A2-Lite, while legacy A1 models are handled through conversion to proprietary device formats; it does not identify .namb as the MG-30 transfer format. Since these two captures came from A2-Lite models, the A1 conversion path should not be assumed to be part of this import.
 
 Candidate A2-Lite outputs were generated from both supplied files for offline comparison:
 - Friedman: 7,980-byte .namb, 1,871 weights, weight offset 496; CRC32 verified.
@@ -44,6 +44,7 @@ References:
 - https://github.com/tone-3000/nam-binary-loader
 - https://github.com/tone-3000/embedded
 - https://github.com/MilanMarocchi/teensy_nam_pedal/blob/main/docs/MODELS.md (community reference for raw 1,871-float A2-Lite blobs; not an NUX file specification)
+- https://www.nux.us/es/pages/nam-a2-native (NUX overview: MG-30 Gen 2 native A2-Lite and A1 conversion distinction)
 
 ## Confirmed flow details still needing interpretation
 
