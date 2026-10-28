@@ -325,6 +325,109 @@ function replyMatches(parsed, slotIndex) {
     parsed.offset === 0 && parsed.size === 128 && parsed.payload.length === 128;
 }
 
+function decodeSlotLabel(payload) {
+  const bytes = toBytes(payload).subarray(0, 32);
+  let label = '';
+  for (const value of bytes) {
+    if (value === 0) break;
+    label += value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '_';
+  }
+  return label.trim();
+}
+
+function makeSlotSnapshot(payload, slotNumber) {
+  const metadata = Uint8Array.from(payload || []);
+  return {
+    slotNumber,
+    name: decodeSlotLabel(metadata),
+    nameAvailable: Boolean(decodeSlotLabel(metadata)),
+    metadata,
+  };
+}
+
+/**
+ * Read the ten NAME/metadata records used by the verified MG-30 NAM transfer
+ * flow. This is a separate metadata query; it does not read model weights.
+ * Two rounds are compared so the UI can flag unstable records instead of
+ * silently showing stale or partial names.
+ */
+export async function readMG30NAMSlotNames(connection, onProgress = () => {}) {
+  if (!connection?.input?.addEventListener || !connection?.output?.send) {
+    throw new Error('Koneksi USB-MIDI MG-30 tidak siap.');
+  }
+  const rounds = [Array(10).fill(null), Array(10).fill(null)];
+  const errors = [Array(10).fill(null), Array(10).fill(null)];
+  for (let round = 0; round < 2; round++) {
+    for (let slot = 0; slot < 10; slot++) {
+      try {
+        const reply = await sendAndWait(
+          connection,
+          makeQueryFrame(slot),
+          parsed => replyMatches(parsed, slot),
+          'nama/metadata NAM slot ' + (slot + 1) + ', putaran ' + (round + 1)
+        );
+        rounds[round][slot] = Uint8Array.from(reply.payload);
+        onProgress({
+          stage: 'name-read',
+          round: round + 1,
+          slot: slot + 1,
+          completed: round * 10 + slot + 1,
+          total: 20,
+        });
+      } catch (error) {
+        errors[round][slot] = error?.message || String(error);
+        onProgress({
+          stage: 'name-read-error',
+          round: round + 1,
+          slot: slot + 1,
+          completed: round * 10 + slot + 1,
+          total: 20,
+          error: errors[round][slot],
+        });
+      }
+    }
+  }
+
+  const slots = [];
+  for (let slot = 0; slot < 10; slot++) {
+    const first = rounds[0][slot];
+    const second = rounds[1][slot];
+    if (!first || !second) {
+      slots.push({
+        slotNumber: slot + 1,
+        name: '',
+        nameAvailable: false,
+        metadata: second || first || new Uint8Array(0),
+        received: false,
+        error: errors[1][slot] || errors[0][slot] || 'Nama slot tidak dapat dibaca dua kali.',
+      });
+      continue;
+    }
+    if (!sameBytes(first, second)) {
+      slots.push({
+        slotNumber: slot + 1,
+        name: '',
+        nameAvailable: false,
+        metadata: second,
+        received: false,
+        error: 'Metadata berubah di antara dua pembacaan; sinkronisasi perlu diulang.',
+      });
+      continue;
+    }
+    slots.push({
+      ...makeSlotSnapshot(second, slot + 1),
+      received: true,
+      nonzero: second.reduce((count, value) => count + (value !== 0 ? 1 : 0), 0),
+    });
+  }
+  return {
+    success: slots.every(slot => slot.received),
+    slots,
+    readbackRounds: 2,
+    note: 'Yang dibaca adalah nama/metadata 128-byte per slot. Isi bobot model tidak dibaca kembali oleh protokol ini.',
+  };
+}
+
 export async function sendMG30A2LiteTransfer(connection, plan, onProgress = () => {}) {
   if (!connection?.input?.addEventListener || !connection?.output?.send) {
     throw new Error('Koneksi USB-MIDI MG-30 tidak siap.');
@@ -382,6 +485,11 @@ export async function sendMG30A2LiteTransfer(connection, plan, onProgress = () =
       ' tidak cocok. Periksa perangkat sebelum mencoba ulang.');
   }
 
+  const slots = readbacks[1].map((payload, index) => ({
+    ...makeSlotSnapshot(payload, index + 1),
+    received: true,
+    nonzero: payload.reduce((count, value) => count + (value !== 0 ? 1 : 0), 0),
+  }));
   return {
     success: true,
     slotNumber: plan.slotNumber,
@@ -390,6 +498,7 @@ export async function sendMG30A2LiteTransfer(connection, plan, onProgress = () =
     dataFrames: plan.dataFrames.length,
     readbackRounds: 2,
     readbackNameVerified: true,
+    slots,
     note: 'Semua frame mendapat ACK dan nama slot berhasil diverifikasi. Capture tidak menyediakan readback bobot, sehingga isi bobot tidak dapat diverifikasi melalui query metadata saja.',
   };
 }
