@@ -825,9 +825,9 @@ html,body{background:#0b1012}
 .studio-playback-status.warn{color:#ffd7a0;border-color:#645038}
 .studio-playback-status.hidden{display:none!important}
 
-.brand .logo{width:60px;height:36px;min-width:60px;display:flex;align-items:center;justify-content:center;padding:0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible}.brand .logo img{display:block;width:100%;height:auto;max-height:31px;object-fit:contain}
-@media(max-width:720px){.brand .logo{width:52px;height:32px;min-width:52px}}
-@media(max-width:390px){.brand .logo{width:47px;height:29px;min-width:47px}}
+.brand .logo{width:76px;height:36px;min-width:76px;display:flex;align-items:center;justify-content:center;padding:0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible}.brand .logo img{display:block;width:100%;height:auto;max-height:32px;object-fit:contain}
+@media(max-width:720px){.brand .logo{width:66px;height:32px;min-width:66px}}
+@media(max-width:390px){.brand .logo{width:61px;height:29px;min-width:61px}}
 .camera-page .camera-preview-panel,.camera-page .camera-recordings-panel,.camera-page .camera-link-panel{padding:12px;margin:0 0 10px;border-radius:16px}
 
 /* Mobile editor refinement: compact amp/effect card, contextual chain icons and preset jump */
