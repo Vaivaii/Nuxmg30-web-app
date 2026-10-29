@@ -1094,7 +1094,7 @@ function renderModelVisual(){
  const block=BLOCKS[selected],state=states[selected],storedModelName=block.models[state.model][0],isUserIR=block.id==="IR"&&getModelBaseName(storedModelName).toLowerCase()==="third-party",name=storedModelName,basis=isUserIR?"User IR · Third-party":getModelBasis(block.id,storedModelName),origin=modelOriginLabel(block.id,storedModelName);
  const category=block.id==="AMP"?"AMPLIFIER":block.id==="IR"?"SPEAKER CABINET":block.id==="S/R"?"FX LOOP":block.id==="VOL"||block.id==="WAH"?"PEDAL":block.id==="CMP"?"COMPRESSOR":block.id==="EFX"?"DRIVE / EFFECT":block.id==="EQ"?"EQUALIZER":block.id==="GATE"?"NOISE GATE":block.id==="MOD"?"MODULATION":block.id==="DLY"?"DELAY":block.id==="RVB"?"REVERB":block.id;
  const originChip=origin?'<span class="model-origin-chip '+(origin==="IMAGE"?'':'is-gen2')+'">'+origin+'</span>':'';
- const isNamAmp=block.id==="AMP"&&(AMP_NAM_SLOT_PROFILES.some(item=>item.name===storedModelName)||/\\bNAM\\s*\\d+\\b/i.test(storedModelName));
+ const isNamAmp=block.id==="AMP"&&(AMP_NAM_SLOT_PROFILES.some(item=>item.name===storedModelName)||/\bNAM\s*\d+\b/i.test(storedModelName));
  const artBadgeText=isNamAmp?'NAM PROFILE':origin==="IMAGE"?'IMAGE':'';
  const artBadgeClass=isNamAmp?'is-nam':'is-image';
  const artBadge=artBadgeText?'<span class="gear-art-badge '+artBadgeClass+'" aria-label="'+artBadgeText+'">'+artBadgeText+'</span>':'';
