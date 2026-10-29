@@ -130,14 +130,15 @@ if (existsSync(stylesPath)) {
 const drawableDir = resolve(androidDir, 'app/src/main/res/drawable');
 mkdirSync(drawableDir, { recursive: true });
 const launcherIcon = `<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-<path android:fillColor="#0B1012" android:pathData="M0,0h108v108h-108z"/>
-<path android:fillColor="#C5F36B" android:pathData="M54,9 C33,9 21,25 24,43 C26,61 43,82 54,94 C65,82 82,61 84,43 C87,25 75,9 54,9Z"/>
-<path android:fillColor="#0B1012" android:pathData="M54,19 C40,19 31,30 33,42 C35,54 47,70 54,78 C61,70 73,54 75,42 C77,30 68,19 54,19Z"/>
-<path android:fillColor="#C5F36B" android:pathData="M29,49h12l5,-10l8,25l7,-18l4,7h14v5h-17l-2,-3l-6,16l-8,-23l-2,7h-15z"/>
-<path android:fillColor="#F1F5F4" android:pathData="M30,84h48v3h-48z"/>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="512" android:viewportHeight="512">
+<path android:fillColor="#FFFFFF" android:pathData="M0,0h512v512h-512z"/>
+<path android:fillColor="#050505" android:pathData="M34,224 L34,289 L34,291 L70,291 L71,290 L71,250 L71,249 L125,289 L129,291 L136,291 L162,291 L162,225 L162,224 L126,224 L125,264 L123,264 L87,236 L72,226 L65,224 Z"/>
+<path android:fillColor="#050505" android:pathData="M178,224 L178,274 L181,282 L188,289 L193,291 L200,291 L283,291 L287,290 L292,287 L298,280 L300,273 L300,225 L299,224 L264,224 L263,266 L262,270 L256,274 L222,274 L218,272 L216,270 L215,267 L215,225 L214,224 L179,224 Z"/>
+<path android:fillColor="#050505" android:pathData="M316,224 L316,226 L316,290 L317,290 L358,259 L359,256 Z"/>
+<path android:fillColor="#050505" android:pathData="M343,225 L384,256 L384,258 L343,289 L343,291 L391,291 L410,276 L429,291 L477,291 L476,289 L436,258 L436,257 L477,225 L478,224 L477,224 L429,224 L411,238 L409,237 L391,224 L343,224 Z"/>
 </vector>
 `;
+
 writeFileSync(resolve(drawableDir, 'ic_launcher.xml'), launcherIcon, 'utf8');
 
 run(['cap', 'sync', 'android']);
