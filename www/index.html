@@ -824,10 +824,14 @@ function modelOriginLabel(blockId,modelName){
  if(blockId==="MOD"&&/^Mono Octave$/i.test(name))return "GEN2";
  return "";
 }
+function activeUserIRName(){
+ try{return String(localStorage.getItem('mg30-user-ir-name')||'').trim().slice(0,20)}catch{return ''}
+}
 function modelDisplayLabel(blockId,modelOrName){
  const name=Array.isArray(modelOrName)?modelOrName[0]:String(modelOrName||"");
  const origin=modelOriginLabel(blockId,name);
  if(origin==="GEN2")return name+" · GEN2";
+ if(blockId==="IR"&&getModelBaseName(name).toLowerCase()==="third-party")return activeUserIRName()||name;
  return name;
 }
 function getModelBasis(blockId,modelName){
@@ -1012,7 +1016,7 @@ function renderGearSvg(blockId,modelName){
 }
 function renderModelVisual(){
  const holder=$("modelVisual");if(!holder)return;
- const block=BLOCKS[selected],state=states[selected],name=block.models[state.model][0],basis=getModelBasis(block.id,name),origin=modelOriginLabel(block.id,name);
+ const block=BLOCKS[selected],state=states[selected],storedModelName=block.models[state.model][0],isUserIR=block.id==="IR"&&getModelBaseName(storedModelName).toLowerCase()==="third-party",name=isUserIR?(activeUserIRName()||storedModelName):storedModelName,basis=isUserIR?"User IR · "+(activeUserIRName()||"Third-party"):getModelBasis(block.id,storedModelName),origin=modelOriginLabel(block.id,storedModelName);
  const category=block.id==="AMP"?"AMPLIFIER":block.id==="IR"?"SPEAKER CABINET":block.id==="S/R"?"FX LOOP":block.id==="VOL"||block.id==="WAH"?"PEDAL":block.id==="CMP"?"COMPRESSOR":block.id==="EFX"?"DRIVE / EFFECT":block.id==="EQ"?"EQUALIZER":block.id==="GATE"?"NOISE GATE":block.id==="MOD"?"MODULATION":block.id==="DLY"?"DELAY":block.id==="RVB"?"REVERB":block.id;
  const originChip=origin?'<span class="model-origin-chip '+(origin==="IMAGE"?'':'is-gen2')+'">'+origin+'</span>':'';
  const originNote=origin==="IMAGE"?'Model audio berbasis IMAGE/capture menurut katalog QuickTone. Visual di kartu ini hanya ilustrasi UI, bukan gambar model capture. Verifikasi pilihan di perangkat sebelum menyimpan preset.':origin==="GEN2"?'Efek tambahan pada katalog QuickTone GEN2. ID dan parameter hardware perlu diuji.':'';
@@ -1087,6 +1091,8 @@ $('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(nex
 function renderPresets(){let q=$('search').value.toLowerCase(),list=presets.filter(p=>p.name.toLowerCase().includes(q));$('presetCount').textContent=presets.length+' draft lokal';$('presetList').innerHTML=list.length?list.map(p=>'<div class="preset"><div><strong>'+escapeHtml(p.name)+'</strong><p>Draft lokal · slot '+slotName(p.targetSlot??0)+' · '+new Date(p.date).toLocaleString()+'</p></div><div class="preset-actions"><button class="btn" data-load="'+p.id+'">Muat</button><button class="btn" data-del="'+p.id+'">Hapus</button></div></div>').join(''):'<div class="empty">Belum ada draft lokal yang cocok. Simpan draft setelah mengatur model dan parameter.</div>';$('presetList').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{let p=presets.find(x=>x.id===b.dataset.load);if(p){states=p.states;selected=p.selected??3;targetSlot=p.targetSlot??0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=p.name;renderSlotPicker();render();showPage('editor');toast('Draft dimuat')}});$('presetList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{presets=presets.filter(x=>x.id!==b.dataset.del);persist();renderPresets()})}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons()}
+window.addEventListener('mg30-user-ir-name-changed',()=>{render();});
+window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name')render();});
 function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets()}
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
