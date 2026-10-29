@@ -752,7 +752,7 @@ async function copySceneTo(targetIndex){
   if(sourcePayload.length!==parts[targetIndex].length-7)throw new Error('Ukuran payload sumber dan tujuan berbeda; operasi dibatalkan.');
   const writeParts=parts.map((part,i)=>{
    const body=part.slice();
-   if(i===targetIndex)body.set(sourcePayload,7);
+   if(i===targetIndex)sourcePayload.forEach((value,offset)=>{body[7+offset]=value});
    body[3]=0x0C;body[4]=0x01;body[5]=program;body[6]=i;
    return body;
   });
@@ -795,7 +795,7 @@ async function copySceneTo(targetIndex){
   const detail='Copy Scene berhenti pada tahap '+stage+partial+': '+error.message;
   setDeviceStatus(detail);
   console.error('[MG30 Copy Scene]',{stage,sourceIndex,targetIndex,program,writeAcks,ccSent,error});
-  toast((stage+': '+error.message).slice(0,88));
+  toast((stage+': '+error.message).slice(0,120),6500);
  }finally{
   copySceneBusy=false;sceneSwitchPending=false;
   if(toggle)toggle.disabled=false;
@@ -956,7 +956,7 @@ function changeSelectedModel(delta){
  }
 }
 function persist(){localStorage.setItem('mg30-presets',JSON.stringify(presets));localStorage.setItem('mg30-draft',JSON.stringify({name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex,targetSlot,chainOrder}));notifyActivePresetChanged();}
-function toast(s){$('toast').textContent=s;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1900)}
+function toast(s,duration=1900){const el=$('toast');if(!el)return;el.textContent=s;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
 
 function renderHardwarePreset(){
  const slot=$('hardwarePresetSlot'),name=$('hardwarePresetName'),source=$('hardwarePresetSource'),fav=$('favoritePresetBtn');
