@@ -235,3 +235,17 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Extracted APK `MG30-Studio-Copy-Scene-Gen2.apk`, size 4,369,432 bytes; SHA-256 `d5de8040bbc0387305ccd9bdbdc59911be3d6e7c644e13d4107c0ceb1c335404`.
 - [x] Restored the workflow branch filter via commit `75c19f54aad07becc7a80fee32e842132bdd07da`; the Copy Scene source was built from trigger commit `8c44e01c8310f7d394bb5c3dd62502ffe6cc1a25`.
 - [ ] Runtime-test on the original MG-30 Gen2 firmware 6.0.x: test with intentionally different source/target scene data, verify source is unchanged, destination matches byte-for-byte, and verify all six source-target combinations. Confirm existing NAM import/use, IR Collection transfer, and MIDI mappings continue working.
+
+
+## Follow-up — Copy Scene mobile layout and verification timing (2026-10-30)
+
+- [x] Fix popup clipping on mobile by capping menu width at the viewport minus 24 px and allowing long target labels to wrap.
+- [x] Wait 220 ms after CC80 target-scene selection before requesting active scene/preset status, matching the existing scene-switch handler's settle time.
+- [x] Replace the generic Copy Scene failure toast with stage-specific diagnostics; status identifies the failing phase and concrete error, with ACK count/CC80 state recorded.
+- [x] Both inline scripts pass JavaScript syntax checks; static checks confirm the new width constraints, wrapping, scene-settle delay, ACK checks and payload read-back verification remain present.
+- [x] Build run [#89 / 40930240411](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40930240411) passed (assembleDebug + artifact upload).
+- [x] Artifact ID 12921304697, ZIP size 3,991,970 bytes, ZIP SHA-256 5eb8f1cd4a05459f703d3a7b0a7835d94820618c565617d0fa745d877c1bb127; expires 2026-11-12.
+- [x] APK MG30-Studio-Copy-Scene-Mobile-Fix.apk, size 4,369,816 bytes, SHA-256 67c05ac2e2f96ca981d761d67b18b12dd566e4fc5697f048b212fd09f6dceeed.
+- [x] Workflow branch filter restored by commit 5d0b3f333f4ecfed9c91bb14784f292048f5b2ae.
+- [ ] Test on the original MG-30 Gen2 firmware 6.0.x. Verify dropdown is fully visible and try a source/target pair with different settings; if it fails, record the new detailed stage/error message for the next protocol correction.
+- [ ] Recheck NAM, IR Collection, and existing MIDI mappings after hardware testing.
