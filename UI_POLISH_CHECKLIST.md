@@ -283,3 +283,13 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] APK `MG30-Studio-Active-Preset-Sync-Fix.apk`, size 4,370,824 bytes, SHA-256 `569a4889d3c832b7ef93261eb5ef40f44f0688d1ef5b32db98d54fc976a65689`.
 - [x] Source commit `e000d5b5c1a8c5accd1faa542173c0d5731298da`; workflow branch filter restored by `6bbb0ba6b038762675fd5973b72b5fbccd42e737`.
 - [ ] Confirm on original MG-30 Gen2 firmware 6.0.x that R.PLEXI appears as 02A immediately after connection and remains correctly labeled while connected; then test Copy Scene source preservation and destination read-back on 02A.
+
+
+## Follow-up — Copy Scene `body.set` runtime failure (2026-10-30)
+
+- [x] Diagnosed reported dialog `body set not function`: MIDI receive parsing returns a normal JavaScript Array, so calling TypedArray-only `.set()` throws before the write sequence starts.
+- [x] Replaced `body.set(sourcePayload, 7)` with per-byte `sourcePayload.forEach((value, offset) => { body[7 + offset] = value; })`.
+- [x] Copy Scene failure toast now shows up to 120 characters for 6.5 seconds; other toast messages keep the default duration.
+- [x] Both inline scripts passed JavaScript syntax checks; confirmed the `.set()` call was removed and per-byte payload copy is present.
+- [ ] APK build #92 / run `40935784561` and artifact SHA/link to be recorded after successful workflow completion.
+- [ ] Verify Copy Scene on the physical MG-30 Gen2: different source/target content, source unchanged and target read-back equals source. If it fails, use the now-longer message to capture the actual next protocol-stage error.
