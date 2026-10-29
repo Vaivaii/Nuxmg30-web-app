@@ -128,6 +128,37 @@ function initUI(){
  function openDb(){return new Promise((resolve,reject)=>{if(!('indexedDB' in window)){reject(Error('Penyimpanan lokal tidak tersedia di perangkat ini.'));return}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'slot'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error('Tidak bisa membuka penyimpanan lokal.'))})}
  async function readSlot(slot){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),req=tx.objectStore(STORE).get(slot);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||Error('Gagal membaca slot lokal.'))})}finally{db.close()}}
  async function writeSlot(record){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(record);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('Gagal menyimpan WAV ke penyimpanan lokal.'));tx.onabort=()=>reject(tx.error||Error('Penyimpanan lokal dibatalkan.'))})}finally{db.close()}}
+ async function useCollectionSlotOnDevice(slot){
+  if(busy||syncBusy)return;
+  const device=deviceSlots.get(slot);
+  if(!device?.read||!device?.stable||!device.occupied){setMessage(collectionStatus,'Slot '+String(slot).padStart(2,'0')+' belum terverifikasi berisi IR di perangkat.','warn');return}
+  if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Gunakan IR langsung dari Collection memerlukan APK Android dan USB OTG.','warn');return}
+  const slotIndex=slot-1,slotLabel=String(slot).padStart(2,'0');
+  const request=Uint8Array.from([0xf0,0x43,0x58,0x70,0x6e,0x01,slotIndex,0,0,0,0,0,0,0xf7]);
+  let connection;
+  setBusy(true);setMessage(collectionStatus,'Meminta MG-30 memakai IR Collection slot '+slotLabel+'…');
+  try{
+   connection=await window.NUXNativeMidi.connect();
+   const response=new Promise((resolve,reject)=>{
+    let settled=false,timer;
+    const cleanup=()=>{if(settled)return;settled=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
+    const onMessage=event=>{
+     const data=Array.from(event?.data||[]);
+     if(data.length!==14||data[0]!==0xf0||data[1]!==0x43||data[2]!==0x58||data[3]!==0x70||data[4]!==0x6e||data[5]!==0x02||data[6]!==slotIndex||data[13]!==0xf7)return;
+     cleanup();resolve(true);
+    };
+    connection.input.addEventListener('midimessage',onMessage);
+    timer=setTimeout(()=>{cleanup();reject(Error('Timeout menunggu respons 6E/02 dari MG-30 untuk slot '+slotLabel+'.'))},1800);
+   });
+   try{await connection.output.send(request)}catch(error){throw Error('Gagal mengirim perintah Gunakan: '+(error?.message||error))}
+   await response;
+   const name=device.name||('Collection '+slotLabel);
+   try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
+   window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:slot,directDeviceUse:true}}));
+   setMessage(collectionStatus,'MG-30 merespons Gunakan untuk Collection slot '+slotLabel+'. Nama cabinet diperbarui menjadi "'+name+'". Periksa slot Third Party/User pada perangkat.','ok');
+  }catch(error){setMessage(collectionStatus,'Gunakan langsung gagal: '+(error?.message||error)+' WAV lokal tidak diubah.','warn')}
+  finally{setBusy(false)}
+ }
  function slotCard(slot){
   const card=document.createElement('article');card.className='ir-collection-slot';card.dataset.slot=String(slot);
   card.innerHTML='<div class="ir-collection-slot-head"><span class="ir-collection-slot-number">'+String(slot).padStart(2,'0')+'</span><span class="ir-collection-slot-status" data-slot-status>Belum dicatat</span></div>'+
@@ -135,7 +166,15 @@ function initUI(){
    '<div class="ir-collection-slot-file" data-slot-file>Belum ada WAV lokal</div>'+
    '<div class="ir-collection-slot-actions"><button class="btn primary" type="button" data-slot-import>Import WAV</button><button class="btn" type="button" data-slot-use disabled>Gunakan di User</button></div>';
   card.querySelector('[data-slot-import]').addEventListener('click',()=>{if(busy)return;pendingTarget={type:'collection',slot};fileInput.value='';fileInput.click()});
-  card.querySelector('[data-slot-use]').addEventListener('click',async()=>{if(busy)return;let record=slotCache.get(slot);if(!record){try{record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,e.message||'Gagal membaca WAV lokal.','warn');return}}if(!record?.blob){setMessage(collectionStatus,'WAV sumber untuk slot '+String(slot).padStart(2,'0')+' tidak tersedia di aplikasi.','warn');return}pendingTarget={type:'user',sourceSlot:slot,entry:record};processImport(record.blob,{type:'user',name:record.name,fileName:record.fileName,sourceSlot:slot,entry:record})});
+  card.querySelector('[data-slot-use]').addEventListener('click',async()=>{
+   if(busy||syncBusy)return;
+   let record=slotCache.get(slot);
+   if(!record){try{record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,e.message||'Gagal membaca WAV lokal.','warn');return}}
+   if(record?.blob){pendingTarget={type:'user',sourceSlot:slot,entry:record};processImport(record.blob,{type:'user',name:record.name,fileName:record.fileName,sourceSlot:slot,entry:record});return}
+   const device=deviceSlots.get(slot);
+   if(device?.read&&device?.stable&&device.occupied){void useCollectionSlotOnDevice(slot);return}
+   setMessage(collectionStatus,'WAV sumber lokal tidak tersedia dan slot perangkat belum terbaca stabil. Sinkronkan Collection terlebih dahulu.','warn');
+  });
   return card;
  }
  const cardNodes=new Map();
@@ -155,7 +194,7 @@ function initUI(){
   }else{
    card.classList.remove('is-filled');name.textContent='Slot Collection '+String(slot).padStart(2,'0');status.textContent='Belum dibaca';file.textContent='Belum ada data perangkat';
   }
-  use.disabled=!local?.blob;use.title=local?.blob?'Mengirim ulang WAV sumber lokal ke Third Party/User melalui jalur yang sudah teruji.':'WAV sumber lokal tidak tersedia; nama perangkat dapat dibaca, tetapi Gunakan belum tersedia.';
+  use.disabled=!(local?.blob||(device?.read&&device?.stable&&device?.occupied));use.title=local?.blob?'Mengirim WAV sumber lokal melalui jalur User yang sudah teruji.':(device?.read&&device?.stable&&device?.occupied?'Meminta MG-30 memakai item Collection langsung melalui request 6E/01 yang teramati pada QuickTone.':'WAV sumber lokal dan metadata perangkat belum tersedia.');
  }
  function renderSlotCount(){
   const records=[...deviceSlots.values()];
