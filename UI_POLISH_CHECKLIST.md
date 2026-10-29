@@ -261,3 +261,12 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] APK `MG30-Studio-Copy-Scene-Preset-Alignment.apk`, size 4,370,572 bytes, SHA-256 `edf0244d868989b618b83b9080a7f965ae9d25a40732127a7631707175a5a1db`.
 - [x] Source commit `2fc91435a9946cdcc3c0a8d3f1b918dad4974e50`; workflow push filters restored by `1371679ebcf760cacd36251f8f508427109e7589`.
 - [ ] Test on original MG-30 Gen2 firmware 6.0.x. Confirm the dropdown is fully visible. If status still reports 01D after confirming Program Change to 31B, capture the detailed status/readback so the preset-status byte interpretation can be corrected without bypassing the write guard.
+
+
+## Follow-up — active preset slot sync correction (2026-10-30)
+
+- [x] Fix status parser to read the zero-based preset slot from response body byte 5 (`reply[5]`), not byte 6. The earlier offset produced 01D (slot 3) where physical 02A (slot 4) is reported.
+- [x] Fix Copy Scene mismatch branch to use a mutable status variable so the post-Program-Change response can be read without a runtime `const` assignment error.
+- [x] Add program-change detection to hardware polling, separate from scene-change detection, and update `targetSlot`, bank/slot indicators, hardware preset name and buffer when the active program changes.
+- [x] Both inline scripts pass syntax checks; static checks confirm the response-byte correction, mutable status assignment and hardware preset polling path.
+- [ ] Confirm on physical MG-30 Gen2 firmware 6.0.x that R.PLEXI reports 02A after connecting, remains 02A during idle polling, and Copy Scene reads/writes preset 02A only. Verify source scene unchanged and destination data matches.
