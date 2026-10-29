@@ -56,7 +56,7 @@ button{touch-action:manipulation}
 .eyebrow{font-size:9px;letter-spacing:2px;color:var(--lime);font-weight:850;text-transform:uppercase}
 .hero h2{font-size:clamp(24px,4vw,32px);letter-spacing:-1.05px;line-height:1.08;margin:5px 0 4px;font-weight:850}
 .hero p{color:var(--muted);margin:0;font-size:11px}
-.hero>div:last-child{display:flex;gap:8px;flex-wrap:wrap}
+.hero>div:last-child:not(:first-child){display:flex;gap:8px;flex-wrap:wrap}
 .device-strip{
   display:flex;align-items:center;gap:11px;margin:0 0 12px;padding:11px 13px;
   border:1px solid #2c393e;border-radius:16px;background:linear-gradient(100deg,#182125,#111719);
