@@ -1359,6 +1359,7 @@ function syncUserIRNameToCabinet(name){
 }
 window.addEventListener('mg30-user-ir-name-changed',event=>{syncUserIRNameToCabinet(event.detail?.name);});
 window.addEventListener('mg30-active-preset-changed',()=>renderModelVisual());
+window.addEventListener('mg30-collection-ir-mapped',()=>renderModelVisual());
 window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name')syncUserIRNameToCabinet(event.newValue);});
 function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets()}
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
