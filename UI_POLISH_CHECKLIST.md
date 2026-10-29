@@ -8,8 +8,8 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - Do not change the correct existing MIDI mapping.
 - Do not regress the tested IR Collection transfer.
 - Preserve the confirmed real-time movable signal-chain behavior based on the QuickTone capture.
-- The user requested that UI edits be committed to this branch first and **no APK build be run until the user explicitly says all screenshots/UI changes are complete and asks for a build**. The user explicitly requested a build after Screenshot 3; that build is complete.
-- Avoid automatic builds on `android/ui-polish-pass-1`. The branch's push trigger was enabled just for the requested build, then disabled again.
+- Updated user instruction (2026-10-29): after every source/UI change, immediately build an APK and record the change/build details in this project file. Do not wait for a separate build request each time.
+- Keep automatic builds managed deliberately: only the requested UI branch is built for a change, verify the run/artifact, and restore temporary workflow settings if needed. Do not change the tested baseline branch.
 
 ## Branches / baseline
 - UI-only working branch: `android/ui-polish-pass-1`.
@@ -154,11 +154,12 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [ ] Runtime-test on Android: swipe the chain in edit mode, drag EFX behind AMP using `GESER`, verify auto-scroll reaches off-screen cards, and confirm the physical pedal order/readback remains correct.
 - Static validation performed before commit: source replacement uniqueness checks and inline JavaScript parse check.
 
-## Workflow for the remaining screenshots
-1. User sends one screenshot and describes desired changes.
-2. Edit only the UI-polish branch and update this file with the request/change status.
-3. Do not build APK or trigger an automatic APK workflow while screenshots are still being collected.
-4. After the user explicitly says the screenshot/UI list is complete and asks for a build, inspect the aggregate diff, run static checks, then build the APK once.
+## Workflow for future changes
+1. Apply a focused change to `android/ui-polish-pass-1`, respecting original MG-30 Gen 2 firmware 6.0.x scope.
+2. Preserve working NAM transfer, IR Collection transfer, MIDI mappings, preset encoding, and confirmed SysEx/ACK protocol unless the user specifically asks for a change to those behaviors.
+3. Run static validation, then immediately build the Android debug APK for the latest source change.
+4. Verify build status and uploaded APK artifact; record run URL, commit, artifact details, checksum, and any outstanding hardware runtime tests here.
+5. Maintain the user’s project-continuity record in every change session.
 
 ## Latest scope
 The current commit includes the Studio → Device control move, connection-triggered USB test, and visible Studio YouTube search. The working tree is represented by this Git branch; continue from it in future conversations.
