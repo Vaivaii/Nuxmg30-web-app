@@ -78,6 +78,16 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Order Capacitor status-bar calls so style/visibility are set before applying the final #0b1012 status-bar background; config style is now LIGHT to match the dark header/white status icons.
 - [ ] Build and install the next APK to verify headings, Edit button size, NAM/IMAGE artwork badges, and status-bar color on the actual Android device. Do not build until user explicitly asks, after collecting remaining screenshots.
 
+## Build after Screenshot 4 — 2026-10-29
+
+- [x] User explicitly requested a build after the latest screenshot/UI changes.
+- [x] JavaScript syntax check passed.
+- [x] Android debug APK build passed.
+- [x] Artifact uploaded: `MG30-Studio-IR-Collection-Experiment`, run [40855992189](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40855992189), size 3,985,790 bytes.
+- [x] APK extracted for this conversation as `MG30-Studio-UI-Polish-Screenshot4.apk`, size 4,363,844 bytes, SHA-256 `c2ff1ff3bff50d4efb90e8453478e07cc19fe5d33f683b38329208787fbd707c`.
+- [x] Automatic build trigger disabled again after the requested build; continue saving screenshot changes to this branch without building until the user asks.
+- [ ] User to install/review screenshot 4 changes: title alignment, compact Edit button, NAM/IMAGE artwork badges, and Android status bar color.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
