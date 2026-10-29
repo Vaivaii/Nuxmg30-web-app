@@ -198,3 +198,14 @@ Build:
 - Extracted APK `MG30-Studio-Copy-Scene-Preset-Alignment.apk`, size 4,370,572 bytes; SHA-256 `edf0244d868989b618b83b9080a7f965ae9d25a40732127a7631707175a5a1db`.
 - Source change commit: `2fc91435a9946cdcc3c0a8d3f1b918dad4974e50`. Workflow push branch filters restored by `1371679ebcf760cacd36251f8f508427109e7589`; restored workflow blob matches `877d83759eba533b56f516fbfa99812d3bead089`.
 - Hardware validation remains pending. If the MG-30 still reports 01D after the user confirms Program Change to 31B, Copy Scene intentionally aborts safely; that result would need another protocol/status-byte investigation rather than bypassing the guard.
+
+
+## 12. Active preset index off-by-one diagnosis (2026-10-30)
+
+User reports the physical MG-30 contains preset 02A named R.PLEXI, while the app showed 01D and Copy Scene treated the mismatch as a hardware status error. Root-cause correction in the status parser:
+
+- `readActiveProgramScene()` receives the SysEx body without the leading `F0` byte. In this representation, the program slot field is `reply[5]` (absolute SysEx byte offset 6); `reply[6]` is the following field (absolute offset 7). The old parser used `reply[6]`, shifting the displayed slot from zero-based slot 4 / 02A to slot 3 / 01D in the reported case.
+- Changed the program parse to `Number(reply[5])`. Scene parsing remains at `reply[9]` pending independent capture evidence for that field.
+- Found a runtime bug in Copy Scene's new mismatch-recovery branch: it declared the first status response with `const status` and later reassigned it after Program Change. Changed that binding to `let status` so the second status read can be processed rather than throwing when the branch is entered.
+- Added `lastReportedProgram` alongside `lastReportedSceneStatus`. Hardware polling now notices preset changes independently of scene changes, updates `targetSlot`, the bank/slot indicator, and the hardware preset display, then reloads the buffer from the detected slot. This ensures the program index is not silently stuck when scene remains unchanged.
+- Static checks passed for both inline scripts; slot formatting maps zero-based `3 → 01D` and `4 → 02A` as expected. Physical hardware confirmation remains required.
