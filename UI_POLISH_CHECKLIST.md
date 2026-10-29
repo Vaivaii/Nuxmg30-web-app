@@ -125,6 +125,15 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Automatic build trigger disabled again after the requested build.
 - [ ] User to confirm icon button alignment/size and Library/Device headings after installation.
 
+## Screenshot 7 — Signal-chain alignment, block headings, and bottom navigation icons
+
+- [x] Make the signal-chain reorder icon button exactly 32×32px with a pill radius to match the approximate height of the adjacent “12 blok” chip.
+- [x] Simplify the top-left editor model heading to the block type only (`AMP`, `EFX`, `CMP`, `IR`, `RVB`, etc.); model/pedal/amp names remain available in the dropdown and artwork.
+- [x] Replace text/symbol navigation glyphs with consistent inline outline SVG icons: sliders for Editor, library/book for Presets, waveform for Studio, amplifier cabinet for NAM & IR, and cable/device connection for Device.
+- [x] Style bottom-nav SVGs as consistent Lucide-inspired stroke icons. Reference used: official Lucide icon gallery https://lucide.dev/icons/ and guitar icon sample/reference https://rdicons.vimalbhatt.com/icons/lucide/guitar . Icons are original inline SVG drawings based on the general visual language, not copied brand marks.
+- [x] Leave the real-time chain SysEx sender/ACK logic, Collection IR transfer, NAM transfer, and MIDI mapping unchanged.
+- [ ] Install and check button/chip alignment, block headings, and bottom navigation icon relevance/consistency on Android.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
