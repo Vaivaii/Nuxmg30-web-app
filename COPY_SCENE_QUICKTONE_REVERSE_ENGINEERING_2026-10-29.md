@@ -257,3 +257,15 @@ Build:
 - Artifact `MG30-Studio-debug-APK`, ID `12925423351`, ZIP size 3,993,091 bytes, SHA-256 `46c086a644319ed382970c5c8af167eef02f14ef39439172027842c9d553ab11`; expires 2026-11-12.
 - Extracted APK `MG30-Studio-Copy-Scene-Source-Scene-Fix.apk`, size 4,370,996 bytes, SHA-256 `bec19f99f65db49d9bc443558dbd43da42e218cb928ecd2400c0de3fd584f2ff`.
 - Physical-pedal validation is still pending. Test Scene 2 → 1, Scene 2 → 3 and Scene 3 → 1/2 using different source/target content; confirm the confirmation dialog names the selected source correctly, the source remains unchanged, and target read-back matches. If it still copies the wrong scene, collect the longer stage/error toast before changing further protocol assumptions.
+
+
+## 17. Compact Copy Scene dropdown — implementation (2026-10-30)
+
+User requested that dropdown choices be simplified to only “Scene 1”, “Scene 2”, and “Scene 3”, because the confirmation dialog already explains the copy operation and overwrite warning.
+
+- Changed the dropdown option text from “Copy to Scene N” plus “Salin dari Scene M” subtitle to a single bold “Scene N” label. The menu still omits the currently selected/source scene.
+- Reduced popup maximum width from 200 CSS px to 148 CSS px (still viewport-clamped), menu padding from 6px to 5px, gap from 5px to 4px, option padding from 8px 9px to 7px 8px, and button layout to a single compact row.
+- Both inline scripts pass JavaScript syntax checks. Static checks confirm no “Copy to” prefix, no source subtitle, and 148px menu width.
+- Source commits: HTML label simplification `28059bb44bec055b7866c157d643b5679e945369`; CSS compaction `dd0760be39c9f0af3cb75622d63a8cafa11d4e0c`.
+- APK build [#94 / 40940168961](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940168961) was triggered; the last checked state had `assembleDebug` still running. Artifact ID/checksum and final outcome will be appended after the run completes.
+- Workflow branch filter has already been restored by commit `3a2033630447834db342c3007e4e1350e7a2c4e3`, with default workflow blob SHA `877d83759eba533b56f516fbfa99812d3bead089`; automatic builds on this branch are disabled by default.
