@@ -124,3 +124,27 @@ A closer re-read of the actual instructions corrects an earlier function-role at
 ### Revised conclusion
 
 The `15 01` command builder is confirmed in the executable, but its relationship to the Copy Scene dropdown is **not confirmed**. The three supplied captures still show only `0C 01` scene-data writes, `0C 03` replies, then CC80 selecting the destination. Next analysis should trace the callback object/vtable constructed at `0x5B1505` and inspect its method targets before implementing anything. No app source changes or APK builds have been made.
+
+
+## 8. Confirmed menu callback and wire-level Copy Scene path (2026-10-30)
+
+Further disassembly completed the path from UI menu selection to the captured USB-MIDI packets:
+
+- The scene-menu callback dispatches through the Copy Scene callback object's vtable to `0x5BA430`. Its argument is the menu option index (0 or 1), **not** the destination scene index directly.
+- `0x5BA430` maps that option against the active/source scene and copies the selected source's `0x8E`-byte (142-byte) scene-data block into the destination scene's block. It then calls `0x4A6AC0` with the updated scene-data structure and sends the destination through the helper that emits CC80.
+- `0x4A6AC0` serializes and writes all three scene parts in index order 0, 1, 2. Its SysEx command is `0C 01`, sent through the asynchronous MIDI helper at `0xB0E360`; the callback at `0x4A6CC0` handles `0C 03` acknowledgements. Once all three writes have completed, the target scene is selected with CC80.
+- This sequence directly explains the supplied capture order: three `0C 01` messages, three `0C 03` replies, and then CC80 for the destination. The earlier `15 01` path is a different scene/state-sync path and is not used as the Copy Scene implementation.
+
+### MG30 Studio implementation begun
+
+Commit `2167ec51be6335c113717f746ee0c40eaa7f9927` adds the Copy Scene UI and a hardware copy routine in `www/index.html`; commit `0f24d9846b67d25b7385a1ef4d7047301cec68f7` styles the menu in `www/ui-redesign.css`.
+
+Implemented flow:
+1. Offer only the other two scene destinations based on the active scene.
+2. Read the current preset/scene status; abort if the device's preset differs from the app's selected slot.
+3. Ask for confirmation because the destination scene is overwritten.
+4. Read all three scene parts and validate their expected response lengths and header indices.
+5. Copy the source scene's packed payload to the target part, then send the three `0C 01` packets in order and wait for each matching `0C 03` acknowledgement.
+6. Send CC80 for the destination scene, confirm scene/preset status, and read the destination part back for byte-for-byte payload verification before showing success.
+
+Syntax parsing passed for both inline scripts in `www/index.html`; presence checks confirmed the menu, ACK validation, CC80 target selection, and read-back checks. **The implementation has not yet been tested on a physical MG-30; a passing APK build does not prove hardware behavior.** Build status and artifact checksum are to be appended after the build completes.
