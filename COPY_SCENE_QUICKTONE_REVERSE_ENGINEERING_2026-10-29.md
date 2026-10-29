@@ -218,3 +218,14 @@ User reports the physical MG-30 contains preset 02A named R.PLEXI, while the app
 - Artifact `MG30-Studio-debug-APK`, ID `12923014115`, ZIP size 3,992,913 bytes, SHA-256 `cf75b33199b8ab94b57ce52a61a671ce4d3fc8fbecf5f854dcd472f501c56edf`; expires 2026-11-12.
 - Extracted APK `MG30-Studio-Active-Preset-Sync-Fix.apk`, size 4,370,824 bytes, SHA-256 `569a4889d3c832b7ef93261eb5ef40f44f0688d1ef5b32db98d54fc976a65689`.
 - Both inline scripts passed parser checks. Static checks confirmed the status slot index correction, mutable Copy Scene status result, and independent program-slot polling. No physical pedal test is available here; user must confirm R.PLEXI reads as 02A after connecting and then test Copy Scene on the correct preset.
+
+
+## 14. Copy Scene runtime exception: Array.prototype.set (2026-10-30)
+
+User reported a short-lived dialog saying “body set not function” when pressing Copy Scene. This maps directly to the previous source expression `body.set(sourcePayload,7)` in the write-parts builder:
+
+- `readSysExPart()` returns the SysEx body produced by `waitForSysEx()`; that helper uses `Array.from(e.data)` and returns a normal JavaScript Array, not a `Uint8Array`/TypedArray.
+- Normal Arrays do not have a `.set()` method, so the exception occurred before the first Copy Scene write was emitted.
+- Replaced the call with `sourcePayload.forEach((value,offset)=>{body[7+offset]=value})`, which copies each payload byte into the target part while preserving the regular Array representation and all existing packet-builder/ACK code.
+- Copy Scene errors now keep the toast visible for 6.5 seconds and allow up to 120 characters, making the stage/reason easier to capture. The generic toast helper accepts an optional duration; its other existing calls retain the 1.9-second default.
+- Both inline scripts parse successfully; static checks confirm the failing `.set()` call is removed and per-byte copy is present. Build is being run under GitHub Actions run #92; append final artifact/checksum once completed.
