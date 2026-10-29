@@ -332,12 +332,11 @@ button{touch-action:manipulation}
 .scene-copy-toggle{border:1px solid #3b494d;border-radius:8px;padding:6px 9px;background:#192225;color:#cbd7d4;font:inherit;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap}
 .scene-copy-toggle:hover:not(:disabled){border-color:var(--lime);color:var(--lime)}
 .scene-copy-toggle:disabled{opacity:.55;cursor:wait}
-.scene-copy-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(200px,calc(100vw - 24px));min-width:0;max-width:calc(100vw - 24px);box-sizing:border-box;display:grid;gap:5px;padding:6px;border:1px solid #3a484b;border-radius:10px;background:#101719;box-shadow:0 12px 30px #0008;overflow-x:hidden}
+.scene-copy-menu{position:absolute;right:0;top:calc(100% + 5px);z-index:40;width:min(148px,calc(100vw - 24px));min-width:0;max-width:calc(100vw - 24px);box-sizing:border-box;display:grid;gap:4px;padding:5px;border:1px solid #3a484b;border-radius:9px;background:#101719;box-shadow:0 8px 20px #0007;overflow-x:hidden}
 .scene-copy-menu[hidden]{display:none}
-.scene-copy-option{display:flex;flex-direction:column;gap:3px;align-items:flex-start;width:100%;min-width:0;max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;padding:8px 9px;border:1px solid #2d3a3d;border-radius:7px;background:#172023;color:#d5dfdc;text-align:left;cursor:pointer}
+.scene-copy-option{display:flex;flex-direction:row;gap:0;align-items:center;justify-content:flex-start;width:100%;min-width:0;max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;padding:7px 8px;border:1px solid #2d3a3d;border-radius:7px;background:#172023;color:#d5dfdc;text-align:left;cursor:pointer}
 .scene-copy-option:hover{border-color:var(--lime);background:#202b22}
-.scene-copy-option strong{font-size:10px;white-space:normal;overflow-wrap:anywhere}
-.scene-copy-option small{font-size:8px;color:#8d9d9d;white-space:normal;overflow-wrap:anywhere}
+.scene-copy-option strong{font-size:11px;font-weight:700;white-space:normal;overflow-wrap:anywhere}
 .scene-bar-head strong{font-size:11px;font-weight:800}
 .scene-bar-head small{font-size:9px;color:var(--muted)}
 .scene-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
