@@ -148,3 +148,14 @@ Implemented flow:
 6. Send CC80 for the destination scene, confirm scene/preset status, and read the destination part back for byte-for-byte payload verification before showing success.
 
 Syntax parsing passed for both inline scripts in `www/index.html`; presence checks confirmed the menu, ACK validation, CC80 target selection, and read-back checks. **The implementation has not yet been tested on a physical MG-30; a passing APK build does not prove hardware behavior.** Build status and artifact checksum are to be appended after the build completes.
+
+
+## 9. APK build record — Copy Scene implementation (2026-10-30)
+
+- Android build workflow run [#88 / 40928213459](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40928213459) completed successfully on branch `android/ui-polish-pass-1`; `assembleDebug` and artifact upload both passed.
+- Build was triggered by temporary workflow enablement commit `8c44e01c8310f7d394bb5c3dd62502ffe6cc1a25`; the push branch filter was subsequently restored by commit `75c19f54aad07becc7a80fee32e842132bdd07da`. The restored workflow blob matches the previous default configuration (`877d83759eba533b56f516fbfa99812d3bead089)); the branch is not enabled for automatic builds by default.
+- Artifact: `MG30-Studio-debug-APK`, ID `12922190556`, ZIP size 3,991,519 bytes, ZIP SHA-256 `af08487e85b089b80a9c03becbcab2330d6f22189fdf609775bceca356c58d46`; expires 2026-11-12.
+- Extracted APK file `MG30-Studio-Copy-Scene-Gen2.apk`, size 4,369,432 bytes, SHA-256 `d5de8040bbc0387305ccd9bdbdc59911be3d6e7c644e13d4107c0ceb1c335404`.
+- Source commit for Copy Scene menu and logic: `2167ec51be6335c113717f746ee0c40eaa7f9927`; CSS styling commit: `0f24d9846b67d25b7385a1ef4d7047301cec68f7`; this protocol/build note commit is after those source changes.
+- Static validation: both inline scripts parse successfully; checked presence of menu wiring, per-part ACK check, CC80 destination, and target payload read-back comparison.
+- Physical MG-30 run-time validation has **not** been performed in this environment. On-device success still requires testing a source scene with different values from its target, confirming the target changes and source remains untouched, then selecting each of the six valid source/destination pairs. Existing NAM, IR Collection, and MIDI mappings were not modified by this feature.
