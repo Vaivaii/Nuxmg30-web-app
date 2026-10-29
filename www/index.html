@@ -608,7 +608,7 @@ async function readActiveProgramScene(){
   const pending=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x15&&b[4]===0x02&&b.length>=10,1800);
   const sent=await midiFrame([0x43,0x58,0x70,0x15,0x00]);
   if(!sent)throw new Error('Gagal meminta status preset/scene dari MG-30.');
-  const reply=await pending,scene=Number(reply[9]),program=Number(reply[6]);
+  const reply=await pending,scene=Number(reply[9]),program=Number(reply[5]); // In the SysEx body, program is byte 5; byte 6 is the following field, not the slot.
   if(!Number.isInteger(scene)||scene<0||scene>2)throw new Error('Indeks scene dari perangkat tidak valid: '+scene);
   if(!Number.isInteger(program)||program<0||program>127)throw new Error('Nomor preset dari perangkat tidak valid: '+program);
   return {program,scene};
@@ -628,6 +628,7 @@ async function readActiveBuffer(options={}){
     status=await readActiveProgramScene();
     sceneIndex=status.scene;
     lastReportedSceneStatus=status.scene;
+    lastReportedProgram=status.program;
    }catch(error){
     if(options.sceneIndex===undefined)setDeviceStatus('Status preset/scene belum terbaca: '+error.message);
    }
@@ -678,16 +679,27 @@ async function pollHardwareState(forceBuffer=false){
  try{
   const status=await readActiveProgramScene();
   if(sceneSwitchPending)return;
-  const firstReport=lastReportedSceneStatus===null;
-  const reportChanged=firstReport||status.scene!==lastReportedSceneStatus;
+  const firstReport=lastReportedSceneStatus===null||lastReportedProgram===null;
+  const programChanged=lastReportedProgram===null||status.program!==lastReportedProgram;
+  const sceneReportChanged=lastReportedSceneStatus===null||status.scene!==lastReportedSceneStatus;
+  const reportChanged=firstReport||programChanged||sceneReportChanged;
   if(!forceBuffer&&!reportChanged)return;
-  lastReportedSceneStatus=status.scene;
-  // A stale scene reply immediately after a UI command must not undo the visible selection.
-  if(lastSceneCommandAt&&Date.now()-lastSceneCommandAt<4000&&status.scene!==activeSceneIndex)return;
   const sceneChanged=status.scene!==activeSceneIndex;
+  // Do not let a stale scene response undo a just-issued scene switch. A program
+  // change is handled separately and must still synchronize the hardware slot.
+  if(lastSceneCommandAt&&Date.now()-lastSceneCommandAt<4000&&sceneChanged&&!programChanged)return;
+  lastReportedProgram=status.program;
+  lastReportedSceneStatus=status.scene;
+  if(programChanged){
+   targetSlot=status.program;
+   $('bankSelect').value=String(Math.floor(targetSlot/4));
+   hardwarePresetName='';hardwarePresetNameLoaded=false;
+   renderSlotPicker();renderHardwarePreset();persist();
+  }
   if(sceneChanged){activeSceneIndex=status.scene;$('sceneSelect').selectedIndex=status.scene;renderSceneButtons();persist()}
   await readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:activeSceneIndex,program:targetSlot});
-  if(sceneChanged||forceBuffer)setDeviceStatus('Scene '+(activeSceneIndex+1)+' · konfigurasi edit buffer dibaca ulang dari MG-30.');
+  if(programChanged)setDeviceStatus('Preset '+slotName(status.program)+' · nama dan konfigurasi disinkronkan dari MG-30.');
+  else if(sceneChanged||forceBuffer)setDeviceStatus('Scene '+(activeSceneIndex+1)+' · konfigurasi edit buffer dibaca ulang dari MG-30.');
  }catch(error){if(forceBuffer)setDeviceStatus('Sinkronisasi hardware belum berhasil: '+error.message)}
  finally{hardwareSyncBusy=false}
 }
@@ -713,7 +725,7 @@ async function copySceneTo(targetIndex){
   while(hardwareSyncBusy)await delay(10);
   await flushMidi();
   stage='membaca status preset/scene (15/00)';
-  const status=await readActiveProgramScene();
+  let status=await readActiveProgramScene();
   sourceIndex=status.scene;program=status.program;
   if(program!==targetSlot){
    const confirmed=confirm('Status MG-30 melaporkan preset '+slotName(program)+', sedangkan aplikasi memilih '+slotName(targetSlot)+'.\n\nTekan OK untuk mengirim Program Change ke '+slotName(targetSlot)+' lalu memeriksa ulang status. Copy Scene hanya dilanjutkan jika pedal mengonfirmasi preset '+slotName(targetSlot)+'. Cancel membatalkan tanpa menulis data scene.');
@@ -906,7 +918,7 @@ let chainOrder=BLOCKS.map((_,i)=>i);
 presets=presets.filter(p=>!p.builtIn);
 localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
-let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastSceneCommandAt=0;
+let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0;
 let targetSlot=0;
 let lastAnnouncedActivePresetSlot=null;
 function notifyActivePresetChanged(){
