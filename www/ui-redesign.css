@@ -934,11 +934,14 @@ html,body{background:#0b1012}
   width:auto!important;
   min-width:0!important;
   max-width:none;
-  height:39px;
+  height:39px!important;
   min-height:39px!important;
-  padding:8px 13px!important;
-  font-size:12px;
-  line-height:1.1;
+  max-height:39px!important;
+  padding:7px 10px!important;
+  font-size:10px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  border-radius:12px;
 }
 @media(max-width:720px){
   .signal-chain-panel .chain-head-actions{
@@ -979,3 +982,42 @@ html,body{background:#0b1012}
   color:#eff5f4;
   letter-spacing:1px;
 }
+
+
+/* Latest screenshot pass: compact Edit to the same visual scale as header actions. */
+.signal-chain-panel .chain-head-actions .chain-edit-toggle{
+  align-self:center!important;
+  box-sizing:border-box!important;
+}
+.signal-chain-panel .chain-head-actions{
+  align-items:center!important;
+}
+
+/* Studio title follows the same eyebrow + left-aligned title hierarchy as Presets. */
+.studio-page-hero{
+  display:block!important;
+  margin:0 2px 14px!important;
+  text-align:left!important;
+}
+.studio-page-hero>div:first-child{
+  display:block!important;
+  width:100%!important;
+  text-align:left!important;
+}
+.studio-page-hero .eyebrow{display:block}
+.studio-page-hero h2{
+  margin:4px 0 0!important;
+  font-size:26px;
+  line-height:1.12;
+  letter-spacing:-.8px;
+  font-weight:850;
+}
+
+/* Compact NAM import: leave the action prompt as the sole file-picker description. */
+#namImportTransferPanel>.panel-head p,
+#namImportTransferPanel>.panel-head>.chip,
+#namImportTransferPanel .nam-file-picker #namTransferFileMeta{
+  display:none!important;
+}
+#namImportTransferPanel>.panel-head{margin-bottom:10px}
+#namImportTransferPanel .nam-file-picker{min-height:86px}
