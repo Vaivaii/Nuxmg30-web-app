@@ -34,6 +34,12 @@ jobs:
           java-version: "21"
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+          accept-android-sdk-licenses: true
+          # "tools" is a retired SDK package and makes sdkmanager exit 1.
+          # Install the supported command-line platform/build packages explicitly.
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Build debug APK
