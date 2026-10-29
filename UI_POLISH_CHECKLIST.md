@@ -88,6 +88,17 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Automatic build trigger disabled again after the requested build; continue saving screenshot changes to this branch without building until the user asks.
 - [ ] User to install/review screenshot 4 changes: title alignment, compact Edit button, NAM/IMAGE artwork badges, and Android status bar color.
 
+## Screenshot 5 — Edit button proportions, Studio title, NAM label/import compactness
+
+- [x] Make the Signal Chain Edit button genuinely match the regular header-action scale: 39px fixed height, no oversized min-width, compact 10px text, and no wrapping.
+- [x] Add a Studio page eyebrow/title pair: green small label “MG30 STUDIO”, white title “Jam & Record”, aligned left like Preset Library.
+- [x] Simplify the amplifier NAM artwork badge text from “NAM PROFILE” to “NAM”.
+- [x] Remove supporting instructions under “Import NAM ke MG-30”; keep the section title only.
+- [x] Remove the “A2-LITE · EXPERIMENTAL” chip from the NAM import card.
+- [x] Hide the file-format metadata under “Pilih file NAM untuk dikirim”, leaving that prompt as the only explanatory text in the file picker. The hidden metadata element is retained so existing JS handlers can still update it safely.
+- [x] Preserve NAM file input IDs, destination selector, send handler, and existing transfer implementation.
+- [ ] Install and visually verify this build: the Edit button height/font proportions, Studio title placement, and compact NAM file picker.
+- [ ] If any follow-up screenshot changes are requested, commit UI changes only; do not rebuild unless the user explicitly asks.
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
