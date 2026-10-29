@@ -1,31 +1,32 @@
-# User IR name sync on preset/scene changes — isolated experiment
+# User IR name sync — readback rolled back to protect import
 
-Target: original NUX MG-30 Gen 2, firmware 6.0.x. This branch is isolated from the known User-IR baseline and from `main`.
+Target: original NUX MG-30 Gen 2, firmware 6.0.x. This branch remains isolated from `main` and the known User-IR baseline.
 
-## Diagnosis
+## Hardware report
 
-The editor renders the custom cabinet label from the local key `mg30-user-ir-name`. The active preset readback already refreshes the IR block model, but User IR name/CRC metadata was only queried on initial connection (plus the local import/Collection-use events). Switching hardware presets could therefore leave the previously cached label visible.
+The user tested Run #34 on the physical unit. It showed the generic `Third-party` label after USB connection, and User IR import no longer worked. The pedal's display showed `TONE KING MAIN OD R`, while the app had previously shown `i5_cap_45_dc`.
 
-## Change in this experiment
+## Why the experiment is rolled back
 
-After a successful preset readback, scene readback, or manual “Baca buffer aktif” operation, the app also calls the existing read-only `syncActiveUserIRNameFromDevice` helper. The first revision queried metadata target `0x47` (71). The user's physical-device screenshot then showed the pedal's Third-party IR name as `TONE KING MAIN OD R` while the app remained on `i5_cap_45_dc`. That demonstrates the first revision did not synchronize the correct displayed name.
+The readback path guessed that `09/00` would return User metadata as `09/02`. That request was not validated against a firmware 6.0.x capture. It also ran repeatedly during connect, preset selection, Scene changes and manual buffer reads. The read command and target byte are still hypotheses; it is not acceptable to leave this query active if it can interfere with the known-good User transfer or clear the local IR name.
 
-User-write captures show different parameter bytes: the original complete User capture uses `1`, while a later capture uses `71`; this field is not proven to be a physical slot number. The current revision changes **readback only** to query `09/00` target `1`, matching the original complete User capture. It requires `09/02`, reads twice, and only displays stable metadata. If readback fails, the UI falls back to generic `Third-party` rather than presenting an older local label as confirmed device state. Target `1` is a testable hypothesis, not yet proof of the active cabinet's metadata key.
+The unverified User metadata query and all calls to it have now been removed from the app. This returns USB connection/preset synchronization to the existing behavior and stops the app from deleting the locally cached label when speculative readback times out.
 
-The experiment does not change the User import `10/01, 09/01, 11/01` command family, the Collection `6A/6C/6B` path, NAM transfer/readback, or the existing MIDI CC map. It adds readback requests only.
+## Protected User import behavior
 
-## Validation status
+- User import explicitly uses parameter **71**.
+- The default of `buildMG30IRTransferPlan` is also now **71**.
+- The User transfer remains 75 SysEx frames with command families `10/01` waveform, `09/01` name, and `11/01` curve.
+- Collection remains separated on `6A/6C/6B` with its independent slot-based parameter.
+- NAM code and the existing MIDI CC mapping are unchanged.
 
-- JavaScript syntax check of both inline scripts passed after the changes.
-- GitHub Actions Android build is being run for this branch.
-- **Physical hardware validation is still required.** In particular, `09/00 → 09/02` User IR name readback has not been independently confirmed against a fresh USBPcap capture on firmware 6.0.x. Target `1` is now the active experiment; the capture establishes its use in one User write, not yet that it is the correct readback key.
+## Cabinet name behavior
 
-## Hardware test checklist
+On a successful User import, the app can continue to display the uploaded/imported name from local app metadata. On connect, the app will no longer claim that it read the active cabinet name from the pedal until the actual read/check transaction is captured and verified. The device-side label `Third-party` and the custom file name are distinct pieces of data and must not be conflated.
 
-1. Connect with User IR name A currently active; confirm the app shows A after the two-pass readback.
-2. Change to another preset that uses Third-party/User IR, where the device metadata should differ if the device stores a different active User IR; verify whether the app updates rather than retaining A.
-3. Trigger a Scene change and use “Baca buffer aktif”; confirm the label is refreshed by device readback.
-4. Switch to a built-in cabinet and back to Third-party; verify model selection follows the active preset, not the cached display label.
-5. If the query times out or returns unstable/different records, save a USBPcap trace of these read-only requests and responses. Do not treat the build succeeding as proof that the pedal returned correct metadata.
+## Validation
 
-Do not merge this branch into `main` or the known-good User-IR baseline until the device readback is verified.
+- Inline JavaScript syntax was checked before this rollback.
+- A new Android debug APK build is triggered for this rollback.
+- Firmware-level name readback remains unsolved; do not attempt another `09/00` query until we capture or disassemble the original MG-30 Gen 2 QuickTone `getIRCrcAndNameCheck` path.
+- Do not merge this experimental branch into `main` until the User import has been tested again on hardware.
