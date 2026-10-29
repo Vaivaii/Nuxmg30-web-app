@@ -662,6 +662,30 @@ async function selectHardwareSlot(prog,fromDevice=false){
  }
 }
 function handleMG30MidiMessage(e){const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
+async function syncActiveUserIRNameFromDevice(connection){
+ const reader=window.NUXIRTransfer?.readActiveUserIRNameFromDevice;
+ if(typeof reader!=='function'||!window.NUXNativeMidi?.available)return null;
+ try{
+  setDeviceStatus('USB-MIDI tersambung · membaca nama IR User aktif dari MG-30…');
+  const result=await reader(connection);
+  const name=String(result?.name||'').trim().slice(0,20);
+  if(result?.received){
+   if(result.occupied&&name){
+    try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
+    window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,source:'device-readback',deviceReadback:true,crcHex:result.crcHex||''}}));
+    setDeviceStatus('Terhubung · nama IR User dibaca dari pedal: '+name+(result.crcHex?' · CRC '+result.crcHex:''));
+   }else{
+    try{localStorage.removeItem('mg30-user-ir-name')}catch{}
+    window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name:'Third-party',source:'device-readback',deviceReadback:true,empty:true}}));
+    setDeviceStatus('Terhubung · metadata User IR terbaca; slot kosong atau belum memiliki nama.');
+   }
+  }
+  return result;
+ }catch(error){
+  setDeviceStatus('Terhubung, tetapi nama IR User aktif gagal dibaca dari pedal: '+(error?.message||error));
+  return null;
+ }
+}
 async function connectMG30(){
  const nativeMidi=window.NUXNativeMidi;
  if(nativeMidi&&nativeMidi.available){
@@ -672,13 +696,19 @@ async function connectMG30(){
    midiInput.onmidimessage=handleMG30MidiMessage;
    midiAccess.onstatechange=()=>{
     const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
+    const newlyConnected=ok&&!midiConnected;
     midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
     setDeviceStatus(ok?'Terhubung via USB-MIDI Android':'Perangkat MIDI terputus');
+    if(newlyConnected){
+     void syncActiveUserIRNameFromDevice({input:midiInput,output:midiOutput});
+     if(window.NUXNAMTransfer?.readMG30NAMSlotNames)setTimeout(()=>{void scanNamDeviceSlots(true)},150);
+    }
    };
    setDeviceStatus('Terhubung via USB-MIDI Android. Membaca preset aktif…');
    $('midiSupport').textContent='Native USB-MIDI';
    toast('Terhubung: '+(connection.deviceName||midiOutput.name||'NUX MG-30'));
    await readActiveBuffer().then(n=>setDeviceStatus('Terhubung via OTG · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('USB-MIDI terhubung, baca buffer gagal: '+e.message));
+   await syncActiveUserIRNameFromDevice(connection);
    renderChain();startHardwareStatePolling();
    if(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames){
     setTimeout(()=>{void scanNamDeviceSlots(true)},80);
@@ -708,12 +738,15 @@ async function connectMG30(){
   midiInput.onmidimessage=handleMG30MidiMessage;
   midiAccess.onstatechange=()=>{
    const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
+   const newlyConnected=ok&&!midiConnected;
    midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
    setDeviceStatus(ok?'Terhubung':'Perangkat terputus');
+   if(newlyConnected)void syncActiveUserIRNameFromDevice({input:midiInput,output:midiOutput});
   };
   setDeviceStatus('Terhubung. Membaca preset aktif…');
   $('midiSupport').textContent='API tersedia';toast('Terhubung: '+(midiOutput.name||'MIDI device'));
   await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));
+  await syncActiveUserIRNameFromDevice({input:midiInput,output:midiOutput});
   renderChain();startHardwareStatePolling();
  }catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}
 }
