@@ -134,6 +134,15 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Leave the real-time chain SysEx sender/ACK logic, Collection IR transfer, NAM transfer, and MIDI mapping unchanged.
 - [ ] Install and check button/chip alignment, block headings, and bottom navigation icon relevance/consistency on Android.
 
+## Build after Screenshot 7 — 2026-10-29
+
+- [x] User requested a build after the latest signal-chain/navigation UI adjustments.
+- [x] JavaScript syntax check passed; Android debug APK build and artifact upload succeeded.
+- [x] GitHub Actions run [40864976216](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40864976216) completed successfully from commit `2d95ca30b85208dcc175820f6b449c5600393059`.
+- [x] Build artifact `MG30-Studio-IR-Collection-Experiment` (3,986,398 bytes, artifact ID `12893028237`) was downloaded and exposed to the conversation as `MG30-Studio-UI-Polish-Screenshot7.zip`; installation APK supplied separately when extraction is available.
+- [x] Automatic build trigger disabled again after this requested build.
+- [ ] User to verify the 32×32 reorder icon aligns with the “12 blok” chip, the editor block heading only displays its type (`AMP`, `EFX`, etc.), and the bottom-nav SVG icons fit their respective tabs.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
