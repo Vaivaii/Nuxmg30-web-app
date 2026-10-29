@@ -239,3 +239,21 @@ User reported a short-lived dialog saying “body set not function” when press
 - Extracted APK `MG30-Studio-Copy-Scene-Array-Fix.apk`, size 4,370,868 bytes; SHA-256 `823b4ed362605cc9a865827c030eec5aeb270930123a2a0b2e9d0825212f59e3`.
 - Both inline scripts passed parser checks. Confirmed the `.set()` call is absent, per-byte payload copy is present, and the Copy Scene error toast persists for 6.5 seconds.
 - Hardware validation remains pending. Try Copy Scene again using this APK; if it fails, the longer stage/error message should identify the next issue. Do not report success unless 3 ACKs, destination selection and destination read-back all pass.
+
+
+## 16. Copy Scene source scene selection fix — APK build #93 (2026-10-30)
+
+User's screenshots showed the active scene card in the editor as Scene 2 or Scene 3, but the Copy Scene confirmation still read “Salin Scene 1” and a Scene 2 → Scene 1 attempt was rejected as source and destination being identical. This confirms that Copy Scene was incorrectly trusting the scene field parsed from the `15/00` status reply; on the affected device it remained at index 0 while the app's selected scene changed.
+
+Changes:
+- Source scene is now taken from `activeSceneIndex`, the app's current scene selection driven by the scene buttons and CC80 path, instead of `status.scene` from the questionable `15/00` field.
+- The first status query and post-Program-Change query still validate the hardware preset number. The source scene remains the current selected UI scene.
+- After the copy writes and sends CC80, the routine no longer rejects Scene 2/3 based on the same untrusted `after.scene` field. It still checks that the hardware preset stayed the same and requires destination payload read-back to match the source byte-for-byte before success.
+- Both inline scripts passed JavaScript parse checks; static assertions confirmed that the Copy Scene source is `activeSceneIndex`, the false scene-status rejection branch is removed, the preset guard remains, and the ACK + destination read-back validation remain present.
+
+Build:
+- GitHub Actions run [#93 / 40938188175](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40938188175) succeeded; `assembleDebug` and artifact upload passed.
+- Source commit: `d8a5751a2e09c6205d96c1b011b3853f9ca56f6a`. Temporary build-trigger commit: `e9ddad3798b49eac4efe368f8f15341e47547867`. Workflow branch filters restored by `e8f8218161f16a0bd27c3ec615000eaba005f2e8`; restored workflow blob is `877d83759eba533b56f516fbfa99812d3bead089`, so automatic branch builds remain disabled by default.
+- Artifact `MG30-Studio-debug-APK`, ID `12925423351`, ZIP size 3,993,091 bytes, SHA-256 `46c086a644319ed382970c5c8af167eef02f14ef39439172027842c9d553ab11`; expires 2026-11-12.
+- Extracted APK `MG30-Studio-Copy-Scene-Source-Scene-Fix.apk`, size 4,370,996 bytes, SHA-256 `bec19f99f65db49d9bc443558dbd43da42e218cb928ecd2400c0de3fd584f2ff`.
+- Physical-pedal validation is still pending. Test Scene 2 → 1, Scene 2 → 3 and Scene 3 → 1/2 using different source/target content; confirm the confirmation dialog names the selected source correctly, the source remains unchanged, and target read-back matches. If it still copies the wrong scene, collect the longer stage/error toast before changing further protocol assumptions.
