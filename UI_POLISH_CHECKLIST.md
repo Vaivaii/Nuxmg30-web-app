@@ -221,3 +221,17 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Restored the workflow branch filter after the build started; automatic build trigger for `android/ui-polish-pass-1` is disabled by default again.
 - [ ] Runtime-test: select a preset with a Collection IR association and confirm its cabinet artwork shows the right `IR 01` / `IR 04` badge; switch to another preset with a different mapping and confirm it updates. Check navigation taps/pages after tab reordering, and recheck NAM/IR transfer.
 
+
+
+## Follow-up — QuickTone Copy Scene port (2026-10-30)
+
+- [x] Reverse-engineered the actual QuickTone 2.6.7.16 Copy Scene callback `0x5BA430`: option index 0/1 is mapped against active source scene, then the 142-byte scene data block is copied to the destination.
+- [x] Reproduced the verified on-wire sequence: read three `0C 02` scene parts; write all three `0C 01` parts in scene-index order; wait for corresponding `0C 03` ACK for each; send CC80 destination; query scene status and read back destination payload before reporting success.
+- [x] Added a Copy Scene dropdown that offers only the other two scenes, with explicit overwrite confirmation and preset-slot mismatch guard.
+- [x] UI markup/source commit: `2167ec51be6335c113717f746ee0c40eaa7f9927`; CSS commit: `0f24d9846b67d25b7385a1ef4d7047301cec68f7`.
+- [x] Inline JavaScript parse check passed for both inline scripts; static checks verified menu wiring, ACK handling, target CC80, and read-back equality validation.
+- [x] APK build run [#88 / 40928213459](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40928213459) succeeded; Android `assembleDebug` and artifact upload passed.
+- [x] Artifact: `MG30-Studio-debug-APK`, ID `12922190556`, ZIP size 3,991,519 bytes; ZIP SHA-256 `af08487e85b089b80a9c03becbcab2330d6f22189fdf609775bceca356c58d46`; expires 2026-11-12.
+- [x] Extracted APK `MG30-Studio-Copy-Scene-Gen2.apk`, size 4,369,432 bytes; SHA-256 `d5de8040bbc0387305ccd9bdbdc59911be3d6e7c644e13d4107c0ceb1c335404`.
+- [x] Restored the workflow branch filter via commit `75c19f54aad07becc7a80fee32e842132bdd07da`; the Copy Scene source was built from trigger commit `8c44e01c8310f7d394bb5c3dd62502ffe6cc1a25`.
+- [ ] Runtime-test on the original MG-30 Gen2 firmware 6.0.x: test with intentionally different source/target scene data, verify source is unchanged, destination matches byte-for-byte, and verify all six source-target combinations. Confirm existing NAM import/use, IR Collection transfer, and MIDI mappings continue working.
