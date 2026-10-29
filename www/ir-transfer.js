@@ -92,7 +92,7 @@ function frameHeader(cmd,param,offset){return[...PREFIX,cmd,1,...enc16(param),..
 function waveformFrames(samples,param,gain){const wire=new Float32Array(N);for(let i=0;i<N;i++)wire[i]=f32(samples[N-1-i]*gain);const dv=new DataView(wire.buffer),frames=[];for(let f=0;f<64;f++){const out=frameHeader(0x10,param,f*32);for(let i=0;i<64;i++)out.push(...enc16(dv.getUint16((f*64+i)*2,true)));out.push(0xF7);if(out.length!==205)throw Error('Panjang paket waveform tidak cocok.');frames.push(Uint8Array.from(out))}return{frames,wire}}
 function nameFrame(name,param){const b=new Uint8Array(32),enc=new TextEncoder().encode(safeName(name));b.set(enc.subarray(0,20));const out=[...PREFIX,0x09,0x01,param,0,2,0,0,0,0];for(let i=0;i<32;i+=2)out.push(...enc16(b[i]|(b[i+1]<<8)));out.push(0xF7);if(out.length!==62)throw Error('Panjang paket nama tidak cocok.');return Uint8Array.from(out)}
 function curveFrames(curve,param){const v=new Uint16Array(640);v.set(curve);const frames=[];for(let f=0;f<10;f++){const out=frameHeader(0x11,param,f*64);for(let i=f*64;i<(f+1)*64;i++)out.push(...enc16(v[i]));out.push(0xF7);if(out.length!==205)throw Error('Panjang paket kurva tidak cocok.');frames.push(Uint8Array.from(out))}return frames}
-export function buildMG30IRTransferPlan({samples,fileName,irName,parameter=1,target='user'}){if(!samples||samples.length<N)throw Error('Pilih WAV yang valid dahulu.');const param=Number(parameter);if(!Number.isInteger(param)||param<0||param>127)throw Error('Parameter transfer harus bilangan 0–127.');const name=safeName(irName||fileName||'Custom IR'),gain=gainFor(samples.subarray?samples.subarray(0,N):samples),wave=waveformFrames(samples,param,gain),curve=curveFrames(curveFor(wave.wire),param),frames=[...wave.frames,nameFrame(name,param),...curve],mode=target==='collection'?'collection':'user',commands=mode==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};if(frames.length!==75)throw Error('Rencana transfer harus berisi 75 paket.');for(let i=0;i<64;i++)frames[i][4]=commands.waveform;frames[64][4]=commands.name;for(let i=65;i<75;i++)frames[i][4]=commands.curve;return{name,parameter:param,target:mode,commands,gain,frames}}
+export function buildMG30IRTransferPlan({samples,fileName,irName,parameter=71,target='user'}){if(!samples||samples.length<N)throw Error('Pilih WAV yang valid dahulu.');const param=Number(parameter);if(!Number.isInteger(param)||param<0||param>127)throw Error('Parameter transfer harus bilangan 0–127.');const name=safeName(irName||fileName||'Custom IR'),gain=gainFor(samples.subarray?samples.subarray(0,N):samples),wave=waveformFrames(samples,param,gain),curve=curveFrames(curveFor(wave.wire),param),frames=[...wave.frames,nameFrame(name,param),...curve],mode=target==='collection'?'collection':'user',commands=mode==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};if(frames.length!==75)throw Error('Rencana transfer harus berisi 75 paket.');for(let i=0;i<64;i++)frames[i][4]=commands.waveform;frames[64][4]=commands.name;for(let i=65;i<75;i++)frames[i][4]=commands.curve;return{name,parameter:param,target:mode,commands,gain,frames}}
 function waitAck(input,cmd,timeout=3000){let timer,done=false,handler=()=>{},cancel=()=>{};const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);input.removeEventListener('midimessage',handler)};const promise=new Promise((resolve,reject)=>{handler=e=>{const d=Array.from(e?.data||[]);if(d.length<8||d[0]!==240||d[1]!==67||d[2]!==88||d[3]!==112||d[4]!==cmd||d[5]!==3||d[d.length-1]!==247)return;cleanup();resolve({status:d[6]})};cancel=()=>{cleanup();resolve(null)};input.addEventListener('midimessage',handler);timer=setTimeout(()=>{cleanup();reject(Error('Timeout ACK untuk fase '+cmd.toString(16)))},timeout)});return{promise,cancel}}
 async function sendFrame(conn,frame,cmd,label){const p=waitAck(conn.input,cmd);try{await conn.output.send(frame)}catch(e){p.cancel();throw Error('Pengiriman '+label+' gagal: '+(e?.message||e))}const ack=await p.promise;if(!ack)throw Error('ACK dibatalkan: '+label);return ack}
 async function sendMG30IRTransfer(conn,plan,onProgress=()=>{}){if(!conn?.input?.addEventListener||!conn?.output?.send||plan?.frames?.length!==75)throw Error('Koneksi MIDI/rencana IR belum siap.');const commands=plan.target==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};const phases=[['waveform',commands.waveform,0,64],['name',commands.name,64,65],['curve',commands.curve,65,75]];let done=0;for(const[phase,cmd,start,end]of phases)for(let i=start;i<end;i++){const ack=await sendFrame(conn,plan.frames[i],cmd,phase+' '+(i-start+1)+'/'+(end-start));const phaseCompleted=i-start+1,finalFrame=i===end-1;const expected=phase==='name'?0:(finalFrame?3:2);if(ack.status!==expected)throw Error('ACK '+phase+' '+phaseCompleted+'/'+(end-start)+' berstatus '+ack.status+', padahal capture QuickTone menunjukkan '+expected+'. Transfer dihentikan; cek slot/perangkat dan jangan anggap impor berhasil.');done++;onProgress({phase,phaseCompleted,phaseTotal:end-start,completed:done,total:75,ackStatus:ack.status,expectedStatus:expected})}return{success:true,completedFrames:done,totalFrames:75,name:plan.name,parameter:plan.parameter,target:plan.target}}
@@ -269,66 +269,6 @@ function initUI(){
    connection.input.addEventListener('midimessage',onMessage);
    timer=setTimeout(()=>{cleanup();reject(Error('Timeout membaca nama/CRC Collection slot '+String(slotIndex+1).padStart(2,'0')+' (6C/02 tidak merespons).'))},timeoutMs);
   });
- }
- function buildUserIRMetadataQuery(shape='short'){
-  // Mirror the device-backed Collection metadata query: command 09/00 asks
-  // for metadata; 09/01 is the observed NAME-WRITE operation and must not be
-  // used as a read request. User-write captures have shown different parameter
-  // values (1 and 71), so this experimental readback tests the literal parameter 1
-  // from the original complete User capture instead of assuming 71 is universal.
-  const header=[0xf0,0x43,0x58,0x70,0x09,0x00,1];
-  if(shape==='metadata')return Uint8Array.from([...header,...packMetadata36(new Uint8Array(36)),0xf7]);
-  return Uint8Array.from([...header,0,0,0,0,0,0,0xf7]);
- }
- function decodeUserIRMetadata(raw){
-  if(!raw||raw[0]!==0xf0||raw[1]!==0x43||raw[2]!==0x58||raw[3]!==0x70||raw[4]!==0x09||raw[5]!==0x02||raw[6]!==1||raw[raw.length-1]!==0xf7)throw Error('Balasan metadata User IR 09/02 tidak cocok dengan target 1.');
-  if(raw.length!==62)throw Error('Panjang balasan User IR 09/02 tidak cocok: '+raw.length+' byte.');
-  const data=unpackMetadata36(Uint8Array.from(raw.slice(7,-1)));
-  const crcBytes=data.slice(0,4);
-  const occupied=crcBytes.some(value=>value!==0)||data.slice(4).some(value=>value!==0);
-  let name='';
-  for(const value of data.slice(4,36)){if(value===0)break;name+=value>=0x20&&value<=0x7e?String.fromCharCode(value):'_'}
-  return {received:true,read:true,slot:1,occupied,name:name.trim(),crcHex:crcBytes.some(value=>value!==0)?Array.from(crcBytes).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',metadata:Array.from(data)};
- }
- function waitUserIRMetadata(connection,timeoutMs=900){
-  return new Promise((resolve,reject)=>{
-   let done=false,timer;
-   const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
-   const onMessage=event=>{
-    const bytes=Array.from(event?.data||[]);
-    if(bytes.length<8||bytes[0]!==0xf0||bytes[1]!==0x43||bytes[2]!==0x58||bytes[3]!==0x70||bytes[4]!==0x09||bytes[5]!==0x02||bytes[6]!==1||bytes[bytes.length-1]!==0xf7)return;
-    try{const result=decodeUserIRMetadata(bytes);cleanup();resolve(result)}catch(error){cleanup();reject(error)}
-   };
-   connection.input.addEventListener('midimessage',onMessage);
-   timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan 09/02 untuk readback nama User IR (target 1).'))},timeoutMs);
-  });
- }
- async function requestUserIRMetadata(connection,shape){
-  const pending=waitUserIRMetadata(connection,1000);
-  try{await connection.output.send(buildUserIRMetadataQuery(shape))}
-  catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query nama User IR: '+(error?.message||error))}
-  return await pending;
- }
- async function readActiveUserIRNameFromDevice(connection){
-  if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI MG-30 tidak siap untuk membaca nama User IR.');
-  let lastError;
-  // Copy the proven NAM/Collection sync pattern: repeat the same query twice,
-  // compare full metadata, and only expose a stable record to the cabinet UI.
-  for(const shape of ['short','metadata']){
-   try{
-    const first=await requestUserIRMetadata(connection,shape);
-    await new Promise(resolve=>setTimeout(resolve,35));
-    const second=await requestUserIRMetadata(connection,shape);
-    const stable=first.metadata.length===second.metadata.length&&first.metadata.every((value,index)=>value===second.metadata[index]);
-    if(!stable)throw Error('Metadata User IR berubah di antara dua pembacaan.');
-    return {...second,stable:true,readRounds:2,query:'09/00',queryParameter:1,queryShape:shape};
-   }catch(error){lastError=error}
-  }
-  throw lastError||Error('Nama User IR dari perangkat tidak terbaca.');
- }
- if(typeof window!=='undefined'){
-  window.NUXIRTransfer=window.NUXIRTransfer||{};
-  window.NUXIRTransfer.readActiveUserIRNameFromDevice=readActiveUserIRNameFromDevice;
  }
  async function sendCollectionMetadataQuery(connection,slotIndex,shape){
   // Match QuickTone's observed Collection slot-selection step first:
