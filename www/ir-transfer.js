@@ -123,6 +123,7 @@ function initUI(){
   status('File dipilih: '+selectedFile.name+'. Parameter acuan saat ini: '+$('irTransferParameter').value+'.','ok');
  });
  $('irTransferName').addEventListener('input',()=>{$('irTransferName').dataset.edited='1';invalidate('Nama IR diubah. Validasi ulang sebelum mengirim.')});
+ $('irTransferParameter').addEventListener('input',()=>invalidate('Parameter/ID transfer diubah. Validasi ulang sebelum mengirim.'));
  $('irTransferValidateBtn').addEventListener('click',async()=>{
   if(busy)return;
   if(!selectedFile){preview('Validasi gagal: pilih file WAV terlebih dahulu.','warn');status('Pilih file WAV terlebih dahulu.','warn');return}
