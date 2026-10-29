@@ -443,12 +443,15 @@ function savedYoutubeKey() {
 function setYoutubeKeyStatus(saved) {
   const node = $('youtubeKeyStatus');
   if (node) {
-    node.textContent = saved ? 'API key tersimpan di perangkat' : 'Pencarian langsung perlu API key';
+    node.textContent = saved ? 'API key tersimpan di perangkat' : 'API key belum disetel';
     node.classList.toggle('is-configured', !!saved);
   }
+  const searchHint = $('youtubeSearchHint');
+  if (searchHint) searchHint.textContent = saved ? 'API key siap digunakan' : 'API key diatur dari Device';
 }
 function showYoutubeApiSettings(show = true) {
   $('youtubeApiSettings')?.classList.toggle('hidden', !show);
+  $('youtubeApiToggle')?.setAttribute('aria-expanded', String(!!show));
   if (show && $('youtubeApiKeyInput')) $('youtubeApiKeyInput').value = savedYoutubeKey();
 }
 function loadYoutubeVideo(videoId) {
