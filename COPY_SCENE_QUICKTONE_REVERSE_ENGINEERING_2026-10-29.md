@@ -269,3 +269,10 @@ User requested that dropdown choices be simplified to only “Scene 1”, “Sce
 - Source commits: HTML label simplification `28059bb44bec055b7866c157d643b5679e945369`; CSS compaction `dd0760be39c9f0af3cb75622d63a8cafa11d4e0c`.
 - APK build [#94 / 40940168961](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940168961) was triggered; the last checked state had `assembleDebug` still running. Artifact ID/checksum and final outcome will be appended after the run completes.
 - Workflow branch filter has already been restored by commit `3a2033630447834db342c3007e4e1350e7a2c4e3`, with default workflow blob SHA `877d83759eba533b56f516fbfa99812d3bead089`; automatic builds on this branch are disabled by default.
+
+
+### Build status note for compact dropdown (checked 2026-10-30)
+
+- A retry build was triggered as run [#95 / 40940578576](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940578576) because run #94 remained stuck on `assembleDebug`.
+- At the last check, both run #94 (`40940168961`) and run #95 (`40940578576`) were still reported `in_progress` with `Build debug APK` running and no artifact uploaded. The GitHub job-log endpoint did not return logs while the job was active. Do not distribute a previous APK as though it contains the compact menu.
+- The workflow branch filter was restored and verified against the default blob SHA `877d83759eba533b56f516fbfa99812d3bead089`; both builds use the committed HTML/CSS menu update.
