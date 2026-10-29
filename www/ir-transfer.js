@@ -103,24 +103,24 @@ function initUI(){
  if(!file||required.some(id=>!$(id)))return;
  // Grounded in the complete QuickTone User/Cabinet > Import capture.
  // Do not query an unobserved context command or interpret its response as a slot.
- let selectedFile=null,prepared=null,busy=false,targetId=1;
- $('irTransferParameter').value='1';
- $('irTransferTargetStatus').textContent='Parameter transfer 1 terlihat pada capture QuickTone "ir user import.pcapng". Makna field dan pemetaan ke nomor slot fisik belum dibuktikan.';
+ let selectedFile=null,prepared=null,busy=false,targetId=71;
+ $('irTransferParameter').value='71';
+ $('irTransferTargetStatus').textContent='Parameter 71 terlihat pada capture QuickTone untuk IR bernama c414_cap_45_dc. Ini acuan pengujian capture terbaru, bukan default universal; pemetaan ke nomor slot fisik belum dibuktikan.';
  const status=(message,kind='')=>{const n=$('irTransferStatus');n.textContent=message;n.classList.remove('ok','warn');if(kind)n.classList.add(kind)};
  const preview=(message,kind='')=>{const n=$('irTransferPreview');n.textContent=message;n.classList.remove('ok','warn');if(kind)n.classList.add(kind)};
  const progress=(pct,label)=>{$('irTransferProgressBar').style.width=Math.max(0,Math.min(100,pct))+'%';$('irTransferProgressLabel').textContent=label||''};
  const busySet=value=>{busy=value;$('irTransferValidateBtn').disabled=value||!selectedFile;$('irTransferReadTargetBtn').disabled=value;$('irTransferChooseBtn').disabled=value;$('irTransferSendBtn').disabled=value||!prepared;$('irTransferName').disabled=value;$('irTransferParameter').disabled=value;file.disabled=value};
- const invalidate=(message='Paket belum divalidasi. Parameter capture User (1) dipilih; pilih WAV lalu validasi.')=>{prepared=null;$('irTransferValidateBtn').disabled=busy||!selectedFile;$('irTransferSendBtn').disabled=true;preview(message);progress(0,'Belum dimulai')};
+ const invalidate=(message='Paket belum divalidasi. Parameter acuan capture QuickTone c414 (71) dipilih; pastikan target sesuai sebelum transfer.')=>{prepared=null;$('irTransferValidateBtn').disabled=busy||!selectedFile;$('irTransferSendBtn').disabled=true;preview(message);progress(0,'Belum dimulai')};
  const nextPaint=()=>new Promise(resolve=>setTimeout(resolve,30));
  $('irTransferChooseBtn').addEventListener('click',()=>file.click());
- $('irTransferReadTargetBtn').addEventListener('click',()=>{if(busy)return;targetId=1;$('irTransferParameter').value='1';$('irTransferTargetStatus').textContent='Parameter transfer disetel ke 1 berdasarkan capture QuickTone "ir user import.pcapng" (Cabinet → Import). Pemetaan ke nomor slot fisik belum terbukti.';invalidate('Parameter transfer 1 dari capture User dipilih. Validasi ulang sebelum mengirim.');status('Parameter transfer 1 dipilih dari capture impor User. Tidak ada permintaan konteks atau data IR yang dikirim.','ok')});
+ $('irTransferReadTargetBtn').addEventListener('click',()=>{if(busy)return;targetId=71;$('irTransferParameter').value='71';$('irTransferTargetStatus').textContent='Parameter 71 terlihat pada capture QuickTone untuk c414_cap_45_dc. Ini hanya nilai acuan agar transaksi bisa dibandingkan; pemetaan ke nomor slot fisik belum terbukti.';invalidate('Parameter acuan c414 (71) dipilih. Validasi ulang sebelum mengirim.');status('Parameter transfer disetel ke 71 berdasarkan capture pembanding c414; ini bukan default universal.','ok')});
  file.addEventListener('change',()=>{
   selectedFile=file.files&&file.files[0]||null;
-  invalidate(selectedFile?'File dipilih. Parameter transfer capture User (1) sudah disetel. Tekan “Validasi & siapkan paket”.':'Belum ada file yang dipilih. Pilih file WAV terlebih dahulu.');
+  invalidate(selectedFile?'File dipilih. Parameter acuan QuickTone c414 (71) sudah disetel. Tekan “Validasi & siapkan paket”.':'Belum ada file yang dipilih. Pilih file WAV terlebih dahulu.');
   if(!selectedFile){$('irTransferFileTitle').textContent='Pilih file IR WAV';$('irTransferFileMeta').textContent='WAV · PCM 8/16/24/32-bit atau Float32 · 8–192 kHz';status('Belum ada file WAV.');return}
   $('irTransferFileTitle').textContent=selectedFile.name;$('irTransferFileMeta').textContent=(selectedFile.size/1024).toFixed(1)+' KB · siap divalidasi';
   if(!$('irTransferName').dataset.edited){try{$('irTransferName').value=safeName(selectedFile.name)}catch{$('irTransferName').value='Custom IR'}}
-  status('File dipilih: '+selectedFile.name+'. Parameter transfer yang dipakai: 1 (capture User).','ok');
+  status('File dipilih: '+selectedFile.name+'. Parameter acuan saat ini: '+$('irTransferParameter').value+'.','ok');
  });
  $('irTransferName').addEventListener('input',()=>{$('irTransferName').dataset.edited='1';invalidate('Nama IR diubah. Validasi ulang sebelum mengirim.')});
  $('irTransferValidateBtn').addEventListener('click',async()=>{
@@ -136,7 +136,7 @@ function initUI(){
    if(waveHeader[6]!==encodedParam[0]||waveHeader[7]!==encodedParam[1]||waveHeader[8]!==encodedParam[2]||nameHeader[6]!==uiParameter||curveHeader[6]!==encodedParam[0]||curveHeader[7]!==encodedParam[1]||curveHeader[8]!==encodedParam[2])throw Error('Parameter header waveform/nama/curve tidak konsisten. Paket tidak disiapkan.');
    prepared={wav,plan};
    const detail=wav.description+' · '+wav.count.toLocaleString('id-ID')+' frame · '+(wav.count/wav.rate).toFixed(2)+' detik · 75 paket · gain '+plan.gain.toPrecision(8)+' · nama "'+plan.name+'" · parameter transfer '+plan.parameter+' (0x'+plan.parameter.toString(16).toUpperCase().padStart(2,'0')+') · header terverifikasi';
-   preview('VALIDASI BERHASIL\n'+detail,'ok');progress(100,'75 paket disiapkan · parameter transfer '+targetId+' · belum dikirim');status('Validasi berhasil. Paket memakai parameter 1 dari capture User; belum ada data yang dikirim.','ok');
+   preview('VALIDASI BERHASIL\n'+detail,'ok');progress(100,'75 paket disiapkan · parameter transfer '+targetId+' · belum dikirim');status('Validasi berhasil. Header waveform, nama, dan curve memakai parameter '+plan.parameter+'. Belum ada data yang dikirim.','ok');
   }catch(error){prepared=null;const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');preview('VALIDASI GAGAL\n'+message,'warn');status('Validasi gagal: '+message,'warn');progress(0,'Validasi gagal')}
   finally{busySet(false)}
  });
@@ -144,15 +144,15 @@ function initUI(){
   if(!prepared||busy)return;
   if(!window.NUXNativeMidi?.available){status('Pengiriman IR memerlukan APK Android MG30 Studio dengan USB-MIDI native.','warn');preview('Paket sudah divalidasi, tetapi pengiriman hanya tersedia di APK Android.');return}
   const p=prepared.plan;
-  const warning='Impor IR "'+p.name+'" ke jalur Third Party / User pada NUX MG-30 Gen 2?\n\n75 pesan SysEx memakai rangkaian 10/09/11. Parameter transfer 1 dipilih karena nilai ini terlihat pada capture QuickTone "ir user import.pcapng" (Cabinet → Import). Arti parameter dan pemetaan ke nomor slot belum terverifikasi. Gunakan target uji/cadangan, bukan data penting.\n\nACK hanya membuktikan respons protokol; bukan bukti bahwa IR tersimpan atau muncul di daftar. Lanjutkan?';
+  const warning='Impor IR "'+p.name+'" ke jalur Third Party / User pada NUX MG-30 Gen 2?\n\n75 pesan SysEx memakai rangkaian 10/09/11. Parameter transfer '+p.parameter+' dipakai. Nilai 71 terlihat pada capture QuickTone untuk c414_cap_45_dc, tetapi arti parameter dan pemetaan ke nomor slot belum terverifikasi. Gunakan target uji/cadangan, bukan data penting.\n\nACK hanya membuktikan respons protokol; bukan bukti bahwa IR tersimpan atau muncul di daftar. Lanjutkan?';
   if(!confirm(warning)){status('Pengiriman dibatalkan. Tidak ada pesan IR baru yang dikirim.');return}
-  busySet(true);progress(0,'Menyambungkan USB-MIDI…');preview('Menyiapkan pengiriman berdasarkan capture User. Jangan cabut kabel OTG.');status('Menyambungkan ke MG-30…');await nextPaint();
+  busySet(true);progress(0,'Menyambungkan USB-MIDI…');preview('Menyiapkan pengiriman dengan parameter '+p.parameter+'. Nilai 71 berasal dari capture pembanding c414; jangan cabut kabel OTG.');status('Menyambungkan ke MG-30…');await nextPaint();
   let startedTransfer=false;
   try{
-   const conn=await window.NUXNativeMidi.connect();status('Mengirim paket 10/09/11 satu per satu dengan parameter transfer 1. Menunggu ACK; jangan cabut USB OTG.');startedTransfer=true;
+   const conn=await window.NUXNativeMidi.connect();status('Mengirim paket 10/09/11 dengan parameter '+p.parameter+'. Menunggu ACK; jangan cabut USB OTG.');startedTransfer=true;
    const result=await sendMG30IRTransfer(conn,p,info=>{progress(info.completed/75*100,info.phase+': '+info.phaseCompleted+'/'+info.phaseTotal+' · total '+info.completed+'/75 · ACK '+info.ackStatus);status('Transfer berlangsung: '+info.completed+' dari 75 paket telah mendapat respons.')});
-   progress(100,'75/75 paket mendapat respons · parameter transfer 1');
-   preview('RESPONS PROTOKOL LENGKAP\nMG-30 merespons seluruh 75 paket pada parameter transfer 1 yang teramati di capture User. Ini belum membuktikan slot tujuan atau penyimpanan IR. Periksa pemilih IR pada amp/cab dan pastikan nama muncul di jalur USER / Third Party. Jika tidak muncul, simpan capture USB transaksi aplikasi ini untuk dibandingkan dengan capture QuickTone.','ok');
+   progress(100,'75/75 paket mendapat respons · parameter transfer '+result.parameter);
+   preview('RESPONS PROTOKOL LENGKAP\nMG-30 merespons seluruh 75 paket pada parameter transfer '+result.parameter+'.  Ini belum membuktikan slot tujuan atau penyimpanan IR. Periksa pemilih IR pada amp/cab dan pastikan nama muncul di jalur USER / Third Party. Jika tidak muncul, simpan capture USB transaksi aplikasi ini untuk dibandingkan dengan capture QuickTone.','ok');
    status('Semua 75 paket mendapat respons untuk Third Party / User IR "'+result.name+'". Status penyimpanan dan kemunculan di daftar masih harus diverifikasi.','ok');
   }catch(error){
    const message=error&&error.message?error.message:String(error||'Kesalahan tidak diketahui');
