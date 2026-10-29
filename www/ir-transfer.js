@@ -210,8 +210,15 @@ function initUI(){
   busy=on;userButton.disabled=on||syncBusy;syncButton.disabled=on||syncBusy;
   grid.querySelectorAll('button').forEach(button=>{
    const slotNode=button.closest('[data-slot]');
-   const local=slotNode?slotCache.get(Number(slotNode.dataset.slot)):null;
-   button.disabled=on||syncBusy||(button.hasAttribute('data-slot-use')&&!local?.blob);
+   const slot=slotNode?Number(slotNode.dataset.slot):0;
+   const local=slot?slotCache.get(slot):null;
+   const device=slot?deviceSlots.get(slot):null;
+   // Keep the device-backed Collection action enabled after sync; don't reduce
+   // eligibility to a local WAV file. For device-only entries, Use is the
+   // captured 6E/01 direct operation and cabinet-name sync runs after 6E/02.
+   const canUseCollection=Boolean(local?.blob||(device?.read&&device?.stable&&device?.occupied));
+   const isUseButton=button.hasAttribute('data-slot-use');
+   button.disabled=on||syncBusy||(isUseButton&&!canUseCollection);
   });
   toggle.disabled=on||syncBusy;
  }
