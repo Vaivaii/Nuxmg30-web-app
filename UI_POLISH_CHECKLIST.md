@@ -270,3 +270,16 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Add program-change detection to hardware polling, separate from scene-change detection, and update `targetSlot`, bank/slot indicators, hardware preset name and buffer when the active program changes.
 - [x] Both inline scripts pass syntax checks; static checks confirm the response-byte correction, mutable status assignment and hardware preset polling path.
 - [ ] Confirm on physical MG-30 Gen2 firmware 6.0.x that R.PLEXI reports 02A after connecting, remains 02A during idle polling, and Copy Scene reads/writes preset 02A only. Verify source scene unchanged and destination data matches.
+
+
+## Follow-up — correct active preset slot byte and polling (2026-10-30)
+
+- [x] Fix the `15/02` status parser from `reply[6]` to `reply[5]`; the observed off-by-one label 01D for physical 02A is consistent with reading the adjacent field.
+- [x] Change Copy Scene status binding from `const` to `let` so the status response after Program Change can be processed.
+- [x] Track `lastReportedProgram` separately from scene status; preset changes detected by polling now refresh the slot index, bank selector, preset name and hardware buffer even when scene index is unchanged.
+- [x] Both inline scripts passed JavaScript syntax parsing.
+- [x] APK build run [#91 / 40934489229](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40934489229) passed; `assembleDebug` and artifact upload succeeded.
+- [x] Artifact ID `12923014115`, ZIP size 3,992,913 bytes, ZIP SHA-256 `cf75b33199b8ab94b57ce52a61a671ce4d3fc8fbecf5f854dcd472f501c56edf`; expires 2026-11-12.
+- [x] APK `MG30-Studio-Active-Preset-Sync-Fix.apk`, size 4,370,824 bytes, SHA-256 `569a4889d3c832b7ef93261eb5ef40f44f0688d1ef5b32db98d54fc976a65689`.
+- [x] Source commit `e000d5b5c1a8c5accd1faa542173c0d5731298da`; workflow branch filter restored by `6bbb0ba6b038762675fd5973b72b5fbccd42e737`.
+- [ ] Confirm on original MG-30 Gen2 firmware 6.0.x that R.PLEXI appears as 02A immediately after connection and remains correctly labeled while connected; then test Copy Scene source preservation and destination read-back on 02A.
