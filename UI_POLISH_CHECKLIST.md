@@ -214,6 +214,10 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Reorder bottom navigation to `Editor → NAM & IR → Presets → Studio → Device`. Page IDs, navigation click handlers, and page implementations remain the same.
 - [x] JavaScript syntax checks passed for both inline app scripts and the IR transfer ES module; static checks verified badge lookup/event and tab order.
 - [x] No changes to the IR waveform/name/curve transfer packet sequence, NAM transfer, MIDI mappings, or signal-chain SysEx/ACK behavior.
-- [ ] APK build in progress for this change; record run/artifact/hash when complete.
+- [x] APK build completed successfully: GitHub Actions run [40909332299](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40909332299), run #87, trigger commit `e2f65d2e8162ae7b9bc15221e3787294aa571a2a`; Android `assembleDebug` and artifact upload both succeeded.
+- [x] Artifact `MG30-Studio-debug-APK`, ID `12912892334`, ZIP size 3,988,510 bytes; ZIP SHA-256 `088effdb1a07691d36e9c99945e0c0caaa1af6d58d1084c33e70d3d71d278f07`; expires 2026-11-12.
+- [x] Extracted APK `MG30-Studio-Cabinet-IR-Badge-Tab-Order.apk`, size 4,367,124 bytes; APK SHA-256 `075fb7e73f3642fcec92e8135201260960a185a37b31e1f075af1059530a6dbc`.
+- [x] Source commits: [cabinet badge + nav order](https://github.com/Vaivaii/Nuxmg30-web-app/commit/01f6fb871a8c58794961b420d4a820ffce1330a5), [mapping update event](https://github.com/Vaivaii/Nuxmg30-web-app/commit/a12e510ca40b81557e557115cefc97da89b1ec18), and [badge refresh listener](https://github.com/Vaivaii/Nuxmg30-web-app/commit/7e799e9ecd9eda3446c8eb94c5a49d814d35fcac).
+- [x] Restored the workflow branch filter after the build started; automatic build trigger for `android/ui-polish-pass-1` is disabled by default again.
 - [ ] Runtime-test: select a preset with a Collection IR association and confirm its cabinet artwork shows the right `IR 01` / `IR 04` badge; switch to another preset with a different mapping and confirm it updates. Check navigation taps/pages after tab reordering, and recheck NAM/IR transfer.
 
