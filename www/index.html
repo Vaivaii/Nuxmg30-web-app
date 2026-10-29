@@ -540,6 +540,33 @@ function syncIncomingParameterCC(cc,rawValue){
 }
 function midiFrame(body){return midiSend([0xF0,...body,0xF7])}
 function waitForSysEx(match,timeout=2200){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{midiInput.removeEventListener('midimessage',handler);reject(new Error('Tidak ada balasan SysEx dari MG-30'))},timeout);function handler(e){const a=Array.from(e.data);if(a[0]!==0xF0||a[a.length-1]!==0xF7)return;const body=a.slice(1,-1);if(match(body)){clearTimeout(timer);midiInput.removeEventListener('midimessage',handler);resolve(body)}}midiInput.addEventListener('midimessage',handler)})}
+function sendSignalChainOrderRealtime(order,movedBlockId){
+ const snapshot=Array.isArray(order)?order.slice():[];
+ const task=chainOrderSendQueue.then(async()=>{
+  if(!midiConnected||!midiOutput||!midiInput)throw new Error('MG-30 belum terhubung; urutan hanya tersimpan lokal.');
+  if(snapshot.length!==12||new Set(snapshot).size!==12||snapshot.some(v=>!Number.isInteger(v)||v<0||v>11))throw new Error('Daftar urutan harus berisi 12 ID blok yang unik.');
+  const ampPos=snapshot.indexOf(3),irPos=snapshot.indexOf(9);
+  if(ampPos<0||irPos<0||Math.abs(ampPos-irPos)!==1)throw new Error('Capture QuickTone menunjukkan AMP dan IR selalu bersebelahan. Perubahan dibatalkan agar pasangan blok tidak terpisah.');
+  // Captured QuickTone 2.6.7.16 uses trailer 0x00 when dragging DLY/RVB (IDs 7/8),
+  // and 0x02 for the other observed block moves. Keep this observed distinction.
+  const controlByte=(movedBlockId===7||movedBlockId===8)?0x00:0x02;
+  const replyPromise=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x0D&&b[4]===0x02&&b.length>=18,2200);
+  const sent=await midiFrame([0x43,0x58,0x70,0x0D,0x01,...snapshot,controlByte]);
+  if(!sent)throw new Error('Perintah urutan tidak terkirim.');
+  const reply=await replyPromise;
+  const echoed=reply.slice(5,17),echoControl=reply[17];
+  if(echoed.length!==12||echoed.some((v,i)=>v!==snapshot[i])||echoControl!==controlByte)throw new Error('ACK 0D/02 tidak cocok dengan urutan yang dikirim.');
+  setDeviceStatus('Signal chain diperbarui langsung di MG-30 · ACK 0D/02 terverifikasi.');
+  toast('Signal chain tersinkron ke pedal');
+  return true;
+ }).catch(error=>{
+  setDeviceStatus('Urutan lokal diperbarui, tetapi sinkron real-time gagal: '+error.message);
+  toast('Urutan pedal belum terverifikasi');
+  return false;
+ });
+ chainOrderSendQueue=task.then(()=>undefined,()=>undefined);
+ return task;
+}
 async function readActiveProgramScene(){
  if(sceneStatusReadPromise)return sceneStatusReadPromise;
  sceneStatusReadPromise=(async()=>{
@@ -742,7 +769,7 @@ async function connectMG30(){
  }catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}
 }
 
-let selected=3,changed=new Set(),presets=[],modelReadbackQueue=Promise.resolve(),modelReadbackToken=0,chainEditMode=false;
+let selected=3,changed=new Set(),presets=[],modelReadbackQueue=Promise.resolve(),modelReadbackToken=0,chainEditMode=false,chainOrderSendQueue=Promise.resolve();
 try{presets=JSON.parse(localStorage.getItem('mg30-presets')||'[]');if(!Array.isArray(presets))presets=[]}catch{presets=[]}
 let states=BLOCKS.map((b,i)=>({model:i===3?1:0,on:i!==4&&i!==8,values:{}}));
 let chainOrder=BLOCKS.map((_,i)=>i);
@@ -1088,9 +1115,18 @@ function renderChain(){
     if(fromIndex<targetIndex)insertAt--;
     insertAt=Math.max(0,Math.min(next.length,insertAt));
     next.splice(insertAt,0,item);
-    chainOrder=next;
-    renderChain();persist();
-    toast('Urutan signal chain diperbarui di draft');
+    const previousOrder=chainOrder.slice();
+    const ampPos=next.indexOf(3),irPos=next.indexOf(9);
+    if(ampPos<0||irPos<0||Math.abs(ampPos-irPos)!==1){
+     chainOrder=previousOrder;
+     renderChain();persist();
+     toast('AMP dan IR harus tetap bersebelahan');
+    }else{
+     chainOrder=next;
+     renderChain();persist();
+     if(midiConnected)sendSignalChainOrderRealtime(chainOrder,d.from);
+     else{setDeviceStatus('Urutan tersimpan di draft lokal. Hubungkan MG-30 untuk sinkron real-time.');toast('Urutan lokal berubah · pedal belum terhubung')}
+    }
    }
   }
   if(d.handle.hasPointerCapture?.(d.pointerId))try{d.handle.releasePointerCapture(d.pointerId)}catch{}
