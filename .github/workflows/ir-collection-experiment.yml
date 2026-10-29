@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - android/ir-collection-experiment
+      - android/user-import-recovery
     paths:
       - "www/**"
       - "native-android/**"
