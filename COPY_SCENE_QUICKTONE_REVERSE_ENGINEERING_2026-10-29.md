@@ -209,3 +209,12 @@ User reports the physical MG-30 contains preset 02A named R.PLEXI, while the app
 - Found a runtime bug in Copy Scene's new mismatch-recovery branch: it declared the first status response with `const status` and later reassigned it after Program Change. Changed that binding to `let status` so the second status read can be processed rather than throwing when the branch is entered.
 - Added `lastReportedProgram` alongside `lastReportedSceneStatus`. Hardware polling now notices preset changes independently of scene changes, updates `targetSlot`, the bank/slot indicator, and the hardware preset display, then reloads the buffer from the detected slot. This ensures the program index is not silently stuck when scene remains unchanged.
 - Static checks passed for both inline scripts; slot formatting maps zero-based `3 → 01D` and `4 → 02A` as expected. Physical hardware confirmation remains required.
+
+
+## 13. Active preset sync fix — APK build #91 (2026-10-30)
+
+- GitHub Actions run [#91 / 40934489229](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40934489229) completed successfully; Android `assembleDebug` and artifact upload both succeeded.
+- Source commit for the parser/polling fix: `e000d5b5c1a8c5accd1faa542173c0d5731298da`. Build trigger was temporary workflow commit `487f5fc038e7b494465af5e51467267e6db6875b`; push branch filtering was restored by `6bbb0ba6b038762675fd5973b72b5fbccd42e737` and now matches the normal disabled-by-default configuration (`877d83759eba533b56f516fbfa99812d3bead089`).
+- Artifact `MG30-Studio-debug-APK`, ID `12923014115`, ZIP size 3,992,913 bytes, SHA-256 `cf75b33199b8ab94b57ce52a61a671ce4d3fc8fbecf5f854dcd472f501c56edf`; expires 2026-11-12.
+- Extracted APK `MG30-Studio-Active-Preset-Sync-Fix.apk`, size 4,370,824 bytes, SHA-256 `569a4889d3c832b7ef93261eb5ef40f44f0688d1ef5b32db98d54fc976a65689`.
+- Both inline scripts passed parser checks. Static checks confirmed the status slot index correction, mutable Copy Scene status result, and independent program-slot polling. No physical pedal test is available here; user must confirm R.PLEXI reads as 02A after connecting and then test Copy Scene on the correct preset.
