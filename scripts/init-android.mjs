@@ -49,6 +49,11 @@ const mainActivityLines = [
   '            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);',
   '            getWindow().setStatusBarColor(Color.rgb(11, 16, 18));',
   '            getWindow().setNavigationBarColor(Color.rgb(11, 16, 18));',
+  '            getWindow().getDecorView().setBackgroundColor(Color.rgb(11, 16, 18));',
+  '            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {',
+  '                getWindow().setStatusBarContrastEnforced(false);',
+  '                getWindow().setNavigationBarContrastEnforced(false);',
+  '            }',
   '            getWindow().getDecorView().setSystemUiVisibility(0);',
   '        }',
   '    }',
@@ -105,6 +110,7 @@ if (existsSync(stylesPath)) {
     let theme = themeMatch[0];
     for (const item of [
       '<item name="android:statusBarColor">#0b1012</item>',
+      '<item name="android:windowBackground">#0b1012</item>',
       '<item name="android:navigationBarColor">#0b1012</item>',
       '<item name="android:windowLightStatusBar">false</item>',
       '<item name="android:windowLightNavigationBar">false</item>',
