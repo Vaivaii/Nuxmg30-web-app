@@ -5,6 +5,7 @@ on:
     branches:
       - android/ir-collection-experiment
       - android/collection-working-restore
+      - android/ir-name-cache-fix
     paths:
       - "www/**"
       - "native-android/**"
