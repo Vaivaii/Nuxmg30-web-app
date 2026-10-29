@@ -376,11 +376,12 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [ ] Implement duplicate to a chosen destination slot, preserving source and validating destination contents after writing.
 - [ ] Check preset naming, slot selection, and overwrite confirmation.
 
-**IR and NAM — rename/display names only**
-- [ ] Scope clarified by user: for IR and NAM, this roadmap item is only to rename assets / set their names so they are readable and displayed in the app UI. It does not mean implementing new IR/NAM import/export flows here.
-- [ ] Inspect existing IR and NAM list/state models to determine where names/labels are stored and why they are not readable/displayed as desired.
-- [ ] Add rename/name display support in the app while preserving the existing working NAM import path, IR User/Collection mapping, transfer frames, and MIDI mappings.
-- [ ] Verify renamed names persist as intended, render correctly in the app, and remain associated with the correct IR/NAM item after reconnect. Do not alter device-side asset naming protocol unless confirmed by QuickTone/code/capture evidence.
+**IR and NAM — rename on the pedal from the app**
+- [ ] Scope clarified by user: this is a straightforward rename operation. When the user renames an IR or NAM in the app, the new name must be written/synchronized to the MG-30 so the device shows the same name. This is not just a local UI label change.
+- [ ] Find and verify QuickTone's device-side rename command/protocol for IR and NAM, including ACK/read-back behavior.
+- [ ] Implement rename controls in the app that send the new name to the correct device asset and confirm the device accepted it.
+- [ ] Verify the renamed name is shown by both the pedal and app after refresh/reconnect, and that the correct IR/NAM item was renamed.
+- [ ] Keep this task limited to renaming. Do not add or redesign import/export, change IR User/Collection mappings, alter NAM import, or change MIDI mappings as part of this goal.
 
 ### Goal 4 — Redesign Studio UI
 - [ ] Review the current Studio screen and QuickTone's equivalent functions before deciding information architecture.
@@ -396,6 +397,6 @@ The current commit includes the Studio → Device control move, connection-trigg
 5. If the conversation is interrupted, resume from this handoff section and inspect the latest branch/build state before editing.
 
 
-## Scope clarification — IR/NAM rename only (2026-10-30)
+## Scope clarification — device-synced IR/NAM rename (2026-10-30)
 
-User clarified that roadmap Goal 4 / IR and NAM means **rename or display asset names so they are readable in the application**, not a request to add IR/NAM import-export flows. Keep this narrow: inspect current app data/UI naming, implement name editing/display, and preserve working NAM import, IR User/Collection mapping, and existing transfer/MIDI behavior. Do not silently expand this goal into new transfer functionality.
+User clarified the exact requirement: rename the IR or NAM **from the app and synchronize/write the changed name to the physical MG-30**, so the name also changes on the device. This is a device-side rename feature, not merely changing a local display label. Reverse-engineer QuickTone's rename command for the appropriate asset type and verify the device ACK/read-back. Keep the task limited to renaming; do not fold in new import/export work or alter existing IR User/Collection, NAM import, or MIDI paths.
