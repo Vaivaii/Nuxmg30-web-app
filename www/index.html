@@ -1036,7 +1036,7 @@ function initSceneCopyUI(){
   [0,1,2].filter(target=>target!==activeSceneIndex).forEach(target=>{
    const button=document.createElement('button');
    button.type='button';button.className='scene-copy-option';button.dataset.copyTarget=String(target);
-   button.innerHTML='<strong>Copy to Scene '+(target+1)+'</strong><small>Salin dari Scene '+(activeSceneIndex+1)+'</small>';
+   button.innerHTML='<strong>Scene '+(target+1)+'</strong>';
    button.onclick=()=>{close();void copySceneTo(target)};
    menu.appendChild(button);
   });
