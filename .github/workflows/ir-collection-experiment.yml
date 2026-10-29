@@ -7,6 +7,7 @@ on:
       - android/collection-working-restore
       - android/ir-name-cache-fix
       - android/movable-signal-chain
+      - android/movable-signal-chain-editmode
     paths:
       - "www/**"
       - "native-android/**"
