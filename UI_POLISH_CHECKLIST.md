@@ -317,3 +317,11 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] APK `MG30-Studio-Copy-Scene-Source-Scene-Fix.apk`, size 4,370,996 bytes, SHA-256 `bec19f99f65db49d9bc443558dbd43da42e218cb928ecd2400c0de3fd584f2ff`.
 - [x] Source commit `d8a5751a2e09c6205d96c1b011b3853f9ca56f6a`; workflow branch filter restored by `e8f8218161f16a0bd27c3ec615000eaba005f2e8`.
 - [ ] Test on original MG-30 Gen2 firmware 6.0.x with distinct scene values: Scene 2 → 1, Scene 2 → 3, Scene 3 → 1 and Scene 3 → 2. Confirm the dialog source reflects the selected scene, source remains unchanged, and target read-back equals source.
+
+
+## Follow-up — compact Copy Scene dropdown (2026-10-30)
+
+- [x] Replace option labels with only `Scene 1`, `Scene 2`, or `Scene 3`; remove the `Copy to` prefix and `Salin dari Scene` subtitle.
+- [x] Reduce dropdown width to 148 CSS px, compact menu/option padding and gap, and use a single-line option layout.
+- [x] Both inline app scripts pass JavaScript syntax checks; static checks verify compact width and simplified labels.
+- [ ] APK build #94 / run `40940168961` is still in progress in the last status check; add artifact checksum and APK reference after completion.
