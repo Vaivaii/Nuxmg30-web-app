@@ -704,18 +704,21 @@ async function copySceneTo(targetIndex){
  copySceneBusy=true;sceneSwitchPending=true;
  const toggle=$('copySceneToggle');
  if(toggle)toggle.disabled=true;
- let sourceIndex=null,program=null,writeAcks=0,ccSent=false;
+ let sourceIndex=null,program=null,writeAcks=0,ccSent=false,stage='persiapan';
  try{
+  stage='sinkronisasi MIDI';
   setDeviceStatus('Copy Scene: menunggu operasi MIDI sebelumnya…');
   if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
   while(hardwareSyncBusy)await delay(10);
   await flushMidi();
+  stage='membaca status preset/scene (15/00)';
   const status=await readActiveProgramScene();
   sourceIndex=status.scene;program=status.program;
   if(program!==targetSlot)throw new Error('Preset aktif perangkat ('+slotName(program)+') berbeda dari slot aplikasi ('+slotName(targetSlot)+'). Sinkronkan preset dahulu agar tidak menulis ke slot yang salah.');
   if(sourceIndex===targetIndex)throw new Error('Scene sumber dan tujuan sama.');
   if(!confirm('Salin Scene '+(sourceIndex+1)+' ke Scene '+(targetIndex+1)+' pada preset '+slotName(program)+'? Scene tujuan akan ditimpa. QuickTone menulis ulang ketiga bagian scene agar perubahan tersimpan ke pedal.'))return;
+  stage='membaca data ketiga scene (0C/00)';
   setDeviceStatus('Copy Scene '+(sourceIndex+1)+' → '+(targetIndex+1)+': membaca ketiga bagian scene…');
   const parts=await readPresetParts(0x0C,program);
   for(let i=0;i<3;i++){
@@ -731,6 +734,7 @@ async function copySceneTo(targetIndex){
    return body;
   });
   for(let part=0;part<3;part++){
+   stage='menulis bagian '+(part+1)+'/3 dan menunggu ACK 0C/03';
    setDeviceStatus('Copy Scene '+(sourceIndex+1)+' → '+(targetIndex+1)+': menulis bagian '+(part+1)+'/3…');
    const ackPromise=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x0C&&b[4]===0x03&&b.length>=8&&b[5]===program&&b[6]===part&&b[7]===0x01,2200);
    let sent=false;
@@ -740,9 +744,11 @@ async function copySceneTo(targetIndex){
    await ackPromise;
    writeAcks++;
   }
+  stage='memilih scene tujuan via CC80';
   setDeviceStatus('Ketiga ACK 0C/03 diterima. Mengaktifkan Scene '+(targetIndex+1)+'…');
   if(!await midiSend([0xB0,80,targetIndex]))throw new Error('Tiga bagian scene mendapat ACK, tetapi CC80 tujuan tidak terkirim.');
   ccSent=true;await flushMidi();lastSceneCommandAt=Date.now();
+  stage='memverifikasi status scene/preset setelah CC80';
   const after=await readActiveProgramScene();
   if(after.program!==program)throw new Error('Preset perangkat berubah setelah penulisan; periksa slot aktif sebelum mencoba lagi.');
   if(after.scene!==targetIndex){
@@ -751,15 +757,19 @@ async function copySceneTo(targetIndex){
   }
   activeSceneIndex=targetIndex;$('sceneSelect').selectedIndex=targetIndex;lastReportedSceneStatus=targetIndex;renderSceneButtons();persist();
   setDeviceStatus('Memverifikasi isi Scene '+(targetIndex+1)+' melalui read-back…');
+  stage='membaca ulang payload tujuan (0C/00)';
   const verify=await readSysExPart(0x0C,program,targetIndex);
   const payload=verify.slice(7);
+  stage='membandingkan read-back dengan sumber';
   if(payload.length!==sourcePayload.length||payload.some((value,i)=>value!==sourcePayload[i]))throw new Error('Scene aktif sudah berpindah, tetapi read-back data tujuan berbeda dari sumber. Jangan ulangi penulisan dulu; periksa pedal.');
   setDeviceStatus('Copy Scene '+(sourceIndex+1)+' → '+(targetIndex+1)+' selesai · 3 ACK 0C/03, CC80 dan read-back terverifikasi.');
   toast('Scene '+(sourceIndex+1)+' disalin ke Scene '+(targetIndex+1));
  }catch(error){
   const partial=writeAcks>0?' ('+writeAcks+'/3 ACK penulisan diterima'+(ccSent?'; CC80 sudah terkirim':'')+')':'';
-  setDeviceStatus('Copy Scene gagal atau parsial'+partial+': '+error.message);
-  toast('Copy Scene belum sepenuhnya terverifikasi');
+  const detail='Copy Scene berhenti pada tahap '+stage+partial+': '+error.message;
+  setDeviceStatus(detail);
+  console.error('[MG30 Copy Scene]',{stage,sourceIndex,targetIndex,program,writeAcks,ccSent,error});
+  toast((stage+': '+error.message).slice(0,88));
  }finally{
   copySceneBusy=false;sceneSwitchPending=false;
   if(toggle)toggle.disabled=false;
