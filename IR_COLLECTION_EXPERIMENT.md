@@ -44,13 +44,31 @@ The IR page now has a target selector with **Third Party / User** as the default
 
 The current experiment selects the Collection command family (6A/6C/6B) separately from the User family (10/09/11). However, a byte comparison of the available captures shows that the Collection waveform and curve payloads also differ from the User capture beyond the command bytes. Since a paired source WAV and confirmed same-content import are not available for that comparison, the cause of the payload differences is not known. Therefore this branch is a test harness, not a confirmed Collection implementation. Test only with a disposable IR and verify the audible/usable result in QuickTone. A complete ACK sequence alone does not prove that the right audio data was stored.
 
+## Hardware result: Collection slot index mapping (2026-10-29)
+
+The user confirmed on the physical MG-30 Gen 2 that Collection transfer successfully creates entries in the Collection list/dialog. Two tested parameter values establish the following mapping for this Collection transfer path:
+
+- Parameter/index `1` created an entry in displayed Collection slot `02`.
+- Parameter/index `4` created an entry in displayed Collection slot `05`.
+- The observed mapping is therefore `displayed slot number = parameter + 1`; the parameter is a zero-based Collection slot index.
+- This mapping is Collection-specific evidence. Do not reinterpret the User IR parameter 71 as a physical slot index.
+- Index `0` → displayed slot `01` follows the observed pattern but has not yet been separately tested.
+- Item content/audio quality still needs validation. A completed 75-packet ACK sequence and an entry appearing in Collection do not alone prove that the generated waveform/curve payload sounds correct.
+
+Collection lifecycle confirmed by the user:
+1. Import/save WAV as an item in Collection.
+2. Choose the saved item in the Collection dialog/list.
+3. The selected item is then transferred into Third Party/User for use by amp/cab.
+
+Build pipeline note: runs #1 and #2 failed during Android SDK setup because the workflow requested the retired SDK package `tools`. Run #3 succeeded after the SDK package list was corrected. The next build after this documentation/UI update must also pass before it is described as the newest installable APK.
+
 ## Required hardware validation before merge
 
 1. Install only a build from `android/ir-collection-experiment`; retain the known-good User APK and/or `android/ir-user-validated` branch as rollback.
 2. Use a disposable/test IR entry, not a valuable Collection entry.
 3. Select **Collection**, confirm the parameter is 1 for comparison with the capture, validate the WAV, and inspect the pre-send protocol label `6A/6C/6B`.
-4. Send once, record ACK/status and any failure, then open QuickTone/device Collection and verify whether the name and usable IR are present.
-5. Re-test a known-good User IR immediately after the Collection experiment to confirm the User path is still functional.
-6. Compare a fresh USB capture from the app with QuickTone Collection capture before treating Collection as confirmed.
+4. Send once and verify the entry appears in the displayed slot `parameter + 1` (tested: 1→02 and 4→05). Inspect the response graph/audio; a visible entry does not yet prove correct payload.
+5. Use QuickTone's item select/load action to move the stored Collection IR into Third Party/User, then verify it can be selected by amp/cab.
+6. Re-test a known-good User IR immediately after Collection to confirm the User path is still functional; then compare a fresh USB capture with QuickTone Collection capture.
 
 Do not merge to `main`, change NAM, or change MIDI mappings on the basis of ACKs alone.
