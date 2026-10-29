@@ -284,7 +284,7 @@ function initUI(){
    if(!conn)conn=await window.NUXNativeMidi.connect();
    for(let i=0;i<indices.length;i++){
     const idx=indices[i];
-    setMessage(collectionStatus,'Membaca slot '+String(idx+1).padStart(2,'0')+': putaran 1/2…');
+    setMessage(collectionStatus,'Membaca dan memverifikasi metadata perangkat untuk slot '+String(idx+1).padStart(2,'0')+'…');
     try{
      const record=await readCollectionSlotStable(conn,idx);
      deviceSlots.set(idx+1,record);success++;if(!record.occupied)empty++;
@@ -297,7 +297,7 @@ function initUI(){
    }
    lastSyncAt=Date.now();
    const detail='Sinkronisasi perangkat: '+success+'/'+indices.length+' slot stabil · '+empty+' kosong · '+failed+' gagal/tidak stabil.';
-   if(!silent||failed>0)setMessage(collectionStatus,detail,failed?'warn':'ok');
+   setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
   finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy')}
