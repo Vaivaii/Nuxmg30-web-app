@@ -87,19 +87,21 @@ The CC80 destination values match zero-based scene indices and agree with the se
 - Therefore the earlier `0x4a5fd0` interpretation is not corroborated by the observed on-wire Copy Scene flow. It may be another code path, a conditional/alternate action, or an interpretation that needs revisiting. Do not implement the 15/01 request based on static disassembly alone.
 - The captures instead visibly show the `0C 01` data-write sequence, `0C 03` responses, and then CC80 target-scene selection.
 
-### Payload and acknowledgement anomalies to resolve before implementation
+### Interpreting repeated payloads and reply indices
 
-- Within each capture, the three outgoing 222-byte `0C 01 76 [scene-index] 01 …` messages are byte-identical except at reconstructed SysEx offset 7, the scene-index byte (00, 01, 02). Thus the data bytes following that index are identical across all three write messages in each trace. The current captures do not yet explain why the same serialized data body is sent for every scene index, or whether the captures represent a copy operation followed by group synchronization. Do not assume it is safe to imitate this sequence until a post-copy readback confirms the per-scene contents.
-- Between the Scene 1 → 2 trace and the other two traces, the only differences in the serialized write body are at zero-based SysEx offsets 192 and 196: `02/01` in the first trace and `04/04` in the other two. Their semantic fields are not yet decoded, so do not label them as specific block/model values.
+The user clarified that all three scenes already contained the same data during these captures. Therefore, identical data bodies in the three outgoing messages are expected and are not evidence of a failed copy or an anomalous serialization pattern. Do not ask the user to create different scene contents solely to explain the identical payloads.
+
+- Within each capture, the three outgoing 222-byte `0C 01 76 [scene-index] 01 …` messages differ at the scene/part index byte (00, 01, 02), while their payload bodies are the same because the scenes were already the same.
+- Between the Scene 1 → 2 trace and the other two traces, serialized write-body offsets 192 and 196 differ: `02/01` in the first trace and `04/04` in the other two. Their semantic fields are not yet decoded. Since scene contents were the same, treat this as a capture/preset/context difference to investigate, not proof of a scene-content difference.
 - The three reply index sequences are:
   - Scene 1 → 2: `00, 01, 00`
   - Scene 2 → 3: `00, 01, 01`
   - Scene 3 → 1: `00, 01, 02`
-  The final response index follows the source scene (0, 1, 2) rather than consistently echoing the third outgoing scene index (02). Do not implement an ACK check that assumes every 0C/03 response echoes its preceding write index until this response field is explained.
+  These remain worth decoding before implementing a strict per-message ACK check. They do not invalidate the observed overall sequence.
 
 ### Best next validation step
 
-After each Copy Scene operation, issue or capture a readback of all three scene payloads for the same preset and compare them against the pre-copy state. This will reveal whether only the destination scene changed and whether the 0C/01 messages represent writes of each scene or part of a larger synchronization group. Capture a no-copy control session as well to exclude routine synchronization traffic. Only after this should MG30 Studio implement the smallest proven copy operation and verify readback before showing success.
+The three captures already establish the broad Copy Scene traffic sequence for the user's normal use case: three `0C 01` scene-part writes, three `0C 03` replies, then CC80 selecting the destination. The next step is to reconcile that wire-level sequence with the static QuickTone function that constructs `15 01`, because that command did not appear in these captures. Review surrounding callers/callbacks and, if needed, capture a no-copy control session to determine whether the three writes are Copy Scene itself or associated synchronization traffic. Only implement after the active wire-level command path and its success/readback semantics are understood.
 
 ## 6. Safety and scope
 
