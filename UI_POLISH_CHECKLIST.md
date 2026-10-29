@@ -116,6 +116,15 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Remove “/ 04” from the Device eyebrow; it now reads “DEVICE”.
 - [x] Keep the real-time signal-chain send/ACK logic unchanged.
 - [ ] Install and check icon alignment, hit target, and consistency of Library/Device title styling.
+## Build after Screenshot 6 — 2026-10-29
+
+- [x] User explicitly requested an APK build after the signal-chain icon and tab-eyebrow cleanup.
+- [x] JavaScript syntax check passed; Android debug APK build and artifact upload succeeded.
+- [x] Build run [40863176055](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40863176055) completed successfully from commit `a89f7d51ceeef8704511209df80d54ccf6d35e4f`.
+- [x] APK extracted and verified at `MG30-Studio-UI-Polish-Screenshot6.apk`; size 4,364,352 bytes, SHA-256 `3ad0c36274d0ac5fb914a62b3f0739bb6ac1d61de68a394ce89981106bfa1118`.
+- [x] Automatic build trigger disabled again after the requested build.
+- [ ] User to confirm icon button alignment/size and Library/Device headings after installation.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
