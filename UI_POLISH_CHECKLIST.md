@@ -249,3 +249,15 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Workflow branch filter restored by commit 5d0b3f333f4ecfed9c91bb14784f292048f5b2ae.
 - [ ] Test on the original MG-30 Gen2 firmware 6.0.x. Verify dropdown is fully visible and try a source/target pair with different settings; if it fails, record the new detailed stage/error message for the next protocol correction.
 - [ ] Recheck NAM, IR Collection, and existing MIDI mappings after hardware testing.
+
+
+## Follow-up — dropdown portal and preset status resynchronization (2026-10-30)
+
+- [x] Portal Copy Scene menu into document body and position it from the button's bounding box, clamped to the screen, repositioning on scroll/resize.
+- [x] On mismatch (for example app 31B vs device-reported 01D), ask permission to send Program Change to selected app slot, wait, and query again. Scene writing proceeds only if status confirms the selected slot; otherwise abort safely.
+- [x] Syntax checks passed for both inline app scripts; static checks verify popup portal/positioning, Program Change, follow-up status check and destination payload read-back guard.
+- [x] Build run [#90 / 40932094023](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40932094023) succeeded (`assembleDebug` + artifact upload).
+- [x] Artifact `MG30-Studio-debug-APK`, ID `12922463144`, ZIP size 3,992,666 bytes, ZIP SHA-256 `1a4f3604aca541a968336162090c745fcddfb38fd12eda926241a15e879a3b80`; expires 2026-11-12.
+- [x] APK `MG30-Studio-Copy-Scene-Preset-Alignment.apk`, size 4,370,572 bytes, SHA-256 `edf0244d868989b618b83b9080a7f965ae9d25a40732127a7631707175a5a1db`.
+- [x] Source commit `2fc91435a9946cdcc3c0a8d3f1b918dad4974e50`; workflow push filters restored by `1371679ebcf760cacd36251f8f508427109e7589`.
+- [ ] Test on original MG-30 Gen2 firmware 6.0.x. Confirm the dropdown is fully visible. If status still reports 01D after confirming Program Change to 31B, capture the detailed status/readback so the preset-status byte interpretation can be corrected without bypassing the write guard.
