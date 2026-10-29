@@ -87,55 +87,16 @@ The locally available `QuickTone.exe` (QuickTone 2.6.7.16, Cherub Technology) co
 
 This is useful new evidence from the app binary: QuickTone has an explicit MG-30 path for checking IR CRC/name, and a separate setter that accepts an index-like byte plus a string. This is a stronger lead for implementing device-backed two-way synchronization than guessing from the two short USBPcap traces. The names/signatures alone do not reveal the exact SysEx bytes, so the function body/control flow still needs disassembly or a capture that includes the check transaction. Do not confuse the MG-30 symbols with the separate `NuxMidiTransmissionMG30MK2` class; target the original Gen 2 class only.
 
-## Implemented device-side Collection metadata sync
+## Collection metadata sync — corrected protocol analysis
 
-The QuickTone original-MG-30 native handler was disassembled and confirms the metadata query shape:
+The first reader implementation was incorrect: it attempted to use `09 01` and expected `09 02` as a Collection read. Capture parsing confirms `09 01` is the **User IR name/CRC write** packet family, not a Collection-list query. That path must not be used to read Collection names.
 
-- Query is `F0 43 58 70 09 01 [index] [54 packed bytes] F7`.
-- The raw query payload is 36 bytes: little-endian integer `1` followed by 32 zero bytes. Each two raw bytes are encoded as three 7-bit-safe bytes using `((word >> 14) & 3), ((word >> 7) & 0x7F), (word & 0x7F)`, where `word = (raw[i] << 8) | raw[i+1]`.
-- Response handler matches command `09 02` and the requested `[index]`, then decodes the 54-byte body to 36 raw bytes.
-- Metadata bytes 0–3 are treated as CRC (all zero means an empty slot); bytes 4–35 are the ASCII name, up to 32 bytes. An acknowledgement `09 03` may be emitted separately; the reader waits for the matching `09 02` record.
-- Slot indexes are zero-based (0–23) in this Collection query. The UI shows slot index + 1 as slots 01–24.
+The successful NAM reader provides the reusable synchronization architecture: register a response listener before each request, send one read request, match the reply by protocol family and slot index, make two full readback rounds, then compare complete raw metadata before marking a slot stable. Collection now uses this same two-pass architecture instead of the earlier per-slot `09/01` request.
 
-The app implementation now has a **Sinkronkan dari MG-30** action and invokes Collection readback after the existing NAM name scan finishes after connect, to avoid interleaving Collection queries with NAM metadata queries. Each Collection slot is read twice and only shown as stable when occupancy/CRC/name match between both reads. The list's names and occupancy are driven by device metadata; IndexedDB is kept only as a local WAV-source mirror for the Use fallback.
+Collection write captures prove that name/CRC metadata is carried by `6C 01 [index] [54-byte packed payload]` and gets a `6C 03` acknowledgement; decoded payload is 36 raw bytes (4 CRC bytes plus a 32-byte name). Based on the same request/response convention used by the proven NAM transaction (`00` read request, `02` data response, `03` write ACK), the new reader probes read-only `6C 00` requests and matches `6C 02 [index] [54-byte packed payload]`. It tries the compact fixed-size request first, then a zero-filled 36-byte metadata request if the device does not reply.
 
-After Collection import, the selected slot is read back twice. The **Gunakan di User** button keeps the already-tested local-WAV route when that WAV exists. If the slot is present on the device but there is no local WAV source, the button uses the captured direct QuickTone request `F0 43 58 70 6E 01 [index] 00 00 00 00 00 00 F7` and awaits a matching device response `6E 02 [index] ... F7`. This device-direct use route is based on QuickTone capture and still requires physical hardware validation in the new APK; failure does not delete or rewrite local WAV data.
+**Important:** `6C 00` is a protocol-derived read-query candidate; it is not yet confirmed by a physical-device response in the submitted captures. The short Collection dialog captures do not contain the list-population transaction. The app now displays a per-round/per-slot progress state, records each timeout on the affected slot, and compares the complete 36-byte metadata between two rounds; the user must confirm that the new build actually receives `6C 02` records on the original MG-30 Gen 2 firmware 6.0.x.
 
-After a successful User transfer or successful direct device Use, the app persists `mg30-user-ir-name` and updates the editor's Third-party cabinet model to show that active name. This is the last IR loaded through MG30 Studio or the captured direct Use action, not a full audio readback of the active Third Party slot.
-
-## Device-side Collection readback implementation status
-
-The list is now implemented against the decoded QuickTone `getIRCrcAndNameCheck` transaction above, with two-pass stability checks and no modifications to the existing NAM implementation. Hardware validation of the new reader and direct Use path remains required.
-
-## Collection payload caveat
-
-The current Collection import selects the observed command family `6A/6C/6B` separately from User's `10/09/11`, and the user confirmed that imported items enter the Collection slots. However, a byte comparison of the available captures shows that Collection waveform/curve payloads differ from the User capture beyond command bytes. The reason is not yet established. Verify the resulting IR's response graph and sound on the device; an entry appearing and a full ACK sequence do not alone prove the audio payload is correct.
-
-## Hardware result: Collection slot index mapping (2026-10-29)
-
-The user confirmed on the physical MG-30 Gen 2 that Collection transfer successfully creates entries in the Collection list/dialog. Two tested parameter values establish the following mapping for this Collection transfer path:
-
-- Parameter/index `1` created an entry in displayed Collection slot `02`.
-- Parameter/index `4` created an entry in displayed Collection slot `05`.
-- The observed mapping is therefore `displayed slot number = parameter + 1`; the parameter is a zero-based Collection slot index.
-- This mapping is Collection-specific evidence. Do not reinterpret the User IR parameter 71 as a physical slot index.
-- Index `0` → displayed slot `01` follows the observed pattern but has not yet been separately tested.
-- Item content/audio quality still needs validation. A completed 75-packet ACK sequence and an entry appearing in Collection do not alone prove that the generated waveform/curve payload sounds correct.
-
-Collection lifecycle confirmed by the user:
-1. Import/save WAV as an item in Collection.
-2. Choose the saved item in the Collection dialog/list.
-3. The selected item is then transferred into Third Party/User for use by amp/cab.
-
-Build pipeline note: runs #1 and #2 failed during Android SDK setup because the workflow requested the retired SDK package `tools`. Run #3 succeeded after the SDK package list was corrected. The next build after this documentation/UI update must also pass before it is described as the newest installable APK.
-
-## Latest build result (2026-10-29)
-
-- Workflow run #16: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40810230417
-- Commit: `219a430da0dc51b6d721631aaa713b5e5171b1aa`.
-- JavaScript syntax validation (module and inline scripts), Android debug APK build, and artifact upload all succeeded.
-- Artifact: `MG30-Studio-IR-Collection-Experiment`, SHA-256 of APK extracted for the user: `8d954e1240ea43db0a08d7e0d70616493fb2174bfdab43f65a644c64c08e9530`.
-- The metadata query/direct Use paths are QuickTone-derived and have not yet been exercised on hardware in this specific build. User should verify readback status and that direct Use moves a device-only Collection slot into Third Party/User before treating sync as hardware-validated.
 ## Required hardware validation before merge
 
 1. Install only a build from `android/ir-collection-experiment`; retain the known-good User APK and/or `android/ir-user-validated` branch as rollback.
