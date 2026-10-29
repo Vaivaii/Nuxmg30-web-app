@@ -328,6 +328,16 @@ function initUI(){
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
   finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
+ async function readCollectionSlotStable(connection,slotIndex){
+  const first=await readCollectionSlotFromDevice(connection,slotIndex);
+  await new Promise(resolve=>setTimeout(resolve,35));
+  const second=await readCollectionSlotFromDevice(connection,slotIndex);
+  const a=Uint8Array.from(first.metadata),b=Uint8Array.from(second.metadata);
+  if(a.length!==b.length||a.some((value,index)=>value!==b[index])){
+   throw Error('Metadata Collection slot '+String(slotIndex+1).padStart(2,'0')+' berubah di antara dua pembacaan.');
+  }
+  return {...second,stable:true,readRounds:2};
+ }
  syncButton.addEventListener('click',()=>void syncCollectionFromDevice());
  window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
