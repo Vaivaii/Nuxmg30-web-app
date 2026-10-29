@@ -42,6 +42,20 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [ ] Runtime-test auto USB inspection on the Android device.
 - [ ] Runtime-test YouTube key saving in Device and searching from Studio after moving the settings.
 
+
+## Screenshot 3 — NAM & IR tab
+
+- [x] Reduce and left-align “Native NAM Profile” directly below “NAM / Profile Lab”.
+- [x] Remove the NAM metadata-description subtitle under the page heading.
+- [x] Move the “Slot NAM di perangkat” read-only card to Device, before the API-key/third-party settings. The existing DOM node is moved after its controls are wired so the read/copy handlers remain attached.
+- [x] Remove the yellow “Perhatian” notice from the NAM import card to make it more compact. Keep the file selection, destination-slot picker, send control, and transfer status.
+- [x] Reduce the NAM text icon in the file picker so “NAM” fits more comfortably.
+- [x] Remove the “Katalog MG-30 GEN2” UI card from the NAM page.
+- [x] Hide the generated “Third Party / User IR” card in the IR manager view, leaving the Collection IR card as the focus. The underlying transfer module is not rewritten in this UI-only change.
+- [x] Update the “Impulse Response” subtitle to describe importing WAVs into Collection slots 01–24.
+- [ ] Runtime-test NAM slot read/copy from Device after installation.
+- [ ] Runtime-test Collection IR UI after installation and confirm sync/import/use-in-User workflows remain as before.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
