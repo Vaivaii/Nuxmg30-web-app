@@ -270,13 +270,12 @@ function initUI(){
    timer=setTimeout(()=>{cleanup();reject(Error('Timeout membaca nama/CRC Collection slot '+String(slotIndex+1).padStart(2,'0')+' (6C/02 tidak merespons).'))},timeoutMs);
   });
  }
- function buildUserIRMetadataQuery(shape='short'){
-  // User/Third-party name metadata uses the parallel 09 family, separate from
-  // Collection's 6C family and from the proven User WAV-write 10/09/11 frames.
-  // The User name-write packet identifies the dedicated User target as 71.
-  const header=[0xf0,0x43,0x58,0x70,0x09,0x00,71];
-  if(shape==='metadata')return Uint8Array.from([...header,...packMetadata36(new Uint8Array(36)),0xf7]);
-  return Uint8Array.from([...header,0,0,0,0,0,0,0xf7]);
+ function buildUserIRMetadataQuery(){
+  // QuickTone original MG-30 getIRCrcAndNameCheck query recovered from the
+  // native protocol: 09/01 + target 71 + 36-byte raw body whose first byte is 1.
+  // This is distinct from the 09/01 NAME-WRITE frame, whose body contains text.
+  const body=new Uint8Array(36);body[0]=1;
+  return Uint8Array.from([0xf0,0x43,0x58,0x70,0x09,0x01,71,...packMetadata36(body),0xf7]);
  }
  function decodeUserIRMetadata(raw){
   if(!raw||raw[0]!==0xf0||raw[1]!==0x43||raw[2]!==0x58||raw[3]!==0x70||raw[4]!==0x09||raw[5]!==0x02||raw[6]!==71||raw[raw.length-1]!==0xf7)throw Error('Balasan metadata User IR 09/02 tidak cocok dengan target 71.');
@@ -298,20 +297,18 @@ function initUI(){
     try{const result=decodeUserIRMetadata(bytes);cleanup();resolve(result)}catch(error){cleanup();reject(error)}
    };
    connection.input.addEventListener('midimessage',onMessage);
-   timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan 09/02 untuk metadata User IR target 71.'))},timeoutMs);
+   timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan 09/02 untuk readback nama User IR (target 71).'))},timeoutMs);
   });
  }
  async function readActiveUserIRNameFromDevice(connection){
   if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI MG-30 tidak siap untuk membaca nama User IR.');
   let lastError;
-  for(const shape of ['short','metadata']){
-   const pending=waitUserIRMetadata(connection,900);
-   try{await connection.output.send(buildUserIRMetadataQuery(shape))}
-   catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query nama User IR: '+(error?.message||error))}
-   try{
-    const result=await pending;
-    return {...result,queryShape:shape};
-   }catch(error){lastError=error}
+  for(let attempt=1;attempt<=2;attempt++){
+   const pending=waitUserIRMetadata(connection,1000);
+   try{await connection.output.send(buildUserIRMetadataQuery())}
+   catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query CRC/nama User IR: '+(error?.message||error))}
+   try{return {...(await pending),query:'getIRCrcAndNameCheck',attempt}}
+   catch(error){lastError=error;if(attempt===1)await new Promise(resolve=>setTimeout(resolve,60))}
   }
   throw lastError||Error('Nama User IR dari perangkat tidak terbaca.');
  }
