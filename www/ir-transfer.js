@@ -302,17 +302,26 @@ function initUI(){
    timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan 09/02 untuk readback nama User IR (target 71).'))},timeoutMs);
   });
  }
+ async function requestUserIRMetadata(connection,shape){
+  const pending=waitUserIRMetadata(connection,1000);
+  try{await connection.output.send(buildUserIRMetadataQuery(shape))}
+  catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query nama User IR: '+(error?.message||error))}
+  return await pending;
+ }
  async function readActiveUserIRNameFromDevice(connection){
   if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI MG-30 tidak siap untuk membaca nama User IR.');
   let lastError;
-  // Same fallback pattern as the working Collection list reader: try compact
-  // metadata query first, then its fixed-width encoded counterpart.
+  // Copy the proven NAM/Collection sync pattern: repeat the same query twice,
+  // compare full metadata, and only expose a stable record to the cabinet UI.
   for(const shape of ['short','metadata']){
-   const pending=waitUserIRMetadata(connection,900);
-   try{await connection.output.send(buildUserIRMetadataQuery(shape))}
-   catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query nama User IR: '+(error?.message||error))}
-   try{return {...(await pending),query:'09/00',queryShape:shape}}
-   catch(error){lastError=error}
+   try{
+    const first=await requestUserIRMetadata(connection,shape);
+    await new Promise(resolve=>setTimeout(resolve,35));
+    const second=await requestUserIRMetadata(connection,shape);
+    const stable=first.metadata.length===second.metadata.length&&first.metadata.every((value,index)=>value===second.metadata[index]);
+    if(!stable)throw Error('Metadata User IR berubah di antara dua pembacaan.');
+    return {...second,stable:true,readRounds:2,query:'09/00',queryShape:shape};
+   }catch(error){lastError=error}
   }
   throw lastError||Error('Nama User IR dari perangkat tidak terbaca.');
  }
