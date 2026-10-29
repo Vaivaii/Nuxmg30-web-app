@@ -260,8 +260,15 @@ function initUI(){
   });
  }
  async function sendCollectionMetadataQuery(connection,slotIndex,shape){
+  // Match QuickTone's observed Collection slot-selection step first:
+  // CC 66 (0x42), value 0 selects displayed slot 01; value 4 selects slot 05.
+  // This is a read/navigation operation; it does not write IR waveform/name/curve.
+  try{
+   await connection.output.send(Uint8Array.from([0xB0,0x42,slotIndex]));
+   await new Promise(resolve=>setTimeout(resolve,35));
+  }catch(error){throw Error('Gagal memilih Collection slot '+String(slotIndex+1).padStart(2,'0')+' melalui CC 66: '+(error?.message||error))}
   const request=buildCollectionMetadataQuery(slotIndex,shape);
-  const pending=waitCollectionMetadata(connection,slotIndex,350);
+  const pending=waitCollectionMetadata(connection,slotIndex,900);
   try{await connection.output.send(request)}catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query 6C/00: '+(error?.message||error))}
   return await pending;
  }
