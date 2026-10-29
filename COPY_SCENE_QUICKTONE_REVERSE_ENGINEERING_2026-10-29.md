@@ -110,3 +110,17 @@ The three captures already establish the broad Copy Scene traffic sequence for t
 - No MG30 Studio source code has been modified for Copy Scene.
 - No APK has been built for Copy Scene.
 - Preserve working NAM transfer, IR Collection transfer, existing MIDI mappings, signal-chain ordering, and current Gen2 protocol behavior.
+
+
+## 7. Follow-up disassembly correction (2026-10-30)
+
+A closer re-read of the actual instructions corrects an earlier function-role attribution in Sections 1–3:
+
+- VA `0x4a87b0` is **not** the Copy Scene menu-selection callback. It is a MIDI/SysEx response handler that first checks incoming bytes at offsets 4–5 for command `06 03`, reads byte 7, reads the current scene via `UserDataMG30`, and then calls `0x4a5fd0`.
+- VA `0x4a5fd0` really does construct `F0 43 58 70 15 01 [arg1] [arg2] 00 00 00 00 00 00 F7` and installs callback `0x4a6100`, which checks for response command `15 02`. However, the path into `0x4a5fd0` from `0x4a87b0` is downstream of an incoming `06 03` response; it is not yet proven to be the user's dropdown-selection path.
+- VA `0x4a7738` is another caller that passes `0x7F` plus a current-scene value to `0x4a5fd0`, consistent with a general scene/state synchronization path.
+- The Copy Scene menu is built in `NuxInstrumentPanelMG30::mouseUp` around `0x5b13ae–0x5b157f`. The callback object is initialized around `0x5b1505` with vtable at `0xD30648`; its method targets begin at `0x5B9960`, `0x5B9980`, `0x5B99A0`, `0x5B99C0`, `0x5B99E0`, etc. This is the next concrete route to trace to identify the actual menu-result handler and distinguish it from the `06 03 → 15 01` callback path.
+
+### Revised conclusion
+
+The `15 01` command builder is confirmed in the executable, but its relationship to the Copy Scene dropdown is **not confirmed**. The three supplied captures still show only `0C 01` scene-data writes, `0C 03` replies, then CC80 selecting the destination. Next analysis should trace the callback object/vtable constructed at `0x5B1505` and inspect its method targets before implementing anything. No app source changes or APK builds have been made.
