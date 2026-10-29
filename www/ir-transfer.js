@@ -246,7 +246,7 @@ function initUI(){
   for(const value of nameBytes){if(value===0)break;name+=value>=0x20&&value<=0x7e?String.fromCharCode(value):'_'}
   return {slot:slotIndex+1,index:slotIndex,read:true,occupied,crcHex:crcBytes.some(value=>value!==0)?Array.from(crcBytes).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',name:name.trim(),metadata:Array.from(data)};
  }
- function waitCollectionMetadata(connection,slotIndex,timeoutMs=650){
+ function waitCollectionMetadata(connection,slotIndex,timeoutMs=350){
   return new Promise((resolve,reject)=>{
    let done=false,timer;
    const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
@@ -256,12 +256,12 @@ function initUI(){
     try{const decoded=decodeCollectionMetadata(bytes,slotIndex);cleanup();resolve(decoded)}catch(error){cleanup();reject(error)}
    };
    connection.input.addEventListener('midimessage',onMessage);
-   timer=setTimeout(()=>{cleanup();reject(Error('Timeout membaca nama/CRC Collection slot '+String(slotIndex+1).padStart(2,'0')+' (06C/02 tidak merespons).'))},timeoutMs);
+   timer=setTimeout(()=>{cleanup();reject(Error('Timeout membaca nama/CRC Collection slot '+String(slotIndex+1).padStart(2,'0')+' (6C/02 tidak merespons).'))},timeoutMs);
   });
  }
  async function sendCollectionMetadataQuery(connection,slotIndex,shape){
   const request=buildCollectionMetadataQuery(slotIndex,shape);
-  const pending=waitCollectionMetadata(connection,slotIndex,650);
+  const pending=waitCollectionMetadata(connection,slotIndex,350);
   try{await connection.output.send(request)}catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query 6C/00: '+(error?.message||error))}
   return await pending;
  }
@@ -300,6 +300,17 @@ function initUI(){
       rounds[round][i]=Uint8Array.from(record.metadata);
      }catch(error){errors[round][i]=error?.message||String(error)}
     }
+   }
+   if(!rounds[0].some(Boolean)){
+    deviceSlots.clear();
+    for(let i=0;i<indices.length;i++){
+     const idx=indices[i],error=errors[0][i]||'Tidak ada balasan metadata pada putaran pertama.';
+     deviceSlots.set(idx+1,{slot:idx+1,index:idx,read:false,stable:false,error});
+    }
+    for(const idx of indices)updateSlotCard(idx+1,slotCache.get(idx+1)||null);
+    renderSlotCount();
+    setMessage(collectionStatus,'Tidak ada satu pun balasan 6C/02 pada putaran pertama. Sinkronisasi dihentikan agar tidak menunggu putaran kedua dengan query yang belum terkonfirmasi. Periksa progres slot dan pesan gagal pada kartu.','warn');
+    return;
    }
    deviceSlots.clear();
    for(let i=0;i<indices.length;i++){
