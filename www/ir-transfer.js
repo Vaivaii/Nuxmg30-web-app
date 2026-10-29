@@ -144,7 +144,11 @@ function initUI(){
     const cleanup=()=>{if(settled)return;settled=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
     const onMessage=event=>{
      const data=Array.from(event?.data||[]);
-     if(data.length!==14||data[0]!==0xf0||data[1]!==0x43||data[2]!==0x58||data[3]!==0x70||data[4]!==0x6e||data[5]!==0x02||data[6]!==slotIndex||data[13]!==0xf7)return;
+     // Captured QuickTone 2.6.7.16 response is 15 bytes:
+     // F0 43 58 70 6E 02 [index] 00 00 00 00 00 00 00 F7.
+     // The old 14-byte check rejected the real reply, so the pedal executed
+     // Use but the app timed out before syncing the cabinet name.
+     if(data.length!==15||data[0]!==0xf0||data[1]!==0x43||data[2]!==0x58||data[3]!==0x70||data[4]!==0x6e||data[5]!==0x02||data[6]!==slotIndex||data[14]!==0xf7)return;
      cleanup();resolve(true);
     };
     connection.input.addEventListener('midimessage',onMessage);
