@@ -346,11 +346,12 @@ The current commit includes the Studio → Device control move, connection-trigg
 
 ## Next session — ordered goals
 
-### Goal 1 — Close out today's compact Copy Scene dropdown
-- [ ] Check GitHub Actions runs #94 and #95; confirm success/failure and retrieve the artifact if available.
-- [ ] If both are stalled/failed, inspect the run/job logs and resolve the build issue before starting new source work.
-- [ ] Record APK filename, artifact ID, size, SHA-256, source commit, and workflow status here.
-- [ ] User test on Android: dropdown shows only the two other scenes, each compactly labelled “Scene N”; confirm Copy Scene still copies the chosen source to the selected destination.
+### Goal 1 — Compact Copy Scene dropdown — COMPLETE (user confirmed 2026-10-30)
+- [x] Compact Copy Scene dropdown implemented: options are only “Scene 1”, “Scene 2”, “Scene 3”; no “Copy to” prefix or source subtitle; popup width/padding reduced.
+- [x] User confirmed roadmap item 1 is complete.
+- [x] Source commits: HTML label simplification `28059bb44bec055b7866c157d643b5679e945369`; CSS compaction `dd0760be39c9f0af3cb75622d63a8cafa11d4e0c`.
+- [x] Previous notes recorded APK build runs #94 (`40940168961`) and #95 (`40940578576`) as still running/no artifact at the last status check. User now confirms this roadmap item is complete; treat this as superseding the pending status for the roadmap, and do not reopen unless the user reports a regression.
+- [x] Move on to Goal 2: reverse-engineer QuickTone CTRL / Expression controls.
 
 ### Goal 2 — Reverse-engineer CTRL / Expression pedal controls
 - [ ] Inspect QuickTone Windows v2.6.7.16 UI strings, event handlers, data structures, and MIDI/SysEx call sites related to CTRL and Expression/EXP assignments.
