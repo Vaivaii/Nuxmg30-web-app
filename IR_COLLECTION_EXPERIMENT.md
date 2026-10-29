@@ -36,7 +36,7 @@ Collection is a staging library/dialog, not a directly usable third-party slot. 
 2. Choose the stored Collection item using the item's load/select/download-arrow action.
 3. QuickTone transfers the selected IR into the device's Third Party / User path, where amp/cab can use it.
 
-The first experimental UI implements only step 1 (transfer into the Collection path). It does not yet enumerate Collection items or automate step 2. After a Collection item is saved, use QuickTone's own item action to load it into Third Party/User until the separate select/load protocol is understood.
+The experimental UI implements step 1 (transfer into a chosen Collection slot) and its **Gunakan di User** action has been hardware-tested by the user. That button re-sends the WAV source stored in the app's local IndexedDB mirror through the known-good User path; it does not read/move the existing Collection item directly from device memory. For items added externally in QuickTone that have no local WAV source in MG30 Studio, the app still cannot load them into User by itself.
 
 ## Merged NAM & IR UI and behavior
 
@@ -50,7 +50,7 @@ The separate IR Import navigation item is removed. The IR manager is placed belo
 
 ## Cabinet name synchronization
 
-After a successful User IR transfer (direct User upload or **Gunakan di User** from an app-managed Collection slot), MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`. When the cabinet model is set to the existing `Third-party` model, the app uses this stored name in the model label and cabinet illustration. This is a local mirror of the last IR sent through MG30 Studio, not yet a device readback of whatever is currently selected on the pedal.
+After a successful User IR transfer (direct User upload or **Gunakan di User** from an app-managed Collection slot), MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`. When the cabinet model is set to the existing `Third-party` model, the app uses this stored name in the model label and cabinet illustration. This is a local mirror of the last IR sent through MG30 Studio, not yet a device readback of whatever is currently selected on the pedal. The visual update was added on branch commit `e68b2b6`; build run #9 succeeded.
 
 ## Device-side Collection readback remains unimplemented
 
