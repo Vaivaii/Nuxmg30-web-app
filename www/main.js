@@ -336,6 +336,8 @@ function parseYoutubeId(value) {
   } catch (_) {}
   return null;
 }
+window.NUXStudioInspectAudio = inspectAudio;
+window.addEventListener('mg30-midi-connected', () => { void inspectAudio(); });
 $('audioCheckBtn')?.addEventListener('click', inspectAudio);
 $('guitarRecordBtn')?.addEventListener('click', startGuitarRecording);
 $('guitarStopBtn')?.addEventListener('click', stopGuitarRecording);
@@ -455,7 +457,7 @@ function loadYoutubeVideo(videoId) {
   $('studioVideoWrap')?.classList.remove('hidden');
   $('youtubePlayer').title = 'Pemutar YouTube · ' + (document.querySelector('[data-youtube-id="' + videoId + '"] .youtube-result-copy strong')?.textContent || 'Video');
   $('youtubeResults')?.classList.add('hidden');
-  if ($('youtubeSearchDetails')) $('youtubeSearchDetails').open = false;
+  if ($('youtubeUrlDetails')) $('youtubeUrlDetails').open = false;
 }
 function safeHttpsUrl(value) {
   try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; } catch (_) { return ''; }
@@ -488,10 +490,11 @@ async function searchYoutubeInStudio() {
   if (!query) { $('youtubeSearchInput').focus(); return; }
   const key = savedYoutubeKey();
   if (!key) {
-    showYoutubeApiSettings(true);
     setYoutubeKeyStatus(false);
+    const hint = $('youtubeSearchHint');
+    if (hint) hint.textContent = 'Atur API key pada tab Device';
     $('youtubeResults').classList.remove('hidden');
-    $('youtubeResults').innerHTML = '<div class="studio-empty">Pencarian langsung perlu YouTube Data API v3 key. Simpan key lewat tombol API Key, lalu cari lagi. Hasil video akan bisa diketuk langsung di sini.</div>';
+    $('youtubeResults').innerHTML = '<div class="studio-empty">Atur YouTube Data API v3 pada tab Device, lalu cari lagi. Hasil video akan bisa diketuk langsung di sini.</div>';
     return;
   }
   if (youtubeSearchController) youtubeSearchController.abort();
