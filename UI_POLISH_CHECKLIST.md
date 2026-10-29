@@ -186,3 +186,17 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Restored `.github/workflows/build-apk.yml` push branch filters after the build had started. Automatic push-triggered build for `android/ui-polish-pass-1` remains disabled by default, to avoid an uncontrolled build on every documentation-only commit; the latest APK was explicitly built and verified for this source change.
 - [ ] Runtime-test on Android: drag EFX over OD and verify OD visibly shifts during drag, confirm drop order persists after release, ensure AMP/IR adjacency validation still works, and verify real-time MG-30 ACK/readback.
 - [ ] After testing, recheck existing NAM import/use, IR Collection transfer, and MIDI mappings remain intact.
+
+
+## Follow-up — preset-aware Collection IR marker (2026-10-29)
+
+- [x] Add a local per-preset mapping from hardware program slot 0–127 (display labels 01A–32D) to Collection IR slot 01–24.
+- [x] After a successful Collection → User action, record the source slot against the preset that was selected when the action started. Direct Collection-use records only after the existing 6E/02 reply; WAV transfer records only after the existing 75/75 frame transfer succeeds.
+- [x] When the selected/active hardware preset changes, update the active marker from that preset's saved mapping.
+- [x] Style only the Collection slot-number badge red; leave the card, name, file details, and buttons unchanged. Add a small legend explaining that red means the IR associated with the selected preset.
+- [x] If the user imports a standalone WAV to User (not from a Collection slot), clear the current preset's old Collection association after successful transfer, so an outdated badge is not shown.
+- [x] The Collection IR transfer packet builder, USB-MIDI request bytes, response/ACK checks, NAM code, MIDI mappings, and signal-chain sender are unchanged.
+- [x] Inline JavaScript and the IR ES module passed parser checks after the change.
+- [ ] APK build in progress; build ID, artifact, size, and checksums to be added immediately when complete.
+- [ ] Runtime-test: use Collection 01 in preset 01A and Collection 04 in preset 01B; switch between the presets and confirm only the corresponding number badge turns red. Also confirm a direct WAV-to-User import clears the old marker only after success.
+
