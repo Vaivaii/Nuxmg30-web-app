@@ -156,12 +156,7 @@ function initUI(){
   const slot=target.slot||0,slotLabel=String(slot).padStart(2,'0');
   const name=safeDisplayName(target.name||target.fileName||blob.name||'Custom IR');
   const fileName=target.fileName||blob.name||name+'.wav';
-  if(target.type==='collection'){
-   const existing=slotCache.get(slot);
-   if(existing&&!confirm('Ganti IR yang dikelola aplikasi pada slot Collection '+slotLabel+'? Slot perangkat bisa tertimpa.')){setMessage(statusNode,'Import dibatalkan. Slot tidak diubah.');return}
-   if(!confirm('Import "'+name+'" ke Collection slot '+slotLabel+'? Ini akan menulis slot Collection tersebut pada MG-30.')){setMessage(statusNode,'Import dibatalkan. Slot tidak diubah.');return}
-  }else if(!confirm('Import "'+name+'" ke Third Party / User pada MG-30 Gen 2?')){setMessage(statusNode,'Import dibatalkan. Tidak ada data dikirim.');return}
-  setBusy(true);setMessage(statusNode,'Memvalidasi WAV…');userButton.querySelector('strong').textContent=target.type==='user'?'Memvalidasi WAV…':'Import IR WAV ke User';
+  setBusy(true);setMessage(statusNode,'Memvalidasi WAV…');userButton.querySelector('strong').textContent='Memvalidasi WAV…';
   try{
    const wav=readMG30IRWav(await blob.arrayBuffer());
    const parameter=target.type==='collection'?slot-1:71;
@@ -169,23 +164,30 @@ function initUI(){
    const commands=target.type==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};
    const p=plan.parameter,enc=enc16(p),wf=plan.frames[0],nf=plan.frames[64],cf=plan.frames[65];
    if(plan.frames.length!==75||wf[4]!==commands.waveform||nf[4]!==commands.name||cf[4]!==commands.curve||wf[6]!==enc[0]||wf[7]!==enc[1]||wf[8]!==enc[2]||nf[6]!==p||cf[6]!==enc[0]||cf[7]!==enc[1]||cf[8]!==enc[2])throw Error('Validasi paket gagal. Tidak ada data yang dikirim.');
+   if(target.type==='collection'){
+    const existing=slotCache.get(slot);
+    const warning='Import "'+name+'" ke Collection slot '+slotLabel+'?'+(existing?'\n\nSlot ini memiliki salinan WAV yang dikelola aplikasi. Mengimpor akan mengganti isi slot tersebut pada perangkat.':'')+'\n\nWAV valid. Transfer akan dimulai setelah konfirmasi.';
+    if(!confirm(warning)){setMessage(statusNode,'Import dibatalkan. Tidak ada data IR dikirim.');return}
+   }else{
+    const warning='Import "'+name+'" ke Third Party / User pada MG-30 Gen 2?\n\nWAV valid. Setelah konfirmasi, aplikasi langsung mengirim IR melalui jalur User yang sudah teruji.';
+    if(!confirm(warning)){setMessage(statusNode,'Import dibatalkan. Tidak ada data IR dikirim.');return}
+   }
    setMessage(statusNode,'WAV valid. Menghubungkan dan mengirim IR…');
    const conn=await window.NUXNativeMidi.connect();
    const result=await sendMG30IRTransfer(conn,plan,info=>{setMessage(statusNode,'Mengirim '+info.completed+'/75 paket…')});
    if(!result?.success||result.completedFrames!==75)throw Error('Transfer belum lengkap. Jangan anggap IR berhasil.');
    if(target.type==='collection'){
     const record={slot,name,fileName,blob,updatedAt:new Date().toISOString(),source:'MG30 Studio'};
-    try{await writeSlot(record);slotCache.set(slot,record);updateSlotCard(slot,record);renderSlotCount();setMessage(statusNode,'Transfer selesai ke Collection slot '+slotLabel+'. WAV sumber tersimpan lokal; periksa item/hasil IR pada perangkat.','ok')}
+    try{await writeSlot(record);slotCache.set(slot,record);updateSlotCard(slot,record);renderSlotCount();setMessage(statusNode,'Transfer selesai ke Collection slot '+slotLabel+'. WAV sumber tersimpan lokal; periksa item dan suara IR pada perangkat.','ok')}
     catch(e){setMessage(statusNode,'Transfer ke slot '+slotLabel+' mendapat respons, tetapi WAV sumber tidak tersimpan lokal. Tombol Gunakan tidak tersedia setelah sesi ini: '+(e.message||'kesalahan penyimpanan'),'warn')}
    }else{
     lastUserName=name;
-    setMessage(userStatus,'Transfer selesai: "'+name+'" dikirim ke Third Party / User. Periksa nama dan hasil IR pada perangkat.','ok');
-    if(target.sourceSlot)setMessage(userStatus,'WAV sumber dari Collection slot '+String(target.sourceSlot).padStart(2,'0')+' dikirim ke Third Party / User memakai jalur User yang sudah teruji. Periksa nama dan hasil IR pada perangkat.','ok');
+    if(target.sourceSlot)setMessage(userStatus,'WAV sumber Collection slot '+String(target.sourceSlot).padStart(2,'0')+' dikirim ke Third Party / User melalui jalur User yang sudah teruji. Periksa suara IR pada perangkat.','ok');
+    else setMessage(userStatus,'Transfer selesai: "'+name+'" dikirim ke Third Party / User. Periksa nama dan suara IR pada perangkat.','ok');
    }
   }catch(error){const msg=error?.message||String(error||'Kesalahan tidak diketahui');setMessage(statusNode,'Import gagal: '+msg,'warn')}
   finally{setBusy(false);userButton.querySelector('strong').textContent='Import IR WAV ke User'}
- }
- fileInput.addEventListener('change',()=>{const blob=fileInput.files&&fileInput.files[0];const target=pendingTarget;pendingTarget=null;if(!blob||!target)return;const name=target.type==='user'?(target.name||safeDisplayName(blob.name)):safeDisplayName(blob.name);processImport(blob,{...target,name,fileName:blob.name})});
+ } fileInput.addEventListener('change',()=>{const blob=fileInput.files&&fileInput.files[0];const target=pendingTarget;pendingTarget=null;if(!blob||!target)return;const name=target.type==='user'?(target.name||safeDisplayName(blob.name)):safeDisplayName(blob.name);processImport(blob,{...target,name,fileName:blob.name})});
  userButton.addEventListener('click',()=>{if(busy)return;pendingTarget={type:'user'};fileInput.value='';fileInput.click()});
  async function restoreLocalSlots(){for(let slot=1;slot<=24;slot++){try{const record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,'Penyimpanan lokal tidak dapat dibaca: '+(e.message||'kesalahan'),'warn');break}updateSlotCard(slot,slotCache.get(slot)||null)}renderSlotCount()}
  restoreLocalSlots();
