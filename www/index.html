@@ -669,7 +669,8 @@ async function syncActiveUserIRNameFromDevice(connection){
   setDeviceStatus('USB-MIDI tersambung · membaca nama IR User aktif dari MG-30…');
   const result=await reader(connection);
   const name=String(result?.name||'').trim().slice(0,20);
-  if(result?.received){
+  if(!result?.received||!result?.stable)throw Error('Nama IR dari perangkat belum lolos dua pembacaan yang cocok.');
+  if(result.received&&result.stable){
    if(result.occupied&&name){
     try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
     window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,source:'device-readback',deviceReadback:true,crcHex:result.crcHex||''}}));
@@ -682,6 +683,11 @@ async function syncActiveUserIRNameFromDevice(connection){
   }
   return result;
  }catch(error){
+  // Do not keep advertising an old, app-only name as if it had been read from
+  // the currently connected pedal. Fall back to the generic Third-party label
+  // until a stable device metadata record is available.
+  try{localStorage.removeItem('mg30-user-ir-name')}catch{}
+  window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name:'Third-party',source:'device-readback-failed',deviceReadback:false,error:error?.message||String(error)}}));
   setDeviceStatus('Terhubung, tetapi nama IR User aktif gagal dibaca dari pedal: '+(error?.message||error));
   return null;
  }
