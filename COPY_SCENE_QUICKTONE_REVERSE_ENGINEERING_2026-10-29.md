@@ -65,7 +65,9 @@ The user supplied three USBPcap/pcapng files named for the UI operation:
 - `copyscene2to3.pcapng` — SHA-256 `882e63a0fe4020930e0b157ba81cdc6258a96532146222696fdf9fa3694a1d4c`.
 - `copyscene3to1.pcapng` — SHA-256 `ed9e73ef65ca20236476a3e9c0c86f05326affb326cc610220a19cd0bf8752a8`.
 
-The captures were decoded as USBPcap link type 249 containing USB-MIDI 4-byte event packets. The operation portion in every trace has the same broad sequence:
+The captures were decoded as USBPcap link type 249 containing USB-MIDI 4-byte event packets. The outgoing write header places `0x76` immediately after the `0C 01` command, followed by a per-message scene/part byte `00`, `01`, or `02`. In MG30 Studio's known read header shape (`F0 43 58 70 0C 00 [program] [part] …`), the same `0x76` position is the program slot byte; if that convention applies to this trace, decimal 118 maps to preset slot **30C** (zero-based indexing). Confirm the displayed preset at capture time before treating 30C as proven.
+
+The operation portion in every trace has the same broad sequence:
 
 1. Three outgoing 222-byte SysEx messages whose starts are:
    - `F0 43 58 70 0C 01 76 00 01 … F7`
