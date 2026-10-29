@@ -108,6 +108,14 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Disabled automatic build trigger again after this requested build; future screenshot UI changes must be committed without building until the user requests it.
 - [ ] User to check the Edit button height/text scale, Studio title header, simplified NAM artwork badge, and compact NAM import card on the Android device.
 
+## Screenshot 6 — Signal-chain icon and tab eyebrow cleanup
+
+- [x] Replace the text-based signal-chain Edit button with a compact reorder icon-only button (38×38px) and keep the icon intact while toggling edit mode; accessible title/ARIA label changes between Edit and Selesai.
+- [x] Move the signal-chain action controls up into the top row of the panel on mobile, aligned with the heading rather than below the description.
+- [x] Remove “/ 02” from the Library eyebrow; it now reads “Library”.
+- [x] Remove “/ 04” from the Device eyebrow; it now reads “DEVICE”.
+- [x] Keep the real-time signal-chain send/ACK logic unchanged.
+- [ ] Install and check icon alignment, hit target, and consistency of Library/Device title styling.
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
