@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title>
 <style>
-:root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.signal-chain-panel .panel-head{align-items:flex-start}.signal-chain-copy{min-width:0;flex:1}.signal-chain-copy h3{font-size:16px;letter-spacing:-.25px}.signal-chain-copy p{max-width:440px;font-size:12px;line-height:1.45}.chain-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.chain-edit-toggle{min-width:82px;min-height:38px;padding:8px 10px;font-size:12px;font-weight:750;letter-spacing:0;white-space:nowrap}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;scrollbar-width:thin;scrollbar-color:#3b4930 transparent}.block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer;touch-action:pan-x;user-select:none;-webkit-user-select:none}.chain.reorder-mode .block{cursor:default;touch-action:pan-x;padding-top:40px;min-height:122px}.chain.reorder-mode .block:active{cursor:default}.block .drag-handle{position:absolute;right:6px;top:6px;display:flex;align-items:center;justify-content:center;height:25px;padding:0 6px;border:1px solid #3a4334;border-radius:7px;background:#20291b;color:var(--lime);font-size:10px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:grab;z-index:2;user-select:none;-webkit-user-select:none}.block .drag-handle:active{cursor:grabbing}.block.drop-target{border-color:var(--lime);box-shadow:0 0 0 2px #c5f36b55}.block.dragging{opacity:.22!important;transform:none!important;filter:saturate(.4);border-style:dashed}.block.drag-ghost{position:fixed!important;z-index:9999!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.03)!important;filter:none!important;box-shadow:0 18px 42px #0008,0 0 0 2px #c5f36b99!important;border-color:var(--lime)!important;transition:none!important;cursor:grabbing!important}.chain.reorder-mode .block.selected{border-color:var(--lime)}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.signal-chain-panel .panel-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.signal-chain-copy p{max-width:none;font-size:11px}.chain-head-actions{width:100%;justify-content:space-between}.chain-edit-toggle{min-width:88px;min-height:40px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}.chain-head-actions{gap:6px}.chain-edit-toggle{min-width:84px;padding:7px 9px}.signal-chain-panel .chip{font-size:10px;padding:6px 8px}}
+:root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.signal-chain-panel .panel-head{align-items:flex-start}.signal-chain-copy{min-width:0;flex:1}.signal-chain-copy h3{font-size:16px;letter-spacing:-.25px}.signal-chain-copy p{max-width:440px;font-size:12px;line-height:1.45}.chain-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.chain-edit-toggle{min-width:82px;min-height:38px;padding:8px 10px;font-size:12px;font-weight:750;letter-spacing:0;white-space:nowrap}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;scrollbar-width:thin;scrollbar-color:#3b4930 transparent}.block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer;touch-action:pan-x;user-select:none;-webkit-user-select:none}.chain.reorder-mode .block{cursor:default;touch-action:pan-x;padding-top:40px;min-height:122px}.chain.reorder-mode .block:active{cursor:default}.block .drag-handle{position:absolute;right:6px;top:6px;display:flex;align-items:center;justify-content:center;height:25px;padding:0 6px;border:1px solid #3a4334;border-radius:7px;background:#20291b;color:var(--lime);font-size:10px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:grab;z-index:2;user-select:none;-webkit-user-select:none}.block .drag-handle:active{cursor:grabbing}.block.drop-target{border-color:var(--lime);box-shadow:0 0 0 2px #c5f36b55}.block.dragging{opacity:.22!important;transform:none!important;filter:saturate(.4);border-style:dashed;pointer-events:none}.block.drag-ghost{position:fixed!important;z-index:9999!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.03)!important;filter:none!important;box-shadow:0 18px 42px #0008,0 0 0 2px #c5f36b99!important;border-color:var(--lime)!important;transition:none!important;cursor:grabbing!important}.chain.reorder-mode .block.selected{border-color:var(--lime)}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.signal-chain-panel .panel-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.signal-chain-copy p{max-width:none;font-size:11px}.chain-head-actions{width:100%;justify-content:space-between}.chain-edit-toggle{min-width:88px;min-height:40px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}.chain-head-actions{gap:6px}.chain-edit-toggle{min-width:84px;padding:7px 9px}.signal-chain-panel .chip{font-size:10px;padding:6px 8px}}
 .slot-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.slot-picker label{font-size:10px;color:var(--muted);font-weight:800}.slot-picker select{min-width:80px;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.slot-buttons{display:flex;gap:7px}.slot-btn{width:42px;height:40px;border:1px solid var(--line);background:#1b2019;color:var(--muted);border-radius:10px;font-weight:800}.slot-btn.active{background:var(--lime);border-color:var(--lime);color:#11160b}.slot-note{margin:12px 0 0;color:var(--muted);font-size:10px}
 /* MG30 Studio native-app UI; isolated to the APK web bundle. */
 .studio-app-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
@@ -1137,20 +1137,39 @@ function renderChain(){
   return '<button type="button" class="block '+(i===selected?'selected ':'')+(!states[i].on?'off':'')+'" data-i="'+i+'" aria-label="'+escapeHtml(b.id+' '+modelDisplayLabel(b.id,b.models[states[i].model]))+'">'+handle+'<span class="symbol">'+renderBlockIcon(b.id)+'</span><b>'+b.id+'</b><small>'+escapeHtml(modelDisplayLabel(b.id,b.models[states[i].model]))+'</small><small>'+(states[i].on?'● ON':'○ OFF')+'</small></button>';
  }).join('');
  let drag=null;
- const clearMarks=()=>holder.querySelectorAll('.block').forEach(el=>el.classList.remove('drop-target','dragging'));
+ const clearMarks=()=>holder.querySelectorAll('.block').forEach(el=>{
+  el.classList.remove('drop-target','dragging');
+  el.style.removeProperty('order');
+ });
+ const previewOrderForDrop=(targetId,after)=>{
+  const next=drag.baseOrder.slice();
+  const fromIndex=next.indexOf(drag.from);
+  if(fromIndex<0||targetId===drag.from)return next;
+  const [item]=next.splice(fromIndex,1);
+  const targetIndex=next.indexOf(targetId);
+  if(targetIndex<0)return drag.previewOrder.slice();
+  next.splice(targetIndex+(after?1:0),0,item);
+  return next;
+ };
+ const applyPreviewOrder=next=>{
+  drag.previewOrder=next.slice();
+  const rank=new Map(next.map((id,index)=>[id,index]));
+  holder.querySelectorAll('.block[data-i]').forEach(el=>{
+   el.style.order=String(rank.get(Number(el.dataset.i))??Number(el.dataset.i));
+  });
+ };
  const updateDropTarget=(x,y)=>{
   if(!drag)return;
-  const target=document.elementFromPoint(x,y)?.closest('.block[data-i]');
-  if(!target||!holder.contains(target))return;
-  if(target===drag.handle){
-   holder.querySelectorAll('.block').forEach(el=>el.classList.remove('drop-target'));
-   drag.toId=drag.from;drag.after=false;
-   return;
-  }
+  // Hit-test beneath the pointer-following ghost and the dimmed source placeholder.
+  const stack=document.elementsFromPoint?document.elementsFromPoint(x,y):[document.elementFromPoint(x,y)];
+  const target=stack.map(el=>el&&el.closest?el.closest('.block[data-i]'):null)
+   .find(el=>el&&holder.contains(el)&&el!==drag.handle&&!el.classList.contains('drag-ghost'));
+  if(!target)return;
   holder.querySelectorAll('.block').forEach(el=>el.classList.toggle('drop-target',el===target));
   drag.toId=Number(target.dataset.i);
   const rect=target.getBoundingClientRect();
   drag.after=x>rect.left+rect.width/2;
+  applyPreviewOrder(previewOrderForDrop(drag.toId,drag.after));
  };
  const moveGhost=(x,y)=>{
   if(!drag||!drag.ghost)return;
@@ -1182,26 +1201,24 @@ function renderChain(){
   if(d.ghost)d.ghost.remove();
   clearMarks();
   holder._chainDragMoved=!!d.moved;
-  if(commit&&d.moved&&Number.isInteger(d.toId)&&d.toId!==d.from){
-   const next=chainOrder.slice(),fromIndex=next.indexOf(d.from),targetIndex=next.indexOf(d.toId);
-   if(fromIndex>=0&&targetIndex>=0){
-    const [item]=next.splice(fromIndex,1);
-    let insertAt=targetIndex+(d.after?1:0);
-    if(fromIndex<targetIndex)insertAt--;
-    insertAt=Math.max(0,Math.min(next.length,insertAt));
-    next.splice(insertAt,0,item);
-    const previousOrder=chainOrder.slice();
-    const ampPos=next.indexOf(3),irPos=next.indexOf(9);
-    if(ampPos<0||irPos<0||Math.abs(ampPos-irPos)!==1){
-     chainOrder=previousOrder;
-     renderChain();persist();
-     toast('AMP dan IR harus tetap bersebelahan');
-    }else{
-     chainOrder=next;
-     renderChain();persist();
-     if(midiConnected)sendSignalChainOrderRealtime(chainOrder,d.from);
-     else{setDeviceStatus('Urutan tersimpan di draft lokal. Hubungkan MG-30 untuk sinkron real-time.');toast('Urutan lokal berubah · pedal belum terhubung')}
-    }
+  const next=Array.isArray(d.previewOrder)?d.previewOrder.slice():d.baseOrder.slice();
+  const changedOrder=next.length===chainOrder.length&&next.some((id,index)=>id!==chainOrder[index]);
+  if(commit&&d.moved&&changedOrder){
+   const previousOrder=chainOrder.slice();
+   const ampPos=next.indexOf(3),irPos=next.indexOf(9);
+   if(next.length!==BLOCKS.length||new Set(next).size!==BLOCKS.length||next.some(v=>!Number.isInteger(v)||v<0||v>=BLOCKS.length)){
+    chainOrder=previousOrder;
+    renderChain();persist();
+    toast('Urutan blok tidak valid; perubahan dibatalkan');
+   }else if(ampPos<0||irPos<0||Math.abs(ampPos-irPos)!==1){
+    chainOrder=previousOrder;
+    renderChain();persist();
+    toast('AMP dan IR harus tetap bersebelahan');
+   }else{
+    chainOrder=next;
+    renderChain();persist();
+    if(midiConnected)sendSignalChainOrderRealtime(chainOrder,d.from);
+    else{setDeviceStatus('Urutan tersimpan di draft lokal. Hubungkan MG-30 untuk sinkron real-time.');toast('Urutan lokal berubah · pedal belum terhubung')}
    }
   }
   if(d.handle.hasPointerCapture?.(d.pointerId))try{d.handle.releasePointerCapture(d.pointerId)}catch{}
@@ -1227,8 +1244,10 @@ function renderChain(){
    ghost.style.margin='0';ghost.style.flex='none';ghost.style.pointerEvents='none';
    ghost.style.zIndex='9999';ghost.style.willChange='left,top,transform';
    document.body.appendChild(ghost);
+   const baseOrder=chainOrder.slice();
    drag={from,toId:from,after:false,pointerId:e.pointerId,handle:card,moved:false,startX:e.clientX,startY:e.clientY,
-    offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top,lastX:e.clientX,lastY:e.clientY,ghost,autoScrollFrame:0};
+    offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top,lastX:e.clientX,lastY:e.clientY,ghost,autoScrollFrame:0,
+    baseOrder,previewOrder:baseOrder.slice()};
    card.classList.add('dragging');
    try{card.setPointerCapture(e.pointerId)}catch{}
    e.preventDefault();
