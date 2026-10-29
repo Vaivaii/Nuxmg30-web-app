@@ -276,3 +276,8 @@ User requested that dropdown choices be simplified to only “Scene 1”, “Sce
 - A retry build was triggered as run [#95 / 40940578576](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940578576) because run #94 remained stuck on `assembleDebug`.
 - At the last check, both run #94 (`40940168961`) and run #95 (`40940578576`) were still reported `in_progress` with `Build debug APK` running and no artifact uploaded. The GitHub job-log endpoint did not return logs while the job was active. Do not distribute a previous APK as though it contains the compact menu.
 - The workflow branch filter was restored and verified against the default blob SHA `877d83759eba533b56f516fbfa99812d3bead089`; both builds use the committed HTML/CSS menu update.
+
+
+## Project handoff pointer — 2026-10-30
+
+The full next-session roadmap is saved in `UI_POLISH_CHECKLIST.md` under **Project handoff — next-session goals (saved 2026-10-30)**. First recheck compact dropdown APK build runs #94 and #95; then reverse-engineer QuickTone CTRL/Expression assignments from the executable and protocol evidence. Longer-term parity goals: preset import/export, rename, Save As/duplicate, IR and NAM management, and a Studio UI redesign. Preserve original MG-30 Gen2 firmware 6.0.x compatibility, working NAM import, IR User/Collection behavior, MIDI mapping, and the now user-confirmed Copy Scene path.
