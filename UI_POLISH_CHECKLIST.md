@@ -197,6 +197,10 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] If the user imports a standalone WAV to User (not from a Collection slot), clear the current preset's old Collection association after successful transfer, so an outdated badge is not shown.
 - [x] The Collection IR transfer packet builder, USB-MIDI request bytes, response/ACK checks, NAM code, MIDI mappings, and signal-chain sender are unchanged.
 - [x] Inline JavaScript and the IR ES module passed parser checks after the change.
-- [ ] APK build in progress; build ID, artifact, size, and checksums to be added immediately when complete.
+- [x] APK build succeeded in GitHub Actions run [40907019774](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40907019774), run #86; trigger commit `1b4034f8739fe8d6aac5456edd93600667b48e1a`. Android `assembleDebug` and artifact upload both passed.
+- [x] Artifact: `MG30-Studio-debug-APK`, ID `12911113452`, ZIP size 3,988,128 bytes; ZIP SHA-256 `9fe17d0eb29abe584e07dbbb51858460218b5667b514d42b3a2f21496f2cdeef`. It expires 2026-11-12.
+- [x] Extracted APK: `MG30-Studio-Collection-IR-Preset-Marker.apk`, size 4,366,808 bytes; APK SHA-256 `f8254df36556f6ee4764b5b8ddb06a52cc605a60da71786883fb34dc8da46b39`.
+- [x] Source commits: [HTML active-preset marker event + red badge style](https://github.com/Vaivaii/Nuxmg30-web-app/commit/ffb9b66134c9ba97f28765e8154700a3ad1c3542) and [per-preset Collection → User association](https://github.com/Vaivaii/Nuxmg30-web-app/commit/bb8f4d5b2696f27976ad18df0f7fc8e6b5ce9427).
+- [x] Restored `.github/workflows/build-apk.yml` push filters; automatic build trigger on `android/ui-polish-pass-1` remains disabled by default after this confirmed build.
 - [ ] Runtime-test: use Collection 01 in preset 01A and Collection 04 in preset 01B; switch between the presets and confirm only the corresponding number badge turns red. Also confirm a direct WAV-to-User import clears the old marker only after success.
 
