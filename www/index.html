@@ -724,9 +724,10 @@ async function copySceneTo(targetIndex){
   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
   while(hardwareSyncBusy)await delay(10);
   await flushMidi();
-  stage='membaca status preset/scene (15/00)';
+  stage='membaca status preset (15/00)';
   let status=await readActiveProgramScene();
-  sourceIndex=status.scene;program=status.program;
+  // The 15/00 reply's scene field is not reliable on this MG-30 path: the UI/CC80 scene state is authoritative for the selected source.
+  sourceIndex=activeSceneIndex;program=status.program;
   if(program!==targetSlot){
    const confirmed=confirm('Status MG-30 melaporkan preset '+slotName(program)+', sedangkan aplikasi memilih '+slotName(targetSlot)+'.\n\nTekan OK untuk mengirim Program Change ke '+slotName(targetSlot)+' lalu memeriksa ulang status. Copy Scene hanya dilanjutkan jika pedal mengonfirmasi preset '+slotName(targetSlot)+'. Cancel membatalkan tanpa menulis data scene.');
    if(!confirmed){setDeviceStatus('Copy Scene dibatalkan: status pedal ('+slotName(program)+') berbeda dari preset aplikasi ('+slotName(targetSlot)+').');return;}
@@ -736,7 +737,7 @@ async function copySceneTo(targetIndex){
    await flushMidi();await delay(360);
    stage='memverifikasi ulang preset setelah Program Change';
    status=await readActiveProgramScene();
-   sourceIndex=status.scene;program=status.program;
+   sourceIndex=activeSceneIndex;program=status.program;
    if(program!==targetSlot)throw new Error('Setelah Program Change ke '+slotName(targetSlot)+', MG-30 masih melaporkan '+slotName(program)+'. Penyalinan dibatalkan agar tidak menulis ke preset yang salah.');
   }
   if(sourceIndex===targetIndex)throw new Error('Scene sumber dan tujuan sama.');
@@ -777,11 +778,9 @@ async function copySceneTo(targetIndex){
   stage='memverifikasi status scene/preset setelah CC80';
   const after=await readActiveProgramScene();
   if(after.program!==program)throw new Error('Preset perangkat berubah setelah penulisan; periksa slot aktif sebelum mencoba lagi.');
-  if(after.scene!==targetIndex){
-   activeSceneIndex=after.scene;$('sceneSelect').selectedIndex=after.scene;lastReportedSceneStatus=after.scene;renderSceneButtons();persist();
-   throw new Error('Ketiga bagian ditulis dengan ACK, tetapi perangkat melaporkan Scene '+(after.scene+1)+' alih-alih Scene '+(targetIndex+1)+'.');
-  }
-  activeSceneIndex=targetIndex;$('sceneSelect').selectedIndex=targetIndex;lastReportedSceneStatus=targetIndex;renderSceneButtons();persist();
+  // The 15/00 scene field has been observed to stay at Scene 1 even while the UI/CC80 state selects Scene 2 or 3.
+  // Do not reject a completed copy based on that unreliable field; target payload read-back below is authoritative.
+  activeSceneIndex=targetIndex;$('sceneSelect').selectedIndex=targetIndex;lastReportedSceneStatus=after.scene;renderSceneButtons();persist();
   setDeviceStatus('Memverifikasi isi Scene '+(targetIndex+1)+' melalui read-back…');
   stage='membaca ulang payload tujuan (0C/00)';
   const verify=await readSysExPart(0x0C,program,targetIndex);
