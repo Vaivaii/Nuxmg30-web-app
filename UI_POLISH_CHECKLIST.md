@@ -143,6 +143,17 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Automatic build trigger disabled again after this requested build.
 - [ ] User to verify the 32×32 reorder icon aligns with the “12 blok” chip, the editor block heading only displays its type (`AMP`, `EFX`, etc.), and the bottom-nav SVG icons fit their respective tabs.
 
+## Follow-up — Signal-chain drag interaction (2026-10-29)
+
+- [x] Fix only the UI gesture layer in `www/index.html` on `android/ui-polish-pass-1`: reorder mode now allows horizontal panning from the card surface while the visible `GESER` handle starts a drag.
+- [x] Show a floating visual copy of the dragged card following the pointer/finger; keep a dimmed source placeholder and the existing destination highlight.
+- [x] Add horizontal auto-scroll while dragging near the left/right edge of the Signal chain viewport.
+- [x] Preserve the existing drop calculation, AMP/IR adjacency guard, local `chainOrder` persistence, and `sendSignalChainOrderRealtime()` sender/ACK path unchanged.
+- [x] No changes to NAM, IR transfer, MIDI mappings, preset encoding, or protocol functions.
+- [x] No APK build triggered for this UI-only follow-up.
+- [ ] Runtime-test on Android: swipe the chain in edit mode, drag EFX behind AMP using `GESER`, verify auto-scroll reaches off-screen cards, and confirm the physical pedal order/readback remains correct.
+- Static validation performed before commit: source replacement uniqueness checks and inline JavaScript parse check.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
