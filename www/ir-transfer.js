@@ -273,21 +273,22 @@ function initUI(){
  function buildUserIRMetadataQuery(shape='short'){
   // Mirror the device-backed Collection metadata query: command 09/00 asks
   // for metadata; 09/01 is the observed NAME-WRITE operation and must not be
-  // used as a read request. Target 71 is the proven User/Third Party transfer
-  // parameter in MG30 Studio's working User WAV transaction.
-  const header=[0xf0,0x43,0x58,0x70,0x09,0x00,71];
+  // used as a read request. User-write captures have shown different parameter
+  // values (1 and 71), so this experimental readback tests the literal parameter 1
+  // from the original complete User capture instead of assuming 71 is universal.
+  const header=[0xf0,0x43,0x58,0x70,0x09,0x00,1];
   if(shape==='metadata')return Uint8Array.from([...header,...packMetadata36(new Uint8Array(36)),0xf7]);
   return Uint8Array.from([...header,0,0,0,0,0,0,0xf7]);
  }
  function decodeUserIRMetadata(raw){
-  if(!raw||raw[0]!==0xf0||raw[1]!==0x43||raw[2]!==0x58||raw[3]!==0x70||raw[4]!==0x09||raw[5]!==0x02||raw[6]!==71||raw[raw.length-1]!==0xf7)throw Error('Balasan metadata User IR 09/02 tidak cocok dengan target 71.');
+  if(!raw||raw[0]!==0xf0||raw[1]!==0x43||raw[2]!==0x58||raw[3]!==0x70||raw[4]!==0x09||raw[5]!==0x02||raw[6]!==1||raw[raw.length-1]!==0xf7)throw Error('Balasan metadata User IR 09/02 tidak cocok dengan target 1.');
   if(raw.length!==62)throw Error('Panjang balasan User IR 09/02 tidak cocok: '+raw.length+' byte.');
   const data=unpackMetadata36(Uint8Array.from(raw.slice(7,-1)));
   const crcBytes=data.slice(0,4);
   const occupied=crcBytes.some(value=>value!==0)||data.slice(4).some(value=>value!==0);
   let name='';
   for(const value of data.slice(4,36)){if(value===0)break;name+=value>=0x20&&value<=0x7e?String.fromCharCode(value):'_'}
-  return {received:true,read:true,slot:71,occupied,name:name.trim(),crcHex:crcBytes.some(value=>value!==0)?Array.from(crcBytes).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',metadata:Array.from(data)};
+  return {received:true,read:true,slot:1,occupied,name:name.trim(),crcHex:crcBytes.some(value=>value!==0)?Array.from(crcBytes).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',metadata:Array.from(data)};
  }
  function waitUserIRMetadata(connection,timeoutMs=900){
   return new Promise((resolve,reject)=>{
@@ -295,11 +296,11 @@ function initUI(){
    const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
    const onMessage=event=>{
     const bytes=Array.from(event?.data||[]);
-    if(bytes.length<8||bytes[0]!==0xf0||bytes[1]!==0x43||bytes[2]!==0x58||bytes[3]!==0x70||bytes[4]!==0x09||bytes[5]!==0x02||bytes[6]!==71||bytes[bytes.length-1]!==0xf7)return;
+    if(bytes.length<8||bytes[0]!==0xf0||bytes[1]!==0x43||bytes[2]!==0x58||bytes[3]!==0x70||bytes[4]!==0x09||bytes[5]!==0x02||bytes[6]!==1||bytes[bytes.length-1]!==0xf7)return;
     try{const result=decodeUserIRMetadata(bytes);cleanup();resolve(result)}catch(error){cleanup();reject(error)}
    };
    connection.input.addEventListener('midimessage',onMessage);
-   timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan 09/02 untuk readback nama User IR (target 71).'))},timeoutMs);
+   timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan 09/02 untuk readback nama User IR (target 1).'))},timeoutMs);
   });
  }
  async function requestUserIRMetadata(connection,shape){
@@ -320,7 +321,7 @@ function initUI(){
     const second=await requestUserIRMetadata(connection,shape);
     const stable=first.metadata.length===second.metadata.length&&first.metadata.every((value,index)=>value===second.metadata[index]);
     if(!stable)throw Error('Metadata User IR berubah di antara dua pembacaan.');
-    return {...second,stable:true,readRounds:2,query:'09/00',queryShape:shape};
+    return {...second,stable:true,readRounds:2,query:'09/00',queryParameter:1,queryShape:shape};
    }catch(error){lastError=error}
   }
   throw lastError||Error('Nama User IR dari perangkat tidak terbaca.');
