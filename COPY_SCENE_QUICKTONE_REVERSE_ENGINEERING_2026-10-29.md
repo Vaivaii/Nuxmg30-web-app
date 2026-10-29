@@ -229,3 +229,13 @@ User reported a short-lived dialog saying “body set not function” when press
 - Replaced the call with `sourcePayload.forEach((value,offset)=>{body[7+offset]=value})`, which copies each payload byte into the target part while preserving the regular Array representation and all existing packet-builder/ACK code.
 - Copy Scene errors now keep the toast visible for 6.5 seconds and allow up to 120 characters, making the stage/reason easier to capture. The generic toast helper accepts an optional duration; its other existing calls retain the 1.9-second default.
 - Both inline scripts parse successfully; static checks confirm the failing `.set()` call is removed and per-byte copy is present. Build is being run under GitHub Actions run #92; append final artifact/checksum once completed.
+
+
+## 15. Copy Scene Array payload fix — APK build #92 (2026-10-30)
+
+- GitHub Actions run [#92 / 40935784561](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40935784561) completed successfully; Android `assembleDebug` and artifact upload passed.
+- Source fix commit: `dc2891a1402f555d940b2a0e7c04322ed9b1e6a9`. Build-trigger workflow commit: `18ba41f41065122eee42bd347cacd91a22f94e46`. Workflow branch filter restored by `64bb487352308415c70539bd2aa050204ed574b8`; restored workflow blob SHA is `877d83759eba533b56f516fbfa99812d3bead089`.
+- Artifact `MG30-Studio-debug-APK`, ID `12925280867`, ZIP size 3,992,958 bytes, SHA-256 `fe8b2265450cd460d1653024eca346f59008c53a321baf4313cc785146504960`; expires 2026-11-12.
+- Extracted APK `MG30-Studio-Copy-Scene-Array-Fix.apk`, size 4,370,868 bytes; SHA-256 `823b4ed362605cc9a865827c030eec5aeb270930123a2a0b2e9d0825212f59e3`.
+- Both inline scripts passed parser checks. Confirmed the `.set()` call is absent, per-byte payload copy is present, and the Copy Scene error toast persists for 6.5 seconds.
+- Hardware validation remains pending. Try Copy Scene again using this APK; if it fails, the longer stage/error message should identify the next issue. Do not report success unless 3 ACKs, destination selection and destination read-back all pass.
