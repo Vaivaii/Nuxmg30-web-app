@@ -99,6 +99,15 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Preserve NAM file input IDs, destination selector, send handler, and existing transfer implementation.
 - [ ] Install and visually verify this build: the Edit button height/font proportions, Studio title placement, and compact NAM file picker.
 - [ ] If any follow-up screenshot changes are requested, commit UI changes only; do not rebuild unless the user explicitly asks.
+## Build after Screenshot 5 — 2026-10-29
+
+- [x] User explicitly requested the build after Screenshot 5.
+- [x] JavaScript syntax check passed; Android debug APK build and artifact upload succeeded.
+- [x] Run [40859911667](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40859911667) completed successfully from the Screenshot 5 changes.
+- [x] APK saved for this conversation as `MG30-Studio-UI-Polish-Screenshot5.apk`, 4,364,064 bytes, SHA-256 `e590b363ac638ba2d4c3458aa169648449fdeee31560e074e2c5c2ad52d407be`.
+- [x] Disabled automatic build trigger again after this requested build; future screenshot UI changes must be committed without building until the user requests it.
+- [ ] User to check the Edit button height/text scale, Studio title header, simplified NAM artwork badge, and compact NAM import card on the Android device.
+
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
 2. Edit only the UI-polish branch and update this file with the request/change status.
