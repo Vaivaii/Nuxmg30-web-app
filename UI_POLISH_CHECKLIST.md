@@ -204,3 +204,16 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Restored `.github/workflows/build-apk.yml` push filters; automatic build trigger on `android/ui-polish-pass-1` remains disabled by default after this confirmed build.
 - [ ] Runtime-test: use Collection 01 in preset 01A and Collection 04 in preset 01B; switch between the presets and confirm only the corresponding number badge turns red. Also confirm a direct WAV-to-User import clears the old marker only after success.
 
+
+
+## Follow-up — cabinet IR slot badge + tab navigation order (2026-10-29)
+
+- [x] Add a compact red `IR 01` badge to the IR cabinet artwork when the current hardware preset has a saved Collection IR 01–24 association and the cabinet model is Third-party/User IR.
+- [x] The badge reads the existing `mg30-ir-collection-preset-map` mapping, so it follows the active preset instead of being a global current-slot marker.
+- [x] Refresh the cabinet badge immediately after a Collection → User association is saved or cleared, using the `mg30-collection-ir-mapped` UI event; the mapping is only changed after successful transfer/use confirmation.
+- [x] Reorder bottom navigation to `Editor → NAM & IR → Presets → Studio → Device`. Page IDs, navigation click handlers, and page implementations remain the same.
+- [x] JavaScript syntax checks passed for both inline app scripts and the IR transfer ES module; static checks verified badge lookup/event and tab order.
+- [x] No changes to the IR waveform/name/curve transfer packet sequence, NAM transfer, MIDI mappings, or signal-chain SysEx/ACK behavior.
+- [ ] APK build in progress for this change; record run/artifact/hash when complete.
+- [ ] Runtime-test: select a preset with a Collection IR association and confirm its cabinet artwork shows the right `IR 01` / `IR 04` badge; switch to another preset with a different mapping and confirm it updates. Check navigation taps/pages after tab reordering, and recheck NAM/IR transfer.
+
