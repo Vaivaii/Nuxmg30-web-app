@@ -1094,8 +1094,12 @@ function renderModelVisual(){
  const block=BLOCKS[selected],state=states[selected],storedModelName=block.models[state.model][0],isUserIR=block.id==="IR"&&getModelBaseName(storedModelName).toLowerCase()==="third-party",name=storedModelName,basis=isUserIR?"User IR · Third-party":getModelBasis(block.id,storedModelName),origin=modelOriginLabel(block.id,storedModelName);
  const category=block.id==="AMP"?"AMPLIFIER":block.id==="IR"?"SPEAKER CABINET":block.id==="S/R"?"FX LOOP":block.id==="VOL"||block.id==="WAH"?"PEDAL":block.id==="CMP"?"COMPRESSOR":block.id==="EFX"?"DRIVE / EFFECT":block.id==="EQ"?"EQUALIZER":block.id==="GATE"?"NOISE GATE":block.id==="MOD"?"MODULATION":block.id==="DLY"?"DELAY":block.id==="RVB"?"REVERB":block.id;
  const originChip=origin?'<span class="model-origin-chip '+(origin==="IMAGE"?'':'is-gen2')+'">'+origin+'</span>':'';
+ const isNamAmp=block.id==="AMP"&&(AMP_NAM_SLOT_PROFILES.some(item=>item.name===storedModelName)||/\\bNAM\\s*\\d+\\b/i.test(storedModelName));
+ const artBadgeText=isNamAmp?'NAM PROFILE':origin==="IMAGE"?'IMAGE':'';
+ const artBadgeClass=isNamAmp?'is-nam':'is-image';
+ const artBadge=artBadgeText?'<span class="gear-art-badge '+artBadgeClass+'" aria-label="'+artBadgeText+'">'+artBadgeText+'</span>':'';
  const originNote=origin==="IMAGE"?'Model audio berbasis IMAGE/capture menurut katalog QuickTone. Visual di kartu ini hanya ilustrasi UI, bukan gambar model capture. Verifikasi pilihan di perangkat sebelum menyimpan preset.':origin==="GEN2"?'Efek tambahan pada katalog QuickTone GEN2. ID dan parameter hardware perlu diuji.':'';
- holder.innerHTML='<div class="gear-visual vector-visual"><div class="gear-art">'+renderGearSvg(block.id,name)+'</div><div class="gear-copy"><div class="gear-copy-head"><span class="gear-type">'+category+'</span>'+originChip+'</div><div class="gear-copy-meta"><small class="based-on"><b>Based on:</b><span>'+escapeHtml(basis)+'</span></small></div>'+(originNote?'<div class="model-origin-note">'+escapeHtml(originNote)+'</div>':'')+'</div></div>';
+ holder.innerHTML='<div class="gear-visual vector-visual"><div class="gear-art">'+renderGearSvg(block.id,name)+artBadge+'</div><div class="gear-copy"><div class="gear-copy-head"><span class="gear-type">'+category+'</span>'+originChip+'</div><div class="gear-copy-meta"><small class="based-on"><b>Based on:</b><span>'+escapeHtml(basis)+'</span></small></div>'+(originNote?'<div class="model-origin-note">'+escapeHtml(originNote)+'</div>':'')+'</div></div>';
 }
 function renderBlockIcon(blockId){
  const shapes={
