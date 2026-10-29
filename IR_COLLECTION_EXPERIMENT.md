@@ -129,6 +129,13 @@ Collection lifecycle confirmed by the user:
 
 Build pipeline note: runs #1 and #2 failed during Android SDK setup because the workflow requested the retired SDK package `tools`. Run #3 succeeded after the SDK package list was corrected. The next build after this documentation/UI update must also pass before it is described as the newest installable APK.
 
+## Latest build result (2026-10-29)
+
+- Workflow run #16: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40810230417
+- Commit: `219a430da0dc51b6d721631aaa713b5e5171b1aa`.
+- JavaScript syntax validation (module and inline scripts), Android debug APK build, and artifact upload all succeeded.
+- Artifact: `MG30-Studio-IR-Collection-Experiment`, SHA-256 of APK extracted for the user: `8d954e1240ea43db0a08d7e0d70616493fb2174bfdab43f65a644c64c08e9530`.
+- The metadata query/direct Use paths are QuickTone-derived and have not yet been exercised on hardware in this specific build. User should verify readback status and that direct Use moves a device-only Collection slot into Third Party/User before treating sync as hardware-validated.
 ## Required hardware validation before merge
 
 1. Install only a build from `android/ir-collection-experiment`; retain the known-good User APK and/or `android/ir-user-validated` branch as rollback.
