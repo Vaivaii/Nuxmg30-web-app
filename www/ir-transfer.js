@@ -113,6 +113,7 @@ function initUI(){
  '<section class="ir-manager-card">'+
   '<div class="ir-manager-card-head"><div><h3>Collection IR</h3><p>Import ke slot Collection 01–24. Pilih slot, lalu WAV otomatis divalidasi dan dikirim.</p></div><span class="chip">24 SLOT</span></div>'+
   '<div class="ir-collection-toolbar"><span class="slot-note" id="irManagerCollectionCount">Belum disinkronkan</span><button class="btn primary" id="irManagerSyncCollection" type="button">Sinkronkan dari MG-30</button><button class="btn ghost" id="irManagerToggleSlots" type="button" aria-expanded="true">Sembunyikan slot</button></div>'+
+  '<p class="ir-current-preset-ir-note">Kotak nomor merah menandai IR Collection yang digunakan preset terpilih.</p>'+
   '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
   '<p class="ir-manager-footnote">Nama dan status slot dibaca dari MG-30. Tombol Gunakan di User tersedia bila WAV sumber juga disimpan oleh MG30 Studio.</p>'+
   '<div class="ir-manager-status" id="irManagerCollectionStatus" role="status" aria-live="polite">Pilih slot Collection untuk menambahkan IR.</div>'+
@@ -123,13 +124,37 @@ function initUI(){
  const userStatus=$('irManagerUserStatus'),collectionStatus=$('irManagerCollectionStatus'),countLabel=$('irManagerCollectionCount'),toggle=$('irManagerToggleSlots'),syncButton=$('irManagerSyncCollection');
  let pendingTarget=null,busy=false,syncBusy=false,slotCache=new Map(),deviceSlots=new Map(),lastUserName='';
  let lastSyncAt=0;
+ const IR_PRESET_COLLECTION_MAP_KEY='mg30-ir-collection-preset-map';
+ function readDraftProgramSlot(){
+  try{
+   const draft=JSON.parse(localStorage.getItem('mg30-draft')||'null');
+   const slot=Number(draft?.targetSlot);
+   return Number.isInteger(slot)&&slot>=0&&slot<=127?slot:0;
+  }catch{return 0}
+ }
+ let activePresetProgramSlot=readDraftProgramSlot();
+ function currentPresetProgramSlot(){
+  activePresetProgramSlot=readDraftProgramSlot();
+  return activePresetProgramSlot;
+ }
+ function presetProgramLabel(programSlot){
+  const slot=Math.max(0,Math.min(127,Number(programSlot)||0));
+  return String(Math.floor(slot/4)+1).padStart(2,'0')+'ABCD'[slot%4];
+ }
+ function readPresetCollectionAssignments(){
+  try{
+   const value=JSON.parse(localStorage.getItem(IR_PRESET_COLLECTION_MAP_KEY)||'{}');
+   return value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+  }catch{return {}}
+ }
  const DB_NAME='mg30-studio-ir-collection-v1',STORE='slots';
  const setMessage=(node,message,kind='')=>{node.textContent=message;node.classList.remove('ok','warn');if(kind)node.classList.add(kind)};
  function openDb(){return new Promise((resolve,reject)=>{if(!('indexedDB' in window)){reject(Error('Penyimpanan lokal tidak tersedia di perangkat ini.'));return}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'slot'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error('Tidak bisa membuka penyimpanan lokal.'))})}
  async function readSlot(slot){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),req=tx.objectStore(STORE).get(slot);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||Error('Gagal membaca slot lokal.'))})}finally{db.close()}}
  async function writeSlot(record){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(record);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('Gagal menyimpan WAV ke penyimpanan lokal.'));tx.onabort=()=>reject(tx.error||Error('Penyimpanan lokal dibatalkan.'))})}finally{db.close()}}
- async function useCollectionSlotOnDevice(slot){
+ async function useCollectionSlotOnDevice(slot,programSlotOverride=null){
   if(busy||syncBusy)return;
+  const programSlot=Number.isInteger(programSlotOverride)&&programSlotOverride>=0&&programSlotOverride<=127?programSlotOverride:currentPresetProgramSlot();
   const device=deviceSlots.get(slot);
   if(!device?.read||!device?.stable||!device.occupied){setMessage(collectionStatus,'Slot '+String(slot).padStart(2,'0')+' belum terverifikasi berisi IR di perangkat.','warn');return}
   if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Gunakan IR langsung dari Collection memerlukan APK Android dan USB OTG.','warn');return}
@@ -158,7 +183,7 @@ function initUI(){
    await response;
    const name=device.name||('Collection '+slotLabel);
    try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
-   window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:slot,directDeviceUse:true}}));
+   window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:slot,programSlot,directDeviceUse:true}}));
    setMessage(collectionStatus,'MG-30 merespons Gunakan untuk Collection slot '+slotLabel+'. Nama cabinet diperbarui menjadi "'+name+'". Periksa slot Third Party/User pada perangkat.','ok');
   }catch(error){setMessage(collectionStatus,'Gunakan langsung gagal: '+(error?.message||error)+' WAV lokal tidak diubah.','warn')}
   finally{setBusy(false)}
@@ -172,11 +197,12 @@ function initUI(){
   card.querySelector('[data-slot-import]').addEventListener('click',()=>{if(busy)return;pendingTarget={type:'collection',slot};fileInput.value='';fileInput.click()});
   card.querySelector('[data-slot-use]').addEventListener('click',async()=>{
    if(busy||syncBusy)return;
+   const programSlot=currentPresetProgramSlot();
    let record=slotCache.get(slot);
    if(!record){try{record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,e.message||'Gagal membaca WAV lokal.','warn');return}}
-   if(record?.blob){pendingTarget={type:'user',sourceSlot:slot,entry:record};processImport(record.blob,{type:'user',name:record.name,fileName:record.fileName,sourceSlot:slot,entry:record});return}
+   if(record?.blob){pendingTarget={type:'user',sourceSlot:slot,programSlot,entry:record};processImport(record.blob,{type:'user',name:record.name,fileName:record.fileName,sourceSlot:slot,programSlot,entry:record});return}
    const device=deviceSlots.get(slot);
-   if(device?.read&&device?.stable&&device.occupied){void useCollectionSlotOnDevice(slot);return}
+   if(device?.read&&device?.stable&&device.occupied){void useCollectionSlotOnDevice(slot,programSlot);return}
    setMessage(collectionStatus,'WAV sumber lokal tidak tersedia dan slot perangkat belum terbaca stabil. Sinkronkan Collection terlebih dahulu.','warn');
   });
   return card;
@@ -203,6 +229,47 @@ function initUI(){
   }
   use.disabled=!(local?.blob||(device?.read&&device?.stable&&device?.occupied));use.title=local?.blob?'Mengirim WAV sumber lokal melalui jalur User yang sudah teruji.':(device?.read&&device?.stable&&device?.occupied?'Meminta MG-30 memakai item Collection langsung melalui request 6E/01 yang teramati pada QuickTone.':'WAV sumber lokal dan metadata perangkat belum tersedia.');
  }
+ function updateCurrentPresetIRMarker(){
+  const assignments=readPresetCollectionAssignments();
+  const stored=Number(assignments[String(activePresetProgramSlot)]);
+  const usedSlot=Number.isInteger(stored)&&stored>=1&&stored<=24?stored:0;
+  for(const [slot,card] of cardNodes){
+   const number=card.querySelector('.ir-collection-slot-number');
+   if(!number)continue;
+   const active=slot===usedSlot;
+   number.classList.toggle('is-used-in-current-preset',active);
+   if(active){
+    number.title='Digunakan oleh preset '+presetProgramLabel(activePresetProgramSlot);
+    number.setAttribute('aria-label','IR Collection slot '+String(slot).padStart(2,'0')+' digunakan oleh preset '+presetProgramLabel(activePresetProgramSlot));
+   }else{
+    number.removeAttribute('title');
+    number.removeAttribute('aria-label');
+   }
+  }
+ }
+ function savePresetCollectionAssignment(programSlot,sourceSlot){
+  if(!Number.isInteger(programSlot)||programSlot<0||programSlot>127)return;
+  const assignments=readPresetCollectionAssignments();
+  const slot=Number(sourceSlot);
+  if(Number.isInteger(slot)&&slot>=1&&slot<=24)assignments[String(programSlot)]=slot;
+  else delete assignments[String(programSlot)];
+  try{localStorage.setItem(IR_PRESET_COLLECTION_MAP_KEY,JSON.stringify(assignments))}
+  catch(error){setMessage(collectionStatus,'Penanda IR tersimpan gagal: '+(error?.message||error),'warn');return}
+  updateCurrentPresetIRMarker();
+ }
+ window.addEventListener('mg30-active-preset-changed',event=>{
+  const programSlot=Number(event?.detail?.programSlot);
+  if(!Number.isInteger(programSlot)||programSlot<0||programSlot>127)return;
+  activePresetProgramSlot=programSlot;
+  updateCurrentPresetIRMarker();
+ });
+ window.addEventListener('mg30-user-ir-name-changed',event=>{
+  const detail=event?.detail||{};
+  const explicitProgram=Number(detail.programSlot);
+  const programSlot=Number.isInteger(explicitProgram)&&explicitProgram>=0&&explicitProgram<=127?explicitProgram:currentPresetProgramSlot();
+  savePresetCollectionAssignment(programSlot,detail.sourceSlot);
+ });
+ updateCurrentPresetIRMarker();
  function renderSlotCount(){
   const records=[...deviceSlots.values()];
   const occupied=records.filter(x=>x.read&&x.stable&&x.occupied).length;
@@ -372,6 +439,7 @@ function initUI(){
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
  async function processImport(blob,target){
   if(busy)return;
+  const programSlot=Number.isInteger(target.programSlot)&&target.programSlot>=0&&target.programSlot<=127?target.programSlot:currentPresetProgramSlot();
   if(!window.NUXNativeMidi?.available){setMessage(target.type==='user'?userStatus:collectionStatus,'Transfer IR hanya tersedia di APK Android. Sambungkan MG-30 melalui USB OTG.','warn');return}
   const statusNode=target.type==='user'?userStatus:collectionStatus;
   const slot=target.slot||0,slotLabel=String(slot).padStart(2,'0');
@@ -404,14 +472,14 @@ function initUI(){
    }else{
     lastUserName=name;
     try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
-    window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:target.sourceSlot||null}}));
+    window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:target.sourceSlot||null,programSlot}}));
     if(target.sourceSlot)setMessage(userStatus,'WAV sumber Collection slot '+String(target.sourceSlot).padStart(2,'0')+' dikirim ke Third Party / User melalui jalur User yang sudah teruji. Nama cabinet disinkronkan ke '+name+'. Periksa suara IR pada perangkat.','ok');
     else setMessage(userStatus,'Transfer selesai: "'+name+'" dikirim ke Third Party / User. Nama cabinet disinkronkan. Periksa suara IR pada perangkat.','ok');
    }
   }catch(error){const msg=error?.message||String(error||'Kesalahan tidak diketahui');setMessage(statusNode,'Import gagal: '+msg,'warn')}
   finally{setBusy(false);userButton.querySelector('strong').textContent='Import IR WAV ke User'}
  } fileInput.addEventListener('change',()=>{const blob=fileInput.files&&fileInput.files[0];const target=pendingTarget;pendingTarget=null;if(!blob||!target)return;const name=target.type==='user'?(target.name||safeDisplayName(blob.name)):safeDisplayName(blob.name);processImport(blob,{...target,name,fileName:blob.name})});
- userButton.addEventListener('click',()=>{if(busy)return;pendingTarget={type:'user'};fileInput.value='';fileInput.click()});
+ userButton.addEventListener('click',()=>{if(busy)return;pendingTarget={type:'user',programSlot:currentPresetProgramSlot()};fileInput.value='';fileInput.click()});
  async function restoreLocalSlots(){for(let slot=1;slot<=24;slot++){try{const record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,'Penyimpanan lokal tidak dapat dibaca: '+(e.message||'kesalahan'),'warn');break}updateSlotCard(slot,slotCache.get(slot)||null)}renderSlotCount()}
  restoreLocalSlots();
 }if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initUI,{once:true});else initUI()}
