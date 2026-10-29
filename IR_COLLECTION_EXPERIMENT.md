@@ -87,11 +87,25 @@ The locally available `QuickTone.exe` (QuickTone 2.6.7.16, Cherub Technology) co
 
 This is useful new evidence from the app binary: QuickTone has an explicit MG-30 path for checking IR CRC/name, and a separate setter that accepts an index-like byte plus a string. This is a stronger lead for implementing device-backed two-way synchronization than guessing from the two short USBPcap traces. The names/signatures alone do not reveal the exact SysEx bytes, so the function body/control flow still needs disassembly or a capture that includes the check transaction. Do not confuse the MG-30 symbols with the separate `NuxMidiTransmissionMG30MK2` class; target the original Gen 2 class only.
 
+## Implemented device-side Collection metadata sync
+
+The QuickTone original-MG-30 native handler was disassembled and confirms the metadata query shape:
+
+- Query is `F0 43 58 70 09 01 [index] [54 packed bytes] F7`.
+- The raw query payload is 36 bytes: little-endian integer `1` followed by 32 zero bytes. Each two raw bytes are encoded as three 7-bit-safe bytes using `((word >> 14) & 3), ((word >> 7) & 0x7F), (word & 0x7F)`, where `word = (raw[i] << 8) | raw[i+1]`.
+- Response handler matches command `09 02` and the requested `[index]`, then decodes the 54-byte body to 36 raw bytes.
+- Metadata bytes 0–3 are treated as CRC (all zero means an empty slot); bytes 4–35 are the ASCII name, up to 32 bytes. An acknowledgement `09 03` may be emitted separately; the reader waits for the matching `09 02` record.
+- Slot indexes are zero-based (0–23) in this Collection query. The UI shows slot index + 1 as slots 01–24.
+
+The app implementation now has a **Sinkronkan dari MG-30** action and invokes Collection readback after the existing NAM name scan finishes after connect, to avoid interleaving Collection queries with NAM metadata queries. Each Collection slot is read twice and only shown as stable when occupancy/CRC/name match between both reads. The list's names and occupancy are driven by device metadata; IndexedDB is kept only as a local WAV-source mirror for the Use fallback.
+
+After Collection import, the selected slot is read back twice. The **Gunakan di User** button keeps the already-tested local-WAV route when that WAV exists. If the slot is present on the device but there is no local WAV source, the button uses the captured direct QuickTone request `F0 43 58 70 6E 01 [index] 00 00 00 00 00 00 F7` and awaits a matching device response `6E 02 [index] ... F7`. This device-direct use route is based on QuickTone capture and still requires physical hardware validation in the new APK; failure does not delete or rewrite local WAV data.
+
+After a successful User transfer or successful direct device Use, the app persists `mg30-user-ir-name` and updates the editor's Third-party cabinet model to show that active name. This is the last IR loaded through MG30 Studio or the captured direct Use action, not a full audio readback of the active Third Party slot.
+
 ## Device-side Collection readback implementation status
 
-The Collection list is device-backed as confirmed by the user, and the app should treat the pedal as the source of truth, using the same synchronization architecture that worked for NAM: request metadata, decode the reply, compare repeated reads for stability, then update the local slot cards and the active cabinet name. The existing IndexedDB mirror is only a fallback for IR WAV files imported through MG30 Studio; it must not override device-reported slot names or occupancy.
-
-The remaining protocol gap is the transaction that populates the list when the Collection dialog opens. The recently supplied click-name and Use captures start after the list is visible, so they reveal selection and use actions but not the initial list refresh. Do not fabricate slot names from the local cache. Capture from before opening the Collection dialog through the moment the 24 names/occupancy appear; then implement the Collection readback codec as a separate module, reusing the NAM sync's two-pass stability-check pattern without changing NAM code.
+The list is now implemented against the decoded QuickTone `getIRCrcAndNameCheck` transaction above, with two-pass stability checks and no modifications to the existing NAM implementation. Hardware validation of the new reader and direct Use path remains required.
 
 ## Collection payload caveat
 
