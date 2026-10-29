@@ -8,6 +8,7 @@ on:
       - android/ir-name-cache-fix
       - android/movable-signal-chain
       - android/movable-signal-chain-editmode
+      - android/ui-polish-pass-1
     paths:
       - "www/**"
       - "native-android/**"
