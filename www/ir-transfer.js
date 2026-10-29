@@ -182,8 +182,10 @@ function initUI(){
     catch(e){setMessage(statusNode,'Transfer ke slot '+slotLabel+' mendapat respons, tetapi WAV sumber tidak tersimpan lokal. Tombol Gunakan tidak tersedia setelah sesi ini: '+(e.message||'kesalahan penyimpanan'),'warn')}
    }else{
     lastUserName=name;
-    if(target.sourceSlot)setMessage(userStatus,'WAV sumber Collection slot '+String(target.sourceSlot).padStart(2,'0')+' dikirim ke Third Party / User melalui jalur User yang sudah teruji. Periksa suara IR pada perangkat.','ok');
-    else setMessage(userStatus,'Transfer selesai: "'+name+'" dikirim ke Third Party / User. Periksa nama dan suara IR pada perangkat.','ok');
+    try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
+    window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:target.sourceSlot||null}}));
+    if(target.sourceSlot)setMessage(userStatus,'WAV sumber Collection slot '+String(target.sourceSlot).padStart(2,'0')+' dikirim ke Third Party / User melalui jalur User yang sudah teruji. Nama cabinet disinkronkan ke '+name+'. Periksa suara IR pada perangkat.','ok');
+    else setMessage(userStatus,'Transfer selesai: "'+name+'" dikirim ke Third Party / User. Nama cabinet disinkronkan. Periksa suara IR pada perangkat.','ok');
    }
   }catch(error){const msg=error?.message||String(error||'Kesalahan tidak diketahui');setMessage(statusNode,'Import gagal: '+msg,'warn')}
   finally{setBusy(false);userButton.querySelector('strong').textContent='Import IR WAV ke User'}
