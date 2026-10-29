@@ -388,6 +388,18 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [ ] Sketch a compact mobile-first layout for studio tools and preset/asset management; keep Editor, NAM & IR, Presets, Studio, Device navigation consistent unless a clear usability reason warrants a change.
 - [ ] Make UI-only changes independently of protocol work, then verify no changes to NAM, IR, MIDI, or scene-transfer behavior.
 
+## Execution order — one milestone at a time
+
+This sequence is the user-facing roadmap. Do not work on multiple feature milestones in parallel.
+
+1. [x] **Copy Scene dropdown polish** — completed and confirmed by user.
+2. [ ] **CTRL / Expression controls** — reverse-engineer QuickTone control assignments and protocol, then implement and hardware-test.
+3. [ ] **Preset import/export** — identify QuickTone preset format and implement files the MG-30 can actually read/write; verify round-trip on hardware.
+4. [ ] **Rename preset** — rename from the app and synchronize the name to the device; verify ACK/read-back.
+5. [ ] **Save As / duplicate preset** — copy a preset to a chosen slot, preserve the source, confirm overwrite explicitly, and verify destination read-back.
+6. [ ] **IR and NAM device-synced rename** — rename an IR or NAM in the app and write the new name to the physical MG-30 so the device and app show the same name. This milestone is rename only; no new import/export work.
+7. [ ] **Studio UI redesign** — redesign the Studio screen after core protocol features are stable.
+
 ## Working method and acceptance rules
 
 1. Investigate QuickTone and captures first; label facts as “wire-confirmed”, “static-code evidence”, or “hypothesis”.
