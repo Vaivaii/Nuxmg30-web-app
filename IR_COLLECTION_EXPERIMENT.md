@@ -50,7 +50,9 @@ The separate IR Import navigation item is removed. The IR manager is placed belo
 
 ## Cabinet name synchronization
 
-After successful User IR upload or successful direct Collection Use, MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`; the editor then selects `Third-party` and renders the readback/app-transferred name on the cabinet. The latest implementation also reads the active User IR's CRC/name on USB connect using the original MG-30 QuickTone `getIRCrcAndNameCheck` query shape: `F0 43 58 70 09 01 47` plus the packed 36-byte body (`uint32 1` followed by zeros), expecting a matching `09 02 47` metadata response. This query is separated from both Collection `6C` metadata and User waveform/name/curve writes. If the device does not reply, the app reports the readback failure and does not fabricate a new device name. The readback query has passed build/syntax validation but still needs physical hardware validation on connect.
+After successful User IR upload or successful direct Collection Use, MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`; the editor then selects `Third-party` and renders the readback/app-transferred name on the cabinet.
+
+For first-connect sync, the app now mirrors the working Collection reader's query/reply pattern on the User-specific command family: send metadata query `F0 43 58 70 09 00 47 00 00 00 00 00 00 F7` (target 71 / 0x47, compact form), wait for matching `09 02 47` response, decode 54 packed bytes to the 36-byte CRC/name record, and read twice to verify byte-for-byte stability before updating the cabinet. If the compact query times out, try the fixed-width 54-byte encoded metadata query. Important correction: `09 01` is the captured name-write command and receives `09 03`; the previous readback build mistakenly used that write command as a query. The latest implementation uses `09 00` for read/query, preserves the existing User import path, and clears the cached name on failed readback so an old app-only label is not falsely presented as current device state. This latest query still requires physical hardware validation after install.
 
 ## New QuickTone capture analysis: select name vs Use (2026-10-29)
 
@@ -104,6 +106,14 @@ Collection write captures prove that name/CRC metadata is carried by `6C 01 [ind
 - Extracted APK SHA-256: `947bf68f97da5fdf319b7eb2fb50bea8e523bb2d7a29073f2be12035a072fc83`
 - Sequence at connect: read active preset buffer, attempt User IR CRC/name query, update the Third-party cabinet label if a valid 09/02 metadata reply returns, then start NAM/Collection metadata synchronization.
 - This build is not yet hardware-validated for the new 09/01 readback transaction. Verify actual name from pedal on first connect; a successful JS/Android build alone does not prove the firmware replied to the query.
+
+## Active User IR connect-sync read-command fix (2026-10-29)
+
+- Workflow run #30 succeeded: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40820029428
+- Commit: `fab32d5babd3c001d5b25da9e080097b84df83d2`.
+- APK SHA-256: `e85b75d697cad4a9daf389729eeb43c81358dcd125fcc9c4a34fa0f14dfafdb1`.
+- JS syntax validation and debug APK build passed.
+- Hardware validation is still required to establish that firmware 6.0.x returns User metadata for target 71 on a `09/00` query; if it does, two byte-identical replies are required before the UI updates the cabinet.
 
 ## Required hardware validation before merge
 
