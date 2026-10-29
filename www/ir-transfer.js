@@ -200,7 +200,7 @@ function initUI(){
   const records=[...deviceSlots.values()];
   const occupied=records.filter(x=>x.read&&x.stable&&x.occupied).length;
   const read=records.filter(x=>x.read&&x.stable).length;
-  countLabel.textContent=read===24?occupied+' IR di perangkat · 24/24 slot stabil':(read?read+'/24 slot stabil dibaca':'Menunggu sinkronisasi perangkat');
+  countLabel.textContent=syncBusy?(read+'/24 slot stabil · membaca…'):(read===24?occupied+' IR di perangkat · 24/24 slot stabil':(read?read+'/24 slot stabil dibaca':'Menunggu sinkronisasi perangkat'));
  }
  toggle.addEventListener('click',()=>{const collapsed=!grid.classList.contains('collapsed');grid.classList.toggle('collapsed',collapsed);toggle.textContent=collapsed?'Tampilkan 24 slot':'Sembunyikan slot';toggle.setAttribute('aria-expanded',String(!collapsed))});
  function setBusy(on){
@@ -240,7 +240,7 @@ function initUI(){
   for(const value of nameBytes){if(value===0)break;name+=value>=0x20&&value<=0x7e?String.fromCharCode(value):'_'}
   return {slot:slotIndex+1,index:slotIndex,read:true,occupied:crc!==0,crcHex:crc?Array.from(data.slice(0,4)).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',name:name.trim(),metadata:Array.from(data)};
  }
- function waitCollectionMetadata(connection,slotIndex,timeoutMs=1300){
+ function waitCollectionMetadata(connection,slotIndex,timeoutMs=400){
   return new Promise((resolve,reject)=>{
    let done=false,timer;
    const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
@@ -256,13 +256,9 @@ function initUI(){
  async function readCollectionSlotFromDevice(connection,slotIndex){
   if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI belum siap.');
   const query=buildCollectionMetadataQuery(slotIndex);
-  let lastError;
-  for(let attempt=1;attempt<=2;attempt++){
-   const pending=waitCollectionMetadata(connection,slotIndex,1300);
-   try{await connection.output.send(query)}catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query Collection: '+(error?.message||error))}
-   try{return await pending}catch(error){lastError=error;if(attempt<2)await new Promise(resolve=>setTimeout(resolve,80))}
-  }
-  throw lastError||Error('Query metadata Collection gagal.');
+  const pending=waitCollectionMetadata(connection,slotIndex,400);
+  try{await connection.output.send(query)}catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query Collection: '+(error?.message||error))}
+  return await pending;
  }
  async function readCollectionSlotStable(connection,slotIndex){
   const first=await readCollectionSlotFromDevice(connection,slotIndex);
@@ -284,6 +280,7 @@ function initUI(){
    if(!conn)conn=await window.NUXNativeMidi.connect();
    for(let i=0;i<indices.length;i++){
     const idx=indices[i];
+    countLabel.textContent='Slot '+String(idx+1).padStart(2,'0')+' dari '+indices.length+' · membaca metadata…';
     setMessage(collectionStatus,'Membaca dan memverifikasi metadata perangkat untuk slot '+String(idx+1).padStart(2,'0')+'…');
     try{
      const record=await readCollectionSlotStable(conn,idx);
@@ -300,7 +297,7 @@ function initUI(){
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
-  finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy')}
+  finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
  syncButton.addEventListener('click',()=>void syncCollectionFromDevice());
  window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
