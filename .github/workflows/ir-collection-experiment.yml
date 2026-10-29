@@ -6,6 +6,7 @@ on:
       - android/ir-collection-experiment
       - android/collection-working-restore
       - android/ir-name-cache-fix
+      - android/movable-signal-chain
     paths:
       - "www/**"
       - "native-android/**"
