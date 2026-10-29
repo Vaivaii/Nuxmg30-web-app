@@ -376,10 +376,11 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [ ] Implement duplicate to a chosen destination slot, preserving source and validating destination contents after writing.
 - [ ] Check preset naming, slot selection, and overwrite confirmation.
 
-**IR and NAM**
-- [ ] Reconcile QuickTone's IR User/Third Party versus Collection behavior and implement corresponding import/export flows.
-- [ ] Preserve the working NAM import path and IR collection mapping. Do not change working transfer frames or MIDI mappings without new capture evidence.
-- [ ] Confirm imported assets are visible, selectable, persisted and recalled by the correct preset/slot after reconnect.
+**IR and NAM — rename/display names only**
+- [ ] Scope clarified by user: for IR and NAM, this roadmap item is only to rename assets / set their names so they are readable and displayed in the app UI. It does not mean implementing new IR/NAM import/export flows here.
+- [ ] Inspect existing IR and NAM list/state models to determine where names/labels are stored and why they are not readable/displayed as desired.
+- [ ] Add rename/name display support in the app while preserving the existing working NAM import path, IR User/Collection mapping, transfer frames, and MIDI mappings.
+- [ ] Verify renamed names persist as intended, render correctly in the app, and remain associated with the correct IR/NAM item after reconnect. Do not alter device-side asset naming protocol unless confirmed by QuickTone/code/capture evidence.
 
 ### Goal 4 — Redesign Studio UI
 - [ ] Review the current Studio screen and QuickTone's equivalent functions before deciding information architecture.
@@ -393,3 +394,8 @@ The current commit includes the Studio → Device control move, connection-trigg
 3. Record every source commit, test result, build run, artifact ID, filename, size and SHA-256 in this project note.
 4. Do not call a feature complete from compilation alone. Hardware acceptance requires correct ACK, device read-back, and a regression check on working NAM/IR/MIDI/preset sync.
 5. If the conversation is interrupted, resume from this handoff section and inspect the latest branch/build state before editing.
+
+
+## Scope clarification — IR/NAM rename only (2026-10-30)
+
+User clarified that roadmap Goal 4 / IR and NAM means **rename or display asset names so they are readable in the application**, not a request to add IR/NAM import-export flows. Keep this narrow: inspect current app data/UI naming, implement name editing/display, and preserve working NAM import, IR User/Collection mapping, and existing transfer/MIDI behavior. Do not silently expand this goal into new transfer functionality.
