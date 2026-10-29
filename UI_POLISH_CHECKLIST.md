@@ -332,3 +332,63 @@ The current commit includes the Studio → Device control move, connection-trigg
 - Source and syntax checks are complete. Run [#94](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940168961) did not finish on the last check; retry [#95](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940578576) was also still in `assembleDebug` with no artifact uploaded.
 - Do not give out an older APK as if it contains this menu polish. Recheck either run and record APK checksum when a successful artifact is available.
 - Workflow branch filter was restored; default blob SHA `877d83759eba533b56f516fbfa99812d3bead089`.
+
+
+# Project handoff — next-session goals (saved 2026-10-30)
+
+## Current state at handoff
+
+- Target remains the original NUX MG-30 Gen 2, firmware 6.0.x; do not switch assumptions to MG-30 MKII.
+- Preset number synchronization from the connected pedal has been fixed and user-verified.
+- Copy Scene is now working on the user's pedal after fixing the JavaScript Array `.set()` error and using the editor-selected scene as the copy source. The user confirmed successful copying.
+- Latest UI request: simplify Copy Scene dropdown options to `Scene 1`, `Scene 2`, `Scene 3` only; remove “Copy to” and source subtitle, and compact popup dimensions. Source edits and syntax checks are done, but APK build runs #94 (`40940168961`) and #95 (`40940578576`) were still reported in progress with no artifact at last check. Recheck build/artifact before supplying a new APK; never substitute an older APK as the compact-menu build.
+- Keep working NAM import and IR User/Collection paths intact. Do not alter already-correct MIDI mappings or the verified Copy Scene write/ACK/read-back path without evidence and regression checks.
+
+## Next session — ordered goals
+
+### Goal 1 — Close out today's compact Copy Scene dropdown
+- [ ] Check GitHub Actions runs #94 and #95; confirm success/failure and retrieve the artifact if available.
+- [ ] If both are stalled/failed, inspect the run/job logs and resolve the build issue before starting new source work.
+- [ ] Record APK filename, artifact ID, size, SHA-256, source commit, and workflow status here.
+- [ ] User test on Android: dropdown shows only the two other scenes, each compactly labelled “Scene N”; confirm Copy Scene still copies the chosen source to the selected destination.
+
+### Goal 2 — Reverse-engineer CTRL / Expression pedal controls
+- [ ] Inspect QuickTone Windows v2.6.7.16 UI strings, event handlers, data structures, and MIDI/SysEx call sites related to CTRL and Expression/EXP assignments.
+- [ ] Map each QuickTone control to its protocol payload and acknowledgement using captures or disassembly; clearly distinguish confirmed wire evidence from static-code inference.
+- [ ] Identify whether assignments are preset-specific/global, which values are range/enum fields, and whether read-back is available.
+- [ ] Implement only after the protocol mapping is supported; add UI controls in MG30 Studio, read-back/ACK handling, and safe validation.
+- [ ] Test on original MG-30 Gen2 firmware 6.0.x and verify other preset fields, NAM, IR, MIDI mapping, and scene state are unchanged.
+
+### Goal 3 — Replicate QuickTone preset-management features
+
+**Import/export presets**
+- [ ] Determine QuickTone preset file format, extension, structure, checksums/headers, and any version fields.
+- [ ] Support importing/exporting a preset in a form the MG-30 can actually read; validate round-trip by exporting from the pedal, importing to the app, and comparing the device read-back.
+- [ ] Keep device-write operations explicit and guarded against writing to the wrong preset slot.
+
+**Rename preset**
+- [ ] Find the QuickTone rename code path and capture/verify the protocol.
+- [ ] Implement rename with device ACK and read-back confirmation; ensure displayed preset number and name stay synchronized.
+
+**Save As / duplicate preset**
+- [ ] Trace QuickTone Save As/duplicate behavior and whether it copies on-device or exports/imports data.
+- [ ] Implement duplicate to a chosen destination slot, preserving source and validating destination contents after writing.
+- [ ] Check preset naming, slot selection, and overwrite confirmation.
+
+**IR and NAM**
+- [ ] Reconcile QuickTone's IR User/Third Party versus Collection behavior and implement corresponding import/export flows.
+- [ ] Preserve the working NAM import path and IR collection mapping. Do not change working transfer frames or MIDI mappings without new capture evidence.
+- [ ] Confirm imported assets are visible, selectable, persisted and recalled by the correct preset/slot after reconnect.
+
+### Goal 4 — Redesign Studio UI
+- [ ] Review the current Studio screen and QuickTone's equivalent functions before deciding information architecture.
+- [ ] Sketch a compact mobile-first layout for studio tools and preset/asset management; keep Editor, NAM & IR, Presets, Studio, Device navigation consistent unless a clear usability reason warrants a change.
+- [ ] Make UI-only changes independently of protocol work, then verify no changes to NAM, IR, MIDI, or scene-transfer behavior.
+
+## Working method and acceptance rules
+
+1. Investigate QuickTone and captures first; label facts as “wire-confirmed”, “static-code evidence”, or “hypothesis”.
+2. Make one narrowly scoped change at a time, run syntax/static checks, and build an APK immediately after each source/UI change.
+3. Record every source commit, test result, build run, artifact ID, filename, size and SHA-256 in this project note.
+4. Do not call a feature complete from compilation alone. Hardware acceptance requires correct ACK, device read-back, and a regression check on working NAM/IR/MIDI/preset sync.
+5. If the conversation is interrupted, resume from this handoff section and inspect the latest branch/build state before editing.
