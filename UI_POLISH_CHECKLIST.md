@@ -8,15 +8,15 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - Do not change the correct existing MIDI mapping.
 - Do not regress the tested IR Collection transfer.
 - Preserve the confirmed real-time movable signal-chain behavior based on the QuickTone capture.
-- The user requested that UI edits be committed to this branch first and **no APK build be run until the user explicitly says all screenshots/UI changes are complete and asks for a build**.
-- Avoid automatic builds on `android/ui-polish-pass-1`. Build workflows have been excluded from this branch's push triggers.
+- The user requested that UI edits be committed to this branch first and **no APK build be run until the user explicitly says all screenshots/UI changes are complete and asks for a build**. The user explicitly requested a build after Screenshot 3; that build is complete.
+- Avoid automatic builds on `android/ui-polish-pass-1`. The branch's push trigger was enabled just for the requested build, then disabled again.
 
 ## Branches / baseline
 - UI-only working branch: `android/ui-polish-pass-1`.
 - Created from the tested real-time signal-chain branch: `android/movable-signal-chain-editmode`.
 - Do not modify the tested baseline branch while polishing UI.
 - Continue committing new screenshot changes to `android/ui-polish-pass-1`.
-- Current APK/build status for the UI polish pass: **not built by design**. Previous build completion belongs to earlier commits before this accumulated UI pass.
+- Current Screenshot 1–3 UI polish APK: **built successfully** on 2026-10-29; GitHub Actions run [40851305061](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40851305061). APK artifact size 4,363,208 bytes; local artifact SHA-256 `e0d32435353405605235894ac9523a574ef42fbf1e0181c26d9b642741163765`. The APK was supplied separately in the conversation for install/review.
 
 ## Screenshot 1 — Editor / Signal Chain
 
@@ -55,6 +55,17 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 - [x] Update the “Impulse Response” subtitle to describe importing WAVs into Collection slots 01–24.
 - [ ] Runtime-test NAM slot read/copy from Device after installation.
 - [ ] Runtime-test Collection IR UI after installation and confirm sync/import/use-in-User workflows remain as before.
+
+
+## Build after Screenshot 3 — 2026-10-29
+
+- [x] User explicitly asked to build after the NAM & IR screenshot changes.
+- [x] JavaScript syntax validation passed.
+- [x] Android debug APK build passed.
+- [x] Artifact upload succeeded: `MG30-Studio-IR-Collection-Experiment` (4,363,208 bytes).
+- [x] APK extracted and copied as `MG30-Studio-NAM-IR-UI-Polish.apk` for this conversation; SHA-256 `e0d32435353405605235894ac9523a574ef42fbf1e0181c26d9b642741163765`.
+- [x] Disabled automatic build trigger again after the requested build. For any later screenshot changes, edit/commit UI only and wait for explicit user instruction before another build.
+- [ ] User to install/review screenshot 1–3 refinements on the Android device. Specifically verify NAM slot reader is available under Device, NAM transfer still works, and Collection IR sync/import/use-in-User UI remains correct.
 
 ## Workflow for the remaining screenshots
 1. User sends one screenshot and describes desired changes.
