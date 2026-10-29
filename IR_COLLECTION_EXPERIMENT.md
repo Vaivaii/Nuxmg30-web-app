@@ -58,28 +58,28 @@ Two short captures supplied by the user were decoded as USB-MIDI event packets. 
 
 ### Clicking only a Collection item/name (no Use action)
 
-- The only action MIDI message is a USB-MIDI Control Change event `0B B0 42 04`, which decodes to MIDI channel 1, CC number 66 (`0x42`), value/index `4`.
-- This matches the previously hardware-tested index mapping: value/index 4 corresponds to displayed Collection slot 05. Strong evidence that clicking/highlighting an item selects the Collection index via CC 66.
-- No Collection name, filename, list query, or incoming device response is present in this capture.
+- The action is a USB-MIDI Control Change event `0B B0 42 04`, which decodes to MIDI channel 1, CC number 66 (`0x42`), value/index `4`.
+- This matches the previously hardware-tested index mapping: value/index 4 corresponds to displayed Collection slot 05. Strong evidence that clicking/highlighting an item selects that device Collection index via CC 66.
+- This capture starts at the item-click action; it does not contain the earlier dialog-open/list-population transaction.
 
 ### Clicking Use on a Collection item
 
-The capture records the following outbound MIDI action sequence, with the same index value 4 in both SysEx messages:
+Re-parsing the USBPcap endpoint direction shows a request/response pair, correcting the earlier direction interpretation:
 
-1. SysEx: `F0 43 58 70 6E 01 04 00 00 00 00 00 00 00 F7`
-2. SysEx about 0.122 ms later: `F0 43 58 70 6E 02 04 00 00 00 00 00 00 00 F7`
-3. In the same USB-MIDI transfer after the second SysEx: `B0 09 14` (CC 9 = 20), `B0 42 00` (CC 66 = 0), `B0 43 00` (CC 67 = 0).
+1. App → device SysEx request: `F0 43 58 70 6E 01 04 00 00 00 00 00 00 00 F7`.
+2. Device → app SysEx response about 0.122 ms later: `F0 43 58 70 6E 02 04 00 00 00 00 00 00 00 F7`.
+3. The same incoming USB-MIDI transfer also includes Control Changes `B0 09 14` (CC 9 = 20), `B0 42 00` (CC 66 = 0), and `B0 43 00` (CC 67 = 0).
 4. About 0.019 ms later, another transfer sends `B0 42 00` (CC 66 = 0).
 
-Both traces contain host-to-device transfers/completions only; they do not contain an incoming Collection list/metadata response. The byte `04` in the two `6E` messages aligns with the selected index 4 from the earlier name click, but the exact semantics of the `6E` subcommands and the associated CC reset sequence remain undecoded. Do not yet replace the current known-working **Gunakan di User** implementation with these raw commands without a controlled A/B hardware test.
+This is direct evidence that the Use action exchanges a Collection-specific `6E 01` request and `6E 02` device response for index 4, followed by MIDI control reset events. The precise semantics and full effect on IR load state are not yet fully decoded. Preserve the already hardware-tested **Gunakan di User** fallback until the direct device action can be tested safely.
 
-The separate older capture `ircolectionmenu dialog.pcapng` likewise shows only repeated CC 66 value 0 actions after USB enumeration when the dialog is opened; it contains no slot-name readback. The long capture `ircolectionmenu dialog dan import.pcapng` records `6A/6C/6B` Collection writes and acknowledgements, not a read/list response.
+The user confirms that QuickTone's Collection list is populated from the device, just as the successful NAM sync reads device metadata. These two new captures are action traces taken after names are already displayed; they do **not** include the dialog-open request/response that populates all Collection names. The older short dialog capture records CC 66 reset actions only, and the long dialog/import capture focuses on the `6A/6C/6B` transfer plus acknowledgements. Therefore the missing evidence is specifically the start-of-dialog list/readback exchange—not whether the Collection is device-backed.
 
-## Device-side Collection readback remains unimplemented
+## Device-side Collection readback implementation status
 
-The proven NAM sync code reads a defined metadata query twice and compares payloads before updating model names. The supplied Collection packet captures contain only the 6A/6C/6B import transaction; the two short menu captures contain no complete SysEx query/response. Therefore the Collection slot list in the current app is still the app's own IndexedDB mirror. Items added by QuickTone outside MG30 Studio cannot honestly be advertised as synchronized from the device yet.
+The Collection list is device-backed as confirmed by the user, and the app should treat the pedal as the source of truth, using the same synchronization architecture that worked for NAM: request metadata, decode the reply, compare repeated reads for stability, then update the local slot cards and the active cabinet name. The existing IndexedDB mirror is only a fallback for IR WAV files imported through MG30 Studio; it must not override device-reported slot names or occupancy.
 
-Do not guess a read command or parse a guessed response as a slot name. To implement true two-way Collection sync, obtain a USBPcap/Wireshark capture starting before opening the Collection dialog and continuing through the device's Collection list/metadata refresh and one item selection/use action. The capture must include USB-MIDI endpoint SysEx traffic, ideally visible frames beginning with `F0 43 58 70`; then reverse-engineer the actual read request, reply format, slot index, name and CRC fields for original MG-30 Gen 2 firmware 6.0.x.
+The remaining protocol gap is the transaction that populates the list when the Collection dialog opens. The recently supplied click-name and Use captures start after the list is visible, so they reveal selection and use actions but not the initial list refresh. Do not fabricate slot names from the local cache. Capture from before opening the Collection dialog through the moment the 24 names/occupancy appear; then implement the Collection readback codec as a separate module, reusing the NAM sync's two-pass stability-check pattern without changing NAM code.
 
 ## Collection payload caveat
 
