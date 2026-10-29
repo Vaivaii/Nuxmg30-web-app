@@ -73,6 +73,8 @@ The capture records the following outbound MIDI action sequence, with the same i
 
 Both traces contain host-to-device transfers/completions only; they do not contain an incoming Collection list/metadata response. The byte `04` in the two `6E` messages aligns with the selected index 4 from the earlier name click, but the exact semantics of the `6E` subcommands and the associated CC reset sequence remain undecoded. Do not yet replace the current known-working **Gunakan di User** implementation with these raw commands without a controlled A/B hardware test.
 
+The separate older capture `ircolectionmenu dialog.pcapng` likewise shows only repeated CC 66 value 0 actions after USB enumeration when the dialog is opened; it contains no slot-name readback. The long capture `ircolectionmenu dialog dan import.pcapng` records `6A/6C/6B` Collection writes and acknowledgements, not a read/list response.
+
 ## Device-side Collection readback remains unimplemented
 
 The proven NAM sync code reads a defined metadata query twice and compares payloads before updating model names. The supplied Collection packet captures contain only the 6A/6C/6B import transaction; the two short menu captures contain no complete SysEx query/response. Therefore the Collection slot list in the current app is still the app's own IndexedDB mirror. Items added by QuickTone outside MG30 Studio cannot honestly be advertised as synchronized from the device yet.
