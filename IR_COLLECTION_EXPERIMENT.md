@@ -52,6 +52,27 @@ The separate IR Import navigation item is removed. The IR manager is placed belo
 
 After a successful User IR transfer (direct User upload or **Gunakan di User** from an app-managed Collection slot), MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`. When the cabinet model is set to the existing `Third-party` model, the app uses this stored name in the model label and cabinet illustration. This is a local mirror of the last IR sent through MG30 Studio, not yet a device readback of whatever is currently selected on the pedal. The visual update was added on branch commit `e68b2b6`; build run #9 succeeded.
 
+## New QuickTone capture analysis: select name vs Use (2026-10-29)
+
+Two short captures supplied by the user were decoded as USB-MIDI event packets. Shared USB device-descriptor enumeration packets precede the action; the application MIDI data is at the end of each trace.
+
+### Clicking only a Collection item/name (no Use action)
+
+- The only action MIDI message is a USB-MIDI Control Change event `0B B0 42 04`, which decodes to MIDI channel 1, CC number 66 (`0x42`), value/index `4`.
+- This matches the previously hardware-tested index mapping: value/index 4 corresponds to displayed Collection slot 05. Strong evidence that clicking/highlighting an item selects the Collection index via CC 66.
+- No Collection name, filename, list query, or incoming device response is present in this capture.
+
+### Clicking Use on a Collection item
+
+The capture records the following outbound MIDI action sequence, with the same index value 4 in both SysEx messages:
+
+1. SysEx: `F0 43 58 70 6E 01 04 00 00 00 00 00 00 00 F7`
+2. SysEx about 0.122 ms later: `F0 43 58 70 6E 02 04 00 00 00 00 00 00 00 F7`
+3. In the same USB-MIDI transfer after the second SysEx: `B0 09 14` (CC 9 = 20), `B0 42 00` (CC 66 = 0), `B0 43 00` (CC 67 = 0).
+4. About 0.019 ms later, another transfer sends `B0 42 00` (CC 66 = 0).
+
+Both traces contain host-to-device transfers/completions only; they do not contain an incoming Collection list/metadata response. The byte `04` in the two `6E` messages aligns with the selected index 4 from the earlier name click, but the exact semantics of the `6E` subcommands and the associated CC reset sequence remain undecoded. Do not yet replace the current known-working **Gunakan di User** implementation with these raw commands without a controlled A/B hardware test.
+
 ## Device-side Collection readback remains unimplemented
 
 The proven NAM sync code reads a defined metadata query twice and compares payloads before updating model names. The supplied Collection packet captures contain only the 6A/6C/6B import transaction; the two short menu captures contain no complete SysEx query/response. Therefore the Collection slot list in the current app is still the app's own IndexedDB mirror. Items added by QuickTone outside MG30 Studio cannot honestly be advertised as synchronized from the device yet.
