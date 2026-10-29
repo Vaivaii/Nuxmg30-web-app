@@ -748,6 +748,9 @@ async function copySceneTo(targetIndex){
   setDeviceStatus('Ketiga ACK 0C/03 diterima. Mengaktifkan Scene '+(targetIndex+1)+'…');
   if(!await midiSend([0xB0,80,targetIndex]))throw new Error('Tiga bagian scene mendapat ACK, tetapi CC80 tujuan tidak terkirim.');
   ccSent=true;await flushMidi();lastSceneCommandAt=Date.now();
+  // Scene transitions on Gen2 need a brief settle window before status readback.
+  // The existing scene-switch workflow also waits 220 ms before querying status.
+  await delay(220);
   stage='memverifikasi status scene/preset setelah CC80';
   const after=await readActiveProgramScene();
   if(after.program!==program)throw new Error('Preset perangkat berubah setelah penulisan; periksa slot aktif sebelum mencoba lagi.');
