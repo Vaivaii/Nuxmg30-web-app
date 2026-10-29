@@ -189,6 +189,9 @@ function initUI(){
   }else if(device?.read&&!device.occupied){
    card.classList.toggle('is-filled',!!local?.blob);name.textContent=local?.blob?(local.name||local.fileName):('Slot Collection '+String(slot).padStart(2,'0'));
    status.textContent=local?.blob?'Kosong di pedal':'Kosong di MG-30';file.textContent=local?.blob?'WAV lokal tersimpan':'Slot perangkat kosong';
+  }else if(device&&!device.read){
+   if(local?.blob){card.classList.add('is-filled');name.textContent=local.name||local.fileName||('IR Slot '+slot);status.textContent='Sinkronisasi gagal';file.textContent=device.error||'Metadata perangkat tidak terbaca';}
+   else{card.classList.remove('is-filled');name.textContent='Slot Collection '+String(slot).padStart(2,'0');status.textContent='Gagal dibaca';file.textContent=device.error||'Perangkat tidak memberi balasan metadata';}
   }else if(local){
    card.classList.add('is-filled');name.textContent=local.name||local.fileName||('IR Slot '+slot);status.textContent='WAV lokal · belum sinkron';file.textContent=local.fileName||'WAV tersimpan';
   }else{
@@ -225,75 +228,101 @@ function initUI(){
   for(let i=0;i<54;i+=3){const word=((packed[i]&3)<<14)|((packed[i+1]&0x7f)<<7)|(packed[i+2]&0x7f);out[j++]=(word>>>8)&0xff;out[j++]=word&0xff}
   return out;
  }
- function buildCollectionMetadataQuery(slotIndex){
+ function buildCollectionMetadataQuery(slotIndex,shape='short'){
   if(!Number.isInteger(slotIndex)||slotIndex<0||slotIndex>23)throw Error('Indeks Collection harus 0–23.');
-  const body=new Uint8Array(36);body[0]=1; // QuickTone's MG-30 getIRCrcAndName query marker.
-  const packed=packMetadata36(body);
-  return Uint8Array.from([0xf0,0x43,0x58,0x70,0x09,0x01,slotIndex,...packed,0xf7]);
+  const header=[0xf0,0x43,0x58,0x70,0x6c,0x00,slotIndex];
+  // 6C/01 is the observed Collection NAME write; 6C/00 is its read/query counterpart.
+  // Start with the compact request, then allow the fixed-width metadata request as fallback.
+  if(shape==='metadata')return Uint8Array.from([...header,...packMetadata36(new Uint8Array(36)),0xf7]);
+  return Uint8Array.from([...header,0,0,0,0,0,0,0xf7]);
  }
  function decodeCollectionMetadata(raw,slotIndex){
-  if(raw[0]!==0xf0||raw[1]!==0x43||raw[2]!==0x58||raw[3]!==0x70||raw[4]!==0x09||raw[5]!==0x02||raw[6]!==slotIndex||raw[raw.length-1]!==0xf7)throw Error('Balasan 09/02 tidak cocok dengan slot yang diminta.');
-  if(raw.length!==62)throw Error('Panjang balasan 09/02 tidak cocok: '+raw.length+' byte.');
+  if(raw[0]!==0xf0||raw[1]!==0x43||raw[2]!==0x58||raw[3]!==0x70||raw[4]!==0x6c||raw[5]!==0x02||raw[6]!==slotIndex||raw[raw.length-1]!==0xf7)throw Error('Balasan 6C/02 tidak cocok dengan indeks Collection yang diminta.');
+  if(raw.length!==62)throw Error('Panjang balasan 6C/02 tidak cocok: '+raw.length+' byte.');
   const data=unpackMetadata36(Uint8Array.from(raw.slice(7,-1)));
-  const crc=data[0]===0&&data[1]===0&&data[2]===0&&data[3]===0?0:1;
+  const crcBytes=data.slice(0,4);
+  const occupied=crcBytes.some(value=>value!==0)||data.slice(4).some(value=>value!==0);
   const nameBytes=data.slice(4,36);let name='';
   for(const value of nameBytes){if(value===0)break;name+=value>=0x20&&value<=0x7e?String.fromCharCode(value):'_'}
-  return {slot:slotIndex+1,index:slotIndex,read:true,occupied:crc!==0,crcHex:crc?Array.from(data.slice(0,4)).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',name:name.trim(),metadata:Array.from(data)};
+  return {slot:slotIndex+1,index:slotIndex,read:true,occupied,crcHex:crcBytes.some(value=>value!==0)?Array.from(crcBytes).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase():'',name:name.trim(),metadata:Array.from(data)};
  }
- function waitCollectionMetadata(connection,slotIndex,timeoutMs=400){
+ function waitCollectionMetadata(connection,slotIndex,timeoutMs=650){
   return new Promise((resolve,reject)=>{
    let done=false,timer;
    const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);connection.input.removeEventListener('midimessage',onMessage)};
    const onMessage=e=>{
     const bytes=Array.from(e?.data||[]);
-    if(bytes.length<8||bytes[0]!==0xf0||bytes[1]!==0x43||bytes[2]!==0x58||bytes[3]!==0x70||bytes[4]!==0x09||bytes[5]!==0x02||bytes[6]!==slotIndex||bytes[bytes.length-1]!==0xf7)return;
+    if(bytes.length<8||bytes[0]!==0xf0||bytes[1]!==0x43||bytes[2]!==0x58||bytes[3]!==0x70||bytes[4]!==0x6c||bytes[5]!==0x02||bytes[6]!==slotIndex||bytes[bytes.length-1]!==0xf7)return;
     try{const decoded=decodeCollectionMetadata(bytes,slotIndex);cleanup();resolve(decoded)}catch(error){cleanup();reject(error)}
    };
    connection.input.addEventListener('midimessage',onMessage);
-   timer=setTimeout(()=>{cleanup();reject(Error('Tidak ada balasan metadata 09/02 untuk slot '+String(slotIndex+1).padStart(2,'0')+'.'))},timeoutMs);
+   timer=setTimeout(()=>{cleanup();reject(Error('Timeout membaca nama/CRC Collection slot '+String(slotIndex+1).padStart(2,'0')+' (06C/02 tidak merespons).'))},timeoutMs);
   });
  }
- async function readCollectionSlotFromDevice(connection,slotIndex){
-  if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI belum siap.');
-  const query=buildCollectionMetadataQuery(slotIndex);
-  const pending=waitCollectionMetadata(connection,slotIndex,400);
-  try{await connection.output.send(query)}catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query Collection: '+(error?.message||error))}
+ async function sendCollectionMetadataQuery(connection,slotIndex,shape){
+  const request=buildCollectionMetadataQuery(slotIndex,shape);
+  const pending=waitCollectionMetadata(connection,slotIndex,650);
+  try{await connection.output.send(request)}catch(error){pending.catch(()=>{});throw Error('Gagal mengirim query 6C/00: '+(error?.message||error))}
   return await pending;
  }
- async function readCollectionSlotStable(connection,slotIndex){
-  const first=await readCollectionSlotFromDevice(connection,slotIndex);
-  await new Promise(resolve=>setTimeout(resolve,35));
-  const second=await readCollectionSlotFromDevice(connection,slotIndex);
-  if(first.occupied!==second.occupied||first.crcHex!==second.crcHex||first.name!==second.name){
-   throw Error('Metadata Collection slot '+String(slotIndex+1).padStart(2,'0')+' berubah di antara dua pembacaan.');
+ let collectionQueryShape=null;
+ async function readCollectionSlotFromDevice(connection,slotIndex){
+  if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI belum siap.');
+  const shapes=collectionQueryShape?[collectionQueryShape]:['short','metadata'];
+  let lastError;
+  for(const shape of shapes){
+   try{
+    const reply=await sendCollectionMetadataQuery(connection,slotIndex,shape);
+    if(!collectionQueryShape)collectionQueryShape=shape;
+    return {...reply,queryShape:shape};
+   }catch(error){lastError=error}
   }
-  return {...second,stable:true,readRounds:2};
+  throw lastError||Error('Query metadata Collection gagal.');
  }
  async function syncCollectionFromDevice({connection=null,slotIndices=null,silent=false}={}){
   if(busy||syncBusy)return;
   if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Sinkronisasi Collection memerlukan APK Android dan kabel USB OTG.','warn');return}
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
+  const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
+  const errors=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   syncBusy=true;setBusy(true);syncButton.textContent='Menyinkronkan…';syncButton.setAttribute('aria-busy','true');
-  setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama dan CRC Collection dalam dua putaran…');
-  let conn=connection,success=0,empty=0,failed=0;
+  setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama/CRC Collection dengan pola sinkronisasi NAM (2 putaran)…');
+  let conn=connection,success=0,empty=0;
   try{
    if(!conn)conn=await window.NUXNativeMidi.connect();
-   for(let i=0;i<indices.length;i++){
-    const idx=indices[i];
-    countLabel.textContent='Slot '+String(idx+1).padStart(2,'0')+' dari '+indices.length+' · membaca metadata…';
-    setMessage(collectionStatus,'Membaca dan memverifikasi metadata perangkat untuk slot '+String(idx+1).padStart(2,'0')+'…');
-    try{
-     const record=await readCollectionSlotStable(conn,idx);
-     deviceSlots.set(idx+1,record);success++;if(!record.occupied)empty++;
-     updateSlotCard(idx+1);renderSlotCount();
-    }catch(error){
-     failed++;
-     deviceSlots.set(idx+1,{slot:idx+1,index:idx,read:false,stable:false,error:error?.message||String(error)});
-     updateSlotCard(idx+1);renderSlotCount();
+   for(let round=0;round<2;round++){
+    for(let i=0;i<indices.length;i++){
+     const idx=indices[i];
+     countLabel.textContent='Putaran '+(round+1)+'/2 · slot '+String(idx+1).padStart(2,'0')+'/'+String(indices.length).padStart(2,'0');
+     setMessage(collectionStatus,'Sinkronisasi dua arah Collection: putaran '+(round+1)+'/2 · membaca slot '+String(idx+1).padStart(2,'0')+'…');
+     try{
+      const record=await readCollectionSlotFromDevice(conn,idx);
+      rounds[round][i]=Uint8Array.from(record.metadata);
+     }catch(error){errors[round][i]=error?.message||String(error)}
     }
    }
+   deviceSlots.clear();
+   for(let i=0;i<indices.length;i++){
+    const idx=indices[i],first=rounds[0][i],second=rounds[1][i];
+    if(!first||!second){
+     const error=errors[1][i]||errors[0][i]||'Slot tidak mendapat metadata pada kedua putaran.';
+     deviceSlots.set(idx+1,{slot:idx+1,index:idx,read:false,stable:false,error});
+     continue;
+    }
+    if(first.length!==second.length||first.some((value,j)=>value!==second[j])){
+     deviceSlots.set(idx+1,{slot:idx+1,index:idx,read:false,stable:false,error:'Metadata berbeda antara putaran 1 dan 2.'});
+     continue;
+    }
+    const record=decodeCollectionMetadata(Uint8Array.from([0xf0,0x43,0x58,0x70,0x6c,0x02,idx,...packMetadata36(Uint8Array.from(second)),0xf7]),idx);
+    const stable={...record,stable:true,readRounds:2,queryShape:collectionQueryShape};
+    deviceSlots.set(idx+1,stable);success++;if(!stable.occupied)empty++;
+   }
+   for(const idx of indices)updateSlotCard(idx+1,slotCache.get(idx+1)||null);
+   renderSlotCount();
    lastSyncAt=Date.now();
-   const detail='Sinkronisasi perangkat: '+success+'/'+indices.length+' slot stabil · '+empty+' kosong · '+failed+' gagal/tidak stabil.';
+   const failed=indices.length-success;
+   const firstErrors=[...deviceSlots.values()].filter(row=>!row.stable).slice(0,3).map(row=>'slot '+String(row.slot).padStart(2,'0')+': '+row.error);
+   const detail='Sinkronisasi dua putaran selesai: '+success+'/'+indices.length+' slot stabil · '+empty+' kosong · '+failed+' gagal/tidak stabil.'+(firstErrors.length?' Rincian: '+firstErrors.join(' | '):'');
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
