@@ -746,7 +746,7 @@ async function connectMG30(){
    $('midiSupport').textContent='Native USB-MIDI';
    toast('Terhubung: '+(connection.deviceName||midiOutput.name||'NUX MG-30'));
    await readActiveBuffer().then(n=>setDeviceStatus('Terhubung via OTG · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('USB-MIDI terhubung, baca buffer gagal: '+e.message));
-   renderChain();startHardwareStatePolling();
+   renderChain();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
    if(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames){
     setTimeout(()=>{void scanNamDeviceSlots(true)},80);
    }
@@ -781,7 +781,7 @@ async function connectMG30(){
   setDeviceStatus('Terhubung. Membaca preset aktif…');
   $('midiSupport').textContent='API tersedia';toast('Terhubung: '+(midiOutput.name||'MIDI device'));
   await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));
-  renderChain();startHardwareStatePolling();
+  renderChain();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
  }catch(e){midiConnected=false;setDeviceStatus('Gagal terhubung');toast('Koneksi gagal: '+e.message)}
 }
 
