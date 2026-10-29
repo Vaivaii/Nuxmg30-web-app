@@ -8,7 +8,9 @@ The editor renders the custom cabinet label from the local key `mg30-user-ir-nam
 
 ## Change in this experiment
 
-After a successful preset readback, scene readback, or manual “Baca buffer aktif” operation, the app also calls the existing read-only `syncActiveUserIRNameFromDevice` helper. This helper uses the current `www/ir-transfer.js` metadata reader, requests `09/00` for target `0x47` (71), requires a matching `09/02` response, reads twice, and only displays a stable device-backed name. If readback fails, the UI falls back to generic `Third-party` rather than presenting an older local label as confirmed device state.
+After a successful preset readback, scene readback, or manual “Baca buffer aktif” operation, the app also calls the existing read-only `syncActiveUserIRNameFromDevice` helper. The first revision queried metadata target `0x47` (71). The user's physical-device screenshot then showed the pedal's Third-party IR name as `TONE KING MAIN OD R` while the app remained on `i5_cap_45_dc`. That demonstrates the first revision did not synchronize the correct displayed name.
+
+User-write captures show different parameter bytes: the original complete User capture uses `1`, while a later capture uses `71`; this field is not proven to be a physical slot number. The current revision changes **readback only** to query `09/00` target `1`, matching the original complete User capture. It requires `09/02`, reads twice, and only displays stable metadata. If readback fails, the UI falls back to generic `Third-party` rather than presenting an older local label as confirmed device state. Target `1` is a testable hypothesis, not yet proof of the active cabinet's metadata key.
 
 The experiment does not change the User import `10/01, 09/01, 11/01` command family, the Collection `6A/6C/6B` path, NAM transfer/readback, or the existing MIDI CC map. It adds readback requests only.
 
@@ -16,7 +18,7 @@ The experiment does not change the User import `10/01, 09/01, 11/01` command fam
 
 - JavaScript syntax check of both inline scripts passed after the changes.
 - GitHub Actions Android build is being run for this branch.
-- **Physical hardware validation is still required.** In particular, `09/00 → 09/02` User IR name readback has not been independently confirmed against a fresh USBPcap capture on firmware 6.0.x.
+- **Physical hardware validation is still required.** In particular, `09/00 → 09/02` User IR name readback has not been independently confirmed against a fresh USBPcap capture on firmware 6.0.x. Target `1` is now the active experiment; the capture establishes its use in one User write, not yet that it is the correct readback key.
 
 ## Hardware test checklist
 
