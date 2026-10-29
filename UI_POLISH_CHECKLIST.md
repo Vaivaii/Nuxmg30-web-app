@@ -162,3 +162,14 @@ This file is the durable continuation record for the multi-screenshot UI-polish 
 
 ## Latest scope
 The current commit includes the Studio → Device control move, connection-triggered USB test, and visible Studio YouTube search. The working tree is represented by this Git branch; continue from it in future conversations.
+
+## Follow-up — live reorder preview while dragging (2026-10-29)
+
+- [x] User reported that dragging EFX toward OD did not make the target card move aside, so it looked like the block could not be repositioned.
+- [x] Updated only the reorder UI in `www/index.html`: as the drag crosses target cards, CSS flex order now previews the resulting chain order during the drag so neighbouring cards shift, rather than only highlighting the target.
+- [x] Hit-testing uses `elementsFromPoint()` and excludes the pointer-following ghost/source placeholder, so the card beneath the finger can still be targeted.
+- [x] On release, commit the same preview order the user saw. Keep the AMP/IR adjacency guard and the existing `sendSignalChainOrderRealtime()` ACK path unchanged.
+- [x] Static inline-JavaScript parse check passed; reorder insertion math passed 264 source/target/side combinations.
+- [x] No changes to NAM transfer, IR transfer, MIDI mapping, preset encoding, or the signal-chain SysEx sender.
+- [ ] APK not rebuilt for this follow-up. Wait for the user to ask for another build.
+- [ ] Runtime-test on Android: drag EFX to either side of an adjacent block (including OD), verify neighbouring cards visibly shift during drag and the final order changes on release; then verify AMP/IR stay adjacent and test physical-pedal ACK/readback.
