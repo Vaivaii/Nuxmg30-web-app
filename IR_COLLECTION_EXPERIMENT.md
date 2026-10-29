@@ -48,6 +48,16 @@ The separate IR Import navigation item is removed. The IR manager is placed belo
 - The app keeps a local IndexedDB mirror of WAV files imported through this UI so the 24-slot list can show their names and offer **Gunakan di User**. This list is not a device readback: Collection items created directly in QuickTone are not enumerated by MG30 Studio.
 - **Gunakan di User** re-sends the saved source WAV from the app's local mirror through the known-good User `10/09/11` route and parameter 71. It does not yet issue a decoded command that reads/moves the existing Collection item directly from the pedal. This is an explicit, honest workaround until the Collection item select/load transaction is reverse-engineered.
 
+## Cabinet name synchronization
+
+After a successful User IR transfer (direct User upload or **Gunakan di User** from an app-managed Collection slot), MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`. When the cabinet model is set to the existing `Third-party` model, the app uses this stored name in the model label and cabinet illustration. This is a local mirror of the last IR sent through MG30 Studio, not yet a device readback of whatever is currently selected on the pedal.
+
+## Device-side Collection readback remains unimplemented
+
+The proven NAM sync code reads a defined metadata query twice and compares payloads before updating model names. The supplied Collection packet captures contain only the 6A/6C/6B import transaction; the two short menu captures contain no complete SysEx query/response. Therefore the Collection slot list in the current app is still the app's own IndexedDB mirror. Items added by QuickTone outside MG30 Studio cannot honestly be advertised as synchronized from the device yet.
+
+Do not guess a read command or parse a guessed response as a slot name. To implement true two-way Collection sync, obtain a USBPcap/Wireshark capture starting before opening the Collection dialog and continuing through the device's Collection list/metadata refresh and one item selection/use action. The capture must include USB-MIDI endpoint SysEx traffic, ideally visible frames beginning with `F0 43 58 70`; then reverse-engineer the actual read request, reply format, slot index, name and CRC fields for original MG-30 Gen 2 firmware 6.0.x.
+
 ## Collection payload caveat
 
 The current Collection import selects the observed command family `6A/6C/6B` separately from User's `10/09/11`, and the user confirmed that imported items enter the Collection slots. However, a byte comparison of the available captures shows that Collection waveform/curve payloads differ from the User capture beyond command bytes. The reason is not yet established. Verify the resulting IR's response graph and sound on the device; an entry appearing and a full ACK sequence do not alone prove the audio payload is correct.
