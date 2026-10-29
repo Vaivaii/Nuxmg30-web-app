@@ -906,3 +906,76 @@ html,body{background:#0b1012}
 .block-quick-select.hidden{display:none!important}
 .preset-jump-menu-head strong{text-transform:none;letter-spacing:.1px}
 @media(max-width:390px){.block-quick-select{width:92px;flex-basis:92px;padding:7px 4px;font-size:9px}}
+
+
+/* UI polish pass — keep each page title stacked under its eyebrow. */
+.hero>div:first-child{
+  display:block;
+  min-width:0;
+  width:100%;
+}
+.hero>div:last-child:not(:first-child){
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+@media(max-width:720px){
+  .hero{margin-top:0!important}
+  .hero>div:first-child{display:block!important;width:100%;flex:none}
+}
+
+/* Compact the Edit control to match the regular header action button. */
+.signal-chain-panel .chain-head-actions .chain-edit-toggle{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none;
+  height:39px;
+  min-height:39px!important;
+  padding:8px 13px!important;
+  font-size:12px;
+  line-height:1.1;
+}
+@media(max-width:720px){
+  .signal-chain-panel .chain-head-actions{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+  }
+}
+
+/* Overlay origin markers directly on the amp / pedal artwork. */
+#page-editor #modelVisual .gear-art{position:relative}
+#page-editor #modelVisual .gear-art .gear-art-badge{
+  position:absolute;
+  z-index:4;
+  top:8px;
+  left:9px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:calc(100% - 18px);
+  padding:5px 8px;
+  border:1px solid #d8ff92;
+  border-radius:7px;
+  background:#c4f56b;
+  color:#11180b;
+  font-size:9px;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.7px;
+  white-space:nowrap;
+  pointer-events:none;
+  box-shadow:0 2px 8px #0005;
+}
+#page-editor #modelVisual .gear-art .gear-art-badge.is-image{
+  background:#202b30;
+  border-color:#71878d;
+  color:#eff5f4;
+  letter-spacing:1px;
+}
