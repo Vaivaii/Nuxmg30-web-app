@@ -28,11 +28,21 @@ The capture named `ircolectionmenu dialog dan import.pcapng` contains a Collecti
 
 The two short Collection-menu captures do not contain a complete list/readback transaction. This patch only separates the observed Collection transfer family from the User family; it does not claim to have decoded Collection list/readback or slot-selection behavior.
 
-## Experimental UI behavior
+## Correct Collection lifecycle
+
+Collection is a staging library/dialog, not a directly usable third-party slot. The workflow reported from QuickTone is:
+
+1. Import the WAV into Collection; it is saved as an item in the Collection contents dialog/list.
+2. Choose the stored Collection item using the item's load/select/download-arrow action.
+3. QuickTone transfers the selected IR into the device's Third Party / User path, where amp/cab can use it.
+
+The first experimental UI implements only step 1 (transfer into the Collection path). It does not yet enumerate Collection items or automate step 2. After a Collection item is saved, use QuickTone's own item action to load it into Third Party/User until the separate select/load protocol is understood.
+
+## Experimental UI behavior and payload caveat
 
 The IR page now has a target selector with **Third Party / User** as the default and **Collection** as a separate experimental target. Each target retains its own parameter field value: User starts at 71 because that exact path has been hardware-tested; Collection starts at 1 because that value is present in the observed Collection capture.
 
-The payload is still produced by the shared WAV-to-IR generator and the command byte family is selected by target. This is a protocol-level experiment: a Collection transaction that receives all acknowledgements is **not** proof that the IR has been saved or appears in the Collection menu.
+The current experiment selects the Collection command family (6A/6C/6B) separately from the User family (10/09/11). However, a byte comparison of the available captures shows that the Collection waveform and curve payloads also differ from the User capture beyond the command bytes. Since a paired source WAV and confirmed same-content import are not available for that comparison, the cause of the payload differences is not known. Therefore this branch is a test harness, not a confirmed Collection implementation. Test only with a disposable IR and verify the audible/usable result in QuickTone. A complete ACK sequence alone does not prove that the right audio data was stored.
 
 ## Required hardware validation before merge
 
