@@ -305,3 +305,15 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] APK `MG30-Studio-Copy-Scene-Array-Fix.apk`, size 4,370,868 bytes, SHA-256 `823b4ed362605cc9a865827c030eec5aeb270930123a2a0b2e9d0825212f59e3`.
 - [x] Source fix commit `dc2891a1402f555d940b2a0e7c04322ed9b1e6a9`; workflow filter restored by `64bb487352308415c70539bd2aa050204ed574b8`.
 - [ ] Test on original MG-30 Gen2 firmware 6.0.x. Confirm the `body.set` error is gone and then verify actual target-scene write/read-back. If there is a new error, capture the now-longer diagnostic.
+
+
+## Follow-up — Copy Scene source scene tracking (build #93, 2026-10-30)
+
+- [x] Use `activeSceneIndex` (scene selected in the editor / CC80 state) as Copy Scene source, instead of the `scene` field from the `15/00` status query that was consistently being parsed as Scene 1 in the user's tests.
+- [x] Remove the post-copy rejection based only on `after.scene`; keep hardware preset consistency checking and destination byte-for-byte payload read-back before success.
+- [x] Both inline app scripts passed syntax checks. Static checks verified source uses `activeSceneIndex`, preset check remains, and ACK/read-back checks are retained.
+- [x] Build [#93 / 40938188175](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40938188175) succeeded (`assembleDebug` + artifact upload).
+- [x] Artifact ID `12925423351`, ZIP size 3,993,091 bytes, SHA-256 `46c086a644319ed382970c5c8af167eef02f14ef39439172027842c9d553ab11`.
+- [x] APK `MG30-Studio-Copy-Scene-Source-Scene-Fix.apk`, size 4,370,996 bytes, SHA-256 `bec19f99f65db49d9bc443558dbd43da42e218cb928ecd2400c0de3fd584f2ff`.
+- [x] Source commit `d8a5751a2e09c6205d96c1b011b3853f9ca56f6a`; workflow branch filter restored by `e8f8218161f16a0bd27c3ec615000eaba005f2e8`.
+- [ ] Test on original MG-30 Gen2 firmware 6.0.x with distinct scene values: Scene 2 → 1, Scene 2 → 3, Scene 3 → 1 and Scene 3 → 2. Confirm the dialog source reflects the selected scene, source remains unchanged, and target read-back equals source.
