@@ -159,3 +159,24 @@ Syntax parsing passed for both inline scripts in `www/index.html`; presence chec
 - Source commit for Copy Scene menu and logic: `2167ec51be6335c113717f746ee0c40eaa7f9927`; CSS styling commit: `0f24d9846b67d25b7385a1ef4d7047301cec68f7`; this protocol/build note commit is after those source changes.
 - Static validation: both inline scripts parse successfully; checked presence of menu wiring, per-part ACK check, CC80 destination, and target payload read-back comparison.
 - Physical MG-30 run-time validation has **not** been performed in this environment. On-device success still requires testing a source scene with different values from its target, confirming the target changes and source remains untouched, then selecting each of the six valid source/destination pairs. Existing NAM, IR Collection, and MIDI mappings were not modified by this feature.
+
+
+## 10. Mobile dropdown + Copy Scene verification follow-up (2026-10-30)
+
+User-reported behavior from Android screenshot:
+- The Copy Scene popup extended beyond the left edge of the mobile screen, clipping its labels.
+- After choosing a target, the app showed the generic “Copy Scene belum sepenuhnya terverifikasi” toast.
+
+Changes made:
+- CSS: constrained the Copy Scene popup to min(200px, calc(100vw - 24px)), forced border-box sizing, allowed option labels to wrap, and prevented horizontal overflow.
+- Timing: after sending CC80 to select the target scene, the routine now waits 220 ms before querying active scene/preset status, matching the existing scene-switch handler's settling delay.
+- Diagnostics: Copy Scene errors now report the stage (status query, scene data read, per-part 0C/03 ACK, CC80, status readback, or payload comparison) and include the concrete error. A console error record includes source, target, preset, ACK count and whether CC80 was sent; the generic toast is replaced by the actual stage/error text.
+- Static checks passed for both inline scripts. CSS checks confirm bounded popup width and wrapping; source checks confirm the 220 ms settle delay, ACK checks, and destination read-back check remain enabled.
+
+Build:
+- GitHub Actions run [#89 / 40930240411](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40930240411) completed successfully from trigger commit b47bd1327e2e3e9daa2303269ebbb693c60d2ef8; assembleDebug and artifact upload both passed.
+- Artifact MG30-Studio-debug-APK, ID 12921304697, ZIP size 3,991,970 bytes, SHA-256 5eb8f1cd4a05459f703d3a7b0a7835d94820618c565617d0fa745d877c1bb127; expires 2026-11-12.
+- Extracted APK MG30-Studio-Copy-Scene-Mobile-Fix.apk, size 4,369,816 bytes; SHA-256 67c05ac2e2f96ca981d761d67b18b12dd566e4fc5697f048b212fd09f6dceeed.
+- Source commits in this patch: mobile popup CSS ef9af2ad4ecad398e2e80a459f7a659b0e7eea37; detailed stage/error report f8a9f481e86fe7c41316d06989dcfb2bd40b8fd8; settle delay b43a8653210216f6e898ab4516d1e1f20947d326.
+- Workflow push filters restored by commit 5d0b3f333f4ecfed9c91bb14784f292048f5b2ae; branch-specific automatic triggering is disabled by default again.
+- Still pending: test this APK on original MG-30 Gen2 firmware 6.0.x. If Copy Scene fails again, use the new detailed on-screen stage/error instead of the previous generic toast to isolate the exact failing phase. Do not treat successful compilation as proof of hardware behavior.
