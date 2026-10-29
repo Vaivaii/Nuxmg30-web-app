@@ -180,3 +180,21 @@ Build:
 - Source commits in this patch: mobile popup CSS ef9af2ad4ecad398e2e80a459f7a659b0e7eea37; detailed stage/error report f8a9f481e86fe7c41316d06989dcfb2bd40b8fd8; settle delay b43a8653210216f6e898ab4516d1e1f20947d326.
 - Workflow push filters restored by commit 5d0b3f333f4ecfed9c91bb14784f292048f5b2ae; branch-specific automatic triggering is disabled by default again.
 - Still pending: test this APK on original MG-30 Gen2 firmware 6.0.x. If Copy Scene fails again, use the new detailed on-screen stage/error instead of the previous generic toast to isolate the exact failing phase. Do not treat successful compilation as proof of hardware behavior.
+
+
+## 11. Portal dropdown and safe preset alignment (2026-10-30)
+
+Follow-up based on screenshots showing the Copy Scene menu still clipped by the editor card and a status mismatch: app-selected preset 31B vs status query reporting preset 01D.
+
+Changes:
+- Moved `sceneCopyMenu` to `document.body` during initialization. It is displayed as a fixed-position portal; its left/top are computed from the toggle button's bounding box and clamped to the viewport. It repositions on window resize and scroll, preventing ancestor overflow from clipping the choices.
+- Kept the preset mismatch safety check. Instead of failing immediately, Copy Scene now asks for explicit confirmation to send MIDI Program Change for the app-selected slot, waits 360 ms, and re-queries status. It proceeds only if the device then reports the expected slot; if it still reports another slot, it stops before writing scene data.
+- This does **not** assume the prior 01D response was false. It is a safe resynchronization attempt; the user must confirm the Program Change, and no scene write occurs if readback still disagrees.
+- Both inline scripts parse successfully. Static checks confirm the dropdown portal, viewport position calculation, Program Change, second status query and retained target payload read-back guard.
+
+Build:
+- GitHub Actions run [#90 / 40932094023](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40932094023) completed successfully; `assembleDebug` and artifact upload passed. Trigger commit: `a38acbbfdf098825a4375de8736cc6c927784ebf`.
+- Artifact `MG30-Studio-debug-APK`, ID `12922463144`, ZIP size 3,992,666 bytes, SHA-256 `1a4f3604aca541a968336162090c745fcddfb38fd12eda926241a15e879a3b80`; expires 2026-11-12.
+- Extracted APK `MG30-Studio-Copy-Scene-Preset-Alignment.apk`, size 4,370,572 bytes; SHA-256 `edf0244d868989b618b83b9080a7f965ae9d25a40732127a7631707175a5a1db`.
+- Source change commit: `2fc91435a9946cdcc3c0a8d3f1b918dad4974e50`. Workflow push branch filters restored by `1371679ebcf760cacd36251f8f508427109e7589`; restored workflow blob matches `877d83759eba533b56f516fbfa99812d3bead089`.
+- Hardware validation remains pending. If the MG-30 still reports 01D after the user confirms Program Change to 31B, Copy Scene intentionally aborts safely; that result would need another protocol/status-byte investigation rather than bypassing the guard.
