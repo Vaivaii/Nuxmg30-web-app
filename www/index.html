@@ -1199,7 +1199,7 @@ function renderChain(){
 function setChainEditMode(enabled){
  chainEditMode=Boolean(enabled);
  const button=$('chainEditToggle'),hint=$('chainEditHint');
- if(button){button.textContent=chainEditMode?'Selesai':'Edit';button.classList.toggle('primary',chainEditMode);button.setAttribute('aria-pressed',String(chainEditMode));button.setAttribute('aria-label',chainEditMode?'Selesai mengatur signal chain':'Edit urutan signal chain')}
+ if(button){button.classList.toggle('primary',chainEditMode);button.setAttribute('aria-pressed',String(chainEditMode));button.setAttribute('aria-label',chainEditMode?'Selesai mengatur signal chain':'Edit urutan signal chain');button.setAttribute('title',chainEditMode?'Selesai mengatur signal chain':'Edit urutan signal chain')}
  if(hint)hint.textContent=chainEditMode?'Tarik kartu; setiap perpindahan dikirim langsung ke pedal saat terhubung. Tekan Selesai untuk mengunci urutan.':'Pilih blok untuk mengedit model. Tekan Edit untuk mengubah urutan; pedal mengikuti otomatis saat terhubung.';
  const holder=$('chain');if(holder)holder.classList.toggle('reorder-mode',chainEditMode);
  renderChain();
