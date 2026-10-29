@@ -20,10 +20,11 @@ let youtubeSearchController = null;
 async function applyNativeStatusBar() {
   if (!isNative() || Capacitor.getPlatform() !== 'android') return;
   try {
-    await StatusBar.setOverlaysWebView({ overlay: false });
-    await StatusBar.setBackgroundColor({ color: '#0b1012' });
     await StatusBar.setStyle({ style: Style.Light });
+    await StatusBar.setOverlaysWebView({ overlay: false });
     await StatusBar.show();
+    // Apply background after showing the system bar to override a launcher/default scrim.
+    await StatusBar.setBackgroundColor({ color: '#0b1012' });
   } catch (error) {
     console.warn('Status bar styling is limited by this Android version:', error);
   }
