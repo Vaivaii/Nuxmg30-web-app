@@ -1147,8 +1147,8 @@ function syncUserIRNameToCabinet(name){
  states[irBlockIndex].model=thirdPartyIndex;
  render();persist();
 }
-window.addEventListener('mg30-user-ir-name-changed',event=>{syncUserIRNameToCabinet(event.detail?.name);});
-window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name')syncUserIRNameToCabinet(event.newValue);});
+window.addEventListener('mg30-user-ir-name-changed',event=>{const detail=event.detail||{};if(detail.source==='device-readback'||detail.source==='device-readback-failed'||detail.deviceReadback===true){render();persist();return;}syncUserIRNameToCabinet(detail.name);});
+window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name'){render();persist();}});
 function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets()}
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
