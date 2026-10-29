@@ -75,6 +75,18 @@ This is direct evidence that the Use action exchanges a Collection-specific `6E 
 
 The user confirms that QuickTone's Collection list is populated from the device, just as the successful NAM sync reads device metadata. The earlier dialog-only capture was already supplied as `ircolectionmenu dialog.pcapng`; it has 22 USBPcap packets and, after enumeration, records two host-to-device `B0 42 00` events (CC 66 value 0), but no visible SysEx list/name request-response. `ircolectionmenu.pcapng` records CC 78 value 9, CC 9 value 25, the corresponding CC 9/45/46 group, and CC 66 value 0. `capkoleksi.pcapng` records CC 66 values 0, 0, 2 before the Collection `6A/6C/6B` writes begin; those writes start about 35.9 ms into that trace. The two newer click traces begin after names are already displayed and show selection/Use actions, not initial list population. Therefore the files are already accounted for; they do not contain the actual list/name readback exchange in the captured USB transactions. This is a capture-content limitation, not a conclusion that the Collection list is local.
 
+## QuickTone 2.6.7.16 binary-symbol evidence
+
+The locally available `QuickTone.exe` (QuickTone 2.6.7.16, Cherub Technology) contains original-MG-30-specific native method symbols including:
+
+- `NuxMidiTransmissionMG30::getIRCrcAndNameCheck(juce::MidiMessage const&, NUX_MIDI_IO::SendData const*)`
+- `NuxMidiTransmissionMG30::setIRCrcAndName(unsigned char, juce::String const&)`
+- `NuxMidiTransmissionMG30::deleteCollectionIRCheck(...)`
+- `NuxMidiTransmissionMG30::loadIRCurve_Check(...)`
+- `NuxMidiTransmissionMG30::handleIncomingMidiMessage(...)`
+
+This is useful new evidence from the app binary: QuickTone has an explicit MG-30 path for checking IR CRC/name, and a separate setter that accepts an index-like byte plus a string. This is a stronger lead for implementing device-backed two-way synchronization than guessing from the two short USBPcap traces. The names/signatures alone do not reveal the exact SysEx bytes, so the function body/control flow still needs disassembly or a capture that includes the check transaction. Do not confuse the MG-30 symbols with the separate `NuxMidiTransmissionMG30MK2` class; target the original Gen 2 class only.
+
 ## Device-side Collection readback implementation status
 
 The Collection list is device-backed as confirmed by the user, and the app should treat the pedal as the source of truth, using the same synchronization architecture that worked for NAM: request metadata, decode the reply, compare repeated reads for stability, then update the local slot cards and the active cabinet name. The existing IndexedDB mirror is only a fallback for IR WAV files imported through MG30 Studio; it must not override device-reported slot names or occupancy.
