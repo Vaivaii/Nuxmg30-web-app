@@ -293,3 +293,15 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Both inline scripts passed JavaScript syntax checks; confirmed the `.set()` call was removed and per-byte payload copy is present.
 - [ ] APK build #92 / run `40935784561` and artifact SHA/link to be recorded after successful workflow completion.
 - [ ] Verify Copy Scene on the physical MG-30 Gen2: different source/target content, source unchanged and target read-back equals source. If it fails, use the now-longer message to capture the actual next protocol-stage error.
+
+
+## Follow-up — Copy Scene Array payload fix, build #92 (2026-10-30)
+
+- [x] Replace `body.set(sourcePayload, 7)` with byte-wise assignment because readback payload parts are standard JavaScript arrays, not TypedArrays.
+- [x] Extend Copy Scene diagnostic toast to 6.5 seconds (normal toast timing remains unchanged for all other calls).
+- [x] Both inline scripts pass syntax checks.
+- [x] Build [#92 / 40935784561](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40935784561) succeeded (`assembleDebug` + artifact upload).
+- [x] Artifact ID `12925280867`, ZIP size 3,992,958 bytes, ZIP SHA-256 `fe8b2265450cd460d1653024eca346f59008c53a321baf4313cc785146504960`.
+- [x] APK `MG30-Studio-Copy-Scene-Array-Fix.apk`, size 4,370,868 bytes, SHA-256 `823b4ed362605cc9a865827c030eec5aeb270930123a2a0b2e9d0825212f59e3`.
+- [x] Source fix commit `dc2891a1402f555d940b2a0e7c04322ed9b1e6a9`; workflow filter restored by `64bb487352308415c70539bd2aa050204ed574b8`.
+- [ ] Test on original MG-30 Gen2 firmware 6.0.x. Confirm the `body.set` error is gone and then verify actual target-scene write/read-back. If there is a new error, capture the now-longer diagnostic.
