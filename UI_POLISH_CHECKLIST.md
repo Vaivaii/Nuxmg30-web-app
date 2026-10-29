@@ -325,3 +325,10 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Reduce dropdown width to 148 CSS px, compact menu/option padding and gap, and use a single-line option layout.
 - [x] Both inline app scripts pass JavaScript syntax checks; static checks verify compact width and simplified labels.
 - [ ] APK build #94 / run `40940168961` is still in progress in the last status check; add artifact checksum and APK reference after completion.
+
+
+### Compact dropdown build follow-up (2026-10-30)
+
+- Source and syntax checks are complete. Run [#94](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940168961) did not finish on the last check; retry [#95](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40940578576) was also still in `assembleDebug` with no artifact uploaded.
+- Do not give out an older APK as if it contains this menu polish. Recheck either run and record APK checksum when a successful artifact is available.
+- Workflow branch filter was restored; default blob SHA `877d83759eba533b56f516fbfa99812d3bead089`.
