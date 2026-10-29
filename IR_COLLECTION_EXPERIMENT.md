@@ -36,7 +36,7 @@ Collection is a staging library/dialog, not a directly usable third-party slot. 
 2. Choose the stored Collection item using the item's load/select/download-arrow action.
 3. QuickTone transfers the selected IR into the device's Third Party / User path, where amp/cab can use it.
 
-The experimental UI implements step 1 (transfer into a chosen Collection slot) and its **Gunakan di User** action has been hardware-tested by the user. That button re-sends the WAV source stored in the app's local IndexedDB mirror through the known-good User path; it does not read/move the existing Collection item directly from device memory. For items added externally in QuickTone that have no local WAV source in MG30 Studio, the app still cannot load them into User by itself.
+The UI reads the 24 Collection entries and their names/CRC from the device. The user has also confirmed that **Gunakan di User** can make a device-resident Collection item become active in Third Party/User without a local WAV source; the direct operation is the captured `6E 01` request and `6E 02` response, rather than the app's fallback WAV re-transfer. If a local WAV mirror exists, the button still uses the known-good User transfer route.
 
 ## Merged NAM & IR UI and behavior
 
@@ -45,12 +45,12 @@ The separate IR Import navigation item is removed. The IR manager is placed belo
 - **Third Party / User** has one WAV upload action. Choosing a file automatically validates it and, after one confirmation, transfers the 75-message User transaction using the hardware-tested parameter 71 and command family `10/09/11`.
 - **Collection** displays slots 01–24 with a hide/show control. Importing a WAV from a specific slot automatically uses `parameter = displayed_slot - 1`, validates the `6A/6C/6B` packet family, asks once for confirmation, and transfers. No manual parameter field or separate Validate/Send buttons are shown.
 - This mapping is hardware-confirmed for the tested examples: parameter 1 → displayed slot 02 and parameter 4 → displayed slot 05. Thus slot 01 uses index 0 by extrapolation; that exact slot has not been tested separately.
-- The app keeps a local IndexedDB mirror of WAV files imported through this UI so the 24-slot list can show their names and offer **Gunakan di User**. This list is not a device readback: Collection items created directly in QuickTone are not enumerated by MG30 Studio.
-- **Gunakan di User** re-sends the saved source WAV from the app's local mirror through the known-good User `10/09/11` route and parameter 71. It does not yet issue a decoded command that reads/moves the existing Collection item directly from the pedal. This is an explicit, honest workaround until the Collection item select/load transaction is reverse-engineered.
+- The 24-slot list is device-backed: slot names, occupancy, and CRC are read from MG-30, twice for a stability check. IndexedDB remains a local WAV-source mirror/fallback and does not override device-reported labels or occupancy.
+- **Gunakan di User** prefers the captured direct `6E/01` operation for a stable, device-resident Collection item. It waits for the matching `6E/02` frame; when a local WAV mirror exists the known-good User `10/09/11` transfer remains available.
 
 ## Cabinet name synchronization
 
-After a successful User IR transfer (direct User upload or **Gunakan di User** from an app-managed Collection slot), MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`. When the cabinet model is set to the existing `Third-party` model, the app uses this stored name in the model label and cabinet illustration. This is a local mirror of the last IR sent through MG30 Studio, not yet a device readback of whatever is currently selected on the pedal. The visual update was added on branch commit `e68b2b6`; build run #9 succeeded.
+After successful User IR upload or successful direct Collection Use, MG30 Studio stores the name under local key `mg30-user-ir-name` and dispatches `mg30-user-ir-name-changed`; the editor then selects `Third-party` and renders the readback/app-transferred name on the cabinet. The latest implementation also reads the active User IR's CRC/name on USB connect using the original MG-30 QuickTone `getIRCrcAndNameCheck` query shape: `F0 43 58 70 09 01 47` plus the packed 36-byte body (`uint32 1` followed by zeros), expecting a matching `09 02 47` metadata response. This query is separated from both Collection `6C` metadata and User waveform/name/curve writes. If the device does not reply, the app reports the readback failure and does not fabricate a new device name. The readback query has passed build/syntax validation but still needs physical hardware validation on connect.
 
 ## New QuickTone capture analysis: select name vs Use (2026-10-29)
 
@@ -96,6 +96,14 @@ The successful NAM reader provides the reusable synchronization architecture: re
 Collection write captures prove that name/CRC metadata is carried by `6C 01 [index] [54-byte packed payload]` and gets a `6C 03` acknowledgement; decoded payload is 36 raw bytes (4 CRC bytes plus a 32-byte name). Based on the same request/response convention used by the proven NAM transaction (`00` read request, `02` data response, `03` write ACK), the new reader probes read-only `6C 00` requests and matches `6C 02 [index] [54-byte packed payload]`. It tries the compact fixed-size request first, then a zero-filled 36-byte metadata request if the device does not reply.
 
 **Important:** `6C 00` is a protocol-derived read-query candidate; it is not yet confirmed by a physical-device response in the submitted captures. The short Collection dialog captures do not contain the list-population transaction. The app now displays a per-round/per-slot progress state, records each timeout on the affected slot, and compares the complete 36-byte metadata between two rounds; the user must confirm that the new build actually receives `6C 02` records on the original MG-30 Gen 2 firmware 6.0.x.
+
+## Active User IR name readback build (2026-10-29)
+
+- Workflow run #27 succeeded: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40819031856
+- Commit: `67e079abc8f7eb9fb59b972f93624edfa25b5838`
+- Extracted APK SHA-256: `947bf68f97da5fdf319b7eb2fb50bea8e523bb2d7a29073f2be12035a072fc83`
+- Sequence at connect: read active preset buffer, attempt User IR CRC/name query, update the Third-party cabinet label if a valid 09/02 metadata reply returns, then start NAM/Collection metadata synchronization.
+- This build is not yet hardware-validated for the new 09/01 readback transaction. Verify actual name from pedal on first connect; a successful JS/Android build alone does not prove the firmware replied to the query.
 
 ## Required hardware validation before merge
 
