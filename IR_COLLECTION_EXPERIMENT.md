@@ -38,11 +38,19 @@ Collection is a staging library/dialog, not a directly usable third-party slot. 
 
 The first experimental UI implements only step 1 (transfer into the Collection path). It does not yet enumerate Collection items or automate step 2. After a Collection item is saved, use QuickTone's own item action to load it into Third Party/User until the separate select/load protocol is understood.
 
-## Experimental UI behavior and payload caveat
+## Merged NAM & IR UI and behavior
 
-The IR page now has a target selector with **Third Party / User** as the default and **Collection** as a separate experimental target. Each target retains its own parameter field value: User starts at 71 because that exact path has been hardware-tested; Collection starts at 1 because that value is present in the observed Collection capture.
+The separate IR Import navigation item is removed. The IR manager is placed below the NAM tools in the combined **NAM & IR** tab.
 
-The current experiment selects the Collection command family (6A/6C/6B) separately from the User family (10/09/11). However, a byte comparison of the available captures shows that the Collection waveform and curve payloads also differ from the User capture beyond the command bytes. Since a paired source WAV and confirmed same-content import are not available for that comparison, the cause of the payload differences is not known. Therefore this branch is a test harness, not a confirmed Collection implementation. Test only with a disposable IR and verify the audible/usable result in QuickTone. A complete ACK sequence alone does not prove that the right audio data was stored.
+- **Third Party / User** has one WAV upload action. Choosing a file automatically validates it and, after one confirmation, transfers the 75-message User transaction using the hardware-tested parameter 71 and command family `10/09/11`.
+- **Collection** displays slots 01–24 with a hide/show control. Importing a WAV from a specific slot automatically uses `parameter = displayed_slot - 1`, validates the `6A/6C/6B` packet family, asks once for confirmation, and transfers. No manual parameter field or separate Validate/Send buttons are shown.
+- This mapping is hardware-confirmed for the tested examples: parameter 1 → displayed slot 02 and parameter 4 → displayed slot 05. Thus slot 01 uses index 0 by extrapolation; that exact slot has not been tested separately.
+- The app keeps a local IndexedDB mirror of WAV files imported through this UI so the 24-slot list can show their names and offer **Gunakan di User**. This list is not a device readback: Collection items created directly in QuickTone are not enumerated by MG30 Studio.
+- **Gunakan di User** re-sends the saved source WAV from the app's local mirror through the known-good User `10/09/11` route and parameter 71. It does not yet issue a decoded command that reads/moves the existing Collection item directly from the pedal. This is an explicit, honest workaround until the Collection item select/load transaction is reverse-engineered.
+
+## Collection payload caveat
+
+The current Collection import selects the observed command family `6A/6C/6B` separately from User's `10/09/11`, and the user confirmed that imported items enter the Collection slots. However, a byte comparison of the available captures shows that Collection waveform/curve payloads differ from the User capture beyond command bytes. The reason is not yet established. Verify the resulting IR's response graph and sound on the device; an entry appearing and a full ACK sequence do not alone prove the audio payload is correct.
 
 ## Hardware result: Collection slot index mapping (2026-10-29)
 
