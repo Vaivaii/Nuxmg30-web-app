@@ -681,7 +681,7 @@ async function connectMG30(){
    await readActiveBuffer().then(n=>setDeviceStatus('Terhubung via OTG · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('USB-MIDI terhubung, baca buffer gagal: '+e.message));
    renderChain();startHardwareStatePolling();
    if(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames){
-    setTimeout(()=>{void scanNamDeviceSlots()},80);
+    setTimeout(()=>{void scanNamDeviceSlots(true)},80);
    }
   }catch(e){midiConnected=false;setDeviceStatus('USB-MIDI Android gagal terhubung');toast('Koneksi OTG gagal: '+(e.message||e))}
   return;
@@ -1091,8 +1091,18 @@ $('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(nex
 function renderPresets(){let q=$('search').value.toLowerCase(),list=presets.filter(p=>p.name.toLowerCase().includes(q));$('presetCount').textContent=presets.length+' draft lokal';$('presetList').innerHTML=list.length?list.map(p=>'<div class="preset"><div><strong>'+escapeHtml(p.name)+'</strong><p>Draft lokal · slot '+slotName(p.targetSlot??0)+' · '+new Date(p.date).toLocaleString()+'</p></div><div class="preset-actions"><button class="btn" data-load="'+p.id+'">Muat</button><button class="btn" data-del="'+p.id+'">Hapus</button></div></div>').join(''):'<div class="empty">Belum ada draft lokal yang cocok. Simpan draft setelah mengatur model dan parameter.</div>';$('presetList').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{let p=presets.find(x=>x.id===b.dataset.load);if(p){states=p.states;selected=p.selected??3;targetSlot=p.targetSlot??0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=p.name;renderSlotPicker();render();showPage('editor');toast('Draft dimuat')}});$('presetList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{presets=presets.filter(x=>x.id!==b.dataset.del);persist();renderPresets()})}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons()}
-window.addEventListener('mg30-user-ir-name-changed',()=>{render();});
-window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name')render();});
+function syncUserIRNameToCabinet(name){
+ const value=String(name||activeUserIRName()||'').trim();
+ if(!value)return;
+ const irBlockIndex=BLOCKS.findIndex(block=>block.id==='IR');
+ if(irBlockIndex<0)return;
+ const thirdPartyIndex=BLOCKS[irBlockIndex].models.findIndex(model=>getModelBaseName(model[0]).toLowerCase()==='third-party');
+ if(thirdPartyIndex<0)return;
+ states[irBlockIndex].model=thirdPartyIndex;
+ render();persist();
+}
+window.addEventListener('mg30-user-ir-name-changed',event=>{syncUserIRNameToCabinet(event.detail?.name);});
+window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name')syncUserIRNameToCabinet(event.newValue);});
 function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets()}
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
@@ -1209,7 +1219,7 @@ async function readNamDeviceSlotRecord(selector){
  const data=Array.from(reply.slice(8));
  return {data,nonzero:data.reduce((n,v)=>n+(v!==0?1:0),0),fingerprint:namSlotFingerprint(data)};
 }
-async function scanNamDeviceSlots(){
+async function scanNamDeviceSlots(notifyCollectionAfterRead=false){
  const button=$('readNamSlotsBtn'),copyButton=$('copyNamSlotsBtn'),status=$('namSlotsStatus');
  if(button.dataset.busy==='1')return;
  button.dataset.busy='1';button.disabled=true;button.textContent='Membaca nama…';copyButton.disabled=true;
@@ -1259,6 +1269,7 @@ async function scanNamDeviceSlots(){
   toast('Gagal membaca nama NAM');
  }finally{
   button.dataset.busy='0';button.disabled=false;button.textContent='Baca ulang 10 nama NAM';
+  if(notifyCollectionAfterRead)window.dispatchEvent(new CustomEvent('mg30-nam-sync-complete'));
  }
 }
 async function copyNamSlotScan(){
@@ -1289,7 +1300,7 @@ function togglePresetJumpMenu(force){
  if(open){buildPresetJumpMenu();menu.classList.remove('hidden');trigger.setAttribute('aria-expanded','true');const active=menu.querySelector('.preset-jump-option.active');if(active)active.scrollIntoView({block:'nearest'});}
  else{menu.classList.add('hidden');trigger.setAttribute('aria-expanded','false');}
 }
-$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=connectMG30;$('connectMidiDevice').onclick=connectMG30;$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
+$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=connectMG30;$('connectMidiDevice').onclick=connectMG30;$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}try{const activeName=activeUserIRName();if(activeName){const irBlockIndex=BLOCKS.findIndex(block=>block.id==='IR');if(irBlockIndex>=0){const thirdPartyIndex=BLOCKS[irBlockIndex].models.findIndex(model=>getModelBaseName(model[0]).toLowerCase()==='third-party');if(thirdPartyIndex>=0)states[irBlockIndex].model=thirdPartyIndex;}}}catch{}render();
 </script>
 <script>
 (function mergeNamAndIr(){
