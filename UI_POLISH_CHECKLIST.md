@@ -172,5 +172,17 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] On release, commit the same preview order the user saw. Keep the AMP/IR adjacency guard and the existing `sendSignalChainOrderRealtime()` ACK path unchanged.
 - [x] Static inline-JavaScript parse check passed; reorder insertion math passed 264 source/target/side combinations.
 - [x] No changes to NAM transfer, IR transfer, MIDI mapping, preset encoding, or the signal-chain SysEx sender.
-- [ ] APK not rebuilt for this follow-up. Wait for the user to ask for another build.
+- [x] APK build for this follow-up completed successfully in run [40903769421](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40903769421); details recorded below.
 - [ ] Runtime-test on Android: drag EFX to either side of an adjacent block (including OD), verify neighbouring cards visibly shift during drag and the final order changes on release; then verify AMP/IR stay adjacent and test physical-pedal ACK/readback.
+
+
+## Build after live reorder preview fix — 2026-10-29
+
+- [x] Following the user's updated instruction, the APK was built immediately after the live reorder preview source change.
+- [x] GitHub Actions run [40903769421](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/40903769421) completed successfully on branch `android/ui-polish-pass-1`, trigger commit `8cf13cb64722c8e14446592971bbac9ec50da37e`. The tree includes the source fix from `d9fa7eab8dac74b74c9f98ea08d729905c8c4615`.
+- [x] `assembleDebug` and `Upload APK artifact` succeeded.
+- [x] Artifact: `MG30-Studio-debug-APK`, ID `12909494822`, ZIP size 3,987,384 bytes; ZIP SHA-256 `80b4b98d3c95651e8dc9abbadff07643b1c360ae7100fadd9e81a94c3cf8ec60`. Expires 2026-11-12.
+- [x] Extracted APK: `MG30-Studio-Live-Reorder-Preview.apk`, size 4,365,876 bytes; APK SHA-256 `2aae4e8b1a5f5fc35b034519c4d8e461c4bb154f29db3489609e4b95a2995511`.
+- [x] Restored `.github/workflows/build-apk.yml` push branch filters after the build had started. Automatic push-triggered build for `android/ui-polish-pass-1` remains disabled by default, to avoid an uncontrolled build on every documentation-only commit; the latest APK was explicitly built and verified for this source change.
+- [ ] Runtime-test on Android: drag EFX over OD and verify OD visibly shifts during drag, confirm drop order persists after release, ensure AMP/IR adjacency validation still works, and verify real-time MG-30 ACK/readback.
+- [ ] After testing, recheck existing NAM import/use, IR Collection transfer, and MIDI mappings remain intact.
