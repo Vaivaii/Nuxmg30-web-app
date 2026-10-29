@@ -715,7 +715,18 @@ async function copySceneTo(targetIndex){
   stage='membaca status preset/scene (15/00)';
   const status=await readActiveProgramScene();
   sourceIndex=status.scene;program=status.program;
-  if(program!==targetSlot)throw new Error('Preset aktif perangkat ('+slotName(program)+') berbeda dari slot aplikasi ('+slotName(targetSlot)+'). Sinkronkan preset dahulu agar tidak menulis ke slot yang salah.');
+  if(program!==targetSlot){
+   const confirmed=confirm('Status MG-30 melaporkan preset '+slotName(program)+', sedangkan aplikasi memilih '+slotName(targetSlot)+'.\n\nTekan OK untuk mengirim Program Change ke '+slotName(targetSlot)+' lalu memeriksa ulang status. Copy Scene hanya dilanjutkan jika pedal mengonfirmasi preset '+slotName(targetSlot)+'. Cancel membatalkan tanpa menulis data scene.');
+   if(!confirmed){setDeviceStatus('Copy Scene dibatalkan: status pedal ('+slotName(program)+') berbeda dari preset aplikasi ('+slotName(targetSlot)+').');return;}
+   stage='menyamakan preset melalui Program Change ke '+slotName(targetSlot);
+   setDeviceStatus('Status pedal berbeda. Memilih preset '+slotName(targetSlot)+' lalu memverifikasi…');
+   if(!await midiSend([0xC0,targetSlot]))throw new Error('Program Change ke '+slotName(targetSlot)+' tidak terkirim.');
+   await flushMidi();await delay(360);
+   stage='memverifikasi ulang preset setelah Program Change';
+   status=await readActiveProgramScene();
+   sourceIndex=status.scene;program=status.program;
+   if(program!==targetSlot)throw new Error('Setelah Program Change ke '+slotName(targetSlot)+', MG-30 masih melaporkan '+slotName(program)+'. Penyalinan dibatalkan agar tidak menulis ke preset yang salah.');
+  }
   if(sourceIndex===targetIndex)throw new Error('Scene sumber dan tujuan sama.');
   if(!confirm('Salin Scene '+(sourceIndex+1)+' ke Scene '+(targetIndex+1)+' pada preset '+slotName(program)+'? Scene tujuan akan ditimpa. QuickTone menulis ulang ketiga bagian scene agar perubahan tersimpan ke pedal.'))return;
   stage='membaca data ketiga scene (0C/00)';
@@ -994,6 +1005,20 @@ function renderSceneButtons(){
 function initSceneCopyUI(){
  const wrap=$('sceneCopyWrap'),toggle=$('copySceneToggle'),menu=$('sceneCopyMenu');
  if(!wrap||!toggle||!menu)return;
+ // Portal the menu to body so ancestor cards/scroll areas cannot clip it.
+ if(menu.parentElement!==document.body)document.body.appendChild(menu);
+ let repositionFrame=0;
+ const place=()=>{
+  if(menu.hidden)return;
+  const rect=toggle.getBoundingClientRect();
+  const width=Math.min(menu.getBoundingClientRect().width||200,window.innerWidth-24);
+  const left=Math.max(12,Math.min(rect.right-width,window.innerWidth-width-12));
+  const height=menu.getBoundingClientRect().height||100;
+  let top=rect.bottom+6;
+  if(top+height>window.innerHeight-12&&rect.top-height-6>=12)top=rect.top-height-6;
+  else top=Math.max(12,Math.min(top,window.innerHeight-height-12));
+  menu.style.position='fixed';menu.style.left=Math.round(left)+'px';menu.style.right='auto';menu.style.top=Math.round(top)+'px';menu.style.zIndex='9999';
+ };
  const close=()=>{menu.hidden=true;toggle.setAttribute('aria-expanded','false')};
  const open=()=>{
   menu.innerHTML='';
@@ -1004,13 +1029,14 @@ function initSceneCopyUI(){
    button.onclick=()=>{close();void copySceneTo(target)};
    menu.appendChild(button);
   });
-  menu.hidden=false;toggle.setAttribute('aria-expanded','true');
+  menu.hidden=false;toggle.setAttribute('aria-expanded','true');place();
  };
  toggle.onclick=()=>{if(menu.hidden)open();else close()};
- document.addEventListener('click',event=>{if(!wrap.contains(event.target))close()});
+ document.addEventListener('click',event=>{if(!wrap.contains(event.target)&&!menu.contains(event.target))close()});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
+ window.addEventListener('resize',()=>{if(!menu.hidden)place()});
+ window.addEventListener('scroll',()=>{if(!menu.hidden){cancelAnimationFrame(repositionFrame);repositionFrame=requestAnimationFrame(place)}},true);
 }
-
 /* Local illustrations + researched model references. No remote photos are loaded. */
 const MODEL_BASED_ON={"AMP":{"Jazz Clean":"Roland JC-120","Deluxe Rvb":"Fender Deluxe Reverb","F Princeton":"Fender Princeton Reverb","Bass Mate":"Fender Bassman","Tweedy":"Fender Tweed Deluxe","Twin Rvb":"Fender Twin Reverb","Hiwire":"Hiwatt DR103","Cali Crunch":"Mesa/Boogie Mark I","Class A15":"Vox AC15","Class A30":"Vox AC30","Plexi 100":"Marshall Plexi 100W / JTM45-100 family","Plexi 45":"Marshall JTM45 / Plexi 45W family","Brit 100":"Marshall 1959 Super Lead 100W (Plexi family)","Brit 800":"Marshall JCM800","1987 X 50":"Marshall 1987X 50W","Slo 100":"Soldano SLO-100","Fireman HBE":"Friedman HBE-100","Dual Rect":"Mesa/Boogie Dual Rectifier","Die VH4":"Diezel VH4","Vibro King":"Fender Vibro-King","Budda":"Budda Superdrive","Mr Z 38":"Dr. Z MAZ 38 Senior","Super Rvb":"Fender Super-Sonic","Brit Blues":"Marshall Bluesbreaker","Match":"Matchless DC-30","Brit 2000":"Marshall JCM2000","Uber":"Bogner Uberschall","Agl":"Aguilar Tone Hammer 500","Bassguy":"Fender Bassman 100","Mld":"NUX MLD (Melvin Lee Davis) Bass Preamp + DI","Dglass":"Darkglass Microtubes B7K Ultra","Starlift":"Rocket Surgeon Starlifter","Vivo":"Peavey 5150","Optima Air":"NUX Optima Air","Stageman":"NUX Stageman AC-50","L Star":"Mesa/Boogie Lone Star Special","PV 5150":"Peavey 5150 family","MB T-Rect Modern":"Mesa/Boogie Triple Rectifier Modern","ORA Rock Lead":"Orange Rock Lead / Rockerverb family","RIV Knuckle":"Rivera Knucklehead family","XTC Blue":"Bogner Ecstasy Blue channel","XTC Red":"Bogner Ecstasy Red channel"},"WAH":{"Clyde":"Fulltone Clyde Wah","Cry BB":"Dunlop Cry Baby","V847":"VOX V847","Horse Wah":"Morley Bad Horsie Wah","Octave-Shift":"DigiTech Whammy"},"VOL":{"Volume":"NUX volume pedal"},"CMP":{"Rose Comp":"Ross Compressor","K Comp":"Keeley 4-knob Compressor (C4 family)","Studio Comp":"Studio compressor style (no single confirmed product)"},"EFX":{"Distortion+":"MXR Distortion+","RC Boost":"Xotic RC Booster","AC Boost":"Xotic AC Booster","Dist One":"BOSS DS-1","T Scream":"Ibanez TS808 Tube Screamer","Blues Drv":"BOSS BD-2 Blues Driver","Morning Drv":"JHS Morning Glory","Eat Dist":"Pro Co RAT","Red Dirt":"Keeley Red Dirt","Crunch":"JHS Angry Charlie","Muff Fuzz":"Electro-Harmonix Big Muff Pi","Katana":"Keeley Katana Clean Boost","ST Singer":"NUX Steel Singer Drive","Red Fuzz":"Arbiter Fuzz Face","Touch Wah":"Musitronics Mu-Tron III","Full-OD HP":"NUX FULL-OD HP image-based EFX","Horseman OD":"NUX HORSEMAN overdrive image-based EFX","NOB ODR":"NUX NOB ODR image-based EFX","RIV BLUEFLOG":"NUX RIV BLUEFLOG image-based EFX","TURBO OD":"NUX TURBO OD image-based EFX"},"EQ":{"6-Band EQ":"BOSS GE-6 graphic EQ","Align EQ":"LR Baggs Align Series EQ","10-Band EQ":"MXR 10-Band EQ","Para EQ":"Generic 3-band parametric EQ (no single confirmed product)"},"GATE":{"Noise Gate":"BOSS NF-1 Noise Gate"},"MOD":{"CE-1":"BOSS CE-1 Chorus Ensemble","CE-2":"BOSS CE-2 Chorus","St Chorus":"MXR M134 Stereo Chorus","Vibrator":"BOSS VB-2 Vibrato","Detune":"NUX original detune algorithm","Flanger":"BOSS BF-3","Phase 90":"MXR Phase 90","Phase 100":"MXR Phase 100","SCF":"TC Electronic SCF","U-Vibe":"Dunlop UV-1 Uni-Vibe family","Tremolo":"BOSS TR-2","Rotary":"Strymon Lex Rotary","Harmonist":"DigiTech HarmonyMan","SCH-1":"Arion SCH-1","Mono Octave":"NUX Mono Octave (GEN2)"},"DLY":{"Analog Delay":"BOSS DM-2","Digital Delay":"BOSS DD-7","Modulation":"Ibanez DML10","Tape Echo":"Roland RE-101 Space Echo","Reverse":"TC Electronic Alter Ego reverse-delay style","Pan Delay":"Ibanez DPL-10","Duotime":"NUX DuoTime (NUX original)","Phi Delay":"NUX Phi Delay (NUX original)"},"RVB":{"Room":"MXR M300","Hall":"Lexicon 480L","Plate":"EMT 140","Spring":"BOSS FRV-1","Shimmer":"Neunaber Seraphim","Damp":"Neunaber Wet family"},"S/R":{"Send/Return":"NUX serial FX loop"},"IR":{"1960":"Marshall 1960 4×12 cabinet","JZ120":"Roland JC-120 2×12 cabinet","DR112":"Fender Deluxe Reverb / Blackface 1×12 cabinet family","BS410":"Fender Bassman 4×10 cabinet","A212":"Vox AC30 2×12 cabinet","TR212":"Fender Twin Reverb 2×12 cabinet","GB412":"Marshall 4×12 cabinet with Greenback speakers","V412":"Marshall Basketweave 4×12 cabinet with Vintage 30 speakers","AGL DB810":"Aguilar DB 8×10 bass cabinet","AMP SV810":"Ampeg SVT 8×10 bass cabinet","AMP SV410":"Ampeg SVT 4×10 bass cabinet","AMP SV212":"Ampeg SVT 2×12 bass cabinet","MKB 410":"Markbass 104HF 4×10 bass cabinet","TRC 410":"Trace Elliot 1048 4×10 bass cabinet","EDEN 410":"Eden D410XST 4×10 bass cabinet","Bassguy 410":"Fender Bassman 4×10 cabinet family","M-D45":"Martin D-45 acoustic guitar body/cabinet reference","G-HBird":"Gibson Hummingbird acoustic guitar body/cabinet reference","G-J15":"Gibson J-15 acoustic guitar body/cabinet reference","Third-party":"User-loaded IR; no fixed manufacturer reference","Swamp Thang":"Eminence Swamp Thang speaker","Cannabis Rex 12":"Eminence Cannabis Rex 12-inch speaker","Legend 1058":"Eminence Legend 1058 speaker","CV-75":"Eminence CV-75 speaker"}};
 function getModelBaseName(modelName){return String(modelName||"").replace(/\s*·\s*(?:IMAGE|GEN2)$/i,"").trim()}
