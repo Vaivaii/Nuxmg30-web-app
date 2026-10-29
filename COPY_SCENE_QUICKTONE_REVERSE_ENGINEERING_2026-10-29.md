@@ -91,6 +91,8 @@ The CC80 destination values match zero-based scene indices and agree with the se
 
 The user clarified that all three scenes already contained the same data during these captures. Therefore, identical data bodies in the three outgoing messages are expected and are not evidence of a failed copy or an anomalous serialization pattern. Do not ask the user to create different scene contents solely to explain the identical payloads.
 
+The user further clarified the QuickTone UI workflow: the Copy Scene dropdown always lists the two scenes other than the current source. When copying Scene 1, the choices are Scene 2 and Scene 3; from Scene 2, choices are Scene 1 and Scene 3; from Scene 3, choices are Scene 1 and Scene 2. This confirms that the menu selection is the destination scene, while the current scene is the source. It does not by itself establish whether the three `0C 01` writes are the copy operation or associated scene-data synchronization.
+
 - Within each capture, the three outgoing 222-byte `0C 01 76 [scene-index] 01 …` messages differ at the scene/part index byte (00, 01, 02), while their payload bodies are the same because the scenes were already the same.
 - Between the Scene 1 → 2 trace and the other two traces, serialized write-body offsets 192 and 196 differ: `02/01` in the first trace and `04/04` in the other two. Their semantic fields are not yet decoded. Since scene contents were the same, treat this as a capture/preset/context difference to investigate, not proof of a scene-content difference.
 - The three reply index sequences are:
