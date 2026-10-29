@@ -1074,7 +1074,7 @@ function renderChain(){
  };
  holder.querySelectorAll('.block').forEach(card=>{
   card.onclick=()=>{
-   if(holder._chainDragMoved)return;
+   if(holder._chainDragMoved||chainEditMode)return;
    const index=Number(card.dataset.i);
    selected=index;render();persist();if(index<11)sendBlockSwitch(index);
   };
