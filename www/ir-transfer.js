@@ -256,6 +256,7 @@ function initUI(){
   try{localStorage.setItem(IR_PRESET_COLLECTION_MAP_KEY,JSON.stringify(assignments))}
   catch(error){setMessage(collectionStatus,'Penanda IR tersimpan gagal: '+(error?.message||error),'warn');return}
   updateCurrentPresetIRMarker();
+  window.dispatchEvent(new CustomEvent('mg30-collection-ir-mapped',{detail:{programSlot,sourceSlot:Number.isInteger(slot)&&slot>=1&&slot<=24?slot:null}}));
  }
  window.addEventListener('mg30-active-preset-changed',event=>{
   const programSlot=Number(event?.detail?.programSlot);
