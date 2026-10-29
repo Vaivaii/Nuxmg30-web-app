@@ -58,12 +58,49 @@ Not yet established by a Copy Scene USB capture:
 - Whether additional preset/current-scene context or subsequent commands are sent by a secondary callback path.
 - Whether MG30 Studio should update local state, request readback, or wait for a specific ACK before showing success.
 
-## 5. Next safe validation step
+## 5. Capture validation — three Copy Scene traces (2026-10-30)
 
-Capture only a Copy Scene operation in QuickTone for the original MG-30 Gen2: start on Scene 1, open Copy Scene, choose Scene 2, and preserve both outgoing and incoming SysEx. Repeat a second case with a different source/destination pair. Compare the trace to the statically observed request shape `F0 43 58 70 15 01 … F7` and reply prefix `F0 43 58 70 15 02 … F7`. This verifies the numeric scene indices and acknowledgement before implementation.
+The user supplied three USBPcap/pcapng files named for the UI operation:
+- `copyscene1to2.pcapng` — SHA-256 `1fdf71f90c14941f43d680ec85a42b615dd3f35fc0056994193b4e3b0a425fb0`.
+- `copyscene2to3.pcapng` — SHA-256 `882e63a0fe4020930e0b157ba81cdc6258a96532146222696fdf9fa3694a1d4c`.
+- `copyscene3to1.pcapng` — SHA-256 `ed9e73ef65ca20236476a3e9c0c86f05326affb326cc610220a19cd0bf8752a8`.
 
-## Safety and scope
+The captures were decoded as USBPcap link type 249 containing USB-MIDI 4-byte event packets. The operation portion in every trace has the same broad sequence:
 
-- No source code in MG30 Studio has been modified for this feature.
+1. Three outgoing 222-byte SysEx messages whose starts are:
+   - `F0 43 58 70 0C 01 76 00 01 … F7`
+   - `F0 43 58 70 0C 01 76 01 01 … F7`
+   - `F0 43 58 70 0C 01 76 02 01 … F7`
+2. Three 15-byte incoming responses with prefix `F0 43 58 70 0C 03 76 … F7`.
+3. A MIDI CC80 event selecting the requested destination scene:
+   - Copy Scene 1 → Scene 2: `B0 50 01`.
+   - Copy Scene 2 → Scene 3: `B0 50 02`.
+   - Copy Scene 3 → Scene 1: `B0 50 00`.
+
+The CC80 destination values match zero-based scene indices and agree with the selected destination in all three filenames. In the Scene 2 → Scene 3 capture there is an additional later CC event `B0 4D 43`; it is not present in the other two traces, so do not treat it as a required Copy Scene command without another controlled capture.
+
+### Important discrepancy with the static disassembly hypothesis
+
+- None of these three captures contains an outgoing SysEx command `F0 43 58 70 15 01 … F7`, nor a reply `F0 43 58 70 15 02 … F7`.
+- Therefore the earlier `0x4a5fd0` interpretation is not corroborated by the observed on-wire Copy Scene flow. It may be another code path, a conditional/alternate action, or an interpretation that needs revisiting. Do not implement the 15/01 request based on static disassembly alone.
+- The captures instead visibly show the `0C 01` data-write sequence, `0C 03` responses, and then CC80 target-scene selection.
+
+### Payload and acknowledgement anomalies to resolve before implementation
+
+- Within each capture, the three outgoing 222-byte `0C 01 76 [scene-index] 01 …` messages are byte-identical except at reconstructed SysEx offset 7, the scene-index byte (00, 01, 02). Thus the data bytes following that index are identical across all three write messages in each trace. The current captures do not yet explain why the same serialized data body is sent for every scene index, or whether the captures represent a copy operation followed by group synchronization. Do not assume it is safe to imitate this sequence until a post-copy readback confirms the per-scene contents.
+- Between the Scene 1 → 2 trace and the other two traces, the only differences in the serialized write body are at zero-based SysEx offsets 192 and 196: `02/01` in the first trace and `04/04` in the other two. Their semantic fields are not yet decoded, so do not label them as specific block/model values.
+- The three reply index sequences are:
+  - Scene 1 → 2: `00, 01, 00`
+  - Scene 2 → 3: `00, 01, 01`
+  - Scene 3 → 1: `00, 01, 02`
+  The final response index follows the source scene (0, 1, 2) rather than consistently echoing the third outgoing scene index (02). Do not implement an ACK check that assumes every 0C/03 response echoes its preceding write index until this response field is explained.
+
+### Best next validation step
+
+After each Copy Scene operation, issue or capture a readback of all three scene payloads for the same preset and compare them against the pre-copy state. This will reveal whether only the destination scene changed and whether the 0C/01 messages represent writes of each scene or part of a larger synchronization group. Capture a no-copy control session as well to exclude routine synchronization traffic. Only after this should MG30 Studio implement the smallest proven copy operation and verify readback before showing success.
+
+## 6. Safety and scope
+
+- No MG30 Studio source code has been modified for Copy Scene.
 - No APK has been built for Copy Scene.
-- Preserve the working NAM transfer, IR Collection transfer, existing MIDI mappings, signal-chain ordering, and existing Gen2 protocol code while implementing after validation.
+- Preserve working NAM transfer, IR Collection transfer, existing MIDI mappings, signal-chain ordering, and current Gen2 protocol behavior.
