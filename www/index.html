@@ -635,7 +635,31 @@ function stopHardwareStatePolling(){if(hardwareSyncTimer){clearInterval(hardware
 function setBitSlot(body,k,v){const p=6+21*Math.floor(k/2)+8*(k%2);for(let i=0;i<7;i++){const bit=p+i,idx=7+Math.floor(bit/7),sh=6-bit%7,b=(v>>(6-i))&1;body[idx]=(body[idx]&~(1<<sh))|(b<<sh)}}
 async function readPresetParts(cmd=0x0C,prog=0){const parts=[];for(let p=0;p<3;p++)parts.push(await readSysExPart(cmd,prog,p));return parts}
 async function writeHardwarePreset(prog,parts){await flushMidi();for(let part=0;part<3;part++){const body=parts[part].slice();body[3]=0x0B;body[4]=0x01;body[5]=prog;body[6]=part;await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x0B&&b[4]===0x03&&b[6]===part,1600).catch(()=>null);midiOutput.send([0xF0,...body,0xF7]);return ack})}await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x07&&b[4]===0x03,1600).catch(()=>null);midiOutput.send([0xF0,0x43,0x58,0x70,0x07,0x01,prog,prog,0,0,0,0,0,0xF7]);return ack});const check=await readPresetParts(0x0B,prog);return check.every((b,i)=>b.slice(7).every((v,j)=>v===parts[i][7+j]))}
-async function saveToDevice(){if(!midiConnected){setDeviceStatus('Belum terhubung. Tekan Hubungkan MG-30 terlebih dahulu.');toast('Belum terhubung ke MG-30');return}if(!confirm('Timpa preset hardware '+slotName()+'? Pastikan sudah backup.')){setDeviceStatus('Simpan dibatalkan.');return}try{setDeviceStatus('Menyimpan: menunggu antrean MIDI…');await flushMidi();setDeviceStatus('Menyimpan: membaca edit buffer…');const parts=await readPresetParts(0x0C,0);const name=currentName().slice(0,16);for(let i=0;i<16;i++)setBitSlot(parts[0],106+i,i<name.length?name.charCodeAt(i)&127:0);setDeviceStatus('Menyimpan preset '+slotName()+' ke perangkat…');const ok=await writeHardwarePreset(targetSlot,parts);if(!ok)throw new Error('Read-back tidak cocok; preset TIDAK dinyatakan tersimpan');setDeviceStatus('Berhasil disimpan dan diverifikasi: '+slotName());toast('Preset '+slotName()+' berhasil disimpan')}catch(e){setDeviceStatus('GAGAL SIMPAN: '+e.message);toast('Gagal simpan: '+e.message)}}
+async function saveToDevice(){
+ if(!midiConnected){setDeviceStatus('Belum terhubung. Tekan Hubungkan MG-30 terlebih dahulu.');toast('Belum terhubung ke MG-30');return}
+ if(!confirm('Timpa preset hardware '+slotName()+'? Pastikan sudah backup.')){setDeviceStatus('Simpan dibatalkan.');return}
+ try{
+  if(!Array.isArray(chainOrder)||chainOrder.length!==BLOCKS.length||new Set(chainOrder).size!==BLOCKS.length||chainOrder.some(v=>!Number.isInteger(v)||v<0||v>=BLOCKS.length))throw new Error('Urutan signal chain tidak valid; tidak ada data yang dikirim.');
+  if(!Number.isInteger(activeSceneIndex)||activeSceneIndex<0||activeSceneIndex>2)throw new Error('Scene aktif tidak valid.');
+  setDeviceStatus('Menyimpan: menunggu antrean MIDI…');
+  await flushMidi();
+  setDeviceStatus('Menyimpan: membaca preset dan scene aktif…');
+  const parts=await readPresetParts(0x0C,0);
+  const name=currentName().slice(0,16);
+  for(let i=0;i<16;i++)setBitSlot(parts[0],106+i,i<name.length?name.charCodeAt(i)&127:0);
+  // Capture QuickTone + readActiveBuffer confirm that the 12 chain IDs live in bit slots 94–105.
+  // Encode those IDs into the selected scene's preset part, preserving all other fields.
+  for(let i=0;i<12;i++)setBitSlot(parts[activeSceneIndex],94+i,chainOrder[i]);
+  setDeviceStatus('Menyimpan preset '+slotName()+' · Scene '+(activeSceneIndex+1)+' termasuk urutan signal chain…');
+  const ok=await writeHardwarePreset(targetSlot,parts);
+  if(!ok)throw new Error('Read-back tidak cocok; preset TIDAK dinyatakan tersimpan');
+  setDeviceStatus('Preset '+slotName()+' tersimpan dan diverifikasi · urutan signal chain Scene '+(activeSceneIndex+1)+' ikut tersimpan.');
+  toast('Preset tersimpan; urutan signal chain diverifikasi');
+ }catch(e){
+  setDeviceStatus('GAGAL SIMPAN: '+e.message);
+  toast('Gagal simpan: '+e.message);
+ }
+}
 async function selectHardwareSlot(prog,fromDevice=false){
  if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
  if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
