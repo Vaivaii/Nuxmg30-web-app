@@ -158,12 +158,21 @@ function initUI(){
   use.disabled=!local?.blob;use.title=local?.blob?'Mengirim ulang WAV sumber lokal ke Third Party/User melalui jalur yang sudah teruji.':'WAV sumber lokal tidak tersedia; nama perangkat dapat dibaca, tetapi Gunakan belum tersedia.';
  }
  function renderSlotCount(){
-  const occupied=[...deviceSlots.values()].filter(x=>x.read&&x.occupied).length;
-  const read=deviceSlots.size;
-  countLabel.textContent=read===24?occupied+' IR di perangkat · 24/24 slot dibaca':(read?read+'/24 slot dibaca':'Menunggu sinkronisasi perangkat');
+  const records=[...deviceSlots.values()];
+  const occupied=records.filter(x=>x.read&&x.stable&&x.occupied).length;
+  const read=records.filter(x=>x.read&&x.stable).length;
+  countLabel.textContent=read===24?occupied+' IR di perangkat · 24/24 slot stabil':(read?read+'/24 slot stabil dibaca':'Menunggu sinkronisasi perangkat');
  }
  toggle.addEventListener('click',()=>{const collapsed=!grid.classList.contains('collapsed');grid.classList.toggle('collapsed',collapsed);toggle.textContent=collapsed?'Tampilkan 24 slot':'Sembunyikan slot';toggle.setAttribute('aria-expanded',String(!collapsed))});
- function setBusy(on){busy=on;userButton.disabled=on||syncBusy;syncButton.disabled=on||syncBusy;grid.querySelectorAll('button').forEach(b=>b.disabled=on||syncBusy||(b.hasAttribute('data-slot-use')&&!slotCache.get(Number(b.closest('[data-slot]').dataset.slot)?.blob)));toggle.disabled=on||syncBusy}
+ function setBusy(on){
+  busy=on;userButton.disabled=on||syncBusy;syncButton.disabled=on||syncBusy;
+  grid.querySelectorAll('button').forEach(button=>{
+   const slotNode=button.closest('[data-slot]');
+   const local=slotNode?slotCache.get(Number(slotNode.dataset.slot)):null;
+   button.disabled=on||syncBusy||(button.hasAttribute('data-slot-use')&&!local?.blob);
+  });
+  toggle.disabled=on||syncBusy;
+ }
  function packMetadata36(raw){
   const bytes=raw instanceof Uint8Array?raw:Uint8Array.from(raw||[]);
   if(bytes.length!==36)throw Error('Payload metadata IR harus 36 byte.');
@@ -216,36 +225,46 @@ function initUI(){
   }
   throw lastError||Error('Query metadata Collection gagal.');
  }
+ async function readCollectionSlotStable(connection,slotIndex){
+  const first=await readCollectionSlotFromDevice(connection,slotIndex);
+  await new Promise(resolve=>setTimeout(resolve,35));
+  const second=await readCollectionSlotFromDevice(connection,slotIndex);
+  if(first.occupied!==second.occupied||first.crcHex!==second.crcHex||first.name!==second.name){
+   throw Error('Metadata Collection slot '+String(slotIndex+1).padStart(2,'0')+' berubah di antara dua pembacaan.');
+  }
+  return {...second,stable:true,readRounds:2};
+ }
  async function syncCollectionFromDevice({connection=null,slotIndices=null,silent=false}={}){
   if(busy||syncBusy)return;
   if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Sinkronisasi Collection memerlukan APK Android dan kabel USB OTG.','warn');return}
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
   syncBusy=true;setBusy(true);syncButton.textContent='Menyinkronkan…';syncButton.setAttribute('aria-busy','true');
-  setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama dan CRC Collection…');
-  let conn=connection;
-  let success=0,empty=0,failed=0;
+  setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama dan CRC Collection dalam dua putaran…');
+  let conn=connection,success=0,empty=0,failed=0;
   try{
    if(!conn)conn=await window.NUXNativeMidi.connect();
    for(let i=0;i<indices.length;i++){
     const idx=indices[i];
+    setMessage(collectionStatus,'Membaca slot '+String(idx+1).padStart(2,'0')+': putaran 1/2…');
     try{
-     const record=await readCollectionSlotFromDevice(conn,idx);
+     const record=await readCollectionSlotStable(conn,idx);
      deviceSlots.set(idx+1,record);success++;if(!record.occupied)empty++;
      updateSlotCard(idx+1);renderSlotCount();
-     setMessage(collectionStatus,'Membaca Collection dari MG-30: slot '+String(idx+1).padStart(2,'0')+' ('+(i+1)+'/'+indices.length+')…');
     }catch(error){
-     failed++;deviceSlots.set(idx+1,{slot:idx+1,index:idx,read:false,occupied:false,error:error?.message||String(error)});
+     failed++;
+     deviceSlots.set(idx+1,{slot:idx+1,index:idx,read:false,stable:false,error:error?.message||String(error)});
      updateSlotCard(idx+1);renderSlotCount();
     }
    }
    lastSyncAt=Date.now();
-   if(!silent||failed>0)setMessage(collectionStatus,'Sinkronisasi perangkat selesai: '+success+'/'+indices.length+' respons · '+empty+' slot kosong · '+failed+' gagal dibaca.',failed?'warn':'ok');
+   const detail='Sinkronisasi perangkat: '+success+'/'+indices.length+' slot stabil · '+empty+' kosong · '+failed+' gagal/tidak stabil.';
+   if(!silent||failed>0)setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
   finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy')}
  }
  syncButton.addEventListener('click',()=>void syncCollectionFromDevice());
- window.addEventListener('mg30-midi-connected',()=>{void syncCollectionFromDevice({silent:true})});
+ window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
  async function processImport(blob,target){
   if(busy)return;
@@ -276,7 +295,7 @@ function initUI(){
    if(!result?.success||result.completedFrames!==75)throw Error('Transfer belum lengkap. Jangan anggap IR berhasil.');
    if(target.type==='collection'){
     const record={slot,name,fileName,blob,updatedAt:new Date().toISOString(),source:'MG30 Studio'};
-    try{await writeSlot(record);slotCache.set(slot,record);updateSlotCard(slot,record);renderSlotCount();setMessage(statusNode,'Transfer selesai ke Collection slot '+slotLabel+'. Membaca ulang nama/CRC dari perangkat…');try{const deviceRecord=await readCollectionSlotFromDevice(conn,slot-1);deviceSlots.set(slot,deviceRecord);updateSlotCard(slot);renderSlotCount();setMessage(statusNode,'Collection slot '+slotLabel+' tersinkron dari perangkat: '+(deviceRecord.occupied?(deviceRecord.name||name):'slot dinyatakan kosong')+'. WAV sumber tersimpan lokal.','ok')}catch(readError){setMessage(statusNode,'Transfer masuk ke Collection slot '+slotLabel+', tetapi readback nama/CRC gagal: '+(readError.message||'kesalahan')+'. Slot lokal tetap disimpan.','warn')}}
+    try{await writeSlot(record);slotCache.set(slot,record);updateSlotCard(slot,record);renderSlotCount();setMessage(statusNode,'Transfer selesai ke Collection slot '+slotLabel+'. Membaca ulang nama/CRC dari perangkat…');try{const deviceRecord=await readCollectionSlotStable(conn,slot-1);deviceSlots.set(slot,deviceRecord);updateSlotCard(slot);renderSlotCount();setMessage(statusNode,'Collection slot '+slotLabel+' tersinkron dari perangkat: '+(deviceRecord.occupied?(deviceRecord.name||name):'slot dinyatakan kosong')+'. WAV sumber tersimpan lokal.','ok')}catch(readError){setMessage(statusNode,'Transfer masuk ke Collection slot '+slotLabel+', tetapi readback stabil nama/CRC gagal: '+(readError.message||'kesalahan')+'. WAV lokal tetap disimpan.','warn')}}
     catch(e){setMessage(statusNode,'Transfer ke slot '+slotLabel+' mendapat respons, tetapi WAV sumber tidak tersimpan lokal. Tombol Gunakan tidak tersedia setelah sesi ini: '+(e.message||'kesalahan penyimpanan'),'warn')}
    }else{
     lastUserName=name;
