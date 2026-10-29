@@ -1,5 +1,5 @@
-// Experimental NUX MG-30 Gen 2 IR transfer. Protocol is reconstructed from two QuickTone captures.
-// Matching both captures validates packet synthesis offline only; hardware audio acceptance remains unverified.
+// NUX MG-30 Gen 2 IR transfer. User 10/09/11 is hardware-tested; Collection 6A/6C/6B remains experimental.
+// The WAV payload generator is shared; Collection audio acceptance has not yet been verified on hardware.
 const PREFIX=[0xF0,0x43,0x58,0x70], N=2048, FFT=16384, W=600, H=305, SENT=-99999, f32=Math.fround;
 const bytesOf=x=>x instanceof Uint8Array?x:x instanceof ArrayBuffer?new Uint8Array(x):ArrayBuffer.isView(x)?new Uint8Array(x.buffer,x.byteOffset,x.byteLength):(()=>{throw Error('Data byte WAV tidak valid.')})();
 function enc16(v){if(!Number.isInteger(v)||v<0||v>65535)throw Error('Nilai uint16 tidak valid.');const w=((v&255)<<8)|(v>>>8);return[(w>>>14)&3,(w>>>7)&127,w&127]}
@@ -113,7 +113,7 @@ let selectedFile=null,prepared=null,busy=false,targetId=71,targetMode='user',par
  const status=(message,kind='')=>{const n=$('irTransferStatus');n.textContent=message;n.classList.remove('ok','warn');if(kind)n.classList.add(kind)};
  const preview=(message,kind='')=>{const n=$('irTransferPreview');n.textContent=message;n.classList.remove('ok','warn');if(kind)n.classList.add(kind)};
  const progress=(pct,label)=>{$('irTransferProgressBar').style.width=Math.max(0,Math.min(100,pct))+'%';$('irTransferProgressLabel').textContent=label||''};
- const busySet=value=>{busy=value;$('irTransferValidateBtn').disabled=value||!selectedFile;$('irTransferReadTargetBtn').disabled=value;$('irTransferChooseBtn').disabled=value;$('irTransferSendBtn').disabled=value||!prepared;$('irTransferName').disabled=value;$('irTransferParameter').disabled=value;file.disabled=value};
+ const busySet=value=>{busy=value;$('irTransferValidateBtn').disabled=value||!selectedFile;$('irTransferReadTargetBtn').disabled=value;$('irTransferChooseBtn').disabled=value;$('irTransferSendBtn').disabled=value||!prepared;$('irTransferName').disabled=value;$('irTransferParameter').disabled=value;$('irTransferTargetMode').disabled=value;file.disabled=value};
  const invalidate=(message='Paket belum divalidasi. Pastikan tujuan protokol dan parameter sesuai sebelum transfer.')=>{prepared=null;$('irTransferValidateBtn').disabled=busy||!selectedFile;$('irTransferSendBtn').disabled=true;preview(message);progress(0,'Belum dimulai')};
  const updateTargetCopy=()=>{
   const collection=targetMode==='collection',label=collection?'Collection':'Third Party / User';
