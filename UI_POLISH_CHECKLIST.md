@@ -836,3 +836,13 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] After schema is confirmed, implement strict import/export validation and use the existing MG30 hardware ACK/read-back path. Keep Copy Scene's existing 0C/01 → 0C/03 flow separate and unchanged.
 - [x] Save detailed static-analysis evidence and next capture requirements in docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md.
 - [ ] Goal 3 source implementation and physical round-trip test have not started. Do not mark preset import/export complete yet.
+
+## Goal 3 follow-up — QuickTone binary static disassembly (2026-10-30)
+
+- [x] Trace the all-preset export dialog path to its buffer construction and file-write helper; observed output length 0x135700 and record stride 0x26AE (static inference: 128 entries).
+- [x] Trace single-file and all-file reader helpers: expected input lengths 0x2590 and 0x12C800 respectively; all-file reader loops 128 records with source stride 0x2590.
+- [ ] Resolve the 0x135700 export vs 0x12C800 all-import size discrepancy by inspecting a real QuickTone .mg30patch file. Do not alter/truncate/pad the data based on speculation.
+- [ ] Identify file headers/version/checksum/slot encoding and match the file import/export path to a USBPcap SysEx capture.
+- [ ] Only after format reconciliation, implement QuickTone-compatible file import/export and validate export → import → pedal read-back on original MG-30 Gen2 firmware 6.0.x.
+- [x] Document the extra disassembly, candidate sizes/strides, uncertainty and guardrails in docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md.
+- [ ] No app source code or protocol implementation was changed; no APK was built in this research-only step.
