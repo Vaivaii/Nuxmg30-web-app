@@ -792,3 +792,16 @@ This section supersedes earlier notes that characterized `0x005C48F0` as only a 
 - [ ] Resolve exact caption-ID-to-key mapping and whether all functions use the same slider captions/semantics.
 - [ ] Trace 0D response consumer and CC77/value55 source separately; retain unknown labels until proven.
 - [ ] No application source changes or APK build in this analysis checkpoint.
+
+
+## Final static follow-through — 0D cache consumer and CC77 output backend (2026-10-30)
+
+- [x] Trace 0D 02 callback consumer: bytes are copied to the active manager state beginning at +0x5E, with cached mirrors at +0xEC and +0x17A; metadata is stored at +0x5D and is also used as a bitfield.
+- [x] Trace helper 0x004B2410: it updates per-type entries by comparing incoming type IDs against the manager's 12-entry type table, updates active/cached parameter data and can post internal events.
+- [x] Confirm 0D 00 requests are issued from a separate type-indexed manager refresh path for selected type codes (1, 2, 6, 8) on the observed table-mismatch branch. Semantic names of those types remain unknown.
+- [x] Confirm no evidence links 0D extended data to the SetValue WAH MIN/MAX panel; slider edits use 13 01.
+- [x] Identify generic WinMM MIDI short-message transport method 0x0089C050 (midiOutShortMsg) as a possible lower-level route for B0 4D 37. Its feature-level caller/trigger is not recovered.
+- [x] Keep CC77/value55, 0D type semantics, and SetValue caption-ID mapping unresolved rather than guessing.
+- [x] Detailed addendum recorded in docs/research/MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md.
+- [ ] Remaining protocol work is now primarily validation/capture of individual write operations for external T/R and Multi EFX CTRL, plus confirmation of selector-7 DLY/SCENE options. Do not implement unknown CC77/0D behavior.
+- [ ] No source modifications or APK build in this reverse-engineering checkpoint.
