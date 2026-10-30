@@ -233,10 +233,8 @@
   <div class="ctrl-dialog-shell">
     <header class="ctrl-dialog-header">
       <div>
-        <span class="eyebrow">MG-30 GEN 2 · CONTROL ASSIGNMENTS</span>
-        <h2 id="ctrlDialogTitle">CTRL / EXP &amp; Pedal</h2>
-        <p>Konfigurasi Multi EFX CTRL, footswitch T/R, dan dua assignment expression. Data dibaca langsung dari perangkat.</p>
-      </div>
+header eyebrow        <h2 id="ctrlDialogTitle">CTRL / EXP &amp; Pedal</h2>
+header subtitle      </div>
       <div class="ctrl-dialog-header-actions">
         <span id="ctrlDirtyBadge" class="ctrl-dirty-badge">BELUM DIBACA</span>
         <button type="button" class="btn" id="ctrlCloseButton" aria-label="Tutup panel CTRL">Tutup</button>
@@ -245,7 +243,7 @@
     <div id="ctrlEditorStatus" class="ctrl-status" role="status" aria-live="polite">Hubungkan MG-30, lalu baca konfigurasi.</div>
     <div class="ctrl-grid">
       <section class="ctrl-card">
-        <div class="ctrl-card-head"><strong>Multi EFX CTRL</strong><small>Payload byte 6</small></div>
+        <div class="ctrl-card-head"><strong>Multi EFX CTRL</strong></div>
         <div class="ctrl-field">
           <label for="multiEfxFunction">Function</label>
           <select id="multiEfxFunction"></select>
@@ -259,15 +257,14 @@
         </div>
       </section>
       <section class="ctrl-card">
-        <div class="ctrl-card-head"><strong>External footswitch</strong><small>Payload byte 7–8</small></div>
+        <div class="ctrl-card-head"><strong>External footswitch</strong></div>
         <div class="ctrl-fields">
           <div class="ctrl-field"><label for="footswitchT">T contact</label><select id="footswitchT"></select></div>
           <div class="ctrl-field"><label for="footswitchR">R contact</label><select id="footswitchR"></select></div>
         </div>
-        <div class="ctrl-dependent-hint">Daftar mengikuti pilihan T/R di QuickTone. Scene Up dan Scene Down saling melengkapi otomatis.</div>
-      </section>
+footswitch helper      </section>
       <section class="ctrl-card">
-        <div class="ctrl-card-head"><strong>CTRL1 · Built-in expression</strong><small>Payload byte 9–10, 14–15</small></div>
+        <div class="ctrl-card-head"><strong>CTRL1 · Built-in expression</strong></div>
         <div class="ctrl-field">
           <label for="ctrl1Function">Function</label>
           <select id="ctrl1Function"></select>
@@ -284,7 +281,7 @@
         </div>
       </section>
       <section class="ctrl-card">
-        <div class="ctrl-card-head"><strong>CTRL2 · Additional expression</strong><small>Payload byte 11–12, 16–17</small></div>
+        <div class="ctrl-card-head"><strong>CTRL2 · Additional expression</strong></div>
         <div class="ctrl-field">
           <label for="ctrl2Function">Function</label>
           <select id="ctrl2Function"></select>
@@ -303,8 +300,7 @@
       <div id="ctrlParameterNotice" class="ctrl-parameter-notice" hidden></div>
     </div>
     <footer class="ctrl-dialog-footer">
-      <p>Penulisan memakai 13 01 → ACK 13 03 → readback 13 02. Operasi dikunci selama sinkronisasi preset/scene. Tidak ada perintah CC77 atau 0D yang dikirim panel ini.</p>
-      <div class="ctrl-dialog-footer-actions">
+footer explanation      <div class="ctrl-dialog-footer-actions">
         <button type="button" class="btn ctrl-read-btn" id="ctrlReadButton">Baca ulang</button>
         <button type="button" class="btn primary ctrl-save-btn" id="ctrlSaveButton" disabled>Simpan ke pedal</button>
       </div>
