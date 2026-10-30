@@ -1001,3 +1001,10 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Run Node tests and fresh Android APK build for the latest branch revision.
 - [ ] Physical re-test read-only Export on original MG-30 Gen2 FW 6.0.x; collect full USBPcap capture if no reply with the requested offset arrives.
 - [x] Protect all working features: NAM, IR User/Third Party, IR Collection, MIDI mappings, existing preset import and Save-to-device behavior, Copy Scene, CTRL/EXP, preset sync and signal-chain reorder are untouched.
+
+
+## Build workflow — regression test gate (2026-10-31)
+
+- [x] Add `tests/**` to the APK workflow path filter.
+- [x] Run `npm test` before Android project generation/build so protocol unit tests gate each relevant source/test change.
+- [ ] Confirm the next Actions run passes the Node test suite and completes the debug APK build.
