@@ -45,6 +45,9 @@ test('read requests match the 15-byte QuickTone request frames', () => {
     0xf0,0x43,0x58,0x70,0x09,0x00,0x07,0,0,0,0,0,0,0,0xf7
   ]);
   assert.equal(buildMG30UserIRWaveReadRequest(7, 32).length, 15);
+  assert.deepEqual([...buildMG30UserIRWaveReadRequest(7, 0)], [
+    0xf0,0x43,0x58,0x70,0x10,0x00,0,0,0,0x0e,0,0,0,0,0xf7
+  ]);
   assert.equal(buildMG30UserIRCurveReadRequest(7, 64).length, 15);
   assert.throws(() => buildMG30UserIRWaveReadRequest(7, 31), /Offset/);
   assert.throws(() => buildMG30UserIRCurveReadRequest(7, 65), /Offset/);
@@ -79,5 +82,6 @@ test('64 waveform replies and 10 curve replies assemble a complete IR resource',
   assert.equal(result.samples[0], 0);
   assert.equal(result.samples[2047], 2047/2048);
   assert.equal(result.curve[599], 305);
-  assert.throws(() => assembleMG30UserIRReadback(8, waves, curves), /offset/);
+  // Data replies do not echo the requested index in the first word; index is a request-side context.
+  assert.equal(assembleMG30UserIRReadback(8, waves, curves).resourceIndex, 8);
 });
