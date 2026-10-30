@@ -175,6 +175,9 @@ export const MG30PresetFormat = Object.freeze({
   ALL_RECORDS_BYTES: ALL_FILE_SIZE,
   parseSingle: parseMG30SinglePresetPatch,
   buildImportPlan: buildMG30SinglePresetImportPlan,
+  decodeSceneReply: decodeMG30PresetSceneReply,
+  buildSinglePatch: buildMG30SinglePresetPatch,
+  buildSinglePatchFromReplies: buildMG30SinglePresetPatchFromReplies,
 });
 
 
