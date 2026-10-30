@@ -109,3 +109,14 @@ Based on the first successful panel screenshot:
 - Set both top-bar actions (`CTRL / EXP` and `Simpan ke pedal`) to the same 42 px height on wide screens and 40 px height on narrow screens, with the same horizontal padding and font sizing.
 - No protocol, read/write state, or device mapping code was changed in this visual refinement.
 - Build for the updated source is tracked in GitHub Actions run 41028702729.
+
+
+### Refined UI APK build result
+
+- Source commit: `bd87002bb11435b1780cc29faf737f4bf956e6e6`.
+- GitHub Actions run: [41028702729](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41028702729) — success.
+- Artifact ID: `12964643057`.
+- Extracted APK: `MG30-Studio-CTRL-Editor-UI-refined.apk`.
+- APK size: 4,378,172 bytes.
+- APK SHA-256: `48f15e6d3b5d55fab6e7a095ef31301c9f1e15880addc693bc44a420157f4a9f`.
+- Refinement removes explanatory small text and makes both top actions the same height; no protocol behavior was changed.
