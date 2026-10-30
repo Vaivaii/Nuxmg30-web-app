@@ -402,3 +402,14 @@ The new export path is read-only: it sends 0C/00, 09/00, 10/00 and 11/00 request
 - [ ] Hardware validation is still required. The first Export UI is explicitly labeled READ ONLY · UJI AWAL. It assumes the User IR resource index equals the selected preset program number because the working single-preset import targets that index; actual readback must confirm this. If the device returns a different index, or any response has a mismatched index/offset, export aborts without downloading a partial file.
 - [ ] No APK build for these commits has been confirmed yet. Run a fresh build before the user tests the Export UI on original MG-30 Gen2 FW 6.0.x.
 - [ ] Keep batch import disabled until export readback is hardware-tested and batch-import slot mapping/record variants are captured.
+
+
+### QuickTone binary cross-check for the 128-entry IR index (2026-10-31)
+
+A further direct disassembly check of QuickTone.exe v2.6.7.16 resolves the index-space concern:
+
+- IR manager constructor at 0x4B1500 initializes the metadata-list count/limit field at object offset +0x640 to 0x80 (128 entries).
+- The metadata refresh loop at 0x4A9560 iterates indices from 0 up to (but not including) that 0x80 count and calls 0x4A95F0 once per index. The 09/00 query builder in 0x4A95F0 writes the passed index into the request frame and waits for 09/02.
+- In the QuickTone receive/transaction dispatcher branch for command 0x0B (around 0x4A5163–0x4A5222), the program byte is copied from the incoming transaction into the manager's current index field, and that same byte is passed to 0x4A95F0 to request the associated IR metadata. This is direct code evidence that the preset program index is used as the IR metadata index on this QuickTone path.
+- Therefore the initial MG30 Studio mapping `resourceIndex = selected program slot` is not an arbitrary assumption: it matches the observed QuickTone transaction path and the 128-entry IR metadata table. Still keep the live hardware reply checks; a returned index mismatch must abort the export.
+- The 128-entry table also confirms the parser's allowed IR index range 0–127.
