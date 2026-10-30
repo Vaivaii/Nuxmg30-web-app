@@ -67,11 +67,11 @@ export function buildMG30UserIRCurveReadRequest(resourceIndex, curveOffset) {
 export function parseMG30UserIRMetadataReadReply(input, expectedIndex) {
   const body = input instanceof Uint8Array ? input : Uint8Array.from(input || []);
   const index = assertIndex(expectedIndex, 'Indeks resource IR');
-  if (body.length !== 61 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
-      body[3] !== 0x09 || body[4] !== 0x02 || body[5] !== 0x00 || body[6] !== index) {
+  if (body.length !== 60 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
+      body[3] !== 0x09 || body[4] !== 0x02 || body[5] !== index) {
     throw new Error('Balasan 09/02 tidak cocok dengan indeks IR yang diminta.');
   }
-  const metadata = decodePackedBytes(body.subarray(7), 36);
+  const metadata = decodePackedBytes(body.subarray(6), 36);
   const crc = metadata.slice(0, 4);
   const nameField = metadata.slice(4, 36);
   let nameEnd = nameField.indexOf(0);
@@ -94,11 +94,11 @@ function parseDataReadReply(input, command, expectedIndex, expectedOffset) {
   if (!Number.isInteger(offset) || offset < 0 || offset > max || offset % step !== 0) {
     throw new Error('Offset reply IR yang diharapkan tidak valid.');
   }
-  if (body.length !== 204 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
+  if (body.length !== 203 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
       body[3] !== command || body[4] !== 0x02) {
     throw new Error('Ukuran/header reply read IR tidak cocok untuk command 0x' + command.toString(16) + '/02.');
   }
-  const decoded = decodePackedBytes(body.subarray(6), 132);
+  const decoded = decodePackedBytes(body.subarray(5), 132);
   const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
   const replyIndex = view.getUint16(0, true);
   const replyOffset = view.getUint16(2, true);
