@@ -630,3 +630,55 @@ This is strong evidence for the cache-serialization explanation of the silent Ex
 Do not use QuickTone's silent Export click as the expected time to capture 10/00 reads. The read transaction is associated with the earlier metadata refresh/cache-miss path. The next disassembly target is the exact cache-presence predicate and the events that trigger the manager refresh (startup, device connection, preset selection/0B notification, IR manager opening). Compare that lifecycle with MG30 Studio's current explicit readback sequence.
 
 No protocol or app source was modified. Do not change request encoding, accept offset 128, or touch the successful importer or protected features without new evidence.
+
+
+## QuickTone request-queue model and Export readback correction (2026-10-31)
+
+### Confirmed queue behavior in QuickTone v2.6.7.16
+
+Further disassembly of the actual User IR waveform reader resolves an important difference between QuickTone and the first MG30 Studio Export implementation:
+
+- In `0x4AB340`, QuickTone loops over all waveform sample offsets `0, 32, …, 2016` in one invocation.
+- For each offset it builds a 15-byte `10/00` request and registers response callback `0x4AB510` with timeout `0x3E8` (1,000 ms) through helper `0xB0E360`.
+- `0xB0E360` constructs a transaction object and registers it with `0xB0DE60`. `0xB0DE60` appends that object to the transaction manager's pending-request list and starts its dispatcher when the queue transitions from empty. The registration call returns to the caller; the `0x4AB340` loop continues registering subsequent offsets rather than waiting for each callback to finish.
+- The response handler `0x4AB510` unpacks the 132-byte data area, reads the second decoded uint16 as the returned sample offset, and writes the 32 float32 sample words into the waveform buffer at that returned offset. It recognizes the final page at returned offset `0x7E0` (2016).
+- The analogous curve path `0x4AAEA0` queues offsets `0,64,…,576` using `11/00`; `0x4AB090` places each 64-word response at the returned curve offset and bounds the meaningful table to 600 values.
+
+The key behavioral point is not that all USB frames necessarily appear simultaneously on the wire. QuickTone registers a batch of per-request asynchronous transactions before the read operation completes, and each callback places the received page by its returned offset. This differs from MG30 Studio's previous one-request/one-wait matcher, which rejected any valid page not matching the exact offset currently displayed as pending.
+
+### Reinterpretation of the Android diagnostic at slot 04B
+
+The supplied slot 04B diagnostic shows:
+- the first app request had expected offset 0;
+- an otherwise correctly shaped 10/02 response body arrived;
+- the decoded returned offset was 128.
+
+Offset 128 is a valid waveform page address: it is 4 × 32 samples, within 0…2016, and aligned to the established 32-sample frame size. Under QuickTone's handler model, that page should be placed at sample position 128, not discarded merely because the UI was awaiting page 0.
+
+This does **not** prove whether the offset-128 reply was an out-of-order page, a stale/previous transaction, or a firmware-side response to another outstanding request. But it establishes that offset 128 is not inherently invalid. The app-level diagnostic did not contain enough history to decide the reply's origin.
+
+### MG30 Studio read-only Export change
+
+The Export-only read path has been changed to match QuickTone's observable transaction model more closely:
+
+- Build the complete 64-request waveform set (offsets 0…2016) and register/send the requests while one listener collects matching 10/02 responses.
+- Route every valid response by its decoded returned offset, independent of response arrival order.
+- Accept one unique page for each expected offset; reject out-of-range/misaligned offsets, duplicates, malformed replies, non-finite samples, and missing pages.
+- Apply the same approach to the 10 curve requests and 11/02 responses (offsets 0…576).
+- Sort the complete responses into canonical offset order before assembling 2,048 samples and 600 curve values. No .mg30patch is produced unless all pages and all three scene readbacks validate.
+
+Source commits:
+- `38f1eab` — add canonical ordering helper for read replies.
+- `c117a01` — add regression tests for out-of-order waveform/curve replies, duplicates and missing data.
+- `fc68d00` — change the Export-only bridge to batch-register requests and collect replies by returned offset.
+
+This is a focused change to the read-only Export implementation. It does not alter any User IR write transaction, Collection transfer, NAM, preset importer, Save-to-device, or other protected code path. Node regression tests passed in Actions run #138 (source commit `fc68d00e2c48e3a954988bc76c80f200f9212cb4`); final Android build outcome is tracked separately below after Actions completion.
+
+### Remaining physical validation
+
+- [ ] Install the APK built from the offset-keyed batch Export source and repeat read-only Export on original MG-30 Gen2 FW 6.0.x.
+- [ ] Confirm the diagnostic records 64 unique waveform offsets and 10 unique curve offsets, irrespective of response ordering.
+- [ ] If the device returns only offset 128 and no other pages, preserve the full diagnostic. That would indicate a deeper request dispatch/transaction problem, not a reason to redefine offset semantics.
+- [ ] Confirm the three scene readbacks and serialized .mg30patch before attempting any round-trip import.
+
+No change to the successful single-preset importer, NAM, IR User/Third Party upload 10/09/11, Collection 6A/6C/6B, MIDI mapping, preset synchronization, Copy Scene, CTRL/EXP, signal chain, or Save-to-device path.
