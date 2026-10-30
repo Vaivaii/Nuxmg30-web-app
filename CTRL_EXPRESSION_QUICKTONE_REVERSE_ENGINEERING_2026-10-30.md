@@ -744,3 +744,19 @@ The previously open readback trigger is now found in the original-MG30 transmiss
 4. Keep 0D 00/0D 02 separate until its UI consumer and payload fields are decoded.
 
 No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
+
+
+## Hardware capture validation — EXP & Pedal panel-open readback (2026-10-30)
+
+- [x] Received and decoded `ctrlpanel.pcapng` (3,160 bytes; SHA-256 `3523dcb7ef6a77b3500bdd699b995002bad11a1842fe798d9b1bf307184b8abc`).
+- [x] Reassembled USB-MIDI traffic and confirmed panel-open request `F0 43 58 70 13 00 F7` on endpoint OUT `0x02`.
+- [x] Confirmed original-MG30 response `F0 43 58 70 13 02 0A 07 04 03 00 01 00 01 00 64 00 64 00 00 F7` on endpoint IN `0x82`.
+- [x] Measured request OUT submit → response IN data at 2.151 ms (OUT completion → response data: 2.037 ms).
+- [x] Validated parser fields: CTRL1 function code 3 (AMP), dependent choice 0; CTRL2 function code 1 (WAH), dependent choice 0; value bytes at offsets 14–17 are `00 64 00 64` (100, 100). Do not infer CTRL2 physical destination from these function codes.
+- [x] Recorded response bytes at offsets 13 and 18–19 as unassigned by the current parser map.
+- [x] Observed a separate PC→device MIDI CC event `B0 4D 37` (channel 1, CC77, value55) about 1.258375 s after readback; its purpose remains unknown and it is not a 0D SysEx message.
+- [x] No `13 01` write, `13 03` ACK, `0D 00` query or `0D 02` response appears in this capture.
+- [x] Full capture report saved in `docs/research/MG30_CTRL_PANEL_CAPTURE_VALIDATION_2026-10-30.md`.
+- [ ] Continue static tracing of first-column function menu item IDs and the CC77 sender.
+- [ ] Continue the independent `0D 00 → 0D 02` / set-value panel analysis. Do not equate it with the now-confirmed `13 00 → 13 02` readback.
+- [ ] No application source changes or APK build. Preserve NAM import, IR User/Collection, MIDI mapping, preset sync and Copy Scene.
