@@ -464,3 +464,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Map the three changing bytes to controls and UI enums; establish CC77 purpose and whether settings are preset-specific/global.
 - [ ] No application source change or APK build yet. Continue analysis only until command semantics and readback are established.
 
+
+
+### Goal 2 — dependent CTRL/EXP controls clarified by screenshots (2026-10-30)
+
+- [x] User clarified CTRL1 = EFX with dependent fields: effect model (example DIST UNO) and model-specific controllable parameter (example LEVEL; other effects may expose DRIVE or different parameters).
+- [x] User clarified CTRL2 = WAH with selected pedal model (example CLYDE) and a WAH MIN/MAX range editor.
+- [x] Added the distinction between observed screenshot values (MIN slider shown at 0–50 and MAX at 51–100 in the example) and unverified universal device defaults/limits.
+- [x] Updated detailed analysis document with a dependent data-model hypothesis and isolated field-by-field capture plan.
+- [ ] Capture changes to EFX model, EFX parameter, WAH MIN only, and WAH MAX only; keep all other fields and preset fixed.
+- [ ] Map those field changes to the observed SysEx payload bytes and confirm panel readback.
+- [ ] No app source changes or APK build; still protocol-analysis phase.
+
