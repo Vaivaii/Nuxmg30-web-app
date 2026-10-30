@@ -704,3 +704,43 @@ This is corroborated by the original-MG30 data: selector 3 contains the AMP mode
 VA 0x005C48F0 is the dependent-choice popup builder, not the first-column function menu builder. Do not cite it as proof of first-column item ordering. The stored enum-to-table mapping above is statically corroborated; the exact native first-column popup item IDs/order still need a direct trace.
 
 No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
+
+
+## CTRL read request and response callback traced — 13 00 / 13 02 (2026-10-30)
+
+The previously open readback trigger is now found in the original-MG30 transmission path.
+
+### Read transaction
+
+- VA 0x004A500D constructs the short SysEx query F0 43 58 70 13 00 F7.
+- In the same path, QuickTone registers the response callback at VA 0x004A8340 before sending the request.
+- The callback at VA 0x004A8340 explicitly accepts command 13 02 and restores the settings record from reply offsets 6–12 and 14–17 (see the field map in the earlier section).
+- Therefore the native read transaction is 13 00 OUT → 13 02 IN. This closes the static request/callback gap. The existing user captures still document the write path, not a hardware capture of this read transaction; capture-level confirmation remains outstanding.
+
+### Write transaction — restated for separation
+
+- VA 0x004A7FE0 sends the 19-byte 13 01 state message.
+- VA 0x004A81F0 checks 13 03 as the write acknowledgement.
+- The native read and write paths are distinct: 13 00/13 02 is readback; 13 01/13 03 is write/ACK.
+
+### Separate 0D data transaction — do not conflate with CTRL readback
+
+- VA 0x004A7D40 sends F0 43 58 70 0D 00 F7 and registers callback VA 0x004A7E60.
+- VA 0x004A7E60 accepts 0D 02. It copies the variable-length reply payload (length byte at reply offset 0x12) and calls helpers VA 0x004B29C0 and VA 0x004B2AB0.
+- VA 0x004B29C0 copies the returned data into the MG30 settings singleton starting at offset +0x5E (and refreshes cached copies at other offsets); VA 0x004B2AB0 stores the response length/status byte at +0x5D.
+- This is a separate 0D 00/0D 02 data transaction. Its exact UI meaning is not proven; do not label it WAH MIN/MAX or use it as the CTRL1/CTRL2 readback path.
+
+### Set-value panel state — separate fields inside the 13 state message
+
+- The original-MG30 NuxPedalSetValuePanelMG30 slider-change path at VA 0x005C5D60 updates the settings bytes +0x7F/+0x80 or +0x81/+0x82, selected by a panel flag at +0x128, then calls the 13 01 sender.
+- Those four state bytes are serialized as 13 01 payload offsets 14–17 and restored by the 13 02 parser from reply offsets 14–17.
+- The slider code proves these are two separate pairs of slider-controlled values, but the labels/semantics of each pair are not yet established. Do not call them MIN/MAX or map them to CTRL1/CTRL2 until the set-value panel's UI labels and caller relationship are traced.
+
+### Remaining validation
+
+1. Capture QuickTone opening/reopening EXP & Pedal and verify the exact 13 00 OUT / 13 02 IN exchange on the original MG-30.
+2. Trace the first-column function dropdown's actual item IDs and confirm the selected values 0–6.
+3. Trace NuxPedalSetValuePanelMG30's caller and label resources to identify what the two slider pairs represent.
+4. Keep 0D 00/0D 02 separate until its UI consumer and payload fields are decoded.
+
+No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
