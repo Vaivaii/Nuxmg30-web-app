@@ -897,3 +897,23 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Record that waveform and curve address progressions match the known User transfer patterns.
 - [ ] Pair the captured 10/01 waveform and 11/01 curve payloads back to the .mg30patch record's WAVE/resource and trailing-data offsets before implementing file-to-IR conversion.
 - [x] Update the research note with the derived-handle correlation and exact ACK status pattern.
+
+## Goal 3 — QuickTone single-preset importer implemented (2026-10-31)
+
+- [x] Confirm the 0x78 byte in IR `10/01`/`11/01` header is the middle 7-bit byte of encoded destination program 0x3C (`encodeWord16(0x003C) = 00 78 00`), not a separate doubled resource handle.
+- [x] Correct the WAVE interpretation: RIFF declares PCM24, but import sends 2,048 raw float32 samples (1,536 in apparent data chunk + 512 immediately after RIFF); do not decode as standard PCM24.
+- [x] Cross-map all three 142-byte scene sections to the three `0B/01` payloads; exact 213/213-byte payload equality for each scene.
+- [x] Cross-map the 16-byte resource name to `09/01`, all 2,048 float32 samples to 64 `10/01` packets, and 600 curve words to the meaningful 600 values in 10 `11/01` packets.
+- [x] Add `www/mg30-preset-format.js`: strict single-file parser (0x26AE) and builder for captured 78-frame import plan; reject batch/all-file (0x135700), unknown size, invalid ordinal/marker, invalid resource metadata, non-finite float samples or invalid curve values.
+- [x] Add `www/mg30-preset-import.js`: single-preset picker/validator/import UI in the Preset page, displays resource and selected destination; refuses unsupported 128-record batch.
+- [x] Add `MG30PresetImportBridge` to `www/index.html`: exact QuickTone order `09/01 → 10/01 ×64 → 11/01 ×10 → 0B/01 ×3`, wait for each matching ACK and validate phase status.
+- [x] Keep QuickTone import path separate from existing `writeHardwarePreset()`: no `07/01) finalization is sent in importer; existing Save-to-device finalizer and readback remain untouched.
+- [x] Add read-only `0B/00` three-scene readback after the three `0B/03` ACKs; verify target program, part indices, and complete payload equality before declaring success. This extra app safety check is not claimed to be part of QuickTone's captured sequence.
+- [x] Add a transaction lock against poll/scene change/Copy Scene/Save/slot selection/CTRL-EXP/CC changes/signal-chain sender while import is running.
+- [x] Preserve IR User/Third Party `09/10/11` family and target destination parameter; no modifications to IR Collection `6A/6B/6C), NAM `58), MIDI mappings, preset sync, or Copy Scene.
+- [x] Record final byte mapping, correction of earlier RIFF and 0x78 interpretations, packet order/statuses, importer behavior, tests and outstanding hardware verification in `docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md`.
+- [ ] Verify single-preset import physically on original MG-30 Gen2 FW 6.0.x: destination chosen, IR appears in Third Party/User list, audio check, and all three scene readbacks.
+- [ ] Define recovery/retry behavior after partial IR or scene transfer interruption; do not auto-retry partial writes.
+- [ ] Decode and reconcile the static reader helper 0x2590/0x12C800 size discrepancy before enabling additional file variants.
+- [ ] Implement/validate all-preset 128-record batch import only after capturing QuickTone batch import and establishing destination slot mapping.
+- [ ] Build validation and debug APK for the latest importer commit; physical hardware testing remains pending.
