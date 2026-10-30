@@ -983,3 +983,6 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Export UI labeled READ ONLY · UJI AWAL. Physical test on original MG-30 Gen2 FW 6.0.x still pending; verify actual resource index mapping and every read reply before trusting the output file.
 - [ ] Fresh APK build and artifact not yet confirmed for current export commits.
 - [ ] Batch importer remains disabled pending hardware export verification and a dedicated batch-import capture/mapping.
+
+
+- [x] Cross-check index mapping in QuickTone binary: IR manager constructor initializes 0x80 (128) metadata entries; refresh loop requests metadata for each index 0–127; the 0x0B transaction handler passes the preset program byte to the 09/00 metadata request path. This supports the initial preset-slot-to-IR-index mapping; live reply index validation remains mandatory.
