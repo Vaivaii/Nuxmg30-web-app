@@ -707,3 +707,23 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Decode state-byte +0x7A bit 0x20 exactly: DLY ON=1/OFF=0; SCENE ON=0/OFF=1.
 - [x] Document that bit polarity is function-dependent and must not be simplified to a shared boolean.
 - [ ] Capture the corresponding isolated hardware writes for DLY and SCENE states before implementation.
+
+
+### Goal 2 — CTRL / EXP editor first implementation (2026-10-30)
+
+- [x] Add CTRL / EXP button beside Simpan ke pedal in the Tone Editor top bar.
+- [x] Add isolated modal editor for Multi EFX CTRL, external footswitch T/R, CTRL1 built-in expression and CTRL2 additional expression.
+- [x] Reuse the shared MIDI queue and existing SysEx wait path; no direct native MIDI calls or second queue.
+- [x] Implement 13 00 readback and 13 01 write → 13 03 ACK → 13 00/13 02 readback verification.
+- [x] Add model-dependent CTRL parameter choices for known original-MG30 model pairs; keep unknown model option disabled rather than guessing.
+- [x] Add WAH MIN/MAX controls from the CTRL1/CTRL2 range value pairs.
+- [x] Implement Multi EFX DLY and SCENE selector-7 labels and opposite bit polarity.
+- [x] Implement T/R complementary Scene Up/Down coupling.
+- [x] Add mutual-exclusion guard against preset/scene sync, Copy Scene and periodic hardware polling.
+- [x] Leave NAM import, IR User/Collection, native MIDI plugin, preset model sync, block MIDI mapping and Copy Scene source paths unchanged.
+- [ ] Complete final CI APK build for latest branch head.
+- [ ] Test panel readback on original MG-30 Gen2 firmware 6.0.x.
+- [ ] Test one isolated CTRL1/CTRL2 or T/R write, verify 13 03 ACK and readback.
+- [ ] Test Multi EFX DLY/SCENE physical behavior.
+- [ ] Do not claim physical validation until these hardware tests pass.
+- [x] Full implementation and scope note saved in `docs/research/MG30_CTRL_EDITOR_IMPLEMENTATION_2026-10-30.md`.
