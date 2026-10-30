@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title><link rel="stylesheet" href="./ctrl-editor.css">
 <style>
 :root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.signal-chain-panel .panel-head{align-items:flex-start}.signal-chain-copy{min-width:0;flex:1}.signal-chain-copy h3{font-size:16px;letter-spacing:-.25px}.signal-chain-copy p{max-width:440px;font-size:12px;line-height:1.45}.chain-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.chain-edit-toggle{min-width:82px;min-height:38px;padding:8px 10px;font-size:12px;font-weight:750;letter-spacing:0;white-space:nowrap}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;scrollbar-width:thin;scrollbar-color:#3b4930 transparent}.block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer;touch-action:pan-x;user-select:none;-webkit-user-select:none}.chain.reorder-mode .block{cursor:default;touch-action:pan-x;padding-top:40px;min-height:122px}.chain.reorder-mode .block:active{cursor:default}.block .drag-handle{position:absolute;right:6px;top:6px;display:flex;align-items:center;justify-content:center;height:25px;padding:0 6px;border:1px solid #3a4334;border-radius:7px;background:#20291b;color:var(--lime);font-size:10px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:grab;z-index:2;user-select:none;-webkit-user-select:none}.block .drag-handle:active{cursor:grabbing}.block.drop-target{border-color:var(--lime);box-shadow:0 0 0 2px #c5f36b55}.block.dragging{opacity:.22!important;transform:none!important;filter:saturate(.4);border-style:dashed;pointer-events:none}.block.drag-ghost{position:fixed!important;z-index:9999!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.03)!important;filter:none!important;box-shadow:0 18px 42px #0008,0 0 0 2px #c5f36b99!important;border-color:var(--lime)!important;transition:none!important;cursor:grabbing!important}.chain.reorder-mode .block.selected{border-color:var(--lime)}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.signal-chain-panel .panel-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.signal-chain-copy p{max-width:none;font-size:11px}.chain-head-actions{width:100%;justify-content:space-between}.chain-edit-toggle{min-width:88px;min-height:40px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}.chain-head-actions{gap:6px}.chain-edit-toggle{min-width:84px;padding:7px 9px}.signal-chain-panel .chip{font-size:10px;padding:6px 8px}}
 .slot-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.slot-picker label{font-size:10px;color:var(--muted);font-weight:800}.slot-picker select{min-width:80px;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.slot-buttons{display:flex;gap:7px}.slot-btn{width:42px;height:40px;border:1px solid var(--line);background:#1b2019;color:var(--muted);border-radius:10px;font-weight:800}.slot-btn.active{background:var(--lime);border-color:var(--lime);color:#11160b}.slot-note{margin:12px 0 0;color:var(--muted);font-size:10px}
@@ -222,12 +222,96 @@
 <button data-page="studio"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg></span><span>Studio</span></button>
 <button data-page="device"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 7V4H5v3M16 17v3h3v-3"/><path d="M5 7h5v4a2 2 0 0 0 2 2h2a2 2 0 0 1 2 2v2h3"/><path d="M5 7a3 3 0 0 0 0 6M19 17a3 3 0 0 1 0-6"/></svg></span><span>Device</span></button>
 </nav>
-<section id="page-editor"><div class="editor-topbar"><div class="editor-section-label"><span class="eyebrow">TONE WORKSPACE</span><strong>Tone Editor</strong></div><div class="editor-top-actions"><button class="btn" id="saveDeviceBtn" title="Simpan ke MG-30">▣ <span>Simpan ke pedal</span></button></div></div>
+<section id="page-editor"><div class="editor-topbar"><div class="editor-section-label"><span class="eyebrow">TONE WORKSPACE</span><strong>Tone Editor</strong></div><div class="editor-top-actions"><button class="btn ctrl-open-btn" id="openCtrlEditor" type="button" aria-haspopup="dialog">CTRL / EXP</button><button class="btn" id="saveDeviceBtn" title="Simpan ke MG-30">▣ <span>Simpan ke pedal</span></button></div></div>
 <div class="device-strip is-hidden-compact" id="connectionStrip"><div class="device-orb" id="deviceOrb"></div><div class="device-copy"><strong>NUX MG-30 GEN2</strong><small id="connectionStatusText">Belum terhubung · tekan Hubungkan untuk sinkronisasi</small></div><button class="btn" id="openDeviceFromEditor">Device & MIDI ↗</button></div>
 <div class="hardware-preset-card"><button class="preset-step" id="prevHardwarePreset" title="Preset sebelumnya" aria-label="Preset sebelumnya">‹</button><div class="hardware-preset-main"><div class="hardware-preset-slot" id="hardwarePresetSlot">01A</div><div class="hardware-preset-details"><button type="button" id="presetJumpTrigger" class="hardware-preset-name-trigger" aria-expanded="false" aria-controls="presetJumpMenu"><strong id="hardwarePresetName">Hubungkan untuk membaca preset</strong></button><small id="hardwarePresetSource">Nama preset akan dibaca dari pedal</small></div></div><button class="preset-favorite" id="favoritePresetBtn" title="Tandai favorit" aria-label="Tandai favorit">☆</button><button class="preset-step" id="nextHardwarePreset" title="Preset berikutnya" aria-label="Preset berikutnya">›</button><div class="preset-jump-menu hidden" id="presetJumpMenu" role="dialog" aria-label="Preset"></div></div><div class="stats"><div class="stat"><small>Preset aktif</small><strong id="statName">Slot 01A</strong></div><div class="stat"><small>Efek aktif</small><strong id="statActive">8 / 11</strong></div><div class="stat"><small>Parameter diubah</small><strong id="statChanged">0</strong></div></div>
 <div class="panel signal-chain-panel"><div class="panel-head"><div class="signal-chain-copy"><h3>Signal chain</h3><p id="chainEditHint">Pilih blok untuk mengedit model. Tekan ikon untuk mengubah urutan signal chain.</p></div><div class="chain-head-actions"><span class="chip">12 blok</span><button class="btn chain-edit-toggle" type="button" id="chainEditToggle" aria-label="Edit urutan signal chain" title="Edit urutan signal chain" aria-pressed="false"><svg class="chain-edit-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h6M4 18h10"/><path d="m17 4 3 2-3 2M13 16l-3 2 3 2M17 10l3 2-3 2"/></svg></button></div></div><div class="chain" id="chain"></div></div>
 <div class="editor"><div class="control main-editor-card"><div class="panel-head"><div><h3 id="editorTitle">AMP · Deluxe Rvb</h3><p id="editorSub">Pilih model dan atur parameter</p></div><select id="blockQuickSelect" class="block-quick-select" aria-label="Pilih model blok aktif"></select><label class="block-toggle" title="Aktifkan atau bypass blok"><span id="blockStatus">ON</span><input class="switch" id="blockSwitch" type="checkbox" checked aria-label="Aktifkan blok"></label></div><div id="modelVisual" class="model-visual-stage"></div><div class="scene-bar"><div class="scene-bar-head"><strong>Scenes</strong><div class="scene-copy-wrap" id="sceneCopyWrap"><button type="button" class="scene-copy-toggle" id="copySceneToggle" aria-expanded="false" aria-controls="sceneCopyMenu">Copy Scene ▾</button><div id="sceneCopyMenu" class="scene-copy-menu" hidden></div></div></div><div id="sceneButtons" class="scene-buttons"></div></div><div class="row model-select-row"><span class="model-row-label">MODEL</span><div class="model-stepper"><button type="button" class="model-step" id="modelPrev" aria-label="Model sebelumnya" title="Model sebelumnya">‹</button><strong id="modelCurrentName">Deluxe Rvb</strong><button type="button" class="model-step" id="modelNext" aria-label="Model berikutnya" title="Model berikutnya">›</button></div><select id="modelSelect" class="hidden" aria-hidden="true" tabindex="-1"></select></div><div id="knobs" class="knobs"></div><div class="row preset-name-row"><label for="presetName">Nama draft</label><input type="text" id="presetName" value="Draft 01A"></div><select id="sceneSelect" class="hidden" aria-hidden="true" tabindex="-1"><option>A · Clean</option><option>B · Rhythm</option><option>C · Lead</option></select></div>
 <details class="control quick-panel"><summary><span>Quick actions & informasi</span><small>Draft lokal · Ekspor · Status fitur</small></summary><div class="quick-panel-body"><button class="btn" id="duplicateBtn">⧉ Duplikat preset</button> <button class="btn" id="exportBtn">↧ Ekspor JSON</button><div class="notice"><b>Catatan kompatibilitas.</b> Perubahan model dan slider tetap menggunakan jalur MIDI yang sudah ada. Pemetaan parameter firmware GEN2 belum diverifikasi sepenuhnya.</div><div class="switch-row"><span>Draft tersimpan otomatis</span><span class="chip">LOCAL</span></div><div class="switch-row"><span>Hardware GEN2</span><span class="chip">BELUM DIVERIFIKASI</span></div></div></details></div></section>
+
+<dialog id="ctrlEditorDialog" class="ctrl-dialog" aria-labelledby="ctrlDialogTitle">
+  <div class="ctrl-dialog-shell">
+    <header class="ctrl-dialog-header">
+      <div>
+        <span class="eyebrow">MG-30 GEN 2 · CONTROL ASSIGNMENTS</span>
+        <h2 id="ctrlDialogTitle">CTRL / EXP &amp; Pedal</h2>
+        <p>Konfigurasi Multi EFX CTRL, footswitch T/R, dan dua assignment expression. Data dibaca langsung dari perangkat.</p>
+      </div>
+      <div class="ctrl-dialog-header-actions">
+        <span id="ctrlDirtyBadge" class="ctrl-dirty-badge">BELUM DIBACA</span>
+        <button type="button" class="btn" id="ctrlCloseButton" aria-label="Tutup panel CTRL">Tutup</button>
+      </div>
+    </header>
+    <div id="ctrlEditorStatus" class="ctrl-status" role="status" aria-live="polite">Hubungkan MG-30, lalu baca konfigurasi.</div>
+    <div class="ctrl-grid">
+      <section class="ctrl-card">
+        <div class="ctrl-card-head"><strong>Multi EFX CTRL</strong><small>Payload byte 6</small></div>
+        <div class="ctrl-field">
+          <label for="multiEfxFunction">Function</label>
+          <select id="multiEfxFunction"></select>
+        </div>
+        <div id="multiEfxDependentWrap" class="ctrl-range" hidden>
+          <div class="ctrl-field">
+            <label for="multiEfxDependent">Mode tambahan</label>
+            <select id="multiEfxDependent"></select>
+          </div>
+          <div id="multiEfxDependentHint" class="ctrl-dependent-hint"></div>
+        </div>
+      </section>
+      <section class="ctrl-card">
+        <div class="ctrl-card-head"><strong>External footswitch</strong><small>Payload byte 7–8</small></div>
+        <div class="ctrl-fields">
+          <div class="ctrl-field"><label for="footswitchT">T contact</label><select id="footswitchT"></select></div>
+          <div class="ctrl-field"><label for="footswitchR">R contact</label><select id="footswitchR"></select></div>
+        </div>
+        <div class="ctrl-dependent-hint">Daftar mengikuti pilihan T/R di QuickTone. Scene Up dan Scene Down saling melengkapi otomatis.</div>
+      </section>
+      <section class="ctrl-card">
+        <div class="ctrl-card-head"><strong>CTRL1 · Built-in expression</strong><small>Payload byte 9–10, 14–15</small></div>
+        <div class="ctrl-field">
+          <label for="ctrl1Function">Function</label>
+          <select id="ctrl1Function"></select>
+        </div>
+        <div id="ctrl1Model" class="ctrl-model-context">Model aktif pada Signal Chain</div>
+        <div id="ctrl1ParameterWrap" class="ctrl-field" style="margin-top:10px" hidden>
+          <label for="ctrl1Parameter">Parameter yang dikontrol</label>
+          <select id="ctrl1Parameter"></select>
+        </div>
+        <div id="ctrl1RangeWrap" class="ctrl-range" hidden>
+          <div class="ctrl-range-title">WAH RANGE</div>
+          <div class="ctrl-range-row"><label class="ctrl-range-label" for="ctrl1Min">MIN</label><input id="ctrl1Min" type="range" min="0" max="100" step="1"><output id="ctrl1MinValue">0</output></div>
+          <div class="ctrl-range-row"><label class="ctrl-range-label" for="ctrl1Max">MAX</label><input id="ctrl1Max" type="range" min="0" max="100" step="1"><output id="ctrl1MaxValue">100</output></div>
+        </div>
+      </section>
+      <section class="ctrl-card">
+        <div class="ctrl-card-head"><strong>CTRL2 · Additional expression</strong><small>Payload byte 11–12, 16–17</small></div>
+        <div class="ctrl-field">
+          <label for="ctrl2Function">Function</label>
+          <select id="ctrl2Function"></select>
+        </div>
+        <div id="ctrl2Model" class="ctrl-model-context">Model aktif pada Signal Chain</div>
+        <div id="ctrl2ParameterWrap" class="ctrl-field" style="margin-top:10px" hidden>
+          <label for="ctrl2Parameter">Parameter yang dikontrol</label>
+          <select id="ctrl2Parameter"></select>
+        </div>
+        <div id="ctrl2RangeWrap" class="ctrl-range" hidden>
+          <div class="ctrl-range-title">WAH RANGE</div>
+          <div class="ctrl-range-row"><label class="ctrl-range-label" for="ctrl2Min">MIN</label><input id="ctrl2Min" type="range" min="0" max="100" step="1"><output id="ctrl2MinValue">0</output></div>
+          <div class="ctrl-range-row"><label class="ctrl-range-label" for="ctrl2Max">MAX</label><input id="ctrl2Max" type="range" min="0" max="100" step="1"><output id="ctrl2MaxValue">100</output></div>
+        </div>
+      </section>
+      <div id="ctrlParameterNotice" class="ctrl-parameter-notice" hidden></div>
+    </div>
+    <footer class="ctrl-dialog-footer">
+      <p>Penulisan memakai 13 01 → ACK 13 03 → readback 13 02. Operasi dikunci selama sinkronisasi preset/scene. Tidak ada perintah CC77 atau 0D yang dikirim panel ini.</p>
+      <div class="ctrl-dialog-footer-actions">
+        <button type="button" class="btn ctrl-read-btn" id="ctrlReadButton">Baca ulang</button>
+        <button type="button" class="btn primary ctrl-save-btn" id="ctrlSaveButton" disabled>Simpan ke pedal</button>
+      </div>
+    </footer>
+  </div>
+</dialog>
+
 <section id="page-nam" class="hidden"><div class="hero nam-page-hero"><div><div class="eyebrow">NAM / PROFILE LAB</div><h2>Native NAM Profile</h2></div></div><details class="panel nam-reader-collapsible" id="namDeviceReaderPanel"><summary class="nam-reader-summary"><span><strong>Slot NAM di perangkat</strong><small>Membaca 10 record melalui SysEx; operasi ini hanya membaca data.</small></span><span class="chip">READ-ONLY · <span class="nam-reader-toggle-label"></span></span></summary><div class="nam-reader-content"><div class="nam-page-actions" style="margin-top:10px"><button class="btn primary" type="button" id="readNamSlotsBtn">Baca 10 nama NAM</button><button class="btn" type="button" id="copyNamSlotsBtn" disabled>Salin data hasil baca</button></div><p class="slot-note" id="namSlotsStatus" role="status" aria-live="polite">Nama NAM akan dibaca otomatis setelah MG-30 tersambung. Tombol baca ulang tetap tersedia untuk menyegarkan hasil.</p><div id="namSlotsResult" class="nam-device-slot-grid" aria-live="polite"></div><textarea id="namSlotRawOutput" class="hidden nam-slot-raw" rows="8" readonly aria-label="Data mentah hasil pembacaan slot NAM"></textarea><div class="notice"><b>Batasan pembacaan:</b> aplikasi membaca nama/metadata 128-byte untuk setiap slot dengan dua putaran pemeriksaan agar hasil stabil. Protokol ini tidak membaca kembali bobot model, jadi nama yang terbaca tidak membuktikan bobot model masih utuh. Operasi pembacaan tidak menulis data ke MG-30.</div></div></details><div class="panel" id="namImportTransferPanel"><div class="panel-head"><div><h3>Import NAM ke MG-30</h3></div></div><label class="studio-file-picker nam-file-picker" for="namTransferFileInput"><span class="studio-file-icon">NAM</span><span><strong id="namTransferFileTitle">Pilih file NAM untuk dikirim</strong><small id="namTransferFileMeta" class="hidden">Mendukung .nam (JSON SlimmableContainer) dan .namb A2-Lite 1.871 bobot</small></span><span class="studio-file-arrow">↗</span></label><input class="hidden" type="file" id="namTransferFileInput" accept=".nam,.namb,application/json,application/octet-stream"><div class="nam-page-actions" style="margin-top:10px"><button class="btn" type="button" id="namTransferChooseBtn">Pilih file NAM</button><label for="namTransferSlot" style="display:flex;align-items:center;gap:8px">Slot tujuan <select id="namTransferSlot" class="btn" style="min-width:110px"><option value="">Pilih slot</option><option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option><option value="4">Slot 4</option><option value="5">Slot 5</option><option value="6">Slot 6</option><option value="7">Slot 7</option><option value="8">Slot 8</option><option value="9">Slot 9</option><option value="10">Slot 10</option></select></label></div><div class="nam-page-actions" style="margin-top:10px"><button class="btn primary" type="button" id="namTransferSendBtn" disabled>Kirim NAM ke MG-30</button></div><p class="slot-note" id="namTransferStatus" role="status" aria-live="polite">Pilih file dan slot tujuan. Transfer hanya tersedia pada APK Android dengan MG-30 Gen 2 tersambung melalui USB OTG.</p></div></section>
 <div id="ir-import-content" class="ir-import-content">
 <div class="hero"><div><div class="eyebrow">THIRD PARTY / USER IR</div><h2>Import IR ke Third Party</h2><p>Impor WAV ke jalur USER IR pada NUX MG-30 Gen 2. Di aplikasi/perangkat, jalur ini tampil sebagai Third Party; menu COLLECTION adalah jalur terpisah.</p></div></div>
@@ -674,7 +758,7 @@ async function readActiveBuffer(options={}){
  try{return await activeBufferReadPromise}finally{activeBufferReadPromise=null}
 }
 async function pollHardwareState(forceBuffer=false){
- if(!midiConnected||hardwareSyncBusy||sceneSwitchPending)return;
+ if(!midiConnected||hardwareSyncBusy||sceneSwitchPending||ctrlEditorBusy)return;
  hardwareSyncBusy=true;
  try{
   const status=await readActiveProgramScene();
@@ -710,6 +794,7 @@ async function readPresetParts(cmd=0x0C,prog=0){const parts=[];for(let p=0;p<3;p
 async function writeHardwarePreset(prog,parts){await flushMidi();for(let part=0;part<3;part++){const body=parts[part].slice();body[3]=0x0B;body[4]=0x01;body[5]=prog;body[6]=part;await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x0B&&b[4]===0x03&&b[6]===part,1600).catch(()=>null);midiOutput.send([0xF0,...body,0xF7]);return ack})}await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x07&&b[4]===0x03,1600).catch(()=>null);midiOutput.send([0xF0,0x43,0x58,0x70,0x07,0x01,prog,prog,0,0,0,0,0,0xF7]);return ack});const check=await readPresetParts(0x0B,prog);return check.every((b,i)=>b.slice(7).every((v,j)=>v===parts[i][7+j]))}
 
 async function copySceneTo(targetIndex){
+ if(ctrlEditorBusy){setDeviceStatus('Tutup panel CTRL sebelum menjalankan Copy Scene.');return;}
  if(!Number.isInteger(targetIndex)||targetIndex<0||targetIndex>2)return;
  if(!midiConnected||!midiInput||!midiOutput){setDeviceStatus('Copy Scene memerlukan koneksi USB-MIDI ke MG-30.');toast('Hubungkan MG-30 terlebih dahulu');return}
  if(copySceneBusy||sceneSwitchPending){toast('Operasi scene lain sedang berlangsung');return}
@@ -803,6 +888,7 @@ async function copySceneTo(targetIndex){
 }
 
 async function saveToDevice(){
+ if(ctrlEditorBusy){setDeviceStatus('Tutup panel CTRL sebelum menyimpan preset.');return;}
  if(!midiConnected){setDeviceStatus('Belum terhubung. Tekan Hubungkan MG-30 terlebih dahulu.');toast('Belum terhubung ke MG-30');return}
  if(!confirm('Timpa preset hardware '+slotName()+'? Pastikan sudah backup.')){setDeviceStatus('Simpan dibatalkan.');return}
  try{
@@ -828,6 +914,7 @@ async function saveToDevice(){
  }
 }
 async function selectHardwareSlot(prog,fromDevice=false){
+ if(ctrlEditorBusy){setDeviceStatus('Panel CTRL sedang aktif; perubahan preset ditunda sampai panel ditutup.');return;}
  if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
  if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
  const requestedSlot=Math.max(0,Math.min(127,Number(prog)||0));
@@ -917,7 +1004,7 @@ let chainOrder=BLOCKS.map((_,i)=>i);
 presets=presets.filter(p=>!p.builtIn);
 localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
-let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0;
+let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0;
 let targetSlot=0;
 let lastAnnouncedActivePresetSlot=null;
 function notifyActivePresetChanged(){
@@ -1701,6 +1788,66 @@ function togglePresetJumpMenu(force){
  else{menu.classList.add('hidden');trigger.setAttribute('aria-expanded','false');}
 }
 initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=connectMG30;$('connectMidiDevice').onclick=connectMG30;$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
+
+function ctrlEditorEnter() {
+ if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
+ if(ctrlEditorBusy)throw new Error('Operasi CTRL lain masih berjalan.');
+ if(hardwareSyncBusy||sceneSwitchPending||copySceneBusy||activeBufferReadPromise||sceneStatusReadPromise)
+  throw new Error('Tunggu sinkronisasi preset/scene selesai, lalu coba lagi.');
+ ctrlEditorBusy=true;
+ window.dispatchEvent(new CustomEvent('mg30-ctrl-busy',{detail:{busy:true}}));
+}
+function ctrlEditorLeave() {
+ ctrlEditorBusy=false;
+ window.dispatchEvent(new CustomEvent('mg30-ctrl-busy',{detail:{busy:false}}));
+}
+async function ctrlReadUnlocked() {
+ await flushMidi();
+ const response=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x13&&b[4]===0x02,3200);
+ const sent=await midiFrame([0x43,0x58,0x70,0x13,0x00]);
+ if(!sent){response.catch(()=>{});throw new Error('Query 13 00 tidak terkirim.');}
+ const body=await response;
+ const bytes=Array.from(body.slice(5,17));
+ if(bytes.length!==12)throw new Error('Balasan 13 02 tidak lengkap: payload konfigurasi hanya '+bytes.length+' byte.');
+ return {bytes,extra:Array.from(body.slice(17)),raw:Array.from(body)};
+}
+window.MG30CtrlBridge=Object.freeze({
+ isConnected:()=>Boolean(midiConnected&&midiInput&&midiOutput),
+ getModelInfo:function(functionCode){
+  const blockIndex=({1:0,2:2,3:3,4:6,5:7,6:8})[Number(functionCode)];
+  if(blockIndex===undefined)return {name:'—',blockId:''};
+  const block=BLOCKS[blockIndex],state=states[blockIndex];
+  const item=block&&block.models?block.models[state?state.model:0]:null;
+  return {name:item?String(item[0]):'Model belum diketahui',blockId:block?block.id:''};
+ },
+ async readState(){
+  ctrlEditorEnter();
+  try{return await ctrlReadUnlocked();}
+  finally{ctrlEditorLeave();}
+ },
+ async writeState(input){
+  if(!Array.isArray(input)||input.length!==12)throw new Error('Payload CTRL harus berisi tepat 12 byte konfigurasi.');
+  const payload=input.map((value,index)=>{
+   const n=Number(value);
+   if(!Number.isInteger(n)||n<0||n>127)throw new Error('Byte CTRL tidak valid pada posisi '+index+'.');
+   return n;
+  });
+  // SysEx 13 01 writes offset 6..17. Offset 13 is fixed zero in QuickTone's serializer.
+  payload[7]=0;
+  ctrlEditorEnter();
+  try{
+   await flushMidi();
+   const ack=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x13&&b[4]===0x03,3200);
+   const sent=await midiFrame([0x43,0x58,0x70,0x13,0x01,...payload]);
+   if(!sent){ack.catch(()=>{});throw new Error('Write 13 01 tidak terkirim.');}
+   await ack;
+   const state=await ctrlReadUnlocked();
+   const matched=payload.every((value,index)=>state.bytes[index]===value);
+   return {state,matched,written:payload};
+  }finally{ctrlEditorLeave();}
+ }
+});
+
 </script>
 <script>
 (function mergeNamAndIr(){
@@ -1726,5 +1873,5 @@ initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMo
   }
 })();
 </script>
-<script type="module" src="./main.js"></script>
+<script type="module" src="./main.js"></script><script type="module" src="./ctrl-editor.js"></script>
 </body></html>
