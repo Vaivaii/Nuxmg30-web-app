@@ -1033,3 +1033,12 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Re-test read-only Export once on slot 04A with the diagnostics APK. Expand “Detail diagnostik readback”, copy the log, and provide it for analysis. Do not repeat preset import and do not perform any write operation for this test.
 - [ ] If the logged request frame is correct but the response continues to report a previous/zero offset, inspect the actual USB-MIDI wire exchange and request/response timing before changing protocol semantics. Do not re-label or accept offset 0 as a different sample offset.
 - [x] Keep the working single-preset importer, NAM, User/Third Party write path, Collection 6A/6B/6C, MIDI mappings, preset synchronization, Copy Scene, CTRL/EXP, signal chain and Save-to-device code untouched.
+
+
+## Physical Export retry — repeated 10/02 offset 0 (2026-10-31)
+
+- [x] User tested read-only Export on selected hardware slot 04A; screenshot reports: `Export gagal: Tidak ada balasan SysEx dari MG-30`. The transaction received a `10/02` data reply with opaque tag `0` and decoded offset `0`, but that offset did not match the outstanding request and was ignored.
+- [x] No data was written to MG-30; the operation is read-only and aborted before generating the preset file.
+- [ ] Obtain the in-app **Detail diagnostik readback** log before changing the protocol. It contains the exact outgoing SysEx request, requested offset, all observed reply headers, and failure step. Use its requestHex and expectedOffset to distinguish a wrong offset field/layout from a stale/repeated response.
+- [ ] In particular, determine whether the failure occurred on the second waveform request (expected offset 32 after offset 0 had succeeded) or at a later offset; the screenshot's short status message does not identify the expected offset or include the request bytes.
+- [ ] Do not change the User IR 10/09/11 upload path, Collection 6A/6B/6C, NAM, MIDI mappings, or preset import while diagnosing this read-only request path. Do not treat the reply's opaque tag 0 as a resource index.
