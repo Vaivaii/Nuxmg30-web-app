@@ -378,3 +378,41 @@ Implementation implications:
 - The exact second choice for each active pedal/amp and the underlying wire enum values still require extraction from QuickTone's MG30-specific code or a small number of representative captures. Do not invent option names.
 
 This is user-confirmed UI behavior, not yet a complete protocol mapping. Preserve the distinction between observed labels, user-confirmed rules, and unresolved numeric encodings.
+
+## QuickTone.exe static disassembly — dependent parameter menus (2026-10-30)
+
+Analysis target: original MG30 class family in QuickTone v2.6.7.16. Separate MKII classes are not used for these findings.
+
+### Popup menu builder and observed option families
+
+- The menu-builder routine beginning at VA `0x005C48F0` (called from the MG30 pedal-setting popup path) stores its selector argument at object offset `+0x9C` and branches to distinct option builders.
+- Selector argument 0/1 constructs the function list from pointers at `0xD313E0` through `0xD313FC`: `----`, `WAH`, `EFX`, `AMP`, `MOD`, `DLY`, `RVB`. This matches the user's screenshot for the CTRL1/CTRL2 function dropdown. Greyed/disabled state is still context-dependent and not fully mapped.
+- Selector argument 4 constructs the T-contact function list: `T:----`, `T:TAP`, `T:CMP`, `T:GATE`, `T:EFX`, `T:EQ`, `T:SR`, `T:MOD`, `T:DLY`, `T:RVB`, `T:SCENE`, `T:RVB HF`, `T:WAH`, `T:S.UP`, `T:S.DN`.
+- The following branch (selector argument 5) uses the parallel R-contact list: `R:----`, `R:TAP`, `R:CMP`, `R:GATE`, `R:EFX`, `R:EQ`, `R:SR`, `R:MOD`, `R:DLY`, `R:RVB`, `R:SCENE`, `R:RVB HF`, `R:WAH`, `R:S.UP`, `R:S.DN`.
+- Selector argument 6 builds a separate restricted list containing generic `----`, `EFX`, `MOD`, `DLY`, `RVB`, `WAH` and some special entries (`TAP`, `CMP`, `GATE`, `EQ`, `SR`, `SCENE`, `RVB HF`). Do not yet assign this particular selector to CTRL4 until its caller/UI identity is independently confirmed.
+
+### Strong static evidence for exactly two dependent parameter choices
+
+- In the branches that build the dependent parameter popup (including paths selected by menu argument 2 and 3), QuickTone reads a control/model record's bytes at offsets `+0x7D` / `+0x7E`, masks each to the low nibble, and uses these as active selector/type values.
+- For each such active type, the menu builder calls helper `0x005C2070` twice, explicitly with parameter-choice indexes `0` and `1`. It then converts those two returned values into the two option entries shown in the popup. The same pattern is repeated for the other dependent row/type.
+- Helper `0x005C2070` resolves the current selector through the MG30 runtime metadata object and selects one of several category-specific lookup arrays. The selected model/type index chooses a record in the relevant array; the helper reads the first or second parameter code according to the supplied 0/1 index. The code accesses per-entry data at a six-byte stride, with separate fields for the two parameter slots.
+- This is direct **static-code evidence** for a two-entry parameter chooser driven by the active type/model context. It corroborates the user's clarification that column 3 has two parameter choices for the active pedal/amp, with WAH following a separate special branch.
+- The model-specific parameter-ID arrays are not yet decoded into a complete human-readable model → parameter pair table. The helper uses a runtime-populated metadata object (`global` singleton rooted at `0x0B8D9718`, whose `+0x2C` field points to the selected model/parameter lookup table). A related parser path at `0x004A5F30` handles records with header bytes `15 02` and updates the shared metadata object, including its category/model-selection fields. The meaning/source of that record within the full device communication path remains under investigation; do not yet assert that it is definitely an MG-30 readback message.
+
+### Parameter-label dictionary discovered in QuickTone resources
+
+The executable contains parameter identifier → display-label translations. This is a label dictionary, not yet the per-model pair association. Examples include:
+- CMP: `CMP_LEVEL` → `LEVEL`, `CMP_GAIN` → `GAIN`, `CMP_SUSTAIN` → `SUSTAIN`, `CMP_RATIO` → `RATIO`, `CMP_RELEASE` → `RELEASE`, `CMP_ATTACK` → `ATTACK`.
+- EFX: `EFX_LEVEL` → `LEVEL`, `EFX_DRIVE` → `DRIVE`, `EFX_GAIN` → `GAIN`, `EFX_TONE` → `TONE`, plus model-specific labels such as `EFX_SENS`, `EFX_FILTER`, `EFX_DECAY`, `EFX_SPECTRUM`.
+- MOD: `MOD_RATE` → `RATE`, `MOD_DEPTH` → `DEPTH`, `MOD_INTEN` → `INTEN`, `MOD_SPEED` → `SPEED`, `MOD_MIX` → `MIX`, and other model-specific labels.
+- DLY: `DLY_RATE` → `RATE`, `DLY_TIME` → `TIME`, `DLY_F.BACK` → `F.BACK`, `DLY_MIX` → `MIX`, and other variants.
+- RVB: `RVB_TONE` → `TONE`, `RVB_DECAY` → `DECAY`, `RVB_PRE.D` → `PRE.D`, `RVB_LEVEL` → `LEVEL`, `RVB_MIX` → `MIX`, etc.
+- AMP: `AMP_GAIN` → `GAIN`, `AMP_MASTER` → `MASTER`, `AMP_BASS` → `BASS`, `AMP_MIDDLE` → `MIDDLE`, `AMP_TREB` → `TREB`, `AMP_PRES` → `PRES`, `AMP_LEVEL` → `LEVEL`, `AMP_DRIVE` → `DRIVE`, and other amp-specific labels.
+- WAH labels include `VOL_MIN` → `MIN`, `VOL_MAX` → `MAX`, `VOL_LEVEL` → `LEVEL`, and `VOL_POSITION` → `POSITION`.
+
+### Current conclusion / remaining analysis
+
+- We do **not** need to USB-capture every pedal/model or each of the two choices. The binary itself proves the menu is assembled by looking up two entries for the active context, and it includes the broad label dictionary.
+- The next task is to decode how the runtime metadata table is populated and how its model/type index maps to the translation identifiers. That should yield most or all model → pair associations without one capture per pedal.
+- Keep WAH as a distinct branch. Keep CTRL1/CTRL2 expression menus separate from the independent T/R footswitch option lists and the Multi EFX CTRL actions.
+- No MG30 Studio source changes or APK builds have been made. This checkpoint is static reverse engineering only.
