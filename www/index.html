@@ -1980,7 +1980,7 @@ window.MG30PresetExportBridge=Object.freeze({
   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
   while(hardwareSyncBusy)await delay(10);
   await flushMidi();
-  presetExportBusy=true;sceneSwitchPending=true;hardwareSyncBusy=true;
+  presetExportBusy=true;window.MG30PresetExportBusy=true;sceneSwitchPending=true;hardwareSyncBusy=true;
   stopHardwareStatePolling();
   try{
    const sceneReplies=[];
@@ -2043,7 +2043,7 @@ window.MG30PresetExportBridge=Object.freeze({
    setDeviceStatus('Export preset gagal: '+(error?.message||error));
    throw error;
   }finally{
-   hardwareSyncBusy=false;sceneSwitchPending=false;presetExportBusy=false;
+   hardwareSyncBusy=false;sceneSwitchPending=false;presetExportBusy=false;window.MG30PresetExportBusy=false;
    renderSceneButtons();
    window.dispatchEvent(new CustomEvent('mg30-preset-import-target-changed'));
    startHardwareStatePolling();
