@@ -584,3 +584,18 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Mark candidate JSON-derived AMP pairs (`GAIN` + `PRES` / `CUT` / `BRIGHT`) as invalid for the canonical original-MG30 CTRL mapping; these likely represent model-editor controls or a different resource context/profile.
 - [ ] Correct the extraction method: distinguish model-editor control arrays from the CTRL-specific two-option lookup table. Do not promote first-two model `languageKey` entries as CTRL pairs across all model categories.
 - [x] No additional AMP capture required; user has checked all AMP models. Record the authoritative correction in the technical note (commit `2441dc5308b94d60f72c758b4bbd1b5df054eac7`).
+
+## Goal 2 — CTRL/Expression static disassembly breakthrough (2026-10-30)
+
+- [x] Continue original-MG30 QuickTone 2.6.7.16 disassembly (not MKII) before changing MG30 Studio source.
+- [x] Map 13 01 write serializer VA 0x004A7FE0 to the settings record: SysEx offsets 9/10 are CTRL1 function/dependent-choice nibbles; offsets 11/12 are CTRL2 function/dependent-choice nibbles.
+- [x] Map 13 02 incoming parser VA 0x004A8340 back to the same packed fields. This proves a native readback parser exists, but not yet the request that triggers it or a complete hardware readback transaction.
+- [x] Map 13 03 write ACK checker VA 0x004A81F0; keep it distinct from the 13 02 state parser.
+- [x] Confirm static function popup order for selector arguments 0/1: ----, WAH, EFX, AMP, MOD, DLY, RVB (indices 0–6).
+- [x] Preserve separate T/R footswitch lists and do not assign the restricted selector-6 list to Multi EFX CTRL without caller/UI proof.
+- [x] Record full byte layout, function list, capture caveats, and next steps in CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md.
+- [ ] Trace the request/callback path that produces 13 02 readback when EXP & Pedal opens/reopens.
+- [ ] Trace 0D 01/0D 02 against the MG30 set-value panel and WAH MIN/MAX sliders; do not assign those bytes to ranges yet.
+- [ ] Recover the model-dependent CTRL parameter pair table from the correct MG30 panel/model data object; do not use candidate JSON editor arrays as canonical CTRL mappings. Keep the user-confirmed AMP pair GAIN + MASTER authoritative.
+- [ ] Obtain a clean one-field CTRL1 dependent-choice capture plus panel reopen/readback capture if static tracing leaves ambiguity.
+- [ ] No MG30 Studio source change or APK build in this checkpoint. NAM, IR User/Collection, MIDI mapping, preset sync, and Copy Scene remain untouched.
