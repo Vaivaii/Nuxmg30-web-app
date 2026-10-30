@@ -682,3 +682,17 @@ This is a focused change to the read-only Export implementation. It does not alt
 - [ ] Confirm the three scene readbacks and serialized .mg30patch before attempting any round-trip import.
 
 No change to the successful single-preset importer, NAM, IR User/Third Party upload 10/09/11, Collection 6A/6C/6B, MIDI mapping, preset synchronization, Copy Scene, CTRL/EXP, signal chain, or Save-to-device path.
+
+
+### Android APK build verification — offset-keyed readback (2026-10-31)
+
+GitHub Actions run [#138](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41123736392) completed successfully from source commit `fc68d00e2c48e3a954988bc76c80f200f9212cb4`.
+
+- Protocol regression tests (`npm test`): passed.
+- Capacitor Android generation: passed.
+- Gradle `assembleDebug`: passed.
+- Artifact upload: passed.
+- Artifact: `MG30-Studio-debug-APK`, ID `13008509843`, size 4,016,705 bytes.
+- SHA-256: `8f9b1b1fc37cec90521cdfe3e000f754cc6a3c3e190c0b18322d2ae81840c701`.
+
+This APK contains the new Export readback collection behavior that accepts valid responses in any order, assigns them by their returned offset, and only assembles the resource once all 64 waveform and 10 curve offsets are present exactly once. It is still a software/CI-verified build, not yet hardware-validated on the pedal.
