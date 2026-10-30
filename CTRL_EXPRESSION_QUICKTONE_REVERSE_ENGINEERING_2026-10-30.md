@@ -176,3 +176,52 @@ Do not assume this list applies identically to all numbered controls. The user's
 ### Data-model implication
 
 Represent function choices as per-control capability lists, not one universal enum shared by every CTRL/EXP input. Preserve disabled/unavailable states if QuickTone displays them, and determine whether those states depend on control identity, current Signal Chain blocks, or the current preset.
+
+
+## Authoritative user clarification — hardware callouts 1, 3 and 4 (2026-10-30)
+
+The user clarified the hardware control diagram and the behavior of the external and built-in controls. This section should be used as the current functional mapping; earlier generic assumptions that all numbered entries are the same type of CTRL should not be used.
+
+### Callout 1 — built-in NUX expression pedal
+
+- This is the expression pedal built into the MG-30.
+- Its assignment can include functions such as WAH or EFX (as shown in earlier dialog photos).
+- When assigned to EFX, the effect/model column reflects the EFX block currently present in the Signal Chain (e.g. DIST UNO); it is not freely selectable in the expression dialog.
+- Its controllable parameter is selected from those supported by that active block (e.g. DRIVE or LEVEL).
+- WAH has its own model/range presentation (e.g. CLYDE and MIN/MAX), as observed in the earlier screenshot. Keep semantics tied to the selected function.
+
+### Callout 3 — external footswitch input
+
+- This is the external NUX footswitch shown separately in the QuickTone device diagram.
+- QuickTone exposes two contact assignments, `T` and `R`, with two corresponding configuration columns.
+- The user confirms its supported functions are limited to:
+  - Toggle on/off for a pedal/block that is currently present and active in the Signal Chain.
+  - Scene up / scene down.
+- Do not present the expression-style continuous parameter mapping (DRIVE/LEVEL or MIN/MAX) for this external footswitch. It is a switch input, not an expression axis.
+- The meaning of the two displayed columns should be kept separate from the expression pedal's function/model/parameter columns.
+
+### Callout 4 — CTRL integrated into the built-in Multi EFX
+
+- This is the CTRL control associated with the MG-30's built-in Multi EFX, not the external T/R footswitch and not the built-in expression pedal.
+- User-confirmed functions include:
+  - Delay TAP.
+  - Toggle on/off for a pedal/block.
+  - Cycle scenes 1 → 2 → 3 (and repeat as supported by the device/UI).
+- Do not conflate this feature with callout 3's external footswitch T/R assignments. The available function list and cycling semantics need their own capture/static-code verification.
+
+### Evidence status and implementation constraints
+
+- **User-confirmed functional mapping:** callout 1 is built-in expression; callout 3 is external footswitch with T/R; callout 4 is Multi EFX CTRL with TAP, block toggle, or scene cycling.
+- **Previously wire-confirmed, but semantic mapping still incomplete:** command family `13 01` and response `13 03` in the two supplied `ctrl1efx.pcapng` / `ctrl2wah.pcapng` captures. Do not map these packets to callout 3 or 4 until a capture is explicitly identified with the corresponding control being changed.
+- **Important naming caution:** capture filenames `ctrl1efx` and `ctrl2wah` are user labels, but the user's later clarification says physical callout 1 is the built-in expression pedal. In notes and code, use explicit names such as `builtinExpression`, `externalFootswitchT`, `externalFootswitchR`, and `multiEfxCtrl` rather than ambiguous `ctrl1` / `ctrl2` until exact QuickTone row-to-hardware mapping is captured.
+- Keep independent schemas for expression assignments, external footswitch T/R, and Multi EFX CTRL. Their option lists and payloads must not be merged into one generic enum.
+
+### Next isolated capture plan
+
+1. **Expression / callout 1:** keep the Signal Chain EFX model fixed (e.g. DIST UNO); change only its controlled parameter (e.g. LEVEL → DRIVE). Capture separately from all other control settings.
+2. **External footswitch / callout 3:** change only T assignment, then only R assignment. For each, capture one active Signal Chain block toggle and one scene up/down assignment. Note the exact T/R and function shown before/after.
+3. **Multi EFX CTRL / callout 4:** capture selection of TAP, block on/off, and scene cycling independently, noting the exact resulting UI setting and pedal behavior.
+4. For every group, reopen the panel and capture whether QuickTone queries/readbacks the stored setting.
+5. Keep preset and Signal Chain stable except for the one deliberately changed variable in each capture.
+
+Do not send guessed MIDI/SysEx messages. Preserve raw pcapng traces. Implement each control family only after its own command, parameter encoding, response, and readback path are established.
