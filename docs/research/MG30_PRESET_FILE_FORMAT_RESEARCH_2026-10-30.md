@@ -428,3 +428,33 @@ A further direct disassembly check of QuickTone.exe v2.6.7.16 resolves the index
 - [ ] The observed offset 128 still needs physical explanation. The matcher change is a safe stale/out-of-order-frame guard, not proof that the device returns the expected offset or that Export now works.
 - [ ] Rebuild APK from this branch and repeat a read-only export on original MG-30 Gen2 firmware 6.0.x. Capture USB-MIDI/USBPcap traffic if the first matching offset still does not arrive; include the outgoing first `10/00` request and all incoming `10/02` replies. No import/write operation is involved.
 - [x] No change to NAM, IR User/Collection write paths, MIDI mappings, preset import, preset save/finalize, Copy Scene, CTRL/EXP, or signal-chain code.
+
+
+## Recovery checkpoint — physical importer result and current Export APK (2026-10-31)
+
+### Single-preset importer status
+
+The earlier implementation section already records the user's report that single-preset import was physically tested and succeeded on the original MG-30 Gen2. This remains the confirmed user-reported result and is treated as complete for the tested single-file case. Do not repeat the basic `.mg30patch` format investigation or reopen the import path without new contradictory evidence.
+
+This status does **not** imply that IR list visibility or separate audio audition was independently confirmed. It does not validate 128-record batch import, interrupted-transfer recovery, or the read-only Export path. Batch import remains disabled.
+
+### Latest branch and build verification
+
+- Working branch: `android/ui-polish-pass-1`.
+- Latest branch head before this documentation update: `17e19a127077ebd79b1b6b60b769d4eff3e2d302`.
+- Successful Android build source commit: `bc10120099acfedd45e17fc023aebe50c78271b9`.
+- Comparing the branch head with the successful build commit showed exactly one intervening commit, modifying only `UI_POLISH_CHECKLIST.md`. Therefore the branch app source at that checkpoint matched the APK source.
+- GitHub Actions run [#132](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41115756336) completed with conclusion `success` on 2026-10-31. The `npm test` protocol-regression step passed, Android project generation completed, `assembleDebug` passed, and artifact upload succeeded.
+- Artifact: `MG30-Studio-debug-APK`; ID `13004389391`; size 4,014,515 bytes; SHA-256 `03076b06387983506817a8db81260a4c2ffeb87ede15bc2e1b4bc4a904f87f9f`.
+- This build includes the latest IR read-reply parser correction: the first decoded word is treated as an opaque reply tag, while the second decoded uint16 is validated as the response offset. Unrelated/out-of-order 10/02 and 11/02 replies are ignored until the expected offset is received. This correction remains a safe matching guard; it is not proof that the hardware export transaction now succeeds.
+
+### Next Goal 3 step
+
+The next test is the already implemented **read-only** `.mg30patch` Export UI using the APK from run #132 on the original MG-30 Gen2 firmware 6.0.x. Do not repeat single-preset import merely to reconfirm its already reported success.
+
+1. Select a known preset with a known associated User/Third Party IR resource.
+2. Run Export and verify the 09/02 metadata response, 64 waveform replies covering offsets 0, 32, …, 2016, and 10 curve replies covering offsets 0, 64, …, 576. Verify the three scene readbacks and confirm no partial file is generated on any mismatch.
+3. Compare the resulting `.mg30patch` with the expected scene/resource information. Only after its readback data is verified should a re-import into a safe test slot be considered for round-trip validation.
+4. If the first expected offset is still missing, collect a full USBPcap trace containing the outgoing 10/00 request and every incoming 10/02 reply. Record the opaque first word and decoded offset separately; do not guess the meaning of the opaque word.
+
+No change is authorized to the working NAM path, User/Third Party 10/09/11 upload path, Collection 6A/6B/6C mapping, MIDI parameter map, preset synchronization, Copy Scene, CTRL/EXP, signal-chain behavior, single-preset importer, or Save-to-device 07/01 writer. Keep the 128-record batch importer disabled pending a dedicated QuickTone batch-import capture and destination-mapping evidence.
