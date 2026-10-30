@@ -176,3 +176,98 @@ export const MG30PresetFormat = Object.freeze({
   parseSingle: parseMG30SinglePresetPatch,
   buildImportPlan: buildMG30SinglePresetImportPlan,
 });
+
+
+/** Inverse of the 16-bit-to-three-7-bit-byte format used in 0B/02 replies. */
+function decodeWord16(bytes, offset) {
+  const a=bytes[offset],b=bytes[offset+1],c=bytes[offset+2];
+  if(!Number.isInteger(a)||!Number.isInteger(b)||!Number.isInteger(c)||
+     a>3||b>0x7F||c>0x7F) throw new Error('Word scene berisi byte packed di luar rentang.');
+  const packed=((a&3)<<14)|((b&0x7F)<<7)|(c&0x7F);
+  return ((packed&0xFF)<<8)|(packed>>>8);
+}
+
+/**
+ * Decode one read-only 0C/02 scene reply into the 71 uint16 words stored in
+ * a QuickTone .mg30patch record. The reply body excludes F0/F7, like the
+ * existing MG30 Studio waitForSysEx helper.
+ */
+export function decodeMG30PresetSceneReply(input, expectedProgram, expectedPart) {
+  const body=bytesOf(input);
+  if(!Number.isInteger(expectedProgram)||expectedProgram<0||expectedProgram>127)
+    throw new Error('Program scene tidak valid (0–127).');
+  if(!Number.isInteger(expectedPart)||expectedPart<0||expectedPart>2)
+    throw new Error('Indeks scene tidak valid (0–2).');
+  if(body.length!==220||body[0]!==0x43||body[1]!==0x58||body[2]!==0x70||
+     body[3]!==0x0C||body[4]!==0x02||body[5]!==expectedProgram||body[6]!==expectedPart)
+    throw new Error('Header/panjang balasan 0C/02 tidak cocok dengan preset dan scene yang diminta.');
+  const words=new Uint16Array(71),raw=new Uint8Array(SCENE_BYTES),view=new DataView(raw.buffer);
+  for(let i=0;i<words.length;i++){
+    words[i]=decodeWord16(body,7+i*3);
+    view.setUint16(i*2,words[i],true);
+  }
+  return {index:expectedPart,words,raw,program:expectedProgram};
+}
+
+/**
+ * Serialize the fully reconstructed record into QuickTone's original Gen2
+ * single-preset .mg30patch layout. This deliberately requires the associated
+ * IR resource; a scene-only backup is not represented as a valid .mg30patch.
+ */
+export function buildMG30SinglePresetPatch({recordOrdinal,scenes,resourceName,samples,curve}) {
+  const ordinal=Number(recordOrdinal);
+  if(!Number.isInteger(ordinal)||ordinal<0||ordinal>127)
+    throw new Error('Indeks record sumber harus 0–127.');
+  if(!Array.isArray(scenes)||scenes.length!==3)
+    throw new Error('Export membutuhkan tepat tiga scene yang sudah dibaca dari perangkat.');
+  if(!(samples instanceof Float32Array)||samples.length!==2048)
+    throw new Error('Export membutuhkan resource IR lengkap: 2.048 sampel float32.');
+  if(!(curve instanceof Uint16Array)||curve.length!==600)
+    throw new Error('Export membutuhkan kurva IR lengkap: 600 nilai uint16.');
+  const name=String(resourceName||'');
+  const nameBytes=new TextEncoder().encode(name);
+  if(!nameBytes.length||nameBytes.length>16||Array.from(nameBytes).some(x=>x<0x20||x>0x7E))
+    throw new Error('Nama resource IR harus 1–16 byte ASCII printable sesuai field file.');
+  for(let i=0;i<samples.length;i++)if(!Number.isFinite(samples[i]))
+    throw new Error('Sampel IR tidak finite pada indeks '+i+'.');
+  for(let i=0;i<curve.length;i++)if(curve[i]>305)
+    throw new Error('Nilai kurva IR di luar rentang 0–305 pada indeks '+i+'.');
+
+  const out=new Uint8Array(RECORD_SIZE),view=new DataView(out.buffer);
+  view.setUint32(0,ordinal,true);
+  for(let scene=0;scene<3;scene++){
+    const words=scenes[scene]?.words;
+    if(!(words instanceof Uint16Array)||words.length!==71)
+      throw new Error('Scene '+(scene+1)+' harus berisi tepat 71 word uint16 hasil readback.');
+    const at=SCENE_OFFSET+scene*SCENE_BYTES;
+    for(let i=0;i<71;i++)view.setUint16(at+i*2,words[i],true);
+  }
+  view.setUint32(RESOURCE_MARKER_OFFSET,1,true);
+  out.set(nameBytes,RESOURCE_NAME_OFFSET);
+  // 0x1C2..0x1D1 is the zero-filled 16-byte field in the supplied format.
+  const riff=RIFF_OFFSET;
+  out.set([0x52,0x49,0x46,0x46],riff);
+  view.setUint32(riff+4,0x1824,true);
+  out.set([0x57,0x41,0x56,0x45],riff+8);
+  out.set([0x66,0x6D,0x74,0x20],riff+12);
+  view.setUint32(riff+16,16,true);
+  view.setUint16(riff+20,1,true);
+  view.setUint16(riff+22,1,true);
+  view.setUint32(riff+24,48000,true);
+  view.setUint32(riff+28,144000,true);
+  view.setUint16(riff+32,3,true);
+  view.setUint16(riff+34,24,true);
+  out.set([0x64,0x61,0x74,0x61],riff+36);
+  view.setUint32(riff+40,0x1800,true);
+  for(let i=0;i<2048;i++)view.setFloat32(FLOAT_DATA_OFFSET+i*4,samples[i],true);
+  for(let i=0;i<600;i++)view.setUint16(CURVE_OFFSET+i*2,curve[i],true);
+  if(out.length!==RECORD_SIZE)throw new Error('Panjang hasil export single-preset tidak cocok.');
+  return out;
+}
+
+export function buildMG30SinglePresetPatchFromReplies({recordOrdinal,sceneReplies,resourceName,samples,curve}) {
+  if(!Array.isArray(sceneReplies)||sceneReplies.length!==3)
+    throw new Error('Export membutuhkan tiga balasan scene 0C/02.');
+  const scenes=sceneReplies.map((reply,index)=>decodeMG30PresetSceneReply(reply,recordOrdinal,index));
+  return buildMG30SinglePresetPatch({recordOrdinal,scenes,resourceName,samples,curve});
+}
