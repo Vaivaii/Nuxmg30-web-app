@@ -1076,3 +1076,19 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Trace the cache-present predicate and identify all triggers for metadata refresh (startup/connect, preset selection/0B notification, IR manager opening). Do not ask for another identical USBPcap Export capture.
 - [ ] Keep the Android readback offset mismatch (requested 0, response decoder reports 128) as a distinct unresolved issue. No change to request encoding or parser semantics until supported by evidence.
 - [x] No source/protocol changes. Successful single-preset importer and all protected features remain untouched.
+
+
+## Goal 3 — QuickTone asynchronous IR request queue and offset-keyed Export (2026-10-31)
+
+- [x] Disassembled QuickTone 0x4AB340: it creates 64 waveform requests for offsets 0…2016, registers each with callback 0x4AB510/timeout 1000 ms through 0xB0E360, and continues the loop without waiting for each callback to complete.
+- [x] Disassembled 0xB0DE60: it adds transaction objects to a pending-request queue and starts the dispatcher when the queue changes from empty. This confirms batch registration of asynchronous transactions; it does not claim simultaneous USB transmission.
+- [x] Confirmed 0x4AB510 places each 32-sample page using the returned second-word offset; completion is recognized at 0x7E0.
+- [x] Confirmed the curve read path similarly queues 10 11/00 requests and the 11/02 handler places 64-word pages by returned offset, bounded to 600 meaningful values.
+- [x] Reinterpreted the 04B diagnostic: returned offset 128 is aligned and valid (32-sample page grid), even though the sequential MG30 Studio matcher was waiting for 0. Its origin remains unproven.
+- [x] Added offset-ordering helper and tests; out-of-order responses are sorted before assembly, while duplicate/missing/out-of-range responses are rejected.
+- [x] Changed only the read-only Export bridge to register all 64 waveform requests and collect 10/02 pages by returned offset; same pattern for 10 curve requests and 11/02 responses.
+- [x] Node protocol regression tests passed in Actions run #138, source commit fc68d00e2c48e3a954988bc76c80f200f9212cb4.
+- [ ] Verify Actions run #138 completes Android debug APK build and artifact upload.
+- [ ] Physical read-only Export test on original MG-30 Gen2 FW 6.0.x; inspect complete unique offset coverage, three scene readbacks and final file.
+- [ ] If only offset 128 arrives without other pages, retain diagnostics; do not redefine the offset field or bypass validation.
+- [x] Protected write/import paths, NAM, IR Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device untouched.
