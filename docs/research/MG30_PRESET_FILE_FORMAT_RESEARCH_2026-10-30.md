@@ -531,3 +531,45 @@ Before changing any request bytes or parser logic, obtain the UI's **Detail diag
 Compare the failed request's `requestHex` with the expected offset and compare all replies' returned offsets. If the outgoing request encodes the wrong offset, fix only the read-request builder after proving the field layout. If it encodes the expected offset but the device returns offset 0 again, investigate response timing/transaction correlation or the read command's actual address semantics using a matching QuickTone read capture/disassembly. Do not infer the cause from the short UI message alone.
 
 No protocol change is made in this checkpoint. Preserve NAM, User/Third Party IR upload, Collection, MIDI mapping, preset import, preset synchronization, Copy Scene, CTRL/EXP, signal chain, and Save-to-device behavior.
+
+
+## Physical Export diagnostic log — slot 04B, first waveform reply reports offset 128 (2026-10-31)
+
+### User-provided in-app diagnostic
+
+- Target: hardware slot `04B`, program/resource index `13`.
+- Operation started: `2026-10-30T20:09:20.960Z`; elapsed time: 3,790 ms.
+- First requested data block: `10/00 waveform 1/64`; expected offset `0`.
+- Exact 15-byte request recorded by the app: `F0 43 58 70 10 00 00 00 00 1A 00 00 00 00 F7`.
+- One matching-command response envelope arrived 51 ms after send (sent at 286 ms, received at 337 ms).
+- Response body length: 203 bytes; captured prefix: `43 58 70 10 02 00 00 00 02 00 00 03 1C 21 02 39 3A 02 2C 4C`.
+- Under the current unpacker, the first two decoded uint16 values are opaque reply tag `0` and returned offset `128`.
+- Since expected offset was `0`, the matcher ignored this frame and timed out at 3,789 ms. No complete .mg30patch was produced and no data was written to the pedal.
+
+### What the bytes establish
+
+The outgoing request is structurally consistent with the documented QuickTone layout: `10/00`, two reserved zero bytes, packed uint16 resource index 13 (`00 1A 00`), packed uint16 offset 0 (`00 00 00`), then F7. This is the app's outgoing buffer, not independent proof of the bytes transmitted on the USB bus.
+
+The response is a recognizable `10/02` body with a 203-byte envelope. The current unpacker interprets the second decoded word as 128. The supplied log contains only the first 20 raw body bytes, not the complete 203-byte body or USB-MIDI packetization.
+
+### Interpretation — unresolved
+
+This is more informative than the earlier 04A screenshot: the 04B log explicitly shows the outstanding request expected offset 0 and observed decoded offset 128.
+
+Possible explanations remain open:
+1. The second decoded word has a different meaning or unit in this response variant (for example a byte/count field rather than the requested sample offset).
+2. The response belongs to a different or earlier read transaction and was correlated with this request.
+3. The response unpacking/word interpretation differs from the actual QuickTone helper despite the current static-analysis interpretation.
+4. Device/firmware response semantics differ from the request assumptions.
+
+The value 128 happens to equal 32 float32 samples × 4 bytes, but this numerical coincidence is **not proof** that the field is a byte count. Do not relabel it, scale offsets, accept 128 for the first block, or disable validation without a QuickTone read capture or further binary/USB evidence.
+
+### Next evidence and safe action
+
+- Obtain a full USBPcap trace of this exact read-only operation, including the first `10/00` OUT request and all `10/02` IN data. Preserve USB-MIDI packet boundaries and raw bytes.
+- If the in-app trace can be extended safely, record the full 203-byte reply body and any preceding `10/02` messages before the first request.
+- Re-inspect QuickTone v2.6.7.16 helper `0x4A4970` and handler `0x4AB510` to establish exactly which unpacked bytes form the offset and how that value is used in the waveform destination pointer.
+- Compare the same request/response for a known User IR resource with a matching QuickTone read capture. Do not use Collection as a substitute; Collection remains a distinct 6A/6B/6C family.
+- Keep Export fail-closed: reject the mismatched block and do not generate a partial preset.
+
+No source/protocol code was changed based on this diagnostic. Preserve the successful single-preset importer, NAM, User/Third Party upload, Collection, MIDI mappings, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device path.
