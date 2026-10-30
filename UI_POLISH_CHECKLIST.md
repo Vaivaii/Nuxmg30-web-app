@@ -620,3 +620,19 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Decode key/display translation and validate against the user-confirmed original-MG30 AMP pair GAIN + MASTER for every AMP model.
 - [ ] Do not implement or publish partial parameter rows until the AMP validation and base-pointer alignment pass.
 - [ ] No app source changes or APK build in this checkpoint. NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene remain protected.
+
+
+## Goal 2 — Original MG30 CTRL model/parameter table decoded (2026-10-30)
+
+- [x] Resolve helper/initializer object-base alignment: constructor 0x005BE8D0 calls initializer 0x005C23E0 at outer+0x74; refresh/helper base is outer object; helper offsets map to initializer offset minus 0x74.
+- [x] Decode static function-to-table selector map at 0x00D3124C: stored values 0 none, 1 WAH, 2 EFX, 3 AMP, 4 MOD, 5 DLY, 6 RVB map to selectors 0, 0, 2, 3, 6, 7, 8.
+- [x] Recover original-MG30 model/parameter rows from the native initializer and key resolver; full table saved in docs/research/MG30_CTRL_EXPRESSION_MODEL_PARAMETER_TABLE_2026-10-30.md.
+- [x] Validate EFX DIST UNO = LEVEL + DRIVE against the known UI/capture example.
+- [x] Validate first 30 original AMP records = GAIN + MASTER against the user's direct check of all AMP models. This resolves the earlier candidate JSON conflict.
+- [x] Identify WAH special rows (CLYDE, CRYBB, V847, HORSE, OCTAVE) with no generic parameter pair; keep WAH MIN/MAX separate.
+- [ ] Trace exact first-column function popup construction/item IDs; do not infer them from dependent-choice builder VA 0x005C48F0.
+- [ ] Trace active model-index selection for all duplicate/shared model rows and confirm the correct row per active block/model.
+- [ ] Trace 13 02 device readback request/callback and verify panel reopen/readback on hardware.
+- [ ] Trace 0D 00 / 0D 02 with NuxPedalSetValuePanelMG30 and WAH MIN/MAX sliders.
+- [ ] Only after protocol/readback checks, implement Roadmap 2 in isolation and build/test APK. No MG30 Studio source change or APK build in this static-analysis checkpoint.
+- [ ] NAM import, IR User/Collection, MIDI mappings, preset sync and Copy Scene remain untouched.
