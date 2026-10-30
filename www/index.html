@@ -1923,8 +1923,9 @@ window.MG30PresetImportBridge=Object.freeze({
    setDeviceStatus('Semua 78 ACK diterima. Membaca ulang tiga scene preset…');
    const readback=await readPresetParts(0x0B,plan.targetProgram);
    for(let part=0;part<3;part++){
-    const expected=plan.steps[75+part].body.slice(7);
-    const actual=readback[part]?.slice(7)||[];
+    const expected=plan.steps[75+part].body.slice(7),reply=readback[part];
+    if(!reply||reply[3]!==0x0B||reply[4]!==0x02||reply[5]!==plan.targetProgram||reply[6]!==part)throw new Error('Header readback Scene '+(part+1)+' tidak cocok dengan slot/part tujuan.');
+    const actual=reply.slice(7);
     if(actual.length!==expected.length||actual.some((value,index)=>value!==expected[index]))throw new Error('Readback Scene '+(part+1)+' tidak cocok dengan payload impor.');
    }
    readbackMatched=true;
