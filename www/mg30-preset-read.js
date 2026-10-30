@@ -85,8 +85,28 @@ export function parseMG30UserIRMetadataReadReply(input, expectedIndex) {
   return { resourceIndex: index, resourceName, crc, metadata };
 }
 
-function parseDataReadReply(input, command, expectedIndex, expectedOffset) {
+export function inspectMG30UserIRDataReadReply(input, command) {
+  if (command !== 0x10 && command !== 0x11) {
+    throw new Error('Keluarga perintah read IR tidak dikenal.');
+  }
   const body = input instanceof Uint8Array ? input : Uint8Array.from(input || []);
+  if (body.length !== 203 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
+      body[3] !== command || body[4] !== 0x02) {
+    throw new Error('Ukuran/header reply read IR tidak cocok untuk command 0x' + command.toString(16) + '/02.');
+  }
+  // QuickTone's 10/02 handler consumes the second decoded word as the sample
+  // offset and does not treat the first word as an echoed resource index.
+  // Keep that first word opaque: its meaning differs from the request index.
+  const decoded = decodePackedBytes(body.subarray(5), 132);
+  const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
+  return {
+    decoded,
+    replyTag: view.getUint16(0, true),
+    offset: view.getUint16(2, true),
+  };
+}
+
+function parseDataReadReply(input, command, expectedIndex, expectedOffset) {
   const index = assertIndex(expectedIndex, 'Indeks resource IR');
   const offset = Number(expectedOffset);
   const max = command === 0x10 ? 0x7E0 : 0x240;
@@ -94,19 +114,17 @@ function parseDataReadReply(input, command, expectedIndex, expectedOffset) {
   if (!Number.isInteger(offset) || offset < 0 || offset > max || offset % step !== 0) {
     throw new Error('Offset reply IR yang diharapkan tidak valid.');
   }
-  if (body.length !== 203 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
-      body[3] !== command || body[4] !== 0x02) {
-    throw new Error('Ukuran/header reply read IR tidak cocok untuk command 0x' + command.toString(16) + '/02.');
+  const inspected = inspectMG30UserIRDataReadReply(input, command);
+  if (inspected.offset !== offset) {
+    throw new Error('Balasan read IR membawa offset ' + inspected.offset +
+      ', diharapkan ' + offset + '. Tag balasan=' + inspected.replyTag + '.');
   }
-  const decoded = decodePackedBytes(body.subarray(5), 132);
-  const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
-  const replyIndex = view.getUint16(0, true);
-  const replyOffset = view.getUint16(2, true);
-  if (replyIndex !== index || replyOffset !== offset) {
-    throw new Error('Balasan read IR membawa indeks/offset ' + replyIndex + '/' + replyOffset +
-      ', diharapkan ' + index + '/' + offset + '.');
-  }
-  return { decoded, resourceIndex: replyIndex, offset: replyOffset };
+  return {
+    decoded: inspected.decoded,
+    resourceIndex: index,
+    replyTag: inspected.replyTag,
+    offset: inspected.offset,
+  };
 }
 
 export function parseMG30UserIRWaveReadReply(input, expectedIndex, expectedSampleOffset) {
@@ -118,7 +136,7 @@ export function parseMG30UserIRWaveReadReply(input, expectedIndex, expectedSampl
     if (!Number.isFinite(value)) throw new Error('Sampel waveform IR tidak finite pada offset ' + (parsed.offset + i) + '.');
     samples[i] = value;
   }
-  return { resourceIndex: parsed.resourceIndex, offset: parsed.offset, samples };
+  return { resourceIndex: parsed.resourceIndex, replyTag: parsed.replyTag, offset: parsed.offset, samples };
 }
 
 export function parseMG30UserIRCurveReadReply(input, expectedIndex, expectedCurveOffset) {
@@ -130,7 +148,7 @@ export function parseMG30UserIRCurveReadReply(input, expectedIndex, expectedCurv
   for (let i = 0; i < validCount; i++) {
     if (values[i] > 305) throw new Error('Nilai kurva IR di luar rentang pada offset ' + (parsed.offset + i) + '.');
   }
-  return { resourceIndex: parsed.resourceIndex, offset: parsed.offset, values, validCount };
+  return { resourceIndex: parsed.resourceIndex, replyTag: parsed.replyTag, offset: parsed.offset, values, validCount };
 }
 
 export function createMG30UserIRReadRequests(resourceIndex) {
@@ -174,6 +192,7 @@ export const MG30PresetReadFormat = Object.freeze({
   parseMetadataReply: parseMG30UserIRMetadataReadReply,
   parseWaveReply: parseMG30UserIRWaveReadReply,
   parseCurveReply: parseMG30UserIRCurveReadReply,
+  inspectDataReply: inspectMG30UserIRDataReadReply,
   createReadRequests: createMG30UserIRReadRequests,
   assembleReadback: assembleMG30UserIRReadback,
 });
