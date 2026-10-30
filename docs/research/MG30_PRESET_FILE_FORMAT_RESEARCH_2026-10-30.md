@@ -322,3 +322,34 @@ The previously queued importer build was rechecked. GitHub Actions run 411012140
 - [ ] If packets appear on reconnect but none during app/export, capture from before application launch and then inspect whether the app had already populated cached preset state before the capture. Keep the possibility of a read path on another interface or cached state open until packet evidence is available.
 - [x] Rechecked older supplied reference captures: nam import.pcapng contains 354 USBPcap packet blocks; presetimport.pcapng 330; ir user import.pcapng 318. The older deluxecapt.pcapng contains 24 blocks dominated by USB descriptor/enumeration traffic and a small number of USB events, but no matching preset/IR SysEx transfer. Do not mistake that older short enumeration/control capture for the new export attempt.
 - [ ] No source/protocol code change and no export UI enabled in response to the silent capture report. Working single-preset import, NAM, IR User/Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain, and Save-to-device remain untouched.
+
+
+## Forensic review — user-supplied presetexport.pcapng (2026-10-31)
+
+The user-supplied capture has now been inspected directly. It is not an empty file, but it contains only USB enumeration/configuration traffic and no preset-export/MIDI payload.
+
+### Capture structure
+
+- File: presetexport.pcapng
+- File size: 2,756 bytes.
+- Interface Description Block: one interface named USBPcap1, link type 249 (USBPcap), snap length 65,535.
+- Enhanced Packet Blocks: 18 total.
+- Captured packets are all USB control-transfer setup/completion traffic (descriptor requests/replies and SET_CONFIGURATION); no Bulk endpoint payloads are present.
+- The recording contains descriptor traffic for USB bus 1 device addresses 3, 1, and 2. Device address 3 is the MG-30.
+- MG-30 device descriptor: VID:PID 1FC9:8260, bcdDevice 0101; configuration total length 0x0158 (344 bytes), four interfaces. This exact VID:PID/configuration signature matches independent NUX MG-30 descriptor documentation.
+- MG-30 interface 4 is USB Audio class (0x01), MIDI Streaming subclass (0x03); it declares Bulk OUT endpoint 0x02 and Bulk IN endpoint 0x82, each with 512-byte max packet size.
+- No captured packet uses MG-30 endpoint 0x02 or 0x82. No USB-MIDI event packet, SysEx, preset request, IR-resource read, or other export data transaction appears in this capture.
+
+### Interpretation
+
+- [x] Confirm USBPcap1 successfully recorded the MG-30's device/configuration enumeration. This is not a zero-packet capture.
+- [x] Confirm the MG-30 is present in the trace and its MIDI streaming interface/endpoints are described correctly.
+- [x] Confirm no USB-MIDI traffic was captured after/beside enumeration, including during the reported Export attempt.
+- [ ] Investigate the QuickTone Export call path against the executable/disassembly and surrounding UI state. A plausible explanation is that Export serializes preset/IR data already held in QuickTone's local model/cache, rather than issuing a fresh hardware read during the button click. This remains a hypothesis until the call graph/state source is traced.
+- [ ] If QuickTone uses cached state, identify which prior operation populates that cache (connect/sync, selecting a preset, loading a file, or a separate explicit read). Do not assume that the data is current or device-authoritative.
+- [ ] Do not ask the user to repeat the same capture with the same steps until the QuickTone export call path is checked. The supplied capture is now a valid negative observation: no USB-MIDI export transaction was generated/captured in this recording.
+- [ ] If further capture becomes necessary, capture from before application launch and include the complete app session; but prioritize tracing whether the Export implementation invokes any MIDI read function before requesting another capture.
+
+### Scope protection
+
+No code/protocol behavior changed from this forensic capture analysis. Do not modify the working Gen2 single-preset importer, NAM, IR User/Third Party, IR Collection 6A/6B/6C, MIDI parameter mappings, preset sync, Copy Scene, CTRL/EXP, signal-chain reorder, or Save-to-device 07/01 path.
