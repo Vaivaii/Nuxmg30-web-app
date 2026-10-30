@@ -1053,3 +1053,14 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Obtain full USBPcap trace with outgoing 10/00 and complete incoming 10/02 bodies and USB-MIDI packet boundaries.
 - [ ] Re-verify QuickTone unpack helper 0x4A4970 and response handler 0x4AB510. Do not change parser semantics or accept offset 128 without evidence.
 - [x] Mismatch rejection remains enabled; no source/protocol change from this log. Protect the successful importer and all unrelated features.
+
+
+## Correction — QuickTone silent Export capture was on direct PC↔MG-30 USB connection (2026-10-31)
+
+- [x] User clarified that the USBPcap session was captured on the PC with the MG-30 directly connected to that PC; no phone was connected.
+- [x] Supersede the earlier Android-vs-Windows capture-boundary speculation. The supplied `presetexport.pcapng` captured MG-30 enumeration/configuration, including VID:PID `1FC9:8260` and MIDI streaming endpoints `0x02` OUT / `0x82` IN.
+- [x] Confirm the 18-packet trace contains no packets on MG-30 MIDI endpoints `0x02` or `0x82`, and no USB-MIDI SysEx transaction during QuickTone Export.
+- [x] Interpret this as a valid negative capture: the QuickTone Export action itself generated no observable MIDI endpoint traffic in that session. This supports, but does not conclusively prove, local preset/resource cache serialization.
+- [ ] Trace QuickTone call graph upstream from Export and identify what populates its preset/IR cache before Export (connect/init, preset sync/selection, IR manager metadata refresh, or another callback). The already identified cache-miss path performs 09/00 then 10/00 waveform and 11/00 curve reads.
+- [ ] Compare cache population path with MG30 Studio's explicit read-only Export bridge. Do not repeat the same silent USBPcap capture.
+- [x] No change to read/write protocol or app source based on this clarification. Keep the Android 10/00 offset mismatch fail-closed and preserve all successful/protected features.
