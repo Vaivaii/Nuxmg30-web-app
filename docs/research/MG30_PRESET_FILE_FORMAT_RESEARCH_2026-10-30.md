@@ -360,3 +360,33 @@ No code/protocol behavior changed from this forensic capture analysis. Do not mo
 - SHA-256 of the exact supplied capture: 024b981b135273819c156a9682aed2d712b79677551137cfc6a9ad2d27770df8.
 - All 18 EPB timestamp fields are identical in this file. Treat timing/duration from this capture as unusable; packet content and endpoint mapping remain inspectable.
 - The capture's one interface name is USBPcap1. It records device enumeration for three bus-1 device addresses; the MG-30 is address 3 by its 1FC9:8260 descriptor.
+
+
+## Goal 3 — QuickTone IR resource readback path and initial Export UI (2026-10-31)
+
+### Read-side path identified in QuickTone executable
+
+Further disassembly of QuickTone v2.6.7.16 resolved the missing read commands that populate the IR cache consumed by the preset serializer.
+
+- Function 0x4A95F0 builds a 15-byte SysEx query for IR metadata: full frame F0 43 58 70 09 00 [index] 00 00 00 00 00 00 00 F7. Its response handler 0x4A9720 matches 09/02, reads the raw index at full-frame byte 6, and unpacks 36 metadata bytes from the packed name/metadata field.
+- After checking whether a matching resource cache entry is already available, the QuickTone path calls 0x4AB340 for waveform readback and 0x4AAEA0 for curve readback when it needs the resource bytes from the pedal.
+- Function 0x4AB340 emits 64 requests using command 10/00. Each request is 15 bytes: F0 43 58 70 10 00 00 00 [packed uint16 resource index] [packed uint16 sample offset] F7. Offsets progress 0, 32, ... 2016 (0x7E0). Its response handler 0x4AB510 accepts 10/02, unpacks 132 bytes, reads the target/offset header, and writes 32 float32 samples per response. Completion is recognized at offset 0x7E0.
+- Function 0x4AAEA0 emits 10 requests using command 11/00 with the same 15-byte request shape and packed resource-index/curve-offset fields. Offsets progress 0, 64, ... 576 (0x240). Response handler 0x4AB090 accepts 11/02, unpacks 132 bytes, and writes 64 uint16 curve values per response. The final reply carries 64 words but only 24 fall within the 600-word table; the QuickTone handler bounds writes to its 600-value destination.
+- When the final 11/02 frame completes, 0x4AB090 builds the RIFF/WAVE-shaped resource object, copies the 0x2000-byte waveform block and 0x12C (300 dword = 600 word) curve data, then updates the internal resource cache keyed by the returned resource index.
+- The surrounding callback path receives 09/02 first, checks the cache entry, and then does waveform 10/00 followed by curve 11/00 when a matching cached asset is unavailable. This explains why a QuickTone Export click can be silent: Export serializes the cache; a separate read/sync operation is responsible for filling it.
+
+### MG30 Studio implementation
+
+- [x] Add www/mg30-preset-read.js with strict request builders for 09/00, 10/00 and 11/00, and response parsers/assemblers for 09/02, 10/02 and 11/02.
+- [x] Preserve QuickTone's request layout, including the two zero/reserved bytes before the packed 16-bit index and offset for 10/00 and 11/00 requests.
+- [x] Account for receive-envelope handling: the MG30 Studio waitForSysEx helper passes bodies without F0/F7, so 09/02 body length is 60 bytes and 10/02/11/02 body length is 203 bytes. QuickTone disassembly's offsets are relative to the full SysEx frame and were adjusted by one byte when expressed against the MG30 Studio body.
+- [x] Add MG30PresetExportBridge in www/index.html. It reads three preset scene parts via 0C/00, one IR metadata reply via 09/00, 64 waveform blocks via 10/00, and 10 curve blocks via 11/00. It validates returned command, index, and per-block offset, assembles 2,048 float32 samples and 600 curve values, and invokes no write commands.
+- [x] Add Export .mg30patch UI and downloader in www/mg30-preset-export.js. The UI uses the strict offline serializer already byte-compared to the supplied sample.
+- [x] Add a dedicated export busy lock. It suppresses parameter CC changes, hardware polling, preset switching, and signal-chain sends during the read transaction, then resumes polling after completion. Existing import and Save-to-device transaction code is not reused.
+- [ ] Hardware test the initial Export UI on the user's original MG-30 Gen2 firmware 6.0.x. Confirm the metadata query returns the expected User/Third Party IR name, 64 waveform replies cover offsets 0..2016, 10 curve replies cover offsets 0..576, and the resulting .mg30patch can be re-imported into a safe test slot with matching scene/resource readback.
+- [ ] The initial bridge assumes the IR resource index associated with the exported preset is the selected hardware program index. The single-preset import capture uses the selected program for the 09/01, 10/01 and 11/01 write phases; the readback callback's returned index is checked strictly. If hardware returns a different resource index, export will stop safely rather than silently using the wrong cache entry.
+- [ ] No export is considered hardware-validated until the above test succeeds. Batch import remains disabled; no change to NAM, Collection IR, MIDI map, preset sync, Copy Scene, CTRL/EXP, signal chain or Save-to-device writer.
+
+### Read-side transaction safety
+
+The new export path is read-only: it sends 0C/00, 09/00, 10/00 and 11/00 requests only. It never sends 0B/01, 07/01, 09/01, 10/01, 11/01, Collection 6A/6B/6C, or NAM 58 writes. Any timeout, missing block, mismatched target index, mismatched offset, invalid float32 sample, or invalid curve word aborts file generation. No partial .mg30patch file is downloaded.
