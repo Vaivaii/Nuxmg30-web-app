@@ -2008,16 +2008,33 @@ window.MG30PresetExportBridge=Object.freeze({
    const metadata=readFormat.parseMetadataReply(Uint8Array.from(metadataBody),program);
    onProgress({phase:'Membaca metadata IR',completed:1,total:1,detail:metadata.resourceName});
 
+   const requestDataReply=async(request,command,offset,label)=>{
+    const ignored=[];
+    try{
+     return await requestPresetExportFrame(request,b=>{
+      if(b.length!==203||b[0]!==0x43||b[1]!==0x58||b[2]!==0x70||b[3]!==command||b[4]!==0x02)return false;
+      try{
+       const header=readFormat.inspectDataReply(Uint8Array.from(b),command);
+       if(header.offset!==offset){
+        if(ignored.length<6)ignored.push('tag '+header.replyTag+'/offset '+header.offset);
+        return false;
+       }
+       return true;
+      }catch(_){return false}
+     },label);
+    }catch(error){
+     if(ignored.length)throw new Error((error?.message||String(error))+
+      ' Balasan '+command.toString(16).toUpperCase()+'/02 dengan offset berbeda diabaikan: '+ignored.join('; ')+'.');
+     throw error;
+    }
+   };
+
    const waveformReplies=[];
    for(let frame=0;frame<64;frame++){
     const offset=frame*32;
     const request=readFormat.buildWaveRequest(program,offset);
-    const body=await requestPresetExportFrame(
-     request,
-     b=>b.length===203&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x10&&b[4]===0x02,
-     '10/00 waveform '+(frame+1)+'/64'
-    );
-    // Validate the target index and offset immediately; do not accept reordered or stale chunks.
+    const body=await requestDataReply(request,0x10,offset,'10/00 waveform '+(frame+1)+'/64');
+    // QuickTone treats the first decoded word as an opaque reply tag; match the address only.
     readFormat.parseWaveReply(Uint8Array.from(body),program,offset);
     waveformReplies.push(Uint8Array.from(body));
     if(frame===63||frame%8===7)onProgress({phase:'Membaca waveform IR',completed:frame+1,total:64});
@@ -2027,11 +2044,7 @@ window.MG30PresetExportBridge=Object.freeze({
    for(let frame=0;frame<10;frame++){
     const offset=frame*64;
     const request=readFormat.buildCurveRequest(program,offset);
-    const body=await requestPresetExportFrame(
-     request,
-     b=>b.length===203&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x11&&b[4]===0x02,
-     '11/00 curve '+(frame+1)+'/10'
-    );
+    const body=await requestDataReply(request,0x11,offset,'11/00 curve '+(frame+1)+'/10');
     readFormat.parseCurveReply(Uint8Array.from(body),program,offset);
     curveReplies.push(Uint8Array.from(body));
     onProgress({phase:'Membaca kurva IR',completed:frame+1,total:10});
