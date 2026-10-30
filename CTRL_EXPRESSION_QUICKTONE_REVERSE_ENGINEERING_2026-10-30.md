@@ -252,3 +252,8 @@ Until proven, use:
 - `multiEfxCtrlCallout4` for the known Multi EFX CTRL.
 
 Do not collapse these into a shared `ctrl2` field in application data or protocol code.
+
+
+## Numbering clarification from user (2026-10-30)
+
+The user clarified that their terms CTRL1, CTRL2, etc. refer to the numbered controls as shown in QuickTone and the NUX illustration. They are not proposing two unrelated numbering systems. The unresolved question is the actual physical function/destination of numbered **CTRL2**: the diagram appears to route it toward the external footswitch path, but the user's observed external footswitch T/R configuration only supports active Signal Chain pedal/block on/off and Scene Up/Down. Keep the shared numbered identity (CTRL2 / number 2) while marking its physical destination and semantics as unresolved. Do not rename it as two separate entities merely because the diagram is ambiguous. Resolve by dedicated capture and observed hardware behavior.
