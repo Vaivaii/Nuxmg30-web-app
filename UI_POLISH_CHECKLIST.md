@@ -887,3 +887,13 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Implement QuickTone-compatible import only after resource conversion, IR destination, scene buffer conversion, post-write commit/readback, and rollback/failure behavior are documented.
 - [x] Record capture sequence, ACK counts, standalone IR User correlation, Collection/NAM exclusions, and the missing `07/01` distinction in `docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md`.
 - [x] No source/protocol changes or APK build in this analysis checkpoint. Preserve NAM, IR User/Collection, MIDI mappings, preset sync, and Copy Scene.
+
+### Goal 3 — IR resource handle/ACK refinement from presetimport.pcapng (2026-10-30)
+
+- [x] Confirm 09/01 in preset import is the same 62-byte SysEx shape as the standalone User IR name frame; its leading parameter field is 0x3C rather than standalone User's 0x01.
+- [x] Confirm 10/01/11/01 parameter field is 0x78 in preset import versus 0x02 in standalone User import; note the observed relation 0x78 = 2 × 0x3C and 0x02 = 2 × 0x01.
+- [ ] Keep the doubled field as an unresolved resource-handle/address relationship; do not label it a physical IR slot or hardcode 0x78.
+- [x] Verify ACK phase statuses: 09/03 status 0; 10/03 63 × status 2 + final status 3; 11/03 9 × status 2 + final status 3; all three 0B/03 responses status 1.
+- [x] Record that waveform and curve address progressions match the known User transfer patterns.
+- [ ] Pair the captured 10/01 waveform and 11/01 curve payloads back to the .mg30patch record's WAVE/resource and trailing-data offsets before implementing file-to-IR conversion.
+- [x] Update the research note with the derived-handle correlation and exact ACK status pattern.
