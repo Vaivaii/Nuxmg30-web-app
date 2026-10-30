@@ -476,3 +476,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Map those field changes to the observed SysEx payload bytes and confirm panel readback.
 - [ ] No app source changes or APK build; still protocol-analysis phase.
 
+
+
+### Goal 2 — correction: built-in EXP pedal and Signal Chain-linked EFX (2026-10-30)
+
+- [x] User clarified hardware callout/row 1 is the MG-30's built-in NUX expression pedal, not an external footswitch.
+- [x] Corrected CTRL1/EFX interpretation: column 2 (e.g. DIST UNO) is read-only context from the active EFX block in Signal Chain, not an editable model selector in the CTRL dialog.
+- [x] Column 3 chooses a parameter supported by that active effect (e.g. DRIVE or LEVEL); available options depend on the Signal Chain EFX model.
+- [x] Corrected the previous analysis hypothesis and documented the distinction between this EFX path and the separate WAH model/MIN-MAX range example.
+- [ ] Capture a single CTRL1 third-column change (e.g. LEVEL → DRIVE) with the Signal Chain EFX model held constant.
+- [ ] Separately change the actual Signal Chain EFX block/model and observe whether CTRL1 column 2 and available parameter choices update automatically.
+- [ ] Keep WAH MIN/MAX capture separate until its exact control-row relationship and range semantics are established.
+- [ ] Existing protocol bytes at offsets 10–12 remain unmapped; no app source change or APK build yet.
+
