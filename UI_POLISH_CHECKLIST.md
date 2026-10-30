@@ -721,9 +721,17 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Implement T/R complementary Scene Up/Down coupling.
 - [x] Add mutual-exclusion guard against preset/scene sync, Copy Scene and periodic hardware polling.
 - [x] Leave NAM import, IR User/Collection, native MIDI plugin, preset model sync, block MIDI mapping and Copy Scene source paths unchanged.
-- [ ] Complete final CI APK build for latest branch head.
+- [x] Complete final CI APK build for latest application source commit 249e6ada; run 41027171814 succeeded.
 - [ ] Test panel readback on original MG-30 Gen2 firmware 6.0.x.
 - [ ] Test one isolated CTRL1/CTRL2 or T/R write, verify 13 03 ACK and readback.
 - [ ] Test Multi EFX DLY/SCENE physical behavior.
 - [ ] Do not claim physical validation until these hardware tests pass.
 - [x] Full implementation and scope note saved in `docs/research/MG30_CTRL_EDITOR_IMPLEMENTATION_2026-10-30.md`.
+
+
+#### CTRL editor APK artifact (2026-10-30)
+
+- [x] GitHub Actions run 41027171814 succeeded for source commit `249e6ada74444a7c6f62c79066568df8cfabc5ad`.
+- [x] Artifact ID `12964162270`; extracted debug APK size 4,378,432 bytes.
+- [x] APK SHA-256 `2fb982240a318ca86fdcfc85b2343a8a72c509f8d1462f99a83d9baee27169f5`.
+- [ ] First real-device readback/write and functional hardware tests remain pending.
