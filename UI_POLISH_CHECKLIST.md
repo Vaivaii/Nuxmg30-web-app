@@ -922,8 +922,8 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 ### Build handoff — single-preset importer (2026-10-31)
 
 - [x] Push of importer source triggered Android APK workflow run [#114](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41101214040), source commit `af71ae32bb342ecff15cc55580d54d5ebac2d0cf`.
-- [ ] Latest observed workflow state: queued; APK build and artifact upload have not completed yet.
-- [ ] Do not mark the feature APK-ready until the run succeeds and the APK artifact is available.
+- [x] Rechecked run #114: completed successfully; artifact MG30-Studio-debug-APK, ID 12998752306, 4,007,697 bytes, SHA-256 80d4b66508bee6f31dc48271730de45061ae5dbeb6c4000dbe4a5135d68e1e7c.
+- [x] This APK is built from importer commit af71ae32bb342ecff15cc55580d54d5ebac2d0cf and does not contain the newer export serializer/registry commits. Build a new APK after export UI and hardware readback are implemented.
 
 
 ## Goal 3 — export serializer and batch-import reverse engineering (2026-10-31)
@@ -937,3 +937,5 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Confirm two RIFF variants among 26 standard resource records: 15 × PCM24 / 0x1800 data and 11 × PCM32 / 0x2000 data. Single-record parser's one strict variant must not be reused for all batch records without variant handling.
 - [ ] Batch import remains disabled pending actual QuickTone batch-import capture, destination-slot mapping, handling of empty and anomalous records, and resolution of reader size discrepancy 0x2590 vs actual export stride 0x26AE.
 - [x] Continue to preserve NAM, IR User/Collection paths and mappings, MIDI map, preset sync, Copy Scene, CTRL/EXP, signal-chain reorder, and Save-to-device writer.
+
+- [x] Correct build checkpoint: run #114 succeeded and artifact ID 12998752306 is available. This verifies the earlier single-importer source only; it is not a build of the current export serializer changes.
