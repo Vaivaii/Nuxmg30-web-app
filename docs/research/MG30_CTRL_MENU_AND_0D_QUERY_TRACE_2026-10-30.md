@@ -279,3 +279,38 @@ This supports a narrower description: 0D 00 → 0D 02 refreshes a separate type-
 **Confirmed:** the set-value sliders send their values through 13 01; the 0D response is copied into a separate type-indexed data manager/cache; short CC77 messages use a generic Windows MIDI-output backend.
 
 **Not confirmed:** the purpose of CC77/value55, semantic names of 0D type codes/payload, or an exact UI feature using the 0D data.
+
+
+## Selector 7 options decoded — Multi EFX DLY and SCENE (2026-10-30)
+
+The two previously unresolved selector-7 option pairs are now recovered from the original-MG30 initializer and popup-builder order.
+
+### Exact option text and popup order
+
+The shared popup builder at 0x005C48F0 reads two 10-byte label records for the current Multi EFX CTRL function and passes them, in the same sequence, to the popup item-vector constructor (0x005C22A0), then to the popup display builder (0x004B0610).
+
+For DLY (Multi EFX CTRL function code 8):
+- option row 0 is S.TAP ON (record key/index 0x6C at initializer-relative offset 0x86E; static label bytes at VA 0x00D317E4).
+- option row 1 is S.TAP OFF (record key/index 0x6B at initializer-relative offset 0x864; static label bytes at VA 0x00D317D8).
+
+For SCENE (function code 10):
+- option row 0 is S3 ON (record key/index 0x75 at initializer-relative offset 0x8C8; static label bytes at VA 0x00D31814).
+- option row 1 is S3 OFF (record key/index 0x74 at initializer-relative offset 0x8BE; static label bytes at VA 0x00D31808).
+
+The initializer is called with outer object +0x74, and the helper-visible table addresses already use the corrected object alignment described above. The popup builder requests the ON record first and OFF record second, and 0x005C22A0 preserves that input vector order.
+
+### Selector-7 storage-bit behavior
+
+The selection handler at 0x005C4610 uses the selected popup row ordinal (EBX) and current low-nibble Multi EFX CTRL function code in state byte +0x7A:
+
+| Function | Popup row | Displayed option | Stored +0x7A |
+|---|---:|---|---|
+| DLY (code 8) | 0 | S.TAP ON | 0x28 (code 8 + bit 0x20) |
+| DLY (code 8) | 1 | S.TAP OFF | 0x08 (code 8, bit clear) |
+| SCENE (code 10) | 0 | S3 ON | 0x0A (code 10, bit clear) |
+| SCENE (code 10) | 1 | S3 OFF | 0x2A (code 10 + bit 0x20) |
+
+Important: this is intentionally not a universal ON=bit-set rule. DLY and SCENE use opposite bit polarity in QuickTone. Implement the conditional mapping exactly if this field is eventually added; do not normalize it to a generic boolean.
+
+This fully identifies the UI labels, menu order and encoded bit pattern. It does not by itself establish the physical timing/operational behavior of the Multi EFX function on the pedal; no isolated hardware write capture for these four states has yet been analysed.
+
