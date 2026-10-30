@@ -311,3 +311,14 @@ A repeatable offline check was run against the mounted sample after adding the s
 ### Build status correction (2026-10-31)
 
 The previously queued importer build was rechecked. GitHub Actions run 41101214040 is completed/success, with artifact MG30-Studio-debug-APK (ID 12998752306; 4,007,697 bytes; SHA-256 80d4b66508bee6f31dc48271730de45061ae5dbeb6c4000dbe4a5135d68e1e7c). It was built from importer commit af71ae32bb342ecff15cc55580d54d5ebac2d0cf, so the newly added export serializer/registry commits are not in that APK. A new APK build is required after export UI/protocol implementation.
+
+
+## Capture attempt — QuickTone single-preset export (2026-10-31)
+
+- [x] User attempted to capture USBPcap traffic while invoking QuickTone single-preset Export; user reports the capture remained silent / no packets appeared.
+- [ ] The new empty/silent capture file has not yet been uploaded, so it is not yet possible to distinguish: (a) zero USBPcap packets at all, (b) USB enumeration packets only, or (c) USB packets present but no MIDI SysEx export transaction.
+- [ ] Ask for the exact silent .pcapng file even if it contains zero packets, the matching output .mg30patch if QuickTone generated one, and whether the packet counter stayed at 0. These establish whether this is a capture-interface issue or a genuinely absent export read transaction.
+- [ ] Next controlled capture: close QuickTone; in Wireshark capture all USBPcap root-hub interfaces simultaneously (or use USBPcapCMD's Attached USB Devices view to identify the MG-30 root hub); do not set a capture filter; start capture before launching QuickTone; optionally unplug/reconnect the MG-30 after capture starts to verify enumeration; launch QuickTone, select the source preset, export the file, then stop capture. Do not re-import or write any preset as part of this test.
+- [ ] If packets appear on reconnect but none during app/export, capture from before application launch and then inspect whether the app had already populated cached preset state before the capture. Keep the possibility of a read path on another interface or cached state open until packet evidence is available.
+- [x] Rechecked older supplied reference captures: nam import.pcapng contains 354 USBPcap packet blocks; presetimport.pcapng 330; ir user import.pcapng 318. The older deluxecapt.pcapng contains 24 blocks dominated by USB descriptor/enumeration traffic and a small number of USB events, but no matching preset/IR SysEx transfer. Do not mistake that older short enumeration/control capture for the new export attempt.
+- [ ] No source/protocol code change and no export UI enabled in response to the silent capture report. Working single-preset import, NAM, IR User/Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain, and Save-to-device remain untouched.
