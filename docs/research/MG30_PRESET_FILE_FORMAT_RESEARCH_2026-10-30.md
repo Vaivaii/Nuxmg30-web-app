@@ -417,3 +417,14 @@ A further direct disassembly check of QuickTone.exe v2.6.7.16 resolves the index
 
 - [x] Final concurrency review: Export rechecks preset import/export, IR transfer, CTRL editor, scene switch and Copy Scene locks after waiting for current buffer/status/MIDI work and immediately before claiming the export lock. This closes the race where an IR upload could begin while Export was waiting for the previous read to finish.
 - [ ] Build and physical validation still pending; no new APK is claimed ready.
+
+
+## Goal 3 — correction from first physical export failure (2026-10-31)
+
+- [x] Review the user's two MG30 Studio screenshots: preset 04D (program 15) failed on first waveform reply with decoded words shown as `0/128`; preset 32B (program 125) failed with `256/128`. Both expected offset 0; no hardware write occurred.
+- [x] Re-check QuickTone v2.6.7.16 disassembly for waveform response handler `0x4AB510`: it unpacks 132 bytes from the `10/02` body and reads the second decoded uint16 at output offset +2 as the waveform offset. The first decoded uint16 is not read as an echoed resource index by this handler.
+- [x] Correct the Studio parser: call the first word an opaque reply tag, not `resourceIndex`; validate the offset word independently. Preserve the requested resource index from the metadata phase as the source index passed into subsequent reads.
+- [x] Improve the export bridge matcher so a `10/02` or `11/02` frame with an offset other than the outstanding request is ignored rather than immediately consumed and treated as the reply. If no matching offset arrives, report the ignored tag/offset pairs for diagnosis.
+- [ ] The observed offset 128 still needs physical explanation. The matcher change is a safe stale/out-of-order-frame guard, not proof that the device returns the expected offset or that Export now works.
+- [ ] Rebuild APK from this branch and repeat a read-only export on original MG-30 Gen2 firmware 6.0.x. Capture USB-MIDI/USBPcap traffic if the first matching offset still does not arrive; include the outgoing first `10/00` request and all incoming `10/02` replies. No import/write operation is involved.
+- [x] No change to NAM, IR User/Collection write paths, MIDI mappings, preset import, preset save/finalize, Copy Scene, CTRL/EXP, or signal-chain code.
