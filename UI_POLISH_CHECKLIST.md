@@ -688,3 +688,13 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Complete exact localized caption-ID join and determine whether semantics vary across active function/model.
 - [ ] Continue identifying the separate 0D extended-data response consumer and CC77 sender.
 - [ ] No source changes/APK build until these remaining items are evidence-backed.
+
+
+### Goal 2 — 0D type-cache consumer and MIDI CC77 sender boundary (2026-10-30)
+
+- [x] Trace 0D payload into type-indexed manager cache; response data is copied and mirrored separately from CTRL state.
+- [x] Confirm helper updates per-type records against a 12-entry type table; semantic type names remain unknown.
+- [x] Identify generic Windows MIDI short-message output path for CC77, but not its app-level sender or trigger.
+- [x] Keep 0D payload and CC77/value55 out of the MG30 Studio implementation until their actual feature meaning is established.
+- [ ] Next wire captures should isolate external T-only, external R-only, and Multi EFX CTRL changes if those protocol bytes are to be implemented.
+- [ ] Decode selector-7 DLY/SCENE dependent option labels and mode bit before implementing that optional field.
