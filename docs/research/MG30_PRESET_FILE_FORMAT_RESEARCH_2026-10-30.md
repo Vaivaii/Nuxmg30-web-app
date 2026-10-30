@@ -190,3 +190,17 @@ The import workflow is now proven to be a two-phase process:
 This supports the interpretation that the RIFF/WAVE content embedded in the .mg30patch record is a preset-associated IR/cab-like resource, but the exact mapping from file offsets to the IR messages and the meaning of the `0x78` parameter are not yet decoded. No Collection transfer, NAM `58` transfer, or `07/01` finalization was observed in this capture.
 
 No source/protocol changes or APK build were made. Existing NAM import, IR User/Collection implementation, MIDI mapping, preset sync, and Copy Scene remain untouched.
+
+
+### Additional parameter and ACK details from the same capture
+
+The command fields reinforce a possible resource-handle relationship, while leaving its semantics open:
+
+- In standalone `ir user import.pcapng`, the `09/01` message's first field after the command is `0x01`; the waveform/curve messages carry `0x02) in their corresponding header parameter field.
+- In `presetimport.pcapng`, the equivalent `09/01` field is `0x3C` (matching the preset program byte used by all three `0B/01` scene writes); the `10/01` and `11/01` messages carry `0x78`.
+- Arithmetic: `0x78 = 2 × 0x3C`, just as `0x02 = 2 × 0x01` in the standalone User import. This may be a derived resource handle/address associated with the first `09/01` parameter, but that meaning is not proven. Do not treat `0x78` as a universal constant or as a confirmed physical IR slot number.
+- The preset-import `09/01` frame is 62 SysEx bytes, same shape/length as standalone User import's name frame. Its parameter changes from `0x01` to `0x3C`; the following 64 waveform and 10 curve frames use the derived `0x78` header parameter.
+- ACK status values follow the same phase completion pattern as the standalone IR User capture: `09/03` status 0; `10/03` status 2 for 63 intermediate frames and 3 for the final frame; `11/03` status 2 for 9 intermediate frames and 3 for the final frame. The three `0B/03` replies echo program/part and report status byte 1.
+- The 64 waveform messages retain the known 32-sample address progression from 0 through 2016; the 10 companion/curve messages retain the known address progression from 0 through 576. This supports reuse of the validated User-family packet builder only after its target/handle parameter is exposed and validated.
+
+These observations strengthen the interpretation that QuickTone binds the User-family IR resource address to the preset destination, but they do not reveal the exact function of the doubled handle field.
