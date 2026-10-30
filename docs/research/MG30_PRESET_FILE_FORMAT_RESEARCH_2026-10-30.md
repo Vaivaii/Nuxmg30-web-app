@@ -413,3 +413,7 @@ A further direct disassembly check of QuickTone.exe v2.6.7.16 resolves the index
 - In the QuickTone receive/transaction dispatcher branch for command 0x0B (around 0x4A5163–0x4A5222), the program byte is copied from the incoming transaction into the manager's current index field, and that same byte is passed to 0x4A95F0 to request the associated IR metadata. This is direct code evidence that the preset program index is used as the IR metadata index on this QuickTone path.
 - Therefore the initial MG30 Studio mapping `resourceIndex = selected program slot` is not an arbitrary assumption: it matches the observed QuickTone transaction path and the 128-entry IR metadata table. Still keep the live hardware reply checks; a returned index mismatch must abort the export.
 - The 128-entry table also confirms the parser's allowed IR index range 0–127.
+
+
+- [x] Final concurrency review: Export rechecks preset import/export, IR transfer, CTRL editor, scene switch and Copy Scene locks after waiting for current buffer/status/MIDI work and immediately before claiming the export lock. This closes the race where an IR upload could begin while Export was waiting for the previous read to finish.
+- [ ] Build and physical validation still pending; no new APK is claimed ready.
