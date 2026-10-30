@@ -166,6 +166,45 @@ export function createMG30UserIRReadRequests(resourceIndex) {
   };
 }
 
+export function orderMG30UserIRDataReadReplies(replies, command, resourceIndex) {
+  const index = assertIndex(resourceIndex, 'Indeks resource IR');
+  if (command !== 0x10 && command !== 0x11) {
+    throw new Error('Keluarga perintah read IR tidak dikenal.');
+  }
+  const count = command === 0x10 ? 64 : 10;
+  const step = command === 0x10 ? WAVE_FRAME_SAMPLES : CURVE_FRAME_VALUES;
+  const max = command === 0x10 ? 0x7E0 : 0x240;
+  if (!Array.isArray(replies) || replies.length !== count) {
+    throw new Error('Jumlah reply read IR tidak lengkap; diterima ' +
+      (Array.isArray(replies) ? replies.length : 0) + ', diharapkan ' + count + '.');
+  }
+  const byOffset = new Map();
+  for (const reply of replies) {
+    const body = reply instanceof Uint8Array ? reply : Uint8Array.from(reply || []);
+    const header = inspectMG30UserIRDataReadReply(body, command);
+    if (header.offset > max || header.offset % step !== 0) {
+      throw new Error('Offset reply IR di luar tabel: ' + header.offset + '.');
+    }
+    if (byOffset.has(header.offset)) {
+      throw new Error('Reply IR duplikat untuk offset ' + header.offset + '.');
+    }
+    if (command === 0x10) {
+      parseMG30UserIRWaveReadReply(body, index, header.offset);
+    } else {
+      parseMG30UserIRCurveReadReply(body, index, header.offset);
+    }
+    byOffset.set(header.offset, body);
+  }
+  const ordered = [];
+  for (let frame = 0; frame < count; frame++) {
+    const offset = frame * step;
+    const body = byOffset.get(offset);
+    if (!body) throw new Error('Reply IR untuk offset ' + offset + ' belum diterima.');
+    ordered.push(body);
+  }
+  return ordered;
+}
+
 export function assembleMG30UserIRReadback(resourceIndex, waveReplies, curveReplies) {
   const index = assertIndex(resourceIndex, 'Indeks resource IR');
   if (!Array.isArray(waveReplies) || waveReplies.length !== 64 ||
@@ -195,4 +234,5 @@ export const MG30PresetReadFormat = Object.freeze({
   inspectDataReply: inspectMG30UserIRDataReadReply,
   createReadRequests: createMG30UserIRReadRequests,
   assembleReadback: assembleMG30UserIRReadback,
+  orderDataReplies: orderMG30UserIRDataReadReplies,
 });
