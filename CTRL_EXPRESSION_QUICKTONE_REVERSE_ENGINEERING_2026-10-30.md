@@ -553,3 +553,73 @@ Technical consequence:
 - No additional AMP captures are needed; the user has already checked all AMP model choices.
 
 Evidence label: **user-confirmed UI observation** for all AMP models. This is stronger than the conflicting candidate JSON interpretation.
+
+## Static disassembly breakthrough — CTRL1/CTRL2 wire-state layout (2026-10-30)
+
+Target: QuickTone 2.6.7.16, original MG30 class family. This section records direct disassembly findings from the supplied executable. It does not change MG30 Studio source code.
+
+### 1. 13 01 write serializer — VA 0x004A7FE0
+
+The native sender constructs a 19-byte SysEx message with root F0 43 58 70 13 01 and serializes the MG30 settings record into the payload. The byte-to-state mapping is:
+
+| Absolute SysEx offset | Source in settings record | Serialization |
+|---:|---|---|
+| 6 | +0x7A | direct byte |
+| 7 | +0x7B | direct byte |
+| 8 | +0x7C | direct byte |
+| 9 | +0x7D | low nibble only — CTRL1 function/category |
+| 10 | +0x7D | high nibble — CTRL1 dependent choice |
+| 11 | +0x7E | low nibble only — CTRL2 function/category |
+| 12 | +0x7E | high nibble — CTRL2 dependent choice |
+| 13 | — | zero-filled reserved byte |
+| 14 | +0x7F | direct byte |
+| 15 | +0x80 | direct byte |
+| 16 | +0x81 | direct byte |
+| 17 | +0x82 | direct byte |
+| 18 | — | F7 terminator |
+
+This proves that the two expression assignments occupy separate packed bytes (+0x7D and +0x7E). The two high nibbles are the dependent choice indexes. The remaining bytes in the same message are not yet semantically decoded and must remain opaque in the app implementation.
+
+### 2. 13 02 response parser — VA 0x004A8340
+
+The native incoming-message handler explicitly checks command bytes 13 02 and writes the returned payload back into the same settings record:
+- reply offset 6 → +0x7A
+- reply offset 7 → +0x7B
+- reply offset 8 → +0x7C
+- reply offset 9 → low nibble of +0x7D
+- reply offset 10, masked with & 1 and shifted left four → high nibble of +0x7D
+- reply offset 11 → low nibble of +0x7E
+- reply offset 12, masked with & 1 and shifted left four → high nibble of +0x7E
+- reply offsets 14–17 → +0x7F through +0x82
+
+This is direct static-code evidence of a response parser capable of restoring both CTRL function values and their 0/1 dependent-choice indexes. It does not by itself prove when the device sends 13 02 or which exact request triggers it; no complete 13 02 hardware readback transaction is present in the currently documented capture set.
+
+### 3. 13 03 ACK check — VA 0x004A81F0
+
+The callback checks for command 13 03 and returns success only when those command bytes match. The dedicated ctrl1efx.pcapng, ctrl2wah.pcapng, and ctrl1leveltodrive.pcapng analyses report 13 01 OUT followed by 13 03 IN. This supports treating 13 03 as the write acknowledgement, not as the state readback payload.
+
+### 4. Function enum order — static popup builder VA 0x005C48F0
+
+For selector arguments 0 and 1, the MG30 popup builder uses the ordered function list ----, WAH, EFX, AMP, MOD, DLY, RVB. The event handler stores the selected popup item into the low nibble of the corresponding packed state byte. This gives a static-code basis for the function enum order (0 through 6), subject to preserving any UI disabled-state/context rules.
+
+The same popup builder has separate T-contact and R-contact lists. Those must not be merged with the expression function enum or treated as the same physical input. The separate restricted selector-6 list is not yet assigned to Multi EFX CTRL with sufficient caller/UI proof.
+
+### 5. What the existing captures do and do not prove
+
+- Wire evidence already recorded: 13 01 request and 13 03 response, approximately 1 ms apart in the supplied CTRL captures.
+- Static-code evidence now maps offsets 9–12 to CTRL1/CTRL2 function and dependent-choice state.
+- The LEVEL → DRIVE capture is useful corroboration for the dependent-choice path, but its packet differs from the older CTRL1 baseline at offsets 6–8 and 10–12. It is not a fully isolated one-field differential capture; do not use it alone to assign every changed byte's semantic value.
+- No complete device-side 13 02 readback transaction has yet been documented. The existence and field mapping of the parser are proven; the actual read request/response timing remains open.
+- The other state bytes at offsets 6–8 and 14–17 remain unmapped. Do not infer that they are WAH MIN/MAX, external T/R, or Multi EFX fields without their own call-path evidence.
+- The 0D 01/0D 02, 12 01/12 03, 14 01/14 02, and 15 01/15 02 code paths found nearby are separate message families. Their existence is not proof that they belong to the same expression transaction; keep them separate until their callers and payload semantics are traced.
+
+### 6. Next reverse-engineering steps — no MG30 Studio implementation yet
+
+1. Trace the QuickTone callback registration/caller that initiates the 13 02 state response path and identify the request sent when the EXP & Pedal panel opens/reopens.
+2. Correlate the 0D 01/0D 02 path with NuxPedalSetValuePanelMG30 and the WAH MIN/MAX controls. Do not assume the fields at +0x7F–+0x82 are MIN/MAX until the caller and slider event handlers prove it.
+3. Recover the active original-MG30 model-dependent parameter pair table from the panel/model data object and its category arrays. Do not promote the candidate embedded JSON languageKey arrays as the CTRL mapping; the all-AMP GAIN + MASTER rule remains user-confirmed and overrides the conflicting candidate rows.
+4. Obtain one isolated hardware capture that changes only the CTRL1 dependent option while keeping preset, Signal Chain EFX model, CTRL2 and all other settings fixed; capture panel reopen/readback separately if possible.
+5. Keep CTRL2 configurable as a second expression assignment. Its physical destination remains unresolved per the user's clarification; do not repurpose it as external footswitch.
+6. Continue to keep callout 3 external T/R footswitch and callout 4 Multi EFX CTRL as separate control families, with their own command/ACK/readback evidence.
+
+No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
