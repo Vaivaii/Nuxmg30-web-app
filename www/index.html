@@ -2026,106 +2026,144 @@ window.MG30PresetExportBridge=Object.freeze({
    const metadata=readFormat.parseMetadataReply(Uint8Array.from(metadataBody),program);
    onProgress({phase:'Membaca metadata IR',completed:1,total:1,detail:metadata.resourceName});
 
-   const requestDataReply=async(request,command,offset,label)=>{
-    const ignored=[];
-    const record={
-     label,
+   const requestDataBatch=async(command,requestFrames,label,step,maxOffset)=>{
+    const expectedOffsets=requestFrames.map(item=>item.offset);
+    const validOffsets=new Set(expectedOffsets);
+    const records=requestFrames.map((item,index)=>({
+     label:label+' '+(index+1)+'/'+requestFrames.length,
      command:command.toString(16).toUpperCase().padStart(2,'0')+'/00',
      resourceIndex:program,
-     expectedOffset:offset,
-     requestLength:request.length,
-     requestHex:traceHex(request),
-     sentAtMs:Math.round(performance.now()-traceStarted),
+     expectedOffset:item.offset,
+     requestLength:item.frame.length,
+     requestHex:traceHex(item.frame),
+     status:'queued',
      replies:[]
+    }));
+    exportTrace.dataRequests.push(...records);
+    exportTrace.current={command:records[0]?.command||'',phase:label,expectedOffsets};
+    const repliesByOffset=new Map();
+    const ignoredReplies=[];
+    let timeoutId=null;
+    let resolveBatch,rejectBatch;
+    const batchPromise=new Promise((resolve,reject)=>{
+     resolveBatch=resolve;rejectBatch=reject;
+    });
+    const finishIfComplete=()=>{
+     if(repliesByOffset.size===expectedOffsets.length)resolveBatch(expectedOffsets.map(offset=>repliesByOffset.get(offset)));
     };
-    exportTrace.dataRequests.push(record);
-    exportTrace.current=record;
+    const listener=event=>{
+     const bytes=Array.from(event.data||[]);
+     if(bytes.length<2||bytes[0]!==0xF0||bytes[bytes.length-1]!==0xF7)return;
+     const body=bytes.slice(1,-1);
+     if(body.length<5||body[0]!==0x43||body[1]!==0x58||body[2]!==0x70||body[3]!==command||body[4]!==0x02)return;
+     const seen={
+      receivedAtMs:Math.round(performance.now()-traceStarted),
+      bodyLength:body.length,
+      bodyPrefixHex:traceHex(body.slice(0,20))
+     };
+     if(body.length!==203){
+      seen.invalid='unexpected body length; expected 203';
+      if(ignoredReplies.length<32)ignoredReplies.push(seen);
+      return;
+     }
+     try{
+      const header=readFormat.inspectDataReply(Uint8Array.from(body),command);
+      seen.replyTag=header.replyTag;
+      seen.returnedOffset=header.offset;
+      if(header.offset>maxOffset||header.offset%step!==0||!validOffsets.has(header.offset)){
+       seen.ignored=true;
+       seen.reason='returned offset is not in the requested page set';
+       if(ignoredReplies.length<32)ignoredReplies.push(seen);
+       return;
+      }
+      const prior=repliesByOffset.get(header.offset);
+      const recordIndex=expectedOffsets.indexOf(header.offset);
+      const record=records[recordIndex];
+      record.replies.push(seen);
+      if(prior){
+       seen.duplicate=true;
+       if(ignoredReplies.length<32)ignoredReplies.push(seen);
+       return;
+      }
+      if(command===0x10)readFormat.parseWaveReply(Uint8Array.from(body),program,header.offset);
+      else readFormat.parseCurveReply(Uint8Array.from(body),program,header.offset);
+      repliesByOffset.set(header.offset,Uint8Array.from(body));
+      record.status='matched';
+      record.completedAtMs=Math.round(performance.now()-traceStarted);
+      record.matchedReply={replyTag:header.replyTag,offset:header.offset,bodyPrefixHex:seen.bodyPrefixHex};
+      onProgress({
+       phase:command===0x10?'Membaca waveform IR':'Membaca kurva IR',
+       completed:repliesByOffset.size,
+       total:expectedOffsets.length,
+       detail:'Offset '+header.offset+' · '+repliesByOffset.size+'/'+expectedOffsets.length
+      });
+      finishIfComplete();
+     }catch(error){
+      seen.invalid=error?.message||String(error);
+      if(ignoredReplies.length<32)ignoredReplies.push(seen);
+     }
+    };
+    midiInput.addEventListener('midimessage',listener);
     try{
-     const body=await requestPresetExportFrame(request,b=>{
-      if(b.length<5||b[0]!==0x43||b[1]!==0x58||b[2]!==0x70||b[3]!==command||b[4]!==0x02)return false;
-      const seen={
-       receivedAtMs:Math.round(performance.now()-traceStarted),
-       bodyLength:b.length,
-       bodyPrefixHex:traceHex(Array.from(b).slice(0,20))
-      };
-      if(b.length!==203){
-       seen.invalid='unexpected body length; expected 203';
-       record.replies.push(seen);
-       if(ignored.length<12)ignored.push(seen);
-       return false;
-      }
-      try{
-       const header=readFormat.inspectDataReply(Uint8Array.from(b),command);
-       seen.replyTag=header.replyTag;
-       seen.returnedOffset=header.offset;
-       record.replies.push(seen);
-       if(header.offset!==offset){
-        seen.ignored=true;
-        if(ignored.length<12)ignored.push(seen);
-        return false;
-       }
-       record.matchedReply={replyTag:header.replyTag,offset:header.offset,bodyPrefixHex:seen.bodyPrefixHex};
-       record.status='matched';
-       record.completedAtMs=Math.round(performance.now()-traceStarted);
-       return true;
-      }catch(error){
-       seen.invalid=error?.message||String(error);
-       record.replies.push(seen);
-       if(ignored.length<12)ignored.push(seen);
-       return false;
-      }
-     },label);
-     record.status='matched';
-     record.completedAtMs=Math.round(performance.now()-traceStarted);
-     return body;
+     for(let i=0;i<requestFrames.length;i++){
+      const item=requestFrames[i],record=records[i];
+      record.sentAtMs=Math.round(performance.now()-traceStarted);
+      const sent=await midiFrame(Array.from(item.frame).slice(1,-1));
+      if(!sent)throw new Error('Request '+record.label+' tidak terkirim.');
+      record.status='sent';
+      if(command===0x10&&i%8===7)onProgress({phase:'Mengirim permintaan waveform IR',completed:i+1,total:requestFrames.length});
+      if(command===0x11)onProgress({phase:'Mengirim permintaan kurva IR',completed:i+1,total:requestFrames.length});
+     }
+     timeoutId=setTimeout(()=>{
+      const missing=expectedOffsets.filter(offset=>!repliesByOffset.has(offset));
+      rejectBatch(new Error('Timeout readback '+records[0].command+': diterima '+
+       repliesByOffset.size+'/'+expectedOffsets.length+' blok; offset hilang '+missing.join(', ')+'.'));
+     },12000);
+     // Responses may arrive while requests are still being sent; check before arming the timeout.
+     finishIfComplete();
+     const bodies=await batchPromise;
+     const ordered=readFormat.orderDataReplies(bodies,command,program);
+     return ordered;
     }catch(error){
-     record.status='failed';
-     record.error=error?.message||String(error);
-     record.failedAtMs=Math.round(performance.now()-traceStarted);
-     record.ignoredReplies=ignored;
+     const missing=expectedOffsets.filter(offset=>!repliesByOffset.has(offset));
+     for(let i=0;i<records.length;i++)if(records[i].status!=='matched')records[i].status='not-received';
      exportTrace.status='failed';
      exportTrace.failure={
       label,
-      command:record.command,
+      command:records[0]?.command||'',
       resourceIndex:program,
-      expectedOffset:offset,
-      requestHex:record.requestHex,
-      replies:record.replies,
-      error:record.error
+      expectedOffsets,
+      sentRequests:records.map(record=>({offset:record.expectedOffset,requestHex:record.requestHex,status:record.status})),
+      receivedOffsets:[...repliesByOffset.keys()].sort((a,b)=>a-b),
+      missingOffsets:missing,
+      ignoredReplies,
+      error:error?.message||String(error)
      };
-     const ignoredSummary=ignored.map(reply=>
-      reply.replyTag!==undefined
-       ? 'tag '+reply.replyTag+'/offset '+reply.returnedOffset
-       : 'body length '+reply.bodyLength+'; '+(reply.invalid||'invalid')
-     ).join('; ');
-     const detail=label+' gagal; IR index='+program+', offset diminta='+offset+
-      '. Request SysEx: '+record.requestHex+'. '+record.error+
-      (ignoredSummary?' Balasan 10/02 atau 11/02 yang berbeda diabaikan: '+ignoredSummary+'.':'');
+     const detail=label+' gagal; IR index='+program+
+      '. Blok diterima '+repliesByOffset.size+'/'+expectedOffsets.length+
+      '; offset hilang '+missing.join(', ')+'. '+(error?.message||error)+
+      (ignoredReplies.length?' Respons tidak valid/duplikat: '+ignoredReplies.slice(0,8).map(item=>
+       item.replyTag!==undefined?'tag '+item.replyTag+'/offset '+item.returnedOffset:
+       'body '+item.bodyLength+' byte').join('; ')+'.':'');
      window.MG30PresetExportLastDiagnostics=exportTrace;
      throw new Error(detail);
+    }finally{
+     if(timeoutId!==null)clearTimeout(timeoutId);
+     midiInput.removeEventListener('midimessage',listener);
     }
    };
 
-   const waveformReplies=[];
-   for(let frame=0;frame<64;frame++){
-    const offset=frame*32;
-    const request=readFormat.buildWaveRequest(program,offset);
-    const body=await requestDataReply(request,0x10,offset,'10/00 waveform '+(frame+1)+'/64');
-    // QuickTone treats the first decoded word as an opaque reply tag; match the address only.
-    readFormat.parseWaveReply(Uint8Array.from(body),program,offset);
-    waveformReplies.push(Uint8Array.from(body));
-    if(frame===63||frame%8===7)onProgress({phase:'Membaca waveform IR',completed:frame+1,total:64});
-   }
+   const waveFrames=Array.from({length:64},(_,frame)=>({
+    offset:frame*32,
+    frame:readFormat.buildWaveRequest(program,frame*32)
+   }));
+   const waveformReplies=await requestDataBatch(0x10,waveFrames,'10/00 waveform',32,0x7E0);
 
-   const curveReplies=[];
-   for(let frame=0;frame<10;frame++){
-    const offset=frame*64;
-    const request=readFormat.buildCurveRequest(program,offset);
-    const body=await requestDataReply(request,0x11,offset,'11/00 curve '+(frame+1)+'/10');
-    readFormat.parseCurveReply(Uint8Array.from(body),program,offset);
-    curveReplies.push(Uint8Array.from(body));
-    onProgress({phase:'Membaca kurva IR',completed:frame+1,total:10});
-   }
+   const curveFrames=Array.from({length:10},(_,frame)=>({
+    offset:frame*64,
+    frame:readFormat.buildCurveRequest(program,frame*64)
+   }));
+   const curveReplies=await requestDataBatch(0x11,curveFrames,'11/00 curve',64,0x240);
    const resource=readFormat.assembleReadback(program,waveformReplies,curveReplies);
    const resourceName=metadata.resourceName;
    if(!resourceName)throw new Error('Nama IR kosong; file preset tidak akan dibuat.');
