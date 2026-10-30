@@ -365,3 +365,16 @@ All other bytes are identical, including the `13 01` command prefix, offset 9 (`
 3. Keep the selected preset and active Signal Chain EFX model fixed; do not alter CTRL2/3/4 during this test.
 
 Preserve this raw pcapng trace as the reference for the CTRL1 parameter-selection operation.
+
+## User clarification — CTRL1/CTRL2 column-3 parameter choices (2026-10-30)
+
+The user clarifies that for CTRL1 and CTRL2, the third-column parameter selector generally exposes exactly **two choices** for the currently active pedal/amp target. Those two choices depend on which pedal or amp is currently active/selected in the relevant signal-chain context. **WAH is the exception** and does not follow this two-choice rule; it has its own WAH-specific configuration/range behavior.
+
+Implementation implications:
+- Do not build a large generic parameter catalogue for column 3.
+- Resolve the currently active pedal/amp target first, then expose its two supported parameter choices for CTRL1/CTRL2.
+- Treat WAH as a separate branch with its own model/range controls; do not force it into the two-parameter selector model.
+- The screenshot examples such as `ANA-DLY` → `RATE` and `PLEXI 45` → `GAIN` illustrate dependent target/parameter context; the user's clarification is authoritative for the two-choice behavior.
+- The exact second choice for each active pedal/amp and the underlying wire enum values still require extraction from QuickTone's MG30-specific code or a small number of representative captures. Do not invent option names.
+
+This is user-confirmed UI behavior, not yet a complete protocol mapping. Preserve the distinction between observed labels, user-confirmed rules, and unresolved numeric encodings.
