@@ -539,3 +539,13 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Appended full packet/differential analysis and evidence classification to `CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md` (commit `2294f6845e43276ee9891cc8b40e5826e9ffe58d`).
 - [ ] Reopen the CTRL1/EXP panel without changing fields and capture the resulting device query/readback; this is the next most useful experiment.
 - [ ] Do not implement or build yet: the payload bytes' semantics and device-side readback remain unproven. Preserve NAM, IR User/Collection, MIDI mappings, preset sync and Copy Scene unchanged.
+
+### Goal 2 — QuickTone static parameter-menu disassembly (2026-10-30)
+
+- [x] Disassembled original-MG30 QuickTone popup menu builder at `0x005C48F0`; function dropdown options match the screenshot: `----`, `WAH`, `EFX`, `AMP`, `MOD`, `DLY`, `RVB`.
+- [x] Identified separate static T and R option lists in the same popup builder, including `T:SCENE`, `T:S.UP`, `T:S.DN` and parallel R entries. Do not conflate these with expression parameter menus.
+- [x] Traced dependent parameter popup creation: QuickTone calls lookup helper `0x005C2070` for choice indexes 0 and 1 using the active type/model context. This statically corroborates exactly two parameter choices per active pedal/amp.
+- [x] Extracted representative parameter identifier/display-label translations for CMP, EFX, MOD, DLY, RVB, AMP and WAH from QuickTone's resource string table.
+- [ ] Decode runtime-populated metadata tables (singleton rooted at `0x0B8D9718`) so the two parameter IDs can be mapped to each active model and display label without capturing each pedal.
+- [ ] Trace parser handling record header `15 02` and identify its source/role in the original-MG30 communication path; do not assume it is a readback without call-graph proof.
+- [ ] Continue reverse engineering only; no app source changes or APK build. Protect existing NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene paths.
