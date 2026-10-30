@@ -917,3 +917,10 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Decode and reconcile the static reader helper 0x2590/0x12C800 size discrepancy before enabling additional file variants.
 - [ ] Implement/validate all-preset 128-record batch import only after capturing QuickTone batch import and establishing destination slot mapping.
 - [ ] Build validation and debug APK for the latest importer commit; physical hardware testing remains pending.
+
+
+### Build handoff — single-preset importer (2026-10-31)
+
+- [x] Push of importer source triggered Android APK workflow run [#114](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41101214040), source commit `af71ae32bb342ecff15cc55580d54d5ebac2d0cf`.
+- [ ] Latest observed workflow state: queued; APK build and artifact upload have not completed yet.
+- [ ] Do not mark the feature APK-ready until the run succeeds and the APK artifact is available.
