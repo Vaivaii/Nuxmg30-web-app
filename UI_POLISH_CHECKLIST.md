@@ -735,3 +735,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Artifact ID `12964162270`; extracted debug APK size 4,378,432 bytes.
 - [x] APK SHA-256 `2fb982240a318ca86fdcfc85b2343a8a72c509f8d1462f99a83d9baee27169f5`.
 - [ ] First real-device readback/write and functional hardware tests remain pending.
+
+- [x] After first user screenshot, remove small payload labels and redundant explanatory helper/footer text from CTRL panel.
+- [x] Match top-bar CTRL / EXP and Simpan ke pedal button height/padding/font sizing.
+- [ ] Build and deliver refreshed APK for this visual refinement (CI run 41028702729).
