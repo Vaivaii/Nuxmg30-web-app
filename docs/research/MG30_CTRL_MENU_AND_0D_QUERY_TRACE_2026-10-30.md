@@ -314,3 +314,37 @@ Important: this is intentionally not a universal ON=bit-set rule. DLY and SCENE 
 
 This fully identifies the UI labels, menu order and encoded bit pattern. It does not by itself establish the physical timing/operational behavior of the Multi EFX function on the pedal; no isolated hardware write capture for these four states has yet been analysed.
 
+
+
+## MG30 Studio integration boundary inspected (2026-10-30)
+
+The existing project source was inspected after completing the QuickTone static mapping. No application source file was changed in this checkpoint.
+
+### Existing integration architecture
+
+- The active Capacitor web bundle is sourced from `www/` (Vite output is the configured `dist` webDir). The root `index.html` is not the primary packaged web editor.
+- The main Tone Editor, its shared MIDI send queue and SysEx helpers live in the inline editor script in `www/index.html`.
+- The native Android transport is `native-android/MG30MidiPlugin.java`, exposed through `www/native-midi.js`.
+- `www/nam-transfer.js` and `www/ir-transfer.js` are separate transfer modules; they are not the Tone Editor's CTRL feature layer.
+- The existing Tone Editor has one shared MIDI chain, a 45 ms inter-message gap, `midiSend`, `midiFrame`, `waitForSysEx`, and `flushMidi`. New CTRL read/write operations should reuse this path rather than introducing a second send queue or direct native port calls.
+- The existing editor currently has no dedicated Multi EFX / external T-R / CTRL1 / CTRL2 configuration panel. Adding that UI will be a new, isolated editor feature, not an extension of NAM or IR transfer.
+
+### Required isolation for a future implementation
+
+1. Add a dedicated CTRL panel to the active `www/index.html` editor; keep UI state separate from the ordinary block parameter CC editor.
+2. Read the controller state with `13 00 OUT → 13 02 IN`; parse the known fields and preserve unknown response bytes rather than normalizing them.
+3. Write a changed known field through the existing MIDI send queue as `13 01 OUT`, wait for `13 03 IN`, then perform a `13 00 → 13 02` readback and compare the relevant state fields.
+4. Keep the CTRL panel's read/write gate mutually exclusive with preset/scene operations, since they share the same physical MIDI connection and send queue.
+5. Do not send CC77/value55 or query 0D as part of CTRL panel initialization. Neither is identified as a CTRL UI prerequisite.
+6. Keep NAM, IR User/Collection, preset read/write and Copy Scene code paths unchanged. Run a full build and regression checks after any future source edit.
+
+### Hardware capture still needed before shipping write controls
+
+The shared native handler statically sends the same 13 01 serializer after the selectors are changed, and serializer fields are mapped. However, no isolated USBPcap differential from this project checkpoint independently validates each physical control write. The remaining focused captures are:
+- change external T only, with external R unchanged;
+- change external R only, with external T unchanged;
+- change Multi EFX function only;
+- for Multi EFX DLY and SCENE, capture the two selector-7 options independently.
+
+Do not use the user's DELUXE amp/model capture as a substitute for these control-specific traces. If the isolated captures are not available, keep hardware validation status explicit in the UI/release note rather than claiming every field has been tested on the pedal.
+
