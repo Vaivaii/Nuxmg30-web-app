@@ -611,3 +611,22 @@ This materially strengthens (but does not by itself prove) the hypothesis that Q
 Do not use the silent QuickTone Export capture as evidence that the Android app's `10/00` request bytes are incorrect; the QuickTone Export action did not issue those requests in the PC capture. The Android in-app diagnostic is a separate observation: it logged an app-generated `10/00` request and a recognizable `10/02` response body with decoded offset 128, while expecting 0.
 
 Next engineering work should trace QuickTone's cache-population trigger/call graph and compare that read path with the Android app's manually initiated readback. Do not ask the user to repeat the same silent Export capture. Do not change `10/00` encoding or accept offset 128 without evidence. Preserve the successful single-preset importer and all protected NAM, IR User/Third Party, Collection, MIDI, preset-sync, Copy Scene, CTRL/EXP, signal-chain and Save-to-device behavior.
+
+
+### Follow-up disassembly — QuickTone IR cache warm-up is part of manager initialization
+
+The bundled QuickTone 2.6.7.16 executable was re-examined after confirming the PC↔MG-30 capture topology.
+
+- Function 0x4A9560 initializes/accesses the IR metadata manager and loops from index 0 to the manager count at object offset +0x640. The manager constructor at 0x4B1500 sets this count to 0x80 (128). For every index, it calls 0x4A95F0.
+- Function 0x4A95F0 builds and sends the 15-byte 09/00 metadata request for the supplied index.
+- Startup/manager initialization code around 0x841C23–0x841D00 creates/accesses the manager and explicitly calls 0x4A9560 at 0x841D00. Thus a 128-index metadata refresh is part of this initialization path, not the Export button.
+- The 09/02 response handler 0x4A9720 checks/updates the resource metadata model and its associated resource cache. When the needed waveform/curve resource data is not already available, the handler path invokes 0x4AB340 (waveform 10/00) followed by 0x4AAEA0 (curve 11/00). The completed curve handler stores the assembled resource in the cache.
+- The USBPcap result therefore fits a concrete code path: QuickTone can populate its 128-entry IR/resource model and fetch cache-miss waveform/curve data during initialization/refresh; a later Export action can serialize the already-resident preset/resource data with no additional USB-MIDI traffic.
+
+This is strong evidence for the cache-serialization explanation of the silent Export capture. It does not prove every Export always has a fully current cache, nor does it prove the Android app's 10/02 offset-128 field interpretation. Those remain separate issues.
+
+### Engineering consequence
+
+Do not use QuickTone's silent Export click as the expected time to capture 10/00 reads. The read transaction is associated with the earlier metadata refresh/cache-miss path. The next disassembly target is the exact cache-presence predicate and the events that trigger the manager refresh (startup, device connection, preset selection/0B notification, IR manager opening). Compare that lifecycle with MG30 Studio's current explicit readback sequence.
+
+No protocol or app source was modified. Do not change request encoding, accept offset 128, or touch the successful importer or protected features without new evidence.
