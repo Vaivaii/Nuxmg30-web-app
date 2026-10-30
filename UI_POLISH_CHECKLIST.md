@@ -776,3 +776,10 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Initial subtitle explains the panel: Multi EFX CTRL, external footswitch, and expression pedal assignments. Subsequent connection/read/write messages still update this subtitle so errors and operation status remain visible.
 - [x] JavaScript control state, read/write workflow and MIDI protocol are unchanged; the existing dirty-badge DOM accesses are already null-guarded.
 - [ ] Verify header spacing and status text on Android portrait layout.
+
+## Follow-up — slightly reduce CTRL / EXP dialog footprint (2026-10-30)
+
+- [x] Reduce dialog max width from 980px to 920px and phone width from viewport minus 22px to viewport minus 38px, adding a little breathing room at the sides.
+- [x] Reduce dialog and scrolling shell maximum height from viewport minus 24px to viewport minus 40px, adding a little breathing room above and below while keeping inner content scrollable.
+- [x] Do not reduce input/select/button sizes or alter CTRL read/write behavior.
+- [ ] Check the resulting portrait layout on the Android device; adjust only if the panel is still too close to screen edges.
