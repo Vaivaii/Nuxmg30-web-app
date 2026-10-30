@@ -523,3 +523,18 @@ Selected examples from the two embedded profiles:
 Trace the device/profile selector that chooses the embedded JSON resource family for original `NuxPedalSettingPanelMG30` versus `NuxPedalSettingPanelMG30MK2`. Only after that association is proven should one profile be promoted to the canonical original MG-30 Gen2/6.0.x option table. No extra per-model packet capture is indicated at this stage.
 
 No MG30 Studio source change or APK build has been made.
+
+## User domain guidance — expected parameter conventions by effect family (2026-10-30)
+
+The user notes a practical pattern from the MG-30 pedal models:
+- AMP controls are expected to be broadly consistent: `GAIN` and `MASTER`.
+- Overdrive/distortion (OD) pedals are expected to use `DRIVE` and `LEVEL`.
+- Delay, reverb and modulation models are the families most likely to have model-specific variation.
+
+Evidence handling:
+- Treat this as valuable user domain guidance / working expectation, not as a replacement for the embedded QuickTone model data.
+- Compare the extracted model-specific pairs against these expectations. Where they agree, this increases confidence; where they disagree (e.g. AMP entries in candidate profile A/B or a model exposing `TONE`, `PRES`, `CUT`, `MIX`, etc.), preserve the actual QuickTone resource result and investigate whether the user-visible pair differs by model, profile, or selector context.
+- Do not normalize all OD models to DRIVE/LEVEL or all AMP models to GAIN/MASTER unless the original MG30 resource/profile selection confirms that rule.
+- Prioritize resolving which candidate JSON profile belongs to original `NuxPedalSettingPanelMG30` vs MKII. The profile mismatch is especially important because the user's AMP expectation (`GAIN`/`MASTER`) conflicts with some candidate rows (`GAIN`/`PRES`, `GAIN`/`CUT`) and therefore can help identify the correct profile or reveal that the first-two-key extraction is not always the CTRL pair.
+
+Next analysis: use this user-provided pattern as a consistency check while tracing the original-MG30 profile selector and validating representative AMP, OD, DLY, RVB and MOD rows. Do not request per-model captures unless static analysis cannot resolve a specific discrepancy.
