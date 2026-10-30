@@ -767,3 +767,12 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Change the USB icon control from a circular shape to a 12px rounded square (11px on narrow screens), matching the app's other buttons/cards.
 - [x] Preserve click-to-connect behavior and Android attach/detach auto-connect logic.
 - [ ] Verify header fit and connection-state label on the Android device at regular and narrow phone widths.
+
+## Follow-up — simplify CTRL / EXP dialog header (2026-10-30)
+
+- [x] Remove the `BELUM DIBACA` dirty/read badge from the CTRL / EXP dialog header.
+- [x] Keep the `Tutup` button at the top-right, aligned with the heading rather than below a status badge.
+- [x] Remove the framed amber/red `Panel siap...` status box. Reuse its live status region as a single plain-text subtitle directly beneath `CTRL / EXP & Pedal`, without background, border or warning box.
+- [x] Initial subtitle explains the panel: Multi EFX CTRL, external footswitch, and expression pedal assignments. Subsequent connection/read/write messages still update this subtitle so errors and operation status remain visible.
+- [x] JavaScript control state, read/write workflow and MIDI protocol are unchanged; the existing dirty-badge DOM accesses are already null-guarded.
+- [ ] Verify header spacing and status text on Android portrait layout.

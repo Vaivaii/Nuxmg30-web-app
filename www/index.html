@@ -245,15 +245,14 @@
 <dialog id="ctrlEditorDialog" class="ctrl-dialog" aria-labelledby="ctrlDialogTitle">
   <div class="ctrl-dialog-shell">
     <header class="ctrl-dialog-header">
-      <div>
+      <div class="ctrl-dialog-heading">
         <h2 id="ctrlDialogTitle">CTRL / EXP &amp; Pedal</h2>
+        <p id="ctrlEditorStatus" class="ctrl-dialog-subtitle ctrl-status" role="status" aria-live="polite">Atur Multi EFX CTRL, footswitch eksternal, dan fungsi expression pedal MG-30.</p>
       </div>
       <div class="ctrl-dialog-header-actions">
-        <span id="ctrlDirtyBadge" class="ctrl-dirty-badge">BELUM DIBACA</span>
         <button type="button" class="btn" id="ctrlCloseButton" aria-label="Tutup panel CTRL">Tutup</button>
       </div>
     </header>
-    <div id="ctrlEditorStatus" class="ctrl-status" role="status" aria-live="polite">Hubungkan MG-30, lalu baca konfigurasi.</div>
     <div class="ctrl-grid">
       <section class="ctrl-card">
         <div class="ctrl-card-head"><strong>Multi EFX CTRL</strong></div>
