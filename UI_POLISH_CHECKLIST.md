@@ -1020,3 +1020,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] If Export still fails, capture the complete USB-MIDI exchange, especially the first outgoing 10/00 request and all incoming 10/02 replies (including opaque reply tag and decoded offset). Do not treat the offset filter as proof of a protocol fix.
 - [ ] Keep 128-record batch import disabled until QuickTone batch import capture and destination mapping are verified.
 - [x] Scope guard maintained: no source change to NAM, IR User/Third Party upload, Collection 6A/6B/6C, MIDI mappings, preset sync, Copy Scene, CTRL/EXP, signal chain, existing single-preset importer, or Save-to-device writer.
+
+
+## Goal 3 — Export offset mismatch and diagnostic instrumentation (2026-10-31)
+
+- [x] Review user screenshot from a read-only Export attempt on preset slot 04A (program/index 12). MG30 Studio reported no matching SysEx reply during waveform read: it received a 10/02 response decoded as opaque tag 0 / offset 0 while waiting for a different offset. Export aborted and explicitly reported that no data was written to the MG-30.
+- [x] Interpret the screenshot narrowly: it proves at least one 10/02 body passed the current 203-byte/header parser and decoded to tag 0, offset 0. The screenshot does not show the requested offset or which waveform frame timed out, so do not assume it was specifically offset 32.
+- [x] Independently inspect QuickTone v2.6.7.16 code at 0x4AB340, helper 0x4A4910 and response handler 0x4AB510. The QuickTone requester stores resource index and sample offset as two little-endian uint16 values, packs each as three 7-bit bytes, and advances waveform offsets 0, 32, …, 2016. Its response handler unpacks 132 bytes and reads the second decoded uint16 (output +2) as the sample offset. This supports the current request field order and parser offset location; it does not prove which bytes physically reached or were returned by the pedal in this Android test.
+- [x] Add an exact unit assertion for the 15-byte request used by slot 04A at waveform offset 32: `F0 43 58 70 10 00 00 00 00 18 00 00 40 00 F7`.
+- [x] Add read-only Export diagnostics: request frame bytes, target resource index, expected offset, each matching-command reply's body length/header prefix, opaque reply tag, returned offset, and elapsed time. Show a copyable log on failure.
+- [ ] Wait for the diagnostics APK workflow to finish successfully; only use the artifact from the final successful run.
+- [ ] Re-test read-only Export once on slot 04A with the diagnostics APK. Expand “Detail diagnostik readback”, copy the log, and provide it for analysis. Do not repeat preset import and do not perform any write operation for this test.
+- [ ] If the logged request frame is correct but the response continues to report a previous/zero offset, inspect the actual USB-MIDI wire exchange and request/response timing before changing protocol semantics. Do not re-label or accept offset 0 as a different sample offset.
+- [x] Keep the working single-preset importer, NAM, User/Third Party write path, Collection 6A/6B/6C, MIDI mappings, preset synchronization, Copy Scene, CTRL/EXP, signal chain and Save-to-device code untouched.
