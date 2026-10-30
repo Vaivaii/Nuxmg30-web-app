@@ -157,3 +157,22 @@ For a WAH assignment:
 - To investigate second-column behavior, change the actual EFX block/model in the Signal Chain in a separate controlled session, then reopen the CTRL dialog and observe whether the displayed model/available parameters follow automatically. This tests the binding, not a CTRL second-column write.
 - Keep the selected preset unchanged within each comparison; record the actual Signal Chain block before/after.
 - Continue to treat the three changing SysEx bytes at offsets 10–12 as unmapped until differential captures establish their meanings.
+
+
+## Additional screenshot — selectable assignment function list (2026-10-30)
+
+User supplied another photograph showing the function dropdown opened below the first-column assignment currently set to `EFX`. Visible entries in the photographed dropdown are:
+- `WAH`
+- `EFX` (greyed/light in this photo)
+- `AMP` (greyed/light in this photo)
+- `MOD`
+- `DLY`
+- `RVB`
+
+The same dialog also visibly contains other configured rows/fields including `DIST UNO`, `PLEXI 45`, and `R:EFX`. The screenshot supports that the function assignment list contains multiple categories and that some entries may be disabled/unavailable in the current context (the lighter entries); exact enable/disable rules are not yet established.
+
+Do not assume this list applies identically to all numbered controls. The user's accompanying statement says the available choices differ for controls 3 and 4, but the precise mapping of these dropdown entries to CTRL1/CTRL2 versus hardware callouts 3/4 is not fully unambiguous from the photo alone. Ask the user to clarify which numbered rows/callouts they mean before assigning the options to a control.
+
+### Data-model implication
+
+Represent function choices as per-control capability lists, not one universal enum shared by every CTRL/EXP input. Preserve disabled/unavailable states if QuickTone displays them, and determine whether those states depend on control identity, current Signal Chain blocks, or the current preset.
