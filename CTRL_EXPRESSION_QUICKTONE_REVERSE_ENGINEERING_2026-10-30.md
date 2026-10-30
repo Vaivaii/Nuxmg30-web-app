@@ -760,3 +760,22 @@ No MG30 Studio source files were changed and no APK was built for this static-an
 - [ ] Continue static tracing of first-column function menu item IDs and the CC77 sender.
 - [ ] Continue the independent `0D 00 → 0D 02` / set-value panel analysis. Do not equate it with the now-confirmed `13 00 → 13 02` readback.
 - [ ] No application source changes or APK build. Preserve NAM import, IR User/Collection, MIDI mapping, preset sync and Copy Scene.
+
+
+## Correction and expanded UI selector map — original MG-30 CTRL panel (2026-10-30)
+
+This section supersedes earlier notes that characterized `0x005C48F0` as only a dependent-choice popup builder and left the first-column function menu untraced.
+
+- [x] Confirm `0x005C48F0` is a shared popup builder; selector argument is stored at menu object `+0x9C`.
+- [x] Selector 0/1 builds the first-column expression function list in exact order: `----, WAH, EFX, AMP, MOD, DLY, RVB`; `0x005C4610` stores the selected row index in CTRL1 state `+0x7D` or CTRL2 state `+0x7E` low nibble.
+- [x] Selector 2/3 builds the two dependent options using `0x005C2070`; selected row index is stored in the high nibble of `+0x7D/+0x7E`.
+- [x] Selector 4/5 builds external T/R footswitch menus; handler stores T at `+0x7B` and R at `+0x7C`. Selecting T:S.UP/T:S.DN or R:S.UP/R:S.DN also stores the complementary direction in the opposite contact byte.
+- [x] Selector 6 builds the Multi EFX CTRL list: `----, TAP, CMP, GATE, EFX, EQ, SR, MOD, DLY, RVB, SCENE, RVB HF, WAH`; handler stores the selected row at `+0x7A`.
+- [x] Selector 7 is an additional dependent/mode selector for current Multi EFX CTRL DLY (code 8) and SCENE (code 10) states; it modifies bit `0x20` in `+0x7A`. Exact user-facing meaning still unresolved.
+- [x] Align all opening assignment bytes to the native serializer/parser: payload offsets 6/7/8 = `+0x7A/+0x7B/+0x7C` (Multi EFX CTRL/T/R); offsets 9/10 = packed CTRL1 function/choice `+0x7D`; offsets 11/12 = packed CTRL2 function/choice `+0x7E`.
+- [x] Trace the SetValue panel: two slider widgets write one of two pairs `+0x7F/+0x80` or `+0x81/+0x82`, then use `13 01`. The labels/semantics of these pairs are not proven; do not call them WAH MIN/MAX yet.
+- [x] Refine 0D path evidence: `0x004B0AF0` queries 0D for selected type bytes when a 12-entry lookup does not match (for type values 1, 2, 6, 8); another dispatcher branch can issue the same query when receiving 0D with status byte 0. This is a separate extended-data refresh path, not proven to be WAH MIN/MAX.
+- [x] CC77/value55 purpose remains unresolved; no reliable code xref found. Do not add it to the app protocol.
+- [x] Full selector and query trace recorded in `docs/research/MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md`.
+- [ ] Resolve selector-7 DLY/SCENE labels, SetValue slider labels, per-context menu availability and CC77 sender.
+- [ ] Keep source unchanged until the remaining control semantics and write/readback behavior are sufficiently supported. No APK build in this checkpoint.
