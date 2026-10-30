@@ -698,3 +698,12 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Keep 0D payload and CC77/value55 out of the MG30 Studio implementation until their actual feature meaning is established.
 - [ ] Next wire captures should isolate external T-only, external R-only, and Multi EFX CTRL changes if those protocol bytes are to be implemented.
 - [ ] Decode selector-7 DLY/SCENE dependent option labels and mode bit before implementing that optional field.
+
+
+### Goal 2 — Multi EFX CTRL dependent options decoded (2026-10-30)
+
+- [x] Selector-7 DLY options decoded in popup order: S.TAP ON, S.TAP OFF.
+- [x] Selector-7 SCENE options decoded in popup order: S3 ON, S3 OFF.
+- [x] Decode state-byte +0x7A bit 0x20 exactly: DLY ON=1/OFF=0; SCENE ON=0/OFF=1.
+- [x] Document that bit polarity is function-dependent and must not be simplified to a shared boolean.
+- [ ] Capture the corresponding isolated hardware writes for DLY and SCENE states before implementation.
