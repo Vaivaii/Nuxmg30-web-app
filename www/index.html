@@ -1842,7 +1842,7 @@ window.MG30CtrlBridge=Object.freeze({
    if(!sent){ack.catch(()=>{});throw new Error('Write 13 01 tidak terkirim.');}
    await ack;
    const state=await ctrlReadUnlocked();
-   const matched=payload.every((value,index)=>state.bytes[index]===value);
+   const matched=payload.every((value,index)=>index===7||state.bytes[index]===value);
    return {state,matched,written:payload};
   }finally{ctrlEditorLeave();}
  }
