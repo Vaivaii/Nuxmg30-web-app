@@ -939,3 +939,12 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Continue to preserve NAM, IR User/Collection paths and mappings, MIDI map, preset sync, Copy Scene, CTRL/EXP, signal-chain reorder, and Save-to-device writer.
 
 - [x] Correct build checkpoint: run #114 succeeded and artifact ID 12998752306 is available. This verifies the earlier single-importer source only; it is not a build of the current export serializer changes.
+
+
+## Goal 3 — export capture diagnostic checkpoint (2026-10-31)
+
+- [x] User attempted QuickTone single-preset Export capture; reports USBPcap remained silent / showed no packets.
+- [ ] No new silent .pcapng has been uploaded yet. Determine whether packet count is exactly zero or only no SysEx packets before diagnosing.
+- [ ] Request the silent capture file, matching exported .mg30patch if generated, and confirmation of whether the USBPcap packet counter remained at zero.
+- [ ] Repeat capture on all USBPcap root-hub interfaces (or identify MG-30 root hub via USBPcapCMD), no capture filter, start before QuickTone launch; optionally reconnect pedal after starting capture to verify bus/interface. Do not perform import/write operations during this diagnostic.
+- [ ] Leave Export UI and batch-import UI disabled until the relevant read/batch transactions are evidenced.
