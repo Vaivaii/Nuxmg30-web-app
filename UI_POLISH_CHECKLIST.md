@@ -739,3 +739,11 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] After first user screenshot, remove small payload labels and redundant explanatory helper/footer text from CTRL panel.
 - [x] Match top-bar CTRL / EXP and Simpan ke pedal button height/padding/font sizing.
 - [x] Build and deliver refreshed APK for this visual refinement (CI run 41028702729; source bd87002b; APK SHA-256 48f15e6d3b5d55fab6e7a095ef31301c9f1e15880addc693bc44a420157f4a9f).
+
+## Correction — compact CTRL / EXP header controls (2026-10-30)
+
+- [x] Revert the added fixed 42px/40px shared header-button styling that enlarged **Simpan ke pedal**; restore the normal `.btn` sizing and the original compact mobile padding/font rule.
+- [x] Keep both header controls aligned: desktop retains their normal approximately 40px height; on mobile, CTRL / EXP uses a 32px minimum height to match the normal compact Save button.
+- [x] Remove the literal placeholder strings `footswitch helper` and `footer explanation` from the CTRL / EXP dialog while retaining the external footswitch fields and footer action buttons.
+- [x] No JavaScript or protocol code changed. The CTRL state/readback/write handlers, shared MIDI queue, NAM import, IR User/Collection transfer, MIDI mappings, preset sync and Copy Scene remain untouched.
+- [ ] Verify the compact dimensions and clean CTRL / EXP dialog on Android; hardware readback/write validation remains a separate test.
