@@ -308,3 +308,60 @@ The user has clarified the practical scope for this milestone:
 - CTRL3: verify T and R assignments independently for block ON/OFF and Scene Up/Down; hardware-check each external footswitch action if available.
 - CTRL4: verify TAP, block ON/OFF and scene cycling 1–3 independently; confirm correct physical behavior.
 - CTRL2: preserve its configuration UI and protocol path where evidence supports it; defer physical input-response validation. Do not let this missing hardware block CTRL1/3/4.
+
+
+## Differential capture — CTRL1 EFX parameter LEVEL → DRIVE (2026-10-30)
+
+User supplied `ctrl1leveltodrive.pcapng` for the isolated CTRL1 parameter-selection experiment. The capture label and preceding instruction identify the intended UI change as LEVEL → DRIVE with the Signal Chain EFX model kept fixed. Treat this UI operation as user-reported context; the packet itself does not contain readable labels.
+
+- File size: 3,044 bytes.
+- SHA-256: `5edda84a0144e3ec76cc94b65e7ea2ed850aeb90ec4a893748df4d051871dd5d`.
+- Capture contains 22 pcapng blocks; USBPcap interface link type 249.
+- Application MIDI traffic: one bulk OUT transfer on endpoint `0x02` (USB-MIDI SysEx) and one bulk IN transfer on endpoint `0x82` (USB-MIDI SysEx response). No other setting transaction or MIDI CC is present.
+
+### Exact wire payload
+
+OUT request (19-byte SysEx):
+
+```
+F0 43 58 70 13 01 0A 07 04 02 01 03 00 00 00 64 00 64 F7
+```
+
+IN response (15-byte SysEx):
+
+```
+F0 43 58 70 13 03 00 00 00 00 00 00 00 00 F7
+```
+
+The IN response is byte-for-byte identical to the response observed after the earlier `ctrl1efx.pcapng` writes. The response follows the OUT request by 1,424 pcapng timestamp ticks; this interface uses the pcapng default microsecond timestamp resolution, so the observed interval is approximately 1.424 ms.
+
+### Differential comparison with the first CTRL1 EFX write
+
+Comparing this OUT request to `ctrl1efx.pcapng` message #1 (`F0 43 58 70 13 01 01 04 08 02 00 00 01 00 00 64 00 64 F7`), exactly six SysEx byte positions differ (offsets count from `F0` as offset 0):
+
+| SysEx offset | Previous CTRL1 EFX write | LEVEL → DRIVE capture |
+|---:|---:|---:|
+| 6 | `01` | `0A` |
+| 7 | `04` | `07` |
+| 8 | `08` | `04` |
+| 10 | `00` | `01` |
+| 11 | `00` | `03` |
+| 12 | `01` | `00` |
+
+All other bytes are identical, including the `13 01` command prefix, offset 9 (`02`), offsets 13–17 (`00 00 64 00 64`), and `F7` terminator.
+
+### Evidence assessment
+
+- **Wire-confirmed:** changing the CTRL1 EFX parameter as captured produces a distinct `13 01` payload; the six differing bytes are at offsets 6, 7, 8, 10, 11 and 12. This is the first differential evidence for the EFX parameter-selection operation rather than merely repeating the earlier CTRL1 assignment frame.
+- **Wire-confirmed:** the device returns the same fixed `13 03` response, approximately 1.424 ms later.
+- **Wire-confirmed:** this trace contains no `B0 4D 37` / CC77 event and no separate readback payload.
+- **Not established:** the semantic meaning of each changed byte, which of them encode the parameter enum versus control/function identifiers, or whether the `13 03` response means accepted, persisted, or read back. Do not yet hardcode `01 03 00` as a DRIVE enum without another differential capture or static-code confirmation.
+- **No application source changes:** this remains protocol analysis only. Do not modify CTRL UI/protocol code or build an APK from this capture alone.
+
+### Next evidence needed
+
+1. Reopen the CTRL1/EXP panel after the LEVEL → DRIVE write and capture the panel-open/read operation without changing any field. This is needed to identify whether QuickTone performs device readback and what response carries the selected parameter.
+2. If the panel readback is established, capture one other parameter choice on the same fixed Signal Chain EFX model (only if available) to isolate the parameter enum from the control/function bytes.
+3. Keep the selected preset and active Signal Chain EFX model fixed; do not alter CTRL2/3/4 during this test.
+
+Preserve this raw pcapng trace as the reference for the CTRL1 parameter-selection operation.
