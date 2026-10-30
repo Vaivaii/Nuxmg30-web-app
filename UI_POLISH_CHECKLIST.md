@@ -449,3 +449,18 @@ Keep each operation isolated and note the before/after UI value. Preserve the ra
 ### Current status
 
 Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/disassembly plus dedicated CTRL/EXP captures. No feature implementation or APK build is appropriate until the protocol fields and ACK/readback path are supported by evidence.
+
+
+### Goal 2 capture checkpoint — 2026-10-30
+
+- [x] Received screenshot plus dedicated `ctrl1efx.pcapng` and `ctrl2wah.pcapng` from the user.
+- [x] Decoded USBPcap bulk endpoint traffic and reassembled USB-MIDI events.
+- [x] Identified outgoing `F0 43 58 70 13 01 ... F7` messages and matching `F0 43 58 70 13 03 ... F7` device responses. Captures show the response approximately 1 ms after each request.
+- [x] Identified three varying payload bytes at SysEx offsets 10–12, but their meanings are not yet mapped.
+- [x] Found two additional CC77/value55 messages in the CTRL1 capture only; purpose unknown.
+- [x] Static QuickTone UI evidence includes MG30 pedal setting classes, `getPedalSetCheck`, and separate T:/R: function option lists.
+- [x] Detailed raw packet bytes, hashes, evidence classification, and next differential-capture steps saved in [CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md](CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md).
+- [ ] Obtain isolated panel-open/read capture, CTRL1 single-choice change, CTRL2 single-choice change, and panel reopen/readback capture.
+- [ ] Map the three changing bytes to controls and UI enums; establish CC77 purpose and whether settings are preset-specific/global.
+- [ ] No application source change or APK build yet. Continue analysis only until command semantics and readback are established.
+
