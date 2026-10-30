@@ -464,3 +464,62 @@ Constructor VA `0x005C5290` installs vtable `0x00D318FC`. Its MSVC RTTI complete
 ### Practical consequence
 
 No per-pedal USB capture is required just to discover the two option names if we can decode the initializer arrays and active model-key table. Continue static table recovery first. Ask for one small hardware capture only if the decoded table or write/readback call path leaves a genuine ambiguity.
+
+## QuickTone embedded model JSON — bulk extraction of CTRL parameter candidates (2026-10-30)
+
+### Discovery
+
+The executable contains multiple embedded JSON model-control definition blobs. Each model entry has an `array` of UI parameter controls, and each control entry carries a `languageKey` such as `DLY_RATE`, `AMP_GAIN`, or `EFX_DRIVE`, plus MIDI CC and range metadata. These are not merely loose strings; they are structured per-model control definitions.
+
+Two resource profiles include the exact original-MG30-family model names visible in the user's screenshot/captures, including `ANALOG DELAY` (UI abbreviation `ANA-DLY`), `PLEXI 45`, and `DIST UNO`:
+
+| Candidate embedded profile | File offset | Top-level entries | Entries with at least one languageKey |
+|---|---:|---:|---:|
+| Profile A | `0x69F8DB0` | 79 | 73 (includes `NAM` and other definitions) |
+| Profile B | `0x6A41E78` | 92 | 86 (includes `NAM` and other definitions) |
+
+Both profiles are part of QuickTone v2.6.7.16's embedded resource data. The current static analysis has **not yet proven which profile is selected by `NuxPedalSettingPanelMG30` (original MG-30) versus `NuxPedalSettingPanelMG30MK2`**, so do not silently assign Profile B to the original MG30 or ship either as the final mapping before tracing the profile selector.
+
+### Correlation: first two model parameter keys match the two CTRL choices
+
+The first two non-empty `languageKey` entries in each model's `array` match all three user-provided examples:
+- `ANALOG DELAY`: first keys `DLY_RATE`, `DLY_INTEN` → UI labels `RATE`, `INTEN`; the user's screenshot shows `ANA-DLY` with `RATE` selected.
+- `PLEXI 45`: first keys `AMP_GAIN`, `AMP_PRES` → `GAIN`, `PRES`; the user's screenshot shows `PLEXI 45` with `GAIN` selected.
+- `DIST UNO`: first keys `EFX_LEVEL`, `EFX_DRIVE` → `LEVEL`, `DRIVE`; this exactly matches the user's isolated `LEVEL → DRIVE` experiment and its unique `13 01` SysEx payload.
+
+This is strong static-data corroboration that the two CTRL dependent choices for a model are represented by the first two model parameter keys in the selected embedded profile. It also proves we can recover most option pairs without USB-capturing every pedal. Keep evidence status as **static resource + cross-checked with user UI/capture**, not fully wire-decoded parameter enums.
+
+### Candidate model-pair export
+
+The generated CSV `QuickTone_CTRL_parameter_pairs_candidate_profiles.csv` contains 165 rows across both candidate profiles. Columns include embedded profile/file offset, model key, option 0/1 language keys and labels, all model parameter keys, and the model control count. SHA-256: `e9eba79fea026a3d14a28617ba75ed468c9c49d1803eed7d32ed5dc84be400d7`.
+
+Selected examples from the two embedded profiles:
+
+| Model | Profile A option 0 | Profile A option 1 |
+|---|---|---|
+| ANALOG DELAY | RATE | INTEN |
+| DIST UNO | LEVEL | DRIVE |
+| PLEXI 45 | GAIN | PRES |
+| T SCREAMER | DRIVE | LEVEL |
+| MORNING DRIVE | LEVEL | DRIVE |
+| CE-1 | INTEN | DEPTH |
+| TREMOLO / TREM | RATE | DEPTH |
+| DIGITAL DELAY / DIGI DELAY | E.LEVEL | F.BACK |
+| ROOM | DECAY | TONE |
+| HALL | DECAY | PRE.D |
+| CLASS A15 | GAIN | CUT |
+| BASS MATE | GAIN | PRES |
+
+### Differences and caveats
+
+- The two profiles are similar but not identical. 69 model keys overlap; 65 have identical first-two pairs. Four shared amp models differ in option 1 (`JAZZ CLEAN`, `TWIN RVB`, `VIB KING`, `SUPER RVB`: Profile A says `BRIGHT`; Profile B says `LEVEL`).
+- Profile B has 20 model keys not in Profile A, while Profile A has 7 not in Profile B. These may be different product or firmware resource families; class-to-profile association is still unresolved.
+- Some model entries have only one non-empty `languageKey` (e.g. `PH 90` in Profile A). Do not manufacture a second parameter. Determine whether that is a genuine single-choice exception or an incomplete/alternate profile.
+- `TOUCH WAH` appears in the model editor's EFX model data and is not the same thing as the expression pedal's dedicated WAH assignment with MIN/MAX. Keep those separate.
+- The WAH assignment/model and MIN/MAX path remains a separate set-value-panel path and is not represented by the generic first-two-parameter extraction.
+
+### Next static task
+
+Trace the device/profile selector that chooses the embedded JSON resource family for original `NuxPedalSettingPanelMG30` versus `NuxPedalSettingPanelMG30MK2`. Only after that association is proven should one profile be promoted to the canonical original MG-30 Gen2/6.0.x option table. No extra per-model packet capture is indicated at this stage.
+
+No MG30 Studio source change or APK build has been made.
