@@ -573,3 +573,20 @@ The value 128 happens to equal 32 float32 samples × 4 bytes, but this numerical
 - Keep Export fail-closed: reject the mismatched block and do not generate a partial preset.
 
 No source/protocol code was changed based on this diagnostic. Preserve the successful single-preset importer, NAM, User/Third Party upload, Collection, MIDI mappings, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device path.
+
+
+## Clarification — previously supplied Export USBPcap has no SysEx traffic (2026-10-31)
+
+The user clarified that an Export-time capture had already been supplied and showed no activity. Do not ask the user to repeat the same capture procedure unchanged.
+
+The previously uploaded short captures were inspected in the current project runtime:
+- `iruser.pcapng`: 26 USBPcap packet blocks; no complete SysEx messages.
+- `deluxecapt.pcapng`: 24 USBPcap packet blocks; no complete SysEx messages.
+- `ircolectionmenu.pcapng` and `ircolectionmenu dialog.pcapng`: short descriptor/control captures, no complete SysEx.
+- By contrast, `ir user import.pcapng` contains 150 complete SysEx messages for the User import transaction (`10/01`, `09/01`, `11/01` plus ACKs); `ircolectionmenu dialog dan import.pcapng` contains the separate Collection import transaction (`6A/01`, `6C/01`, `6B/01` plus ACKs).
+
+The no-activity Export capture is therefore not evidence of the Export request bytes or of a malformed request; it contains no captured SysEx to inspect. The in-app diagnostic separately proves that the Android app constructed/logged a 15-byte `10/00` request and received a 203-byte `10/02`-shaped body, but its `requestHex` is an application-buffer record, not an independent USB wire capture.
+
+Likely capture-boundary issue to verify: the screenshot shows MG30 Studio running on Android. A Windows USBPcap capture only sees USB traffic on the Windows machine's USB host/controller; it cannot observe a direct Android-phone-host-to-MG-30 cable session. This is a transport-topology explanation, not yet confirmed because the exact host/capture topology of the earlier no-activity file has not been established.
+
+Next action is **not** to repeat the same USBPcap capture. First establish where the USBPcap capture was taken and which machine was USB host. If the pedal was connected directly to the Android phone, use Android-side USB MIDI/UsbDeviceConnection instrumentation (log the actual transfer call, endpoint, bytes written/read and return length) or a hardware USB protocol analyzer. Keep the current app-level diagnostics and fail-closed offset check. Do not change the read protocol, accept offset 128, or modify any working write/import path based only on an empty capture.
