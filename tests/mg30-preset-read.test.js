@@ -7,6 +7,7 @@ import {
   parseMG30UserIRMetadataReadReply,
   parseMG30UserIRWaveReadReply,
   parseMG30UserIRCurveReadReply,
+  inspectMG30UserIRDataReadReply,
   assembleMG30UserIRReadback,
 } from '../www/mg30-preset-read.js';
 
@@ -20,10 +21,10 @@ const packWords = bytes => {
   for (let i = 0; i < bytes.length; i += 2) packed.push(...encodeWord(view.getUint16(i, true)));
   return packed;
 };
-function makeDataReply(command, index, offset, values, type) {
+function makeDataReply(command, replyTag, offset, values, type) {
   const decoded = new Uint8Array(132);
   const view = new DataView(decoded.buffer);
-  view.setUint16(0, index, true);
+  view.setUint16(0, replyTag, true);
   view.setUint16(2, offset, true);
   values.forEach((value, i) => {
     if (type === 'float32') view.setFloat32(4 + i * 4, value, true);
@@ -55,13 +56,16 @@ test('metadata reply validates index and extracts the resource name', () => {
   assert.throws(() => parseMG30UserIRMetadataReadReply(reply, 8), /tidak cocok/);
 });
 
-test('wave and curve replies validate index/offset and decode values', () => {
-  const wave = makeDataReply(0x10, 7, 32, Array.from({length:32}, (_,i)=>(32+i)/2048), 'float32');
+test('wave and curve replies treat the first decoded word as an opaque tag and validate offset', () => {
+  const wave = makeDataReply(0x10, 256, 32, Array.from({length:32}, (_,i)=>(32+i)/2048), 'float32');
+  const waveHeader = inspectMG30UserIRDataReadReply(wave, 0x10);
+  assert.equal(waveHeader.replyTag, 256);
+  assert.equal(waveHeader.offset, 32);
   assert.equal(parseMG30UserIRWaveReadReply(wave, 7, 32).samples[0], 32/2048);
-  assert.throws(() => parseMG30UserIRWaveReadReply(wave, 7, 64), /indeks\/offset/);
-  const curve = makeDataReply(0x11, 7, 64, Array.from({length:64}, (_,i)=>Math.min(305,64+i)), 'uint16');
+  assert.throws(() => parseMG30UserIRWaveReadReply(wave, 7, 64), /offset 32, diharapkan 64/);
+  const curve = makeDataReply(0x11, 0, 64, Array.from({length:64}, (_,i)=>Math.min(305,64+i)), 'uint16');
   assert.equal(parseMG30UserIRCurveReadReply(curve, 7, 64).values[0], 64);
-  assert.throws(() => parseMG30UserIRCurveReadReply(curve, 8, 64), /indeks\/offset/);
+  assert.throws(() => parseMG30UserIRCurveReadReply(curve, 8, 128), /offset 64, diharapkan 128/);
 });
 
 test('64 waveform replies and 10 curve replies assemble a complete IR resource', () => {
@@ -75,5 +79,5 @@ test('64 waveform replies and 10 curve replies assemble a complete IR resource',
   assert.equal(result.samples[0], 0);
   assert.equal(result.samples[2047], 2047/2048);
   assert.equal(result.curve[599], 305);
-  assert.throws(() => assembleMG30UserIRReadback(8, waves, curves), /indeks\/offset/);
+  assert.throws(() => assembleMG30UserIRReadback(8, waves, curves), /offset/);
 });
