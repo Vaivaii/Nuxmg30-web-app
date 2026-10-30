@@ -528,3 +528,14 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Milestone goal is changing the CTRL assignments in MG30 Studio for each numbered control, with implementation/testing focused on 1, 3 and 4 first. CTRL2 remains in the configuration surface.
 - [ ] No app source changes yet; remain in protocol mapping/capture phase until commands, payload fields, ACK and readback are supported.
 
+
+
+### Goal 2 — CTRL1 LEVEL → DRIVE differential capture (2026-10-30)
+
+- [x] Received and decoded `ctrl1leveltodrive.pcapng` (3,044 bytes; SHA-256 `5edda84a0144e3ec76cc94b65e7ea2ed850aeb90ec4a893748df4d051871dd5d`).
+- [x] Reassembled USB-MIDI traffic: one OUT SysEx `F0 43 58 70 13 01 0A 07 04 02 01 03 00 00 00 64 00 64 F7`, followed by the usual IN response `F0 43 58 70 13 03 00 00 00 00 00 00 00 00 F7` approximately 1.424 ms later.
+- [x] Compared against `ctrl1efx.pcapng` CTRL1 baseline. Six SysEx positions differ: offsets 6, 7, 8, 10, 11, and 12. This confirms a distinct command payload for the captured LEVEL → DRIVE selection; numeric meanings are still unmapped.
+- [x] Confirmed there is no additional CC77 message and no separate readback transaction in this capture.
+- [x] Appended full packet/differential analysis and evidence classification to `CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md` (commit `2294f6845e43276ee9891cc8b40e5826e9ffe58d`).
+- [ ] Reopen the CTRL1/EXP panel without changing fields and capture the resulting device query/readback; this is the next most useful experiment.
+- [ ] Do not implement or build yet: the payload bytes' semantics and device-side readback remain unproven. Preserve NAM, IR User/Collection, MIDI mappings, preset sync and Copy Scene unchanged.
