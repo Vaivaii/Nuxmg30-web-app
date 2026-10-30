@@ -353,3 +353,10 @@ The user-supplied capture has now been inspected directly. It is not an empty fi
 ### Scope protection
 
 No code/protocol behavior changed from this forensic capture analysis. Do not modify the working Gen2 single-preset importer, NAM, IR User/Third Party, IR Collection 6A/6B/6C, MIDI parameter mappings, preset sync, Copy Scene, CTRL/EXP, signal-chain reorder, or Save-to-device 07/01 path.
+
+
+### Capture integrity marker
+
+- SHA-256 of the exact supplied capture: 024b981b135273819c156a9682aed2d712b79677551137cfc6a9ad2d27770df8.
+- All 18 EPB timestamp fields are identical in this file. Treat timing/duration from this capture as unusable; packet content and endpoint mapping remain inspectable.
+- The capture's one interface name is USBPcap1. It records device enumeration for three bus-1 device addresses; the MG-30 is address 3 by its 1FC9:8260 descriptor.
