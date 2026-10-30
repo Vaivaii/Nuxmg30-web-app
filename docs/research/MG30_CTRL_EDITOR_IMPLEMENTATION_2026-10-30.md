@@ -88,3 +88,13 @@ Recommended first device test:
 5. Avoid treating a successful ACK alone as proof of the physical function; the panel confirms stored bytes through readback.
 
 Any mismatch or timeout should be captured before repeating a write. Keep NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene protected.
+
+
+## Final build result — 2026-10-30
+
+- Final source commit used by the APK: `249e6ada74444a7c6f62c79066568df8cfabc5ad`.
+- GitHub Actions run: [41027171814](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41027171814) — conclusion: success.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `12964162270`.
+- Extracted APK: `MG30-Studio-CTRL-Editor-debug.apk`, 4,378,432 bytes.
+- APK SHA-256: `2fb982240a318ca86fdcfc85b2343a8a72c509f8d1462f99a83d9baee27169f5`.
+- This confirms the Android build completed; it does not substitute for the first on-pedal read/write and physical control tests.
