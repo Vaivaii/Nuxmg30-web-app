@@ -458,3 +458,47 @@ The next test is the already implemented **read-only** `.mg30patch` Export UI us
 4. If the first expected offset is still missing, collect a full USBPcap trace containing the outgoing 10/00 request and every incoming 10/02 reply. Record the opaque first word and decoded offset separately; do not guess the meaning of the opaque word.
 
 No change is authorized to the working NAM path, User/Third Party 10/09/11 upload path, Collection 6A/6B/6C mapping, MIDI parameter map, preset synchronization, Copy Scene, CTRL/EXP, signal-chain behavior, single-preset importer, or Save-to-device 07/01 writer. Keep the 128-record batch importer disabled pending a dedicated QuickTone batch-import capture and destination-mapping evidence.
+
+
+## Forensic follow-up — Export offset mismatch on slot 04A (2026-10-31)
+
+### User-observed hardware result
+
+The user supplied an Android MG30 Studio screenshot from an Export attempt with source slot **04A**. The status reported that no matching SysEx response was received during the `10/02` waveform read and displayed one ignored reply as `tag 0 / offset 0`. The UI also explicitly reported that no data was written to the MG-30.
+
+The screenshot is not enough to identify the exact failing waveform frame or requested offset: the prior UI only showed the mismatched returned header, not the active request's offset. Therefore, do not conclude from this screenshot alone that the failed request was offset 32, or that the pedal always returns offset 0.
+
+The message itself establishes that the app received a body matching the current 203-byte `10/02` envelope check and decoded its first two words as opaque tag 0 and offset 0. It was ignored because it did not match the offset currently awaited.
+
+### Independent QuickTone binary check
+
+The supplied QuickTone v2.6.7.16 executable was independently re-inspected with x86 disassembly:
+
+- At `0x4AB340`, the User IR waveform reader initializes the request command `10/00`, keeps the requested resource index in a 16-bit variable, initializes sample offset to 0, and increments that offset by `0x20` until it reaches `0x800`. That is 64 pages at sample offsets 0, 32, …, 2016.
+- For each request, the function writes the resource index and sample offset as two adjacent little-endian uint16 values in a four-byte local structure.
+- Helper `0x4A4910` takes those two uint16 words and encodes each into three 7-bit SysEx bytes. The current MG30 Studio `encodeWord16`/request builder implements the same byte transformation.
+- At `0x4AB510`, the `10/02` handler validates the response command/status, calls `0x4A4970` to unpack `0x84` (132) bytes from the payload, then reads the second decoded uint16 at output offset +2. That value is used as the sample offset when placing the 32 float32 values into the waveform buffer.
+- Therefore the current request field order, three-byte uint16 packing, 32-sample offset progression, and second-word reply-offset interpretation are consistent with the inspected QuickTone code. This does not prove that the Android host transmitted the intended request on the USB wire, that MG-30 firmware 6.0.x replies identically, or that timing/queue behavior is correct.
+
+For slot 04A (program/index 12), the expected second waveform request at offset 32 is:
+`F0 43 58 70 10 00 00 00 00 18 00 00 40 00 F7`.
+A regression assertion now locks this exact request into the protocol test suite.
+
+### Instrumentation added
+
+The export bridge now captures, per IR waveform/curve request:
+- target resource index and request label (for example waveform 2/64);
+- expected sample/curve offset;
+- complete 15-byte outgoing request frame as hex;
+- elapsed request/reply times;
+- matching-command response body length and initial raw bytes;
+- decoded opaque reply tag and returned offset;
+- all mismatched replies observed while waiting for that request.
+
+The Export page exposes the trace in an expandable, copyable diagnostics panel after failure. This is instrumentation only: it adds no MIDI command and does not alter read/write protocol behavior.
+
+### Next controlled test
+
+Install only the APK from the latest successful diagnostics build. Retry **read-only Export** on slot 04A once, expand “Detail diagnostik readback”, and provide the copied log. The expected offset, actual outgoing request bytes and incoming reply prefix will identify whether the mismatch is in request construction, transmission/transport, firmware response behavior, or reply timing.
+
+Do not accept an offset-mismatched block, do not produce a partial `.mg30patch`, and do not introduce any write operation to work around the failure. Keep the already successful single-preset importer, NAM, User/Third Party upload family `09/10/11`, Collection `6A/6B/6C`, MIDI mappings, preset synchronization, Copy Scene, CTRL/EXP, signal chain and Save-to-device `07/01` path unchanged. Batch import remains disabled.
