@@ -136,3 +136,57 @@ Do not model preset import as necessarily only three scene writes. The likely hi
 2. Convert the preset's scene/model data into three hardware scene-part buffers and write them through the existing `0B/01` → `0B/03` per-part ACK sequence, then `07/01` → `07/03) finalize and read-back verification—if the import capture confirms this writer path is reused.
 
 The ordering and any resource-address/slot mapping are unknown. Keep all existing IR User/Third Party and Collection command families and their mappings untouched until the import capture establishes the correct destination and sequence. No implementation or APK build was made.
+
+
+## Hardware import capture decoded — IR User followed by three preset parts (2026-10-30)
+
+User supplied `presetimport.pcapng` (44,352 bytes). The USBPcap/USB-MIDI event packets were reconstructed into complete SysEx messages and correlated with their IN replies.
+
+### Observed ordered transaction
+
+The capture contains 78 SysEx OUT messages and 78 corresponding SysEx IN responses:
+
+| Sequence | OUT | IN response | Count |
+|---|---|---|---:|
+| 1 | `09/01` | `09/03` | 1 |
+| 2 | `10/01` | `10/03` | 64 |
+| 3 | `11/01` | `11/03` | 10 |
+| 4 | `0B/01` | `0B/03` | 3 |
+
+All observed OUT messages have a matching IN response. The 10/01 group contains 64 fixed-size waveform messages; the 11/01 group contains 10 fixed-size companion-data messages. Their detailed payload fields should continue to be interpreted using the separately validated IR User capture map, not guessed from command names alone.
+
+### Correlation with existing IR captures
+
+- The standalone `ir user import.pcapng` capture has the same IR User command counts: 64 × `10/01`, 1 × `09/01`, 10 × `11/01`, with matching `10/03`, `09/03), and `11/03` replies.
+- The order differs: standalone User import observed `10/01` × 64 → `09/01` → `11/01` × 10; preset import observed `09/01` → `10/01` × 64 → `11/01` × 10.
+- Preset import does **not** show Collection's `6A/01`, `6C/01`, or `6B/01` command family. It therefore uses the IR User/Third Party family, not the Collection transfer family.
+- The preset-import IR packets use a different header parameter from the standalone User capture (for example, the observed byte at message offset 7 is `0x78` in this capture versus `0x02` in the standalone capture). Do not hardcode either value or assume they are interchangeable; decode this field and its relationship to the resource/preset slot separately.
+
+### Preset scene writes at the end of the same import
+
+After all 75 IR-related OUT messages complete, QuickTone sends exactly three preset writes:
+
+- `0B/01` with program byte `0x3C`, part byte `0`, followed by matching `0B/03`.
+- `0B/01` with program byte `0x3C`, part byte `1`, followed by matching `0B/03`.
+- `0B/01` with program byte `0x3C`, part byte `2`, followed by matching `0B/03`.
+
+Thus the capture directly demonstrates this QuickTone import order: **IR User/Third Party resource transfer first, then all three scene parts for preset program 60 (0x3C)**. The `09/01` metadata message also contains `0x3C`; its exact field semantics remain to be decoded, but it is consistent with the associated resource being addressed in the context of the same destination preset.
+
+### Important difference from MG30 Studio's current save helper
+
+The capture contains no `07/01` finalization frame and no `07/03` response. A raw scan and reconstructed OUT-message list both confirm this command is absent from the supplied capture.
+
+MG30 Studio's existing `writeHardwarePreset()` sends the same three `0B/01` part writes with per-part `0B/03` ACKs, **then additionally sends `07/01` and waits for `07/03`**, followed by read-back verification. Therefore:
+- QuickTone and MG30 Studio share the observed three-part `0B/01` write/ACK family and program/part addressing.
+- The complete QuickTone import sequence is **not byte-for-byte the same as** the current MG30 Studio helper: the latter's `07/01` step was not observed here.
+- Do not remove `07/01` from the existing Save-to-device helper, because that is a separate working app path. Equally, do not blindly reuse that entire helper for QuickTone-compatible import until the role of `07/01` and any post-write readback/commit behavior is understood.
+
+### Consequences for the implementation model
+
+The import workflow is now proven to be a two-phase process:
+1. Restore the associated audio resource through the existing IR User/Third Party command family (`09/01`, `10/01`, `11/01`) with all observed ACKs.
+2. Write the three preset scene parts using `0B/01) and matching `0B/03) ACKs.
+
+This supports the interpretation that the RIFF/WAVE content embedded in the .mg30patch record is a preset-associated IR/cab-like resource, but the exact mapping from file offsets to the IR messages and the meaning of the `0x78` parameter are not yet decoded. No Collection transfer, NAM `58` transfer, or `07/01` finalization was observed in this capture.
+
+No source/protocol changes or APK build were made. Existing NAM import, IR User/Collection implementation, MIDI mapping, preset sync, and Copy Scene remain untouched.
