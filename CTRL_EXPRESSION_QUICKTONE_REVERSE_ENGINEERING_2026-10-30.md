@@ -628,3 +628,39 @@ No MG30 Studio source files were changed and no APK was built for this static-an
 ### Correction — separate 0D request command (2026-10-30)
 
 A line-by-line recheck of VA 0x004A7D40 shows that the outgoing message is F0 43 58 70 0D 00 F7 (command 0D 00), not 0D 01. Its paired incoming handler at VA 0x004A7E60 checks 0D 02. Earlier shorthand in the previous section/checklist that said 0D 01/0D 02 is corrected: the observed static pair is 0D 00 request and 0D 02 response. The response parser consumes a length-bearing payload and updates the MG30 singleton through helper calls, but the payload fields and relationship to WAH MIN/MAX are still unproven. Do not label it an expression range transaction until the panel callback and slider path are traced.
+
+
+## Original-MG30 model lookup initializer located — parameter-pair table source (2026-10-30)
+
+Further static tracing located the initializer and the lookup path that must be decoded before publishing the canonical CTRL model/parameter pairs.
+
+### Original panel identity and initializer
+
+- VA 0x005BE8D0 is the constructor associated with the RTTI type descriptor NuxPedalSettingPanelMG30 (original MG-30 class, not the MKII class).
+- The constructor calls VA 0x005C23E0 with ECX set to the embedded panel-data region (outer object + 0x74). This initializer populates the panel's large static model/key data structure, including the lookup-table regions later read by the CTRL menu helper.
+- This is the correct original-MG30 class family for the lookup path. It is no longer necessary to rely on the two candidate embedded model-editor JSON profiles as the only source for CTRL mapping.
+
+### Lookup and menu-building call path
+
+- VA 0x005C2070 selects a model-indexed record from one of several category arrays and returns two one-byte identifiers in the caller's output buffer. The dependent-choice caller supplies choice index 0 and then 1.
+- VA 0x005C2030 resolves one returned identifier into a 10-byte string/key slice from the panel-data object, using the object-relative calculation (identifier × 5 + 0x255) × 2.
+- VA 0x005C48F0 is the dependent-choice popup builder: it calls the lookup for choice 0 and choice 1, resolves the returned identifiers, and builds the two option entries. It is not, by itself, proof of the first-column function dropdown's displayed order.
+- The lookup helper's category switch references table regions at object-relative offsets 0x14A, 0x168, 0x23A, 0x35A, 0x42C and 0x45C. The initializer at 0x005C23E0 writes data across these regions and a larger key/string pool.
+- A static byte map begins at VA 0x00D3124C (bytes 00 00 02 03 06 07 08 00 in the executable image) and is indexed by the stored function value before the category-table lookup. The exact relation between the UI item IDs, packed function value, category selector, active model index and the six-byte record layout still needs a complete base-pointer/call-site alignment.
+
+### Evidence status and important correction
+
+- Proven: the original-MG30 panel contains a static model/key data initializer; the CTRL dependent-choice helper reads category-specific records; choices 0 and 1 are looked up separately; and a separate key/string resolver turns returned identifiers into menu text.
+- Not yet proven: the complete model → displayed parameter-0/parameter-1 catalogue, the exact first-column function-menu item IDs/order, or the runtime selector-to-row mapping for every model family.
+- Important correction to the earlier shorthand: VA 0x005C48F0 builds the dependent-choice menu, not the first-column function menu. Therefore the previous statement that this function alone proves the ordered function list (----, WAH, EFX, AMP, MOD, DLY, RVB) is withdrawn. That order may match the user's UI description, but its exact native item IDs/order must be traced separately.
+- The partially reconstructed static arrays currently produce candidate labels that conflict with the user's direct observation that every original-MG30 AMP model exposes GAIN + MASTER. This indicates the object-base alignment, category selector, model-row mapping, or key translation is not yet fully resolved. Do not publish or implement those partial rows. The user's all-AMP GAIN + MASTER observation remains authoritative.
+
+### Next static tasks
+
+1. Trace the exact pointer stored in the dependent-choice popup's parent field and reconcile it with the +0x74 initializer argument; verify the helper's base address before extracting any array row.
+2. Trace the first-column function popup construction and the selected-item IDs written by VA 0x005C4610. Reconcile those IDs with the static selector map at 0x00D3124C and the user's known CTRL1 EFX / CTRL2 WAH examples.
+3. Trace the global model-index selector returned by the MG30 settings singleton accessor (the +0x2C lookup data) to determine how the active model maps to a row in each category array.
+4. Decode the returned key identifiers through the actual display/localization path; use the user-confirmed AMP GAIN + MASTER result as a hard validation test, not as a rule to overwrite unexplained bytes.
+5. Only then export the canonical original-MG30 model → parameter-choice-0/choice-1 table. Preserve WAH's separate MIN/MAX/set-value path and do not mix T/R or Multi EFX controls into this table.
+
+No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
