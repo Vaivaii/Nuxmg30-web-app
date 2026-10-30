@@ -204,3 +204,68 @@ The command fields reinforce a possible resource-handle relationship, while leav
 - The 64 waveform messages retain the known 32-sample address progression from 0 through 2016; the 10 companion/curve messages retain the known address progression from 0 through 576. This supports reuse of the validated User-family packet builder only after its target/handle parameter is exposed and validated.
 
 These observations strengthen the interpretation that QuickTone binds the User-family IR resource address to the preset destination, but they do not reveal the exact function of the doubled handle field.
+
+
+## Final single-preset byte mapping and capture cross-validation (2026-10-31)
+
+This section supersedes the earlier provisional interpretations of the WAVE region and the 0x78 parameter.
+
+### Corrected interpretation of the IR target parameter
+
+- The `09/01` name frame in the supplied import capture carries destination program byte `0x3C`.
+- The `10/01` and `11/01` frames encode the same integer program value 0x003C via the established 16-bit-to-three-7-bit-byte encoding: `encodeWord16(0x003C) = [0x00, 0x78, 0x00]`.
+- Therefore `0x78` is the middle packed byte of the encoded destination value `0x3C`, **not** a separate doubled/derived handle. This corrects the earlier hypothesis in the first capture note. The field represents the same destination preset program parameter; do not call it a physical IR slot number.
+
+### Corrected interpretation of RIFF/WAVE region
+
+The record's WAVE header declares PCM24, mono, 48 kHz, but QuickTone's import payload is raw IEEE float32, not decoded PCM24:
+
+- First 1,536 float32 values (6,144 bytes) occupy the apparent RIFF `data` region at file offset `0x1FE` through `0x19FD`.
+- The next 512 float32 values (2,048 bytes) immediately follow the RIFF end at `0x19FE` through `0x21FD`.
+- The contiguous result is exactly 2,048 float32 samples (8,192 bytes). Encoding the float bytes as 64 packets of `10/01` produces an exact match to all 64 captured waveform frame payloads.
+- Do not feed this peculiar WAVE-shaped resource through a generic PCM24 decoder. The parser deliberately reconstructs the contiguous raw float32 block from the two file ranges.
+
+### Confirmed complete single-record layout
+
+| File offset | Length | Meaning / verified mapping |
+|---|---:|---|
+| `0x0000` | 4 | Little-endian source record ordinal (sample = 1; not destination slot) |
+| `0x0004` | 426 | Three scene records, 142 bytes each; each contains 71 little-endian uint16 values |
+| `0x01AE` | 4 | Resource marker; sample value = 1 |
+| `0x01B2` | 16 | ASCII IR resource name; sample = `c414_cap_45_dc` |
+| `0x01C2` | 16 | Padding in supplied sample |
+| `0x01D2` | 0x182C | WAVE-shaped header and first 1,536 raw float32 values |
+| `0x19FE` | 0x800 | Remaining 512 float32 values, just outside RIFF |
+| `0x21FE` | 0x4B0 | 600 little-endian uint16 curve values (0..305 in the tested sample) |
+
+The record ends at `0x26AE` (9,902 bytes). The three scene blocks encode to 213 bytes each with the captured uint16-to-three-7bit-byte mapping; all three scene write payloads match the capture exactly (213/213 bytes per scene).
+
+The resource name encodes to the `09/01` name payload exactly. The 2,048 float32 values encode to all 64 `10/01` packets exactly. The 600 stored curve words match the 600 meaningful curve words decoded from the ten `11/01` packets. QuickTone's last curve packet contains eight nonzero words in the forty transmitted tail words beyond the 600-value file table; those bytes are not stored in the record and appear to be transient/stale data. The MG30 Studio builder deterministically zero-fills that unused tail and does not replicate memory residue.
+
+### Final capture order and ACK behavior
+
+Single-preset QuickTone import uses 78 OUT frames in this exact order:
+1. `09/01` name once; ACK `09/03` status 0.
+2. `10/01` waveform 64 times; ACK `10/03` status 2 for 63 frames and status 3 for the final frame.
+3. `11/01` curve 10 times; ACK `11/03` status 2 for nine frames and status 3 for the final frame.
+4. `0B/01` scenes 0, 1, 2; each ACK `0B/03` echoes the target program and part and has status 1.
+
+Target program is the destination slot chosen in QuickTone (capture = 0x3C). The source record ordinal from the file is not used as the destination; the destination is supplied to all resource and scene frames.
+
+No `07/01` finalization or `07/03` response appears in the QuickTone import capture. This is why the new importer has a separate QuickTone-compatible three-scene writer and deliberately does not call the existing Save-to-device `writeHardwarePreset()` helper (which retains its own 07/01 finalization and read-back contract). Existing Save-to-device remains unchanged.
+
+### Implemented software path
+
+- Added `www/mg30-preset-format.js`: strict parser for one 0x26AE record and builder for the exact 78-message QuickTone import plan. It rejects 128-preset batch files and unknown lengths/markers/WAVE metadata rather than guessing.
+- Added `www/mg30-preset-import.js`: Preset-page UI for selecting, validating and importing a single .mg30patch into the currently selected hardware program.
+- Updated `www/index.html`: isolated `MG30PresetImportBridge` uses the existing MIDI queue and ACK listener, sends 09 → 10×64 → 11×10 → 0B×3, validates each observed phase status, and never sends 07/01. It locks polling, preset selection, Save, scene switching, Copy Scene, parameter CC changes, signal-chain reorder, and CTRL/EXP while the operation is active.
+- After the 3 preset write ACKs, the app performs a separate read-only `0B/00` readback and checks target program, part index, and all scene payload bytes. This is an MG30 Studio safety verification added after the captured QuickTone transaction; it is not claimed to be part of QuickTone's import sequence.
+- IR resource delivery is addressed with the selected destination program parameter. The app preserves the exact User/Third Party `09/10/11` command family; Collection `6A/6B/6C` and NAM `58` code paths are untouched.
+- Parser/frame fixture comparison (supplied `1B DELUX DIST.mg30patch` vs `presetimport.pcapng`): name frame matches; waveform 64/64; curve meaningful words 600/600 (nine full packets byte-exact and the final packet differs only in eight non-recorded stale tail words); preset scene payloads 3/3 byte-exact.
+- This is offline/file-and-capture validation only. It does not prove physical import on the user's MG-30 Gen2 FW 6.0.x. Hardware round-trip, IR resource list visibility, audio check, and failure/retry behavior remain pending.
+- The 128-record file remains intentionally unsupported by the UI. Batch destination mapping and a matching batch-import capture are still required.
+- Earlier QuickTone static-reader helper size expectations (`0x2590` / `0x12C800`) still conflict with the actual single/all export samples (`0x26AE` / `0x135700`). This disassembly/callback discrepancy remains unresolved; no trimming or padding is performed.
+
+### Scope protection
+
+No changes were made to NAM import, IR Collection commands, Collection mapping, MIDI parameter map, preset synchronization read logic, signal-chain mapping, Copy Scene payload/ACK path, or the existing Save-to-device `07/01` writer. The importer sets a temporary busy lock around its own transaction only.
