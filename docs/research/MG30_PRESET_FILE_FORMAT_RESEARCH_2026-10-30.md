@@ -76,3 +76,43 @@ The all-export dialog path writes a 0x135700-byte buffer, while the all-file rea
 - The exact wire transaction that exports/imports these preset structures is still not matched to a USBPcap trace.
 
 Next action remains: compare an actual original-MG30 .mg30patch exported by QuickTone with the observed candidate lengths/layout, then correlate with a capture of the same export/import.
+
+## Real .mg30patch samples received and compared (2026-10-30)
+
+User supplied two original-MG30-format sample files for analysis:
+
+- `1B DELUX DIST.mg30patch`: 9,902 bytes = `0x26AE`; SHA-256 `0b8f9fecb5150bfe5a96dfcf66f3a777b910cef2910bcaa3100f0fa990aaa67a`.
+- `MG30AllPatch.mg30patch`: 1,267,456 bytes = `0x135700`; SHA-256 `ea502ba24001d363c21950ed676bf77271026ac30ced4d10241168e10fe0b22a`.
+
+### Direct observations from the files
+
+- The single-preset sample is exactly one `0x26AE`-byte record.
+- The all-preset sample is exactly `128 * 0x26AE = 0x135700`; there is no remainder. It parses cleanly as 128 fixed-stride records.
+- Each all-file record begins with a little-endian 32-bit sequential value from 0 through 127. Treat this as a record/slot index candidate; confirm exact pedal slot semantics against a matching import or export capture.
+- The record at index 1 contains the preset name `DELUX DIST`, matching the single-preset filename and its first four bytes (`01 00 00 00`).
+- The single sample and all-file record 1 share the first `0x1B2` bytes. The short label field at offset `0x1B2` differs: single sample `c414_cap_45_dc`; all-file record 1 `CHPBRIT412`.
+- Both contain a `RIFF/WAVE` region beginning at offset `0x1D2`. The inspected sample's WAVE header declares PCM format, mono, 48,000 Hz, 24-bit, and a data size of `0x1800`. The all-file contains RIFF/WAVE regions in 26 of its 128 records; some observed records declare `0x2000` data size.
+- The single sample and all-file record 1 are not byte-identical. Apart from the short label field, the WAVE sample data and the `0xCB0)-byte trailing region differ substantially. The meaning of the trailing region is not decoded.
+- This establishes a real WAVE/resource-bearing record layout; it does **not** yet prove whether that resource field is an IR, a cab asset, NAM-related data, or another QuickTone audio resource. Keep the field semantically neutral until correlated with an import capture.
+
+### Important correction to the earlier static-reader interpretation
+
+The observed single file is `0x26AE` bytes, and the observed all-preset file is `0x135700` bytes. These samples therefore confirm the export-buffer stride/size inference (`0x26AE`, 128 records), but conflict with the previously traced reader-helper exact lengths (`0x2590` single and `0x12C800` all). This is now a concrete unresolved discrepancy, not merely a lack of sample data. Do not truncate/pad records by `0x11E`, and do not implement against the reader-helper size until its caller/callback pairing and conversion path are revalidated.
+
+### Relation to the existing MG30 Studio preset-save MIDI path
+
+Source review of `www/index.html` confirms the existing write primitive:
+
+1. `readPresetParts(0x0C, program)` obtains three scene-part responses through `readSysExPart`.
+2. `writeHardwarePreset(program, parts)` iterates all three parts. For each it clones the source response and changes only header bytes 3–6 to command/action/program/part = `0B 01 program part`; it sends the body as SysEx and waits for the corresponding `0B/03` ACK.
+3. It then sends the existing `07/01` preset-finalization frame, waits for `07/03`, reads back the three parts on the existing `0B/00` path, and byte-compares each payload from byte 7 onward.
+4. `saveToDevice()` already uses this guarded writer. Copy Scene keeps its separate `0C/01 → 0C/03` transaction and must remain untouched.
+
+**Working hypothesis:** QuickTone import likely parses/converts one `0x26AE) file record into three scene-part buffers and then uses the same or a closely related hardware write transaction (`0B/01` per part, ACKs, `07/01) finalization). Reusing the established hardware transport layer is more likely than inventing a separate bulk-MIDI protocol. However, this is not yet proven: the .mg30patch record has WAVE/resource data and trailing bytes that are not simply the three already-observed scene SysEx payloads. The file-to-three-parts conversion still needs to be identified.
+
+### Next validation
+
+- Capture QuickTone import of the supplied `1B DELUX DIST.mg30patch` into a deliberately selected/ backed-up destination slot, with USBPcap started before opening the Import dialog and stopped after QuickTone reports completion.
+- Capture or export a matching single-preset file from the same source slot if needed to cross-check the resource field and slot index.
+- Correlate the import SysEx frames with the existing `0B/01 → 0B/03`, `07/01 → 07/03`, and read-back sequence. Record any additional resource/WAVE transfer commands separately.
+- Do not change preset writer code, NAM, IR User/Collection, MIDI mappings, preset sync, or Copy Scene until the file conversion and import wire path are evidence-backed. No implementation or APK build was made in this analysis checkpoint.
