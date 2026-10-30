@@ -179,11 +179,9 @@ function renderMulti() {
   if (functionCode === 8) {
     dependent.hidden = false;
     optionList(select, [["S.TAP ON", 0], ["S.TAP OFF", 1]], (raw & 0x20) ? 0 : 1);
-    $("multiEfxDependentHint").textContent = "DLY: bit 0x20 aktif berarti S.TAP ON.";
   } else if (functionCode === 10) {
     dependent.hidden = false;
     optionList(select, [["S3 ON", 0], ["S3 OFF", 1]], (raw & 0x20) ? 1 : 0);
-    $("multiEfxDependentHint").textContent = "SCENE memakai polaritas bit yang berlawanan dengan DLY.";
   } else {
     dependent.hidden = true;
   }
