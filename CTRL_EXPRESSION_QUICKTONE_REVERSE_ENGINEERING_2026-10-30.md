@@ -805,3 +805,16 @@ This section supersedes earlier notes that characterized `0x005C48F0` as only a 
 - [x] Detailed addendum recorded in docs/research/MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md.
 - [ ] Remaining protocol work is now primarily validation/capture of individual write operations for external T/R and Multi EFX CTRL, plus confirmation of selector-7 DLY/SCENE options. Do not implement unknown CC77/0D behavior.
 - [ ] No source modifications or APK build in this reverse-engineering checkpoint.
+
+
+## Selector-7 Multi EFX CTRL dependent options decoded (2026-10-30)
+
+- [x] Resolve original-MG30 selector-7 DLY dependent choices: popup row 0 = S.TAP ON, row 1 = S.TAP OFF.
+- [x] Resolve selector-7 SCENE dependent choices: popup row 0 = S3 ON, row 1 = S3 OFF.
+- [x] Trace popup order from original-MG30 data initializer records through shared popup builder 0x005C48F0 and vector constructor 0x005C22A0.
+- [x] Map storage bit 0x20 in Multi EFX CTRL byte +0x7A:
+  - DLY: ON = bit set (0x28), OFF = bit clear (0x08).
+  - SCENE: ON = bit clear (0x0A), OFF = bit set (0x2A).
+- [x] Record the important inversion: do not treat bit 0x20 as a generic ON/OFF boolean shared by DLY and SCENE.
+- [ ] Still obtain isolated hardware write captures for Multi EFX DLY S.TAP ON/OFF and SCENE S3 ON/OFF before implementing this field.
+- [ ] No MG30 Studio source changes/APK build in this analysis checkpoint; keep NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene unchanged.
