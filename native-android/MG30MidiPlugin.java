@@ -35,11 +35,32 @@ public class MG30MidiPlugin extends Plugin {
     private int activeDeviceId = -1;
     private String activeDeviceName = "";
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private MidiManager.DeviceCallback deviceCallback;
 
     @Override
     public void load() {
         Object service = getContext().getSystemService(Context.MIDI_SERVICE);
-        if (service instanceof MidiManager) midiManager = (MidiManager) service;
+        if (!(service instanceof MidiManager)) return;
+        midiManager = (MidiManager) service;
+        deviceCallback = new MidiManager.DeviceCallback() {
+            @Override
+            public void onDeviceAdded(MidiDeviceInfo info) {
+                notifyMidiDeviceChanged(info, true);
+            }
+
+            @Override
+            public void onDeviceRemoved(MidiDeviceInfo info) {
+                if (activeDeviceId == info.getId()) {
+                    closeConnection();
+                    JSObject state = new JSObject();
+                    state.put("connected", false);
+                    state.put("id", info.getId());
+                    notifyListeners("midiConnectionChanged", state);
+                }
+                notifyMidiDeviceChanged(info, false);
+            }
+        };
+        midiManager.registerDeviceCallback(deviceCallback, mainHandler);
     }
 
     @PluginMethod
@@ -229,8 +250,24 @@ public class MG30MidiPlugin extends Plugin {
 
     @Override
     protected void handleOnDestroy() {
+        if (midiManager != null && deviceCallback != null) {
+            try { midiManager.unregisterDeviceCallback(deviceCallback); } catch (Exception ignored) {}
+            deviceCallback = null;
+        }
         closeConnection();
         super.handleOnDestroy();
+    }
+
+    private void notifyMidiDeviceChanged(MidiDeviceInfo info, boolean attached) {
+        JSObject event = new JSObject();
+        event.put("id", info.getId());
+        event.put("name", property(info, MidiDeviceInfo.PROPERTY_NAME));
+        event.put("manufacturer", property(info, MidiDeviceInfo.PROPERTY_MANUFACTURER));
+        event.put("product", property(info, MidiDeviceInfo.PROPERTY_PRODUCT));
+        event.put("inputPortCount", info.getInputPortCount());
+        event.put("outputPortCount", info.getOutputPortCount());
+        event.put("attached", attached);
+        notifyListeners("midiDeviceChanged", event);
     }
 
     private String property(MidiDeviceInfo info, String key) {

@@ -127,11 +127,14 @@ if (Capacitor.isNativePlatform()) {
   NativeMidi.addListener('midiConnectionChanged', event => {
     notifyConnection(Boolean(event?.connected), event?.name || liveDeviceName);
   });
+  NativeMidi.addListener('midiDeviceChanged', event => {
+    window.dispatchEvent(new CustomEvent('mg30-native-midi-device', { detail: event || {} }));
+  });
 
   window.NUXNativeMidi = {
     available: true,
     isConnected: () => connected,
-    async connect() {
+    async connect(options = {}) {
       if (connected && outputPort) {
         return { input: inputPort, output: outputPort, access: accessShim, deviceName: liveDeviceName };
       }
@@ -145,7 +148,7 @@ if (Capacitor.isNativePlatform()) {
       if (!selected) selected = candidates.find(device => /nux/i.test(
         String(device.name || '') + ' ' + String(device.product || '') + ' ' + String(device.manufacturer || '')
       ));
-      if (!selected && candidates.length === 1) selected = candidates[0];
+      if (!selected && candidates.length === 1 && options.autoOnly !== true) selected = candidates[0];
       if (!selected) {
         const labels = candidates.map(device => String(device.name || device.product || 'MIDI device') + ' (ID ' + device.id + ')');
         throw new Error(labels.length
@@ -164,4 +167,5 @@ if (Capacitor.isNativePlatform()) {
       return Array.isArray(result?.devices) ? result.devices : [];
     },
   };
+  window.dispatchEvent(new CustomEvent('mg30-native-midi-ready'));
 }

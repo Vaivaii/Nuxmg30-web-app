@@ -747,3 +747,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Remove the literal placeholder strings `footswitch helper` and `footer explanation` from the CTRL / EXP dialog while retaining the external footswitch fields and footer action buttons.
 - [x] No JavaScript or protocol code changed. The CTRL state/readback/write handlers, shared MIDI queue, NAM import, IR User/Collection transfer, MIDI mappings, preset sync and Copy Scene remain untouched.
 - [ ] Verify the compact dimensions and clean CTRL / EXP dialog on Android; hardware readback/write validation remains a separate test.
+
+## Follow-up — USB icon status + automatic MG-30 USB-MIDI reconnect (2026-10-30)
+
+- [x] Remove the literal `header eyebrow` and `header subtitle` placeholder strings from the CTRL / EXP dialog heading.
+- [x] Replace the large **Hubungkan** text button in the app header with a compact USB icon button; it is dim while disconnected, illuminated when connected, and exposes accessible status/labels.
+- [x] Preserve manual recovery: tapping the USB icon while disconnected runs the existing connection flow; tapping while connected does not reopen the connection.
+- [x] Add Android `MidiManager.DeviceCallback` attach/detach notifications. When a matching NUX/MG-30 MIDI device appears, the app attempts a silent auto-connect using the existing readback/polling path. A device already attached at app startup is checked once after the page loads.
+- [x] Auto-connect only selects a named MG-30/NUX candidate; the existing single-device fallback remains available to an explicit manual connection attempt.
+- [x] Detaching the active MIDI device closes its ports and updates the connection state so the USB icon turns off; reattaching triggers a fresh automatic attempt.
+- [x] No change to IR/NAM transfer packet code, preset/scene serialization, MIDI parameter map, signal-chain sender, or CTRL protocol handlers.
+- [ ] Validate on original MG-30 Gen2 FW 6.0.x: open app with pedal already attached, attach after app launch, unplug/replug, and manually tap the USB icon after a simulated disconnect.
+- [ ] Confirm existing NAM import/readback, IR User/Collection, and MIDI mappings remain unchanged on hardware.
