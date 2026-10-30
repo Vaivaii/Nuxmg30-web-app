@@ -1064,3 +1064,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Trace QuickTone call graph upstream from Export and identify what populates its preset/IR cache before Export (connect/init, preset sync/selection, IR manager metadata refresh, or another callback). The already identified cache-miss path performs 09/00 then 10/00 waveform and 11/00 curve reads.
 - [ ] Compare cache population path with MG30 Studio's explicit read-only Export bridge. Do not repeat the same silent USBPcap capture.
 - [x] No change to read/write protocol or app source based on this clarification. Keep the Android 10/00 offset mismatch fail-closed and preserve all successful/protected features.
+
+
+## QuickTone Export cache explanation strengthened by disassembly (2026-10-31)
+
+- [x] Confirmed user's PC capture topology: MG-30 directly connected to PC; no phone involved. The 18-packet USBPcap file includes MG-30 enumeration but no packets on MIDI endpoints 0x02 OUT / 0x82 IN during Export.
+- [x] Re-examined QuickTone initialization: function 0x841D00 calls IR manager refresh 0x4A9560.
+- [x] Confirmed 0x4A9560 loops through the manager's 128 entries (count at +0x640, initialized to 0x80 by 0x4B1500) and calls 0x4A95F0 for each index.
+- [x] Confirmed 0x4A95F0 issues 09/00 metadata requests; the 09/02 handler 0x4A9720 checks the corresponding resource cache and, on cache miss, invokes 10/00 waveform 0x4AB340 followed by 11/00 curve 0x4AAEA0.
+- [x] This provides a code-supported explanation for silent QuickTone Export: relevant preset/IR data can be read/cached during initialization/refresh, then Export serializes in-memory state. Export click itself need not issue USB-MIDI.
+- [ ] Trace the cache-present predicate and identify all triggers for metadata refresh (startup/connect, preset selection/0B notification, IR manager opening). Do not ask for another identical USBPcap Export capture.
+- [ ] Keep the Android readback offset mismatch (requested 0, response decoder reports 128) as a distinct unresolved issue. No change to request encoding or parser semantics until supported by evidence.
+- [x] No source/protocol changes. Successful single-preset importer and all protected features remain untouched.
