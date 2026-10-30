@@ -412,3 +412,40 @@ This sequence is the user-facing roadmap. Do not work on multiple feature milest
 ## Scope clarification — device-synced IR/NAM rename (2026-10-30)
 
 User clarified the exact requirement: rename the IR or NAM **from the app and synchronize/write the changed name to the physical MG-30**, so the name also changes on the device. This is a device-side rename feature, not merely changing a local display label. Reverse-engineer QuickTone's rename command for the appropriate asset type and verify the device ACK/read-back. Keep the task limited to renaming; do not fold in new import/export work or alter existing IR User/Collection, NAM import, or MIDI paths.
+
+
+## Goal 2 — CTRL / Expression reverse-engineering progress (2026-10-30)
+
+### Static QuickTone executable inspection — initial findings
+
+Input executable: user-provided `NUX_QuickTone_V2.6.7.16_Windows.zip`, containing `QuickTone.exe` (190,296,504 bytes).
+
+- [x] Extracted the executable and inspected its printable strings / MSVC RTTI-style class names.
+- [x] Confirmed MG-30-specific UI classes are present: `NuxPedalPopupMenuMG30`, `NuxPedalSettingPanelMG30`, and `NuxPedalSetValuePanelMG30`. Separate MK2 classes also exist; analysis must stay on the MG30 (non-MK2) class family.
+- [x] Found UI/resource strings including `EXP & Pedal`, `EXP & Pedal1`, `EXP & Pedal2`, `CTRL`, `CTRL1`, and `CTRL2`.
+- [x] Found a MG30-specific MIDI transmission method name `NuxMidiTransmissionMG30::getPedalSetCheck`, plus a similarly named MG30MK2 method. This is a useful code-navigation lead, but the method's packet format and semantics are not yet established.
+- [x] Found MG30-specific incoming MIDI handler symbols and a lambda associated with the `NuxPedalSetValuePanelMG30` constructor. The exact event-to-packet call graph remains to be disassembled.
+- [ ] Determine the actual UI fields/options, their value ranges/enums, and whether CTRL and EXP are per-preset or global.
+- [ ] Disassemble the MG30-specific panel constructor/callbacks and `getPedalSetCheck`; trace exact outgoing messages and matching incoming ACK/readback.
+
+### Evidence classification
+
+- **Static-code evidence:** QuickTone v2.6.7.16 contains distinct original-MG30 pedal-setting UI/transmission classes and CTRL/EXP labels.
+- **Not yet wire-confirmed:** No command bytes, parameter offsets, value encoding, ACK pattern, or readback behavior have been established for CTRL/EXP.
+- **Capture gap:** The currently supplied capture inventory includes IR User/Collection, NAM import, Deluxe capture, and Copy Scene traces. No capture is yet identified as a dedicated CTRL/Expression edit/readback session. Do not infer a CTRL/EXP protocol from the unrelated IR/NAM/Copy Scene packets.
+- **No application source changes have been made for Goal 2.** Existing NAM, IR, MIDI mapping, preset sync, and Copy Scene code remains untouched.
+
+### Required next evidence
+
+Capture QuickTone v2.6.7.16 communicating with the original MG-30 Gen2 firmware 6.0.x while performing isolated operations:
+1. Open the pedal-setting / EXP & Pedal panel without changing anything (baseline/read request).
+2. Change exactly one CTRL setting, apply/save it, then capture the response.
+3. Restore baseline, change exactly one EXP setting (or calibration/range field), apply/save, then capture the response.
+4. Reopen/read the panel to determine whether QuickTone performs an explicit readback.
+5. If there are separate CTRL1/CTRL2 or EXP1/EXP2 tabs/options, capture each independently and note which field was changed.
+
+Keep each operation isolated and note the before/after UI value. Preserve the raw USBPcap/pcapng files. Do not send guessed SysEx or test unknown commands against the pedal.
+
+### Current status
+
+Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/disassembly plus dedicated CTRL/EXP captures. No feature implementation or APK build is appropriate until the protocol fields and ACK/readback path are supported by evidence.
