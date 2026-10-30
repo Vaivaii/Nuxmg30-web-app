@@ -986,3 +986,6 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 
 
 - [x] Cross-check index mapping in QuickTone binary: IR manager constructor initializes 0x80 (128) metadata entries; refresh loop requests metadata for each index 0–127; the 0x0B transaction handler passes the preset program byte to the 09/00 metadata request path. This supports the initial preset-slot-to-IR-index mapping; live reply index validation remains mandatory.
+
+- [x] Export rechecks all conflicting hardware-operation locks after waiting for the current MIDI queue, before starting the read sequence.
+- [ ] Fresh APK and original Gen2 hardware validation still pending.
