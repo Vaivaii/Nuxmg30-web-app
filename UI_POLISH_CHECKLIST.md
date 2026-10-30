@@ -1042,3 +1042,14 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Obtain the in-app **Detail diagnostik readback** log before changing the protocol. It contains the exact outgoing SysEx request, requested offset, all observed reply headers, and failure step. Use its requestHex and expectedOffset to distinguish a wrong offset field/layout from a stale/repeated response.
 - [ ] In particular, determine whether the failure occurred on the second waveform request (expected offset 32 after offset 0 had succeeded) or at a later offset; the screenshot's short status message does not identify the expected offset or include the request bytes.
 - [ ] Do not change the User IR 10/09/11 upload path, Collection 6A/6B/6C, NAM, MIDI mappings, or preset import while diagnosing this read-only request path. Do not treat the reply's opaque tag 0 as a resource index.
+
+
+## Physical Export diagnostic — slot 04B (2026-10-31)
+
+- [x] Received the in-app read-only Export diagnostic for slot 04B / program 13.
+- [x] First request: 10/00 waveform 1/64, expected offset 0; app-recorded request: `F0 43 58 70 10 00 00 00 00 1A 00 00 00 00 F7`.
+- [x] One 203-byte 10/02 response arrived 51 ms after send. Prefix: `43 58 70 10 02 00 00 00 02 00 00 03 1C 21 02 39 3A 02 2C 4C`. Current decoder reports opaque tag 0 / returned offset 128.
+- [x] Expected offset 0 did not match returned offset 128; export timed out after 3.79 s and aborted without writing to MG-30.
+- [ ] Obtain full USBPcap trace with outgoing 10/00 and complete incoming 10/02 bodies and USB-MIDI packet boundaries.
+- [ ] Re-verify QuickTone unpack helper 0x4A4970 and response handler 0x4AB510. Do not change parser semantics or accept offset 128 without evidence.
+- [x] Mismatch rejection remains enabled; no source/protocol change from this log. Protect the successful importer and all unrelated features.
