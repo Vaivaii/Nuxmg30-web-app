@@ -676,3 +676,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Resolve selector-7 option labels/bit meaning, labels for the two SetValue value pairs, conditional availability and CC77 sender.
 - [ ] Continue separating `0D 00 → 0D 02` extended-data refresh from `13 00 → 13 02` CTRL readback. Do not label 0D as WAH MIN/MAX without proof.
 - [ ] No source changes or APK build yet. Protect NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene.
+
+
+### Goal 2 — SetValue panel caller and slider wire-path (2026-10-30)
+
+- [x] Confirm only CTRL1 dependent row (selector 2) and CTRL2 dependent row (selector 3) open the original-MG30 SetValue panel.
+- [x] Confirm SetValue panel has three localized captions and two sliders; QuickTone resource strings include WAH_RANGE/RANGE, VOL_MIN/MIN and VOL_MAX/MAX, matching the user's WAH screenshot (exact caption IDs to resource keys remain inferred).
+- [x] Confirm slider changes store CTRL1 pair at `+0x7F/+0x80` or CTRL2 pair at `+0x81/+0x82` and immediately use `13 01`.
+- [x] Confirm these same value bytes are restored in `13 02` readback.
+- [x] Do not assign WAH MIN/MAX to the separate 0D family; no evidence connects 0D payload to these range values.
+- [ ] Complete exact localized caption-ID join and determine whether semantics vary across active function/model.
+- [ ] Continue identifying the separate 0D extended-data response consumer and CC77 sender.
+- [ ] No source changes/APK build until these remaining items are evidence-backed.
