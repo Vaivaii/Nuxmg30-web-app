@@ -269,3 +269,30 @@ No `07/01` finalization or `07/03` response appears in the QuickTone import capt
 ### Scope protection
 
 No changes were made to NAM import, IR Collection commands, Collection mapping, MIDI parameter map, preset synchronization read logic, signal-chain mapping, Copy Scene payload/ACK path, or the existing Save-to-device `07/01` writer. The importer sets a temporary busy lock around its own transaction only.
+
+
+## Goal 3 — single-preset export serializer and batch-file inventory (2026-10-31)
+
+### Single-preset export work completed offline
+
+- [x] Add inverse decoder for hardware scene read replies in www/mg30-preset-format.js: decodeMG30PresetSceneReply() validates the 220-byte 0C/02 body, program byte, part index, and reconstructs 71 packed uint16 words into the 142-byte little-endian scene record.
+- [x] Add strict serializer buildMG30SinglePresetPatch() and convenience buildMG30SinglePresetPatchFromReplies(). The serializer writes the 0x26AE-byte Gen2 single-record layout and requires all three scenes, a 1–16 byte printable ASCII IR resource name, 2,048 finite float32 samples, and 600 curve words in range. It refuses to generate a purported QuickTone file when the associated IR resource is missing.
+- [x] Expose the export decoder/serializer through the MG30PresetFormat registry.
+- [x] Offline reconstruction test against supplied 1B DELUX DIST.mg30patch: reconstructed 9,902-byte output is byte-for-byte identical to the sample; SHA-256 remains 0b8f9fecb5150bfe5a96dfcf66f3a777b910cef2910bcaa3100f0fa990aaa67a. This is a local format/serializer test, not a pedal hardware export test.
+- [ ] Do not yet add/enable an Export .mg30patch UI. The current app reads the three preset scene parts but www/ir-transfer.js implements IR uploads and Collection metadata/name reads; no verified readback sequence for User IR waveform samples and curve data is currently available. An export that writes scene data but fills the IR block with zeros or stale cached values would be incomplete and must not be presented as a compatible QuickTone preset.
+- [ ] Capture a real QuickTone single-preset export with USBPcap running from before the Export action until the file has been saved. Supply both the resulting .pcapng and the matching exported .mg30patch; select a source preset whose attached IR name/audio resource is known. Use this pair to identify scene-read and IR-resource-read commands, ordering, ACK behavior, and any export-time conversion.
+- [ ] After the read protocol is validated, implement the hardware readback bridge, add the UI, compare exported bytes against QuickTone's matching file, then import the exported file into a safe test slot and verify three-scene readback plus resource data. Do not modify the working single-preset importer or the existing Save-to-device writer while adding export.
+
+### Batch .mg30patch file inventory — evidence for the next import phase
+
+- [x] Reinspect supplied MG30AllPatch.mg30patch: file size is 0x135700 (1,267,456 bytes) and divides exactly into 128 fixed-size 0x26AE records. The leading uint32 LE record ordinal runs 0–127.
+- [x] Inventory resource marker at 0x1AE: 101 records have marker 0 (no resource marker), 27 have marker 1.
+- [x] Of the 27 marker-1 records, 26 contain a RIFF/WAVE header at 0x1D2. The remaining marked record is ordinal 91: it has resource name 412-MRSHLL77-G12 but no standard RIFF/WAVE header at that offset. Do not force it through the single-record parser.
+- [x] The 26 standard WAVE records include two structural variants: 15 records use RIFF size 0x1824, PCM format code 1, mono/48 kHz, blockAlign 3, 24 bits, data size 0x1800; 11 records use RIFF size 0x2024, PCM format code 1, mono/48 kHz, blockAlign 4, 32 bits, data size 0x2000. Their binary representation and QuickTone conversion must be handled as separate variants until matching import/export captures prove the float mapping.
+- [ ] Batch importer remains disabled. The 128 records' source ordinals are known, but how QuickTone maps source records to device destination slots, how marker-0/marker-1 records are handled, and how the anomalous ordinal-91 record is interpreted are not yet proven.
+- [ ] Capture QuickTone batch import of the supplied MG30AllPatch.mg30patch, with USBPcap starting before the Import dialog and ending after completion. Record the destination/slot selections and export resulting device state if practical. The capture must establish whether the app imports all 128 records, skips empty entries, uses separate resource and preset transactions per occupied record, and how it chooses the destination address.
+- [ ] Keep the prior static-reader discrepancy open: native QuickTone reader helpers previously appeared to expect 0x2590 per record / 0x12C800 total, while real exported single/all samples are 0x26AE / 0x135700. No truncation, padding, or alternate accepted length has been introduced.
+
+### Scope protection
+
+No change to working NAM import, IR User/Third Party upload packets, Collection 6A/6B/6C commands/mapping, MIDI parameter mapping, preset synchronization, Copy Scene, CTRL/EXP, signal-chain reorder, or Save-to-device 07/01 path. Export serializer is offline-only; it sends no MIDI and performs no hardware write.
