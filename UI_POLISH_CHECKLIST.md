@@ -912,7 +912,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Add a transaction lock against poll/scene change/Copy Scene/Save/slot selection/CTRL-EXP/CC changes/signal-chain sender while import is running.
 - [x] Preserve IR User/Third Party `09/10/11` family and target destination parameter; no modifications to IR Collection `6A/6B/6C), NAM `58), MIDI mappings, preset sync, or Copy Scene.
 - [x] Record final byte mapping, correction of earlier RIFF and 0x78 interpretations, packet order/statuses, importer behavior, tests and outstanding hardware verification in `docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md`.
-- [ ] Verify single-preset import physically on original MG-30 Gen2 FW 6.0.x: destination chosen, IR appears in Third Party/User list, audio check, and all three scene readbacks.
+- [x] User reports that the single-preset import was physically tested and succeeded on the original MG-30 Gen2. IR list visibility and separate audio audition were not separately reported; do not infer those checks.
 - [ ] Define recovery/retry behavior after partial IR or scene transfer interruption; do not auto-retry partial writes.
 - [ ] Decode and reconcile the static reader helper 0x2590/0x12C800 size discrepancy before enabling additional file variants.
 - [ ] Implement/validate all-preset 128-record batch import only after capturing QuickTone batch import and establishing destination slot mapping.
