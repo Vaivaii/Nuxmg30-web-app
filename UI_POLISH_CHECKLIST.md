@@ -489,3 +489,17 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Keep WAH MIN/MAX capture separate until its exact control-row relationship and range semantics are established.
 - [ ] Existing protocol bytes at offsets 10–12 remain unmapped; no app source change or APK build yet.
 
+
+
+### Goal 2 — hardware control families clarified by user (2026-10-30)
+
+- [x] **Callout 1:** built-in NUX expression pedal. EFX assignment references the active Signal Chain EFX model and selects a model-supported parameter (e.g. DRIVE/LEVEL); WAH has its own model and MIN/MAX range path.
+- [x] **Callout 3:** external NUX footswitch, with separate T and R contact assignments / two configuration columns. Its user-confirmed actions are limited to toggling a pedal/block currently active in Signal Chain and scene up/down.
+- [x] **Callout 4:** CTRL associated with built-in Multi EFX. User-confirmed actions include Delay TAP, pedal/block on/off, and scene cycling 1–3.
+- [x] Detailed technical note now separates the three control families and explicitly warns against using ambiguous CTRL1/CTRL2 names before row-to-hardware mapping is captured.
+- [ ] Capture callout 1 expression parameter change with the Signal Chain effect held constant.
+- [ ] Capture external footswitch T and R assignments independently, including block toggle and scene up/down.
+- [ ] Capture Multi EFX CTRL TAP, block toggle, and scene cycle 1–3 independently.
+- [ ] Capture panel-open/readback for each family; identify its own command/ACK/readback path.
+- [ ] No app source changes or APK build yet. Keep all three control families separate until their wire semantics are established.
+
