@@ -377,8 +377,7 @@ async function saveToPedal() {
       setStatus("Tersimpan · ACK 13 03 diterima dan seluruh field yang dikirim cocok dengan readback 13 02.", "ok");
     } else {
       loadState(result.state);
-      markDirty();
-      setStatus("Perangkat membalas readback, tetapi ada field yang berbeda dari nilai kirim. Periksa kembali sebelum mencoba lagi.", "warn");
+      setStatus("Perangkat membalas readback, tetapi ada field yang berbeda dari nilai kirim. Nilai pada panel kini mengikuti data perangkat.", "warn");
     }
   } catch (error) {
     setStatus((error && error.message ? error.message : "Penulisan CTRL gagal.") +
