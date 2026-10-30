@@ -9,7 +9,8 @@
     "android:init": "npm run build && node scripts/init-android.mjs",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "android:build": "npm run android:init && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run android:init && cd android && ./gradlew assembleDebug",
+    "test": "node --test"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
