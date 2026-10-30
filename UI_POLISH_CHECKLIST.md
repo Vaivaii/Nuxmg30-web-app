@@ -503,3 +503,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Capture panel-open/readback for each family; identify its own command/ACK/readback path.
 - [ ] No app source changes or APK build yet. Keep all three control families separate until their wire semantics are established.
 
+
+
+### Goal 2 — CTRL2 working hypothesis updated (2026-10-30)
+
+- [x] User proposes CTRL2 is expression-related because its dependent configuration columns resemble CTRL1, not the external T/R footswitch editor.
+- [x] Treat this as the leading hypothesis for investigation, not as confirmed hardware fact.
+- [ ] Determine whether CTRL2 is a second physical expression input, an alternate/internal expression assignment, or another expression-related controller.
+- [ ] Capture a CTRL2-only assignment change while keeping CTRL1 and external T/R unchanged.
+- [ ] If possible, test built-in and external expression pedal movement independently and observe which assignment responds.
+- [ ] Verify CTRL1/CTRL2 independent readback and compare their SysEx with external T/R transactions.
+- [ ] Do not label CTRL2 as external footswitch. No app source changes or APK build until physical mapping is established.
+
