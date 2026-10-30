@@ -225,3 +225,30 @@ The user clarified the hardware control diagram and the behavior of the external
 5. Keep preset and Signal Chain stable except for the one deliberately changed variable in each capture.
 
 Do not send guessed MIDI/SysEx messages. Preserve raw pcapng traces. Implement each control family only after its own command, parameter encoding, response, and readback path are established.
+
+
+## Important unresolved ambiguity — QuickTone CTRL2 vs diagram callout 2/3 (2026-10-30)
+
+The user explicitly states that the destination/meaning of **CTRL2 is not yet understood**. The NUX/QuickTone diagram is ambiguous:
+- The diagram's line/illustration appears to point CTRL2 toward the external footswitch path.
+- The diagram separately labels callout 3 as the external footswitch.
+- In actual QuickTone external footswitch configuration, the user can only assign the two T/R contacts to (a) toggle a pedal/block currently present in Signal Chain or (b) Scene Up / Scene Down. This observed capability does not match every apparent implication of the diagram.
+- Therefore, do **not** assert that CTRL2 is the external footswitch, do not equate CTRL2 with callout 3, and do not invent a separate hardware destination for CTRL2.
+- Current confirmed mapping remains: callout 1 = built-in expression pedal; callout 3 = external footswitch T/R; callout 4 = Multi EFX CTRL (per user's direct clarification). **CTRL2's physical destination / relationship to callouts remains unresolved.**
+
+### Evidence needed to resolve CTRL2
+
+1. Capture a baseline with QuickTone open and the pedal connected, then change only the UI item explicitly labeled CTRL2 (not a guessed row/callout) and save.
+2. Observe the actual MG-30 hardware response: which physical input/control changes behavior, if any. Test only with harmless assignments and do not infer from diagram artwork alone.
+3. Compare the outgoing SysEx and incoming response with captures for callout 1 expression, callout 3 external T/R, and callout 4 Multi EFX CTRL.
+4. If possible, inspect QuickTone UI labels/tooltips and MG30-specific handler call graph for CTRL2. Keep UI identifier, diagram callout number, and physical connector as separate identifiers until linked by evidence.
+
+### Naming rule
+
+Until proven, use:
+- `quickToneCtrl2Ui` for the UI element called CTRL2,
+- `diagramCallout2` for the diagram's number 2,
+- `externalFootswitchCallout3` for the known external footswitch,
+- `multiEfxCtrlCallout4` for the known Multi EFX CTRL.
+
+Do not collapse these into a shared `ctrl2` field in application data or protocol code.
