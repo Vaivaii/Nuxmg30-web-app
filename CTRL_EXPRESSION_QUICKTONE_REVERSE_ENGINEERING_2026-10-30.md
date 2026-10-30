@@ -664,3 +664,43 @@ Further static tracing located the initializer and the lookup path that must be 
 5. Only then export the canonical original-MG30 model → parameter-choice-0/choice-1 table. Preserve WAH's separate MIN/MAX/set-value path and do not mix T/R or Multi EFX controls into this table.
 
 No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
+
+
+## Corrected object-base alignment and decoded original-MG30 model/parameter table (2026-10-30)
+
+The earlier partial extraction used the wrong object base for the table arrays. The alignment is now resolved from the constructor and refresh call sites:
+
+- VA 0x005BE8D0 constructs the original NuxPedalSettingPanelMG30 object and calls initializer VA 0x005C23E0 with ECX = outer object + 0x74.
+- The refresh path at VA 0x005C13A4 operates on the panel subobject at outer object + 0x70. It uses ECX = EDI - 0x70 for the shared model/key lookup helpers, which is the outer object base.
+- Therefore helper-relative table offsets map to initializer memory at (helper offset - 0x74). The helper string/key pool at outer+0x4AA aligns to initializer offset 0x436. The displayed model-name pool at subobject+0x43A also aligns to outer+0x4AA.
+- This alignment resolves the previous apparent mismatch and produces readable model names and parameter labels. The full decoded table is recorded in docs/research/MG30_CTRL_EXPRESSION_MODEL_PARAMETER_TABLE_2026-10-30.md.
+
+### Correct function-to-table mapping
+
+The static selector map at VA 0x00D3124C is 00 00 02 03 06 07 08 00. Combined with the original panel refresh path and the decoded table contents, the stored function values map as follows:
+
+| Stored value | Function | Lookup selector |
+|---:|---|---:|
+| 0 | none / ---- | 0 |
+| 1 | WAH | 0 |
+| 2 | EFX | 2 |
+| 3 | AMP | 3 |
+| 4 | MOD | 6 |
+| 5 | DLY | 7 |
+| 6 | RVB | 8 |
+
+This is corroborated by the original-MG30 data: selector 3 contains the AMP model records, selector 6 the MOD records, selector 7 the DLY records, selector 8 the RVB records, and selector 2 the EFX/overdrive records. The first-column popup's actual item IDs still need a direct construction trace, but the stored-value/category mapping is now established.
+
+### Important validations
+
+- The original AMP table's first 30 model records resolve to GAIN + MASTER. This directly matches the user's independent inspection of all original-MG30 AMP models and supersedes the conflicting candidate embedded model-editor JSON rows.
+- The EFX record DIST UNO resolves to LEVEL + DRIVE, matching the user's known UI/capture example.
+- WAH's special table lists CLYDE, CRYBB, V847, HORSE and OCTAVE with no generic parameter pair (---- / ----); WAH MIN/MAX remains a separate set-value path.
+- MOD, DLY and RVB rows also decode into readable model-specific parameter pairs. Some arrays intentionally contain duplicate/shared model rows across families; preserve their raw records and use the active model-index map rather than deduplicating by model name.
+- The prior concern that the reconstructed AMP records contradicted GAIN + MASTER was caused by the wrong object-base alignment. The correctly aligned original-MG30 table now agrees with the user's AMP observation.
+
+### Evidence correction retained
+
+VA 0x005C48F0 is the dependent-choice popup builder, not the first-column function menu builder. Do not cite it as proof of first-column item ordering. The stored enum-to-table mapping above is statically corroborated; the exact native first-column popup item IDs/order still need a direct trace.
+
+No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
