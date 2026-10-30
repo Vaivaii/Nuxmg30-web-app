@@ -783,3 +783,11 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Reduce dialog and scrolling shell maximum height from viewport minus 24px to viewport minus 40px, adding a little breathing room above and below while keeping inner content scrollable.
 - [x] Do not reduce input/select/button sizes or alter CTRL read/write behavior.
 - [ ] Check the resulting portrait layout on the Android device; adjust only if the panel is still too close to screen edges.
+
+## Follow-up — full CTRL / EXP panel visible without scrolling (2026-10-30)
+
+- [x] Replace the phone dialog's internal scroll area with a non-scrolling shell; the dialog clips overflow instead of presenting a scroll bar.
+- [x] Compact the CTRL header, card gaps, card padding, labels, model context, range spacing, and footer spacing for mobile.
+- [x] Keep dropdowns and footer buttons at usable touch heights (36–38 CSS px minimum in the narrow phone layout).
+- [x] Preserve the existing single-column sequence and full-width controls; no protocol, JavaScript, SysEx, NAM, IR, or MIDI-map files changed.
+- [ ] Verify all four control sections and both footer buttons fit simultaneously on the target Android phone. If a selected function reveals additional range/conditional controls, re-check that state separately.

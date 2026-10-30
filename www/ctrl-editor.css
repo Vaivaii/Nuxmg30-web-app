@@ -2,3 +2,87 @@
 
 /* Match CTRL / EXP to the normal compact Save button without enlarging either. */
 @media(max-width:700px){.editor-top-actions>.ctrl-open-btn{min-height:32px}}
+
+
+/* Fit the complete CTRL/EXP editor on a phone without an internal scroll area. */
+@media(max-width:700px){
+  .ctrl-dialog{
+    max-height:calc(100dvh - 28px);
+    overflow:hidden;
+  }
+  .ctrl-dialog-shell{
+    padding:10px;
+    max-height:none;
+    overflow:visible;
+  }
+  .ctrl-dialog-header{
+    gap:9px;
+    margin-bottom:8px;
+  }
+  .ctrl-dialog-header h2{
+    margin:0 0 2px;
+    font-size:15px;
+  }
+  .ctrl-dialog .ctrl-dialog-subtitle.ctrl-status{
+    margin:3px 0 0;
+    font-size:10px;
+    line-height:1.3;
+  }
+  .ctrl-dialog-header-actions .btn{
+    min-height:38px;
+    padding:8px 10px;
+    font-size:11px;
+  }
+  .ctrl-grid{gap:7px}
+  .ctrl-card{padding:10px}
+  .ctrl-card-head{margin-bottom:6px}
+  .ctrl-card-head strong{font-size:12px}
+  .ctrl-field{gap:3px}
+  .ctrl-field label,.ctrl-range-label{
+    font-size:9px;
+    letter-spacing:.5px;
+  }
+  .ctrl-field select{
+    min-height:38px;
+    padding:7px 9px;
+    font-size:11px;
+  }
+  .ctrl-model-context{
+    margin-top:5px;
+    padding:6px 8px;
+    font-size:10px;
+  }
+  .ctrl-range{
+    margin-top:7px;
+    padding:7px;
+  }
+  .ctrl-range-title{margin-bottom:5px;font-size:10px}
+  .ctrl-range-row{margin-top:5px;gap:7px}
+  .ctrl-dependent-hint,.ctrl-parameter-notice{
+    margin-top:5px;
+    font-size:9px;
+    line-height:1.35;
+  }
+  .ctrl-dialog-footer{
+    margin-top:8px;
+    padding-top:8px;
+    gap:6px;
+  }
+  .ctrl-dialog-footer-actions{gap:6px}
+  .ctrl-dialog-footer-actions .btn{
+    min-height:38px;
+    padding:8px 9px;
+    font-size:11px;
+  }
+  .ctrl-save-btn{min-height:38px}
+}
+@media(max-width:390px){
+  .ctrl-dialog-shell{padding:9px}
+  .ctrl-grid{gap:6px}
+  .ctrl-card{padding:9px}
+  .ctrl-card-head{margin-bottom:5px}
+  .ctrl-field select{min-height:36px;padding:6px 8px}
+  .ctrl-model-context{margin-top:4px;padding:5px 7px}
+  .ctrl-dialog-footer{margin-top:7px;padding-top:7px}
+  .ctrl-dialog-footer-actions .btn{min-height:36px;padding:7px 8px}
+}
