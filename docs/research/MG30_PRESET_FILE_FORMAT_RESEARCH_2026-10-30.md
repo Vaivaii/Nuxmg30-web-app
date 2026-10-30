@@ -116,3 +116,23 @@ Source review of `www/index.html` confirms the existing write primitive:
 - Capture or export a matching single-preset file from the same source slot if needed to cross-check the resource field and slot index.
 - Correlate the import SysEx frames with the existing `0B/01 → 0B/03`, `07/01 → 07/03`, and read-back sequence. Record any additional resource/WAVE transfer commands separately.
 - Do not change preset writer code, NAM, IR User/Collection, MIDI mappings, preset sync, or Copy Scene until the file conversion and import wire path are evidence-backed. No implementation or APK build was made in this analysis checkpoint.
+
+
+## IR-resource correlation — stronger hypothesis, not yet proven (2026-10-30)
+
+A cross-check against the existing MG-30 IR capture reports adds an important clue to the RIFF region:
+
+- The sample's RIFF WAVE header is PCM, mono, 48 kHz, 24-bit. Its `data` size is `0x1800` = 6,144 bytes = exactly 2,048 mono 24-bit samples.
+- The existing original-MG30 User IR capture uses 64 waveform frames of command `10/01`, with 32-sample address increments from 0 through 2016 (64 × 32 = 2,048 samples), followed by the separate `09/01` name and `11/01` curve phases.
+- The separate Collection capture uses `6A/01` waveform, `6C/01` name and `6B/01` curve. Do not collapse these two workflows: User/Third Party and Collection remain distinct.
+- The preset record's adjacent 16-byte label (`c414_cap_45_dc` in the single sample; `CHPBRIT412` in all-file record 1) looks like an associated resource name. Together with the matching 2,048-sample count, this **strongly suggests** the embedded WAVE is a cab/IR-like resource belonging to the preset.
+- This is still a structural correlation, not proof of byte-for-byte identity or proof of which IR destination/workflow QuickTone uses. The `0xCB0)-byte trailer after the WAVE region remains undecoded. Its size can be factored as `0x800 + 0x4B0`; the `0x4B0) portion equals 600 × 2 bytes, which is an interesting size coincidence with the 600 meaningful curve values in the existing IR transfer analysis, but no offset map has been established.
+
+### Updated import model to test
+
+Do not model preset import as necessarily only three scene writes. The likely high-level workflow now has two data classes:
+
+1. Restore or resolve the preset's associated audio/IR resource using the appropriate QuickTone resource path. Determine from capture whether it uses User/Third Party `10/09/11`, Collection `6A/6C/6B`, a dedicated resource command family, or no separate transfer for some records.
+2. Convert the preset's scene/model data into three hardware scene-part buffers and write them through the existing `0B/01` → `0B/03` per-part ACK sequence, then `07/01` → `07/03) finalize and read-back verification—if the import capture confirms this writer path is reused.
+
+The ordering and any resource-address/slot mapping are unknown. Keep all existing IR User/Third Party and Collection command families and their mappings untouched until the import capture establishes the correct destination and sequence. No implementation or APK build was made.
