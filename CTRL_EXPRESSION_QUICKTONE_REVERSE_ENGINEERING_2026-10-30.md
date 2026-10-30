@@ -538,3 +538,18 @@ Evidence handling:
 - Prioritize resolving which candidate JSON profile belongs to original `NuxPedalSettingPanelMG30` vs MKII. The profile mismatch is especially important because the user's AMP expectation (`GAIN`/`MASTER`) conflicts with some candidate rows (`GAIN`/`PRES`, `GAIN`/`CUT`) and therefore can help identify the correct profile or reveal that the first-two-key extraction is not always the CTRL pair.
 
 Next analysis: use this user-provided pattern as a consistency check while tracing the original-MG30 profile selector and validating representative AMP, OD, DLY, RVB and MOD rows. Do not request per-model captures unless static analysis cannot resolve a specific discrepancy.
+
+## Authoritative user correction — all AMP models expose GAIN + MASTER (2026-10-30)
+
+The user has personally checked **all AMP models in the original MG-30 QuickTone UI** and confirms that the CTRL parameter choices are always exactly `GAIN` and `MASTER` for every AMP model.
+
+This user-confirmed hardware/UI observation supersedes the candidate embedded JSON extraction rows that appeared to show AMP pairs such as `GAIN + PRES`, `GAIN + CUT`, or `GAIN + BRIGHT`. Those candidate rows must not be used as the original MG-30 CTRL AMP mapping.
+
+Technical consequence:
+- The first-two-`languageKey` extraction from the embedded model JSON is not a universally valid method for deriving CTRL option pairs across every category/model. It may describe model-editor controls rather than the CTRL-dependent pair, or may come from a different resource profile/context.
+- Treat the authoritative AMP CTRL pair as `GAIN` + `MASTER` for all AMP models, based on direct user inspection of the original MG-30 QuickTone UI.
+- Revisit the extraction algorithm and profile association before publishing any canonical table. Specifically separate model editor parameter arrays from the CTRL option lookup table; do not assume they are the same data structure.
+- Preserve the user-confirmed examples for other families as cross-checks: OD/Distortion generally DRIVE + LEVEL; Delay/Reverb/Modulation may vary by model.
+- No additional AMP captures are needed; the user has already checked all AMP model choices.
+
+Evidence label: **user-confirmed UI observation** for all AMP models. This is stronger than the conflicting candidate JSON interpretation.
