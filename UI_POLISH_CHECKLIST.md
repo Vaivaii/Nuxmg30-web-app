@@ -571,3 +571,9 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Resolve special `PH 90` one-key case and WAH's distinct MIN/MAX path; do not invent missing second options.
 - [ ] Correlate the selected embedded model pair data with the exact runtime lookup/write/readback path for `13 01` / `13 03` before implementation.
 - [ ] No MG30 Studio source change or APK build yet. Preserve existing NAM, IR User/Collection, MIDI mappings, preset synchronization and Copy Scene.
+
+### Goal 2 — user-provided parameter-family consistency checks (2026-10-30)
+
+- [x] Record user's expected conventions: AMP generally `GAIN` + `MASTER`; OD generally `DRIVE` + `LEVEL`; DLY/RVB/MOD are the families expected to vary more by model.
+- [ ] Compare these expectations against both extracted QuickTone resource profiles and resolve discrepancies before selecting the original MG30 profile. Do not force-normalize the table to these expectations; preserve exact QuickTone evidence.
+- [ ] Prioritize original MG30 vs MKII resource-family selector, then spot-check representative AMP, OD, DLY, RVB and MOD mappings from static data. Avoid per-model capture unless a concrete unresolved discrepancy remains.
