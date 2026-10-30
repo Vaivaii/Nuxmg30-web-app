@@ -549,3 +549,13 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Decode runtime-populated metadata tables (singleton rooted at `0x0B8D9718`) so the two parameter IDs can be mapped to each active model and display label without capturing each pedal.
 - [ ] Trace parser handling record header `15 02` and identify its source/role in the original-MG30 communication path; do not assume it is a readback without call-graph proof.
 - [ ] Continue reverse engineering only; no app source changes or APK build. Protect existing NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene paths.
+
+### Goal 2 — CTRL1/CTRL2 packed option state and lookup flow (2026-10-30)
+
+- [x] Trace MG30 setting-panel event handler `0x005C4610`: selectors 0/1 update the low nibble of separate state bytes `+0x7D` / `+0x7E` (CTRL1/CTRL2 function); selectors 2/3 update the high nibble of those bytes (dependent option selection).
+- [x] Trace panel refresh handler `0x005C13A4`: the low nibble resolves function/category context and the high nibble selects one of two dependent column-3 option entries; helper `0x005C2070` returns the second-column target/model label and the currently selected third-column parameter label.
+- [x] Confirm RTTI for constructor `0x005C5290`: vtable `0x00D318FC` identifies `NuxPedalSetValuePanelMG30`; constructor creates slider/value controls. Exact WAH MIN/MAX caller and protocol semantics remain to be traced.
+- [ ] Decode and align the full static initializer tables plus model-key string table into a readable model → target label → option 0 / option 1 catalogue. Do not publish pairs from partially decoded string IDs.
+- [ ] Correlate packed state fields and option index with the `13 01` wire payload and confirm readback behavior.
+- [x] Record findings in `CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md` (commit `4e1c82fc248feb62d106cff77671988b8f7cd6cf`).
+- [ ] No app source changes/APK build yet; keep NAM, IR User/Collection, MIDI mappings, preset sync and Copy Scene untouched.
