@@ -872,3 +872,18 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Capture the exact import transaction to establish whether resource upload happens before or after the three-scene preset write, and whether both phases use existing User/Collection handlers.
 - [x] Keep `10/09/11` User and `6A/6C/6B` Collection flows separate; no changes to either path or its parameter mapping in this checkpoint.
 - [x] Update the research note with this cross-correlation and a two-data-class import hypothesis. No source/protocol change and no APK build.
+
+
+## Goal 3 — QuickTone preset-import USBPcap validated (2026-10-30)
+
+- [x] Decode supplied `presetimport.pcapng`: 78 SysEx OUT requests and 78 matching SysEx IN responses.
+- [x] Confirm ordered IR User/Third Party phase: `09/01 → 09/03` once, `10/01 → 10/03` 64 times, then `11/01 → 11/03` 10 times.
+- [x] Compare with standalone `ir user import.pcapng`: same command families/counts, but different message ordering and a differing header parameter. Keep the parameter unresolved; do not copy constants blindly.
+- [x] Confirm Collection family `6A/6B/6C` and NAM family `58` are absent from this preset import capture.
+- [x] Confirm the IR resource phase is followed by exactly three `0B/01` preset scene writes targeting program `0x3C` (60), part indices 0, 1, and 2; each has a matching `0B/03` response.
+- [x] Confirm QuickTone import capture does **not** contain `07/01` or `07/03`, unlike MG30 Studio's current `writeHardwarePreset()` helper. Keep the existing Save-to-device finalization path untouched; do not blindly reuse the whole helper for import.
+- [ ] Decode the `09/01` metadata parameter and the `0x78` field in `10/01`/`11/01`; establish exact mapping from .mg30patch WAVE/resource bytes to User IR message payloads.
+- [ ] Resolve the trailing `0xCB0)-byte per-record region and the earlier `0x2590) vs `0x26AE) file-reader/export discrepancy.
+- [ ] Implement QuickTone-compatible import only after resource conversion, IR destination, scene buffer conversion, post-write commit/readback, and rollback/failure behavior are documented.
+- [x] Record capture sequence, ACK counts, standalone IR User correlation, Collection/NAM exclusions, and the missing `07/01` distinction in `docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md`.
+- [x] No source/protocol changes or APK build in this analysis checkpoint. Preserve NAM, IR User/Collection, MIDI mappings, preset sync, and Copy Scene.
