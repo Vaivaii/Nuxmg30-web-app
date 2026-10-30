@@ -971,3 +971,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Hardware test initial Export UI on original MG-30 Gen2 FW 6.0.x; verify each phase/count/offset and re-import a generated file into a safe test slot.
 - [ ] Initial export bridge assumes the preset program index is the attached IR resource index. It checks the returned index/offset and aborts on mismatch; revise only if actual hardware readback provides evidence for a different resource mapping.
 - [ ] Until the hardware test passes, label Export as implemented but not yet hardware-validated. Keep batch import disabled.
+
+
+## Goal 3 — export code-level validation checkpoint (2026-10-31)
+
+- [x] Syntax-check all added/modified JS modules and inline app scripts.
+- [x] Synthetic runtime verification: 09/00, 10/00, 11/00 request frames are each 15 bytes; synthetic metadata, 64 waveform and 10 curve replies parse and assemble into exactly 2,048 float32 samples and 600 curve words; three synthetic scene replies serialize into a 9,902-byte record.
+- [x] Add Node test coverage in tests/mg30-preset-read.test.js; package.json now has npm test = node --test. Test runner itself still needs to be run by CI/Node.
+- [x] Add shared busy locks across preset import, preset export and IR User/Collection upload so transactions cannot interleave.
+- [x] Reject IR names longer than the file's 16-byte field rather than silently truncating.
+- [ ] Export UI labeled READ ONLY · UJI AWAL. Physical test on original MG-30 Gen2 FW 6.0.x still pending; verify actual resource index mapping and every read reply before trusting the output file.
+- [ ] Fresh APK build and artifact not yet confirmed for current export commits.
+- [ ] Batch importer remains disabled pending hardware export verification and a dedicated batch-import capture/mapping.
