@@ -502,3 +502,32 @@ The Export page exposes the trace in an expandable, copyable diagnostics panel a
 Install only the APK from the latest successful diagnostics build. Retry **read-only Export** on slot 04A once, expand “Detail diagnostik readback”, and provide the copied log. The expected offset, actual outgoing request bytes and incoming reply prefix will identify whether the mismatch is in request construction, transmission/transport, firmware response behavior, or reply timing.
 
 Do not accept an offset-mismatched block, do not produce a partial `.mg30patch`, and do not introduce any write operation to work around the failure. Keep the already successful single-preset importer, NAM, User/Third Party upload family `09/10/11`, Collection `6A/6B/6C`, MIDI mappings, preset synchronization, Copy Scene, CTRL/EXP, signal chain and Save-to-device `07/01` path unchanged. Batch import remains disabled.
+
+
+## Physical Export retry result — offset 0 reply ignored (2026-10-31)
+
+The user supplied a screenshot from the original MG30 Studio Android UI, connected to the MG-30 Gen2 over USB MIDI, with preset slot 04A selected. The read-only Export attempt failed with the visible status:
+
+`Export gagal: Tidak ada balasan SysEx dari MG-30. Balasan 10/02 dengan offset berbeda diabaikan: tag 0/offset 0. Tidak ada data yang ditulis ke MG-30.`
+
+What this establishes:
+
+- The app observed at least one structurally recognizable `10/02` reply (the current matcher requires the expected 10/02 header and a 203-byte body before it records the reply).
+- Its decoded first uint16 was opaque reply tag 0; its second decoded uint16 was offset 0.
+- That reply did not match the offset outstanding for the request that eventually timed out. The status text alone does not reveal the outstanding offset, so it is not yet safe to conclude whether this was the second waveform page (expected offset 32) or a later page.
+- Export aborted. No file was completed and the app explicitly reports that it wrote no data to the MG-30. The path is read-only.
+- This result does not invalidate the already successful single-preset import and does not justify changing the User/Third Party upload command family.
+
+### Required next evidence — in-app diagnostic log
+
+Before changing any request bytes or parser logic, obtain the UI's **Detail diagnostik readback · untuk analisis** log. After the failed attempt, expand that details section and use **Salin log diagnostik**. The log records:
+- target program/slot;
+- each outgoing request's complete SysEx hex (`requestHex`);
+- expected offset for the pending request;
+- every observed reply's body length and header prefix;
+- decoded opaque reply tag and returned offset;
+- the exact failure step.
+
+Compare the failed request's `requestHex` with the expected offset and compare all replies' returned offsets. If the outgoing request encodes the wrong offset, fix only the read-request builder after proving the field layout. If it encodes the expected offset but the device returns offset 0 again, investigate response timing/transaction correlation or the read command's actual address semantics using a matching QuickTone read capture/disassembly. Do not infer the cause from the short UI message alone.
+
+No protocol change is made in this checkpoint. Preserve NAM, User/Third Party IR upload, Collection, MIDI mapping, preset import, preset synchronization, Copy Scene, CTRL/EXP, signal chain, and Save-to-device behavior.
