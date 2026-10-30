@@ -94,3 +94,33 @@ Please capture each operation separately with the same original MG-30 Gen2 and Q
 Keep the selected preset unchanged during these captures. Note the exact before/after UI choice for each file. These differential captures should let us isolate the field for each control and determine if opening the panel triggers a separate read operation. Preserve the raw pcapng files.
 
 Do not send guessed MIDI/SysEx messages to the pedal. Implement only after the variable fields, option enums, response and readback behavior are supported by evidence.
+
+
+## User clarification — dependent control columns and WAH range (2026-10-30)
+
+The user supplied two additional photographs and clarified the intended meaning of the dialog:
+
+- CTRL1 is assigned to EFX. Its row displays three dependent choices: function `EFX`, effect model `DIST UNO`, and a parameter selector `LEVEL`.
+- CTRL2 is assigned to WAH. Its row displays function `WAH`, pedal model `CLYDE`, and WAH-specific range controls; the user identifies this third-column setting as volume MIN/MAX.
+- The third-column options are model-dependent for EFX: different effects expose different controllable parameters (for example LEVEL or DRIVE). Do not hardcode a universal effect parameter list.
+- The WAH popup photo shows two sliders labeled MIN and MAX. The pictured values are MIN ending at 50 and MAX starting at 51, with the slider handles at approximately 0 and 100 respectively. Treat these as values shown in this example only, not universal defaults or device limits until confirmed from capture/code.
+- The extra rows/options shown in the dialog (including T:MOD, R:EFX and TAP in the supplied photo) appear to be other assignment/control rows. Their exact relationship to the numbered hardware callouts and the SysEx byte fields still needs to be established.
+
+### Updated UI/data model hypothesis
+
+The control editor likely needs a dependent configuration model rather than three generic fixed dropdowns:
+1. Control/function assignment (e.g. EFX or WAH).
+2. Model selection when that function supports models (e.g. DIST UNO or CLYDE).
+3. Function/model-specific parameter mapping (e.g. EFX LEVEL/DRIVE) or a range editor (e.g. WAH MIN/MAX).
+
+This is a UI/data-model hypothesis grounded in the user's screenshots and explanation; exact wire-field mapping remains unproven. Keep function list, model list, parameter list, and range schema separate so later protocol evidence can bind each value without conflating them.
+
+### Revised next captures
+
+The next capture should focus on changing **one dependent field at a time** while keeping the preset and all other assignment fields unchanged:
+- EFX model: DIST UNO → another EFX model.
+- EFX parameter: LEVEL → DRIVE (or another available parameter for that model).
+- WAH range: change only MIN while keeping MAX fixed, then separately change only MAX.
+- If possible, open each selector/popup without changing values to identify read/query behavior.
+
+Record the UI before/after value for each pcap. This should help identify whether the existing three changing SysEx bytes represent a control slot, a function/model enum, a parameter enum, or range data. Do not assign semantics to offsets 10–12 until these differential captures or disassembly support them.
