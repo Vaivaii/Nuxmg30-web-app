@@ -1902,10 +1902,10 @@ window.MG30PresetImportBridge=Object.freeze({
  getTargetLabel:()=>slotName(targetSlot),
  async import(plan,onProgress=()=>{}){
   if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
-  if(presetImportBusy||presetExportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
+  if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
   if(!plan||plan.steps?.length!==78||plan.totalFrames!==78||plan.targetProgram!==targetSlot)throw new Error('Rencana impor tidak cocok dengan slot tujuan aktif.');
   if(!Number.isInteger(plan.targetProgram)||plan.targetProgram<0||plan.targetProgram>127)throw new Error('Slot tujuan tidak valid.');
-  presetImportBusy=true;sceneSwitchPending=true;
+  presetImportBusy=true;window.MG30PresetImportBusy=true;sceneSwitchPending=true;
   let acknowledged=0,currentStep=null,readbackMatched=false;
   try{
    setDeviceStatus('Impor preset: menunggu transaksi perangkat sebelumnya…');
@@ -1973,7 +1973,7 @@ window.MG30PresetExportBridge=Object.freeze({
  getTargetLabel:()=>slotName(targetSlot),
  async readSingle(onProgress=()=>{}){
   if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
-  if(presetImportBusy||presetExportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
+  if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
   const program=Number(targetSlot);
   if(!Number.isInteger(program)||program<0||program>127)throw new Error('Slot sumber export tidak valid.');
   if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
@@ -2036,8 +2036,9 @@ window.MG30PresetExportBridge=Object.freeze({
     onProgress({phase:'Membaca kurva IR',completed:frame+1,total:10});
    }
    const resource=readFormat.assembleReadback(program,waveformReplies,curveReplies);
-   const resourceName=metadata.resourceName.slice(0,16);
+   const resourceName=metadata.resourceName;
    if(!resourceName)throw new Error('Nama IR kosong; file preset tidak akan dibuat.');
+   if(resourceName.length>16)throw new Error('Nama IR berjumlah '+resourceName.length+' karakter; format single-preset hanya menyediakan 16 byte. Export dihentikan agar nama tidak terpotong.');
    return {recordOrdinal:program,sceneReplies,resourceName,samples:resource.samples,curve:resource.curve,resourceIndex:program};
   }catch(error){
    setDeviceStatus('Export preset gagal: '+(error?.message||error));
