@@ -924,3 +924,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Push of importer source triggered Android APK workflow run [#114](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41101214040), source commit `af71ae32bb342ecff15cc55580d54d5ebac2d0cf`.
 - [ ] Latest observed workflow state: queued; APK build and artifact upload have not completed yet.
 - [ ] Do not mark the feature APK-ready until the run succeeds and the APK artifact is available.
+
+
+## Goal 3 — export serializer and batch-import reverse engineering (2026-10-31)
+
+- [x] User reports that the implemented single-preset QuickTone import was physically tested and succeeded on their original MG-30 Gen2 device. Record this as a general successful hardware test only; do not infer unreported separate checks such as IR list visibility or audio audition.
+- [x] Add strict scene reply decoder and single-preset .mg30patch serializer in www/mg30-preset-format.js; serializer commit 0addfab4d8e7f02dbb77e97ab479a13197855113, followed by registry exposure commit 1f34e8957c7f891ba6a43246af86b79a10b2e63f.
+- [x] Offline reconstruction of supplied 1B DELUX DIST.mg30patch returns an exact 9,902-byte match and the same SHA-256 0b8f9fecb5150bfe5a96dfcf66f3a777b910cef2910bcaa3100f0fa990aaa67a.
+- [ ] Export is not yet end-to-end and no Export UI is enabled: there is no verified device readback sequence for the preset's associated IR waveform (2,048 float32 values) and curve (600 words). Do not export a scene-only/zero-filled file as a valid QuickTone preset.
+- [ ] Next export requirement: matching USBPcap capture and output file from QuickTone single-preset export with a known attached IR. Reverse engineer readback first, then implement/test hardware export and round-trip.
+- [x] Batch-file inventory: MG30AllPatch.mg30patch is 128 × 0x26AE (total 0x135700); 101 records have resource marker 0 and 27 marker 1. Of the latter, 26 are standard RIFF/WAVE records and ordinal 91 is structurally anomalous (marker 1/name present, no RIFF at the normal offset).
+- [x] Confirm two RIFF variants among 26 standard resource records: 15 × PCM24 / 0x1800 data and 11 × PCM32 / 0x2000 data. Single-record parser's one strict variant must not be reused for all batch records without variant handling.
+- [ ] Batch import remains disabled pending actual QuickTone batch-import capture, destination-slot mapping, handling of empty and anomalous records, and resolution of reader size discrepancy 0x2590 vs actual export stride 0x26AE.
+- [x] Continue to preserve NAM, IR User/Collection paths and mappings, MIDI map, preset sync, Copy Scene, CTRL/EXP, signal-chain reorder, and Save-to-device writer.
