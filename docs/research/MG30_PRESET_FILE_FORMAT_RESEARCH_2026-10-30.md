@@ -587,6 +587,27 @@ The previously uploaded short captures were inspected in the current project run
 
 The no-activity Export capture is therefore not evidence of the Export request bytes or of a malformed request; it contains no captured SysEx to inspect. The in-app diagnostic separately proves that the Android app constructed/logged a 15-byte `10/00` request and received a 203-byte `10/02`-shaped body, but its `requestHex` is an application-buffer record, not an independent USB wire capture.
 
-Likely capture-boundary issue to verify: the screenshot shows MG30 Studio running on Android. A Windows USBPcap capture only sees USB traffic on the Windows machine's USB host/controller; it cannot observe a direct Android-phone-host-to-MG-30 cable session. This is a transport-topology explanation, not yet confirmed because the exact host/capture topology of the earlier no-activity file has not been established.
+The user has now explicitly confirmed that the Windows PC was connected directly to the MG-30 during the USBPcap capture; the phone was not involved. Therefore, the Android-vs-Windows capture-boundary explanation below is **not applicable to this capture** and is superseded by the corrected conclusion in the next section.
 
-Next action is **not** to repeat the same USBPcap capture. First establish where the USBPcap capture was taken and which machine was USB host. If the pedal was connected directly to the Android phone, use Android-side USB MIDI/UsbDeviceConnection instrumentation (log the actual transfer call, endpoint, bytes written/read and return length) or a hardware USB protocol analyzer. Keep the current app-level diagnostics and fail-closed offset check. Do not change the read protocol, accept offset 128, or modify any working write/import path based only on an empty capture.
+Next action is not to repeat USBPcap. Investigate QuickTone's local resource/preset cache and the call path that fills it before Export. Keep the Android app's read-only diagnostic and fail-closed offset check unchanged until the response field interpretation is proven.
+
+
+## Confirmed USBPcap topology and QuickTone Export behavior (2026-10-31) — correction
+
+The user clarified that the PC capture was performed with the MG-30 connected directly to the PC, with no phone connected. This resolves the capture topology.
+
+The previously inspected `presetexport.pcapng` is a valid negative observation from the PC↔MG-30 USB connection:
+- 18 Enhanced Packet Blocks were recorded.
+- USBPcap captured enumeration/configuration traffic, including the MG-30 descriptor (VID:PID `1FC9:8260`) and its USB Audio/MIDI Streaming interface.
+- The MG-30 MIDI streaming interface declares Bulk OUT endpoint `0x02` and Bulk IN endpoint `0x82`.
+- No captured packet used endpoint `0x02` or `0x82`; there is no USB-MIDI event packet, SysEx request/reply, or preset/IR read transaction in the capture, including during the reported QuickTone Export action.
+
+Therefore, the capture is **not** empty because the pedal was attached to an unrelated host. It confirms the MG-30 was enumerated on the PC USB bus, while QuickTone Export generated no observable MIDI endpoint traffic during the recorded Export action.
+
+This materially strengthens (but does not by itself prove) the hypothesis that QuickTone's Export button serializes data already held in QuickTone's local preset/resource model or cache rather than initiating a fresh read from the pedal at click time. The separate QuickTone IR readback path already identified in disassembly (`09/00` metadata, then cache-miss `10/00` waveform and `11/00` curve reads) must be traced upstream to determine which earlier action populates that cache: device connect/initialization, preset synchronization/selection, IR manager refresh, or another callback.
+
+### Consequence for MG30 Studio
+
+Do not use the silent QuickTone Export capture as evidence that the Android app's `10/00` request bytes are incorrect; the QuickTone Export action did not issue those requests in the PC capture. The Android in-app diagnostic is a separate observation: it logged an app-generated `10/00` request and a recognizable `10/02` response body with decoded offset 128, while expecting 0.
+
+Next engineering work should trace QuickTone's cache-population trigger/call graph and compare that read path with the Android app's manually initiated readback. Do not ask the user to repeat the same silent Export capture. Do not change `10/00` encoding or accept offset 128 without evidence. Preserve the successful single-preset importer and all protected NAM, IR User/Third Party, Collection, MIDI, preset-sync, Copy Scene, CTRL/EXP, signal-chain and Save-to-device behavior.
