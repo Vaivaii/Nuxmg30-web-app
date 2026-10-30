@@ -989,3 +989,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 
 - [x] Export rechecks all conflicting hardware-operation locks after waiting for the current MIDI queue, before starting the read sequence.
 - [ ] Fresh APK and original Gen2 hardware validation still pending.
+
+
+## Goal 3 — physical Export failure diagnosis and read-reply parser correction (2026-10-31)
+
+- [x] Review screenshots for slot 04D/program 15 and 32B/program 125: first data reply was parsed as tag/index 0 or 256 and offset 128, while offset 0 was expected. Both attempts aborted before any device write.
+- [x] Cross-check QuickTone `0x4AB510` waveform response handler: the second decoded uint16 is the returned sample offset; the first decoded uint16 is not an echoed resource index in this handler.
+- [x] Rename the first decoded word to opaque `replyTag`; stop comparing it with the requested IR index. Keep offset validation.
+- [x] Filter `10/02` and `11/02` replies by the expected offset in the pending-request matcher, so unrelated/stale/out-of-order frames are ignored rather than consuming the current request.
+- [ ] Explain the observed offset 128 from actual USB-MIDI request/reply bytes; do not assume the filter alone fixes the device interaction.
+- [ ] Run Node tests and fresh Android APK build for the latest branch revision.
+- [ ] Physical re-test read-only Export on original MG-30 Gen2 FW 6.0.x; collect full USBPcap capture if no reply with the requested offset arrives.
+- [x] Protect all working features: NAM, IR User/Third Party, IR Collection, MIDI mappings, existing preset import and Save-to-device behavior, Copy Scene, CTRL/EXP, preset sync and signal-chain reorder are untouched.
