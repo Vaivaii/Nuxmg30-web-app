@@ -916,7 +916,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Define recovery/retry behavior after partial IR or scene transfer interruption; do not auto-retry partial writes.
 - [ ] Decode and reconcile the static reader helper 0x2590/0x12C800 size discrepancy before enabling additional file variants.
 - [ ] Implement/validate all-preset 128-record batch import only after capturing QuickTone batch import and establishing destination slot mapping.
-- [ ] Build validation and debug APK for the latest importer commit; physical hardware testing remains pending.
+- [x] Physical hardware validation of the single-preset importer is now user-reported as successful on the original MG-30 Gen2. The remaining physical Goal 3 hardware test is the read-only Export path, not a repeat of the successful import.
 
 
 ### Build handoff — single-preset importer (2026-10-31)
@@ -981,7 +981,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Add shared busy locks across preset import, preset export and IR User/Collection upload so transactions cannot interleave.
 - [x] Reject IR names longer than the file's 16-byte field rather than silently truncating.
 - [ ] Export UI labeled READ ONLY · UJI AWAL. Physical test on original MG-30 Gen2 FW 6.0.x still pending; verify actual resource index mapping and every read reply before trusting the output file.
-- [ ] Fresh APK build and artifact not yet confirmed for current export commits.
+- [x] Fresh APK confirmed by Actions run #132 from source commit `bc10120099acfedd45e17fc023aebe50c78271b9`; `npm test` and `assembleDebug` both passed. Artifact ID `13004389391`, size 4,014,515 bytes, SHA-256 `03076b06387983506817a8db81260a4c2ffeb87ede15bc2e1b4bc4a904f87f9f`. Branch head at checkpoint `17e19a127077ebd79b1b6b60b769d4eff3e2d302` is one docs-only commit ahead (only `UI_POLISH_CHECKLIST.md` changed), so the APK contains the current app source.
 - [ ] Batch importer remains disabled pending hardware export verification and a dedicated batch-import capture/mapping.
 
 
@@ -1007,4 +1007,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 
 - [x] Add `tests/**` to the APK workflow path filter.
 - [x] Run `npm test` before Android project generation/build so protocol unit tests gate each relevant source/test change.
-- [ ] Confirm the next Actions run passes the Node test suite and completes the debug APK build.
+- [x] Confirmed by Actions run #132: protocol regression tests (`npm test`) passed, Android debug APK build completed, and artifact upload succeeded.
+
+
+## Recovery checkpoint — single-preset import complete; read-only Export next (2026-10-31)
+
+- [x] Recovered branch `android/ui-polish-pass-1`; source checkpoint for the latest successful APK is `bc10120099acfedd45e17fc023aebe50c78271b9`.
+- [x] Confirmed branch head before this documentation update was `17e19a127077ebd79b1b6b60b769d4eff3e2d302`; comparison shows the only intervening change was this checklist file. No app source differs from the successful APK build.
+- [x] Preserve the user's report that single-preset `.mg30patch` import on the original MG-30 Gen2 physically succeeded. Do not reopen the established file-format investigation or require a redundant import test.
+- [x] Build evidence: Actions run [#132](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41115756336) completed successfully. Both protocol regression tests and Android debug APK build passed; artifact `MG30-Studio-debug-APK` is available (ID `13004389391`, SHA-256 `03076b06387983506817a8db81260a4c2ffeb87ede15bc2e1b4bc4a904f87f9f`).
+- [ ] Next Goal 3 hardware task: install the APK from run #132 and test the **read-only Export** path on original MG-30 Gen2 firmware 6.0.x. Validate the 09/02 metadata response, all 64 10/02 waveform offsets (0–2016), all 10 11/02 curve offsets (0–576), plus the three scene readbacks before trusting the output file.
+- [ ] If Export still fails, capture the complete USB-MIDI exchange, especially the first outgoing 10/00 request and all incoming 10/02 replies (including opaque reply tag and decoded offset). Do not treat the offset filter as proof of a protocol fix.
+- [ ] Keep 128-record batch import disabled until QuickTone batch import capture and destination mapping are verified.
+- [x] Scope guard maintained: no source change to NAM, IR User/Third Party upload, Collection 6A/6B/6C, MIDI mappings, preset sync, Copy Scene, CTRL/EXP, signal chain, existing single-preset importer, or Save-to-device writer.
