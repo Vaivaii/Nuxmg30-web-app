@@ -1949,7 +1949,7 @@ window.MG30PresetImportBridge=Object.freeze({
    setDeviceStatus('IMPORT GAGAL: '+detail);
    throw new Error(detail);
   }finally{
-   hardwareSyncBusy=false;sceneSwitchPending=false;presetImportBusy=false;
+   hardwareSyncBusy=false;sceneSwitchPending=false;presetImportBusy=false;window.MG30PresetImportBusy=false;
    renderSceneButtons();
    window.dispatchEvent(new CustomEvent('mg30-preset-import-target-changed'));
   }
