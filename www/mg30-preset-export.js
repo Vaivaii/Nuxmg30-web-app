@@ -15,6 +15,15 @@ function setStatus(message, kind = '') {
   node.classList.remove('ok', 'warn');
   if (kind) node.classList.add(kind);
 }
+function renderDiagnostics(open = false) {
+  const details = $('presetExportDiagnosticsDetails');
+  const field = $('presetExportDiagnosticsText');
+  const trace = window.MG30PresetExportLastDiagnostics;
+  if (!details || !field || !trace) return;
+  field.value = JSON.stringify(trace, null, 2);
+  details.hidden = false;
+  if (open) details.open = true;
+}
 function updateTarget() {
   const bridge = window.MG30PresetExportBridge;
   const program = Number(bridge?.getTargetProgram?.() ?? 0);
@@ -42,6 +51,23 @@ function init() {
   button.dataset.initialized = '1';
   let busy = false;
   const bridge = () => window.MG30PresetExportBridge;
+  const copyDiagnostics = $('presetExportCopyDiagnostics');
+  if (copyDiagnostics && copyDiagnostics.dataset.initialized !== '1') {
+    copyDiagnostics.dataset.initialized = '1';
+    copyDiagnostics.addEventListener('click', async () => {
+      const field = $('presetExportDiagnosticsText');
+      if (!field || !field.value) return;
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard API tidak tersedia.');
+        await navigator.clipboard.writeText(field.value);
+        copyDiagnostics.textContent = 'Log tersalin';
+      } catch (_) {
+        field.focus();
+        field.select();
+        copyDiagnostics.textContent = 'Log dipilih · gunakan Salin';
+      }
+    });
+  }
   button.addEventListener('click', async () => {
     if (busy) return;
     const api = bridge();
@@ -62,6 +88,8 @@ function init() {
     busy = true;
     button.disabled = true;
     button.textContent = 'Mengekspor ' + label + '…';
+    const diagnosticsDetails = $('presetExportDiagnosticsDetails');
+    if (diagnosticsDetails) diagnosticsDetails.hidden = true;
     setStatus('Memulai pembacaan preset ' + label + '…');
     try {
       const source = await api.readSingle(progress => {
@@ -80,7 +108,10 @@ function init() {
       setStatus('Export selesai: ' + filename + ' · ' + bytes.length.toLocaleString('id-ID') +
         ' byte. File berisi 3 scene dan IR "' + source.resourceName +
         '" hasil pembacaan 2.048 sampel + 600 nilai kurva.', 'ok');
+      const diagnosticsDetails = $('presetExportDiagnosticsDetails');
+      if (diagnosticsDetails) diagnosticsDetails.hidden = true;
     } catch (error) {
+      renderDiagnostics(true);
       setStatus('Export gagal: ' + (error?.message || String(error)) +
         ' Tidak ada data yang ditulis ke MG-30.', 'warn');
     } finally {
