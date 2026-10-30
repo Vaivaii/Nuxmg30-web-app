@@ -846,3 +846,18 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Only after format reconciliation, implement QuickTone-compatible file import/export and validate export → import → pedal read-back on original MG-30 Gen2 firmware 6.0.x.
 - [x] Document the extra disassembly, candidate sizes/strides, uncertainty and guardrails in docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md.
 - [ ] No app source code or protocol implementation was changed; no APK was built in this research-only step.
+
+
+## Goal 3 follow-up — real .mg30patch sample comparison and write-path hypothesis (2026-10-30)
+
+- [x] Receive and inspect `1B DELUX DIST.mg30patch` (0x26AE bytes) and `MG30AllPatch.mg30patch` (0x135700 bytes).
+- [x] Confirm all-preset file divides exactly into 128 records of 0x26AE bytes, with sequential little-endian 32-bit record/index prefixes 0–127.
+- [x] Match record index 1 name `DELUX DIST` to the single-file sample.
+- [x] Confirm a RIFF/WAVE resource region and an additional undecoded trailing region are present inside records; keep their exact semantics open until an import capture proves the resource type.
+- [x] Confirm samples support the export-side 0x26AE stride / 0x135700 total-size inference.
+- [ ] Resolve the concrete conflict with the statically traced QuickTone reader helpers, which expect 0x2590 / 0x12C800. Do not truncate/pad by 0x11E or guess a conversion.
+- [x] Review existing MG30 Studio `writeHardwarePreset()`: per-scene `0B/01` writes, matching `0B/03` ACKs, `07/01` finalize, `07/03` ACK and `0B/00` payload read-back verification.
+- [ ] Prove whether QuickTone .mg30patch import converts each record into the same three scene parts and reuses this hardware write path. Need a USBPcap capture of importing the supplied single-preset file.
+- [ ] Determine whether import sends additional WAVE/resource transfer frames; do not assume all RIFF/resource bytes are carried inside the three scene-part messages.
+- [ ] No source/protocol change and no APK build in this research checkpoint. Preserve NAM, IR User/Collection, MIDI mappings, preset sync, and Copy Scene unchanged.
+- [x] Save sample hashes, record layout observations, current writer transaction details, discrepancies and capture plan in `docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md`.
