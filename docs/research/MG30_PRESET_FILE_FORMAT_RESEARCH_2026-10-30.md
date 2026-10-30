@@ -54,3 +54,25 @@ Once a real sample is available, inspect its length, byte distribution, recurrin
 ## Status
 
 Goal 3 is active. The QuickTone extension, default all-preset filename, model-specific import/export panels, and separate export entry points are confirmed. Binary structure and wire-level transfer remain unverified. No preset import/export source code was changed in this research step.
+
+## Additional static disassembly findings (2026-10-30)
+
+These are code-path observations from the original-MG30 implementation in QuickTone v2.6.7.16. Function addresses below are PE virtual addresses, not file offsets. They narrow the format, but do not yet establish a safe round-trip schema.
+
+- The block at VA 0x004AB710 is associated with the all-preset export dialog path (it references MG30AllPatch.mg30patch). It allocates a 0x135700-byte output buffer, iterates a manager count field at object offset +0x640, and advances the output record pointer by 0x26AE for each item. Its write helper at VA 0x004B56A0 passes 0x135700 as the byte count to the file buffer.
+- The value 0x135700 equals 128 × 0x26AE (1,267,456 bytes). This strongly suggests 128 fixed-stride internal/export records, each 0x26AE bytes, for that all-export path; treat the count/record interpretation as a static-code inference pending a real exported sample.
+- The single-file reader helper at VA 0x004B5750 checks for an input length of exactly 0x2590 (9,616 bytes), then constructs an internal 0x26AE-byte record and populates its scene/audio-related fields.
+- The all-file reader helper at VA 0x004B5A20 checks for an input length of exactly 0x12C800 (1,236,992 bytes), loops 128 times with a source stride of 0x2590, and constructs an internal output buffer of 0x135700 bytes with destination stride 0x26AE.
+- Arithmetic: 0x12C800 = 128 × 0x2590; 0x135700 = 128 × 0x26AE; the per-record difference is 0x11E bytes (total 0x8F00 bytes).
+
+### Unresolved discrepancy — do not code around it
+
+The all-export dialog path writes a 0x135700-byte buffer, while the all-file reader helper validates an input length of 0x12C800. The single-file reader expects 0x2590. It is not yet proven whether the all-export code block, helper pairing, conversion stage, or the exact panel callback has been interpreted completely. These differing lengths must be reconciled against a real .mg30patch sample before treating either stride as the on-disk format. Do not trim 0x11E bytes per record, add/remove WAV headers, or accept multiple sizes speculatively.
+
+### What this disassembly adds
+
+- Preset data is not simply an opaque copy of the three existing 0C scene read responses: QuickTone builds per-record structures and includes a separate audio/WAVE-related region in the internal representation.
+- A potential 128-entry organization and candidate record strides now exist for comparison with a sample file, but header fields, slot numbering, version markers, checksums, and exact scene/audio offsets have not been validated.
+- The exact wire transaction that exports/imports these preset structures is still not matched to a USBPcap trace.
+
+Next action remains: compare an actual original-MG30 .mg30patch exported by QuickTone with the observed candidate lengths/layout, then correlate with a capture of the same export/import.
