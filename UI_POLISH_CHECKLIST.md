@@ -636,3 +636,17 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Trace 0D 00 / 0D 02 with NuxPedalSetValuePanelMG30 and WAH MIN/MAX sliders.
 - [ ] Only after protocol/readback checks, implement Roadmap 2 in isolation and build/test APK. No MG30 Studio source change or APK build in this static-analysis checkpoint.
 - [ ] NAM import, IR User/Collection, MIDI mappings, preset sync and Copy Scene remain untouched.
+
+
+## Goal 2 — CTRL readback request traced (2026-10-30)
+
+- [x] Trace native read request VA 0x004A500D: QuickTone sends F0 43 58 70 13 00 F7 and registers callback VA 0x004A8340.
+- [x] Confirm callback VA 0x004A8340 accepts 13 02 and restores state offsets 0x7A–0x82. Static read transaction is 13 00 OUT → 13 02 IN.
+- [x] Keep write path distinct: 13 01 OUT → 13 03 ACK.
+- [x] Correctly separate 0D 00 OUT → 0D 02 IN. Its variable-length payload is stored starting at singleton offset +0x5E with a length/status byte at +0x5D; its UI semantics are not proven.
+- [x] Trace NuxPedalSetValuePanelMG30 slider handler VA 0x005C5D60: it updates either state pair +0x7F/+0x80 or +0x81/+0x82 and then sends 13 01. The pair labels/meaning are still unresolved.
+- [ ] Capture the 13 00/13 02 readback exchange when QuickTone opens/reopens EXP & Pedal on the original MG-30.
+- [ ] Trace actual first-column function dropdown item IDs.
+- [ ] Identify the two set-value slider pair labels and their caller before assigning MIN/MAX or controller semantics.
+- [ ] Decode 0D 00/0D 02 UI consumer and payload semantics separately.
+- [ ] No app source change or APK build in this static-analysis checkpoint.
