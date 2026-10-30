@@ -8,6 +8,7 @@ import {
   parseMG30UserIRWaveReadReply,
   parseMG30UserIRCurveReadReply,
   inspectMG30UserIRDataReadReply,
+  orderMG30UserIRDataReadReplies,
   assembleMG30UserIRReadback,
 } from '../www/mg30-preset-read.js';
 
@@ -74,6 +75,35 @@ test('wave and curve replies treat the first decoded word as an opaque tag and v
   const curve = makeDataReply(0x11, 0, 64, Array.from({length:64}, (_,i)=>Math.min(305,64+i)), 'uint16');
   assert.equal(parseMG30UserIRCurveReadReply(curve, 7, 64).values[0], 64);
   assert.throws(() => parseMG30UserIRCurveReadReply(curve, 8, 128), /offset 64, diharapkan 128/);
+});
+
+test('read replies are ordered by returned offset, not request arrival order', () => {
+  const waves = Array.from({length:64}, (_,frame) =>
+    makeDataReply(0x10, 0, frame*32,
+      Array.from({length:32}, (_,i)=>(frame*32+i)/2048), 'float32'));
+  const curves = Array.from({length:10}, (_,frame) =>
+    makeDataReply(0x11, 0, frame*64,
+      Array.from({length:64}, (_,i)=>Math.min(305,frame*64+i)), 'uint16'));
+  const orderedWaves = orderMG30UserIRDataReadReplies(waves.slice().reverse(), 0x10, 13);
+  const orderedCurves = orderMG30UserIRDataReadReplies(
+    [curves[4],curves[0],curves[9],curves[3],curves[1],curves[7],curves[2],curves[8],curves[5],curves[6]],
+    0x11, 13);
+  assert.equal(inspectMG30UserIRDataReadReply(orderedWaves[0],0x10).offset,0);
+  assert.equal(inspectMG30UserIRDataReadReply(orderedWaves[1],0x10).offset,32);
+  assert.equal(inspectMG30UserIRDataReadReply(orderedWaves[63],0x10).offset,2016);
+  assert.equal(inspectMG30UserIRDataReadReply(orderedCurves[0],0x11).offset,0);
+  assert.equal(inspectMG30UserIRDataReadReply(orderedCurves[9],0x11).offset,576);
+  const assembled = assembleMG30UserIRReadback(13, orderedWaves, orderedCurves);
+  assert.equal(assembled.samples[0],0);
+  assert.equal(assembled.samples[2047],2047/2048);
+  assert.equal(assembled.curve[599],305);
+  assert.throws(() => orderMG30UserIRDataReadReplies(
+    [...waves.slice(1),waves[1]],0x10,13), /duplikat/);
+  assert.throws(() => orderMG30UserIRDataReadReplies(
+    waves.slice(1),0x10,13), /Jumlah reply/);
+  assert.throws(() => orderMG30UserIRDataReadReplies(
+    [...waves.slice(0,63),makeDataReply(0x10,0,64,Array(32).fill(0),'float32')],
+    0x10,13), /duplikat|offset/);
 });
 
 test('64 waveform replies and 10 curve replies assemble a complete IR resource', () => {
