@@ -759,3 +759,11 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] No change to IR/NAM transfer packet code, preset/scene serialization, MIDI parameter map, signal-chain sender, or CTRL protocol handlers.
 - [ ] Validate on original MG-30 Gen2 FW 6.0.x: open app with pedal already attached, attach after app launch, unplug/replug, and manually tap the USB icon after a simulated disconnect.
 - [ ] Confirm existing NAM import/readback, IR User/Collection, and MIDI mappings remain unchanged on hardware.
+
+## Follow-up — USB header spacing and square icon (2026-10-30)
+
+- [x] Add a compact two-line `USB MIDI` / connection-state label beside the USB icon to use the otherwise empty header area.
+- [x] Keep label state synchronized with MIDI: `Terputus`, `Menghubungkan…`, or `Terhubung`; connected state uses the lime accent.
+- [x] Change the USB icon control from a circular shape to a 12px rounded square (11px on narrow screens), matching the app's other buttons/cards.
+- [x] Preserve click-to-connect behavior and Android attach/detach auto-connect logic.
+- [ ] Verify header fit and connection-state label on the Android device at regular and narrow phone widths.
