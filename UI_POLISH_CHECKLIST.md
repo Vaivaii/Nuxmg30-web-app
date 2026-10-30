@@ -948,3 +948,14 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Request the silent capture file, matching exported .mg30patch if generated, and confirmation of whether the USBPcap packet counter remained at zero.
 - [ ] Repeat capture on all USBPcap root-hub interfaces (or identify MG-30 root hub via USBPcapCMD), no capture filter, start before QuickTone launch; optionally reconnect pedal after starting capture to verify bus/interface. Do not perform import/write operations during this diagnostic.
 - [ ] Leave Export UI and batch-import UI disabled until the relevant read/batch transactions are evidenced.
+
+
+## Goal 3 — presetexport.pcapng forensic result (2026-10-31)
+
+- [x] Inspect user-supplied presetexport.pcapng directly: 2,756 bytes, one USBPcap1 interface, 18 USB packet blocks.
+- [x] Identify MG-30 at USB bus 1/device address 3, VID:PID 1FC9:8260, device revision 0101; matching NUX MG-30 descriptor signature.
+- [x] Parse MG-30 configuration: 344 bytes, four interfaces; MIDI Streaming interface 4 exposes Bulk OUT 0x02 and Bulk IN 0x82.
+- [x] Confirm all captured traffic is USB enumeration/configuration control transfers. No packet uses MIDI endpoints 0x02/0x82; no SysEx or preset/IR read traffic appears during the reported Export capture.
+- [ ] Trace QuickTone exportPresetLogic/exportAllPresetLogic and their data source. Hypothesis: Export serializes already-populated local/cache state and does not trigger a USB hardware read when clicked. Treat as hypothesis pending call-graph/data-flow verification.
+- [ ] Determine which QuickTone action populates the cached preset/IR data before export; avoid asking for another identical capture until this code path is understood.
+- [x] No changes to app source/protocols; all working features remain untouched.
