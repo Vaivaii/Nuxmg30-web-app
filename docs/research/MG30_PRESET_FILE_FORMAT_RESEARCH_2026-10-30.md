@@ -262,7 +262,7 @@ No `07/01` finalization or `07/03` response appears in the QuickTone import capt
 - After the 3 preset write ACKs, the app performs a separate read-only `0B/00` readback and checks target program, part index, and all scene payload bytes. This is an MG30 Studio safety verification added after the captured QuickTone transaction; it is not claimed to be part of QuickTone's import sequence.
 - IR resource delivery is addressed with the selected destination program parameter. The app preserves the exact User/Third Party `09/10/11` command family; Collection `6A/6B/6C` and NAM `58` code paths are untouched.
 - Parser/frame fixture comparison (supplied `1B DELUX DIST.mg30patch` vs `presetimport.pcapng`): name frame matches; waveform 64/64; curve meaningful words 600/600 (nine full packets byte-exact and the final packet differs only in eight non-recorded stale tail words); preset scene payloads 3/3 byte-exact.
-- This is offline/file-and-capture validation only. It does not prove physical import on the user's MG-30 Gen2 FW 6.0.x. Hardware round-trip, IR resource list visibility, audio check, and failure/retry behavior remain pending.
+- At the time this implementation paragraph was written, validation was offline/file-and-capture only. The user subsequently reported that the single-preset import was physically tested and succeeded on the original MG-30 Gen2. The user did not separately report IR list visibility or an audio audition; do not infer those checks. Detailed recovery/retry behavior after an interrupted partial transfer remains pending.
 - The 128-record file remains intentionally unsupported by the UI. Batch destination mapping and a matching batch-import capture are still required.
 - Earlier QuickTone static-reader helper size expectations (`0x2590` / `0x12C800`) still conflict with the actual single/all export samples (`0x26AE` / `0x135700`). This disassembly/callback discrepancy remains unresolved; no trimming or padding is performed.
 
@@ -296,3 +296,13 @@ No changes were made to NAM import, IR Collection commands, Collection mapping, 
 ### Scope protection
 
 No change to working NAM import, IR User/Third Party upload packets, Collection 6A/6B/6C commands/mapping, MIDI parameter mapping, preset synchronization, Copy Scene, CTRL/EXP, signal-chain reorder, or Save-to-device 07/01 path. Export serializer is offline-only; it sends no MIDI and performs no hardware write.
+
+
+### Export serializer verification detail (2026-10-31)
+
+A repeatable offline check was run against the mounted sample after adding the serializer:
+
+- Reconstructed the canonical 0x26AE record using the observed scene bytes, resource name, RIFF/WAVE header, 2,048 contiguous float32 sample bytes, and 600 curve words.
+- Result compared byte-for-byte equal to the original supplied file; length 9,902 bytes; SHA-256 0b8f9fecb5150bfe5a96dfcf66f3a777b910cef2910bcaa3100f0fa990aaa67a.
+- Each of the three 142-byte scene sections also survived the packed 71-word → 213-byte SysEx word encoding → inverse decode round-trip exactly.
+- These checks validate the local serializer and inverse word mapping only. They do not establish the as-yet-unknown hardware readback protocol for IR resource waveform/curve data or prove a live pedal export.
