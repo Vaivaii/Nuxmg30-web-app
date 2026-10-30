@@ -2001,7 +2001,7 @@ window.MG30PresetExportBridge=Object.freeze({
    const metadataFrame=readFormat.buildMetadataRequest(program);
    const metadataBody=await requestPresetExportFrame(
     metadataFrame,
-    b=>b.length===61&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x09&&b[4]===0x02&&b[5]===0x00&&b[6]===program,
+    b=>b.length===60&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x09&&b[4]===0x02&&b[5]===program,
     '09/00 metadata'
    );
    const metadata=readFormat.parseMetadataReply(Uint8Array.from(metadataBody),program);
@@ -2013,7 +2013,7 @@ window.MG30PresetExportBridge=Object.freeze({
     const request=readFormat.buildWaveRequest(program,offset);
     const body=await requestPresetExportFrame(
      request,
-     b=>b.length===204&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x10&&b[4]===0x02,
+     b=>b.length===203&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x10&&b[4]===0x02,
      '10/00 waveform '+(frame+1)+'/64'
     );
     // Validate the target index and offset immediately; do not accept reordered or stale chunks.
@@ -2028,7 +2028,7 @@ window.MG30PresetExportBridge=Object.freeze({
     const request=readFormat.buildCurveRequest(program,offset);
     const body=await requestPresetExportFrame(
      request,
-     b=>b.length===204&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x11&&b[4]===0x02,
+     b=>b.length===203&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x11&&b[4]===0x02,
      '11/00 curve '+(frame+1)+'/10'
     );
     readFormat.parseCurveReply(Uint8Array.from(body),program,offset);
