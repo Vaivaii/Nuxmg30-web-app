@@ -354,11 +354,11 @@ The current commit includes the Studio → Device control move, connection-trigg
 - [x] Move on to Goal 2: reverse-engineer QuickTone CTRL / Expression controls.
 
 ### Goal 2 — Reverse-engineer CTRL / Expression pedal controls
-- [ ] Inspect QuickTone Windows v2.6.7.16 UI strings, event handlers, data structures, and MIDI/SysEx call sites related to CTRL and Expression/EXP assignments.
-- [ ] Map each QuickTone control to its protocol payload and acknowledgement using captures or disassembly; clearly distinguish confirmed wire evidence from static-code inference.
-- [ ] Identify whether assignments are preset-specific/global, which values are range/enum fields, and whether read-back is available.
-- [ ] Implement only after the protocol mapping is supported; add UI controls in MG30 Studio, read-back/ACK handling, and safe validation.
-- [ ] Test on original MG-30 Gen2 firmware 6.0.x and verify other preset fields, NAM, IR, MIDI mapping, and scene state are unchanged.
+- [x] Inspect QuickTone Windows v2.6.7.16 UI strings, event handlers, data structures, and MIDI/SysEx call sites related to CTRL and Expression/EXP assignments.
+- [x] Map QuickTone controls to their protocol payload and acknowledgement using captures/disassembly; distinguish wire-confirmed evidence from static-code inference.
+- [x] Identify assignment fields, range/enum values, and read-back behavior.
+- [x] Implement the CTRL / EXP controls in MG30 Studio with read-back/ACK handling and safe validation.
+- [x] Complete Goal 2 on the original MG-30 Gen2 firmware 6.0.x. User confirms Goal 2 is successful; do not reopen or repeat its analysis/testing unless a regression is reported. Preserve NAM, IR User/Collection, MIDI mappings, preset sync, signal-chain realtime reorder, and Copy Scene.
 
 ### Goal 3 — Replicate QuickTone preset-management features
 
@@ -393,7 +393,7 @@ The current commit includes the Studio → Device control move, connection-trigg
 This sequence is the user-facing roadmap. Do not work on multiple feature milestones in parallel.
 
 1. [x] **Copy Scene dropdown polish** — completed and confirmed by user.
-2. [ ] **CTRL / Expression controls** — reverse-engineer QuickTone control assignments and protocol, then implement and hardware-test.
+2. [x] **CTRL / Expression controls** — completed successfully on the original MG-30 Gen2; user confirmed. Do not reopen unless regression is reported.
 3. [ ] **Preset import/export** — identify QuickTone preset format and implement files the MG-30 can actually read/write; verify round-trip on hardware.
 4. [ ] **Rename preset** — rename from the app and synchronize the name to the device; verify ACK/read-back.
 5. [ ] **Save As / duplicate preset** — copy a preset to a chosen slot, preserve the source, confirm overwrite explicitly, and verify destination read-back.
@@ -810,21 +810,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 ## Roadmap continuation — next active milestone
 
 - [x] Close the CTRL / EXP mobile UI acceptance item after the user's confirmation.
-- [ ] Continue Goal 2 hardware acceptance on original NUX MG-30 Gen 2 firmware 6.0.x, one control family at a time: (1) CTRL1 built-in expression with a single effect parameter choice change and ACK/readback; (2) external footswitch T and R independently for block ON/OFF and Scene Up/Down; (3) Multi EFX CTRL TAP, block ON/OFF, and scene cycle.
-- [ ] Keep CTRL2 visible/configurable but defer its physical-response test until an additional expression pedal is available, as already specified by the user.
-- [ ] For each device test, capture the before/after setting, wire transaction, ACK, and panel readback. Do not mark physical behavior complete from build success alone.
-- [ ] If hardware evidence is not available in a session, continue static QuickTone analysis of unresolved function-menu IDs, active model-row selection, 0D 00/0D 02 SetValue semantics, and CC77 trigger without changing the app protocol.
-- [ ] Once Goal 2 has wire and hardware acceptance, move to Roadmap Goal 3 in order: preset import/export, preset rename, Save As/duplicate, then IR/NAM device-synced rename. Studio redesign remains later.
+- [x] Goal 2 — CTRL / EXP controls — user confirms successful completion; this milestone is closed.
+- [ ] Next: Goal 3 — preset import/export, followed by preset rename, Save As/duplicate, and IR/NAM device-synced rename. Studio redesign remains Goal 4.
 - [ ] Preserve working NAM, IR User/Collection, MIDI mappings, preset sync, signal-chain realtime reorder, and Copy Scene in all future steps.
 
-## Goal 2 — active model-row selection statically traced (2026-10-30)
 
-- [x] Inspect the original-MG30 dependent-choice lookup `0x005C2070` against getter `0x004B3B20`.
-- [x] Confirm `[manager+0x2C]` is the pointer to the active model-code array used by the lookup.
-- [x] Confirm selected family byte is masked with `0x3F`, decremented from one-based model code to a zero-based row, then addressed with a six-byte record stride.
-- [x] Confirm the two option keys are located at record offsets `+3` and `+5` and passed to the string/key resolver.
-- [x] Cross-check the panel refresh path `0x005C13A4` uses the same family selector and lookup before resolving the visible dependent parameter labels.
-- [ ] Build a full crosswalk of current active model IDs to every duplicated/shared/auxiliary table row; retain uncertainty where runtime ID evidence is missing.
-- [ ] Next Roadmap 2 work remains original-MG30 Gen 2 FW 6.0.x hardware acceptance: CTRL1 isolated change with ACK/readback, external T/R isolated changes, and Multi EFX isolated changes.
-- [ ] Leave CC77 and 0D 00/0D 02 out of application code until their feature-level semantics are proven.
-- [ ] No app source files changed in this static-analysis step. NAM, IR User/Collection, MIDI mappings, preset sync, signal-chain realtime reorder, and Copy Scene remain untouched.
+## Latest accepted change — CTRL / EXP panel no-scroll layout (2026-10-30)
+
+- [x] User confirms: "Sip, sudah bagus." The final mobile CTRL / EXP panel layout is accepted.
+- [x] All four control sections and both footer actions (Baca ulang / Simpan ke pedal) fit in the tested phone viewport without internal scrolling.
+- [x] Keep the compact spacing and usable 36–38 CSS px minimum touch targets; no protocol or MIDI behavior was changed in this UI pass.
+- [x] Android debug build succeeded: [GitHub Actions run 41038988421](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41038988421).
+- [x] Build artifact: MG30-Studio-debug-APK, artifact ID 12968364791, SHA-256 `67b69e6d05932b02bc89d6795938458d475c8ea54db78388f1c1c65a51977bda`.
+- [x] Goal 2 remains closed; next roadmap milestone is Goal 3 — Preset import/export.
