@@ -738,4 +738,4 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 
 - [x] After first user screenshot, remove small payload labels and redundant explanatory helper/footer text from CTRL panel.
 - [x] Match top-bar CTRL / EXP and Simpan ke pedal button height/padding/font sizing.
-- [ ] Build and deliver refreshed APK for this visual refinement (CI run 41028702729).
+- [x] Build and deliver refreshed APK for this visual refinement (CI run 41028702729; source bd87002b; APK SHA-256 48f15e6d3b5d55fab6e7a095ef31301c9f1e15880addc693bc44a420157f4a9f).
