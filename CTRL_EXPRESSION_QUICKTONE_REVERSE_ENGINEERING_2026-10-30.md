@@ -426,3 +426,41 @@ A closer read of helper `0x005C2070` refines the earlier description:
 - The global singleton's selector table and the panel/model object's per-model pair/name tables are distinct structures. Earlier shorthand that described the global singleton as directly holding all parameter pairs should not be used.
 
 This narrows the remaining task: identify where the active panel/model data object receives/populates its model-indexed two-parameter arrays and 10-byte parameter-name key table. Once that source is traced, we should be able to recover the per-model pairs from QuickTone without manually capturing each pedal.
+
+## Confirmed UI state encoding and dependent-column flow — deeper event-handler trace (2026-10-30)
+
+This trace refines the earlier helper analysis and directly corroborates the user's two-choice rule for CTRL1/CTRL2.
+
+### CTRL1 and CTRL2 state bytes
+
+In the MG30 setting-panel event handler at VA `0x005C4610`, the selected popup item is written into separate packed state bytes on the device settings record:
+- Popup selector 0 writes the low nibble of byte `+0x7D` (first expression assignment's function/category).
+- Popup selector 1 writes the low nibble of byte `+0x7E` (second expression assignment's function/category).
+- Popup selector 2 writes the high nibble of byte `+0x7D` (first expression assignment's dependent option index).
+- Popup selector 3 writes the high nibble of byte `+0x7E` (second expression assignment's dependent option index).
+
+This is static-code evidence that CTRL1 and CTRL2 have distinct function/category and dependent-option state, rather than sharing one global selection.
+
+### Displaying the selected target and parameter
+
+The panel refresh path at VA `0x005C13A4` reads those packed bytes. For each expression assignment it:
+1. Uses the low nibble to resolve the active function/category context.
+2. Uses the high nibble as the dependent option index.
+3. Calls helper `0x005C2070`, which selects the category-specific static table and returns two string IDs: one for the fixed dependent target/model display (column 2), and one for the selected parameter display (column 3).
+4. Copies those labels into the second and third column widgets (`+0x9C4` and `+0x9C8`, first row; analogous widgets for the second assignment).
+
+At the lookup helper, the table record contributes a fixed first label ID and a selected second label ID from one of the two adjacent candidate fields. The `0`/`1` candidate index is therefore how QuickTone resolves the two choices for column 3; it is not a generic unrestricted parameter list.
+
+### Important distinction
+
+- The user's description that column 3 has two choices for each active pedal/amp (except WAH) is now corroborated by the code path that stores a 0/1 dependent-option choice and uses that choice when resolving the third-column label.
+- The category-specific initializer tables contain the mapping records, but a complete readable model → target label → parameter-choice-0/parameter-choice-1 catalogue has **not yet been decoded**. The raw string/key table and its object-relative base need to be aligned correctly before publishing the full mapping. Do not infer pairs from partially decoded IDs.
+- The earlier `LEVEL → DRIVE` capture is a useful differential wire example; exact SysEx byte-to-function/parameter enum mapping still needs correlation with this internal state path or further static call-graph evidence.
+
+### Set-value panel RTTI confirmation
+
+Constructor VA `0x005C5290` installs vtable `0x00D318FC`. Its MSVC RTTI complete-object-locator points to the type descriptor for `NuxPedalSetValuePanelMG30`. The constructor creates slider/value UI controls. This confirms the component identity, but does not by itself prove the precise UI action or protocol semantics of every slider. Keep WAH MIN/MAX handling separate until its caller and event path are completely traced.
+
+### Practical consequence
+
+No per-pedal USB capture is required just to discover the two option names if we can decode the initializer arrays and active model-key table. Continue static table recovery first. Ask for one small hardware capture only if the decoded table or write/readback call path leaves a genuine ambiguity.
