@@ -623,3 +623,8 @@ The same popup builder has separate T-contact and R-contact lists. Those must no
 6. Continue to keep callout 3 external T/R footswitch and callout 4 Multi EFX CTRL as separate control families, with their own command/ACK/readback evidence.
 
 No MG30 Studio source files were changed and no APK was built for this static-analysis checkpoint.
+
+
+### Correction — separate 0D request command (2026-10-30)
+
+A line-by-line recheck of VA 0x004A7D40 shows that the outgoing message is F0 43 58 70 0D 00 F7 (command 0D 00), not 0D 01. Its paired incoming handler at VA 0x004A7E60 checks 0D 02. Earlier shorthand in the previous section/checklist that said 0D 01/0D 02 is corrected: the observed static pair is 0D 00 request and 0D 02 response. The response parser consumes a length-bearing payload and updates the MG30 singleton through helper calls, but the payload fields and relationship to WAH MIN/MAX are still unproven. Do not label it an expression range transaction until the panel callback and slider path are traced.
