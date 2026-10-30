@@ -306,3 +306,8 @@ A repeatable offline check was run against the mounted sample after adding the s
 - Result compared byte-for-byte equal to the original supplied file; length 9,902 bytes; SHA-256 0b8f9fecb5150bfe5a96dfcf66f3a777b910cef2910bcaa3100f0fa990aaa67a.
 - Each of the three 142-byte scene sections also survived the packed 71-word → 213-byte SysEx word encoding → inverse decode round-trip exactly.
 - These checks validate the local serializer and inverse word mapping only. They do not establish the as-yet-unknown hardware readback protocol for IR resource waveform/curve data or prove a live pedal export.
+
+
+### Build status correction (2026-10-31)
+
+The previously queued importer build was rechecked. GitHub Actions run 41101214040 is completed/success, with artifact MG30-Studio-debug-APK (ID 12998752306; 4,007,697 bytes; SHA-256 80d4b66508bee6f31dc48271730de45061ae5dbeb6c4000dbe4a5135d68e1e7c). It was built from importer commit af71ae32bb342ecff15cc55580d54d5ebac2d0cf, so the newly added export serializer/registry commits are not in that APK. A new APK build is required after export UI/protocol implementation.
