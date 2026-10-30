@@ -98,3 +98,14 @@ Any mismatch or timeout should be captured before repeating a write. Keep NAM, I
 - Extracted APK: `MG30-Studio-CTRL-Editor-debug.apk`, 4,378,432 bytes.
 - APK SHA-256: `2fb982240a318ca86fdcfc85b2343a8a72c509f8d1462f99a83d9baee27169f5`.
 - This confirms the Android build completed; it does not substitute for the first on-pedal read/write and physical control tests.
+
+
+## Screenshot-driven UI refinement (2026-10-30)
+
+Based on the first successful panel screenshot:
+- Removed the per-card payload-offset captions.
+- Removed the introductory helper subtitle, external T/R helper sentence, Multi EFX selector polarity helper text, and the small protocol/explanation footer.
+- Kept the live status/readback message and the model context (for example, current AMP model) because those are functional context rather than protocol annotation.
+- Set both top-bar actions (`CTRL / EXP` and `Simpan ke pedal`) to the same 42 px height on wide screens and 40 px height on narrow screens, with the same horizontal padding and font sizing.
+- No protocol, read/write state, or device mapping code was changed in this visual refinement.
+- Build for the updated source is tracked in GitHub Actions run 41028702729.
