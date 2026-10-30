@@ -1980,6 +1980,7 @@ window.MG30PresetExportBridge=Object.freeze({
   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
   while(hardwareSyncBusy)await delay(10);
   await flushMidi();
+  if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain dimulai saat export menunggu antrean. Coba lagi setelah selesai.');
   presetExportBusy=true;window.MG30PresetExportBusy=true;sceneSwitchPending=true;hardwareSyncBusy=true;
   stopHardwareStatePolling();
   try{
