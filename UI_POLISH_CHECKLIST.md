@@ -577,3 +577,10 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Record user's expected conventions: AMP generally `GAIN` + `MASTER`; OD generally `DRIVE` + `LEVEL`; DLY/RVB/MOD are the families expected to vary more by model.
 - [ ] Compare these expectations against both extracted QuickTone resource profiles and resolve discrepancies before selecting the original MG30 profile. Do not force-normalize the table to these expectations; preserve exact QuickTone evidence.
 - [ ] Prioritize original MG30 vs MKII resource-family selector, then spot-check representative AMP, OD, DLY, RVB and MOD mappings from static data. Avoid per-model capture unless a concrete unresolved discrepancy remains.
+
+### Authoritative AMP CTRL mapping correction (2026-10-30)
+
+- [x] User checked all AMP models in original MG-30 QuickTone and confirms every AMP exposes exactly `GAIN` + `MASTER` in CTRL parameter choices.
+- [x] Mark candidate JSON-derived AMP pairs (`GAIN` + `PRES` / `CUT` / `BRIGHT`) as invalid for the canonical original-MG30 CTRL mapping; these likely represent model-editor controls or a different resource context/profile.
+- [ ] Correct the extraction method: distinguish model-editor control arrays from the CTRL-specific two-option lookup table. Do not promote first-two model `languageKey` entries as CTRL pairs across all model categories.
+- [x] No additional AMP capture required; user has checked all AMP models. Record the authoritative correction in the technical note (commit `2441dc5308b94d60f72c758b4bbd1b5df054eac7`).
