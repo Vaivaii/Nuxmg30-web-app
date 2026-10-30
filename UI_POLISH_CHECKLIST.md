@@ -650,3 +650,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Identify the two set-value slider pair labels and their caller before assigning MIN/MAX or controller semantics.
 - [ ] Decode 0D 00/0D 02 UI consumer and payload semantics separately.
 - [ ] No app source change or APK build in this static-analysis checkpoint.
+
+
+### Goal 2 — hardware-confirmed EXP & Pedal panel-open readback (2026-10-30)
+
+- [x] Capture `ctrlpanel.pcapng` received and decoded; full report saved under `docs/research/MG30_CTRL_PANEL_CAPTURE_VALIDATION_2026-10-30.md`.
+- [x] Confirm panel open sends `13 00` OUT and original MG-30 returns `13 02` IN (~2.151 ms request-to-response).
+- [x] Confirm readback contains CTRL1/CTRL2 function-choice fields and two value pairs; snapshot captured codes are CTRL1 AMP/choice 0, CTRL2 WAH/choice 0, values 100/100.
+- [x] Keep response bytes not covered by the current parser map uninterpreted.
+- [x] Record separate outgoing CC77/value55 event as unknown; do not merge it into the SysEx protocol.
+- [x] Panel-open readback hardware-validation item is complete.
+- [ ] Continue tracing first-column function-menu item IDs and CC77 sender.
+- [ ] Continue separate `0D 00 → 0D 02` / set-value panel analysis; no assumption that it means WAH MIN/MAX.
+- [ ] Do not change source or build APK yet. Keep NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene protected.
