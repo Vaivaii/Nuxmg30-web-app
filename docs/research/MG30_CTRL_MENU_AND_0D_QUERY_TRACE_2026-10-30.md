@@ -193,3 +193,61 @@ Static inspection has not located a reliable executable-code cross-reference to 
 - [ ] The semantic content of 0D extended data; do not infer WAH MIN/MAX.
 
 No MG30 Studio source changes were made and no APK was built in this reverse-engineering checkpoint. Preserve NAM import, IR User/Collection, MIDI mappings, preset sync and completed Copy Scene.
+
+
+## SetValue sub-editor trace — slider rows and WAH range evidence (2026-10-30)
+
+This adds a more exact link between the SetValue panel and the two CTRL dependent-configuration rows. It does not change the wire map or assign new meanings to the 0D packet family.
+
+### Parent UI selection and panel creation
+
+In parent panel click handler VA `0x005C1BA0`, child-object identity selects the popup selector argument:
+- child `+0xA30` → selector 0 (CTRL1 function);
+- child `+0xA3C` → selector 1 (CTRL2 function);
+- child `+0xA38` → selector 2 (CTRL1 dependent configuration);
+- child `+0xA44` → selector 3 (CTRL2 dependent configuration);
+- child `+0xA48` → selector 4 (external footswitch T);
+- child `+0xA4C` → selector 5 (external footswitch R);
+- child `+0xA50` → selector 6 (Multi EFX CTRL function);
+- child `+0xA5C` → selector 7 (Multi EFX dependent/mode choice).
+
+The SetValue panel is created only for the `+0xA38` and `+0xA44` child objects (selectors 2 and 3). The parent passes a boolean flag that is true for selector 2 / CTRL1 and false for selector 3 / CTRL2. This structurally confirms that the two slider-pair editors are the dependent-configuration sub-editors for CTRL1 and CTRL2; they are not the external T/R or Multi EFX controls.
+
+### SetValue constructor and slider write
+
+Original-MG30 SetValue panel constructor: `0x005C5290`.
+- It creates three caption widgets at object offsets `+0x84`, `+0x88`, and `+0x8C`.
+- Those captions are populated through localization lookup `0x009A5350` using identifiers `0x155B`, `0x1517`, and `0x15ED`, respectively.
+- It creates the two slider widgets at `+0x134` and `+0x138`.
+- The resource strings embedded in QuickTone include `WAH_RANGE = RANGE`, `VOL_MIN = MIN`, and `VOL_MAX = MAX`. The user's WAH editor screenshot independently shows the Range / MIN / MAX layout.
+
+The exact join from numeric caption IDs `0x155B/0x1517/0x15ED` to the resource keys has not been recovered, so the title/MIN/MAX text association is still classed as a strong inference rather than a fully proven ID-to-key mapping. However, the panel is structurally restricted to the CTRL1/CTRL2 dependent-configuration rows, and the user-provided WAH screenshot matches the three-caption/two-slider shape. Do not hard-code the inferred labels for every function without checking the selected function/model context.
+
+Slider handler VA `0x005C5D60`:
+- converts each slider widget position using the configured min/max range stored in the panel object;
+- reads the two controls at `+0x134/+0x138`;
+- if the parent flag at `+0x128` is true (selector 2 / CTRL1), writes the values to device state `+0x7F/+0x80`;
+- if false (selector 3 / CTRL2), writes to `+0x81/+0x82`;
+- then invokes the existing `13 01` serializer at `0x004A7FE0`.
+
+This confirms the value pairs are edited and written as part of the CTRL assignment record through `13 01`, and restored by the same `13 02` parser already verified in the hardware panel-open capture. Do not route these values through the separate `0D 00/0D 02` query family.
+
+### Consequence for 0D interpretation
+
+The WAH range editor is now structurally tied to the CTRL1/CTRL2 SetValue sub-editor and its direct `13 01` write path. The separate `0D 00 → 0D 02` path remains an extended/type-data refresh/cache mechanism whose user-visible payload has not been identified. No evidence currently connects the 0D payload to WAH MIN/MAX. Previous wording that left open a possible 0D-to-WAH-range association should be read as a hypothesis only; the current best-supported model is that WAH range slider edits use the `13 01` record's value bytes 14–17.
+
+### Evidence boundary
+
+**Confirmed by static code:**
+- SetValue editor invocation only for CTRL1 dependent row (selector 2) and CTRL2 dependent row (selector 3).
+- Two sliders map to separate pairs `+0x7F/+0x80` and `+0x81/+0x82`.
+- Slider change sends `13 01`.
+- The readback parser `13 02` restores these same four bytes.
+
+**Strong inference from user screenshot + QuickTone language resource:**
+- The WAH configuration presents the two sliders as MIN and MAX under a RANGE title.
+
+**Still unresolved:**
+- Exact numeric localization-ID → language-key mapping for the three captions.
+- Whether the same caption strings and slider semantics apply unchanged to every function/model context.
+- Actual meaning/consumer of separate `0D 02` extended data.
