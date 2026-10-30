@@ -861,3 +861,14 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Determine whether import sends additional WAVE/resource transfer frames; do not assume all RIFF/resource bytes are carried inside the three scene-part messages.
 - [ ] No source/protocol change and no APK build in this research checkpoint. Preserve NAM, IR User/Collection, MIDI mappings, preset sync, and Copy Scene unchanged.
 - [x] Save sample hashes, record layout observations, current writer transaction details, discrepancies and capture plan in `docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md`.
+
+
+## Goal 3 addendum — embedded IR/resource clue in preset records (2026-10-30)
+
+- [x] Correlate the record's RIFF/WAVE data size (`0x1800` = 2,048 mono 24-bit samples) with the existing MG-30 IR waveform transfer's 2,048-sample span (64 × 32 samples).
+- [x] Note the adjacent per-record resource label and the independent WAVE/trailing-data region.
+- [ ] Confirm whether this resource is a cabinet IR and whether QuickTone restores it as User/Third Party, Collection, or via a separate resource command family. The structural match is not proof.
+- [ ] Decode the `0xCB0)-byte trailer. The `0x4B0) size component coincides with 600 × 2 bytes but its meaning/offset is unproven.
+- [ ] Capture the exact import transaction to establish whether resource upload happens before or after the three-scene preset write, and whether both phases use existing User/Collection handlers.
+- [x] Keep `10/09/11` User and `6A/6C/6B` Collection flows separate; no changes to either path or its parameter mapping in this checkpoint.
+- [x] Update the research note with this cross-correlation and a two-data-class import hypothesis. No source/protocol change and no APK build.
