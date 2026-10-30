@@ -1088,7 +1088,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Added offset-ordering helper and tests; out-of-order responses are sorted before assembly, while duplicate/missing/out-of-range responses are rejected.
 - [x] Changed only the read-only Export bridge to register all 64 waveform requests and collect 10/02 pages by returned offset; same pattern for 10 curve requests and 11/02 responses.
 - [x] Node protocol regression tests passed in Actions run #138, source commit fc68d00e2c48e3a954988bc76c80f200f9212cb4.
-- [ ] Verify Actions run #138 completes Android debug APK build and artifact upload.
+- [x] Verified Actions run [#138](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41123736392): protocol tests, Capacitor generation, Gradle assembleDebug and artifact upload all passed. Artifact `MG30-Studio-debug-APK`, ID `13008509843`, size 4,016,705 bytes, SHA-256 `8f9b1b1fc37cec90521cdfe3e000f754cc6a3c3e190c0b18322d2ae81840c701`. Source commit `fc68d00e2c48e3a954988bc76c80f200f9212cb4`.
 - [ ] Physical read-only Export test on original MG-30 Gen2 FW 6.0.x; inspect complete unique offset coverage, three scene readbacks and final file.
 - [ ] If only offset 128 arrives without other pages, retain diagnostics; do not redefine the offset field or bypass validation.
 - [x] Protected write/import paths, NAM, IR Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device untouched.
