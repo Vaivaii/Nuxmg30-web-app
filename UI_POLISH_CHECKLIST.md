@@ -630,8 +630,9 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Validate EFX DIST UNO = LEVEL + DRIVE against the known UI/capture example.
 - [x] Validate first 30 original AMP records = GAIN + MASTER against the user's direct check of all AMP models. This resolves the earlier candidate JSON conflict.
 - [x] Identify WAH special rows (CLYDE, CRYBB, V847, HORSE, OCTAVE) with no generic parameter pair; keep WAH MIN/MAX separate.
-- [ ] Trace exact first-column function popup construction/item IDs; do not infer them from dependent-choice builder VA 0x005C48F0.
-- [ ] Trace active model-index selection for all duplicate/shared model rows and confirm the correct row per active block/model.
+- [x] Trace exact first-column function popup construction/item IDs. The original-MG30 shared popup builder `0x005C48F0` and selection handler `0x005C4610` are documented in `MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md`.
+- [x] Recover the active model-row lookup algorithm: `manager+0x2C` supplies the active model-code array; the function-family selector indexes it, masks the code with `0x3F`, and converts the one-based code to a zero-based six-byte record row. See the new active-row section in `MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md`.
+- [ ] Cross-check every duplicate/shared model record against actual model IDs from active original-MG30 preset readback; the selection formula is statically confirmed, but a complete per-model hardware ID inventory is still outstanding.
 - [ ] Trace 13 02 device readback request/callback and verify panel reopen/readback on hardware.
 - [ ] Trace 0D 00 / 0D 02 with NuxPedalSetValuePanelMG30 and WAH MIN/MAX sliders.
 - [ ] Only after protocol/readback checks, implement Roadmap 2 in isolation and build/test APK. No MG30 Studio source change or APK build in this static-analysis checkpoint.
@@ -646,7 +647,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Correctly separate 0D 00 OUT → 0D 02 IN. Its variable-length payload is stored starting at singleton offset +0x5E with a length/status byte at +0x5D; its UI semantics are not proven.
 - [x] Trace NuxPedalSetValuePanelMG30 slider handler VA 0x005C5D60: it updates either state pair +0x7F/+0x80 or +0x81/+0x82 and then sends 13 01. The pair labels/meaning are still unresolved.
 - [ ] Capture the 13 00/13 02 readback exchange when QuickTone opens/reopens EXP & Pedal on the original MG-30.
-- [ ] Trace actual first-column function dropdown item IDs.
+- [x] Trace actual first-column function dropdown item IDs and stored ordinals: `----=0, WAH=1, EFX=2, AMP=3, MOD=4, DLY=5, RVB=6`.
 - [ ] Identify the two set-value slider pair labels and their caller before assigning MIN/MAX or controller semantics.
 - [ ] Decode 0D 00/0D 02 UI consumer and payload semantics separately.
 - [ ] No app source change or APK build in this static-analysis checkpoint.
@@ -660,7 +661,8 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Keep response bytes not covered by the current parser map uninterpreted.
 - [x] Record separate outgoing CC77/value55 event as unknown; do not merge it into the SysEx protocol.
 - [x] Panel-open readback hardware-validation item is complete.
-- [ ] Continue tracing first-column function-menu item IDs and CC77 sender.
+- [x] First-column function-menu item IDs and ordinals are now statically traced.
+- [ ] Continue identifying the CC77 sender/trigger; do not implement CC77 until its purpose is known.
 - [ ] Continue separate `0D 00 → 0D 02` / set-value panel analysis; no assumption that it means WAH MIN/MAX.
 - [ ] Do not change source or build APK yet. Keep NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene protected.
 
@@ -673,7 +675,8 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Confirm T/R Scene Up/Down selection updates the opposite contact with the complementary direction code.
 - [x] Confirm Multi EFX CTRL list contains TAP, block selectors and SCENE entries and is independent of CTRL1/CTRL2.
 - [x] Document the correction and detailed trace in `docs/research/MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md`.
-- [ ] Resolve selector-7 option labels/bit meaning, labels for the two SetValue value pairs, conditional availability and CC77 sender.
+- [x] Resolve selector-7 DLY/SCENE labels and bit polarity: DLY `S.TAP ON/OFF` uses set/clear bit `0x20`; SCENE `S3 ON/OFF` uses the opposite polarity.
+- [ ] Resolve exact localized caption IDs for the two SetValue slider pairs, conditional availability rules, and the CC77 sender/trigger.
 - [ ] Continue separating `0D 00 → 0D 02` extended-data refresh from `13 00 → 13 02` CTRL readback. Do not label 0D as WAH MIN/MAX without proof.
 - [ ] No source changes or APK build yet. Protect NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene.
 
@@ -697,7 +700,7 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Identify generic Windows MIDI short-message output path for CC77, but not its app-level sender or trigger.
 - [x] Keep 0D payload and CC77/value55 out of the MG30 Studio implementation until their actual feature meaning is established.
 - [ ] Next wire captures should isolate external T-only, external R-only, and Multi EFX CTRL changes if those protocol bytes are to be implemented.
-- [ ] Decode selector-7 DLY/SCENE dependent option labels and mode bit before implementing that optional field.
+- [x] Decode selector-7 DLY/SCENE dependent option labels and mode bit; retain the function-dependent opposite bit polarity in implementation.
 
 
 ### Goal 2 — Multi EFX CTRL dependent options decoded (2026-10-30)
@@ -813,3 +816,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] If hardware evidence is not available in a session, continue static QuickTone analysis of unresolved function-menu IDs, active model-row selection, 0D 00/0D 02 SetValue semantics, and CC77 trigger without changing the app protocol.
 - [ ] Once Goal 2 has wire and hardware acceptance, move to Roadmap Goal 3 in order: preset import/export, preset rename, Save As/duplicate, then IR/NAM device-synced rename. Studio redesign remains later.
 - [ ] Preserve working NAM, IR User/Collection, MIDI mappings, preset sync, signal-chain realtime reorder, and Copy Scene in all future steps.
+
+## Goal 2 — active model-row selection statically traced (2026-10-30)
+
+- [x] Inspect the original-MG30 dependent-choice lookup `0x005C2070` against getter `0x004B3B20`.
+- [x] Confirm `[manager+0x2C]` is the pointer to the active model-code array used by the lookup.
+- [x] Confirm selected family byte is masked with `0x3F`, decremented from one-based model code to a zero-based row, then addressed with a six-byte record stride.
+- [x] Confirm the two option keys are located at record offsets `+3` and `+5` and passed to the string/key resolver.
+- [x] Cross-check the panel refresh path `0x005C13A4` uses the same family selector and lookup before resolving the visible dependent parameter labels.
+- [ ] Build a full crosswalk of current active model IDs to every duplicated/shared/auxiliary table row; retain uncertainty where runtime ID evidence is missing.
+- [ ] Next Roadmap 2 work remains original-MG30 Gen 2 FW 6.0.x hardware acceptance: CTRL1 isolated change with ACK/readback, external T/R isolated changes, and Multi EFX isolated changes.
+- [ ] Leave CC77 and 0D 00/0D 02 out of application code until their feature-level semantics are proven.
+- [ ] No app source files changed in this static-analysis step. NAM, IR User/Collection, MIDI mappings, preset sync, signal-chain realtime reorder, and Copy Scene remain untouched.
