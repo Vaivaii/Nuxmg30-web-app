@@ -559,3 +559,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Correlate packed state fields and option index with the `13 01` wire payload and confirm readback behavior.
 - [x] Record findings in `CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md` (commit `4e1c82fc248feb62d106cff77671988b8f7cd6cf`).
 - [ ] No app source changes/APK build yet; keep NAM, IR User/Collection, MIDI mappings, preset sync and Copy Scene untouched.
+
+### Goal 2 — bulk CTRL parameter extraction from embedded QuickTone model JSON (2026-10-30)
+
+- [x] Located structured embedded model-control JSON blobs in `QuickTone.exe`; entries expose ordered `languageKey` parameter lists per model.
+- [x] Extracted two candidate profile sets that both include the user-confirmed MG30 model names `ANALOG DELAY` / `ANA-DLY`, `PLEXI 45`, and `DIST UNO`: resource blob at file offset `0x69F8DB0` (79 top-level entries) and blob at `0x6A41E78` (92 top-level entries).
+- [x] Established strong static-data correlation that the first two non-empty `languageKey` entries match CTRL's two dependent parameter choices: ANA-DLY `RATE`/`INTEN`; PLEXI 45 `GAIN`/`PRES`; DIST UNO `LEVEL`/`DRIVE`. DIST UNO's `LEVEL` → `DRIVE` order matches the user's isolated SysEx capture.
+- [x] Exported both candidate datasets to `QuickTone_CTRL_parameter_pairs_candidate_profiles.csv` (165 model rows; SHA-256 `e9eba79fea026a3d14a28617ba75ed468c9c49d1803eed7d32ed5dc84be400d7`).
+- [x] Detailed extraction/correlation, profile offsets, pair differences and caveats recorded in `CTRL_EXPRESSION_QUICKTONE_REVERSE_ENGINEERING_2026-10-30.md` (commit `8f371e111434cff1af0d2c33cce8dd07e51075c0`).
+- [ ] Trace which embedded profile set is selected by original `NuxPedalSettingPanelMG30` versus `NuxPedalSettingPanelMG30MK2`; do not confuse candidate profiles or use MKII-only model rows in the original MG30 implementation.
+- [ ] Resolve special `PH 90` one-key case and WAH's distinct MIN/MAX path; do not invent missing second options.
+- [ ] Correlate the selected embedded model pair data with the exact runtime lookup/write/readback path for `13 01` / `13 03` before implementation.
+- [ ] No MG30 Studio source change or APK build yet. Preserve existing NAM, IR User/Collection, MIDI mappings, preset synchronization and Copy Scene.
