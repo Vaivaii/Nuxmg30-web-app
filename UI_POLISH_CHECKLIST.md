@@ -959,3 +959,15 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Trace QuickTone exportPresetLogic/exportAllPresetLogic and their data source. Hypothesis: Export serializes already-populated local/cache state and does not trigger a USB hardware read when clicked. Treat as hypothesis pending call-graph/data-flow verification.
 - [ ] Determine which QuickTone action populates the cached preset/IR data before export; avoid asking for another identical capture until this code path is understood.
 - [x] No changes to app source/protocols; all working features remain untouched.
+
+
+## Goal 3 — QuickTone IR readback and first Export implementation (2026-10-31)
+
+- [x] Trace QuickTone IR read-side command sequence: 09/00 → 09/02 metadata; 10/00 × 64 → 10/02 waveform (offsets 0..2016, step 32); 11/00 × 10 → 11/02 curve (offsets 0..576, step 64).
+- [x] Identify the exact 15-byte 10/00 and 11/00 read-request layout: command/action, two reserved zero bytes, packed uint16 resource index, packed uint16 block offset, F7.
+- [x] Implement strict read-side packet builders, parsers and 2,048-sample / 600-value assembly in www/mg30-preset-read.js.
+- [x] Add read-only MG30PresetExportBridge and Export .mg30patch UI in www/index.html and www/mg30-preset-export.js. Reads the three scenes plus User IR metadata/waveform/curve and uses the previously byte-verified serializer.
+- [x] Export has its own busy lock; it does not call any preset/IR write path. It blocks CC/poll/slot-change/chain operations while reading and resumes polling afterward.
+- [ ] Hardware test initial Export UI on original MG-30 Gen2 FW 6.0.x; verify each phase/count/offset and re-import a generated file into a safe test slot.
+- [ ] Initial export bridge assumes the preset program index is the attached IR resource index. It checks the returned index/offset and aborts on mismatch; revise only if actual hardware readback provides evidence for a different resource mapping.
+- [ ] Until the hardware test passes, label Export as implemented but not yet hardware-validated. Keep batch import disabled.
