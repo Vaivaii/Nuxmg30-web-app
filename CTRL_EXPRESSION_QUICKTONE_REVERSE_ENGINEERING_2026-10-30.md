@@ -779,3 +779,16 @@ This section supersedes earlier notes that characterized `0x005C48F0` as only a 
 - [x] Full selector and query trace recorded in `docs/research/MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md`.
 - [ ] Resolve selector-7 DLY/SCENE labels, SetValue slider labels, per-context menu availability and CC77 sender.
 - [ ] Keep source unchanged until the remaining control semantics and write/readback behavior are sufficiently supported. No APK build in this checkpoint.
+
+
+## SetValue panel caller / wire-path confirmation (2026-10-30)
+
+- [x] Parent panel click handler `0x005C1BA0` maps child `+0xA38` to selector 2 (CTRL1 dependent editor) and child `+0xA44` to selector 3 (CTRL2 dependent editor); these are the only two child rows that instantiate `NuxPedalSetValuePanelMG30`.
+- [x] Constructor `0x005C5290` creates three captions (resource IDs `0x155B`, `0x1517`, `0x15ED`) and two slider controls at `+0x134/+0x138`.
+- [x] Slider handler `0x005C5D60` writes selector-2 values to `+0x7F/+0x80`, selector-3 values to `+0x81/+0x82`, then invokes `13 01` serializer `0x004A7FE0`.
+- [x] The same four value bytes are returned by the `13 02` hardware readback parser. This confirms the slider-value pair path belongs to the `13 01/13 02` CTRL state record.
+- [x] QuickTone resources contain `WAH_RANGE=RANGE`, `VOL_MIN=MIN`, and `VOL_MAX=MAX`; the user WAH screenshot shows that Range/MIN/MAX presentation. Mark exact numeric-ID-to-key correlation as strong inference, not proven mapping.
+- [x] Separate `0D 00 → 0D 02` remains an extended/type-data refresh/cache path. No evidence connects its payload to WAH MIN/MAX; do not route slider changes through 0D.
+- [ ] Resolve exact caption-ID-to-key mapping and whether all functions use the same slider captions/semantics.
+- [ ] Trace 0D response consumer and CC77/value55 source separately; retain unknown labels until proven.
+- [ ] No application source changes or APK build in this analysis checkpoint.
