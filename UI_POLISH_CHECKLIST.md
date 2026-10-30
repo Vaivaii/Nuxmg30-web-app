@@ -599,3 +599,9 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Recover the model-dependent CTRL parameter pair table from the correct MG30 panel/model data object; do not use candidate JSON editor arrays as canonical CTRL mappings. Keep the user-confirmed AMP pair GAIN + MASTER authoritative.
 - [ ] Obtain a clean one-field CTRL1 dependent-choice capture plus panel reopen/readback capture if static tracing leaves ambiguity.
 - [ ] No MG30 Studio source change or APK build in this checkpoint. NAM, IR User/Collection, MIDI mapping, preset sync, and Copy Scene remain untouched.
+
+
+### Opcode correction — 0D query path (2026-10-30)
+
+- Static recheck corrected the adjacent set-value-related message family: outgoing VA 0x004A7D40 sends 0D 00 (not 0D 01); incoming handler VA 0x004A7E60 checks 0D 02.
+- Keep 0D 00/0D 02 separate from 13 01/13 03 CTRL assignment writes and ACKs. The 0D payload semantics and its connection to WAH MIN/MAX remain unproven.
