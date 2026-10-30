@@ -361,6 +361,12 @@
  <p class="slot-note" id="presetExportTarget">Sumber: 01A</p>
  <button class="btn primary" type="button" id="presetExportStart">Ekspor preset .mg30patch</button>
  <p class="studio-result" id="presetExportStatus" role="status" aria-live="polite">Export membaca preset dan IR dari pedal. Operasi ini tidak menulis atau mengubah data MG-30.</p>
+ <details id="presetExportDiagnosticsDetails" hidden style="margin-top:10px;border:1px solid #655332;border-radius:10px;background:#111611;padding:10px">
+  <summary style="cursor:pointer;color:#e6c99b;font-size:11px;font-weight:700">Detail diagnostik readback · untuk analisis</summary>
+  <p class="slot-note">Log berisi slot/indeks, request SysEx yang dikirim, offset yang diminta, dan header balasan yang diterima. Log ini tidak berisi perintah tulis.</p>
+  <textarea id="presetExportDiagnosticsText" rows="9" readonly spellcheck="false" aria-label="Log diagnostik Export" style="display:block;width:100%;min-height:150px;margin:8px 0;background:#090e0c;color:#dce6d4;border:1px solid #394333;border-radius:8px;padding:9px;font:10px/1.45 ui-monospace,monospace;white-space:pre;overflow:auto"></textarea>
+  <button class="btn" id="presetExportCopyDiagnostics" type="button">Salin log diagnostik</button>
+ </details>
 </div>
 <div class="panel preset-import-panel">
  <div class="panel-head"><div><h3>Import preset QuickTone</h3><p>Impor satu file .mg30patch ke slot hardware yang sedang dipilih.</p></div><span class="chip">GEN2 · SINGLE</span></div>
@@ -1983,6 +1989,18 @@ window.MG30PresetExportBridge=Object.freeze({
   if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain dimulai saat export menunggu antrean. Coba lagi setelah selesai.');
   presetExportBusy=true;window.MG30PresetExportBusy=true;sceneSwitchPending=true;hardwareSyncBusy=true;
   stopHardwareStatePolling();
+  const traceStarted=performance.now();
+  const exportTrace={
+   version:1,
+   targetProgram:program,
+   targetSlot:slotName(program),
+   startedAt:new Date().toISOString(),
+   status:'running',
+   dataRequests:[],
+   failure:null
+  };
+  const traceHex=bytes=>Array.from(bytes||[],value=>Number(value).toString(16).padStart(2,'0')).join(' ').toUpperCase();
+  window.MG30PresetExportLastDiagnostics=exportTrace;
   try{
    const sceneReplies=[];
    for(let part=0;part<3;part++){
@@ -2010,22 +2028,81 @@ window.MG30PresetExportBridge=Object.freeze({
 
    const requestDataReply=async(request,command,offset,label)=>{
     const ignored=[];
+    const record={
+     label,
+     command:command.toString(16).toUpperCase().padStart(2,'0')+'/00',
+     resourceIndex:program,
+     expectedOffset:offset,
+     requestLength:request.length,
+     requestHex:traceHex(request),
+     sentAtMs:Math.round(performance.now()-traceStarted),
+     replies:[]
+    };
+    exportTrace.dataRequests.push(record);
+    exportTrace.current=record;
     try{
-     return await requestPresetExportFrame(request,b=>{
-      if(b.length!==203||b[0]!==0x43||b[1]!==0x58||b[2]!==0x70||b[3]!==command||b[4]!==0x02)return false;
+     const body=await requestPresetExportFrame(request,b=>{
+      if(b.length<5||b[0]!==0x43||b[1]!==0x58||b[2]!==0x70||b[3]!==command||b[4]!==0x02)return false;
+      const seen={
+       receivedAtMs:Math.round(performance.now()-traceStarted),
+       bodyLength:b.length,
+       bodyPrefixHex:traceHex(Array.from(b).slice(0,20))
+      };
+      if(b.length!==203){
+       seen.invalid='unexpected body length; expected 203';
+       record.replies.push(seen);
+       if(ignored.length<12)ignored.push(seen);
+       return false;
+      }
       try{
        const header=readFormat.inspectDataReply(Uint8Array.from(b),command);
+       seen.replyTag=header.replyTag;
+       seen.returnedOffset=header.offset;
+       record.replies.push(seen);
        if(header.offset!==offset){
-        if(ignored.length<6)ignored.push('tag '+header.replyTag+'/offset '+header.offset);
+        seen.ignored=true;
+        if(ignored.length<12)ignored.push(seen);
         return false;
        }
+       record.matchedReply={replyTag:header.replyTag,offset:header.offset,bodyPrefixHex:seen.bodyPrefixHex};
+       record.status='matched';
+       record.completedAtMs=Math.round(performance.now()-traceStarted);
        return true;
-      }catch(_){return false}
+      }catch(error){
+       seen.invalid=error?.message||String(error);
+       record.replies.push(seen);
+       if(ignored.length<12)ignored.push(seen);
+       return false;
+      }
      },label);
+     record.status='matched';
+     record.completedAtMs=Math.round(performance.now()-traceStarted);
+     return body;
     }catch(error){
-     if(ignored.length)throw new Error((error?.message||String(error))+
-      ' Balasan '+command.toString(16).toUpperCase()+'/02 dengan offset berbeda diabaikan: '+ignored.join('; ')+'.');
-     throw error;
+     record.status='failed';
+     record.error=error?.message||String(error);
+     record.failedAtMs=Math.round(performance.now()-traceStarted);
+     record.ignoredReplies=ignored;
+     exportTrace.status='failed';
+     exportTrace.failure={
+      label,
+      command:record.command,
+      resourceIndex:program,
+      expectedOffset:offset,
+      requestHex:record.requestHex,
+      replies:record.replies,
+      error:record.error
+     };
+     const ignoredSummary=ignored.map(reply=>
+      reply.replyTag!==undefined
+       ? 'tag '+reply.replyTag+'/offset '+reply.returnedOffset
+       : 'body length '+reply.bodyLength+'; '+(reply.invalid||'invalid')
+     ).join('; ');
+     const detail=label+' gagal; IR index='+program+', offset diminta='+offset+
+      '. Request SysEx: '+record.requestHex+'. '+record.error+
+      (ignoredSummary?' Balasan 10/02 atau 11/02 yang berbeda diabaikan: '+ignoredSummary+'.':'');
+     window.MG30PresetExportLastDiagnostics=exportTrace;
+     throw new Error(detail);
     }
    };
 
@@ -2053,8 +2130,17 @@ window.MG30PresetExportBridge=Object.freeze({
    const resourceName=metadata.resourceName;
    if(!resourceName)throw new Error('Nama IR kosong; file preset tidak akan dibuat.');
    if(resourceName.length>16)throw new Error('Nama IR berjumlah '+resourceName.length+' karakter; format single-preset hanya menyediakan 16 byte. Export dihentikan agar nama tidak terpotong.');
+   exportTrace.status='complete';
+   exportTrace.finishedAt=new Date().toISOString();
+   exportTrace.elapsedMs=Math.round(performance.now()-traceStarted);
+   window.MG30PresetExportLastDiagnostics=exportTrace;
    return {recordOrdinal:program,sceneReplies,resourceName,samples:resource.samples,curve:resource.curve,resourceIndex:program};
   }catch(error){
+   exportTrace.status='failed';
+   exportTrace.finishedAt=new Date().toISOString();
+   exportTrace.elapsedMs=Math.round(performance.now()-traceStarted);
+   exportTrace.error=error?.message||String(error);
+   window.MG30PresetExportLastDiagnostics=exportTrace;
    setDeviceStatus('Export preset gagal: '+(error?.message||error));
    throw error;
   }finally{
