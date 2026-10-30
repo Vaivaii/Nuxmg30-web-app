@@ -790,4 +790,26 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [x] Compact the CTRL header, card gaps, card padding, labels, model context, range spacing, and footer spacing for mobile.
 - [x] Keep dropdowns and footer buttons at usable touch heights (36–38 CSS px minimum in the narrow phone layout).
 - [x] Preserve the existing single-column sequence and full-width controls; no protocol, JavaScript, SysEx, NAM, IR, or MIDI-map files changed.
-- [ ] Verify all four control sections and both footer buttons fit simultaneously on the target Android phone. If a selected function reveals additional range/conditional controls, re-check that state separately.
+- [x] User confirmed the final phone layout is "Sip, sudah bagus"; all four control sections and both footer buttons are visible together with no internal scrolling in the tested default state.
+- [ ] Separately re-check the fit if a selected function reveals additional conditional/range controls.
+
+## Final CTRL / EXP panel fit — user accepted (2026-10-30)
+
+- [x] User confirmed the compact one-screen/no-scroll CTRL / EXP panel is good; treat the default phone layout as accepted.
+- [x] Dialog shows title, subtitle, Multi EFX CTRL, external T/R, CTRL1, CTRL2, and the Baca ulang / Simpan ke pedal footer in one viewport.
+- [x] Internal dialog scrolling remains disabled on mobile; mobile layout uses compact gaps/padding and 36–38px minimum dropdown/button touch heights.
+- [x] No protocol or MIDI behavior changed in this visual pass.
+- [x] Source commit: `7c93364f1e9148a2f0f54e9398404e75cf8af15f` — `style: fit CTRL editor on phone without scrolling`.
+- [x] Android debug build: run [41038988421](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41038988421) — success.
+- [x] CI artifact: `MG30-Studio-debug-APK`, artifact ID `12968364791`, ZIP size 4,002,327 bytes, SHA-256 `67b69e6d05932b02bc89d6795938458d475c8ea54db78388f1c1c65a51977bda`.
+- [ ] Verify any conditional WAH MIN/MAX or other expanded states still fit on the phone; the accepted screenshot shows the default state.
+
+## Roadmap continuation — next active milestone
+
+- [x] Close the CTRL / EXP mobile UI acceptance item after the user's confirmation.
+- [ ] Continue Goal 2 hardware acceptance on original NUX MG-30 Gen 2 firmware 6.0.x, one control family at a time: (1) CTRL1 built-in expression with a single effect parameter choice change and ACK/readback; (2) external footswitch T and R independently for block ON/OFF and Scene Up/Down; (3) Multi EFX CTRL TAP, block ON/OFF, and scene cycle.
+- [ ] Keep CTRL2 visible/configurable but defer its physical-response test until an additional expression pedal is available, as already specified by the user.
+- [ ] For each device test, capture the before/after setting, wire transaction, ACK, and panel readback. Do not mark physical behavior complete from build success alone.
+- [ ] If hardware evidence is not available in a session, continue static QuickTone analysis of unresolved function-menu IDs, active model-row selection, 0D 00/0D 02 SetValue semantics, and CC77 trigger without changing the app protocol.
+- [ ] Once Goal 2 has wire and hardware acceptance, move to Roadmap Goal 3 in order: preset import/export, preset rename, Save As/duplicate, then IR/NAM device-synced rename. Studio redesign remains later.
+- [ ] Preserve working NAM, IR User/Collection, MIDI mappings, preset sync, signal-chain realtime reorder, and Copy Scene in all future steps.
