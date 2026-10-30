@@ -124,3 +124,36 @@ The next capture should focus on changing **one dependent field at a time** whil
 - If possible, open each selector/popup without changing values to identify read/query behavior.
 
 Record the UI before/after value for each pcap. This should help identify whether the existing three changing SysEx bytes represent a control slot, a function/model enum, a parameter enum, or range data. Do not assign semantics to offsets 10–12 until these differential captures or disassembly support them.
+
+
+## Authoritative user correction — built-in EXP and Signal Chain dependency (2026-10-30)
+
+This section supersedes the earlier hypothesis above that the second column is a freely selectable model field for CTRL1.
+
+The user clarified the exact CTRL1 behavior:
+
+- The hardware callout/row **1** is the MG-30's built-in NUX expression pedal. It is not an external footswitch.
+- For CTRL1 row 1, the first column selects the function assigned to the built-in expression pedal (example: `EFX`).
+- When the function is `EFX`, the second column is **static/read-only context**, automatically reflecting the EFX block/model currently present in the Signal Chain. In the user's current preset, the Signal Chain EFX is distortion, so QuickTone displays `DIST UNO`. That model name cannot be changed from this CTRL dialog.
+- The third column chooses which parameter of that already-present Signal Chain effect the built-in expression pedal controls. Examples include `DRIVE` or `LEVEL`. The available parameter choices depend on the actual effect model in the Signal Chain.
+- Therefore, changing the Signal Chain EFX model can change the second-column display and may change the valid third-column parameter choices. The CTRL1 dialog does not independently select/replace the EFX model.
+
+The separate WAH example previously shown (function `WAH`, model `CLYDE`, and MIN/MAX volume range) remains a distinct observed configuration path. Do not conflate that WAH-specific model/range editor with the CTRL1/EFX second column. The precise relationship of that WAH row to the other hardware control callouts should be checked against the UI/device diagram and captures rather than assumed.
+
+### Corrected data-model view
+
+For built-in expression pedal row 1 when assigned to EFX:
+1. Assignment/function: `EFX`.
+2. Effect identity: read-only reference to the currently active EFX block/model in the Signal Chain (e.g. `DIST UNO`), not a user-editable CTRL field.
+3. Controlled parameter: user-selectable parameter supported by that current EFX block (e.g. `DRIVE`, `LEVEL`).
+
+For a WAH assignment:
+- The screenshots show a WAH model such as `CLYDE` and a dedicated MIN/MAX range popup. Keep this schema separate until more evidence confirms whether those values refer to built-in EXP travel calibration, WAH volume range, or a different assignment row.
+
+### Impact on reverse-engineering plan
+
+- Do **not** run a capture that attempts to change CTRL1's second column from DIST UNO to another model; the user confirms this field cannot be edited in the CTRL dialog.
+- To isolate the third-column parameter enum, keep the same Signal Chain EFX model and change only the parameter (e.g. `LEVEL` → `DRIVE`).
+- To investigate second-column behavior, change the actual EFX block/model in the Signal Chain in a separate controlled session, then reopen the CTRL dialog and observe whether the displayed model/available parameters follow automatically. This tests the binding, not a CTRL second-column write.
+- Keep the selected preset unchanged within each comparison; record the actual Signal Chain block before/after.
+- Continue to treat the three changing SysEx bytes at offsets 10–12 as unmapped until differential captures establish their meanings.
