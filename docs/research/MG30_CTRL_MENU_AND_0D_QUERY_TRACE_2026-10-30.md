@@ -251,3 +251,31 @@ The WAH range editor is now structurally tied to the CTRL1/CTRL2 SetValue sub-ed
 - Exact numeric localization-ID → language-key mapping for the three captions.
 - Whether the same caption strings and slider semantics apply unchanged to every function/model context.
 - Actual meaning/consumer of separate `0D 02` extended data.
+
+
+## Extended 0D response consumer and CC77 transport layer (2026-10-30)
+
+### 0D response consumer
+
+Further tracing of the 0D 02 callback and its cache helpers shows the payload is consumed by a type-keyed data manager, not by the SetValue slider handler:
+
+- Callback 0x004A7E60 validates subcommand 0D 02, reads the response's count/metadata byte at offset 0x12, and collects the variable bytes beginning at offset 6.
+- Helper 0x004B29C0 copies the received bytes into the active manager data area beginning at +0x5E, using the object's stored extent/count; it also mirrors the data into cached object copies at +0xEC and +0x17A (plus the associated metadata fields).
+- Helper 0x004B2AB0 stores the response metadata byte at +0x5D and mirrors the cached state. This byte is also used as a bitfield by adjacent helper 0x004B2BB0; do not name it only as a length.
+- Helper 0x004B2410 takes two bytes (a type/key byte and a value byte), compares the type against multiple positions in the manager's 12-entry type table, and updates matching active/cached per-type data records. It also updates packed parameter data and posts internal events for some matching slots.
+- Caller 0x004B0AF0 extracts the record type from the high byte of a key and checks it against the 12-entry type table. The mismatch branch requests 0D 00 for selected type codes (1, 2, 6, 8), rather than doing so for every type.
+
+This supports a narrower description: 0D 00 → 0D 02 refreshes a separate type-indexed extended-data/cache state used by the active parameter/model manager. The exact user-facing feature represented by each type code and each returned byte remains unidentified. It is not the CTRL panel readback and is not the WAH MIN/MAX slider write path.
+
+### CC77 / value55 transport trace
+
+- B0 4D 37 is confirmed as a short MIDI Control Change event (channel 1, CC77, value55), independent of the SysEx commands.
+- Static disassembly identifies generic Windows MIDI-output backend method 0x0089C050, which dispatches a packed short MIDI event through the WinMM midiOutShortMsg API using the selected output handle.
+- That method is reached through a virtual method table entry; the executable contains the vtable pointer, but no direct static callsite was recovered that constructs specifically CC77/value55.
+- Therefore this only identifies a plausible transport layer, not the feature-level sender or its trigger. The CC77 event remains unexplained and must not be copied into MG30 Studio.
+
+### Updated confidence
+
+**Confirmed:** the set-value sliders send their values through 13 01; the 0D response is copied into a separate type-indexed data manager/cache; short CC77 messages use a generic Windows MIDI-output backend.
+
+**Not confirmed:** the purpose of CC77/value55, semantic names of 0D type codes/payload, or an exact UI feature using the 0D data.
