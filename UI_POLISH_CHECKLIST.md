@@ -605,3 +605,18 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 
 - Static recheck corrected the adjacent set-value-related message family: outgoing VA 0x004A7D40 sends 0D 00 (not 0D 01); incoming handler VA 0x004A7E60 checks 0D 02.
 - Keep 0D 00/0D 02 separate from 13 01/13 03 CTRL assignment writes and ACKs. The 0D payload semantics and its connection to WAH MIN/MAX remain unproven.
+
+
+## Goal 2 — Original-MG30 CTRL model lookup source located (2026-10-30)
+
+- [x] Identify original MG30 panel constructor VA 0x005BE8D0 (RTTI: NuxPedalSettingPanelMG30, not MKII).
+- [x] Locate embedded panel-data initializer VA 0x005C23E0, called with ECX = outer object + 0x74.
+- [x] Trace dependent-choice lookup helper VA 0x005C2070, string/key resolver VA 0x005C2030, and dependent-choice popup builder VA 0x005C48F0.
+- [x] Identify static selector-map bytes at VA 0x00D3124C and lookup table regions 0x14A, 0x168, 0x23A, 0x35A, 0x42C, 0x45C.
+- [x] Correct evidence status: VA 0x005C48F0 builds the dependent-choice menu, not the first-column function menu; the first-column function item IDs/order remain to be traced.
+- [ ] Reconcile the exact helper parent pointer with the initializer's +0x74 object base before extracting table rows.
+- [ ] Trace function dropdown construction and item IDs; correlate with selector map and known CTRL1 EFX / CTRL2 WAH examples.
+- [ ] Trace active model-index mapping through the singleton +0x2C data to category-array row indices.
+- [ ] Decode key/display translation and validate against the user-confirmed original-MG30 AMP pair GAIN + MASTER for every AMP model.
+- [ ] Do not implement or publish partial parameter rows until the AMP validation and base-pointer alignment pass.
+- [ ] No app source changes or APK build in this checkpoint. NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene remain protected.
