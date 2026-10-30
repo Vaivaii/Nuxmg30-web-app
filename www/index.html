@@ -225,6 +225,15 @@
 #ir-manager-ui>.ir-manager-card:first-child{display:none!important}
 #ir-manager-ui.ir-manager-grid{grid-template-columns:minmax(0,1fr)!important}
 </style>
+<style id="preset-import-ui-css">
+.preset-import-panel{border-color:#46583a;background:linear-gradient(145deg,#1a2118,#121711)}
+.preset-import-file-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+#presetImportFileInfo{min-width:0;flex:1;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+#presetImportSend{width:100%;min-height:43px}
+#presetImportStatus{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}
+#presetImportStatus.ok{border-color:rgba(197,243,107,.38);color:#dff6b7}
+#presetImportStatus.warn{border-color:rgba(255,189,105,.4);color:#ffd9a7}
+</style>
 </head>
 <body><div class="app">
 <header class="top"><div class="brand"><div class="logo" aria-label="NUX"><img src="./assets/nux-logo-white.svg" alt="NUX"></div><div><h1>MG-30 <span class="gen2-label">GEN2</span></h1><p>MOBILE EDITOR</p></div></div><div class="actions"><div class="usb-header-status" aria-live="polite"><strong>USB MIDI</strong><small id="usbHeaderStatus">Terputus</small></div><button class="btn usb-connect-btn" id="connectMidi" type="button" title="USB-MIDI terputus" aria-label="Hubungkan NUX MG-30 melalui USB-MIDI" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13"/><path d="m9 6 3-3 3 3"/><path d="M12 10H8l-2 2v3"/><path d="M12 12h4l2 2v1"/><path d="M12 16v4"/><path d="M10 20h4"/><circle cx="6" cy="17" r="1.5"/><rect x="16.5" y="15.5" width="3" height="3" rx=".5"/></svg></button><button class="btn" id="resetBtn">Reset</button></div></header>
@@ -340,7 +349,17 @@
  <div class="notice"><b>Peringatan pengujian.</b> Target halaman ini adalah jalur USER IR / Third Party dengan rangkaian 10/09/11, bukan rangkaian 6A/6C/6B yang terlihat pada capture aktivitas Collection. Aplikasi memakai parameter transfer 1 karena nilai itu teramati pada capture impor User QuickTone. Query konteks yang terpisah tidak muncul pada capture impor User yang kita miliki, sehingga tidak dipakai sebagai prasyarat. Makna parameter dan pemetaannya ke nomor slot fisik masih belum dipastikan. ACK bukan bukti bahwa IR sudah muncul dalam daftar. Cadangkan data penting dan pastikan target uji aman sebelum mengirim; transfer terputus dapat meninggalkan data parsial.</div>
 </div>
 </div>
-<section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div><div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
+<section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div>
+<div class="panel preset-import-panel">
+ <div class="panel-head"><div><h3>Import preset QuickTone</h3><p>Impor satu file .mg30patch ke slot hardware yang sedang dipilih.</p></div><span class="chip">GEN2 · SINGLE</span></div>
+ <input class="hidden" type="file" id="presetImportFile" accept=".mg30patch,application/octet-stream">
+ <div class="preset-import-file-row"><button class="btn" type="button" id="presetImportChoose">Pilih file .mg30patch</button><span id="presetImportFileInfo">Belum ada file single-preset dipilih.</span></div>
+ <p class="slot-note" id="presetImportTarget">Tujuan: 01A</p>
+ <button class="btn primary" type="button" id="presetImportSend" disabled>Impor ke 01A</button>
+ <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite">Importer memvalidasi record, mengirim resource IR ke Third Party/User, lalu menulis tiga scene. File batch 128 preset belum didukung.</p>
+ <p class="slot-note">Capture QuickTone mengirim IR melalui keluarga User 09/10/11, kemudian tiga scene 0B/01. Jalur Collection, NAM, Save ke pedal, dan Copy Scene tetap terpisah.</p>
+</div>
+<div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
 <section id="page-studio" class="hidden studio-page">
   <div class="hero studio-page-hero"><div><div class="eyebrow">MG30 STUDIO</div><h2>Jam &amp; Record</h2></div></div>
   <div class="panel studio-backing-panel">
@@ -616,7 +635,7 @@ function updateUsbConnectButton(){const button=$('connectMidi');if(!button)retur
 function setDeviceStatus(message){const el=$('deviceStatus');if(el)el.textContent=message;const op=$('operationStatus');if(op)op.textContent=message;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(message&&message.length<58?message:'Belum terhubung · ketuk ikon USB untuk menghubungkan');const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);updateUsbConnectButton()}
 function enqueueMidi(fn){const run=async()=>{const wait=MIDI_GAP-(performance.now()-lastMidiSend);if(wait>0)await delay(wait);const out=await fn();lastMidiSend=performance.now();return out};const p=midiChain.then(run);midiChain=p.catch(()=>{});return p}
 function midiSend(data){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{await midiOutput.send(data);return true})}
-function sendCC(cc,value){if(!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
+function sendCC(cc,value){if(presetImportBusy||!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
 async function flushCC(){try{while(pendingCC.size){const batch=[...pendingCC.entries()];pendingCC.clear();for(const [cc,value] of batch)await midiSend([0xB0,cc,value])}}finally{flushingCC=false;if(pendingCC.size){flushingCC=true;flushCC()}}}
 async function flushMidi(){while(flushingCC||pendingCC.size)await delay(10);await midiChain}
 function sendBlockSwitch(index){const cc=MIDI_SW[index];if(cc==null)return;const st=states[index];const modelValue=deviceModelValue(index,st.model);if(modelValue==null)return;sendCC(cc,modelValue+(st.on?0:64))}
@@ -670,6 +689,7 @@ function waitForSysEx(match,timeout=2200){return new Promise((resolve,reject)=>{
 function sendSignalChainOrderRealtime(order,movedBlockId){
  const snapshot=Array.isArray(order)?order.slice():[];
  const task=chainOrderSendQueue.then(async()=>{
+  if(presetImportBusy)throw new Error('Impor preset sedang berlangsung; ubah signal chain setelah selesai.');
   if(!midiConnected||!midiOutput||!midiInput)throw new Error('MG-30 belum terhubung; urutan hanya tersimpan lokal.');
   if(snapshot.length!==12||new Set(snapshot).size!==12||snapshot.some(v=>!Number.isInteger(v)||v<0||v>11))throw new Error('Daftar urutan harus berisi 12 ID blok yang unik.');
   const ampPos=snapshot.indexOf(3),irPos=snapshot.indexOf(9);
@@ -711,6 +731,7 @@ async function readActiveProgramScene(){
 async function readSysExPart(cmd,prog,part){if(!midiConnected)throw new Error('Hubungkan MG-30 terlebih dahulu');await flushMidi();const reply=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===cmd&&b[4]===0x02&&b[6]===part);await midiFrame([0x43,0x58,0x70,cmd,0x00,prog,part,0,0,0,0,0,0]);return reply}
 function bitSlot(body,k){const p=6+21*Math.floor(k/2)+8*(k%2);let v=0;for(let i=0;i<7;i++){const bit=p+i,byte=body[7+Math.floor(bit/7)];v=(v<<1)|((byte>>(6-bit%7))&1)}return v}
 async function readActiveBuffer(options={}){
+ if(presetImportBusy)throw new Error('Impor preset sedang berlangsung; pembacaan buffer ditunda.');
  if(activeBufferReadPromise)return activeBufferReadPromise;
  activeBufferReadPromise=(async()=>{
   const preservedDraftName=options.preserveDraftName?$('presetName').value:null;
@@ -897,6 +918,7 @@ async function copySceneTo(targetIndex){
 }
 
 async function saveToDevice(){
+ if(presetImportBusy||sceneSwitchPending){setDeviceStatus('Impor preset sedang berlangsung; simpan ditunda sampai selesai.');return;}
  if(ctrlEditorBusy){setDeviceStatus('Tutup panel CTRL sebelum menyimpan preset.');return;}
  if(!midiConnected){setDeviceStatus('Belum terhubung. Tekan Hubungkan MG-30 terlebih dahulu.');toast('Belum terhubung ke MG-30');return}
  if(!confirm('Timpa preset hardware '+slotName()+'? Pastikan sudah backup.')){setDeviceStatus('Simpan dibatalkan.');return}
@@ -923,6 +945,7 @@ async function saveToDevice(){
  }
 }
 async function selectHardwareSlot(prog,fromDevice=false){
+ if(presetImportBusy||sceneSwitchPending){setDeviceStatus('Impor preset sedang berlangsung; pemilihan slot ditunda sampai selesai.');return;}
  if(ctrlEditorBusy){setDeviceStatus('Panel CTRL sedang aktif; perubahan preset ditunda sampai panel ditutup.');return;}
  if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
  if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
@@ -948,7 +971,7 @@ async function selectHardwareSlot(prog,fromDevice=false){
   toast('Gagal sinkron preset: '+error.message);
  }
 }
-function handleMG30MidiMessage(e){const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
+function handleMG30MidiMessage(e){if(presetImportBusy)return;const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
 async function connectMG30(options={}){
  const silent=options.silent===true;
  const autoOnly=options.autoOnly===true;
@@ -1037,7 +1060,7 @@ let chainOrder=BLOCKS.map((_,i)=>i);
 presets=presets.filter(p=>!p.builtIn);
 localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
-let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0;
+let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0;
 let targetSlot=0;
 let lastAnnouncedActivePresetSlot=null;
 function notifyActivePresetChanged(){
@@ -1860,6 +1883,66 @@ async function ctrlReadUnlocked() {
  if(bytes.length!==12)throw new Error('Balasan 13 02 tidak lengkap: payload konfigurasi hanya '+bytes.length+' byte.');
  return {bytes,extra:Array.from(body.slice(17)),raw:Array.from(body)};
 }
+
+window.MG30PresetImportBridge=Object.freeze({
+ isConnected:()=>Boolean(midiConnected&&midiInput&&midiOutput),
+ getTargetProgram:()=>targetSlot,
+ getTargetLabel:()=>slotName(targetSlot),
+ async import(plan,onProgress=()=>{}){
+  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
+  if(presetImportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
+  if(!plan||plan.steps?.length!==78||plan.totalFrames!==78||plan.targetProgram!==targetSlot)throw new Error('Rencana impor tidak cocok dengan slot tujuan aktif.');
+  if(!Number.isInteger(plan.targetProgram)||plan.targetProgram<0||plan.targetProgram>127)throw new Error('Slot tujuan tidak valid.');
+  presetImportBusy=true;sceneSwitchPending=true;
+  let acknowledged=0,currentStep=null,readbackMatched=false;
+  try{
+   setDeviceStatus('Impor preset: menunggu transaksi perangkat sebelumnya…');
+   if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
+   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
+   while(hardwareSyncBusy)await delay(10);
+   await flushMidi();
+   hardwareSyncBusy=true;
+   for(let i=0;i<plan.steps.length;i++){
+    currentStep=plan.steps[i];
+    const ackPromise=waitForSysEx(b=>{
+     if(b[0]!==0x43||b[1]!==0x58||b[2]!==0x70||b[3]!==currentStep.command||b[4]!==0x03)return false;
+     if(currentStep.kind==='preset-scene')return b[5]===plan.targetProgram&&b[6]===currentStep.index;
+     return true;
+    },3500);
+    let sent=false;
+    try{sent=await midiFrame(Array.from(currentStep.body))}
+    catch(error){ackPromise.catch(()=>{});throw error}
+    if(!sent){ackPromise.catch(()=>{});throw new Error('Frame '+(i+1)+'/78 tidak terkirim.')}
+    const ack=await ackPromise;
+    const status=currentStep.kind==='preset-scene'?ack[7]:ack[5];
+    if(status!==currentStep.expectedStatus)throw new Error('ACK '+currentStep.kind+' #'+currentStep.index+' berstatus '+status+', seharusnya '+currentStep.expectedStatus+'.');
+    acknowledged++;
+    const phase=currentStep.kind==='ir-name'?'Nama IR':currentStep.kind==='ir-waveform'?'Waveform IR':currentStep.kind==='ir-curve'?'Kurva IR':'Scene preset';
+    onProgress({completed:acknowledged,total:78,phase,step:currentStep,ackStatus:status});
+   }
+   setDeviceStatus('Semua 78 ACK diterima. Membaca ulang tiga scene preset…');
+   const readback=await readPresetParts(0x0B,plan.targetProgram);
+   for(let part=0;part<3;part++){
+    const expected=plan.steps[75+part].body.slice(7);
+    const actual=readback[part]?.slice(7)||[];
+    if(actual.length!==expected.length||actual.some((value,index)=>value!==expected[index]))throw new Error('Readback Scene '+(part+1)+' tidak cocok dengan payload impor.');
+   }
+   readbackMatched=true;
+   setDeviceStatus('Impor '+slotName(plan.targetProgram)+' selesai · 78 ACK · tiga scene lolos readback.');
+   toast('Preset diimpor dan tiga scene diverifikasi');
+   return {success:true,framesAcknowledged:acknowledged,sceneReadback:readbackMatched,resourceName:plan.resourceName,targetProgram:plan.targetProgram};
+  }catch(error){
+   const detail='Berhenti setelah '+acknowledged+'/78 ACK'+(currentStep?' pada '+currentStep.kind+' #'+currentStep.index:'')+'. '+(error?.message||String(error));
+   setDeviceStatus('IMPORT GAGAL: '+detail);
+   throw new Error(detail);
+  }finally{
+   hardwareSyncBusy=false;sceneSwitchPending=false;presetImportBusy=false;
+   renderSceneButtons();
+   window.dispatchEvent(new CustomEvent('mg30-preset-import-target-changed'));
+  }
+ }
+});
+
 window.MG30CtrlBridge=Object.freeze({
  isConnected:()=>Boolean(midiConnected&&midiInput&&midiOutput),
  getModelInfo:function(functionCode){
@@ -1922,5 +2005,5 @@ window.MG30CtrlBridge=Object.freeze({
   }
 })();
 </script>
-<script type="module" src="./main.js"></script><script type="module" src="./ctrl-editor.js"></script>
+<script type="module" src="./main.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script>
 </body></html>
