@@ -286,3 +286,25 @@ Status:
 If there is no external expression pedal connected, the protocol capture can still reveal whether CTRL2 has a distinct stored assignment, but cannot alone prove the physical input destination. Do not claim the hardware has a second expression input without direct behavior evidence or a reliable QuickTone call graph.
 
 Naming: retain the UI names CTRL1 and CTRL2. Mark CTRL2 as "expression-related hypothesis" in notes/UI planning until verified. Do not merge it into external footswitch T/R.
+
+
+## User scope decision — prioritize controls 1, 3 and 4; retain CTRL2 (2026-10-30)
+
+The user has clarified the practical scope for this milestone:
+
+- CTRL2 is treated as the assignment for an additional expression pedal. The user does not own that additional expression pedal, so they cannot perform physical response testing for CTRL2.
+- We do **not** need to continue investigating or proving CTRL2's physical behavior in the current milestone.
+- Keep CTRL2 present and retain its configuration/options in the app; do not remove it, repurpose it as external footswitch, or block the feature work because its physical input cannot be tested.
+- Focus implementation and validation on:
+  1. **CTRL1 / callout 1:** built-in expression pedal assignments.
+  2. **CTRL3 / callout 3:** external footswitch T/R assignments (active Signal Chain block ON/OFF and Scene Up/Down).
+  3. **CTRL4 / callout 4:** Multi EFX CTRL actions (Delay TAP, block ON/OFF, scene cycling 1–3).
+- For CTRL2, retain the UI/configuration path as supported by QuickTone evidence, but clearly record that physical input response is not hardware-validated because the user lacks the additional expression pedal. Do not claim the second expression input has been physically tested.
+- The milestone objective is the ability to change each numbered CTRL assignment in MG30 Studio, prioritizing 1/3/4. CTRL2 remains present as a retained configuration item even if physical operation cannot currently be verified.
+
+### Revised acceptance plan
+
+- CTRL1: verify assignment/function changes and dependent parameter controls using the built-in expression pedal; confirm write ACK and device readback.
+- CTRL3: verify T and R assignments independently for block ON/OFF and Scene Up/Down; hardware-check each external footswitch action if available.
+- CTRL4: verify TAP, block ON/OFF and scene cycling 1–3 independently; confirm correct physical behavior.
+- CTRL2: preserve its configuration UI and protocol path where evidence supports it; defer physical input-response validation. Do not let this missing hardware block CTRL1/3/4.
