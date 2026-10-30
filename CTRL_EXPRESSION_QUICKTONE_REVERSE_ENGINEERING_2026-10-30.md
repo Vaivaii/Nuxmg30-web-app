@@ -257,3 +257,32 @@ Do not collapse these into a shared `ctrl2` field in application data or protoco
 ## Numbering clarification from user (2026-10-30)
 
 The user clarified that their terms CTRL1, CTRL2, etc. refer to the numbered controls as shown in QuickTone and the NUX illustration. They are not proposing two unrelated numbering systems. The unresolved question is the actual physical function/destination of numbered **CTRL2**: the diagram appears to route it toward the external footswitch path, but the user's observed external footswitch T/R configuration only supports active Signal Chain pedal/block on/off and Scene Up/Down. Keep the shared numbered identity (CTRL2 / number 2) while marking its physical destination and semantics as unresolved. Do not rename it as two separate entities merely because the diagram is ambiguous. Resolve by dedicated capture and observed hardware behavior.
+
+
+## User hypothesis — CTRL2 may be a second expression assignment (2026-10-30)
+
+The user proposes that **CTRL2 may also be an expression-pedal-related control**, rather than the external footswitch, because its configuration columns look the same as CTRL1's. This is a plausible working hypothesis and should now be tested before treating CTRL2 as an external footswitch mapping.
+
+Reasoning grounded in the user's observations:
+- CTRL1 and CTRL2 appear to expose the same dependent column structure (function such as WAH/EFX, a related effect/model display, and a function-specific parameter/range control).
+- External footswitch callout 3 has a distinct T/R configuration with the observed restricted actions: active Signal Chain block on/off and Scene Up/Down.
+- Therefore, the matching CTRL1/CTRL2 editor structure is more consistent with two expression-like assignments than with CTRL2 being the same T/R external footswitch editor.
+
+Status:
+- **Working hypothesis:** CTRL2 is expression-related (possibly a second expression assignment/input).
+- **Not confirmed:** whether CTRL2 maps to a second physical expression input, an alternate/internal expression controller, or another expression assignment path.
+- **Not confirmed:** whether MG-30 hardware exposes two independent expression sources and whether both are simultaneously usable.
+- The diagram's apparent line toward the external footswitch remains ambiguous and must not override the matching UI structure or the user's observed external T/R limitations.
+
+### Targeted experiment to test the hypothesis
+
+1. Set CTRL1 to a recognizable expression assignment (e.g. WAH with a distinctive MIN/MAX range).
+2. Set CTRL2 to a different recognizable expression assignment (e.g. EFX with a different parameter or WAH with a clearly different range), if QuickTone permits.
+3. Capture USBPcap while changing only CTRL2, leaving CTRL1 and external T/R untouched.
+4. Observe which physical input/pedal movement changes the parameter on the MG-30. Test the built-in expression pedal and any external expression pedal input independently if available; do not assume either is CTRL2.
+5. Reopen the panel and check whether CTRL1 and CTRL2 values are independently read back and retained.
+6. Compare CTRL2's SysEx command/response with CTRL1's known `13 01` / `13 03` transaction and with external T/R changes.
+
+If there is no external expression pedal connected, the protocol capture can still reveal whether CTRL2 has a distinct stored assignment, but cannot alone prove the physical input destination. Do not claim the hardware has a second expression input without direct behavior evidence or a reliable QuickTone call graph.
+
+Naming: retain the UI names CTRL1 and CTRL2. Mark CTRL2 as "expression-related hypothesis" in notes/UI planning until verified. Do not merge it into external footswitch T/R.
