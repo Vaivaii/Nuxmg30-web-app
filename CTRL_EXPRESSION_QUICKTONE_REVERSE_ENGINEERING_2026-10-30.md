@@ -416,3 +416,13 @@ The executable contains parameter identifier → display-label translations. Thi
 - The next task is to decode how the runtime metadata table is populated and how its model/type index maps to the translation identifiers. That should yield most or all model → pair associations without one capture per pedal.
 - Keep WAH as a distinct branch. Keep CTRL1/CTRL2 expression menus separate from the independent T/R footswitch option lists and the Multi EFX CTRL actions.
 - No MG30 Studio source changes or APK builds have been made. This checkpoint is static reverse engineering only.
+
+### Clarification of lookup data roles from deeper helper tracing
+
+A closer read of helper `0x005C2070` refines the earlier description:
+- It obtains the currently selected metadata-table segment from the global MG30 settings singleton via accessor `0x004B3B20` (field `+0x2C`). The supplied selector/category ID indexes this small map; its low six bits (minus one) produce the model/entry index and the category ID selects one of several lookup families.
+- The **two per-model parameter IDs themselves are read from the active panel/model data object passed in ECX**, not directly from the global singleton. For the selected model index, code reads one entry for parameter index 0 and another for index 1 from category-specific arrays in that object. The array records use a six-byte stride, with separate parameter-ID fields.
+- Helper `0x005C2030` then takes each returned parameter ID and copies a 10-byte key from the same panel/model data object using an offset equivalent to `0x255 + parameterId * 5` 16-bit units (`0x4AA + parameterId * 10` bytes). This strongly suggests the popup is built from parameter-name keys that are subsequently passed through the translation/display layer. The translation resource contains matching key families such as `EFX_LEVEL`, `EFX_DRIVE`, `AMP_GAIN`, `MOD_RATE`, and so on.
+- The global singleton's selector table and the panel/model object's per-model pair/name tables are distinct structures. Earlier shorthand that described the global singleton as directly holding all parameter pairs should not be used.
+
+This narrows the remaining task: identify where the active panel/model data object receives/populates its model-indexed two-parameter arrays and 10-byte parameter-name key table. Once that source is traced, we should be able to recover the per-model pairs from QuickTone without manually capturing each pedal.
