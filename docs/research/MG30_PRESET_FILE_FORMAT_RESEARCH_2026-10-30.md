@@ -390,3 +390,15 @@ Further disassembly of QuickTone v2.6.7.16 resolved the missing read commands th
 ### Read-side transaction safety
 
 The new export path is read-only: it sends 0C/00, 09/00, 10/00 and 11/00 requests only. It never sends 0B/01, 07/01, 09/01, 10/01, 11/01, Collection 6A/6B/6C, or NAM 58 writes. Any timeout, missing block, mismatched target index, mismatched offset, invalid float32 sample, or invalid curve word aborts file generation. No partial .mg30patch file is downloaded.
+
+
+### Implementation validation and remaining hardware risks (2026-10-31)
+
+- [x] Syntax-checked the new read parser, export UI module, preset serializer module, IR transfer module, and both inline scripts in index.html after the integration changes.
+- [x] Executed synthetic end-to-end parser/serializer checks in the development tool: generated 15-byte 09/00, 10/00 and 11/00 requests; decoded a synthetic 09/02 metadata reply; assembled 64 synthetic 10/02 waveform replies into 2,048 float32 samples; assembled 10 synthetic 11/02 replies into 600 curve values; decoded three synthetic 0C/02 scene replies; serialized a 9,902-byte single-preset record. This validates code-level framing/assembly with synthetic replies, not actual MG-30 hardware.
+- [x] Added tests/mg30-preset-read.test.js with Node built-in tests and npm test (node --test) script for request lengths/layout, metadata/index validation, waveform/curve index+offset validation, and complete IR assembly. The repository test runner has not been executed in CI/local Node during this session; only the equivalent synthetic runtime checks were executed here.
+- [x] Added shared transaction locks between preset import, preset export and IR transfer. IR upload refuses to start during preset import/export; preset import/export refuse to start during an IR upload; parameter CC, hardware polling, preset switching and signal-chain updates are held during export.
+- [x] Export now refuses to truncate an IR resource name longer than the 16-byte single-record field.
+- [ ] Hardware validation is still required. The first Export UI is explicitly labeled READ ONLY · UJI AWAL. It assumes the User IR resource index equals the selected preset program number because the working single-preset import targets that index; actual readback must confirm this. If the device returns a different index, or any response has a mismatched index/offset, export aborts without downloading a partial file.
+- [ ] No APK build for these commits has been confirmed yet. Run a fresh build before the user tests the Export UI on original MG-30 Gen2 FW 6.0.x.
+- [ ] Keep batch import disabled until export readback is hardware-tested and batch-import slot mapping/record variants are captured.
