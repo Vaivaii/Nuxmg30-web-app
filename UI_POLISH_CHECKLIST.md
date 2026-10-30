@@ -515,3 +515,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Verify CTRL1/CTRL2 independent readback and compare their SysEx with external T/R transactions.
 - [ ] Do not label CTRL2 as external footswitch. No app source changes or APK build until physical mapping is established.
 
+
+
+### Goal 2 — final scope/priorities clarified by user (2026-10-30)
+
+- [x] CTRL2 retained as the additional-expression-pedal assignment. User does not own the additional expression pedal, so physical behavior cannot be tested now.
+- [x] Do not spend current milestone effort trying to prove CTRL2 physical response. Keep CTRL2 configurable/present; do not delete it or repurpose it as external footswitch.
+- [ ] **Priority 1 — CTRL1 / callout 1:** built-in expression pedal assignment and effect-dependent parameter controls; protocol, ACK/readback and physical validation.
+- [ ] **Priority 2 — CTRL3 / callout 3:** external footswitch T/R mappings for active Signal Chain block ON/OFF and Scene Up/Down; validate T and R independently.
+- [ ] **Priority 3 — CTRL4 / callout 4:** Multi EFX CTRL mapping for Delay TAP, block ON/OFF and scene cycling 1–3.
+- [ ] **CTRL2 — retained, physical validation deferred:** preserve QuickTone-compatible configuration UI/protocol where supported; mark hardware response unverified until an additional expression pedal is available.
+- [ ] Milestone goal is changing the CTRL assignments in MG30 Studio for each numbered control, with implementation/testing focused on 1, 3 and 4 first. CTRL2 remains in the configuration surface.
+- [ ] No app source changes yet; remain in protocol mapping/capture phase until commands, payload fields, ACK and readback are supported.
+
