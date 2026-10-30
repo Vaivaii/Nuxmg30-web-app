@@ -663,3 +663,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Continue tracing first-column function-menu item IDs and CC77 sender.
 - [ ] Continue separate `0D 00 → 0D 02` / set-value panel analysis; no assumption that it means WAH MIN/MAX.
 - [ ] Do not change source or build APK yet. Keep NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene protected.
+
+
+### Goal 2 — original-MG30 CTRL editor selector map (2026-10-30)
+
+- [x] Trace shared popup builder `0x005C48F0`: selectors 0/1 = CTRL1/CTRL2 function; 2/3 = their dependent choices; 4/5 = external T/R; 6 = Multi EFX CTRL function; 7 = its conditional dependent/mode choice.
+- [x] Confirm expression function list order and enum values: `----=0, WAH=1, EFX=2, AMP=3, MOD=4, DLY=5, RVB=6`.
+- [x] Confirm first three payload bytes map to Multi EFX CTRL `+0x7A`, external T `+0x7B`, external R `+0x7C`; CTRL1/CTRL2 packed bytes follow at `+0x7D/+0x7E`.
+- [x] Confirm T/R Scene Up/Down selection updates the opposite contact with the complementary direction code.
+- [x] Confirm Multi EFX CTRL list contains TAP, block selectors and SCENE entries and is independent of CTRL1/CTRL2.
+- [x] Document the correction and detailed trace in `docs/research/MG30_CTRL_MENU_AND_0D_QUERY_TRACE_2026-10-30.md`.
+- [ ] Resolve selector-7 option labels/bit meaning, labels for the two SetValue value pairs, conditional availability and CC77 sender.
+- [ ] Continue separating `0D 00 → 0D 02` extended-data refresh from `13 00 → 13 02` CTRL readback. Do not label 0D as WAH MIN/MAX without proof.
+- [ ] No source changes or APK build yet. Protect NAM, IR User/Collection, MIDI mapping, preset sync and Copy Scene.
