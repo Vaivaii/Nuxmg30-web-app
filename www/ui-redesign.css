@@ -1333,6 +1333,7 @@ html,body{background:#0b1012}
   body > .app > #page-editor > .editor-topbar,
   body > .app > #page-nam > .nam-page-hero,
   body > .app > #page-studio > .studio-page-hero,
+  body > .app > #page-device > .hero:first-child,
   body > .app > #page-backup > .hero:first-child {
     position: sticky;
     top: 0;
@@ -1353,13 +1354,20 @@ html,body{background:#0b1012}
 
   body > .app > #page-nam > .nam-page-hero,
   body > .app > #page-studio > .studio-page-hero,
+  body > .app > #page-device > .hero:first-child,
   body > .app > #page-backup > .hero:first-child {
     align-items: flex-start;
   }
 
-  /* Device starts directly with its connection panel; no oversized title block. */
-  body > .app > #page-device > .hero:first-child {
+  /* Keep Device label and title; remove only the small explanatory subtitle. */
+  body > .app > #page-device > .hero:first-child p {
     display: none !important;
+  }
+
+  body > .app > #page-device > .hero:first-child h2 {
+    margin: 4px 0 0;
+    font-size: 23px;
+    line-height: 1.12;
   }
 
   body > .app > #page-device {
