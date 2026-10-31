@@ -47,14 +47,16 @@ test('read requests match the 15-byte QuickTone request frames', () => {
   ]);
   assert.equal(buildMG30UserIRWaveReadRequest(7, 32).length, 15);
   assert.deepEqual([...buildMG30UserIRWaveReadRequest(7, 0)], [
-    0xf0,0x43,0x58,0x70,0x10,0x00,0,0,0,0x0e,0,0,0,0,0xf7
+    0xf0,0x43,0x58,0x70,0x10,0x00,0,0x0e,0,0,0,0,0,0,0xf7
   ]);
-  // Exact QuickTone request fields for source slot 04A (program/index 12),
-  // second waveform page at sample offset 32.
+  // QuickTone places both packed fields directly after the command; the two
+  // padding bytes are trailing. Check source slot 04A / program 12, offset 32.
   assert.deepEqual([...buildMG30UserIRWaveReadRequest(12, 32)], [
-    0xf0,0x43,0x58,0x70,0x10,0x00,0,0,0,0x18,0,0,0x40,0,0xf7
+    0xf0,0x43,0x58,0x70,0x10,0x00,0,0x18,0,0,0x40,0,0,0,0xf7
   ]);
-  assert.equal(buildMG30UserIRCurveReadRequest(7, 64).length, 15);
+  assert.deepEqual([...buildMG30UserIRCurveReadRequest(7, 64)], [
+    0xf0,0x43,0x58,0x70,0x11,0x00,0,0x0e,0,1,0,0,0,0,0xf7
+  ]);
   assert.throws(() => buildMG30UserIRWaveReadRequest(7, 31), /Offset/);
   assert.throws(() => buildMG30UserIRCurveReadRequest(7, 65), /Offset/);
 });
