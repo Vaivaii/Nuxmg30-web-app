@@ -52,10 +52,13 @@
 /* Compact Import follow-through appears only after a file is chosen. */
 #page-presets .preset-library-import-bar {
   display: none;
-  align-items: center;
-  gap: 9px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
   margin: 0 0 12px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--panel);
@@ -66,29 +69,38 @@
 }
 
 #page-presets #presetImportFileInfo {
-  flex: 1 1 auto;
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
   min-width: 0;
   color: var(--muted);
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
   overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 #page-presets #presetImportTarget {
-  display: none !important;
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  color: #c5f36b;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
-#page-presets #presetImportSend {
-  flex: 0 0 auto;
-  min-height: 34px;
-  padding: 7px 11px;
-  border-radius: 10px;
-  font-size: 10px;
-  white-space: nowrap;
+#page-presets .preset-library-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
 }
 
-#page-presets #presetImportSend:disabled {
-  display: none;
+#page-presets .preset-library-title .eyebrow {
+  margin: 0;
 }
 
 #page-presets #presetImportStatus,
