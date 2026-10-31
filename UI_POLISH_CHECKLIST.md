@@ -2070,3 +2070,32 @@ Build #201 is the authoritative build for this fix. Continue monitoring its run 
 - ZIP integrity test passed; APK identified as Android package with APK signing block.
 - Inspected packaged Vite bundle: app fixed viewport recovery present; independent section scroll present; Preset flex-column and card-list internal `overflow-y:auto` present; both MG30 Studio footer strings absent; all four hidden Draft IDs remain.
 - No protocol/device/feature JS code changed for this fix. Physical Android UI validation remains pending; install #201 and verify header top position, Preset scrolling, and tab-to-tab scroll retention.
+## Cross-tab sticky headings, Device compact layout, and per-tab bottom fades (1 November 2026)
+
+### User screenshot requests
+- Keep the heading/top controls fixed inside each tab while its content scrolls: Editor CTRL/EXP + Save-to-device, NAM & IR title, Studio title, and Backup title.
+- Device page: remove the large DEVICE / Device & Settings title and explanatory subtitle; start its USB connection panel closer to the app header.
+- Add a bottom gradient fade to all non-Preset tabs, ending at the scroll viewport boundary above the fixed bottom navigation. Do not duplicate the existing Preset Manager fade.
+- Correct the right inset/box alignment of Preset Manager Export button.
+
+### CSS-only changes
+1. `www/ui-redesign.css` latest blob SHA `d00872d708124046f5d826d5bbb0c0df800676ae` (change commit `08409b72e02e46bf88b13188090844a543e130ca`, with Device selector correction commit `d1b9209722864aa16c4ca5a649a72bd17cb8730b`).
+   - On phone widths, make `.editor-topbar`, `.nam-page-hero`, `.studio-page-hero`, and Backup's first hero sticky at the top of their own page scroll container, with opaque/blurred background and border so their actions/titles do not disappear under scrolling.
+   - Device's first `.hero` (DEVICE eyebrow, Device & Settings title, subtitle) is hidden; first USB audio card gets a small 2px top margin and Device section gets 5px top padding.
+   - Add a 58px sticky bottom fade to Editor, NAM, Studio, Device and Backup scroll containers. Gradient ends in app background `#0b1012`, extends across the app's side gutters, reaches the top edge of fixed bottom navigation, and has `pointer-events:none`.
+   - Preset Manager is explicitly excluded from this extra pseudo-element; it retains its own existing card-frame fade.
+2. `www/preset-library-ui.css` latest blob SHA `2f892e82d151ab82d7a98345ea871bc735e3818d` (commit `bd36d0f214615a5818317bd90da17ec47ae434c2`).
+   - Add 5px right inset to the Preset header; constrain action buttons' sizing with border-box and consistent 72px minimum width so Export no longer sits flush against the right edge.
+
+### Verification / protected files
+- Git compare from prior project checkpoint `115f6c4b12faf7bb68262ebb1d7ea7aaa8728a27` confirms exactly two application CSS files changed: `www/ui-redesign.css` and `www/preset-library-ui.css`.
+- `www/index.html` unchanged SHA `75f32a4ed4a83b76596099e731acf8485f60bbb3`.
+- `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- Editor CTRL/EXP and Save-to-device markup remain untouched; all MIDI, SysEx, USB audio, scene, Signal Chain, Import/Export logic remains untouched.
+- Static assertions passed for sticky headers, Editor control buttons remaining in the sticky bar, hidden Device hero, Device spacing, all five non-Preset fades, Preset fade exclusion, Export inset and unchanged protocol files.
+- Physical Android layout check and build of this visual stage have not yet been run.
+
+### Mandatory stop point
+Both CSS changes and the project notes are saved. Do not run CI / GitHub Actions / Gradle / APK until the user explicitly chooses **Build sekarang**.
+Next response must ask exactly: **Build sekarang atau nanti?**
