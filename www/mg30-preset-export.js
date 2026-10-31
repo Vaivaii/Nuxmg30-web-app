@@ -45,6 +45,29 @@ function downloadPatch(bytes, filename) {
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let index = 0; index < bytes.length; index++) binary += String.fromCharCode(bytes[index]);
+  return btoa(binary);
+}
+async function savePatch(bytes, filename) {
+  const nativeBridge = window.NUXNativeMidi;
+  if (nativeBridge?.available === true) {
+    if (typeof nativeBridge.savePatch !== 'function') {
+      throw new Error('Dialog File manager Android belum tersedia. Perbarui aplikasi MG30 Studio ke versi terbaru.');
+    }
+    return {
+      ...(await nativeBridge.savePatch({
+        fileName: filename,
+        mimeType: 'application/octet-stream',
+        base64: bytesToBase64(bytes)
+      })),
+      native: true
+    };
+  }
+  downloadPatch(bytes, filename);
+  return { saved: true, native: false, fileName: filename, bytes: bytes.length };
+}
 function init() {
   const button = $('presetExportStart');
   if (!button || button.dataset.initialized === '1') return;
@@ -104,9 +127,20 @@ function init() {
         throw new Error('Ukuran record hasil export tidak cocok dengan format Gen2 single-preset.');
       }
       const filename = 'MG30_' + label + '.mg30patch';
-      downloadPatch(bytes, filename);
-      setStatus('Export selesai: ' + filename + ' · ' + bytes.length.toLocaleString('id-ID') +
-        ' byte. File berisi 3 scene dan IR "' + source.resourceName +
+      setStatus('Pembacaan selesai. Memilih lokasi penyimpanan di File manager Android…');
+      const saved = await savePatch(bytes, filename);
+      if (saved?.cancelled) {
+        setStatus('Penyimpanan dibatalkan. File ' + filename + ' belum disimpan.', 'warn');
+        return;
+      }
+      if (!saved?.saved) throw new Error('Android tidak mengonfirmasi penyimpanan file.');
+      const savedName = saved.fileName || filename;
+      const locationText = saved.native
+        ? 'Lokasi: folder yang kamu pilih di File manager Android.'
+        : 'Unduhan browser dimulai.';
+      setStatus('File tersimpan: ' + savedName + ' · ' +
+        Number(saved.bytes || bytes.length).toLocaleString('id-ID') + ' byte. ' + locationText +
+        ' File berisi 3 scene dan IR "' + source.resourceName +
         '" hasil pembacaan 2.048 sampel + 600 nilai kurva.', 'ok');
       const diagnosticsDetails = $('presetExportDiagnosticsDetails');
       if (diagnosticsDetails) diagnosticsDetails.hidden = true;
