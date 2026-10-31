@@ -153,8 +153,8 @@
   width: 100%;
   height: min(66vh, 690px);
   min-height: 330px;
-  padding: 2px 3px calc(34px + env(safe-area-inset-bottom, 0px));
-  scroll-padding-bottom: 34px;
+  padding: 2px 3px 8px;
+  scroll-padding-bottom: 8px;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -409,13 +409,14 @@
 /* Build source: compact shared Import / Export feedback dialog. */
 
 
-/* Fill the vertical space above the fixed bottom tab bar on Android phones. */
+/* Mobile fallback; the Preset Library controller measures the exact space above .nav. */
 @media (max-width: 720px) {
   #page-presets .preset-library-card-list {
-    height: max(260px, min(720px, calc(100dvh - 280px)));
+    height: min(720px, calc(100dvh - 180px));
     min-height: 260px;
-    max-height: calc(100dvh - 280px);
-    scroll-padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+    max-height: none;
+    padding-bottom: 8px;
+    scroll-padding-bottom: 8px;
   }
 }
 /* Build source: Export picker hand-off and expanded Preset Manager card viewport. */
