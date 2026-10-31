@@ -781,3 +781,8 @@ This shared builder is used only by readback request construction in `www/mg30-p
 - [ ] Install that run's APK on original MG-30 Gen2 firmware 6.0.x and perform a **read-only Export** on slot 04C / program 14.
 - [ ] Confirm the outgoing waveform request at offset 0 now has packed index bytes at positions 6–8 (`00 1C 00`) and offset bytes at positions 9–11 (`00 00 00`); at offset 32 bytes 9–11 must be `00 40 00`.
 - [ ] Require 64 unique waveform offsets, 10 unique curve offsets, three valid scene readbacks, and full file validation before trusting or importing any exported file.
+
+
+### Explicit correction to the earlier request-builder comparison (2026-10-31)
+
+Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request structure were incomplete and are superseded here. The 7-bit uint16 packing algorithm in helper `0x4A4910` was equivalent, but the app placed the packed words two bytes too late. QuickTone starts its packed `[resourceIndex, offset]` fields at frame byte 6; the old app inserted two zeros there and started those fields at byte 8. Do not revert this fix based on the earlier statement that the request bytes matched. The response decoder/offset semantics remain unchanged.
