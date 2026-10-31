@@ -1252,3 +1252,12 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [ ] User to confirm Editor renders normally and USB-MIDI reconnects on physical MG-30.
 - Preset Manager redesign is suspended; do not touch Editor/USB-MIDI/NAM/IR/MIDI paths for another UI-only change.
 - Details: `docs/research/MG30_PRESET_MANAGER_STARTUP_REGRESSION_2026-10-31.md`
+
+
+### Restored stable Editor APK — Build #184 (2026-10-31)
+
+- [x] CI #184 passed tests and Android debug build.
+- [x] Five core/UI/transfer files restored byte-identically to stable Build #155 baseline.
+- [x] APK size 4,395,972 bytes; SHA-256 04d67d94cee87a3f70f5be6597451393aa85643f4ffdfa7fe19dc879a99365f4.
+- [x] Artifact ID 13047232483.
+- [ ] User to install Build #184 and confirm Editor fully renders and USB-MIDI connects to original MG-30 Gen2.
