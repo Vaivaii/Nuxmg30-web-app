@@ -1206,3 +1206,16 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [x] Build source commit: d75d55942ad57562b8b27018d4cda9933e237476.
 - [x] Artifact MG30-Studio-debug-APK ID 13044153884; APK 4,395,972 bytes; SHA-256 cbb1bc5d77b09023d2c1e89bd716352870aa64571053a0ae4a2ac5e77c2fcb17.
 - [ ] Install and physically test on original MG-30 Gen2 FW 6.0.x: export slot 03B with IR name YA DXVB 112 Mix 10, verify full 18-byte name in .mg30patch, then import to a safe test slot and confirm name, waveform, curve, and all three scenes.
+
+### Preset Manager UI and 128-slot name browser (2026-10-31)
+
+- [x] Rename Preset Library to Preset Manager; remove subtitle copy.
+- [x] Move Import and Export to the title/header row.
+- [x] Replace bank + A/B/C/D slot buttons with a scrolling 128-slot hardware list showing slot label and cached preset name; retain search, selected-row highlight, favorite indication and local-drafts collapse.
+- [x] Add explicit ↻ action for read-only names scan; cache names locally and persist partial scan progress.
+- [x] Read stored slot names through 0B/00 → 0B/02, part 0, bit slots 106..121. Scan does not send Program Change.
+- [x] Refresh names after active buffer read, verified Save-to-device and verified preset Import.
+- [x] Guard against overlapping NAM, IR User, IR Collection, preset transfer, scene, Save and Copy Scene operations while scan runs.
+- [ ] Hardware test all 128 names on original MG-30 Gen2 FW 6.0.x. Confirm 28A TT Clean Single, 28B NAM TES, 28C TT DJENTE, 28D TT TV, 29A R.ACOUSTIC, 29B MK Shim Diy.
+- [ ] Verify header Import/Export, list selection/sync, Save, Copy Scene, NAM, IR User and Collection workflows on the new APK.
+- Details: docs/research/MG30_PRESET_MANAGER_UI_2026-10-31.md
