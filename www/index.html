@@ -357,7 +357,10 @@
 </div>
 <section id="page-presets" class="hidden preset-library-page">
  <header class="preset-library-header">
-  <h2>Preset Manager</h2>
+  <div class="preset-library-title">
+   <div class="eyebrow">LIBRARY</div>
+   <h2>Preset Manager</h2>
+  </div>
   <div class="preset-library-actions">
    <button class="btn" type="button" id="presetImportChoose">Import</button>
    <button class="btn primary" type="button" id="presetExportStart" aria-label="Export">Export</button>
@@ -367,8 +370,7 @@
  <input class="hidden" type="file" id="presetImportFile" accept=".mg30patch,application/octet-stream">
  <div class="preset-library-import-bar" id="presetLibraryImportBar">
   <span id="presetImportFileInfo"></span>
-  <span id="presetImportTarget">Tujuan: 01A</span>
-  <button class="btn primary" type="button" id="presetImportSend" disabled>Import ke 01A</button>
+  <span id="presetImportTarget">Pilih slot tujuan dengan mengetuk kartu preset di bawah.</span>
  </div>
  <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite"></p>
  <p class="studio-result" id="presetExportStatus" role="status" aria-live="polite"></p>
@@ -382,14 +384,13 @@
  <div id="presetLibraryCards" class="preset-library-card-list" role="listbox" aria-label="128 preset hardware NUX MG-30"></div>
  <p id="presetLibraryScanStatus" role="status" aria-live="polite"></p>
 
- <details class="preset-library-drafts">
-  <summary>Draft lokal <span id="presetCount">0 draft</span></summary>
-  <div class="preset-library-draft-tools">
-   <input id="search" placeholder="Cari draft…" aria-label="Cari draft lokal">
-   <button class="btn primary" id="newPresetBtn" type="button">＋ Preset baru</button>
-  </div>
+ <!-- Keep legacy draft nodes hidden because the existing Editor renderer still queries these IDs. -->
+ <div class="hidden" aria-hidden="true">
+  <input id="search" type="search" aria-label="Draft search">
+  <span id="presetCount">0 draft</span>
+  <button id="newPresetBtn" type="button"></button>
   <div id="presetList"></div>
- </details>
+ </div>
 
  <div class="hidden" aria-hidden="true">
   <span id="slotLabel">01A</span>
