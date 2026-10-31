@@ -1187,3 +1187,14 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - Regression tests verify the user's exact 18-byte example, first-16-byte boundary and printable-ASCII validation.
 - Await GitHub Actions test/build result, then validate Export and Import on original MG-30 Gen2 FW 6.0.x. This exact long built-in IR is the primary retest.
 - Note: this follows the user's direct observation of QuickTone truncating names, rather than claiming a disassembly-proven implementation detail. Do not reintroduce manual alias prompts.
+
+
+### Preset Export — corrected QuickTone IR name field to 32 bytes (2026-10-31)
+
+- User correctly questioned whether the earlier 16-byte assumption came from one short-name sample. Reinspection of the supplied QuickTone v2.6.7.16 executable confirmed that it copies the resource name in two consecutive 16-byte chunks from record offsets 0x1B2 and 0x1C2; RIFF begins at 0x1D2. Thus the full name field is 32 bytes, not 16.
+- The sample name c414_cap_45_dc only occupied the first 14 bytes, leaving the remaining 18 bytes zero. That is why the second 16-byte half looked like padding.
+- Updated parser, serializer and preset Import 09/01 name-frame validation to support the complete 32-byte field. The user's exact 18-byte built-in name YA DXVB 112 Mix 10 now passes unchanged. No manual alias prompt and no 16-byte truncation.
+- Names longer than 32 printable ASCII bytes are limited to the first 32 bytes, consistent with the observed fixed-width field. Full 32-byte names are tested.
+- No change to independent standalone IR WAV upload UI/20-character cap, NAM, IR Collection workflow, User/Third Party upload packet flow, MIDI mapping, preset scenes, or Save-to-device.
+- Tests cover 32-byte exact capacity, the 18-byte user-reported name, and 36-to-32-byte limit. Wait for GitHub Actions, then physically test Export 03B and Import to safe slot on original MG-30 Gen2 FW 6.0.x.
+- This correction supersedes the previous checklist note about truncating to 16 bytes. Do not reintroduce the alias prompt or 16-byte rule.
