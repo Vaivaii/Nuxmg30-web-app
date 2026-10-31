@@ -277,3 +277,33 @@ Physical verification on the original MG-30 Gen2 FW 6.0.x is still pending. Conf
 
 **Current stop point:** build #190 succeeded and APK was extracted/verified. Do not run another build unless the user requests it.
 
+## 18. Latest user screenshot refinement — compact shared Import / Export feedback (31 Oct 2026)
+
+Application commits on `feature/preset-manager-redesign`:
+- `8972f7de1482b78902bbe5f235369c6d5b075b94` — compact shared dialog markup in `www/index.html`.
+- `240e1dfe69b6cbf8f83e7f22b5290820b0f8190b` — smaller modal and scoped feedback CSS.
+- `bc86d59464cda59ff294bd50959e2005fbe68cfa` — Export feedback observer in the Preset Library-only controller.
+- `03dc4305c75ec821fa7e9a7508ef54666a5804f5` — fix Export progress-fraction parsing.
+- `0b989421174b3352988f791870c322d4603bddd5` — concise Import copy and result dialog.
+
+Behavior:
+- After file selection, the single import panel shows the filename and **“Pilih slot tujuan.”** The duplicate valid-file green status panel is suppressed.
+- Import feedback shows only the title and progress bar, retaining the warning not to close the application or disconnect USB. Success shows only **“Import selesai”** and auto-closes in ~1.05s; failure shows **“Import gagal”** and auto-closes in ~2.1s.
+- Export progress, save completion, initial confirmation cancellation, Android save-dialog cancellation and failure are mirrored from the existing Export status node into the same modal. Result messages auto-close.
+- Dialog width is reduced to 340px; phase, ACK count and technical transfer explanation are not displayed.
+- Export progress fractions are read only from its existing status text.
+
+Protection:
+- `www/mg30-preset-export.js` is untouched; SHA remains `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- Import parser, builder, bridge call, packet/ACK/readback logic remain unchanged.
+- Signal Chain, Editor/startup, USB-MIDI/native Android, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+- CSS changes are exclusively scoped to `#page-presets`.
+
+Validation:
+- Source assertions passed; no automated app tests, hardware tests, CI or APK build were run.
+- Build #190 is an older APK and does not include this stage.
+
+**Next isolated task:** increase only the Preset Manager card-list viewport so the scroll area reaches just above the fixed bottom navigation and the final card is fully visible. Keep the four hidden legacy draft IDs intact at the end of `#page-presets`; do not change the shared navigation or global CSS.
+
+**Current stop point:** this stage is committed and recorded. Ask exactly **“Build sekarang atau nanti?”** and wait. Do not start another stage until the user's next instruction.
+
