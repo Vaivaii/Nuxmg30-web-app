@@ -1895,3 +1895,27 @@ Next response must ask exactly: Build sekarang atau nanti?
 ### Mandatory stop point
 This one CSS change is committed and documented. Do not build until the user explicitly chooses Build sekarang.
 Next response must ask exactly: Build sekarang atau nanti?
+## Preset Manager — extend bottom fade to the frame edge (1 November 2026)
+
+### Screenshot issue and diagnosis
+- User reported that the bottom fade did not reach the bottom edge of the frame. Screenshot shows the fade ending above the frame's lower boundary, leaving a visible abrupt transition.
+- Cause in current implementation: sticky pseudo-element used bottom: 0 and 48px height while the scroll container retained 8px bottom padding, so the overlay visually stopped short of the inner frame edge.
+
+### Single CSS correction
+- File: www/preset-library-ui.css
+- Commit: e392180c752ad9857cee8332df3930c8c61d5423
+- Extend the sticky fade from 48px to 56px; offset sticky bottom by -8px to cover the list's bottom padding; apply matching -8px bottom margin; soften the gradient ramp and finish at 99% of the frame base color; increase corner radius to follow the frame bottom.
+- `pointer-events: none` remains, so card selection is not intercepted.
+- No HTML, JS, scroll measurement, card sizing, frame dimensions, import/export, or device logic changed.
+
+### Build and validation
+- Build #195 succeeded for source commit dcd017b8384eee91b7d80d4a129bb21bf84adcc6 (run ID 41229602878; artifact ID 13053385990; artifact MG30-Studio-debug-APK; ZIP size 4,022,403 bytes). Build includes the first fade but NOT this edge correction.
+- The edge correction has static source assertions only; not yet built or physically verified on Android.
+- No CI/GitHub Actions/Gradle/APK build triggered for e392180c; commit uses [skip ci].
+
+### Protected areas
+- Only www/preset-library-ui.css changed in this correction.
+- Import and Export code, Editor/startup, global/shared CSS, Signal Chain, USB-MIDI/native Android, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save-to-device, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+
+### Mandatory stop point
+CSS correction is committed and this checklist updated. Ask exactly **Build sekarang atau nanti?** and wait for approval.
