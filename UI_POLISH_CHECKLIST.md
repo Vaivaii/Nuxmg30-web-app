@@ -1219,3 +1219,11 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [ ] Hardware test all 128 names on original MG-30 Gen2 FW 6.0.x. Confirm 28A TT Clean Single, 28B NAM TES, 28C TT DJENTE, 28D TT TV, 29A R.ACOUSTIC, 29B MK Shim Diy.
 - [ ] Verify header Import/Export, list selection/sync, Save, Copy Scene, NAM, IR User and Collection workflows on the new APK.
 - Details: docs/research/MG30_PRESET_MANAGER_UI_2026-10-31.md
+
+### Preset Manager APK build result (2026-10-31)
+
+- [x] GitHub Actions #175 passed: 9 protocol regression tests, Android debug build, artifact upload.
+- [x] Source commit b4c26c9202e435b14ce7bcf03d6ce7a6b9cda0a3.
+- [x] Artifact MG30-Studio-debug-APK ID 13046282191; APK 4,400,228 bytes.
+- [x] APK SHA-256 7d96bba63a0dcdcbd36ce46e9738166d7f4a99dbf93bc0d713722c278621f64d.
+- [ ] Physical test on original MG-30 Gen2 FW 6.0.x: refresh full 128 slot names, verify 28A–29B labels, choose a row and sync, then check Import/Export and existing NAM/IR/Collection functions.
