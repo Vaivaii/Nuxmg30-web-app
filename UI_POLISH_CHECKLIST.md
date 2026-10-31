@@ -2027,3 +2027,37 @@ Do not edit other application files. Follow Build #200 to completion, verify the
 - `npm test` passed. Physical Android tab-switch/scroll-retention test is still pending.
 - Build #199 (run 41233084907) was triggered by the preceding HTML-only commit and is not the authoritative build. Build #200 checks out the combined source commit with both approved files.
 - No changes to main.js, preset-library-ui.js/css, mg30-preset-export.js, MIDI/SysEx/device logic, Editor behavior, Import/Export protocols, NAM/IR, Signal Chain or mapping.
+## Fix Build #200 regression — normal header position and restore Preset card scrolling (1 November 2026)
+
+### Screenshot diagnosis
+- After Build #200, the Android screenshots showed the NUX header displaced far down the screen (large blank region above it) and Preset cards not scrolling.
+- The previous independent-scroll shell sized `.app` but did not pin the shell itself to viewport origin; body was fixed, which could retain a prior root scroll/visual viewport offset.
+- The old Preset-specific override in the global CSS forced the page section to `display:block`, while the Preset UI expected its card list to flex inside a column. That removed the list's bounded flex height and made scrolling unreliable.
+
+### Correction
+- File: www/ui-redesign.css only.
+- Commit: e636a666d4439fd0bc220c064a93be2d1b29ab87.
+- The app shell is now explicitly `position:fixed; inset:0` and body returns to normal static positioning while html/body root scrolling remains locked on mobile. This anchors the NUX header at the top of the viewport and prevents inherited document scroll offset.
+- Header is returned to normal in-shell flex flow, with transform/inset reset and no forced height.
+- Visible tab sections remain individual flex scrollers, with overscroll containment and hidden sections removed from layout.
+- Preset-only override now makes `#page-presets` a `display:flex; flex-direction:column; overflow:hidden` viewport. Its heading/actions remain fixed in the panel while `.preset-library-card-list` is `flex:1; min-height:0; overflow-y:auto`, restoring a bounded, independently scrollable card list.
+- Bottom navigation stays fixed. No JavaScript or DOM change was necessary.
+
+### Scope / protected code verification
+- The only app source file changed for this correction is `www/ui-redesign.css`.
+- `www/index.html` unchanged; no footer, markup, Draft IDs or script tags changed.
+- `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/preset-library-ui.js` unchanged SHA `67ec75258620323492609dcdec559badfb769797`.
+- `www/preset-library-ui.css` unchanged SHA `ce207d1b218366add1b4916225ee0eedb3a24d6d`.
+- `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- No changes to Editor controls, Signal Chain, USB-MIDI/native Android, Import/Export protocol, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio, Device or startup logic.
+- Static assertions passed for fixed app origin, normal-flow header, independent visible section scroll, Preset flex column, bounded internal card-list scroll, and fixed bottom nav.
+
+### Build
+- Build #201 was triggered from exact correction commit `e636a666d4439fd0bc220c064a93be2d1b29ab87`, run ID `41233822485`.
+- At checklist update time, Node/Java setup had succeeded and dependency installation was running. Protocol tests, Capacitor generation, Gradle compilation and artifact upload were pending.
+- Do not use Build #200 APK for this correction; it contains the broken header / Preset scroll layout.
+- Physical Android validation still required after installing #201: confirm header near status bar; scroll Presets and verify list moves; switch between tabs and verify retained independent scroll positions.
+
+### Current state
+Build #201 is the authoritative build for this fix. Continue monitoring its run and provide only its verified artifact.
