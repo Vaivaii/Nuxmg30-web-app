@@ -1132,3 +1132,8 @@ The build verifies the updated dispatch-time diagnostics and pre-request page re
 - [ ] Wait for Actions run #141 Android build and artifact upload to complete; do not use the earlier failed run #140 artifact (protocol tests failed there because the test vectors still described the old layout).
 - [ ] Hardware-test corrected APK on original MG-30 Gen2 FW 6.0.x using read-only Export on slot 04C; inspect 64 waveform offsets, 10 curve offsets and all three scene readbacks.
 - [x] Protected User IR upload, Collection, NAM, preset importer, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device code remain unchanged.
+
+
+### Explicit correction to the earlier request-builder comparison (2026-10-31)
+
+Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request structure were incomplete and are superseded here. The 7-bit uint16 packing algorithm in helper `0x4A4910` was equivalent, but the app placed the packed words two bytes too late. QuickTone starts its packed `[resourceIndex, offset]` fields at frame byte 6; the old app inserted two zeros there and started those fields at byte 8. Do not revert this fix based on the earlier statement that the request bytes matched. The response decoder/offset semantics remain unchanged.
