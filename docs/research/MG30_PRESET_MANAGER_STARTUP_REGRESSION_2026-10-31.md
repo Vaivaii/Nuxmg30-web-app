@@ -57,3 +57,19 @@ Do not claim hardware recovery validated until the user confirms successful conn
 - Do not modify IR User/Third Party and Collection packet payloads/mappings.
 - Do not change MIDI mappings.
 - Keep the 32-byte QuickTone IR name field handling.
+
+
+## User instruction — rollback the Preset Manager experiment (31 Oct 2026)
+
+The user reported that Build #178 still displayed the same incomplete Editor and USB-MIDI "Terputus" state. The earlier startup-order diagnosis was therefore insufficient and must not be presented as a confirmed fix.
+
+Per explicit instruction to restore the Editor and avoid touching working areas, the Preset Manager refactor introduced after stable Build #155 was rolled back:
+- `www/index.html` restored to the exact content at stable baseline commit `d75d55942ad57562b8b27018d4cda9933e237476`.
+- `www/ui-redesign.css` restored to that same baseline.
+- `www/ir-transfer.js` and `www/nam-transfer.js` restored to baseline, removing scan-coordination changes introduced only for Preset Manager.
+- `www/mg30-preset-export.js` restored to baseline, removing the UI-only Export header label change.
+- Removed the startup regression test that asserted the reverted UI's initialization order.
+
+This restores the Editor page, USB-MIDI connection handler, and existing transfer pages to the version before the Preset Manager redesign. The 32-byte QuickTone IR-name format/parser/serializer fix is retained because it already existed in Build #155. Earlier NAM transfer, IR User/Third Party and Collection protocols, MIDI map, Save, Copy Scene, and single-preset Import/Export remain at the stable baseline.
+
+The redesign is suspended. Do not reintroduce Preset Manager startup/scan code into the core Editor script. Any future Preset Manager UI work must be strictly isolated and tested so it cannot change or block Editor initialization or USB-MIDI connection.
