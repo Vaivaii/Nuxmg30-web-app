@@ -125,3 +125,31 @@ After each small code edit:
 - Update the project resume prompt/document if the latest stop point or instructions changed.
 - Stop and ask exactly: **“Build sekarang atau nanti?”**
 - Do not run tests that trigger CI/build, GitHub Actions, Gradle or APK packaging until the user explicitly chooses “build sekarang”. Local static checks/tests that do not package/build may be run only when they do not alter protected code.
+
+
+## Visual reference and required two-way hardware synchronization (user clarification, 31 Oct 2026)
+
+The user supplied a TONEX-style preset-card screenshot as a **visual reference only**. Do not copy its unrelated TONEX Plug/Mobile Device tabs, bottom navigation or branding. Apply the visual language to the existing MG-30 Preset Library tab only.
+
+### Card appearance
+
+- Use a vertical list of distinct, rounded preset cards with a dark background.
+- Each card has a narrow left column containing the hardware slot label (e.g. `00A`, `00B`, `01A`) and a thin vertical accent divider separating it from the preset name.
+- Show the actual preset name prominently on the right.
+- Keep the card content minimal: no explanatory copy, subtitles, category descriptions, helper paragraphs, repeated status labels, or unrelated metadata.
+- The overall page should show only the Preset Manager title/header, the Import and Export actions at the top, and the scrolling preset-card list. Temporary feedback may be shown only when a user operation needs it.
+- Use a clear selected-card treatment (border/accent/background) so the current hardware slot is immediately obvious.
+- Do not add block/effect icons unless their source is already available inside Preset Library without reading or changing protected tabs/protocols. Do not invent icons or preset metadata.
+
+### Two-way slot synchronization — essential behavior
+
+The preset cards are not merely labels. The existing hardware slot synchronization must remain bidirectional:
+
+1. **App → pedal:** tapping a preset card selects that slot on the MG-30, using the existing, proven Preset Library slot-selection/synchronization behavior. It must not be replaced with a local-only selected state.
+2. **Pedal → app:** when the user changes the hardware slot directly on the MG-30 (e.g. pedal moves to 02A), the app must receive the existing device-state update and move the selected-card highlight/current slot to 02A.
+3. The app's selected slot, displayed slot label and actual hardware slot must remain consistent. Do not create a second independent slot state.
+4. Preserve existing behavior for preset loading/sync into the app when a slot is selected, including whatever read/refresh flow currently works. Do not invent a new protocol.
+5. Reuse the existing sync functions and event/state pathways. No new Program Change polling loop, USB-MIDI handler, global event listener or connection startup changes may be added for this redesign.
+6. If the existing Preset Library tab does not expose enough information to implement device → app card selection without changing protected global/USB-MIDI code, stop and report the exact limitation. Ask the user before touching any protected code.
+
+This bidirectional requirement is higher priority than visual convenience. A card list that only changes its highlight locally is not an acceptable implementation.
