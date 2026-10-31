@@ -153,7 +153,7 @@ function initUI(){
  async function readSlot(slot){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),req=tx.objectStore(STORE).get(slot);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||Error('Gagal membaca slot lokal.'))})}finally{db.close()}}
  async function writeSlot(record){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(record);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('Gagal menyimpan WAV ke penyimpanan lokal.'));tx.onabort=()=>reject(tx.error||Error('Penyimpanan lokal dibatalkan.'))})}finally{db.close()}}
  async function useCollectionSlotOnDevice(slot,programSlotOverride=null){
-  if(busy||syncBusy)return;
+  if(busy||syncBusy||window.MG30PresetNameScanBusy)return;
   const programSlot=Number.isInteger(programSlotOverride)&&programSlotOverride>=0&&programSlotOverride<=127?programSlotOverride:currentPresetProgramSlot();
   const device=deviceSlots.get(slot);
   if(!device?.read||!device?.stable||!device.occupied){setMessage(collectionStatus,'Slot '+String(slot).padStart(2,'0')+' belum terverifikasi berisi IR di perangkat.','warn');return}
