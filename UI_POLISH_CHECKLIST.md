@@ -1826,3 +1826,42 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 This one CSS change and its project notes are committed. Do not build until the user explicitly chooses Build sekarang.
 Next response must ask exactly: Build sekarang atau nanti?
 
+## Preset Manager — Editor-matched palette, compact cards, sync outcome toast (1 November 2026)
+
+### User screenshot feedback addressed
+- The previous framed list used a green/olive gradient that differed from the charcoal/blue-green Editor panels. The frame now uses an Editor-matched dark charcoal palette and border.
+- The frame and individual cards were visually oversized. Reduced frame padding/radius, vertical card gap, card height, slot column width, divider width, card-name font and card-name padding so more slots are visible without changing scrolling.
+- Removed the tiny inline preset synchronization progress text below the list; it was obscured by the fixed navigation on phone layouts.
+- Background name synchronization now uses the existing application toast function, with brief outcome labels: “Sinkronisasi preset selesai”, “Sinkronisasi preset gagal”, and “Sinkronisasi preset ditunda”. Toast duration is 2.2 seconds.
+- If the MG-30 connects while Preset Manager is already open, the existing mg30-midi-connected event now starts the missing-name scan; the existing scanPromise guard prevents duplicate reads.
+- If the device is disconnected or a device operation is active, synchronization reports “ditunda”. A read error reports “gagal”; successful completion reports “selesai”.
+
+### Exact source files / commits
+1. www/preset-library-ui.css — commit 2fc0fc0a92aac23fec87d9a50fbec4da5f4b3e12.
+   - Frame palette matched to Editor panel colors (#151e21 / #12191c / #101619, line #263137).
+   - Rounded frame reduced from 22px to 18px, with tighter internal padding and gaps.
+   - Cards reduced to 66px base / 62px mobile height; slot label column reduced to 64px base / 60px mobile; divider 3px; label font/padding reduced.
+   - presetLibraryScanStatus is hidden inside the Preset tab.
+2. www/preset-library-ui.js — commit 3d8635ff38ea33290bc9eb05427fbeb2ccb2b1a9.
+   - Removed progress writes to the obscured scan-status element.
+   - Added small outcome toast using the existing window.toast function only.
+   - Shows the requested finished / failed / deferred outcome and starts a scan when the connected-device event arrives while the Preset tab is open.
+   - Preserves current cache, stored-preset read command readSysExPart(0x0b, program, 0), retry and read-only scan path.
+
+### Protected areas / verification
+- All four legacy Draft IDs (search, presetCount, newPresetBtn, presetList) remain in the same hidden container in www/index.html.
+- The exact nav-based card viewport measurement from the previous step remains in place.
+- Export picker transition observer remains unchanged; www/mg30-preset-export.js remains unchanged (SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52).
+- Import parser/plan/bridge and Export readback/serialization/save/File Manager native flow remain unchanged.
+- No edits to www/index.html, www/main.js, www/ctrl-editor.js, www/ctrl-editor.css, www/ui-redesign.css, global CSS, shared navigation, Editor/startup, Movable Signal Chain, USB-MIDI/native Android connection handlers, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save-to-device, Copy Scene, CTRL/EXP, Studio or Device.
+- Git compare from previous successful build source 134dc6dd731a49779ea6f60295e0abf814e2e7cb confirms only www/preset-library-ui.css and www/preset-library-ui.js changed in this application stage.
+- Static assertions passed for the palette, compact card sizing, hidden inline scan text, three toast outcomes, auto-scan on mg30-midi-connected, retained stored-preset read path, unchanged Export module and retained Draft IDs.
+- Automated tests and physical UI/MG-30 validation: not run.
+
+### Build status
+- Build #193 completed successfully (run ID 41226563156) against commit 134dc6dd731a49779ea6f60295e0abf814e2e7cb, artifact ID 13051943991, ZIP size 4,022,206 bytes. It predates this compact palette/card/toast refinement.
+- This refinement has not been built. No CI / GitHub Actions / Gradle / APK build has been triggered for commits 2fc0fc0a / 3d8635ff; commits use [skip ci].
+
+### Mandatory stop point
+This visual/synchronization stage is committed. Do not build until the user explicitly chooses Build sekarang.
+Next response must ask exactly: Build sekarang atau nanti?
