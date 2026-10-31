@@ -2202,7 +2202,8 @@ window.MG30PresetExportBridge=Object.freeze({
    const resource=readFormat.assembleReadback(program,waveformReplies,curveReplies);
    const resourceName=metadata.resourceName;
    if(!resourceName)throw new Error('Nama IR kosong; file preset tidak akan dibuat.');
-   if(resourceName.length>16)throw new Error('Nama IR berjumlah '+resourceName.length+' karakter; format single-preset hanya menyediakan 16 byte. Export dihentikan agar nama tidak terpotong.');
+   // Nama metadata perangkat dapat lebih panjang daripada field 16-byte .mg30patch.
+   // Alias dipilih di UI export; jangan menggagalkan readback yang sudah lengkap atau memotong nama diam-diam.
    exportTrace.status='complete';
    exportTrace.finishedAt=new Date().toISOString();
    exportTrace.elapsedMs=Math.round(performance.now()-traceStarted);
