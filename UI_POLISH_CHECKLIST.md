@@ -1415,3 +1415,69 @@ Copy that prompt into a new chat in this same project whenever a conversation is
 - Build: not applicable; no build started.
 
 **Current stop point:** card design and bidirectional synchronization requirements have been recorded. No code has been touched. The next step is source inspection/design review, not implementation until the user says to proceed.
+
+---
+
+## First Preset Manager card UI implementation — 2026-10-31
+
+Code change committed. Build approval required.
+
+### Implemented
+
+- [x] Replaced only the contents of the Preset Library tab with a minimal Preset Manager header.
+- [x] Moved the existing Import file-picker control and Export action to the header without changing their IDs or transfer modules.
+- [x] Kept the existing Import send button in a compact inline row that appears after a file is selected.
+- [x] Added the vertical rounded-card list for all 128 hardware slots (01A–32D). Cards show only the slot on the left, an accent divider and the preset name.
+- [x] Added a selected-card highlight.
+- [x] Kept local drafts inside a collapsed Draft lokal section.
+- [x] Added page-local name caching in localStorage and lazy name loading when the user opens the Preset Library tab while connected. It does not start on USB connection.
+- [x] Name loading uses the existing read-only stored-preset helper readSysExPart(0x0B, program, 0) and decodes the name from packed slots 106–121. It reads only Scene/part 0, sends no Program Change, and performs no writes.
+- [x] App → pedal card selection calls the existing selectHardwareSlot(program, false) path.
+- [x] Pedal → app selected-card updates listen to the existing mg30-active-preset-changed event. The card component derives active selection from the existing hidden slotLabel; it does not maintain an independent hardware-slot state.
+- [x] The name scan checks existing visible busy flags for preset Import/Export, IR transfer, NAM metadata scan and in-progress Save/Copy Scene status before reading. If another known operation is active, it stops and can resume when the user reopens the tab.
+
+### Exact application files changed
+
+1. www/index.html
+   - Replaced only the #page-presets section markup.
+   - Preserved all existing IDs consumed by the unchanged Import/Export modules and existing legacy slot state.
+   - Added one page-scoped stylesheet attachment and one Preset Library module attachment.
+   - No Editor, global startup, connection, device, or movable signal-chain logic was changed.
+   - Commit: 2294e4a5cc86ea79db2bfc13e781e1585673d07c.
+
+2. www/preset-library-ui.js (new)
+   - Implements card rendering, local name cache, lazy read-only 128-slot name loading, card → existing hardware selector, and existing device → app active-slot event handling.
+   - Commit: 2bada7b0359cc79526813762079d63cd29f00304.
+   - Follow-up byte-range validation correction: 8747a6392b4314a9d7856a195c925041f92117c3.
+
+3. www/preset-library-ui.css (new)
+   - All selectors are scoped under #page-presets; no global/shared selectors.
+   - Styles the card list, header actions, selected card and compact conditional Import/Export feedback.
+   - Commit: f0f99e65f1a3f02c8c0bfd7bb2f036907f0c4018.
+   - Follow-up diagnostics visibility correction: 3dcbd03ad7831275ab6d85504a8fa1c25353f012.
+
+### Protected areas explicitly not changed
+
+- [x] www/mg30-preset-import.js — unchanged; all existing Import IDs and behavior retained.
+- [x] www/mg30-preset-export.js — unchanged; all existing Export IDs and behavior retained.
+- [x] www/mg30-preset-format.js and www/mg30-preset-read.js — unchanged.
+- [x] Movable Signal Chain markup, styles, drag/drop, touch and reorder logic — unchanged.
+- [x] Editor page logic, signal-chain rendering, www/main.js, CTRL/EXP and Save-to-device — unchanged.
+- [x] USB-MIDI / Native Android connection handlers and startup — unchanged.
+- [x] NAM and IR User/Third Party / Collection modules and transfer payloads — unchanged.
+- [x] MIDI mappings, Studio and Device tabs — unchanged.
+- [x] No shared/global CSS file was edited. The new stylesheet is dedicated to #page-presets only.
+
+### Verification status
+
+- Manual source review: the compare diff contains only www/index.html, www/preset-library-ui.js, and www/preset-library-ui.css as application-code files.
+- Automated tests: not run yet.
+- Android build / APK: not run.
+- GitHub Actions: no workflow run was triggered for this new branch; the APK build workflow is not configured to auto-run on pushes to feature/preset-manager-redesign.
+- Hardware validation: pending. Must verify all 128 names, app → pedal selection, pedal → app selected-card update, Import/Export and protected workflows on original MG-30 Gen2 FW 6.0.x.
+
+### Mandatory stop point
+
+The first isolated UI/code change is complete and recorded. Do not run tests through CI, GitHub Actions, Gradle or APK packaging until the user explicitly answers: Build sekarang.
+
+Next response must ask exactly: Build sekarang atau nanti?
