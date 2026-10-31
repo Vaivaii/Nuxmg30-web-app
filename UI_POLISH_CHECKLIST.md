@@ -1481,3 +1481,64 @@ Code change committed. Build approval required.
 The first isolated UI/code change is complete and recorded. Do not run tests through CI, GitHub Actions, Gradle or APK packaging until the user explicitly answers: Build sekarang.
 
 Next response must ask exactly: Build sekarang atau nanti?
+
+## Follow-up — Import target flow, Library eyebrow, and remove visible drafts (2026-10-31)
+
+### User-requested behavior implemented
+
+- [x] Small green **LIBRARY** eyebrow now appears directly above **Preset Manager**.
+- [x] The visible **Draft lokal** disclosure/card is removed from Preset Manager.
+- [x] Legacy draft nodes remain hidden inside a page-local compatibility container because the existing Editor renderer still queries `search`, `presetCount`, `newPresetBtn`, and `presetList`. These nodes are not visible in Preset Manager and their IDs were not removed.
+- [x] Tapping **Import** continues to open the existing `presetImportFile` Android/WebView file picker. The accepted file remains `.mg30patch`.
+- [x] After a file is selected and validated, the user taps a destination slot card. The card continues to select/synchronize the physical slot through the existing `selectHardwareSlot(program, false)` flow.
+- [x] After the slot selection resolves, the Preset Library dispatches a tab-local `mg30-preset-library-target-selected` event. The preset import UI then displays the native confirmation prompt with Cancel / OK.
+- [x] Cancel sends no import frames and leaves the selected file available so the user can tap another destination. OK starts the existing import plan.
+- [x] The narrow vertical file-name rendering is fixed: the file metadata and target instruction now occupy full-width stacked rows; the old full-width send button no longer squeezes the filename.
+- [x] Import feedback identifies the selected destination before confirmation.
+
+### Exact application files changed
+
+1. `www/index.html`
+   - Commit: `9d0d751d13bf9b661b9ff43eae461fa6ea959dfa`
+   - Added the green LIBRARY eyebrow.
+   - Removed the visible Draft lokal disclosure.
+   - Preserved the legacy draft DOM IDs in a hidden compatibility container to prevent the existing Editor renderer from throwing on null elements.
+   - Kept the file input and Import/Export control IDs in the Preset Library section.
+
+2. `www/preset-library-ui.js`
+   - Commit: `3b7b3d4f2edb16d15f7a4106a1d2ea111ff35ebe`
+   - After the existing slot-selection promise resolves, emits the Preset Library-local destination-selected event only if the existing `slotLabel` confirms the requested hardware slot.
+
+3. `www/preset-library-ui.css`
+   - Commit: `d62229841361c7e20d40a0e6ec88e39b668f1045`
+   - Fixes the import file row sizing and shows the selected destination instruction.
+   - Adds only #page-presets-scoped styles for the Library heading/import row.
+
+4. `www/mg30-preset-import.js`
+   - Commit: `cfd5b0ab896440806b4faf97e1bfbdc54b875e84`
+   - Implements file → destination card → native Cancel/OK confirmation → import.
+   - Preserves existing file parser, plan builder, 78-step progress callback, bridge call, success/failure reporting, and transfer sequence.
+   - The confirmation is shown only after the hardware slot is selected and the bridge confirms the same target program.
+
+### Explicitly untouched
+
+- `MG30PresetImportBridge.import()`, the inline USB-MIDI implementation, packet sequence, 78-frame transfer plan, ACK handling and readback logic.
+- `www/mg30-preset-format.js`, `www/mg30-preset-export.js`, `www/mg30-preset-read.js`.
+- Export behavior and Android export save picker.
+- NAM transfer, IR User / Third Party module, IR Collection, Collection mapping, MIDI mappings, movable Signal Chain, Editor startup/rendering, USB-MIDI/native Android bridge, Save, Copy Scene, CTRL/EXP, Studio and Device.
+- No changes to the original MG-30 Gen2 firmware-specific protocol data.
+
+### Validation / build status
+
+- Source changes committed to `feature/preset-manager-redesign`.
+- Static/hardware verification has not yet been performed.
+- No APK for these new commits has been user-validated.
+- Physical test required on **original NUX MG-30 Gen 2, firmware 6.0.x**:
+  1. Tap Import and verify Android's file manager opens.
+  2. Choose a valid `.mg30patch`.
+  3. Tap destination card 32B (or a safe test slot) and verify the Cancel/OK confirmation names that slot.
+  4. Tap Cancel and confirm no import transfer starts.
+  5. Repeat and tap OK; inspect the 78/78 ACK result and device readback.
+  6. Verify Export and all NAM/IR User/Third Party/Collection and MIDI workflows remain unchanged.
+
+**Current stop point:** the requested source change and project notes are committed. Do not treat the old APK/build as containing these changes. Ask the user exactly: **Build sekarang atau nanti?**
