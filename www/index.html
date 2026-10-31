@@ -1208,7 +1208,7 @@ async function readStoredPresetName(program){
 async function scanHardwarePresetNames(force=false){
  if(presetNameScanPromise)return presetNameScanPromise;
  if(!midiConnected||!midiInput||!midiOutput){const status=$('presetNameScanStatus');if(status)status.textContent='Hubungkan MG-30 untuk membaca nama preset dari perangkat.';return false}
- if(presetImportBusy||presetExportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy||window.MG30IRTransferBusy||window.MG30CollectionSyncBusy||$('readNamSlotsBtn')?.dataset.busy==='1'||presetNameScanBusy){const status=$('presetNameScanStatus');if(status)status.textContent='Operasi NAM, IR, atau Collection sedang berlangsung. Coba lagi setelah selesai.';return false}
+ if(presetImportBusy||presetExportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy||window.MG30IRTransferBusy||window.MG30CollectionSyncBusy||window.MG30CollectionUseBusy||$('readNamSlotsBtn')?.dataset.busy==='1'||presetNameScanBusy){const status=$('presetNameScanStatus');if(status)status.textContent='Operasi NAM, IR, atau Collection sedang berlangsung. Coba lagi setelah selesai.';return false}
  presetNameScanPromise=(async()=>{
   let completed=0,finalMessage='';
   const resumePolling=!!hardwareSyncTimer;
