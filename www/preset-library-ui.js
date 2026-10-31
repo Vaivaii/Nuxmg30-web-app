@@ -250,23 +250,37 @@ function initPresetLibraryUI() {
     throw new Error('Balasan slot ' + slotLabel(program) + ' tidak cocok dengan permintaan.');
   }
 
+  function showScanToast(result) {
+    const messages = {
+      selesai: 'Sinkronisasi preset selesai',
+      gagal: 'Sinkronisasi preset gagal',
+      ditunda: 'Sinkronisasi preset ditunda'
+    };
+    if (typeof window.toast === 'function') window.toast(messages[result], 2200);
+  }
+
   async function scanMissingNames() {
     if (scanPromise) return scanPromise;
     if (Object.keys(names).length >= 128) return;
     const bridge = window.MG30PresetExportBridge;
-    if (!bridge?.isConnected?.()) return;
+    if (!bridge?.isConnected?.()) {
+      showScanToast('ditunda');
+      return;
+    }
     if (activeDeviceOperation()) {
-      if (scanStatus) scanStatus.textContent = 'Tunggu operasi perangkat selesai, lalu buka kembali Preset Manager.';
+      showScanToast('ditunda');
       return;
     }
 
     scanPromise = (async () => {
       let completed = Object.keys(names).length;
+      let deferred = false;
       try {
         for (let program = 0; program < 128; program++) {
           if (Object.prototype.hasOwnProperty.call(names, program)) continue;
           if (activeDeviceOperation()) {
-            throw new Error('Operasi perangkat lain dimulai; pembacaan dihentikan dengan aman.');
+            deferred = true;
+            throw new Error('Pembacaan ditunda karena operasi perangkat lain dimulai.');
           }
           const name = await readStoredName(program);
           names[program] = name;
@@ -274,24 +288,27 @@ function initPresetLibraryUI() {
           if (completed % 4 === 0 || completed === 128) {
             try { localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names)); } catch {}
             renderCards();
-            if (scanStatus) scanStatus.textContent = 'Membaca nama preset ' + completed + '/128…';
           }
         }
         try { localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names)); } catch {}
-        if (scanStatus) scanStatus.textContent = '';
         renderCards();
+        showScanToast('selesai');
       } catch (error) {
         try { localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names)); } catch {}
-        if (scanStatus) scanStatus.textContent =
-          'Pembacaan berhenti di ' + completed + '/128. Buka kembali tab Preset untuk melanjutkan.';
         console.warn('[Preset Library] Name scan stopped:', error);
         renderCards();
+        showScanToast(deferred || activeDeviceOperation() ? 'ditunda' : 'gagal');
       } finally {
         scanPromise = null;
       }
     })();
     return scanPromise;
   }
+
+  // When a device connects while Presets is already open, start the deferred name scan.
+  window.addEventListener('mg30-midi-connected', () => {
+    if (!page.classList.contains('hidden')) void scanMissingNames();
+  });
 
   // Device -> app: the existing app dispatches this event whenever its hardware slot state changes.
   window.addEventListener('mg30-active-preset-changed', onActivePresetChanged);
