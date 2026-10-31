@@ -2099,3 +2099,26 @@ Build #201 is the authoritative build for this fix. Continue monitoring its run 
 ### Mandatory stop point
 Both CSS changes and the project notes are saved. Do not run CI / GitHub Actions / Gradle / APK until the user explicitly chooses **Build sekarang**.
 Next response must ask exactly: **Build sekarang atau nanti?**
+## Device title correction — preserve DEVICE eyebrow and Device & Settings title (1 November 2026)
+
+### User clarification
+- The request was to remove only the small explanatory subtitle under Device & Settings, NOT the green DEVICE eyebrow or the large heading.
+- Keep the large Device & Settings title, slightly smaller than before.
+- Keep Device heading sticky like the other tabs. Keep the Device USB content spacing compact.
+
+### CSS correction
+- File: www/ui-redesign.css
+- Commit: 95c9fb4d22a861ffa57ddafb64dd04ddf54b0b28.
+- Added Device hero to the shared sticky-heading selector alongside Editor, NAM, Studio and Backup.
+- Removed the rule that hid the entire Device hero.
+- Hide only `#page-device > .hero:first-child p`.
+- Preserve the green eyebrow; reduce Device heading to 23px with 1.12 line height.
+- Preserve Device top padding (5px) and USB panel margin (2px).
+
+### Verification / protection
+- Static checks passed: Device hero visible and sticky, subtitle alone hidden, green eyebrow retained, title 23px, compact panel spacing kept, other tabs' sticky headings remain selected.
+- This correction changes only www/ui-redesign.css; no HTML, JS, event handling, USB-MIDI, Editor, Import/Export, NAM/IR, or Device function code changed.
+- Automated/physical testing pending.
+
+### Build
+- Commit 95c9fb4d22a861ffa57ddafb64dd04ddf54b0b28 was pushed to the active branch and triggers the Android build workflow. Verify its run/artifact before distribution.
