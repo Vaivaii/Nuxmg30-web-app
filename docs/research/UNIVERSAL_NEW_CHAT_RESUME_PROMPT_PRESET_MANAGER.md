@@ -353,4 +353,27 @@ Build:
 - No new workflow / CI / Gradle / APK build is running for this stage yet.
 
 **Current stop point:** layout source and project notes saved. Ask exactly **“Build sekarang atau nanti?”**; do not build before user approval.
+## 21. Preset Manager framed card collection (1 November 2026)
 
+User wants the 128 preset cards grouped inside one dedicated surrounding frame/panel, rather than appearing flat as individual cards.
+
+Implemented:
+- www/preset-library-ui.css commit c464a2976561d174cb84df3625a09f7239a78ea6.
+- The existing #page-presets .preset-library-card-list is now the frame itself; no extra wrapper node was added.
+- Added subtle olive border, rounded 22px corners, dark gradient background, inset highlight and soft shadow.
+- Inner frame padding is 12px top, 10px left/right and 8px bottom.
+- Card dimensions, 11px gaps, internal scroll behavior and dynamic measured height to the bottom navigation remain intact.
+- The previous viewport calculation still sizes the list from its top edge to the real top edge of the fixed .nav.
+
+Preservation:
+- Hidden Draft IDs search, presetCount, newPresetBtn, and presetList remain intact and hidden.
+- Export implementation module unchanged; SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52.
+- No Import/Export protocol, native file manager, Editor/startup, Signal Chain, USB-MIDI, NAM, IR User/Third Party, IR Collection, MIDI mappings, Save, Copy Scene, CTRL/EXP, Studio, Device, global CSS or shared navigation changes.
+
+Validation:
+- Static source checks passed for frame styling, scrolling, dynamic viewport, hidden Draft IDs and unchanged Export module.
+- No automated tests or physical Android visual verification run.
+- Current frame and measured viewport source are not in any built APK yet. Build #192 is older and does not contain these changes.
+- No CI or APK build has been triggered for this stage.
+
+Current stop point: frame styling and project notes are committed. Ask exactly Build sekarang atau nanti? and wait for approval.
