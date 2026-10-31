@@ -737,3 +737,47 @@ GitHub Actions run #139 completed successfully from source commit 14d13eb90358a6
 - Artifact: MG30-Studio-debug-APK, ID 13025326763, size 4,016,974 bytes.
 
 The build verifies the updated dispatch-time diagnostics and pre-request page rejection at source commit 14d13eb. It does not establish that read-only Export now succeeds on the physical pedal. Install the artifact from run #139 and repeat the read-only test; inspect all 64 unique waveform pages, 10 curve pages and three scene replies before trusting any output.
+
+
+## Root cause found — 10/00 and 11/00 request field offset (2026-10-31)
+
+The slot 04C diagnostic sequence has now been explained by comparing the exact outgoing request bytes with QuickTone v2.6.7.16 machine code, not merely by timing inference.
+
+### Exact QuickTone frame construction
+
+Disassembly of waveform reader `0x4AB340` and curve reader `0x4AAEA0` shows both build the 15-byte frame with this layout:
+
+- bytes 0–3: `F0 43 58 70`
+- bytes 4–5: command `10 00` (waveform) or `11 00` (curve)
+- bytes 6–8: packed uint16 resource index
+- bytes 9–11: packed uint16 sample/curve offset
+- bytes 12–13: two zero padding bytes
+- byte 14: `F7`
+
+Both functions pass a 4-byte source structure containing `[resourceIndex, offset]` to helper `0x4A4910`, with destination beginning at frame byte 6. The helper encodes each uint16 into three 7-bit bytes. The two zero bytes are trailing padding, not reserved bytes before the index.
+
+### Previous MG30 Studio layout and why it produced the exact 4-page cycle
+
+The previous app builder put two zero bytes immediately after the command, then the packed index and offset. The pedal therefore interpreted bytes 6–8 as resource index zero and bytes 9–11 as the offset field. For target resource index 14, the packed index bytes are `00 1C 00`; because they were shifted into the beginning of the offset field, the first two bytes of the misaligned field were `1C 00`, and the third byte came from the first packed offset byte. The decoder masks the first byte to its two significant bits, so this produces the observed returned offsets:
+
+- requested offsets 0 and 32 → returned offset 0
+- requested offsets 64 and 96 → returned offset 256
+- requested offsets 128 and 160 → returned offset 512
+- requested offsets 192 and 224 → returned offset 768
+- then the same four-offset cycle repeats as the offset's leading packed byte rolls over.
+
+This exactly matches the slot 04C diagnostic response sequence `0, 0, 256, 256, 512, 512, 768, 768`, repeating across the request stream. The 04C result is therefore strong, direct evidence of the two-byte request-field displacement in the app. The returned offset decoder was correctly reading the device's reply; the request builder layout was wrong.
+
+### Source correction
+
+- Commit `4f7833ca203be339769e861b90fd3b43714c8192` changes the shared read-only IR data request builder so packed resource index and offset follow the command immediately, with two trailing padding zeros before `F7`.
+- Commit `fca33e90f4ba050a6ae9847bf0742a3279155ef6` updates exact 15-byte regression vectors for waveform (including index 12 / offset 32) and curve (index 7 / offset 64). Protocol tests pass in Actions run #141 from this test commit.
+
+This shared builder is used only by readback request construction in `www/mg30-preset-read.js`. It does not change User IR upload, Collection, NAM, preset import, MIDI mappings or other protected paths. The physical pedal has not yet been retested with the corrected frame; successful CI is not hardware proof.
+
+### Remaining physical validation
+
+- [ ] Confirm Actions run #141 completes successfully, including Android debug APK build and artifact upload.
+- [ ] Install that run's APK on original MG-30 Gen2 firmware 6.0.x and perform a **read-only Export** on slot 04C / program 14.
+- [ ] Confirm the outgoing waveform request at offset 0 now has packed index bytes at positions 6–8 (`00 1C 00`) and offset bytes at positions 9–11 (`00 00 00`); at offset 32 bytes 9–11 must be `00 40 00`.
+- [ ] Require 64 unique waveform offsets, 10 unique curve offsets, three valid scene readbacks, and full file validation before trusting or importing any exported file.
