@@ -46,3 +46,14 @@ Requested layout:
 - If 0B/00 stored preset name reads fail on some firmware state, keep successful cached names and use the progress/error text; do not infer missing names or fabricate model names.
 
 Do not claim hardware validation until the user has tested the new APK on the actual pedal.
+
+## CI / APK result (2026-10-31)
+
+- GitHub Actions run #175 succeeded: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41210771577
+- Built source commit: `b4c26c9202e435b14ce7bcf03d6ce7a6b9cda0a3`.
+- Regression tests: 9 passed, 0 failed.
+- Android debug build and artifact upload completed successfully.
+- Artifact ID: `13046282191`, name `MG30-Studio-debug-APK`.
+- APK size: 4,400,228 bytes.
+- APK SHA-256: `7d96bba63a0dcdcbd36ce46e9738166d7f4a99dbf93bc0d713722c278621f64d`.
+- Physical validation of the 128 stored-slot name scan remains pending on the original MG-30 Gen2 FW 6.0.x.
