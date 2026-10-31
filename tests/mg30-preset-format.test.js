@@ -20,45 +20,51 @@ function makeRecord(resourceName) {
   };
 }
 
-test('single-preset file preserves a valid 16-byte IR name and imports it as the same name', () => {
-  const source = makeRecord('LONG_IR_ALIAS_16');
-  assert.equal(new TextEncoder().encode(source.resourceName).length, 16);
+test('single-preset file preserves the full 32-byte QuickTone IR name field', () => {
+  const source = makeRecord('LONG_IR_NAME_1234567890123456789');
+  assert.equal(new TextEncoder().encode(source.resourceName).length, 32);
   const bytes = buildMG30SinglePresetPatch(source);
   const parsed = parseMG30SinglePresetPatch(bytes);
   const plan = buildMG30SinglePresetImportPlan(parsed, 10);
 
+  assert.equal(String.fromCharCode(...bytes.subarray(0x1b2, 0x1d2)), source.resourceName);
   assert.equal(parsed.resourceName, source.resourceName);
   assert.equal(plan.resourceName, source.resourceName);
   assert.equal(plan.steps[0].kind, 'ir-name');
   assert.equal(plan.steps[0].command, 0x09);
+  assert.equal(plan.steps[0].body.length, 60);
   assert.equal(plan.steps.length, 78);
   assert.equal(parsed.samples.length, 2048);
   assert.equal(parsed.curve.length, 600);
 });
 
-test('long IR names use QuickTone first-16-byte behavior without an alias prompt', () => {
+test('the 18-byte built-in IR name in the user report remains unchanged through export and import plan', () => {
   const originalName = 'YA DXVB 112 Mix 10';
   assert.equal(new TextEncoder().encode(originalName).length, 18);
 
   const quickToneName = fitMG30QuickToneIRName(originalName);
-  assert.equal(quickToneName, 'YA DXVB 112 Mix');
-  assert.equal(new TextEncoder().encode(quickToneName).length, 15);
+  assert.equal(quickToneName, originalName);
 
-  const source = makeRecord(quickToneName);
-  const bytes = buildMG30SinglePresetPatch(source);
+  const bytes = buildMG30SinglePresetPatch(makeRecord(quickToneName));
   const parsed = parseMG30SinglePresetPatch(bytes);
   const plan = buildMG30SinglePresetImportPlan(parsed, 10);
 
-  assert.equal(parsed.resourceName, quickToneName);
-  assert.equal(plan.resourceName, quickToneName);
-  assert.equal(plan.steps[0].kind, 'ir-name');
-  assert.equal(plan.steps[0].command, 0x09);
-  assert.equal(plan.steps.length, 78);
+  assert.equal(parsed.resourceName, originalName);
+  assert.equal(plan.resourceName, originalName);
+  assert.equal(plan.steps[0].body.length, 60);
 });
 
-test('QuickTone name fitting keeps exactly the first 16 ASCII bytes and rejects unsupported characters', () => {
-  const name = '1234567890ABCDEFZZ';
-  assert.equal(fitMG30QuickToneIRName(name), '1234567890ABCDEF');
-  assert.equal(new TextEncoder().encode(fitMG30QuickToneIRName(name)).length, 16);
+test('names longer than 32 ASCII bytes are limited to the first 32 bytes', () => {
+  const name = 'NAME12345678901234567890123456789012';
+  assert.equal(new TextEncoder().encode(name).length, 36);
+  const fitted = fitMG30QuickToneIRName(name);
+  assert.equal(fitted, name.slice(0, 32));
+  assert.equal(new TextEncoder().encode(fitted).length, 32);
+
+  const parsed = parseMG30SinglePresetPatch(buildMG30SinglePresetPatch(makeRecord(fitted)));
+  assert.equal(parsed.resourceName, fitted);
+});
+
+test('QuickTone name fitting rejects unsupported characters', () => {
   assert.throws(() => fitMG30QuickToneIRName('IR_ÜBER_LONG_NAME'), /ASCII printable/);
 });
