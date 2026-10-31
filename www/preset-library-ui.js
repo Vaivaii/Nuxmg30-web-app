@@ -66,11 +66,89 @@ function initPresetLibraryUI() {
   const scanStatus = $('presetLibraryScanStatus');
   const importBar = $('presetLibraryImportBar');
   const importInput = $('presetImportFile');
+  const exportStatus = $('presetExportStatus');
+  const feedbackDialog = $('presetImportProgressDialog');
+  const feedbackTitle = $('presetImportProgressTitle');
+  const feedbackTrack = $('presetImportProgressTrack');
+  const feedbackFill = $('presetImportProgressFill');
+  const feedbackNote = $('presetImportProgressNote');
   if (!page || !cards || page.dataset.cardUiReady === '1') return;
   page.dataset.cardUiReady = '1';
 
   let names = loadNameCache();
   let scanPromise = null;
+  let exportFeedbackTimer = null;
+
+  function closeExportFeedback() {
+    if (!feedbackDialog || feedbackDialog.dataset.owner !== 'export') return;
+    if (feedbackDialog.open && typeof feedbackDialog.close === 'function') feedbackDialog.close();
+    else feedbackDialog.removeAttribute('open');
+    delete feedbackDialog.dataset.owner;
+  }
+
+  function showExportFeedback(title, note, state, percent, autoCloseMs = 0, indeterminate = false) {
+    if (!feedbackDialog || !feedbackTitle || !feedbackTrack || !feedbackFill || !feedbackNote) return;
+    if (feedbackDialog.dataset.owner === 'import') return;
+    if (exportFeedbackTimer) window.clearTimeout(exportFeedbackTimer);
+    exportFeedbackTimer = null;
+    feedbackDialog.dataset.owner = 'export';
+    feedbackDialog.dataset.state = state;
+    feedbackTitle.textContent = title;
+    feedbackNote.textContent = note;
+    feedbackTrack.classList.toggle('is-indeterminate', Boolean(indeterminate));
+    feedbackTrack.setAttribute('aria-valuenow', String(Math.max(0, Math.min(100, percent))));
+    feedbackFill.style.width = Math.max(0, Math.min(100, percent)) + '%';
+    if (!feedbackDialog.open) {
+      if (typeof feedbackDialog.showModal === 'function') feedbackDialog.showModal();
+      else feedbackDialog.setAttribute('open', '');
+    }
+    if (autoCloseMs > 0) {
+      exportFeedbackTimer = window.setTimeout(() => {
+        closeExportFeedback();
+        exportFeedbackTimer = null;
+      }, autoCloseMs);
+    }
+  }
+
+  function reflectExportStatus() {
+    if (!exportStatus) return;
+    const text = String(exportStatus.textContent || '').trim();
+    if (!text || feedbackDialog?.dataset.owner === 'import') return;
+    const cancelled = /dibatalkan/i.test(text);
+    const failed = exportStatus.classList.contains('warn') || /gagal|tidak valid|belum terhubung/i.test(text);
+    const succeeded = exportStatus.classList.contains('ok') || /file tersimpan:/i.test(text);
+
+    if (cancelled) {
+      showExportFeedback('Export dibatalkan', '', 'cancelled', 0, 1050);
+      return;
+    }
+    if (succeeded) {
+      showExportFeedback('Export selesai', '', 'success', 100, 1050);
+      return;
+    }
+    if (failed) {
+      const title = /belum terhubung/i.test(text) ? 'MG-30 belum terhubung' : 'Export gagal';
+      showExportFeedback(title, '', 'error', 0, 1900);
+      return;
+    }
+
+    const progress = [...text.matchAll(/(\\d+)\\s*\\/\\s*(\\d+)/g)].at(-1);
+    const hasProgress = Boolean(progress && Number(progress[2]) > 0);
+    const percent = hasProgress
+      ? Math.round(Math.max(0, Math.min(1, Number(progress[1]) / Number(progress[2]))) * 100)
+      : 0;
+    showExportFeedback('Export sedang berlangsung',
+      'Jangan tutup aplikasi atau lepas koneksi USB selama proses berlangsung.',
+      'loading', percent, 0, !hasProgress);
+  }
+
+  if (exportStatus && !exportStatus.dataset.feedbackObserved) {
+    exportStatus.dataset.feedbackObserved = '1';
+    const exportStatusObserver = new MutationObserver(reflectExportStatus);
+    exportStatusObserver.observe(exportStatus, {
+      childList: true, characterData: true, attributes: true, subtree: true
+    });
+  }
 
   function selectedProgram() {
     return currentHardwareSlot();
