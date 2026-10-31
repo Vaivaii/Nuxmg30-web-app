@@ -832,6 +832,7 @@ async function readActiveBuffer(options={}){
   const resolvedProgram=Number.isInteger(options.program)?options.program:(status?status.program:program);
   if(Number.isInteger(resolvedProgram)&&resolvedProgram>=0&&resolvedProgram<128){
    targetSlot=resolvedProgram;$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker();
+   setHardwarePresetName(resolvedProgram,name||'');
   }
   activeSceneIndex=sceneIndex;$('sceneSelect').selectedIndex=sceneIndex;
   render();renderSceneButtons();
@@ -877,6 +878,7 @@ async function readPresetParts(cmd=0x0C,prog=0){const parts=[];for(let p=0;p<3;p
 async function writeHardwarePreset(prog,parts){await flushMidi();for(let part=0;part<3;part++){const body=parts[part].slice();body[3]=0x0B;body[4]=0x01;body[5]=prog;body[6]=part;await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x0B&&b[4]===0x03&&b[6]===part,1600).catch(()=>null);midiOutput.send([0xF0,...body,0xF7]);return ack})}await enqueueMidi(async()=>{const ack=waitForSysEx(b=>b[3]===0x07&&b[4]===0x03,1600).catch(()=>null);midiOutput.send([0xF0,0x43,0x58,0x70,0x07,0x01,prog,prog,0,0,0,0,0,0xF7]);return ack});const check=await readPresetParts(0x0B,prog);return check.every((b,i)=>b.slice(7).every((v,j)=>v===parts[i][7+j]))}
 
 async function copySceneTo(targetIndex){
+ if(presetNameScanBusy){setDeviceStatus('Pembacaan nama preset sedang berlangsung; Copy Scene ditunda sampai selesai.');return;}
  if(ctrlEditorBusy){setDeviceStatus('Tutup panel CTRL sebelum menjalankan Copy Scene.');return;}
  if(!Number.isInteger(targetIndex)||targetIndex<0||targetIndex>2)return;
  if(!midiConnected||!midiInput||!midiOutput){setDeviceStatus('Copy Scene memerlukan koneksi USB-MIDI ke MG-30.');toast('Hubungkan MG-30 terlebih dahulu');return}
@@ -971,6 +973,7 @@ async function copySceneTo(targetIndex){
 }
 
 async function saveToDevice(){
+ if(presetNameScanBusy){setDeviceStatus('Pembacaan nama preset sedang berlangsung; simpan ditunda sampai selesai.');return;}
  if(presetImportBusy||presetExportBusy||sceneSwitchPending){setDeviceStatus('Transfer preset sedang berlangsung; simpan ditunda sampai selesai.');return;}
  if(ctrlEditorBusy){setDeviceStatus('Tutup panel CTRL sebelum menyimpan preset.');return;}
  if(!midiConnected){setDeviceStatus('Belum terhubung. Tekan Hubungkan MG-30 terlebih dahulu.');toast('Belum terhubung ke MG-30');return}
@@ -998,6 +1001,7 @@ async function saveToDevice(){
  }
 }
 async function selectHardwareSlot(prog,fromDevice=false){
+ if(presetNameScanBusy){setDeviceStatus('Pembacaan 128 nama preset sedang berlangsung; pemilihan slot menunggu selesai.');return;}
  if(presetImportBusy||presetExportBusy||sceneSwitchPending){setDeviceStatus('Transfer preset sedang berlangsung; pemilihan slot ditunda sampai selesai.');return;}
  if(ctrlEditorBusy){setDeviceStatus('Panel CTRL sedang aktif; perubahan preset ditunda sampai panel ditutup.');return;}
  if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
@@ -1204,43 +1208,42 @@ async function scanHardwarePresetNames(force=false){
  if(!midiConnected||!midiInput||!midiOutput){const status=$('presetNameScanStatus');if(status)status.textContent='Hubungkan MG-30 untuk membaca nama preset dari perangkat.';return false}
  if(presetImportBusy||presetExportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy||window.MG30IRTransferBusy||presetNameScanBusy){const status=$('presetNameScanStatus');if(status)status.textContent='Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.';return false}
  presetNameScanPromise=(async()=>{
-  let completed=Object.keys(hardwarePresetNames).length;
+  let completed=0,finalMessage='';
   const resumePolling=!!hardwareSyncTimer;
   presetNameScanBusy=true;window.MG30PresetNameScanBusy=true;
   const refresh=$('refreshPresetNames');if(refresh)refresh.disabled=true;
-  renderPresetManagerList();
   const status=$('presetNameScanStatus');
+  renderPresetManagerList();
   try{
+   stopHardwareStatePolling();
    if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
    if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
    while(hardwareSyncBusy)await delay(15);
-   stopHardwareStatePolling();hardwareSyncBusy=true;
+   hardwareSyncBusy=true;
    for(let program=0;program<128;program++){
-    if(!force&&Object.prototype.hasOwnProperty.call(hardwarePresetNames,program))continue;
+    if(!force&&Object.prototype.hasOwnProperty.call(hardwarePresetNames,program)){completed++;continue;}
+    if(status)status.textContent='Membaca nama preset · '+(program+1)+'/128 · '+slotName(program);
     const name=await readStoredPresetName(program);
     hardwarePresetNames[program]=name;
     completed++;
     if(program%4===3||program===127){
-     persistHardwarePresetNames();
-     if(status)status.textContent='Membaca nama preset · '+(program+1)+'/128 · '+slotName(program);
-     renderPresetManagerList();
+     persistHardwarePresetNames();renderPresetManagerList();
      if(status)status.textContent='Membaca nama preset · '+(program+1)+'/128 · '+slotName(program);
      await delay(4);
     }
    }
    persistHardwarePresetNames();
-   if(status)status.textContent='Selesai · '+Object.keys(hardwarePresetNames).length+'/128 nama preset terbaca';
-   renderPresetManagerList();
+   finalMessage='Selesai · '+Object.keys(hardwarePresetNames).length+'/128 nama preset terbaca';
    return true;
   }catch(error){
    persistHardwarePresetNames();
-   if(status)status.textContent='Pembacaan berhenti di '+completed+'/128 · '+(error?.message||String(error))+' · tekan ↻ untuk mencoba lagi';
-   renderPresetManagerList();
+   finalMessage='Pembacaan berhenti di '+completed+'/128 · '+(error?.message||String(error))+' · tekan ↻ untuk mencoba lagi';
    return false;
   }finally{
    hardwareSyncBusy=false;presetNameScanBusy=false;window.MG30PresetNameScanBusy=false;
    if(refresh)refresh.disabled=false;
    renderPresetManagerList();renderSlotPicker();
+   if(status&&finalMessage)status.textContent=finalMessage;
    if(midiConnected&&resumePolling)startHardwareStatePolling();
    presetNameScanPromise=null;
   }
@@ -1289,7 +1292,7 @@ function renderSceneButtons(){
  holder.innerHTML=items.map((item,i)=>'<button type="button" class="scene-button '+(activeSceneIndex===i?'active':'')+'" data-scene="'+i+'"><strong>'+item[0]+'</strong><small>'+item[1].split('·')[1].trim()+'</small></button>').join('');
  holder.querySelectorAll('[data-scene]').forEach(btn=>btn.onclick=async()=>{
   const index=Number(btn.dataset.scene);
-  if(!Number.isInteger(index)||index<0||index>2||sceneSwitchPending)return;
+  if(!Number.isInteger(index)||index<0||index>2||sceneSwitchPending||presetNameScanBusy)return;
   const previous=activeSceneIndex;
   if(!midiConnected){
    activeSceneIndex=index;picker.selectedIndex=index;renderSceneButtons();persist();
@@ -1820,7 +1823,7 @@ window.addEventListener('mg30-user-ir-name-changed',event=>{syncUserIRNameToCabi
 window.addEventListener('mg30-active-preset-changed',()=>renderModelVisual());
 window.addEventListener('mg30-collection-ir-mapped',()=>renderModelVisual());
 window.addEventListener('storage',event=>{if(event.key==='mg30-user-ir-name')syncUserIRNameToCabinet(event.newValue);});
-function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets()}
+function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets'){renderPresets();renderPresetManagerList();if(midiConnected&&Object.keys(hardwarePresetNames).length<128)void scanHardwarePresetNames(false);const list=$('hardwarePresetList'),active=list?.querySelector('[data-hardware-slot="'+targetSlot+'"]');if(active)active.scrollIntoView({block:'nearest'})}}
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('backupBtn').onclick=()=>download('mg30-studio-backup.json',presets);$('search').oninput=renderPresets;$('importFile').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());presets=Array.isArray(d)?d:[...presets,{id:String(Date.now()),name:d.name||'Imported preset',date:new Date().toISOString(),states:d.states||states,selected:d.selected||3}];persist();renderPresets();toast('Impor selesai')}catch{toast('File JSON tidak valid')}e.target.value=''};$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let ok='requestMIDIAccess'in navigator;$('midiSupport').textContent=ok?'API tersedia':'Tidak tersedia';toast(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API')};$('midiSupport').textContent=('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia';
@@ -2017,7 +2020,7 @@ function togglePresetJumpMenu(force){
  if(open){buildPresetJumpMenu();menu.classList.remove('hidden');trigger.setAttribute('aria-expanded','true');const active=menu.querySelector('.preset-jump-option.active');if(active)active.scrollIntoView({block:'nearest'});}
  else{menu.classList.add('hidden');trigger.setAttribute('aria-expanded','false');}
 }
-initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
+initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();initPresetManagerList();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
 function autoConnectMG30FromUsb(deviceInfo=null){
  if(!window.NUXNativeMidi?.available||midiConnected||midiConnectPending)return;
  if(deviceInfo){
