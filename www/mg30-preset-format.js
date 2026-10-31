@@ -28,9 +28,9 @@ function encodeWord16(value) {
   return [(w >>> 14) & 3, (w >>> 7) & 0x7F, w & 0x7F];
 }
 /**
- * Match the observed QuickTone MG-30 single-record resource-name field:
- * keep the first 16 printable ASCII bytes, then remove padding whitespace.
- * The device metadata name itself is not changed.
+ * QuickTone's Gen2 single-record cache/file reserves 32 consecutive bytes
+ * for the resource name at 0x1B2..0x1D1, copied as two 16-byte chunks.
+ * Keep up to 32 printable ASCII bytes; do not truncate names that fit.
  */
 export function fitMG30QuickToneIRName(resourceName) {
   const original = String(resourceName || '');
@@ -39,7 +39,7 @@ export function fitMG30QuickToneIRName(resourceName) {
   if (Array.from(bytes).some(byte => byte < 0x20 || byte > 0x7E)) {
     throw new Error('Nama resource IR harus berupa ASCII printable.');
   }
-  return String.fromCharCode(...bytes.subarray(0, 16)).trimEnd();
+  return String.fromCharCode(...bytes.subarray(0, 32));
 }
 
 function decodeAsciiField(bytes) {
@@ -83,7 +83,7 @@ export function parseMG30SinglePresetPatch(input) {
   if (resourceMarker !== 1) {
     throw new Error('Penanda resource record tidak cocok dengan varian single-preset yang tervalidasi. Tidak ada data yang dikirim.');
   }
-  const resourceName = decodeAsciiField(b.subarray(RESOURCE_NAME_OFFSET, RESOURCE_NAME_OFFSET + 16)).trim();
+  const resourceName = decodeAsciiField(b.subarray(RESOURCE_NAME_OFFSET, RESOURCE_NAME_OFFSET + 32)).trim();
   if (!resourceName) throw new Error('Nama resource IR pada record kosong.');
 
   // The internal QuickTone record uses a RIFF/WAVE-shaped header, but the
@@ -129,7 +129,10 @@ export function parseMG30SinglePresetPatch(input) {
 
 function makeNameBody(name, target) {
   const nameBytes = new TextEncoder().encode(name);
-  if (nameBytes.length > 20) throw new Error('Nama IR lebih dari 20 byte ASCII.');
+  if (!nameBytes.length || nameBytes.length > 32 ||
+      Array.from(nameBytes).some(x => x < 0x20 || x > 0x7E)) {
+    throw new Error('Nama IR pada preset harus 1–32 byte ASCII printable.');
+  }
   const padded = new Uint8Array(32);
   padded.set(nameBytes);
   const body = [0x43, 0x58, 0x70, 0x09, 0x01, target, 0, 2, 0, 0, 0, 0];
@@ -245,8 +248,8 @@ export function buildMG30SinglePresetPatch({recordOrdinal,scenes,resourceName,sa
     throw new Error('Export membutuhkan kurva IR lengkap: 600 nilai uint16.');
   const name=String(resourceName||'');
   const nameBytes=new TextEncoder().encode(name);
-  if(!nameBytes.length||nameBytes.length>16||Array.from(nameBytes).some(x=>x<0x20||x>0x7E))
-    throw new Error('Nama resource IR harus 1–16 byte ASCII printable sesuai field file.');
+  if(!nameBytes.length||nameBytes.length>32||Array.from(nameBytes).some(x=>x<0x20||x>0x7E))
+    throw new Error('Nama resource IR harus 1–32 byte ASCII printable sesuai field QuickTone.');
   for(let i=0;i<samples.length;i++)if(!Number.isFinite(samples[i]))
     throw new Error('Sampel IR tidak finite pada indeks '+i+'.');
   for(let i=0;i<curve.length;i++)if(curve[i]>305)
@@ -263,7 +266,8 @@ export function buildMG30SinglePresetPatch({recordOrdinal,scenes,resourceName,sa
   }
   view.setUint32(RESOURCE_MARKER_OFFSET,1,true);
   out.set(nameBytes,RESOURCE_NAME_OFFSET);
-  // 0x1C2..0x1D1 is the zero-filled 16-byte field in the supplied format.
+  // QuickTone copies the 32-byte name in two 16-byte chunks:
+  // 0x1B2..0x1C1 and 0x1C2..0x1D1. RIFF begins immediately at 0x1D2.
   const riff=RIFF_OFFSET;
   out.set([0x52,0x49,0x46,0x46],riff);
   view.setUint32(riff+4,0x1824,true);
