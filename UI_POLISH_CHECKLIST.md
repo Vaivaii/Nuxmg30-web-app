@@ -1796,4 +1796,33 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 This one layout change and documentation update are committed. Do not build until the user explicitly chooses **Build sekarang**.
 
 Next response must ask exactly: **Build sekarang atau nanti?**
+## Preset Manager — framed card collection (1 November 2026)
+
+### User request
+- Add one enclosing frame/panel around the complete list of 128 preset cards so the cards appear grouped in a dedicated area instead of floating flat on the page.
+- Keep the existing 128 slots, card size, internal scrolling, measured viewport reaching to just above the fixed bottom navigation, and the legacy Draft compatibility IDs.
+
+### Change
+- File: www/preset-library-ui.css
+- Commit: c464a2976561d174cb84df3625a09f7239a78ea6
+- Styled the existing #page-presets .preset-library-card-list as the frame itself; no additional wrapper or DOM relocation was required.
+- Added a subtle olive border, 22px rounded corners, darker gradient background, inset highlight and soft shadow.
+- Increased only the inner inset spacing to 12px top / 10px sides / 8px bottom. Cards keep their existing individual dimensions and 11px vertical gap.
+- Preserved the card list scrolling and dynamic inline height measurement from resizeCardViewport(); the frame adds no space outside the already measured viewport.
+
+### Verification and protected areas
+- Static checks passed: frame border, radius, background, shadow, internal scrolling, measured nav-based viewport, all four Draft IDs and hidden Draft container.
+- www/index.html and www/preset-library-ui.js unchanged in this step.
+- www/mg30-preset-export.js unchanged (SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52).
+- No changes to Import/Export protocol, parser, plan, native file picker, USB-MIDI, Editor/startup, Movable Signal Chain, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio, Device, global CSS or shared navigation.
+- Automated tests and physical Android visual check: not run.
+
+### Build state
+- Build #192 succeeded on earlier source commit 2a4310f304faab9a34ed88bda2693e7603766995; it does not include the later measured viewport or framed-card changes.
+- The current dynamic viewport fix and this frame style have not been built.
+- No CI / GitHub Actions / Gradle / APK build has been triggered for this frame change. The commit uses [skip ci].
+
+### Mandatory stop point
+This one CSS change and its project notes are committed. Do not build until the user explicitly chooses Build sekarang.
+Next response must ask exactly: Build sekarang atau nanti?
 
