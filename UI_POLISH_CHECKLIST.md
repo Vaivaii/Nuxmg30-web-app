@@ -1227,3 +1227,15 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [x] Artifact MG30-Studio-debug-APK ID 13046282191; APK 4,400,228 bytes.
 - [x] APK SHA-256 7d96bba63a0dcdcbd36ce46e9738166d7f4a99dbf93bc0d713722c278621f64d.
 - [ ] Physical test on original MG-30 Gen2 FW 6.0.x: refresh full 128 slot names, verify 28A–29B labels, choose a row and sync, then check Import/Export and existing NAM/IR/Collection functions.
+
+ 
+### Preset Manager startup regression — recovery build (2026-10-31)
+
+- [x] Isolate Preset Manager list initialization so an error in that UI cannot stop main Editor render or USB-MIDI connect-handler wiring.
+- [x] Wire core Editor render and USB-MIDI click handler before optional Preset Manager initialization; catch/log Preset Manager-only errors.
+- [x] Native Android classes.dex and AndroidManifest confirmed byte-identical to previously working Build #155.
+- [x] Added startup-order regression test and inline script parse check.
+- [x] GitHub Actions Build #178 passed: 11 tests, 0 failures; APK built and uploaded.
+- [x] APK: MG30-Studio-USB-MIDI-Startup-Fix-Build-178.apk · 4,400,364 bytes · SHA-256 ab87eb8e28a0106863e1f1275bb5fc5b03e2d85ac748e9696e76c52ed2372a55.
+- [ ] User hardware test: Editor renders normally; connect via OTG succeeds; header shows Terhubung; then check Preset Manager and existing NAM/IR/Collection workflows.
+- Details: docs/research/MG30_PRESET_MANAGER_STARTUP_REGRESSION_2026-10-31.md
