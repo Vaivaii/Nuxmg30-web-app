@@ -1176,3 +1176,14 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [ ] Confirm NAM identity/assignment and preset behavior survive that round trip.
 - [x] Do not label NAM transfer as untested; do not alter its working transfer path.
 - [ ] Keep generic preset Export/Import success separate unless the tested preset is confirmed to contain/use NAM.
+
+
+### Preset Export — QuickTone long IR name behavior correction (2026-10-31)
+
+- User tested the manual alias prompt for the built-in IR `YA DXVB 112 Mix 10` (18 bytes); pressing OK failed. User explicitly requested QuickTone-style behavior and does not want a manual alias dialog.
+- Removed manual alias prompt. Export now retains the full metadata name during readback, then stores the first 16 printable ASCII bytes in the `.mg30patch` 16-byte name field, trimming trailing padding whitespace at the boundary. Example: `YA DXVB 112 Mix 10` → `YA DXVB 112 Mix`.
+- Export status reports original and stored names when they differ. Device metadata name itself is not modified.
+- No changes to waveform/curve data, three scenes, Importer, NAM, IR User/Third Party transfer, IR Collection, or MIDI mappings.
+- Regression tests verify the user's exact 18-byte example, first-16-byte boundary and printable-ASCII validation.
+- Await GitHub Actions test/build result, then validate Export and Import on original MG-30 Gen2 FW 6.0.x. This exact long built-in IR is the primary retest.
+- Note: this follows the user's direct observation of QuickTone truncating names, rather than claiming a disassembly-proven implementation detail. Do not reintroduce manual alias prompts.
