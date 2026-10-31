@@ -112,3 +112,14 @@ Code commits:
 - `d75d55942ad57562b8b27018d4cda9933e237476` — update Export status to mention 32-byte limit.
 
 The updated APK build and physical export/import validation are still required before considering this complete.
+
+
+### Build verification after 32-byte correction (2026-10-31)
+
+- GitHub Actions run #155 succeeded: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41206676542
+- Source commit built: `d75d55942ad57562b8b27018d4cda9933e237476`.
+- Regression tests: 9 passed, 0 failed. This includes the full 32-byte field, exact 18-byte user name, and truncation only beyond 32 bytes.
+- Android debug build and artifact upload succeeded.
+- Artifact: `MG30-Studio-debug-APK`, ID `13044153884`, ZIP size 4,018,193 bytes; contained APK size 4,395,972 bytes.
+- APK SHA-256: `cbb1bc5d77b09023d2c1e89bd716352870aa64571053a0ae4a2ac5e77c2fcb17`.
+- Physical export/import on original MG-30 Gen2 FW 6.0.x is still required. Do not treat CI success as hardware validation.
