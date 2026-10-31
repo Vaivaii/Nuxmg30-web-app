@@ -844,3 +844,16 @@ NAM status clarification: NAM support has been implemented previously, but the u
 - [x] IR Collection catalog is intended as a storage/catalog collection.
 - [x] Applying/using an IR from Collection targets User (Third Party) on the pedal; preserve this mapping.
 - [ ] User to test NAM transfer/use on physical MG-30; capture any failure diagnostics before changing implementation.
+
+
+## Correction — NAM transfer already succeeded; remaining test is NAM-containing preset Export → Import (2026-10-31)
+
+Correction from user: the statement that NAM transfer is untested was wrong. NAM transfer to the MG-30 was already successful yesterday, before the IR import workflow was completed. The user is referring to a different validation: **export a preset/file from the application that contains/uses a NAM, then import that exported file back again**. Do not conflate this with initial NAM transfer, which is already confirmed successful.
+
+### Accurate status
+- [x] NAM transfer from MG30 Studio to the physical MG-30 succeeded (user reports this was verified the previous day).
+- [ ] Validate Export of a preset/file in the app that contains the NAM-associated data, then Import that exported file back to the MG-30.
+- [ ] After round trip, compare/confirm NAM identity/assignment and preset behavior are retained. Do not claim this round trip is validated until user tests it.
+- [x] Recent generic `.mg30patch` Export → Android Save As → Import round trip succeeded, but it is not yet explicit that the tested source preset contained NAM. Keep those claims separate.
+
+Do not change NAM transfer code or working IR paths while preparing this validation. The next task is a targeted round-trip test with a preset known to contain/use NAM, not implementation of NAM transfer from scratch.
