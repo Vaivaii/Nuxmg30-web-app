@@ -439,3 +439,20 @@ Build #195 (run ID 41229602878) succeeded on commit dcd017b8384eee91b7d80d4a129b
 The e392180c correction has not been built or tested on device. Do not trigger CI/Gradle/APK until user explicitly approves.
 
 Current stop point: ask **Build sekarang atau nanti?**.
+## 25. Bottom fade precisely aligned with the frame sides and lower corners (1 Nov 2026)
+
+The user screenshot showed that the previous fade ended slightly above the frame bottom and did not merge into the left/right inner edges.
+
+Corrected www/preset-library-ui.css in commit d6040b9083f13159a958c6d684b501006df5532a:
+- Sticky overlay is 64px high.
+- Width is calc(100% + 16px), with -8px left/right margins covering the list's 8px inner horizontal padding.
+- Added side-edge horizontal gradient plus vertical bottom fade.
+- Gradient ends at the exact frame background color #101619 and uses 17px lower radius matching the frame's inner corners.
+- pointer-events:none stays enabled so card selection works.
+- Only CSS changed; no Import/Export protocol, HTML, JavaScript, scroll measuring, card sizes, nav, Editor, Signal Chain, MIDI, NAM or IR files modified.
+
+Build state:
+- Build #196 success (source commit 5e13dba57f37824f891fabdea93afc43767afa5c, run 41230174130) is the prior fade attempt and does not contain this correction.
+- Build #197 was triggered automatically from exact commit d6040b9083f13159a958c6d684b501006df5532a, run ID 41230734572.
+- At last check, dependencies were installing; follow run 41230734572 to completion and retrieve its artifact only after success.
+- No second build should be started while #197 is running.
