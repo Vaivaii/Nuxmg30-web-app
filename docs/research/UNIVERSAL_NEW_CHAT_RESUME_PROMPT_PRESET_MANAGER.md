@@ -533,3 +533,24 @@ Physical test after install: header returns to normal near top; Preset card list
 - ZIP integrity passed; APK recognized as Android package.
 - Packaged bundle checks passed: fixed app viewport, independent tab section scrolling, Preset flex-column/internal card scroller, both footer labels removed, four Draft IDs retained.
 - Physical Android validation pending. User should verify header returns to top, Preset list scrolls, and each tab retains its own scroll position.
+## Cross-tab sticky headings, Device compact layout, non-Preset bottom fades and Export edge alignment (1 Nov 2026)
+
+User wants top headings/actions to remain visible while each tab body scrolls: Editor's CTRL/EXP and Save-to-device, NAM title, Studio title and other tab titles. Device title/subtitle should disappear and its first content panel should sit closer to the app header. All tabs except Presets receive the same bottom fade ending at the top of bottom nav; Presets retains its own existing fade. Preset Export button right edge needs an inset.
+
+Implemented CSS-only:
+- `www/ui-redesign.css` latest SHA `d00872d708124046f5d826d5bbb0c0df800676ae`: sticky top headings/actions for Editor `.editor-topbar`, NAM `.nam-page-hero`, Studio `.studio-page-hero`, Backup `.hero:first-child`; sticky opaque/blurred header treatment per tab scroll container.
+- Device first `.hero` hidden; Device section top padding 5px and USB audio panel margin top 2px.
+- Adds 58px sticky bottom fade to `#page-editor`, `#page-nam`, `#page-studio`, `#page-device`, `#page-backup`, with base color #0b1012, side gutter extension, ends at the scroll area/nav boundary; pointer events disabled. Preset is intentionally excluded and retains existing card-frame fade.
+- Global CSS changes originated in commit `08409b72e02e46bf88b13188090844a543e130ca`; Device first-panel selector corrected in `d1b9209722864aa16c4ca5a649a72bd17cb8730b`.
+- `www/preset-library-ui.css` SHA `2f892e82d151ab82d7a98345ea871bc735e3818d`, commit `bd36d0f214615a5818317bd90da17ec47ae434c2`: header right padding 5px and action button box sizing/min width consistency to keep Export inset from the right edge.
+
+Preservation:
+- Git compare confirms only the two CSS files changed.
+- `www/index.html` unchanged, `www/main.js` unchanged, `www/mg30-preset-export.js` unchanged.
+- Editor control markup, MIDI/SysEx/USB audio handlers, Signal Chain, scene operations, Import/Export transfer protocols and Preset controller untouched.
+
+Validation:
+- Static checks passed for sticky selectors, Editor top action controls retained, Device title hidden and spacing adjusted, five non-Preset gradients, Preset gradient exclusion, Export inset and unchanged JS/HTML/protocol sources.
+- No build or physical Android UI verification yet.
+
+Current stop point: CSS source and project notes saved. Ask exactly **“Build sekarang atau nanti?”** and wait for approval.
