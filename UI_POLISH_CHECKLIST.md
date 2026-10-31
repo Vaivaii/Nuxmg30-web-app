@@ -2016,3 +2016,14 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 
 ### Stop / next action
 Do not edit other application files. Follow Build #200 to completion, verify the artifact source SHA matches `6d671aa0dcb53bb613d173d1de0cc812636d4d3c`, download/extract/inspect its APK, then provide the verified APK link.
+### Build #200 — independent tab scrolling + remove footer labels (1 November 2026)
+
+- Build run: 41233090589; result: success; branch: feature/preset-manager-redesign.
+- Exact application source commit: 6d671aa0dcb53bb613d173d1de0cc812636d4d3c.
+- All workflow stages succeeded: Node setup, Java setup, npm install, protocol regression tests, Capacitor Android generation, Gradle assembleDebug, artifact upload.
+- Artifact ID: 13054292076; artifact: MG30-Studio-debug-APK; downloaded ZIP: MG30_Studio_Build_200_Independent_Tabs.zip; ZIP size 4,023,560 bytes.
+- Extracted APK: MG30_Studio_Build_200_Independent_Tabs.apk; size 4,401,596 bytes; SHA-256 `4cae80dad35061272d001af0a30977d11a02a27f0a5993089ea990c3324cc107`.
+- APK ZIP integrity test passed. Embedded web assets verified: both MG30 Studio footer markup strings absent; bundled CSS contains 100dvh/overflow-y auto independent tab shell and the Preset Manager fixed-viewport override.
+- `npm test` passed. Physical Android tab-switch/scroll-retention test is still pending.
+- Build #199 (run 41233084907) was triggered by the preceding HTML-only commit and is not the authoritative build. Build #200 checks out the combined source commit with both approved files.
+- No changes to main.js, preset-library-ui.js/css, mg30-preset-export.js, MIDI/SysEx/device logic, Editor behavior, Import/Export protocols, NAM/IR, Signal Chain or mapping.
