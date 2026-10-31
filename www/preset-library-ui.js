@@ -132,7 +132,8 @@ function initPresetLibraryUI() {
       return;
     }
 
-    const progress = [...text.matchAll(/(\\d+)\\s*\\/\\s*(\\d+)/g)].at(-1);
+    const matches = [...text.matchAll(/(\d+)\s*\/\s*(\d+)/g)];
+    const progress = matches[matches.length - 1];
     const hasProgress = Boolean(progress && Number(progress[2]) > 0);
     const percent = hasProgress
       ? Math.round(Math.max(0, Math.min(1, Number(progress[1]) / Number(progress[2]))) * 100)
