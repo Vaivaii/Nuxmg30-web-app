@@ -20,8 +20,8 @@ function makeRecord(resourceName) {
 }
 
 test('single-preset file preserves a valid 16-byte IR name and imports it as the same name', () => {
-  const source = makeRecord('LONG_IR_ALIAS16');
-  assert.equal(new TextEncoder().encode(source.resourceName).length, 15);
+  const source = makeRecord('LONG_IR_ALIAS_16');
+  assert.equal(new TextEncoder().encode(source.resourceName).length, 16);
   const bytes = buildMG30SinglePresetPatch(source);
   const parsed = parseMG30SinglePresetPatch(bytes);
   const plan = buildMG30SinglePresetImportPlan(parsed, 10);
