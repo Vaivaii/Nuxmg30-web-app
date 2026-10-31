@@ -424,3 +424,18 @@ Build state:
 - No build has been triggered for commit 654f9029.
 
 Current stop point: CSS source and project notes are committed. Ask exactly “Build sekarang atau nanti?” and wait for approval.
+## 24. Extend Preset Manager bottom fade to the frame edge (1 Nov 2026)
+
+User screenshot showed the bottom fade stopping above the frame bottom. The initial sticky overlay used bottom:0 and 48px height while list retained 8px bottom padding, leaving a visible gap.
+
+Corrected only www/preset-library-ui.css in commit e392180c752ad9857cee8332df3930c8c61d5423:
+- Sticky fade height increased 48px -> 56px.
+- Sticky bottom offset set to -8px and margin-bottom -8px to extend across the list's bottom padding and visually meet the frame edge.
+- Gradient ramp softened and final opacity increased to .99; border radius follows frame bottom.
+- pointer-events:none retained so cards remain tappable.
+- No markup, JS, scroll measurement, card dimensions, Import/Export logic, or other app areas touched.
+
+Build #195 (run ID 41229602878) succeeded on commit dcd017b8384eee91b7d80d4a129bb21bf84adcc6; artifact ID 13053385990, ZIP size 4,022,403 bytes. It contains initial fade only, NOT the edge correction.
+The e392180c correction has not been built or tested on device. Do not trigger CI/Gradle/APK until user explicitly approves.
+
+Current stop point: ask **Build sekarang atau nanti?**.
