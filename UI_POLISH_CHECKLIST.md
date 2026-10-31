@@ -1106,3 +1106,16 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Wait for the CI workflow from commit 14d13eb to pass before distributing an APK.
 - [ ] Repeat read-only Export on original MG-30 Gen2 FW 6.0.x; inspect dispatch timestamps, pre-request pages, unique waveform and curve offset coverage, and all three scene readbacks.
 - [x] No change to the request encoder, decoded-offset meaning, IR write/import routines, NAM, Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal-chain order, or Save-to-device.
+
+
+### Android APK build verification — dispatch-timing diagnostics (2026-10-31)
+
+GitHub Actions run #139 completed successfully from source commit 14d13eb90358a68a82ccdc9b52964aac4fb489d7: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41156796990
+
+- Protocol regression tests (npm test): passed.
+- Capacitor Android generation: passed.
+- Gradle assembleDebug: passed.
+- Artifact upload: passed.
+- Artifact: MG30-Studio-debug-APK, ID 13025326763, size 4,016,974 bytes.
+
+The build verifies the updated dispatch-time diagnostics and pre-request page rejection at source commit 14d13eb. It does not establish that read-only Export now succeeds on the physical pedal. Install the artifact from run #139 and repeat the read-only test; inspect all 64 unique waveform pages, 10 curve pages and three scene replies before trusting any output.
