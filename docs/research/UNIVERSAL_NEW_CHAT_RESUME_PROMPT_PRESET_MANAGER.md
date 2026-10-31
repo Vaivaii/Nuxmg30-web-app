@@ -216,3 +216,18 @@ Validation status:
 - The old APK does NOT contain these latest changes.
 - Test first on the original MG-30 Gen2 FW 6.0.x. Verify the Cancel path sends no import frames, then test OK on a safe destination slot.
 - Current next step: update/check the build state, then ask the user exactly **“Build sekarang atau nanti?”** before producing an APK for this new commit set.
+
+## 15. Build result for destination-first Import flow (31 Oct 2026)
+
+Latest code commit: `cfd5b0ab896440806b4faf97e1bfbdc54b875e84`.
+
+- GitHub Actions run #189, ID `41218768705`: **success**.
+- Protocol regression test step: passed.
+- Android debug build and artifact upload: passed.
+- Artifact ID: `13048698907`.
+- APK filename: `MG30_Studio_Preset_Manager_Import_Flow_cfd5b0a.apk`.
+- APK size: 4,020,278 bytes.
+- APK SHA-256: `1b4ce29cff32b478ea433cc78920c17125d59ffe761d76d9fdb42d1d95235101`.
+- APK was extracted and the packaged JS/CSS checked for the destination-first import event, confirmation copy and updated Library styles.
+
+Next step is physical verification on the original MG-30 Gen2 firmware 6.0.x. Test the Android file picker, select a destination card, Cancel (verify no import frames are sent), then OK on a safe slot and verify 78/78 ACK / readback. Recheck NAM transfer, IR User/Third Party, IR Collection and MIDI mappings. A successful CI build does not replace that hardware test.
