@@ -1358,3 +1358,19 @@ Copy that prompt into a new chat in this same project whenever a conversation is
 ### Addendum commit
 
 - Plan scope-lock commit: `8e1e1c10997fdfdb0a966b3df746b6fc2ff56a99`.
+
+
+### Universal resume prompt added (2026-10-31)
+
+- [x] Added `docs/research/UNIVERSAL_NEW_CHAT_RESUME_PROMPT_PRESET_MANAGER.md`.
+- [x] Prompt instructs a new chat to inspect branch HEAD, checklist, plan, latest commits and current stop point before continuing.
+- [x] Prompt repeats all strict scope restrictions: no Import/Export changes, no movable signal-chain changes, no code outside Preset Library.
+- [x] Prompt repeats the mandatory per-code-change checklist update and **“Build sekarang atau nanti?”** approval gate.
+- [x] Direct APK download obligation after an approved build is recorded.
+- Prompt file commit: `79ebd05108146a809934b3cbfbf7891565d81b25`.
+- Scope-lock plan commit: `8e1e1c10997fdfdb0a966b3df746b6fc2ff56a99`.
+- Scope-lock checklist commit: `49b72e32ca6d88ed7b7b23840fe68a215cb5115c`.
+- Checklist remains the authoritative source for current work status and must be updated after every code change.
+- [x] Documentation only. No app code changed; no build started.
+
+**Current stop point:** branch and restrictions are documented. Waiting to draft/review the Preset Library layout before the first code change.
