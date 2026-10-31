@@ -784,6 +784,7 @@ async function readActiveProgramScene(){
 async function readSysExPart(cmd,prog,part){if(!midiConnected)throw new Error('Hubungkan MG-30 terlebih dahulu');await flushMidi();const reply=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===cmd&&b[4]===0x02&&b[6]===part);await midiFrame([0x43,0x58,0x70,cmd,0x00,prog,part,0,0,0,0,0,0]);return reply}
 function bitSlot(body,k){const p=6+21*Math.floor(k/2)+8*(k%2);let v=0;for(let i=0;i<7;i++){const bit=p+i,byte=body[7+Math.floor(bit/7)];v=(v<<1)|((byte>>(6-bit%7))&1)}return v}
 async function readActiveBuffer(options={}){
+ if(presetNameScanBusy)throw new Error('Pembacaan 128 nama preset sedang berlangsung; buffer aktif ditunda.');
  if(presetImportBusy||presetExportBusy)throw new Error('Transfer preset sedang berlangsung; pembacaan buffer ditunda.');
  if(activeBufferReadPromise)return activeBufferReadPromise;
  activeBufferReadPromise=(async()=>{
@@ -1213,7 +1214,8 @@ async function scanHardwarePresetNames(force=false){
   let completed=0,finalMessage='';
   const resumePolling=!!hardwareSyncTimer;
   presetNameScanBusy=true;window.MG30PresetNameScanBusy=true;
-  const refresh=$('refreshPresetNames');if(refresh)refresh.disabled=true;
+  const refresh=$('refreshPresetNames'),exportButton=$('presetExportStart'),importButton=$('presetImportChoose');
+  if(refresh)refresh.disabled=true;if(exportButton)exportButton.disabled=true;if(importButton)importButton.disabled=true;
   const status=$('presetNameScanStatus');
   renderPresetManagerList();
   try{
@@ -1243,7 +1245,7 @@ async function scanHardwarePresetNames(force=false){
    return false;
   }finally{
    hardwareSyncBusy=false;presetNameScanBusy=false;window.MG30PresetNameScanBusy=false;
-   if(refresh)refresh.disabled=false;
+   if(refresh)refresh.disabled=false;if(exportButton)exportButton.disabled=false;if(importButton)importButton.disabled=false;
    renderPresetManagerList();renderSlotPicker();
    if(status&&finalMessage)status.textContent=finalMessage;
    if(midiConnected&&resumePolling)startHardwareStatePolling();
@@ -2068,6 +2070,7 @@ window.MG30PresetImportBridge=Object.freeze({
  getTargetProgram:()=>targetSlot,
  getTargetLabel:()=>slotName(targetSlot),
  async import(plan,onProgress=()=>{}){
+  if(presetNameScanBusy)throw new Error('Sedang membaca nama 128 preset. Tunggu sampai selesai sebelum Import.');
   if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
   if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
   if(!plan||plan.steps?.length!==78||plan.totalFrames!==78||plan.targetProgram!==targetSlot)throw new Error('Rencana impor tidak cocok dengan slot tujuan aktif.');
@@ -2144,6 +2147,7 @@ window.MG30PresetExportBridge=Object.freeze({
  getTargetProgram:()=>targetSlot,
  getTargetLabel:()=>slotName(targetSlot),
  async readSingle(onProgress=()=>{}){
+  if(presetNameScanBusy)throw new Error('Sedang membaca nama 128 preset. Tunggu sampai selesai sebelum Export.');
   if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
   if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
   const program=Number(targetSlot);
