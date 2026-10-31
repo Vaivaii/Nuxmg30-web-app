@@ -188,3 +188,31 @@ The first isolated card UI implementation and checklist update are complete. The
 - If user says Build sekarang: run tests/build for this exact branch head, inspect the Actions result, download and extract the matching APK, then provide a direct sandbox APK link in chat.
 - If user says Build nanti: do not build. Leave code and checklist committed and wait for next instruction.
 - Do not make another code change until the user chooses the build timing and gives the next instruction. Do not modify any protected area.
+
+## 14. Latest follow-up — destination-first preset import (31 Oct 2026)
+
+The user requested the following exact flow on the Preset Library tab:
+- Tap Import → Android file manager opens → choose a `.mg30patch`.
+- Tap a preset card to choose the destination slot.
+- After the existing hardware slot selection resolves, show a native Cancel / OK confirmation.
+- Cancel must send no import frames; OK runs the existing import.
+- Add a small green **LIBRARY** eyebrow above Preset Manager.
+- Remove the visible Draft lokal card/panel.
+
+Implemented commits on `feature/preset-manager-redesign`:
+- `9d0d751d13bf9b661b9ff43eae461fa6ea959dfa` — `www/index.html`: new Library label, removed visible draft panel, retained legacy draft IDs hidden so existing Editor render logic does not break.
+- `3b7b3d4f2edb16d15f7a4106a1d2ea111ff35ebe` — `www/preset-library-ui.js`: dispatches `mg30-preset-library-target-selected` only after existing slot synchronization is reflected by `slotLabel`.
+- `d62229841361c7e20d40a0e6ec88e39b668f1045` — `www/preset-library-ui.css`: fixes narrow vertical filename by stacking file/target info at full width; adds title styling.
+- `cfd5b0ab896440806b4faf97e1bfbdc54b875e84` — `www/mg30-preset-import.js`: new sequence file validation → card selection → native Cancel/OK confirmation → existing import bridge call.
+
+Critical boundary:
+- The user has explicitly approved changing the **preset import interaction**, overriding the older blanket ban on changing its UI module.
+- Do NOT change the binary parser, import plan builder, 78-step transaction sequence, IR User/Third Party resource transfer, device bridge, ACK/readback or underlying USB-MIDI packet logic.
+- NAM, IR Collection mapping, MIDI mappings, movable signal chain, Editor startup/render, Save, Copy Scene, CTRL/EXP, Studio and Device remain protected and untouched.
+- Hidden draft compatibility DOM IDs are intentionally retained because the existing Editor-side renderer queries them. Do not remove them without first refactoring that dependency with user approval.
+
+Validation status:
+- Source committed; automated tests and hardware validation pending.
+- The old APK does NOT contain these latest changes.
+- Test first on the original MG-30 Gen2 FW 6.0.x. Verify the Cancel path sends no import frames, then test OK on a safe destination slot.
+- Current next step: update/check the build state, then ask the user exactly **“Build sekarang atau nanti?”** before producing an APK for this new commit set.
