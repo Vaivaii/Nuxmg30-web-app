@@ -786,3 +786,23 @@ This shared builder is used only by readback request construction in `www/mg30-p
 ### Explicit correction to the earlier request-builder comparison (2026-10-31)
 
 Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request structure were incomplete and are superseded here. The 7-bit uint16 packing algorithm in helper `0x4A4910` was equivalent, but the app placed the packed words two bytes too late. QuickTone starts its packed `[resourceIndex, offset]` fields at frame byte 6; the old app inserted two zeros there and started those fields at byte 8. Do not revert this fix based on the earlier statement that the request bytes matched. The response decoder/offset semantics remain unchanged.
+
+
+## Export destination — native Android Save As dialog (2026-10-31)
+
+The intended UX is Android's built-in system file picker (Save As), where the user chooses the folder and confirms the `.mg30patch` file. The previous `downloadPatch()` implementation only created a Blob URL and programmatically clicked a browser download anchor; that did not reliably present Android's file manager in the Capacitor WebView, even though the UI showed "Export selesai".
+
+### Source changes
+
+- Commit `804cf5e` adds `MG30Midi.savePatch` to `native-android/MG30MidiPlugin.java`. It validates the base64 payload and exact Gen2 single-preset size (`0x26AE` = 9,902 bytes), launches `Intent.ACTION_CREATE_DOCUMENT` with `CATEGORY_OPENABLE`, `.mg30patch` title and `application/octet-stream` MIME type, then writes the bytes to the returned `content://` URI using `ContentResolver.openOutputStream`. The native result confirms the actual document URI, display name and byte count. Cancel returns a distinct cancelled result; I/O failure rejects rather than claiming success.
+- Commit `9f344a3` exposes the method through `window.NUXNativeMidi.savePatch`.
+- Commit `ddc584f` sends the completed export bytes through that native picker on Android. The UI now reports the file as saved only after the plugin writes it, tells the user the destination is the folder they selected, and reports cancellation without claiming a saved file. Browser-only use retains the original browser-download fallback.
+
+This is a save-file-only extension to the existing native MIDI plugin; it does not change MIDI send/receive, USB device connection, IR write/import protocol, Collection, NAM, preset import, MIDI mappings or other MG-30 signal/preset operations. Android's Storage Access Framework `ACTION_CREATE_DOCUMENT` asks the user to choose a destination and grants access to the returned URI; no broad storage permission is introduced.
+
+### Validation remaining
+
+- [ ] Verify GitHub Actions run #144 from commit `ddc584f` passes Node protocol regression tests, Capacitor generation, Gradle APK build and artifact upload.
+- [ ] Install that APK and run a read-only export. Confirm Android's system file manager Save As UI appears after readback succeeds.
+- [ ] Choose a folder, confirm save, then locate the resulting `.mg30patch` there and verify exact 9,902-byte size.
+- [ ] Cancel the picker once and confirm the app reports "Penyimpanan dibatalkan" and does not claim success.
