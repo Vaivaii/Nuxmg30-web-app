@@ -1198,3 +1198,11 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - No change to independent standalone IR WAV upload UI/20-character cap, NAM, IR Collection workflow, User/Third Party upload packet flow, MIDI mapping, preset scenes, or Save-to-device.
 - Tests cover 32-byte exact capacity, the 18-byte user-reported name, and 36-to-32-byte limit. Wait for GitHub Actions, then physically test Export 03B and Import to safe slot on original MG-30 Gen2 FW 6.0.x.
 - This correction supersedes the previous checklist note about truncating to 16 bytes. Do not reintroduce the alias prompt or 16-byte rule.
+
+
+### QuickTone 32-byte IR name field — build result (2026-10-31)
+
+- [x] GitHub Actions run #155 passed all 9 regression tests and completed Android debug APK build/upload.
+- [x] Build source commit: d75d55942ad57562b8b27018d4cda9933e237476.
+- [x] Artifact MG30-Studio-debug-APK ID 13044153884; APK 4,395,972 bytes; SHA-256 cbb1bc5d77b09023d2c1e89bd716352870aa64571053a0ae4a2ac5e77c2fcb17.
+- [ ] Install and physically test on original MG-30 Gen2 FW 6.0.x: export slot 03B with IR name YA DXVB 112 Mix 10, verify full 18-byte name in .mg30patch, then import to a safe test slot and confirm name, waveform, curve, and all three scenes.
