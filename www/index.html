@@ -374,21 +374,12 @@
  </div>
  <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite"></p>
 
- <dialog id="presetImportProgressDialog" class="preset-import-progress-dialog" aria-labelledby="presetImportProgressTitle" aria-describedby="presetImportProgressMessage">
+ <dialog id="presetImportProgressDialog" class="preset-import-progress-dialog" aria-labelledby="presetImportProgressTitle" aria-describedby="presetImportProgressNote">
   <div class="preset-import-progress-shell">
-   <div class="preset-import-progress-symbol" aria-hidden="true">
-    <span class="preset-import-progress-spinner"></span>
-    <span class="preset-import-progress-result-icon" id="presetImportProgressIcon"></span>
-   </div>
    <h3 id="presetImportProgressTitle">Import sedang berlangsung</h3>
-   <p id="presetImportProgressMessage"></p>
    <div class="preset-import-progress-meter">
-    <div class="preset-import-progress-track" id="presetImportProgressTrack" role="progressbar" aria-label="Kemajuan import preset" aria-valuemin="0" aria-valuemax="78" aria-valuenow="0">
+    <div class="preset-import-progress-track" id="presetImportProgressTrack" role="progressbar" aria-label="Kemajuan transfer preset" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
      <span id="presetImportProgressFill"></span>
-    </div>
-    <div class="preset-import-progress-meta">
-     <span id="presetImportProgressPhase">Menyiapkan transfer…</span>
-     <strong id="presetImportProgressAck">0/78 ACK</strong>
     </div>
    </div>
    <p class="preset-import-progress-note" id="presetImportProgressNote">Jangan tutup aplikasi atau lepas koneksi USB selama proses berlangsung.</p>
