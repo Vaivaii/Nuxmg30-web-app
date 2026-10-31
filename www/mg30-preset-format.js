@@ -27,6 +27,21 @@ function encodeWord16(value) {
   const w = ((n & 0xFF) << 8) | (n >>> 8);
   return [(w >>> 14) & 3, (w >>> 7) & 0x7F, w & 0x7F];
 }
+/**
+ * Match the observed QuickTone MG-30 single-record resource-name field:
+ * keep the first 16 printable ASCII bytes, then remove padding whitespace.
+ * The device metadata name itself is not changed.
+ */
+export function fitMG30QuickToneIRName(resourceName) {
+  const original = String(resourceName || '');
+  const bytes = new TextEncoder().encode(original);
+  if (!bytes.length) throw new Error('Nama resource IR kosong.');
+  if (Array.from(bytes).some(byte => byte < 0x20 || byte > 0x7E)) {
+    throw new Error('Nama resource IR harus berupa ASCII printable.');
+  }
+  return String.fromCharCode(...bytes.subarray(0, 16)).trimEnd();
+}
+
 function decodeAsciiField(bytes) {
   let end = bytes.indexOf(0);
   if (end < 0) end = bytes.length;
@@ -178,6 +193,7 @@ export const MG30PresetFormat = Object.freeze({
   decodeSceneReply: decodeMG30PresetSceneReply,
   buildSinglePatch: buildMG30SinglePresetPatch,
   buildSinglePatchFromReplies: buildMG30SinglePresetPatchFromReplies,
+  fitQuickToneIRName: fitMG30QuickToneIRName,
 });
 
 
