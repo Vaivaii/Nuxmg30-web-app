@@ -82,3 +82,33 @@ Commits:
 - `3ff07539f750fcd918b66ab677727dbf968182cd` — remove manual alias prompt.
 - `dc529d6c5ec00d0ac4dd226d2676695b808d8343` — regression tests.
 - `10bd2a3b29ce7e4e1c58816c6bb6810139737a0a` — update readback comment.
+
+
+## Critical correction — file stores a 32-byte IR name, not 16 (31 Oct 2026)
+
+The preceding 16-byte assumption and the first-16-byte truncation implementation were incorrect. The 16-byte name in the supplied test file was simply short; the adjacent 16 bytes were zero because that sample's name did not need the full field.
+
+Disassembly of QuickTone v2.6.7.16 was repeated directly from the supplied executable:
+
+- At VA 0x004B5180, QuickTone copies a 16-byte chunk from internal-record offset 0x1B2, then copies a second 16-byte chunk from offset 0x1C2 into the same contiguous name buffer.
+- Offset 0x1D2 is where the RIFF/WAVE area begins. Therefore 0x1B2..0x1D1 is a 32-byte IR name field; 0x1C2..0x1D1 is the second half, not padding.
+- The preset import 09/01 builder already transports a 32-byte name field. Metadata reply 09/02 also provides 32 name bytes after the 4-byte CRC.
+
+The app has now been corrected to:
+- read all 32 bytes from offset 0x1B2 when parsing the .mg30patch file;
+- serialize the name across offsets 0x1B2..0x1D1;
+- accept up to 32 printable ASCII bytes in the preset Import 09/01 name frame;
+- preserve the complete 18-byte user example `YA DXVB 112 Mix 10` without any alias prompt or truncation;
+- limit only names longer than 32 printable ASCII bytes to their first 32 bytes, matching the fixed-width QuickTone field;
+- leave the independent standalone IR WAV uploader (whose UI currently has a 20-character cap), NAM transfer, Collection workflow, and MIDI mapping unchanged.
+
+The earlier commits that implemented a manual alias dialog and then 16-byte truncation are superseded by this correction. Do not reintroduce either behavior.
+
+Regression tests now cover an exact 32-byte name, the user's 18-byte built-in IR name, a 36-byte name clipped to 32 bytes, and the 32-byte name payload passed through the preset import plan.
+
+Code commits:
+- `ccd3379b85c7a5ae401df3b7d4d91dbe5cf187a9` — read/write full 32-byte preset name.
+- `a9b674d877cf31680b4d50442d2811c04771935b` — test 32-byte field and 18-byte user name.
+- `d75d55942ad57562b8b27018d4cda9933e237476` — update Export status to mention 32-byte limit.
+
+The updated APK build and physical export/import validation are still required before considering this complete.
