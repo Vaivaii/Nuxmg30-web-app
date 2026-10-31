@@ -1865,3 +1865,33 @@ Next response must ask exactly: Build sekarang atau nanti?
 ### Mandatory stop point
 This visual/synchronization stage is committed. Do not build until the user explicitly chooses Build sekarang.
 Next response must ask exactly: Build sekarang atau nanti?
+## Preset Manager — bottom fade / sinking-card edge (1 November 2026)
+
+### User request
+- Add a subtle bottom shadow/gradient inside the framed card collection so the last visible cards appear to fade or sink into the frame background rather than ending at a hard, abrupt edge.
+- Keep the fade localized to Preset Manager and preserve card selection/scroll behavior.
+
+### Change
+- File: www/preset-library-ui.css
+- Commit: 654f9029fdaf745de43765f791c25e5d1de829d7
+- Added #page-presets .preset-library-card-list::after as a sticky 48px overlay at the bottom of the scroll viewport.
+- Gradient starts transparent and blends into the existing frame base color (#101619), with a very soft upper shadow.
+- pointer-events: none ensures the overlay does not intercept card taps.
+- The pseudo-element is inside the existing scrolling list; no wrapper, markup, height measurement or card geometry changes were made.
+
+### Preserved
+- Editor-matched frame palette and compact card sizing.
+- Dynamic measured list height to the top of the bottom navigation.
+- All four hidden Draft compatibility IDs.
+- Import/Export feedback and the Export native File Manager hand-off observer.
+- www/mg30-preset-export.js is unchanged; no transfer protocol, readback, save, USB-MIDI, Editor, Signal Chain, NAM, IR, MIDI mapping, Studio or Device code changed.
+
+### Verification and build
+- Static checks passed for the page-scoped pseudo-element, sticky bottom positioning, transparent-to-frame gradient, and pointer-events none.
+- Build #194 succeeded on source commit a49bf650543b58d9b74de10d2a4568d78a96cc53 (run ID 41228353932, artifact ID 13052363256, ZIP size 4,022,251 bytes); it does NOT contain this new bottom fade.
+- The new bottom fade has not been built or tested physically on the Android phone / original MG-30.
+- No CI, GitHub Actions, Gradle or APK build was triggered for commit 654f9029; it uses [skip ci].
+
+### Mandatory stop point
+This one CSS change is committed and documented. Do not build until the user explicitly chooses Build sekarang.
+Next response must ask exactly: Build sekarang atau nanti?
