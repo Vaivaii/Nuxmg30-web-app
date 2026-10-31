@@ -373,6 +373,27 @@
   <span id="presetImportTarget">Pilih slot tujuan dengan mengetuk kartu preset di bawah.</span>
  </div>
  <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite"></p>
+
+ <dialog id="presetImportProgressDialog" class="preset-import-progress-dialog" aria-labelledby="presetImportProgressTitle" aria-describedby="presetImportProgressMessage">
+  <div class="preset-import-progress-shell">
+   <div class="preset-import-progress-symbol" aria-hidden="true">
+    <span class="preset-import-progress-spinner"></span>
+    <span class="preset-import-progress-result-icon" id="presetImportProgressIcon"></span>
+   </div>
+   <h3 id="presetImportProgressTitle">Import sedang berlangsung</h3>
+   <p id="presetImportProgressMessage"></p>
+   <div class="preset-import-progress-meter">
+    <div class="preset-import-progress-track" id="presetImportProgressTrack" role="progressbar" aria-label="Kemajuan import preset" aria-valuemin="0" aria-valuemax="78" aria-valuenow="0">
+     <span id="presetImportProgressFill"></span>
+    </div>
+    <div class="preset-import-progress-meta">
+     <span id="presetImportProgressPhase">Menyiapkan transfer…</span>
+     <strong id="presetImportProgressAck">0/78 ACK</strong>
+    </div>
+   </div>
+   <p class="preset-import-progress-note" id="presetImportProgressNote">Jangan tutup aplikasi atau lepas koneksi USB selama proses berlangsung.</p>
+  </div>
+ </dialog>
  <p class="studio-result" id="presetExportStatus" role="status" aria-live="polite"></p>
  <p class="hidden" id="presetExportTarget">Sumber: 01A</p>
  <details id="presetExportDiagnosticsDetails" hidden>
@@ -384,20 +405,20 @@
  <div id="presetLibraryCards" class="preset-library-card-list" role="listbox" aria-label="128 preset hardware NUX MG-30"></div>
  <p id="presetLibraryScanStatus" role="status" aria-live="polite"></p>
 
- <!-- Keep legacy draft nodes hidden because the existing Editor renderer still queries these IDs. -->
- <div class="hidden" aria-hidden="true">
-  <input id="search" type="search" aria-label="Draft search">
-  <span id="presetCount">0 draft</span>
-  <button id="newPresetBtn" type="button"></button>
-  <div id="presetList"></div>
- </div>
-
  <div class="hidden" aria-hidden="true">
   <span id="slotLabel">01A</span>
   <select id="bankSelect"></select>
   <div id="slotButtons"></div>
   <button id="loadSlot" type="button"></button>
   <p id="operationStatus"></p>
+ </div>
+
+ <!-- Keep legacy draft IDs hidden as the final nodes in Preset Manager; Editor still queries them. -->
+ <div class="hidden" aria-hidden="true">
+  <input id="search" type="search" aria-label="Draft search">
+  <span id="presetCount">0 draft</span>
+  <button id="newPresetBtn" type="button"></button>
+  <div id="presetList"></div>
  </div>
 </section>
 <section id="page-studio" class="hidden studio-page">
