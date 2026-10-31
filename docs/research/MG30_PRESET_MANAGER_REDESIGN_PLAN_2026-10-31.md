@@ -196,3 +196,44 @@ This bidirectional requirement is higher priority than visual convenience. A car
 - Automated tests not run. Android build not run. No GitHub Actions workflow run was triggered for this feature branch.
 - Physical test pending: connect original MG-30 Gen2 FW 6.0.x, open Preset Manager, allow stored-name scan to complete, verify example names from slots 28A–29B, tap a card and verify the pedal follows, change slot on pedal and verify selected card follows.
 - Next: ask the user Build sekarang atau nanti? Do not start CI/Gradle/APK packaging without explicit Build sekarang approval.
+
+## Follow-up implementation — Import destination selection and Library heading (31 October 2026)
+
+The user explicitly requested a Preset Library import-flow adjustment. This is a narrow exception to the earlier blanket restriction on editing the preset Import UI module: the user has now authorized a change to the **interaction flow**, while the underlying import format/protocol/bridge remain protected.
+
+### New user workflow
+
+1. Tap **Import** in the Preset Manager header.
+2. Android/WebView opens the existing file picker from the existing `input[type=file]`.
+3. Select a valid `.mg30patch`.
+4. Tap the destination preset card. The card uses the existing `selectHardwareSlot(program, false)` path; it is not a local-only target selection.
+5. Once the existing slot label confirms the requested target, show the native confirmation dialog (Cancel / OK).
+6. Cancel sends no import frames and retains the selected file. OK invokes the existing import bridge and plan.
+
+### UI refinements
+
+- Add small green **LIBRARY** eyebrow above the Preset Manager title.
+- Remove the visible Draft lokal disclosure.
+- Keep the legacy draft IDs inside a hidden compatibility container because the existing Editor renderer still queries those IDs during render/startup.
+- Fix the import details row so the filename and target text are full-width stacked rows rather than a narrow one-character column.
+
+### Implementation and commits
+
+- `9d0d751d13bf9b661b9ff43eae461fa6ea959dfa` — `www/index.html`: Library eyebrow, hidden legacy draft nodes, and import-row markup.
+- `3b7b3d4f2edb16d15f7a4106a1d2ea111ff35ebe` — `www/preset-library-ui.js`: dispatch destination-selected event after existing slot synchronization resolves.
+- `d62229841361c7e20d40a0e6ec88e39b668f1045` — `www/preset-library-ui.css`: stacked full-width file and target display.
+- `cfd5b0ab896440806b4faf97e1bfbdc54b875e84` — `www/mg30-preset-import.js`: file → slot card → Cancel/OK dialog → existing import bridge.
+
+### Import preservation boundary
+
+Only the user-facing sequence and confirmation gate changed. The following remain unchanged:
+- `parseMG30SinglePresetPatch()` and `buildMG30SinglePresetImportPlan()`.
+- Existing 78-step single-preset plan, IR resource routing to Third Party/User, three-scene preset write sequence, ACK and readback behavior.
+- `MG30PresetImportBridge.import()`, native USB-MIDI handling and packet/frame transfer.
+- Preset format/read/export modules.
+
+NAM transfer, IR Collection behavior, MIDI mappings, signal chain and all other app pages remain untouched.
+
+### Verification state
+
+No source-level automated regression tests, Android build or physical pedal validation has been completed for these follow-up commits. Validate the Cancel path specifically to confirm no writes/frames are sent, then validate OK on a safe slot. Target remains original MG-30 Gen 2 FW 6.0.x, not MKII.
