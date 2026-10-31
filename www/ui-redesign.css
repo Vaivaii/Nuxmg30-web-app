@@ -1326,3 +1326,77 @@ html,body{background:#0b1012}
     display: none !important;
   }
 }
+
+/* Per-tab sticky headings and bottom fade: Presets keeps its own existing treatment. */
+@media (max-width: 720px) {
+  /* Keep each tab's top title/actions visible while its body scrolls underneath. */
+  body > .app > #page-editor > .editor-topbar,
+  body > .app > #page-nam > .nam-page-hero,
+  body > .app > #page-studio > .studio-page-hero,
+  body > .app > #page-backup > .hero:first-child {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: 7px 3px 10px;
+    margin: 0 0 10px;
+    background: linear-gradient(180deg, #0b1012 0%, #0b1012 82%, rgba(11, 16, 18, .96) 100%);
+    border-bottom: 1px solid #263136;
+    box-shadow: 0 7px 16px rgba(0, 0, 0, .16);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  body > .app > #page-editor > .editor-topbar {
+    align-items: center;
+    min-height: 48px;
+  }
+
+  body > .app > #page-nam > .nam-page-hero,
+  body > .app > #page-studio > .studio-page-hero,
+  body > .app > #page-backup > .hero:first-child {
+    align-items: flex-start;
+  }
+
+  /* Device starts directly with its connection panel; no oversized title block. */
+  body > .app > #page-device > .hero:first-child {
+    display: none !important;
+  }
+
+  body > .app > #page-device {
+    padding-top: 5px !important;
+  }
+
+  body > .app > #page-device > .device-usb-audio-card:first-of-type {
+    margin-top: 2px;
+  }
+
+  /* Fade the lower edge of every scrollable tab into the area above bottom navigation.
+     Preset Manager is intentionally excluded because its card-frame fade already exists. */
+  body > .app > #page-editor:not(.hidden)::after,
+  body > .app > #page-nam:not(.hidden)::after,
+  body > .app > #page-studio:not(.hidden)::after,
+  body > .app > #page-device:not(.hidden)::after,
+  body > .app > #page-backup:not(.hidden)::after {
+    content: "";
+    display: block;
+    position: sticky;
+    bottom: -8px;
+    z-index: 25;
+    width: calc(100% + 20px);
+    height: 58px;
+    flex: 0 0 58px;
+    margin-top: -58px;
+    margin-right: -10px;
+    margin-bottom: -8px;
+    margin-left: -10px;
+    background: linear-gradient(
+      180deg,
+      rgba(11, 16, 18, 0) 0%,
+      rgba(11, 16, 18, .42) 38%,
+      rgba(11, 16, 18, .82) 72%,
+      #0b1012 100%
+    );
+    box-shadow: 0 -7px 18px rgba(0, 0, 0, .12);
+    pointer-events: none;
+  }
+}
