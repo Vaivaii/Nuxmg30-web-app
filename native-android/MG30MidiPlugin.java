@@ -1,6 +1,9 @@
 package com.vaivaii.mg30studio;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.media.midi.MidiDevice;
 import android.media.midi.MidiDeviceInfo;
 import android.media.midi.MidiInputPort;
@@ -9,15 +12,19 @@ import android.media.midi.MidiOutputPort;
 import android.media.midi.MidiReceiver;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import org.json.JSONException;
+
+import androidx.activity.result.ActivityResult;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -203,6 +210,89 @@ public class MG30MidiPlugin extends Plugin {
             call.resolve(result);
         } catch (JSONException | IOException error) {
             call.reject("Pengiriman MIDI gagal: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void savePatch(PluginCall call) {
+        String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
+        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
+        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
+
+        String base64 = call.getString("base64", "");
+        if (base64.isEmpty() || base64.length() > 1024 * 1024) {
+            call.reject("Data preset kosong atau melebihi batas aman untuk penyimpanan.");
+            return;
+        }
+        try {
+            byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+            if (bytes.length != 0x26AE) {
+                call.reject("Ukuran file .mg30patch tidak sesuai format Gen2 single-preset.");
+                return;
+            }
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/octet-stream");
+            intent.putExtra(Intent.EXTRA_TITLE, safeName);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            startActivityForResult(call, intent, "savePatchResult");
+        } catch (IllegalArgumentException error) {
+            call.reject("Data file preset tidak valid: " + error.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void savePatchResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (result == null || result.getResultCode() != Activity.RESULT_OK ||
+            result.getData() == null || result.getData().getData() == null) {
+            JSObject cancelled = new JSObject();
+            cancelled.put("saved", false);
+            cancelled.put("cancelled", true);
+            call.resolve(cancelled);
+            return;
+        }
+
+        Uri uri = result.getData().getData();
+        String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
+        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
+        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
+
+        String base64 = call.getString("base64", "");
+        try {
+            byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+            if (bytes.length != 0x26AE) {
+                call.reject("Ukuran file .mg30patch tidak sesuai format Gen2 single-preset.");
+                return;
+            }
+            try (java.io.OutputStream output = getContext().getContentResolver().openOutputStream(uri, "w")) {
+                if (output == null) throw new IOException("Android tidak dapat membuka lokasi file yang dipilih.");
+                output.write(bytes);
+                output.flush();
+            }
+
+            String displayName = safeName;
+            try (android.database.Cursor cursor = getContext().getContentResolver().query(
+                uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null
+            )) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int nameColumn = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (nameColumn >= 0) displayName = cursor.getString(nameColumn);
+                }
+            } catch (Exception ignored) {}
+
+            JSObject saved = new JSObject();
+            saved.put("saved", true);
+            saved.put("fileName", displayName);
+            saved.put("bytes", bytes.length);
+            saved.put("uri", uri.toString());
+            saved.put("storage", "android-system-file-picker");
+            call.resolve(saved);
+        } catch (IllegalArgumentException | IOException error) {
+            call.reject("Gagal menyimpan file melalui File manager Android: " + error.getMessage());
         }
     }
 
