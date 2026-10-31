@@ -144,3 +144,47 @@ The plan and checklist now contain this clarification:
 - No application code has been changed.
 - No tests or builds were run for this documentation-only clarification.
 - Current next step: inspect the existing Preset Library-only slot-selection and device-to-app update pathway, then present an isolated design/implementation proposal. Do not touch protected code or start coding unless instructed.
+
+
+## 12. Latest implementation checkpoint — Preset cards and two-way hardware selection (31 Oct 2026)
+
+Current branch: feature/preset-manager-redesign.
+Latest code commits:
+- 2bada7b0359cc79526813762079d63cd29f00304 — new www/preset-library-ui.js.
+- f0f99e65f1a3f02c8c0bfd7bb2f036907f0c4018 — new www/preset-library-ui.css.
+- 2294e4a5cc86ea79db2bfc13e781e1585673d07c — Preset Library-only markup replacement and dedicated module/style attachment in www/index.html.
+- 8747a6392b4314a9d7856a195c925041f92117c3 — name field minimum-byte validation.
+- 3dcbd03ad7831275ab6d85504a8fa1c25353f012 — Export diagnostics visibility style correction.
+
+Files changed for this implementation:
+- www/index.html — the only markup replaced was #page-presets. One Preset Library-specific CSS link and one Preset Library-specific module script were attached. Original Import/Export IDs were preserved.
+- www/preset-library-ui.js — isolated card list, local name cache, lazy stored-name reader, app-to-pedal card selection via existing selectHardwareSlot(), and pedal-to-app selected card via existing mg30-active-preset-changed event.
+- www/preset-library-ui.css — selectors scoped under #page-presets only.
+
+Behavior implemented:
+- Minimal Preset Manager header with existing Import/Export controls at top.
+- 128 vertically scrolling rounded cards; slot number at left, thin divider, preset name at right; selected slot is highlighted.
+- Import file selection remains the existing control; after choosing a file, existing send button appears in a compact row.
+- The list lazily reads missing preset names when the Preset Library tab is opened while connected. It uses existing readSysExPart(0x0B, program, 0), verifies returned program and part, decodes packed name slots 106–121, performs no Program Change and writes nothing. Cached names persist in localStorage and partial scan can resume on re-entry.
+- App → pedal selection uses the existing selectHardwareSlot(program, false) path.
+- Pedal → app selection follows the existing mg30-active-preset-changed event and existing slotLabel state; there is no second independent hardware-slot state.
+
+Protection check:
+- No changes to mg30-preset-import.js or mg30-preset-export.js; their IDs, logic and transaction behavior are preserved.
+- No Movable Signal Chain changes.
+- No Editor render/startup or USB-MIDI/native connection changes.
+- No NAM/IR modules, MIDI mappings, Save, Copy Scene, CTRL/EXP, Studio or Device changes.
+- No global CSS changes.
+- This is a source-only update; there is no APK yet for these changes.
+
+Validation state:
+- Source diff manually reviewed; application-code changes are limited to the three files above.
+- Automated tests NOT run. Android build NOT run. Hardware test pending.
+- The Actions workflow does not auto-trigger for pushes to this new feature branch.
+
+## 13. Mandatory current stop point
+
+The first isolated card UI implementation and checklist update are complete. The latest checklist entry is authoritative. The assistant must now ask the user exactly: **Build sekarang atau nanti?**
+- If user says Build sekarang: run tests/build for this exact branch head, inspect the Actions result, download and extract the matching APK, then provide a direct sandbox APK link in chat.
+- If user says Build nanti: do not build. Leave code and checklist committed and wait for next instruction.
+- Do not make another code change until the user chooses the build timing and gives the next instruction. Do not modify any protected area.
