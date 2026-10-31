@@ -123,11 +123,12 @@
 
 #page-presets #presetExportTarget,
 #page-presets #presetImportTarget,
-#page-presets #presetExportDiagnosticsDetails {
+#page-presets #presetExportDiagnosticsDetails[hidden] {
   display: none;
 }
 
 #page-presets #presetExportDiagnosticsDetails:not([hidden]) {
+  display: block;
   margin: 0 0 12px;
   padding: 10px;
   border: 1px solid #655332;
