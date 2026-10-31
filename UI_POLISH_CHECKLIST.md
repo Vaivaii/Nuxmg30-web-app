@@ -1150,3 +1150,13 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [ ] Confirm Actions run #144 and APK artifact.
 - [ ] On Android, verify Save As picker opens, chosen-folder file exists and has 9,902 bytes; verify cancellation reports no save.
 - [x] No changes to MIDI protocol or any preset/IR/NAM/Collection device write paths.
+
+
+## Physical MG-30 round-trip validation — Export and Import succeeded (2026-10-31)
+
+- [x] User confirms successful QuickTone `.mg30patch` Export on physical MG-30 after correcting request field offsets.
+- [x] User confirms Android system file manager Save As was used in the Export path.
+- [x] User confirms successful Import of the exported `.mg30patch` back to the physical MG-30.
+- [x] Record Android build: Actions #144 passed; commit `ddc584f33fc7b81248445da5b56d7944deaa2b9b`; artifact `MG30-Studio-debug-APK` ID `13042443301`, 4,018,075 bytes.
+- [ ] Optional: verify/audition all three imported scenes and compare IR identity/settings with the source slot; not yet explicitly reported.
+- [ ] Keep Collection and NAM as separately scoped validation items; the successful single-preset round trip does not prove those separate flows.
