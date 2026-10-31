@@ -15,6 +15,29 @@ function setStatus(message, kind = '') {
   node.classList.remove('ok', 'warn');
   if (kind) node.classList.add(kind);
 }
+function chooseExportResourceName(originalName) {
+  const original = String(originalName || '');
+  const encoder = new TextEncoder();
+  const originalBytes = encoder.encode(original);
+  if (!originalBytes.length) throw new Error('Nama IR kosong; file preset tidak akan dibuat.');
+  if (originalBytes.length <= 16) return original;
+
+  const suggestion = Array.from(original).slice(0, 16).join('');
+  const alias = window.prompt(
+    'Nama IR asli di MG-30: "' + original + '" (' + originalBytes.length +
+    ' byte). Field nama pada .mg30patch yang sudah tervalidasi hanya 16 byte. ' +
+    'Masukkan nama alias 1–16 karakter ASCII. Alias ini akan menjadi nama IR saat file diimpor kembali; data waveform dan kurva tidak diubah.',
+    suggestion
+  );
+  if (alias === null) return null;
+  const chosen = alias.trim();
+  const bytes = encoder.encode(chosen);
+  if (!bytes.length || bytes.length > 16 ||
+      Array.from(bytes).some(byte => byte < 0x20 || byte > 0x7E)) {
+    throw new Error('Nama alias IR harus 1–16 byte ASCII printable. Export dibatalkan tanpa mengubah perangkat.');
+  }
+  return chosen;
+}
 function renderDiagnostics(open = false) {
   const details = $('presetExportDiagnosticsDetails');
   const field = $('presetExportDiagnosticsText');
@@ -122,7 +145,13 @@ function init() {
         const detail = progress?.detail ? ' · ' + progress.detail : '';
         setStatus(phase + (total ? ' · ' + completed + '/' + total : '') + detail);
       });
-      const bytes = buildMG30SinglePresetPatchFromReplies(source);
+      const exportResourceName = chooseExportResourceName(source.resourceName);
+      if (exportResourceName === null) {
+        setStatus('Export dibatalkan saat memilih alias nama IR. Tidak ada data yang ditulis ke MG-30.', 'warn');
+        return;
+      }
+      const exportSource = { ...source, resourceName: exportResourceName };
+      const bytes = buildMG30SinglePresetPatchFromReplies(exportSource);
       if (!(bytes instanceof Uint8Array) || bytes.length !== 0x26AE) {
         throw new Error('Ukuran record hasil export tidak cocok dengan format Gen2 single-preset.');
       }
@@ -138,10 +167,13 @@ function init() {
       const locationText = saved.native
         ? 'Lokasi: folder yang kamu pilih di File manager Android.'
         : 'Unduhan browser dimulai.';
+      const resourceNameStatus = exportResourceName === source.resourceName
+        ? ' Nama IR: "' + source.resourceName + '".'
+        : ' Nama IR asli di pedal: "' + source.resourceName + '". File memakai alias "' +
+          exportResourceName + '"; saat file diimpor kembali, alias tersebut akan menjadi nama IR di User/Third Party.';
       setStatus('File tersimpan: ' + savedName + ' · ' +
         Number(saved.bytes || bytes.length).toLocaleString('id-ID') + ' byte. ' + locationText +
-        ' File berisi 3 scene dan IR "' + source.resourceName +
-        '" hasil pembacaan 2.048 sampel + 600 nilai kurva.', 'ok');
+        ' File berisi 3 scene, 2.048 sampel waveform, dan 600 nilai kurva.' + resourceNameStatus, 'ok');
       const diagnosticsDetails = $('presetExportDiagnosticsDetails');
       if (diagnosticsDetails) diagnosticsDetails.hidden = true;
     } catch (error) {
