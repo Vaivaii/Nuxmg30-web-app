@@ -1708,3 +1708,45 @@ This Import/Export feedback stage and this checklist record are committed. Do no
 
 Next response must ask exactly: **Build sekarang atau nanti?**
 
+## Video review — Export picker transition and Preset Manager card viewport (31 October 2026)
+
+### Evidence from user video `1001008546.mp4`
+
+- Export progress itself advances through the readback; the visual glitch happens at the hand-off to Android File Manager / DocumentsUI.
+- The video shows the Export web modal still displayed while the native save-location picker slides over it, creating a split/overlaid transition.
+- Source tracing confirms the Export module first sets the status text `Pembacaan selesai. Memilih lokasi penyimpanan di File manager Android…`, then immediately invokes the existing `savePatch()` / native `savePatch` bridge. The Preset Library MutationObserver previously treated that status as another generic “Export sedang berlangsung” state and left the web modal open.
+- The final captured Preset Manager list ends noticeably above the fixed bottom navigation, leaving unused vertical space and limiting how many complete cards can be shown.
+
+### Changes committed
+
+1. `www/preset-library-ui.js`
+   - Commit: `f6baa478df7b4cf5bbf592808a4dceefc3d08f61`.
+   - In the existing Export-status observer, detect the “Memilih lokasi penyimpanan / File manager Android” hand-off status.
+   - Clear any pending Export feedback auto-close timer and close the Export modal before Android DocumentsUI appears.
+   - When the native file manager returns, the unchanged existing status still drives the short `Export selesai` or `Export dibatalkan` dialog. Export progress, failure and initial-confirmation cancellation feedback remain routed to the same modal.
+   - No changes to `www/mg30-preset-export.js`, `savePatch()`, native Android bridge, readback sequencing, .mg30patch serialization or File Manager result handling.
+
+2. `www/preset-library-ui.css`
+   - Commit: `cfcb379c3e89a1aa52dcea95ac3672d85e6e5d95`.
+   - Added a mobile-only, Preset Manager-scoped dynamic list height: `min(720px, calc(100dvh - 280px))`.
+   - Removes the previous 64vh/620px mobile cap for widths up to 720px, so the card list expands toward the fixed bottom tab navigation.
+   - Keeps the existing internal scrolling, card dimensions, bottom/safe-area padding, and hidden draft compatibility nodes. No nav CSS was changed.
+
+### Protected areas / verification
+
+- `www/mg30-preset-export.js` remains unchanged (SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`).
+- Export data readback, file format, native Save As bridge, cancellation result and protocol are unchanged.
+- Import parsing, plan builder, bridge transfer, ACK/readback and packet sequencing are unchanged.
+- Editor/startup, global/shared CSS, Movable Signal Chain, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save-to-device, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+- Git compare from previous HEAD `c4f0c0f560ab009a13a100a7576bc1fb74137a70` confirms only `www/preset-library-ui.js` and `www/preset-library-ui.css` changed.
+- Static source checks passed for the pre-picker dialog close, preserved success/cancel popups, and mobile dynamic card height scoped under `#page-presets`.
+- Automated app tests and physical Android/device validation: not run.
+- Prior Build #191 (run ID `41223265713`) succeeded for commit `c4f0c0f560ab009a13a100a7576bc1fb74137a70`, but its artifact predates both changes in this section.
+- No GitHub Actions, CI, Gradle or APK build has been run for commits `f6baa478` / `cfcb379c`; both commits use `[skip ci]`.
+
+### Mandatory stop point
+
+The Export transition and card-viewport source changes are committed and this checklist entry records the video diagnosis. Do not build until the user explicitly chooses **Build sekarang**.
+
+Next response must ask exactly: **Build sekarang atau nanti?**
+
