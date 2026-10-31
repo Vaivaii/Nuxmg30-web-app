@@ -524,3 +524,12 @@ Only `www/ui-redesign.css` was edited for this correction. `index.html`, `main.j
 Build #201 automatically triggered from exact commit e636a666d4439fd0bc220c064a93be2d1b29ab87; run ID 41233822485. Monitor this build; its artifact supersedes Build #200 for layout fix. At the last note, dependencies were installing, later build stages pending.
 
 Physical test after install: header returns to normal near top; Preset card list scrolls; switching tabs preserves each tab's own scroll.
+## Build #201 successful — header and Preset scrolling recovery (1 Nov 2026)
+
+- Build #201 / run `41233822485` succeeded from exact source commit `e636a666d4439fd0bc220c064a93be2d1b29ab87`.
+- All checks passed: npm install, protocol regression tests, Capacitor Android generation, Gradle debug APK and artifact upload.
+- Artifact ID `13055051632`, ZIP 4,023,993 bytes. Extracted APK `/mnt/data/MG30_Studio_Build_201_Fixed_Header_Scroll.apk`, 4,401,968 bytes.
+- APK SHA-256 `a04cce7cc5523364b1f3fefb0d0409419a8ede399f23b91217d9772f18bf9b22`.
+- ZIP integrity passed; APK recognized as Android package.
+- Packaged bundle checks passed: fixed app viewport, independent tab section scrolling, Preset flex-column/internal card scroller, both footer labels removed, four Draft IDs retained.
+- Physical Android validation pending. User should verify header returns to top, Preset list scrolls, and each tab retains its own scroll position.
