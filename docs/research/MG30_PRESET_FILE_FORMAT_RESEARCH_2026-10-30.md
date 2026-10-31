@@ -696,3 +696,31 @@ GitHub Actions run [#138](https://github.com/Vaivaii/Nuxmg30-web-app/actions/run
 - SHA-256: `8f9b1b1fc37cec90521cdfe3e000f754cc6a3c3e190c0b18322d2ae81840c701`.
 
 This APK contains the new Export readback collection behavior that accepts valid responses in any order, assigns them by their returned offset, and only assembles the resource once all 64 waveform and 10 curve offsets are present exactly once. It is still a software/CI-verified build, not yet hardware-validated on the pedal.
+
+
+## Physical Export diagnostic — slot 04C and request-dispatch instrumentation (2026-10-31)
+
+The user supplied the full read-only Export diagnostic for original MG-30 Gen2, target slot 04C / program 14. The waveform phase failed after 15.873 seconds:
+
+- 64 waveform requests were recorded, offsets 0…2016 in steps of 32.
+- Only four unique 10/02 returned offsets were observed: 0, 256, 512 and 768. Each returned offset appeared repeatedly (16 observations per offset in the supplied trace); all other 60 waveform offsets were missing.
+- The returned offsets are individually well-formed and aligned to the 32-sample page grid. The first eight observed reply offsets form the sequence 0, 0, 256, 256, 512, 512, 768, 768; later replies repeat those same four values. This does not establish why the device returns those pages, nor whether the repeated bodies are replies to consecutive requests or stale/unsolicited frames.
+- The first observed replies for returned offsets 256, 512 and 768 arrived before the corresponding offset 256, 512 and 768 requests were dispatched in this export attempt. The prior diagnostic's sentAtMs field was misleading: it was written before entering midiFrame(), which can wait in the shared 45 ms MIDI send queue. It represented the queue-attempt time, not the actual output dispatch time.
+- The supplied log also showed completedAtMs and matchedReply on some records whose final status was not-received. This exposed a status race: a fast response could mark a record matched, then the send loop could overwrite that status with sent; the failure handler later changed it to not-received.
+
+### Safety and diagnostic correction
+
+Commit 14d13eb90358a68a82ccdc9b52964aac4fb489d7 changes only the shared MIDI send helper's optional dispatch callback and the read-only Export diagnostics/collector:
+
+- Record sendQueuedAtMs before queueing, sentAtMs at the exact point immediately before midiOutput.send(), and sendCompletedAtMs after the send promise resolves.
+- Preserve matched if a response arrives before the send promise continuation; distinguish not-sent, not-received and send-failed.
+- For a returned offset, do not accept the page until the request frame for that same offset has actually been dispatched in the current read. Log earlier pages as ignored with reason 'reply arrived before the matching offset request was dispatched'. This prevents a stale/unrequested page from completing a future offset merely because its address is in range.
+- Record the response's offsetRequestSentAtMs and msAfterOffsetRequestSent to make subsequent timing evidence actionable.
+
+The request builder, packed offset decoder, response offset semantics, User IR upload, Collection transfer, NAM, preset importer, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device path were not changed. No write operation was introduced. The four-offset pattern remains unexplained; do not redefine the decoded offset or accept partial data. Re-test only after the new APK build succeeds, then inspect the true dispatch timestamps and pre-request ignored replies.
+
+### Remaining physical validation
+
+- [ ] Verify the CI build for source commit 14d13eb and install its APK on original MG-30 Gen2 firmware 6.0.x.
+- [ ] Repeat read-only Export on slot 04C (program 14) or another test slot. Check whether pages 256/512/768 were being reported before their matching request was actually sent, and inspect the new dispatch/latency fields.
+- [ ] Require all 64 unique waveform offsets, all 10 curve offsets, all three scene readbacks, and a valid serialized file. Never trust or import a partial readback.
