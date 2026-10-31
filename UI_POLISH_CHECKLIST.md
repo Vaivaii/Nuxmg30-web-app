@@ -1261,3 +1261,55 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [x] APK size 4,395,972 bytes; SHA-256 04d67d94cee87a3f70f5be6597451393aa85643f4ffdfa7fe19dc879a99365f4.
 - [x] Artifact ID 13047232483.
 - [ ] User to install Build #184 and confirm Editor fully renders and USB-MIDI connects to original MG-30 Gen2.
+
+
+---
+
+## Dedicated Preset Manager redesign branch — 2026-10-31
+
+<badge>Branch: `feature/preset-manager-redesign`</badge>
+
+**Baseline:** `c5a2ba998777dd8cb8601a7a7bd629ef97902f08` — restored stable Editor code after rollback.
+
+### User's requested result
+
+- [ ] Rename page to **Preset Manager** and remove the subtitle.
+- [ ] Place Import and Export actions in the page header.
+- [ ] Show all 128 hardware slots in a single vertical scrolling list (01A–32D).
+- [ ] Display both slot number and actual preset name, following the MG-30 hardware list style.
+- [ ] Highlight selected slot and keep layout compact, clear and efficient.
+- [ ] Keep local drafts separate and visually unobtrusive.
+
+### Strict change boundaries
+
+- [ ] Do not modify Editor page markup, render functions, state, startup code or initialization order.
+- [ ] Do not modify USB-MIDI / Native Android MIDI code, event handlers or connection state.
+- [ ] Do not modify MIDI mappings or parameter encoding.
+- [ ] Do not modify NAM, IR User/Third Party, IR Collection, Collection → User behavior.
+- [ ] Do not modify preset Import/Export protocol, binary serializer, Save-to-device, Copy Scene, CTRL/EXP or signal-chain behavior.
+- Prefer isolated `www/preset-manager.js` plus Preset Manager-scoped CSS. UI/script errors must never block the Editor or USB-MIDI startup.
+- Do not start preset-name scans automatically on connection. Any read-only scan must first have a separate concurrency review and must not overlap NAM/IR/Collection/preset transactions.
+
+### Mandatory iteration / build approval protocol
+
+**For every future code change:**
+
+1. Make one small, reviewable logical code change on this branch only.
+2. Update this checklist in the same work cycle, naming every changed file, summary, commit SHA, untouched features, test status and next validation step.
+3. Stop and ask the user exactly: **“Build sekarang atau nanti?”**
+4. Do not run CI, GitHub Actions, Gradle or APK build until the user explicitly says **build sekarang**.
+5. If the user says **build nanti**, leave the committed code/checklist as-is and do not build.
+6. If the user says **build sekarang**, run tests/build, download the matching artifact, extract the APK and post a direct sandbox APK link in chat. The user must not need to navigate GitHub Actions.
+7. Never supply an older APK as though it contains the latest source.
+
+### Branch setup completed
+
+- [x] Created branch `feature/preset-manager-redesign` from the restored stable recovery baseline.
+- [x] Added detailed plan: `docs/research/MG30_PRESET_MANAGER_REDESIGN_PLAN_2026-10-31.md`.
+- [x] Recorded the no-build-without-approval procedure.
+- [x] No application code has been changed on this branch.
+- [ ] Review/propose the visual and interaction structure before the first code edit.
+
+**Plan commit:** `8a7074057e1c3f9e93c6feaab3aca6032463fc72`.
+
+**Current stop point:** branch and checklist are prepared. Waiting for the user's next instruction. No build has been started.
