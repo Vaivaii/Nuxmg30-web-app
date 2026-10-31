@@ -40,7 +40,7 @@ function currentHardwareSlot() {
 }
 
 function readPresetName(body) {
-  if (!body || body.length < 220 || typeof window.bitSlot !== 'function') {
+  if (!body || body.length < 190 || typeof window.bitSlot !== 'function') {
     throw new Error('Data slot preset tidak lengkap.');
   }
   let name = '';
