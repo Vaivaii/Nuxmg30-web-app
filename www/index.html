@@ -172,7 +172,7 @@
 #connectMidi.usb-connect-btn.is-connecting{color:var(--lime);border-color:#849e4b;animation:mg30-usb-pulse .75s ease-in-out infinite alternate}
 @keyframes mg30-usb-pulse{from{opacity:.48}to{opacity:1}}
 @media(max-width:390px){.usb-header-status{min-width:64px}.usb-header-status strong,.usb-header-status small{font-size:9px}#connectMidi.usb-connect-btn{width:40px;height:40px;min-width:40px;min-height:40px;border-radius:11px}}
-</style><link rel="stylesheet" href="ui-redesign.css?v=param-quantize-1"><style id="gear-visual-compact-override">
+</style><link rel="stylesheet" href="ui-redesign.css?v=param-quantize-1"><link rel="stylesheet" href="preset-library-ui.css?v=card-v1"><style id="gear-visual-compact-override">
 /* Higher-specificity local override: make every gear illustration visibly more compact. */
 #page-editor #modelVisual .gear-visual .gear-art{
   height:160px!important;
@@ -355,29 +355,50 @@
  <div class="notice"><b>Peringatan pengujian.</b> Target halaman ini adalah jalur USER IR / Third Party dengan rangkaian 10/09/11, bukan rangkaian 6A/6C/6B yang terlihat pada capture aktivitas Collection. Aplikasi memakai parameter transfer 1 karena nilai itu teramati pada capture impor User QuickTone. Query konteks yang terpisah tidak muncul pada capture impor User yang kita miliki, sehingga tidak dipakai sebagai prasyarat. Makna parameter dan pemetaannya ke nomor slot fisik masih belum dipastikan. ACK bukan bukti bahwa IR sudah muncul dalam daftar. Cadangkan data penting dan pastikan target uji aman sebelum mengirim; transfer terputus dapat meninggalkan data parsial.</div>
 </div>
 </div>
-<section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div>
-<div class="panel preset-export-panel">
- <div class="panel-head"><div><h3>Export preset QuickTone</h3><p>Baca tiga scene dan resource IR dari MG-30 lalu simpan sebagai .mg30patch. Implementasi awal; belum divalidasi di perangkat fisik.</p></div><span class="chip">READ ONLY · UJI AWAL</span></div>
- <p class="slot-note" id="presetExportTarget">Sumber: 01A</p>
- <button class="btn primary" type="button" id="presetExportStart">Ekspor preset .mg30patch</button>
- <p class="studio-result" id="presetExportStatus" role="status" aria-live="polite">Export membaca preset dan IR dari pedal. Operasi ini tidak menulis atau mengubah data MG-30.</p>
- <details id="presetExportDiagnosticsDetails" hidden style="margin-top:10px;border:1px solid #655332;border-radius:10px;background:#111611;padding:10px">
-  <summary style="cursor:pointer;color:#e6c99b;font-size:11px;font-weight:700">Detail diagnostik readback · untuk analisis</summary>
-  <p class="slot-note">Log berisi slot/indeks, request SysEx yang dikirim, offset yang diminta, dan header balasan yang diterima. Log ini tidak berisi perintah tulis.</p>
-  <textarea id="presetExportDiagnosticsText" rows="9" readonly spellcheck="false" aria-label="Log diagnostik Export" style="display:block;width:100%;min-height:150px;margin:8px 0;background:#090e0c;color:#dce6d4;border:1px solid #394333;border-radius:8px;padding:9px;font:10px/1.45 ui-monospace,monospace;white-space:pre;overflow:auto"></textarea>
-  <button class="btn" id="presetExportCopyDiagnostics" type="button">Salin log diagnostik</button>
- </details>
-</div>
-<div class="panel preset-import-panel">
- <div class="panel-head"><div><h3>Import preset QuickTone</h3><p>Impor satu file .mg30patch ke slot hardware yang sedang dipilih.</p></div><span class="chip">GEN2 · SINGLE</span></div>
+<section id="page-presets" class="hidden preset-library-page">
+ <header class="preset-library-header">
+  <h2>Preset Manager</h2>
+  <div class="preset-library-actions">
+   <button class="btn" type="button" id="presetImportChoose">Import</button>
+   <button class="btn primary" type="button" id="presetExportStart" aria-label="Export">Export</button>
+  </div>
+ </header>
+
  <input class="hidden" type="file" id="presetImportFile" accept=".mg30patch,application/octet-stream">
- <div class="preset-import-file-row"><button class="btn" type="button" id="presetImportChoose">Pilih file .mg30patch</button><span id="presetImportFileInfo">Belum ada file single-preset dipilih.</span></div>
- <p class="slot-note" id="presetImportTarget">Tujuan: 01A</p>
- <button class="btn primary" type="button" id="presetImportSend" disabled>Impor ke 01A</button>
- <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite">Importer memvalidasi record, mengirim resource IR ke Third Party/User, lalu menulis tiga scene. File batch 128 preset belum didukung.</p>
- <p class="slot-note">Capture QuickTone mengirim IR melalui keluarga User 09/10/11, kemudian tiga scene 0B/01. Jalur Collection, NAM, Save ke pedal, dan Copy Scene tetap terpisah.</p>
-</div>
-<div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
+ <div class="preset-library-import-bar" id="presetLibraryImportBar">
+  <span id="presetImportFileInfo"></span>
+  <span id="presetImportTarget">Tujuan: 01A</span>
+  <button class="btn primary" type="button" id="presetImportSend" disabled>Import ke 01A</button>
+ </div>
+ <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite"></p>
+ <p class="studio-result" id="presetExportStatus" role="status" aria-live="polite"></p>
+ <p class="hidden" id="presetExportTarget">Sumber: 01A</p>
+ <details id="presetExportDiagnosticsDetails" hidden>
+  <summary>Detail diagnostik Export</summary>
+  <textarea id="presetExportDiagnosticsText" rows="9" readonly spellcheck="false" aria-label="Log diagnostik Export"></textarea>
+  <button class="btn" id="presetExportCopyDiagnostics" type="button">Salin log</button>
+ </details>
+
+ <div id="presetLibraryCards" class="preset-library-card-list" role="listbox" aria-label="128 preset hardware NUX MG-30"></div>
+ <p id="presetLibraryScanStatus" role="status" aria-live="polite"></p>
+
+ <details class="preset-library-drafts">
+  <summary>Draft lokal <span id="presetCount">0 draft</span></summary>
+  <div class="preset-library-draft-tools">
+   <input id="search" placeholder="Cari draft…" aria-label="Cari draft lokal">
+   <button class="btn primary" id="newPresetBtn" type="button">＋ Preset baru</button>
+  </div>
+  <div id="presetList"></div>
+ </details>
+
+ <div class="hidden" aria-hidden="true">
+  <span id="slotLabel">01A</span>
+  <select id="bankSelect"></select>
+  <div id="slotButtons"></div>
+  <button id="loadSlot" type="button"></button>
+  <p id="operationStatus"></p>
+ </div>
+</section>
 <section id="page-studio" class="hidden studio-page">
   <div class="hero studio-page-hero"><div><div class="eyebrow">MG30 STUDIO</div><h2>Jam &amp; Record</h2></div></div>
   <div class="panel studio-backing-panel">
@@ -2288,5 +2309,5 @@ window.MG30CtrlBridge=Object.freeze({
   }
 })();
 </script>
-<script type="module" src="./main.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script>
+<script type="module" src="./main.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script>
 </body></html>
