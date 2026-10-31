@@ -478,3 +478,24 @@ Validation/build:
 - No automated tests or physical Android checks run for this isolation change. Do not treat Build #197 as containing it.
 
 **Current stop point:** source and project notes are committed. Ask exactly **“Build sekarang atau nanti?”**; no build until approval.
+## All tabs independent scrolling / remove MG30 Studio footer labels (1 Nov 2026)
+
+User explicitly authorized changing only www/ui-redesign.css and www/index.html to make each tab scroll independently and remove MG30 Studio footer labels, while preserving existing working functionality.
+
+Implemented:
+- www/index.html commit 9ee2a812404a1f4b2115bfbfee295086a4e8b83e: removed the Preset-local MG30 Studio footer and the original shared MG30 Studio footer. No section, nav, script or IDs changed.
+- www/ui-redesign.css commit 6d671aa0dcb53bb613d173d1de0cc812636d4d3c: mobile app shell fixed to 100dvh with body scroll disabled; header remains in shell; bottom nav remains fixed; each visible page section becomes an independent flex scroller with overscroll containment; hidden pages are display:none and retain their own scroll positions; previous Preset-only fixed viewport is overridden so Presets uses the same model.
+- Shared footer is removed from markup; no global footer label remains.
+
+Scope verification:
+- Git compare from base 437a9bfe57c808f04bdda55c369617c7f38e5a66 shows exactly two app files changed: www/index.html and www/ui-redesign.css.
+- www/main.js unchanged SHA e2697b26e1d673be2002b8f1a085f12e9618b1de.
+- www/preset-library-ui.js unchanged SHA 67ec75258620323492609dcdec559badfb769797.
+- www/preset-library-ui.css unchanged SHA ce207d1b218366add1b4916225ee0eedb3a24d6d.
+- www/mg30-preset-export.js unchanged SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52.
+- Four hidden Draft compatibility IDs are retained. No device protocol, USB-MIDI, Editor, Signal Chain, Import/Export, NAM/IR, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio or Device code touched.
+
+Builds:
+- Build #199 run 41233084907 at HTML-only commit 9ee2a812404a1f4b2115bfbfee295086a4e8b83e; it is not the full final source.
+- Build #200 run 41233090589 at final combined commit 6d671aa0dcb53bb613d173d1de0cc812636d4d3c; this is the build to inspect and distribute.
+- At note creation, automated checks/Gradle for #200 have not yet been validated; inspect its completion and artifact before giving a download link.
