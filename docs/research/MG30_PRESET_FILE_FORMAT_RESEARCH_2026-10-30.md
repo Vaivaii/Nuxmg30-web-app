@@ -832,3 +832,15 @@ This user-reported physical round trip validates file transfer and the single-pr
 - [x] Import the exported single-preset file back to the physical MG-30 successfully (user confirmation).
 - [ ] Optional confidence check: compare the imported preset's three scenes and IR identity/settings against the source slot and audition the result. No destructive/batch test is implied.
 - [ ] Continue separate validation of IR Collection import/assignment and NAM workflows; this round trip does not newly certify those distinct paths.
+
+
+## Clarification: IR Collection is a catalog/source, active use is still User (2026-10-31)
+
+User clarified the intended and already-correct IR behavior: **IR Collection is only a storage/catalog library. When an IR from Collection is selected/applied for use on the pedal, it is transferred/installed into the pedal's User (Third Party) IR area.** Collection is not a separate active-use destination or a second device IR bank. Do not describe Collection import and User import as two independent destination workflows, and do not change this existing mapping. Preserve the current Collection catalog behavior and the Collection → User install/use path.
+
+NAM status clarification: NAM support has been implemented previously, but the user has **not yet tested NAM on the physical MG-30**. Treat NAM as implemented but hardware validation pending; do not claim physical NAM transfer/use has been verified. The recent successful `.mg30patch` Export → Android Save As → Import round trip does not validate NAM.
+
+### Updated validation scope
+- [x] IR Collection catalog is intended as a storage/catalog collection.
+- [x] Applying/using an IR from Collection targets User (Third Party) on the pedal; preserve this mapping.
+- [ ] User to test NAM transfer/use on physical MG-30; capture any failure diagnostics before changing implementation.
