@@ -95,7 +95,7 @@ function curveFrames(curve,param){const v=new Uint16Array(640);v.set(curve);cons
 export function buildMG30IRTransferPlan({samples,fileName,irName,parameter=1,target='user'}){if(!samples||samples.length<N)throw Error('Pilih WAV yang valid dahulu.');const param=Number(parameter);if(!Number.isInteger(param)||param<0||param>127)throw Error('Parameter transfer harus bilangan 0–127.');const name=safeName(irName||fileName||'Custom IR'),gain=gainFor(samples.subarray?samples.subarray(0,N):samples),wave=waveformFrames(samples,param,gain),curve=curveFrames(curveFor(wave.wire),param),frames=[...wave.frames,nameFrame(name,param),...curve],mode=target==='collection'?'collection':'user',commands=mode==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};if(frames.length!==75)throw Error('Rencana transfer harus berisi 75 paket.');for(let i=0;i<64;i++)frames[i][4]=commands.waveform;frames[64][4]=commands.name;for(let i=65;i<75;i++)frames[i][4]=commands.curve;return{name,parameter:param,target:mode,commands,gain,frames}}
 function waitAck(input,cmd,timeout=3000){let timer,done=false,handler=()=>{},cancel=()=>{};const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);input.removeEventListener('midimessage',handler)};const promise=new Promise((resolve,reject)=>{handler=e=>{const d=Array.from(e?.data||[]);if(d.length<8||d[0]!==240||d[1]!==67||d[2]!==88||d[3]!==112||d[4]!==cmd||d[5]!==3||d[d.length-1]!==247)return;cleanup();resolve({status:d[6]})};cancel=()=>{cleanup();resolve(null)};input.addEventListener('midimessage',handler);timer=setTimeout(()=>{cleanup();reject(Error('Timeout ACK untuk fase '+cmd.toString(16)))},timeout)});return{promise,cancel}}
 async function sendFrame(conn,frame,cmd,label){const p=waitAck(conn.input,cmd);try{await conn.output.send(frame)}catch(e){p.cancel();throw Error('Pengiriman '+label+' gagal: '+(e?.message||e))}const ack=await p.promise;if(!ack)throw Error('ACK dibatalkan: '+label);return ack}
-async function sendMG30IRTransfer(conn,plan,onProgress=()=>{}){if(window.MG30PresetNameScanBusy||window.MG30PresetExportBusy||window.MG30PresetImportBusy||window.MG30IRTransferBusy)throw Error('Transfer preset/IR lain sedang berjalan. Tunggu sampai selesai.');if(!conn?.input?.addEventListener||!conn?.output?.send||plan?.frames?.length!==75)throw Error('Koneksi MIDI/rencana IR belum siap.');window.MG30IRTransferBusy=true;try{const commands=plan.target==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};const phases=[['waveform',commands.waveform,0,64],['name',commands.name,64,65],['curve',commands.curve,65,75]];let done=0;for(const[phase,cmd,start,end]of phases)for(let i=start;i<end;i++){const ack=await sendFrame(conn,plan.frames[i],cmd,phase+' '+(i-start+1)+'/'+(end-start));const phaseCompleted=i-start+1,finalFrame=i===end-1;const expected=phase==='name'?0:(finalFrame?3:2);if(ack.status!==expected)throw Error('ACK '+phase+' '+phaseCompleted+'/'+(end-start)+' berstatus '+ack.status+', padahal capture QuickTone menunjukkan '+expected+'. Transfer dihentikan; cek slot/perangkat dan jangan anggap impor berhasil.');done++;onProgress({phase,phaseCompleted,phaseTotal:end-start,completed:done,total:75,ackStatus:ack.status,expectedStatus:expected})}return{success:true,completedFrames:done,totalFrames:75,name:plan.name,parameter:plan.parameter,target:plan.target}}finally{window.MG30IRTransferBusy=false}}
+async function sendMG30IRTransfer(conn,plan,onProgress=()=>{}){if(window.MG30PresetExportBusy||window.MG30PresetImportBusy||window.MG30IRTransferBusy)throw Error('Transfer preset/IR lain sedang berjalan. Tunggu sampai selesai.');if(!conn?.input?.addEventListener||!conn?.output?.send||plan?.frames?.length!==75)throw Error('Koneksi MIDI/rencana IR belum siap.');window.MG30IRTransferBusy=true;try{const commands=plan.target==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};const phases=[['waveform',commands.waveform,0,64],['name',commands.name,64,65],['curve',commands.curve,65,75]];let done=0;for(const[phase,cmd,start,end]of phases)for(let i=start;i<end;i++){const ack=await sendFrame(conn,plan.frames[i],cmd,phase+' '+(i-start+1)+'/'+(end-start));const phaseCompleted=i-start+1,finalFrame=i===end-1;const expected=phase==='name'?0:(finalFrame?3:2);if(ack.status!==expected)throw Error('ACK '+phase+' '+phaseCompleted+'/'+(end-start)+' berstatus '+ack.status+', padahal capture QuickTone menunjukkan '+expected+'. Transfer dihentikan; cek slot/perangkat dan jangan anggap impor berhasil.');done++;onProgress({phase,phaseCompleted,phaseTotal:end-start,completed:done,total:75,ackStatus:ack.status,expectedStatus:expected})}return{success:true,completedFrames:done,totalFrames:75,name:plan.name,parameter:plan.parameter,target:plan.target}}finally{window.MG30IRTransferBusy=false}}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function initUI(){
  const $=id=>document.getElementById(id),root=$('ir-import-content');
@@ -153,7 +153,7 @@ function initUI(){
  async function readSlot(slot){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),req=tx.objectStore(STORE).get(slot);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||Error('Gagal membaca slot lokal.'))})}finally{db.close()}}
  async function writeSlot(record){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(record);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('Gagal menyimpan WAV ke penyimpanan lokal.'));tx.onabort=()=>reject(tx.error||Error('Penyimpanan lokal dibatalkan.'))})}finally{db.close()}}
  async function useCollectionSlotOnDevice(slot,programSlotOverride=null){
-  if(busy||syncBusy||window.MG30PresetNameScanBusy||window.MG30CollectionSyncBusy)return;
+  if(busy||syncBusy)return;
   const programSlot=Number.isInteger(programSlotOverride)&&programSlotOverride>=0&&programSlotOverride<=127?programSlotOverride:currentPresetProgramSlot();
   const device=deviceSlots.get(slot);
   if(!device?.read||!device?.stable||!device.occupied){setMessage(collectionStatus,'Slot '+String(slot).padStart(2,'0')+' belum terverifikasi berisi IR di perangkat.','warn');return}
@@ -161,7 +161,7 @@ function initUI(){
   const slotIndex=slot-1,slotLabel=String(slot).padStart(2,'0');
   const request=Uint8Array.from([0xf0,0x43,0x58,0x70,0x6e,0x01,slotIndex,0,0,0,0,0,0,0xf7]);
   let connection;
-  window.MG30CollectionUseBusy=true;setBusy(true);setMessage(collectionStatus,'Meminta MG-30 memakai IR Collection slot '+slotLabel+'…');
+  setBusy(true);setMessage(collectionStatus,'Meminta MG-30 memakai IR Collection slot '+slotLabel+'…');
   try{
    connection=await window.NUXNativeMidi.connect();
    const response=new Promise((resolve,reject)=>{
@@ -186,7 +186,7 @@ function initUI(){
    window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:slot,programSlot,directDeviceUse:true}}));
    setMessage(collectionStatus,'MG-30 merespons Gunakan untuk Collection slot '+slotLabel+'. Nama cabinet diperbarui menjadi "'+name+'". Periksa slot Third Party/User pada perangkat.','ok');
   }catch(error){setMessage(collectionStatus,'Gunakan langsung gagal: '+(error?.message||error)+' WAV lokal tidak diubah.','warn')}
-  finally{window.MG30CollectionUseBusy=false;setBusy(false)}
+  finally{setBusy(false)}
  }
  function slotCard(slot){
   const card=document.createElement('article');card.className='ir-collection-slot';card.dataset.slot=String(slot);
@@ -366,12 +366,12 @@ function initUI(){
   throw lastError||Error('Query metadata Collection gagal.');
  }
  async function syncCollectionFromDevice({connection=null,slotIndices=null,silent=false}={}){
-  if(busy||syncBusy||window.MG30PresetNameScanBusy)return;
+  if(busy||syncBusy)return;
   if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Sinkronisasi Collection memerlukan APK Android dan kabel USB OTG.','warn');return}
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
   const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   const errors=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
-  syncBusy=true;window.MG30CollectionSyncBusy=true;setBusy(true);syncButton.textContent='Menyinkronkan…';syncButton.setAttribute('aria-busy','true');
+  syncBusy=true;setBusy(true);syncButton.textContent='Menyinkronkan…';syncButton.setAttribute('aria-busy','true');
   setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama/CRC Collection dengan pola sinkronisasi NAM (2 putaran)…');
   let conn=connection,success=0,empty=0;
   try{
@@ -423,7 +423,7 @@ function initUI(){
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
-  finally{syncBusy=false;window.MG30CollectionSyncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy');renderSlotCount()}
+  finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
  async function readCollectionSlotStable(connection,slotIndex){
   const first=await readCollectionSlotFromDevice(connection,slotIndex);
@@ -439,7 +439,7 @@ function initUI(){
  window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
  async function processImport(blob,target){
-  if(busy||window.MG30PresetNameScanBusy||window.MG30CollectionSyncBusy||window.MG30CollectionUseBusy)return;
+  if(busy)return;
   const programSlot=Number.isInteger(target.programSlot)&&target.programSlot>=0&&target.programSlot<=127?target.programSlot:currentPresetProgramSlot();
   if(!window.NUXNativeMidi?.available){setMessage(target.type==='user'?userStatus:collectionStatus,'Transfer IR hanya tersedia di APK Android. Sambungkan MG-30 melalui USB OTG.','warn');return}
   const statusNode=target.type==='user'?userStatus:collectionStatus;
