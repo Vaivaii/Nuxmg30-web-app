@@ -1374,3 +1374,44 @@ Copy that prompt into a new chat in this same project whenever a conversation is
 - [x] Documentation only. No app code changed; no build started.
 
 **Current stop point:** branch and restrictions are documented. Waiting to draft/review the Preset Library layout before the first code change.
+
+
+---
+
+## User visual-reference clarification — preset cards + bidirectional slot sync (2026-10-31)
+
+### Card design — required
+
+- [ ] Replace any table/dropdown/number-only list concept with a vertical scrolling list of rounded preset cards inspired by the supplied TONEX screenshot (visual language only; do not copy TONEX tabs, navigation or branding).
+- [ ] Each card displays the slot number in a narrow left column (e.g. 00A, 00B, 01A) and the actual preset name prominently on the right, separated by a thin vertical accent line.
+- [ ] Keep the card and page visually minimal. Do not add helper paragraphs, subtitles, category text, repeated status text, explanatory boxes or unrelated metadata.
+- [ ] Page header contains only the Preset Manager title and Import / Export actions. Do not add unrelated buttons or page descriptions.
+- [ ] Highlight the currently selected hardware slot clearly.
+- [ ] Do not add effect/block icons unless data is already available within the Preset Library's permitted scope. Never fabricate icons or labels.
+
+### Bidirectional synchronization — mandatory, not just visual
+
+- [ ] **App → pedal:** tapping card 02A selects/synchronizes hardware slot 02A using the current existing Preset Library slot-selection mechanism.
+- [ ] **Pedal → app:** changing the slot directly on the MG-30 to 02A must update the app's active slot and selected-card highlight to 02A.
+- [ ] Displayed slot, selected card, app target slot and actual pedal slot must remain in sync. No separate local-only card state.
+- [ ] Preserve the current behavior that selecting a slot synchronizes/loads its data into the application.
+- [ ] Reuse existing proven slot-state and device-update pathways. Do not add a new Program Change polling loop, global listener, USB-MIDI handler or startup hook.
+- [ ] If bidirectional updates cannot be delivered using existing code whose sole responsibility is Preset Library, stop and ask the user before modifying any protected global/USB-MIDI/Editor code.
+- [ ] A card list that changes highlight only when tapped locally is not accepted.
+
+### Visual-reference clarification — stop point (2026-10-31)
+
+- Reference: user-provided TONEX-style card list screenshot.
+- The screenshot is only a card-layout example; the app remains MG-30 Studio and keeps its existing navigation.
+- Desired essential card content: slot number + preset name. No extra prose.
+- Actions: Import and Export at top, reusing existing transfer behavior without changing protected code.
+- Required interaction: bidirectional app ↔ pedal slot selection and active-card synchronization.
+- Plan updated: `docs/research/MG30_PRESET_MANAGER_REDESIGN_PLAN_2026-10-31.md`.
+- Plan commit: `01d1fcb812e36cab74bce3f2962a3b462aabee55`.
+- Files changed in this clarification: documentation only; no application code changed.
+- Protected areas untouched: preset Import/Export implementation, movable signal chain, Editor, USB-MIDI, NAM, IR, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio, Device.
+- Tests: not run (documentation-only clarification).
+- Next step: inspect the existing Preset Library-only slot selection and incoming device-slot update pathway; propose exact isolated implementation before editing code.
+- Build: not applicable; no build started.
+
+**Current stop point:** card design and bidirectional synchronization requirements have been recorded. No code has been touched. The next step is source inspection/design review, not implementation until the user says to proceed.
