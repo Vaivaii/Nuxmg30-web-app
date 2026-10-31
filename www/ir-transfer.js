@@ -439,7 +439,7 @@ function initUI(){
  window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
  async function processImport(blob,target){
-  if(busy)return;
+  if(busy||window.MG30PresetNameScanBusy)return;
   const programSlot=Number.isInteger(target.programSlot)&&target.programSlot>=0&&target.programSlot<=127?target.programSlot:currentPresetProgramSlot();
   if(!window.NUXNativeMidi?.available){setMessage(target.type==='user'?userStatus:collectionStatus,'Transfer IR hanya tersedia di APK Android. Sambungkan MG-30 melalui USB OTG.','warn');return}
   const statusNode=target.type==='user'?userStatus:collectionStatus;
