@@ -474,3 +474,57 @@
 /* Package current Preset Manager UI for the approved Android build. */
 
 /* Build trigger: compile the bottom-edge fade correction for Android. */
+
+/* Isolate the Preset Manager from the document scroll used by the other tabs. */
+@media (max-width: 720px) {
+  body.preset-manager-active > .app > #page-presets.preset-library-page:not(.hidden) {
+    position: fixed;
+    z-index: 50;
+    top: var(--preset-manager-top, 166px);
+    right: 10px;
+    bottom: var(--preset-manager-bottom, 107px);
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: 1100px;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    margin: 0 auto;
+    padding: 0 0 2px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body.preset-manager-active > .app > .footer {
+    display: none !important;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-header {
+    flex: 0 0 auto;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-import-bar.has-file {
+    flex: 0 0 auto;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-card-list {
+    flex: 1 1 0;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-footer {
+    flex: 0 0 auto;
+    margin: 4px 0 0;
+    padding: 1px 0 2px;
+    text-align: center;
+    color: #6d7b7e;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+}
