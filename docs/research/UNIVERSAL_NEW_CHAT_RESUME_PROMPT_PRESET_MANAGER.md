@@ -307,3 +307,25 @@ Validation:
 
 **Current stop point:** this stage is committed and recorded. Ask exactly **“Build sekarang atau nanti?”** and wait. Do not start another stage until the user's next instruction.
 
+## 19. Video review — Export native picker transition and card viewport (31 Oct 2026)
+
+User video `1001008546.mp4` showed that Export progress was still open during the native Android File Manager / DocumentsUI launch, causing the WebView progress modal and native picker transition to overlap/split. The existing Export status string `Memilih lokasi penyimpanan di File manager Android…` occurs immediately before the unchanged `savePatch()` call. The Preset Manager observer had treated this as another generic progress state.
+
+Changes on `feature/preset-manager-redesign`:
+- `f6baa478df7b4cf5bbf592808a4dceefc3d08f61` — `www/preset-library-ui.js`: close the Export web modal as soon as the existing status signals Android File Manager hand-off; clear its timer. After the native picker returns, existing unchanged status routing presents the brief success/cancel result modal.
+- `cfcb379c3e89a1aa52dcea95ac3672d85e6e5d95` — `www/preset-library-ui.css`: set a mobile-only dynamic Preset Manager card-list height `min(720px, calc(100dvh - 280px))` at widths <=720px. This expands the internal list close to the fixed bottom navigation, while preserving card sizes and safe-area scroll padding.
+
+Protection:
+- `www/mg30-preset-export.js` is untouched; SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- Export readback, serialization, .mg30patch format, native bridge, File Manager Save As and cancel result remain unchanged.
+- Import parser/plan/transfer, Editor/startup, global/shared CSS, Signal Chain, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mappings, Save, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+- Only `www/preset-library-ui.js` and `www/preset-library-ui.css` changed from the preceding HEAD.
+
+Validation:
+- Static assertions passed for Export picker hand-off closure, success/cancellation outcome retention, and the page-scoped dynamic list height.
+- No automated or physical tests were run.
+- Build #191 succeeded on older commit `c4f0c0f560ab009a13a100a7576bc1fb74137a70`; it does not include these two changes.
+- No new workflow, CI, Gradle or APK build has been started for this stage.
+
+**Current stop point:** both targeted source changes and project notes are saved. Ask exactly **“Build sekarang atau nanti?”** and do not build before approval.
+
