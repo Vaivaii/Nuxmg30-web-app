@@ -499,3 +499,12 @@ Builds:
 - Build #199 run 41233084907 at HTML-only commit 9ee2a812404a1f4b2115bfbfee295086a4e8b83e; it is not the full final source.
 - Build #200 run 41233090589 at final combined commit 6d671aa0dcb53bb613d173d1de0cc812636d4d3c; this is the build to inspect and distribute.
 - At note creation, automated checks/Gradle for #200 have not yet been validated; inspect its completion and artifact before giving a download link.
+## Build #200 — independent tab scrolling release checkpoint (1 Nov 2026)
+
+- Build #200 run 41233090589 completed successfully on source commit 6d671aa0dcb53bb613d173d1de0cc812636d4d3c on feature/preset-manager-redesign.
+- npm test, Capacitor Android project generation, Gradle debug APK compilation, and artifact upload all passed.
+- Artifact ID 13054292076; ZIP size 4,023,560 bytes.
+- Extracted /mnt/data/MG30_Studio_Build_200_Independent_Tabs.apk, 4,401,596 bytes; SHA-256 4cae80dad35061272d001af0a30977d11a02a27f0a5993089ea990c3324cc107.
+- APK archive integrity passed. Embedded index no longer contains either MG30 Studio footer markup; bundled CSS confirms the independent viewport/scroll rules and legacy Preset override.
+- The APK changes only the two approved app files: www/index.html and www/ui-redesign.css. All feature code files remained unchanged.
+- Physical Android test is still needed: scroll NAM & IR, open Presets and verify it retains its own scroll position; then test Editor, Studio and Device independently.
