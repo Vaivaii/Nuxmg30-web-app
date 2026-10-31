@@ -1239,3 +1239,16 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [x] APK: MG30-Studio-USB-MIDI-Startup-Fix-Build-178.apk · 4,400,364 bytes · SHA-256 ab87eb8e28a0106863e1f1275bb5fc5b03e2d85ac748e9696e76c52ed2372a55.
 - [ ] User hardware test: Editor renders normally; connect via OTG succeeds; header shows Terhubung; then check Preset Manager and existing NAM/IR/Collection workflows.
 - Details: docs/research/MG30_PRESET_MANAGER_STARTUP_REGRESSION_2026-10-31.md
+
+
+### Rollback — Preset Manager UI experiment (2026-10-31)
+
+- [x] User reported Editor render regression and USB-MIDI no longer connects on Build #178.
+- [x] Stopped the Preset Manager redesign rather than asking the user to troubleshoot hardware.
+- [x] Restored `www/index.html`, `www/ui-redesign.css`, `www/ir-transfer.js`, `www/nam-transfer.js`, and `www/mg30-preset-export.js` exactly to stable Build #155 baseline commit `d75d55942ad57562b8b27018d4cda9933e237476`.
+- [x] Removed startup test specific to the reverted Preset Manager startup path.
+- [x] Retained the 32-byte QuickTone IR resource-name support present in Build #155.
+- [ ] Build restored baseline and verify CI before APK delivery.
+- [ ] User to confirm Editor renders normally and USB-MIDI reconnects on physical MG-30.
+- Preset Manager redesign is suspended; do not touch Editor/USB-MIDI/NAM/IR/MIDI paths for another UI-only change.
+- Details: `docs/research/MG30_PRESET_MANAGER_STARTUP_REGRESSION_2026-10-31.md`
