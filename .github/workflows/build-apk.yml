@@ -9,6 +9,7 @@ on:
       - android/nam-transfer-tone3000
       - android/ir-import-test
       - android/ui-polish-pass-1
+      - feature/preset-manager-redesign
     paths:
       - 'www/**'
       - 'tests/**'
