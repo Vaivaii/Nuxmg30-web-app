@@ -4,6 +4,7 @@ import {
   buildMG30SinglePresetPatch,
   parseMG30SinglePresetPatch,
   buildMG30SinglePresetImportPlan,
+  fitMG30QuickToneIRName,
 } from '../www/mg30-preset-format.js';
 
 function makeRecord(resourceName) {
@@ -35,20 +36,29 @@ test('single-preset file preserves a valid 16-byte IR name and imports it as the
   assert.equal(parsed.curve.length, 600);
 });
 
-test('serializer refuses the original long device name until an explicit short alias is chosen', () => {
-  const originalName = 'BUILTIN_IR_NAME_18';
+test('long IR names use QuickTone first-16-byte behavior without an alias prompt', () => {
+  const originalName = 'YA DXVB 112 Mix 10';
   assert.equal(new TextEncoder().encode(originalName).length, 18);
-  assert.throws(
-    () => buildMG30SinglePresetPatch(makeRecord(originalName)),
-    /1–16 byte ASCII printable/
-  );
 
-  const alias = 'BUILTIN_IR_18';
-  const bytes = buildMG30SinglePresetPatch(makeRecord(alias));
+  const quickToneName = fitMG30QuickToneIRName(originalName);
+  assert.equal(quickToneName, 'YA DXVB 112 Mix');
+  assert.equal(new TextEncoder().encode(quickToneName).length, 15);
+
+  const source = makeRecord(quickToneName);
+  const bytes = buildMG30SinglePresetPatch(source);
   const parsed = parseMG30SinglePresetPatch(bytes);
   const plan = buildMG30SinglePresetImportPlan(parsed, 10);
 
-  assert.equal(parsed.resourceName, alias);
-  assert.equal(plan.resourceName, alias);
+  assert.equal(parsed.resourceName, quickToneName);
+  assert.equal(plan.resourceName, quickToneName);
   assert.equal(plan.steps[0].kind, 'ir-name');
+  assert.equal(plan.steps[0].command, 0x09);
+  assert.equal(plan.steps.length, 78);
+});
+
+test('QuickTone name fitting keeps exactly the first 16 ASCII bytes and rejects unsupported characters', () => {
+  const name = '1234567890ABCDEFZZ';
+  assert.equal(fitMG30QuickToneIRName(name), '1234567890ABCDEF');
+  assert.equal(new TextEncoder().encode(fitMG30QuickToneIRName(name)).length, 16);
+  assert.throws(() => fitMG30QuickToneIRName('IR_ÜBER_LONG_NAME'), /ASCII printable/);
 });
