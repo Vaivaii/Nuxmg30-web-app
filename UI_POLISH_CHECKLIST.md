@@ -1137,3 +1137,16 @@ The build verifies the updated dispatch-time diagnostics and pre-request page re
 ### Explicit correction to the earlier request-builder comparison (2026-10-31)
 
 Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request structure were incomplete and are superseded here. The 7-bit uint16 packing algorithm in helper `0x4A4910` was equivalent, but the app placed the packed words two bytes too late. QuickTone starts its packed `[resourceIndex, offset]` fields at frame byte 6; the old app inserted two zeros there and started those fields at byte 8. Do not revert this fix based on the earlier statement that the request bytes matched. The response decoder/offset semantics remain unchanged.
+
+
+## Goal 3 — Native Android file manager destination for QuickTone Export (2026-10-31)
+
+- [x] Identify current Blob URL + anchor-click download as the reason Android WebView did not reliably open the system Save As file manager.
+- [x] Add native `MG30Midi.savePatch` using Android `ACTION_CREATE_DOCUMENT`; user chooses the destination folder in the system picker.
+- [x] Write validated 9,902-byte Gen2 `.mg30patch` bytes to the returned `content://` URI and only report success after the output stream closes successfully.
+- [x] Return the saved display name, bytes and document URI; distinguish user cancellation from I/O failure.
+- [x] Expose native save method through `window.NUXNativeMidi` and route Android Export to it. Keep browser download fallback for non-native browser sessions.
+- [x] Commits: `804cf5e`, `9f344a3`, `ddc584f`.
+- [ ] Confirm Actions run #144 and APK artifact.
+- [ ] On Android, verify Save As picker opens, chosen-folder file exists and has 9,902 bytes; verify cancellation reports no save.
+- [x] No changes to MIDI protocol or any preset/IR/NAM/Collection device write paths.
