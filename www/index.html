@@ -2108,6 +2108,11 @@ window.MG30PresetImportBridge=Object.freeze({
     if(actual.length!==expected.length||actual.some((value,index)=>value!==expected[index]))throw new Error('Readback Scene '+(part+1)+' tidak cocok dengan payload impor.');
    }
    readbackMatched=true;
+   let importedPresetName='';
+   for(let i=0;i<16;i++){const code=bitSlot(readback[0],106+i);if(!code)break;if(code<0x20||code>0x7E)break;importedPresetName+=String.fromCharCode(code)}
+   setHardwarePresetName(plan.targetProgram,importedPresetName);
+   if(targetSlot===plan.targetProgram){hardwarePresetName=importedPresetName;hardwarePresetNameLoaded=!!importedPresetName;renderHardwarePreset()}
+   renderSlotPicker();
    setDeviceStatus('Impor '+slotName(plan.targetProgram)+' selesai · 78 ACK · tiga scene lolos readback.');
    toast('Preset diimpor dan tiga scene diverifikasi');
    return {success:true,framesAcknowledged:acknowledged,sceneReadback:readbackMatched,resourceName:plan.resourceName,targetProgram:plan.targetProgram};
