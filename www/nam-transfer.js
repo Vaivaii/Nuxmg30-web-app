@@ -352,6 +352,7 @@ function makeSlotSnapshot(payload, slotNumber) {
  * silently showing stale or partial names.
  */
 export async function readMG30NAMSlotNames(connection, onProgress = () => {}) {
+  if (window.MG30PresetNameScanBusy) throw new Error('Pembacaan nama preset sedang berlangsung. Coba lagi setelah selesai.');
   if (!connection?.input?.addEventListener || !connection?.output?.send) {
     throw new Error('Koneksi USB-MIDI MG-30 tidak siap.');
   }
@@ -429,6 +430,7 @@ export async function readMG30NAMSlotNames(connection, onProgress = () => {}) {
 }
 
 export async function sendMG30A2LiteTransfer(connection, plan, onProgress = () => {}) {
+  if (window.MG30PresetNameScanBusy) throw new Error('Pembacaan nama preset sedang berlangsung. Coba lagi setelah selesai.');
   if (!connection?.input?.addEventListener || !connection?.output?.send) {
     throw new Error('Koneksi USB-MIDI MG-30 tidak siap.');
   }
