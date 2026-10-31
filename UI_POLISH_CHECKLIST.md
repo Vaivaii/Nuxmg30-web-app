@@ -1160,3 +1160,10 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [x] Record Android build: Actions #144 passed; commit `ddc584f33fc7b81248445da5b56d7944deaa2b9b`; artifact `MG30-Studio-debug-APK` ID `13042443301`, 4,018,075 bytes.
 - [ ] Optional: verify/audition all three imported scenes and compare IR identity/settings with the source slot; not yet explicitly reported.
 - [ ] Keep Collection and NAM as separately scoped validation items; the successful single-preset round trip does not prove those separate flows.
+
+
+## Clarification — IR Collection catalog maps to User for active use (2026-10-31)
+
+- [x] User confirms IR Collection is a storage/catalog only, not a separate active IR destination.
+- [x] IR selected from Collection is installed/transferred to pedal User (Third Party) for use. Preserve existing mapping; do not create a separate Collection device bank or redirect this path.
+- [ ] NAM hardware test remains pending; user has not tested NAM on physical MG-30 yet.
