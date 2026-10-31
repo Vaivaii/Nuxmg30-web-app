@@ -329,3 +329,28 @@ Validation:
 
 **Current stop point:** both targeted source changes and project notes are saved. Ask exactly **“Build sekarang atau nanti?”** and do not build before approval.
 
+## 20. Screenshot clarification — Preset list fills space to bottom navigation (1 Nov 2026)
+
+The user's actual requirement is to extend the 128-card list down to immediately above the fixed bottom tab navigation and display more complete cards at once. The Draft IDs must remain.
+
+Root cause:
+- `search`, `presetCount`, `newPresetBtn`, and `presetList` are in a `.hidden` container, and `.hidden` is `display:none!important`. They do not consume screen height.
+- The previous list height cap `min(720px, calc(100dvh - 280px))` and 34px bottom padding caused the unused area shown in the screenshot.
+
+Fix on `feature/preset-manager-redesign`:
+- `cae96c435c1a23c000943560465e8cfe63c6f216` — `www/preset-library-ui.js`: measure card-list top against real `.nav` top and assign the available height. Recalculate on window/visualViewport resize, entering Preset Manager, and Import panel change. Only runs on visible mobile Preset Manager.
+- `b71a5bfccf964977e3943beb88c51edb279b5767` — `www/preset-library-ui.css`: bottom card-list padding/scroll padding reduced to 8px and removed the fixed mobile max-height cap; CSS fallback stays local to the Preset Manager list.
+
+Preservation:
+- Hidden Draft IDs remain in `www/index.html`; no ID removal or markup movement.
+- Shared `.nav` is only read for its bounding rectangle; its position/style is not changed.
+- `www/mg30-preset-export.js` unchanged (SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`).
+- No Editor/startup, Signal Chain, USB-MIDI/native Android, Import/Export protocol, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio, Device, global CSS or shared code was modified in this stage.
+
+Build:
+- Build #192 succeeded on the previous source before this dynamic measurement fix; artifact ID `13051745621`. The user screenshot showed it still left a gap, so it is not the APK for the current layout adjustment.
+- Current measurement change has not been built or physically tested.
+- No new workflow / CI / Gradle / APK build is running for this stage yet.
+
+**Current stop point:** layout source and project notes saved. Ask exactly **“Build sekarang atau nanti?”**; do not build before user approval.
+
