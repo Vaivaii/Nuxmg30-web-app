@@ -1560,3 +1560,59 @@ Next response must ask exactly: Build sekarang atau nanti?
 - APK download has been materialized and is available at `/mnt/data/MG30_Studio_Preset_Manager_Import_Flow_cfd5b0a.apk` in this conversation session.
 
 **Still pending:** install and physically verify on the original NUX MG-30 Gen 2 FW 6.0.x. Confirm Cancel sends no import frames, OK completes on a safe slot, and NAM / IR Third Party / Collection / MIDI paths remain unaffected. CI success is not a substitute for pedal validation.
+
+## Preset Manager import progress dialog and final-card clearance — 31 October 2026
+
+### User-requested refinement
+
+- Replace the persistent inline “Import selesai” status box with a Preset Manager modal dialog.
+- While import is active, show a loading spinner, a plain-language explanation of the IR + three-scene transfer, the current phase, and the live ACK count out of 78.
+- The progress dialog has no close action and prevents the Cancel/Escape dismissal event while active. This is a presentation-only wait screen; it does not cancel or alter the transfer.
+- On success, show the 78/78 ACK and existing three-scene readback result in the dialog, then auto-close after 1.5 seconds.
+- On failure, show the error and latest known ACK count, then auto-close after 2.6 seconds. The selected file remains available for inspection/retry as before.
+- Clear the old inline status after success/failure so the large persistent message box no longer occupies the Preset Manager page.
+- Keep all four legacy draft IDs (`search`, `presetCount`, `newPresetBtn`, `presetList`) hidden and move their compatibility container to the final child position inside `#page-presets`. No ID was removed.
+- Add extra bottom scroll clearance (including device safe-area inset) to the 128-card list so the final cards have room at the end of the scroll viewport.
+
+### Exact files changed and commits
+
+1. `www/mg30-preset-import.js`
+   - Commit: `03ccd46539eab6aad02010d2c2e14956b7848770`
+   - Added dialog state, loading/progress display, ACK counter, non-dismissible cancel handling, and automatic result dismissal.
+   - The existing parser call, plan builder, selected-target validation, and `bridge.import(plan, ...)` invocation remain in place. The only changed part is how progress/result feedback is presented.
+
+2. `www/preset-library-ui.css`
+   - Commit: `ab3db2de0f1bbfbd3f5fbaeef255e61e8d6106e7`
+   - Added modal/spinner/progress/result styles and additional card-list bottom scroll padding.
+   - Every new/modified selector is scoped under `#page-presets`; no global/shared selector was added.
+
+3. `www/index.html`
+   - Commit: `e7d3249f06166765dd8cc196e02ee810e134ba4b`
+   - Added the dialog markup inside `#page-presets`.
+   - Moved hidden draft compatibility IDs to the very end of the Preset Manager tab, after the retained hidden hardware-slot compatibility nodes.
+   - Shared host file edit is limited to the Preset Manager section.
+
+### Protected areas deliberately untouched
+
+- Import binary parsing, `parseMG30SinglePresetPatch()`, `buildMG30SinglePresetImportPlan()`, plan contents, transfer bridge, USB-MIDI/native Android packet sender, packet ordering, timeouts, ACK validation, readback, and the 78-step transfer behavior.
+- Export module, Export readback, serialization, format and native Save As flow.
+- Movable Signal Chain markup, styling, drag/drop, touch and reorder behavior.
+- Editor rendering/startup, global app initialization, USB-MIDI/native Android connection handlers.
+- NAM, IR User/Third Party protocol, IR Collection catalog/install/use workflow, MIDI mappings, Save-to-device, Copy Scene, CTRL/EXP, Studio, Device.
+- No shared JavaScript or global CSS was changed. NAM and all other working workflows remain outside this change.
+
+### Validation and build status
+
+- Git compare from previous HEAD `3195b337912e509cee460c975cb75cd2ff02cdc8` confirms the three application files above are the only code paths changed.
+- Source inspection confirms the dialog markup, ACK display, cancel-event prevention, success/error auto-close timers, the existing plan-builder call, and the existing bridge import call.
+- Automated tests and JavaScript syntax tests: not run.
+- GitHub Actions / CI / Gradle / APK build: not run. Commits use `[skip ci]` to avoid triggering an automatic build before user approval.
+- Physical import test on original NUX MG-30 Gen 2 FW 6.0.x: pending.
+- The previous Build #189 APK does not contain this new dialog refinement.
+
+### Mandatory stop point
+
+The source change and this checklist record are committed to `feature/preset-manager-redesign`. Do not run a build until the user explicitly chooses **Build sekarang**.
+
+Next response must ask exactly: **Build sekarang atau nanti?**
+
