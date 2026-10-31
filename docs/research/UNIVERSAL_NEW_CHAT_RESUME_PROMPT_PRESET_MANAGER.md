@@ -114,3 +114,33 @@ Documentation-only changes do not require an APK build; still record them in the
 ## 9. What to say at the start of the new chat
 
 Start by confirming the active branch, the last checklist entry/commit, and the exact next action. Then continue without asking the user to re-explain the project or the protected areas.
+
+
+## 10. Latest user clarification — card design and two-way slot sync (31 Oct 2026)
+
+The user supplied a TONEX-style preset-card screenshot as a visual reference only. Required MG-30 design:
+- Vertically scrolling rounded preset cards.
+- Slot number in a narrow left column (e.g. 00A), thin vertical accent divider, actual preset name prominent on the right.
+- Minimal content only: slot number and preset name. No helper paragraphs, extra subtitles, categories, explanations or unrelated metadata.
+- Header: Preset Manager title with Import and Export buttons at the top. The existing transfer behavior must be reused exactly.
+- Clear selected-card highlight.
+- Do not copy TONEX brand, tabs or navigation.
+
+**Bidirectional device synchronization is essential:**
+- Tap a card in the app → the same hardware slot is selected/synchronized on the MG-30, using the existing working slot-selection behavior.
+- Change the slot directly on the MG-30 → the app's current slot and selected-card highlight must follow the hardware change.
+- The card list is not a local-only visual list. App target, displayed slot, selected card and actual pedal slot must stay consistent.
+- Reuse the existing device update/state pathway. Do not add Program Change polling, global event listeners, USB-MIDI handlers or Editor startup changes.
+- If the existing Preset Library-only code cannot support pedal → app updates without editing protected global code, stop and ask permission. Do not silently broaden scope.
+- No extra effect/block icons unless data is already available within the Preset Library's permitted scope.
+
+The plan and checklist now contain this clarification:
+- Plan commit: `01d1fcb812e36cab74bce3f2962a3b462aabee55`.
+- Checklist commit: `6f9746c147ba7dad6f7b4454bc5f626f8a8dcbc2`.
+
+## 11. Latest stop point
+
+- Only documentation was updated after the branch setup.
+- No application code has been changed.
+- No tests or builds were run for this documentation-only clarification.
+- Current next step: inspect the existing Preset Library-only slot-selection and device-to-app update pathway, then present an isolated design/implementation proposal. Do not touch protected code or start coding unless instructed.
