@@ -530,3 +530,23 @@
 }
 
 /* Build checkpoint: user-approved build for Preset Manager scroll isolation. */
+
+/* Keep Preset Manager Import / Export buttons aligned inside the right edge of the header. */
+@media (max-width: 720px) {
+  #page-presets .preset-library-header {
+    box-sizing: border-box;
+    padding-right: 5px;
+  }
+
+  #page-presets .preset-library-actions {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  #page-presets .preset-library-actions .btn {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    min-width: 72px;
+    max-width: 100%;
+  }
+}
