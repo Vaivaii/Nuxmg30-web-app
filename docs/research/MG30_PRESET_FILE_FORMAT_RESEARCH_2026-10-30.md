@@ -234,7 +234,6 @@ The record's WAVE header declares PCM24, mono, 48 kHz, but QuickTone's import pa
 | `0x01AE` | 4 | Resource marker; sample value = 1 |
 | `0x01B2` | 32 | ASCII IR resource name; sample = `c414_cap_45_dc` followed by zero terminator/padding bytes |
 | `0x01D2` | 0x182C | RIFF/WAVE-shaped header and first 1,536 raw float32 values |
-| `0x01D2` | 0x182C | WAVE-shaped header and first 1,536 raw float32 values |
 | `0x19FE` | 0x800 | Remaining 512 float32 values, just outside RIFF |
 | `0x21FE` | 0x4B0 | 600 little-endian uint16 curve values (0..305 in the tested sample) |
 
