@@ -82,3 +82,46 @@ Do not implement a hardware-name scan by inserting new code into the main Editor
 ## Current state
 
 No application code has been changed on this branch yet. Only this plan and the project checklist are being prepared. Do not build until the user has requested a code change and then explicitly selected “build sekarang”.
+
+
+## Addendum — strict scope lock requested by user (31 October 2026)
+
+The following restrictions override any broader interpretation of the earlier implementation plan.
+
+### Absolutely do not modify these areas
+
+1. **Preset Import and Export — completely off limits**
+   - Do not edit Import preset UI, Import validation, Import bridge, Import packet sequence, Export preset UI, Export readback, Export bridge, serializers, parsers, file format, save picker, or related tests.
+   - The existing Import/Export controls may be repositioned or visually restyled only if this can be done without changing their IDs, event wiring, JS modules, behavior, validations, transaction ordering or protocol. Prefer a visual wrapper/CSS around their existing controls.
+   - Never refactor or “clean up” Import/Export code as part of this UI task.
+
+2. **Movable Signal Chain — completely off limits**
+   - Do not edit its markup, styling, DOM structure, drag/drop handlers, reorder algorithms, state, persistence, block ordering, touch gestures, event propagation, or supporting code.
+   - Do not change shared CSS selectors or shared event handlers in a way that can affect movable signal-chain behavior.
+   - Do not move or wrap signal-chain elements as part of the Preset Library redesign.
+
+3. **All code outside the Preset Library tab — off limits**
+   - Do not modify Editor, NAM & IR, Studio, Device, global app shell/header, bottom navigation, shared app startup, connection code, USB-MIDI/native Android bridge, global state, shared helpers, MIDI mappings, preset engine, Save-to-device, Copy Scene, CTRL/EXP, audio or other tabs.
+   - Do not modify shared CSS selectors or global JavaScript functions if their scope can reach other tabs.
+   - Only code whose sole responsibility is the Preset Library tab may be added or edited. Use isolated Preset Library-specific files/selectors and tab-local event handling.
+   - If a required task cannot be done without changing something outside the Preset Library tab, stop and ask the user before editing it.
+
+### Import / Export buttons in the header
+
+The user's requested header Import and Export buttons are a presentation request, not permission to change transfer behavior:
+- Reuse the current Import and Export controls/handlers as they exist.
+- Move only their visual presentation inside the Preset Library tab, using the narrowest possible tab-scoped wrapper/CSS.
+- Do not change their IDs or JS module files.
+- If simply repositioning existing controls would require modifying transfer modules or protocol code, do not do it; report the limitation and ask first.
+
+### Required review before each edit
+
+Before changing any file, identify whether it is exclusively Preset Library code. If the file is shared (especially `www/index.html`, global styles, or a shared JS module), do not edit it automatically. First isolate the Preset Library markup/controller into a dedicated module or request approval for the minimal shared-file edit. Never touch the movable signal-chain region.
+
+### Mandatory per-change checkpoint
+
+After each small code edit:
+- Update `UI_POLISH_CHECKLIST.md` with date, exact file names, summary, commit SHA, files/areas explicitly not touched, and test state.
+- Update the project resume prompt/document if the latest stop point or instructions changed.
+- Stop and ask exactly: **“Build sekarang atau nanti?”**
+- Do not run tests that trigger CI/build, GitHub Actions, Gradle or APK packaging until the user explicitly chooses “build sekarang”. Local static checks/tests that do not package/build may be run only when they do not alter protected code.
