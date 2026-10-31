@@ -1,0 +1,327 @@
+/* Preset Library only. Keep every selector scoped to #page-presets. */
+#page-presets.preset-library-page {
+  min-width: 0;
+  padding-bottom: 18px;
+}
+
+#page-presets .preset-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 2px 16px;
+}
+
+#page-presets .preset-library-header h2 {
+  margin: 0;
+  font-size: clamp(23px, 5vw, 30px);
+  line-height: 1.08;
+  letter-spacing: -.8px;
+}
+
+#page-presets .preset-library-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+#page-presets .preset-library-actions .btn {
+  min-height: 39px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+#page-presets #presetImportChoose {
+  min-width: 72px;
+}
+
+#page-presets #presetExportStart {
+  min-width: 72px;
+  font-size: 0;
+}
+
+#page-presets #presetExportStart::after {
+  content: "Export";
+  font-size: 11px;
+}
+
+/* Compact Import follow-through appears only after a file is chosen. */
+#page-presets .preset-library-import-bar {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+#page-presets .preset-library-import-bar.has-file {
+  display: flex;
+}
+
+#page-presets #presetImportFileInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+#page-presets #presetImportTarget {
+  display: none !important;
+}
+
+#page-presets #presetImportSend {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+#page-presets #presetImportSend:disabled {
+  display: none;
+}
+
+#page-presets #presetImportStatus,
+#page-presets #presetExportStatus {
+  display: none;
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+#page-presets #presetImportStatus:not(:empty),
+#page-presets #presetExportStatus:not(:empty) {
+  display: block;
+}
+
+#page-presets #presetImportStatus.ok,
+#page-presets #presetExportStatus.ok {
+  border-color: rgba(166, 211, 104, .45);
+  color: #c9e8a4;
+}
+
+#page-presets #presetImportStatus.warn,
+#page-presets #presetExportStatus.warn {
+  border-color: rgba(220, 164, 94, .5);
+  color: #e6c99b;
+}
+
+#page-presets #presetExportTarget,
+#page-presets #presetImportTarget,
+#page-presets #presetExportDiagnosticsDetails {
+  display: none;
+}
+
+#page-presets #presetExportDiagnosticsDetails:not([hidden]) {
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid #655332;
+  border-radius: 10px;
+  background: #111611;
+}
+
+#page-presets #presetExportDiagnosticsDetails summary {
+  color: #e6c99b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The list itself scrolls; cards contain only slot and preset name. */
+#page-presets .preset-library-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 100%;
+  height: min(66vh, 690px);
+  min-height: 330px;
+  padding: 2px 3px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #485641 transparent;
+}
+
+#page-presets .preset-library-card {
+  display: grid;
+  grid-template-columns: 78px 4px minmax(0, 1fr);
+  align-items: stretch;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 76px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(104, 116, 100, .18);
+  border-radius: 17px;
+  background: #171b18;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+
+#page-presets .preset-library-card:active {
+  transform: scale(.992);
+}
+
+#page-presets .preset-library-card-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: rgba(0, 0, 0, .13);
+  color: #d7dfd2;
+  font-size: 14px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .15px;
+}
+
+#page-presets .preset-library-card-divider {
+  display: block;
+  width: 4px;
+  background: #65715d;
+}
+
+#page-presets .preset-library-card-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 17px;
+  overflow: hidden;
+  color: #e5ebe1;
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#page-presets .preset-library-card.is-selected {
+  border: 2px solid #a6d368;
+  background: #293327;
+  box-shadow: 0 0 0 1px rgba(166, 211, 104, .08);
+}
+
+#page-presets .preset-library-card.is-selected .preset-library-card-slot {
+  color: #d1f69b;
+  background: rgba(0, 0, 0, .2);
+}
+
+#page-presets .preset-library-card.is-selected .preset-library-card-divider {
+  background: #a6d368;
+}
+
+#page-presets .preset-library-card.is-selected .preset-library-card-name {
+  color: #f0f8e9;
+}
+
+#page-presets .preset-library-card:disabled {
+  opacity: .75;
+  cursor: wait;
+}
+
+#page-presets #presetLibraryScanStatus {
+  min-height: 0;
+  margin: 4px 4px 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+#page-presets .preset-library-drafts {
+  margin-top: 14px;
+  padding: 0 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+#page-presets .preset-library-drafts > summary {
+  padding: 12px 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#page-presets .preset-library-drafts[open] > summary {
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+#page-presets .preset-library-draft-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#page-presets .preset-library-draft-tools #search {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+#page-presets .preset-library-draft-tools #newPresetBtn {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 10px;
+}
+
+@media (max-width: 420px) {
+  #page-presets .preset-library-header {
+    gap: 7px;
+    margin-bottom: 13px;
+  }
+  #page-presets .preset-library-header h2 {
+    font-size: 24px;
+  }
+  #page-presets .preset-library-actions {
+    gap: 5px;
+  }
+  #page-presets .preset-library-actions .btn {
+    min-height: 37px;
+    padding: 7px 10px;
+  }
+  #page-presets .preset-library-card-list {
+    height: min(64vh, 620px);
+    min-height: 300px;
+    gap: 9px;
+  }
+  #page-presets .preset-library-card {
+    grid-template-columns: 68px 4px minmax(0, 1fr);
+    min-height: 72px;
+    border-radius: 15px;
+  }
+  #page-presets .preset-library-card-slot {
+    font-size: 13px;
+  }
+  #page-presets .preset-library-card-name {
+    padding: 10px 13px;
+    font-size: 15px;
+  }
+  #page-presets .preset-library-import-bar {
+    gap: 7px;
+    padding: 8px 9px;
+  }
+  #page-presets #presetImportSend {
+    padding: 7px 9px;
+  }
+}
