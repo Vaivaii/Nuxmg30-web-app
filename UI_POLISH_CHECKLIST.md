@@ -1542,3 +1542,21 @@ Next response must ask exactly: Build sekarang atau nanti?
   6. Verify Export and all NAM/IR User/Third Party/Collection and MIDI workflows remain unchanged.
 
 **Current stop point:** the requested source change and project notes are committed. Do not treat the old APK/build as containing these changes. Ask the user exactly: **Build sekarang atau nanti?**
+
+## Build verification — destination-first Import flow (31 October 2026)
+
+- Latest application-code commit built: `cfd5b0ab896440806b4faf97e1bfbdc54b875e84`.
+- GitHub Actions run: **#189**, run ID `41218768705`.
+- Run result: **success**.
+- Protocol regression test step: success.
+- Capacitor Android project generation: success.
+- Debug APK build: success.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `13048698907`.
+- Artifact ZIP SHA-256: `820382313657bb58f044381ae2d1a1a5cd5324b6577f8c995c5795e8901cd74c`.
+- Extracted APK: `MG30_Studio_Preset_Manager_Import_Flow_cfd5b0a.apk`, 4,020,278 bytes.
+- Extracted APK SHA-256: `1b4ce29cff32b478ea433cc78920c17125d59ffe761d76d9fdb42d1d95235101`.
+- Build run was triggered by the branch's existing push workflow configuration.
+- Verified the built APK's bundled JavaScript contains the new target-selected event and destination-first confirmation text; bundled CSS contains the Library/import-row selectors.
+- APK download has been materialized and is available at `/mnt/data/MG30_Studio_Preset_Manager_Import_Flow_cfd5b0a.apk` in this conversation session.
+
+**Still pending:** install and physically verify on the original NUX MG-30 Gen 2 FW 6.0.x. Confirm Cancel sends no import frames, OK completes on a safe slot, and NAM / IR Third Party / Collection / MIDI paths remain unaffected. CI success is not a substitute for pedal validation.
