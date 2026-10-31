@@ -118,6 +118,15 @@ function initPresetLibraryUI() {
     const failed = exportStatus.classList.contains('warn') || /gagal|tidak valid|belum terhubung/i.test(text);
     const succeeded = exportStatus.classList.contains('ok') || /file tersimpan:/i.test(text);
 
+    // The native Android Documents picker must open without the web progress dialog above it.
+    // Closing here avoids the split/slide transition artefact captured in the user's video.
+    if (/memilih lokasi penyimpanan|file manager android/i.test(text)) {
+      if (exportFeedbackTimer) window.clearTimeout(exportFeedbackTimer);
+      exportFeedbackTimer = null;
+      closeExportFeedback();
+      return;
+    }
+
     if (cancelled) {
       showExportFeedback('Export dibatalkan', '', 'cancelled', 0, 1050);
       return;
