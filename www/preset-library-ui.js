@@ -66,6 +66,7 @@ function initPresetLibraryUI() {
   const scanStatus = $('presetLibraryScanStatus');
   const importBar = $('presetLibraryImportBar');
   const importInput = $('presetImportFile');
+  const topBar = document.querySelector('.top');
   const nav = document.querySelector('.nav');
   const exportStatus = $('presetExportStatus');
   const feedbackDialog = $('presetImportProgressDialog');
@@ -80,17 +81,44 @@ function initPresetLibraryUI() {
   let scanPromise = null;
   let exportFeedbackTimer = null;
 
-  // Size only this tab's card scroller to the real gap above the fixed bottom navigation.
-  // The legacy Draft compatibility IDs stay hidden and are not part of this measurement.
-  function resizeCardViewport() {
-    if (page.classList.contains('hidden') || !nav || window.innerWidth > 720) return;
-    const listTop = cards.getBoundingClientRect().top;
-    const navTop = nav.getBoundingClientRect().top;
-    const available = Math.floor(navTop - listTop - 8);
-    if (available < 260) return;
-    cards.style.height = available + 'px';
-    cards.style.maxHeight = available + 'px';
+  // Keep only Preset Manager fixed between the sticky app header and fixed bottom navigation.
+  // This isolates its card scrolling from the shared NAM & IR / other-tab document scroll.
+  // Legacy Draft compatibility IDs remain hidden and never participate in viewport sizing.
+  function clearPresetViewport() {
+    document.body.classList.remove('preset-manager-active');
+    page.style.removeProperty('--preset-manager-top');
+    page.style.removeProperty('--preset-manager-bottom');
+    cards.style.removeProperty('height');
+    cards.style.removeProperty('max-height');
   }
+
+  function resizeCardViewport() {
+    if (page.classList.contains('hidden')) {
+      clearPresetViewport();
+      return;
+    }
+    if (!topBar || !nav || window.innerWidth > 720) {
+      clearPresetViewport();
+      return;
+    }
+
+    const headerBottom = topBar.getBoundingClientRect().bottom;
+    const navTop = nav.getBoundingClientRect().top;
+    const top = Math.max(0, Math.ceil(headerBottom + 7));
+    const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop));
+
+    document.body.classList.add('preset-manager-active');
+    page.style.setProperty('--preset-manager-top', top + 'px');
+    page.style.setProperty('--preset-manager-bottom', bottom + 'px');
+    cards.style.removeProperty('height');
+    cards.style.removeProperty('max-height');
+  }
+
+  const presetVisibilityObserver = new MutationObserver(() => {
+    if (page.classList.contains('hidden')) clearPresetViewport();
+    else resizeCardViewport();
+  });
+  presetVisibilityObserver.observe(page, { attributes: true, attributeFilter: ['class'] });
 
   window.addEventListener('resize', resizeCardViewport, { passive: true });
   window.visualViewport?.addEventListener('resize', resizeCardViewport);
