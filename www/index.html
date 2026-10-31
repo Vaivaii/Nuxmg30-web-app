@@ -995,7 +995,7 @@ async function saveToDevice(){
   const ok=await writeHardwarePreset(targetSlot,parts);
   if(!ok)throw new Error('Read-back tidak cocok; preset TIDAK dinyatakan tersimpan');
   setHardwarePresetName(targetSlot,name);
-  hardwarePresetName=name;hardwarePresetNameLoaded=!!name;renderHardwarePresetList();
+  hardwarePresetName=name;hardwarePresetNameLoaded=!!name;renderPresetManagerList();renderHardwarePreset();
   setDeviceStatus('Preset '+slotName()+' tersimpan dan diverifikasi · urutan signal chain Scene '+(activeSceneIndex+1)+' ikut tersimpan.');
   toast('Preset tersimpan; urutan signal chain diverifikasi');
  }catch(e){
