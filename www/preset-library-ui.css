@@ -407,3 +407,14 @@
   #page-presets #presetImportProgressFill { animation: none; transition: none; }
 }
 /* Build source: compact shared Import / Export feedback dialog. */
+
+
+/* Fill the vertical space above the fixed bottom tab bar on Android phones. */
+@media (max-width: 720px) {
+  #page-presets .preset-library-card-list {
+    height: max(260px, min(720px, calc(100dvh - 280px)));
+    min-height: 260px;
+    max-height: calc(100dvh - 280px);
+    scroll-padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+  }
+}
