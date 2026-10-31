@@ -1919,3 +1919,33 @@ Next response must ask exactly: Build sekarang atau nanti?
 
 ### Mandatory stop point
 CSS correction is committed and this checklist updated. Ask exactly **Build sekarang atau nanti?** and wait for approval.
+## Preset Manager — bottom fade aligned with frame sides and lower corners (1 November 2026)
+
+### User screenshot feedback
+- The previous bottom gradient still stopped short of the lower frame edge and did not blend into the left/right inner frame edges.
+- The latest correction expands the fade overlay beyond the list content width to cover the 8px horizontal inner padding, and adds side-edge shading in addition to the vertical fade.
+- The gradient ends in the exact frame base color #101619; the lower border-radius follows the inner lower frame corners.
+
+### Source change
+- File: www/preset-library-ui.css
+- Commit: d6040b9083f13159a958c6d684b501006df5532a
+- Sticky fade overlay changed from 56px to 64px.
+- Width increased from 100% to calc(100% + 16px), with -8px left and right margins to meet the inner frame sides.
+- Added a horizontal edge gradient that darkens toward both frame sides, layered with the bottom vertical fade that ends in #101619.
+- Bottom radius remains 17px to match the inner edge of the 18px frame with 1px border.
+- pointer-events:none is retained so the overlay never blocks card taps.
+- No markup, Javascript, card height, scroll viewport measurement, Export/Import, or shared navigation changed.
+
+### Verification / build
+- Static source checks passed for expanded width/margins, 64px fade height, horizontal edge shading, exact #101619 bottom color, lower radius and pointer-events:none.
+- www/mg30-preset-export.js unchanged (SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52).
+- Build #196 succeeded on previous CSS commit 5e13dba57f37824f891fabdea93afc43767afa5c (run ID 41230174130). It predates this geometry correction.
+- Build #197 triggered automatically from the corrected CSS commit d6040b9083f13159a958c6d684b501006df5532a; run ID 41230734572. At checklist update time: dependency install in progress; no artifact yet.
+- Physical Android screen verification remains pending.
+
+### Protected areas
+- Only www/preset-library-ui.css changed for this correction.
+- Import/Export transfer code, Editor/startup, global/shared CSS, Movable Signal Chain, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mappings, Save-to-device, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+
+### Current stop point
+Build #197 is already running for the edge correction. Do not start a second build. Continue checking run 41230734572 and download only its artifact after success.
