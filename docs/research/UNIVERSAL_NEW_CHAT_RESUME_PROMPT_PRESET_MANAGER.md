@@ -260,3 +260,20 @@ Validation:
 
 **Current stop point:** source and checklist are committed. Do not build until the user answers **Build sekarang**. Ask exactly: **Build sekarang atau nanti?**
 
+## 17. Build result — Preset Manager import progress dialog (31 Oct 2026)
+
+- User approved **Build sekarang**.
+- Build workflow run **#190**, ID `41220763279`, successful.
+- Build source commit: `7ce732bcaae87254d5893286ed168c3d162e0c2b` on `feature/preset-manager-redesign`.
+- Protocol regression tests, Capacitor Android project generation, debug APK build and artifact upload all passed.
+- Artifact ID: `13049299836`; ZIP size: 4,022,237 bytes.
+- Extracted APK: `MG30_Studio_Preset_Manager_Import_Dialog_7ce732b.apk`.
+- APK size: 4,400,648 bytes.
+- APK SHA-256: `c222f563f4506e6ae201000f403e9059a496662b5a6eeb8fe86b0fcc4d83dd13`.
+- APK package inspection confirmed the import dialog, ACK field, modal/spinner styles, success/error auto-close code, hidden legacy draft IDs after the card list, and safe-area scroll clearance.
+- Direct APK path in the build conversation: `/mnt/data/MG30_Studio_Preset_Manager_Import_Dialog_7ce732b.apk`.
+
+Physical verification on the original MG-30 Gen2 FW 6.0.x is still pending. Confirm that the modal progress appears, displays phase/ACK count and auto-closes; verify slot 32D can scroll fully into view; recheck Import/Export, NAM, IR User/Third Party, IR Collection, MIDI mapping and other protected workflows.
+
+**Current stop point:** build #190 succeeded and APK was extracted/verified. Do not run another build unless the user requests it.
+
