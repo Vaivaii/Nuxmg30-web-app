@@ -1122,10 +1122,131 @@ function notifyActivePresetChanged(){
  window.dispatchEvent(new CustomEvent('mg30-active-preset-changed',{detail:{programSlot:targetSlot,presetLabel:slotName(targetSlot)}}));
 }
 let hardwarePresetName='',hardwarePresetNameLoaded=false;
+let hardwarePresetNames={};try{const savedNames=JSON.parse(localStorage.getItem('mg30-hardware-preset-names')||'{}');if(savedNames&&typeof savedNames==='object'&&!Array.isArray(savedNames))for(const [key,value] of Object.entries(savedNames)){const slot=Number(key);if(Number.isInteger(slot)&&slot>=0&&slot<128&&typeof value==='string')hardwarePresetNames[slot]=value}}catch{}
+let presetNameScanBusy=false,presetNameScanPromise=null;
 let favoriteSlots=new Set();try{favoriteSlots=new Set(JSON.parse(localStorage.getItem('mg30-favorite-slots')||'[]').map(Number))}catch{}
 function slotName(p=targetSlot){return String(Math.floor(p/4)+1).padStart(2,'0')+'ABCD'[p%4]}
-function initSlotPicker(){const bank=$('bankSelect');for(let i=1;i<=32;i++)bank.add(new Option(String(i).padStart(2,'0'),i-1));bank.onchange=()=>{targetSlot=(+bank.value)*4+targetSlot%4;renderSlotPicker();persist();if(midiConnected)selectHardwareSlot(targetSlot,false);else setDeviceStatus('Slot '+slotName()+' dipilih lokal. Hubungkan MG-30 agar perangkat ikut berpindah.')};renderSlotPicker()}
-function renderSlotPicker(){$('slotLabel').textContent=slotName();$('statName').textContent='Slot '+slotName();$('slotButtons').innerHTML='ABCD'.split('').map((s,i)=>'<button type="button" class="slot-btn '+(targetSlot%4===i?'active':'')+'" data-slot="'+i+'"><span>HARDWARE SLOT</span><strong>'+String(Math.floor(targetSlot/4)+1).padStart(2,'0')+s+'</strong><small>'+(targetSlot%4===i?'Terpilih':'Pilih slot')+'</small></button>').join('');$('slotButtons').querySelectorAll('button').forEach(b=>b.onclick=()=>{targetSlot=Math.floor(targetSlot/4)*4+(+b.dataset.slot);renderSlotPicker();persist();if(midiConnected)selectHardwareSlot(targetSlot,false);else setDeviceStatus('Slot '+slotName()+' dipilih lokal. Hubungkan MG-30 agar perangkat ikut berpindah.')})}
+function persistHardwarePresetNames(){try{localStorage.setItem('mg30-hardware-preset-names',JSON.stringify(hardwarePresetNames))}catch{}}
+function setHardwarePresetName(program,name){
+ if(!Number.isInteger(program)||program<0||program>127)return;
+ hardwarePresetNames[program]=String(name||'').trim();
+ persistHardwarePresetNames();
+ const row=$('hardwarePresetList')?.querySelector('[data-hardware-slot="'+program+'"]');
+ if(row){const node=row.querySelector('.hardware-preset-row-name');if(node){node.textContent=hardwarePresetNames[program]||'Preset tanpa nama';node.classList.toggle('is-unread',!hardwarePresetNames[program]);}}
+ const current=$('presetManagerCurrentLabel');
+ if(current&&program===targetSlot)current.textContent='Slot terpilih: '+slotName(program)+(hardwarePresetNames[program]?' · '+hardwarePresetNames[program]:'');
+}
+function renderPresetManagerList(){
+ const holder=$('hardwarePresetList');if(!holder)return;
+ const search=String($('presetHardwareSearch')?.value||'').trim().toLowerCase();
+ const scrollTop=holder.scrollTop;
+ const rows=[];
+ for(let program=0;program<128;program++){
+  const label=slotName(program),known=Object.prototype.hasOwnProperty.call(hardwarePresetNames,program);
+  const name=known?(hardwarePresetNames[program]||'Preset tanpa nama'):'Nama belum dibaca';
+  const haystack=(label+' '+name).toLowerCase();
+  if(search&&!haystack.includes(search))continue;
+  const unread=!known;
+  rows.push('<button type="button" role="option" aria-selected="'+(program===targetSlot)+'" class="hardware-preset-row '+(program===targetSlot?'active ':'')+(favoriteSlots.has(program)?'is-favorite ':'')+'" data-hardware-slot="'+program+'" '+(presetNameScanBusy?'disabled':'')+'><span class="hardware-preset-row-slot">'+label+'</span><span class="hardware-preset-row-name '+(unread?'is-unread':'')+'">'+escapeHtml(name)+'</span><span class="hardware-preset-row-indicator"></span></button>');
+ }
+ holder.innerHTML=rows.join('')||'<div class="hardware-preset-list-empty">Tidak ada preset yang cocok dengan pencarian.</div>';
+ holder.scrollTop=scrollTop;
+ const count=Object.keys(hardwarePresetNames).length;
+ const status=$('presetNameScanStatus');
+ if(status&&!presetNameScanBusy){
+  if(count===128)status.textContent='128 nama preset tersimpan di perangkat · tekan ↻ untuk memperbarui';
+  else if(count>0)status.textContent=count+' / 128 nama tersimpan · hubungkan MG-30 untuk melengkapi';
+  else status.textContent=midiConnected?'Belum ada nama yang dibaca · tekan ↻ untuk memuat 128 preset':'Hubungkan MG-30 untuk membaca nama 128 preset';
+ }
+}
+function renderSlotPicker(){
+ $('slotLabel').textContent=slotName();$('statName').textContent='Slot '+slotName();
+ $('slotButtons').innerHTML='ABCD'.split('').map((s,i)=>'<button type="button" class="slot-btn '+(targetSlot%4===i?'active':'')+'" data-slot="'+i+'"><span>HARDWARE SLOT</span><strong>'+String(Math.floor(targetSlot/4)+1).padStart(2,'0')+s+'</strong><small>'+(targetSlot%4===i?'Terpilih':'Pilih slot')+'</small></button>').join('');
+ $('slotButtons').querySelectorAll('button').forEach(b=>b.onclick=()=>{targetSlot=Math.floor(targetSlot/4)*4+(+b.dataset.slot);renderSlotPicker();persist();if(midiConnected)selectHardwareSlot(targetSlot,false);else setDeviceStatus('Slot '+slotName()+' dipilih lokal. Hubungkan MG-30 agar perangkat ikut berpindah.')});
+ const current=$('presetManagerCurrentLabel');
+ if(current)current.textContent='Slot terpilih: '+slotName()+(hardwarePresetNames[targetSlot]?' · '+hardwarePresetNames[targetSlot]:'');
+ const list=$('hardwarePresetList');
+ if(list)list.querySelectorAll('[data-hardware-slot]').forEach(row=>{const active=Number(row.dataset.hardwareSlot)===targetSlot;row.classList.toggle('active',active);row.setAttribute('aria-selected',String(active))});
+}
+function initPresetManagerList(){
+ const holder=$('hardwarePresetList');
+ if(holder&&holder.dataset.initialized!=='1'){
+  holder.dataset.initialized='1';
+  holder.addEventListener('click',event=>{
+   const row=event.target.closest('[data-hardware-slot]');if(!row||presetNameScanBusy)return;
+   const program=Number(row.dataset.hardwareSlot);
+   if(Number.isInteger(program)&&program>=0&&program<128)void selectHardwareSlot(program,false);
+  });
+ }
+ const search=$('presetHardwareSearch');
+ if(search&&search.dataset.initialized!=='1'){search.dataset.initialized='1';search.addEventListener('input',renderPresetManagerList)}
+ const refresh=$('refreshPresetNames');
+ if(refresh&&refresh.dataset.initialized!=='1'){
+  refresh.dataset.initialized='1';
+  refresh.addEventListener('click',()=>void scanHardwarePresetNames(true));
+ }
+ renderPresetManagerList();
+}
+async function readStoredPresetName(program){
+ await flushMidi();
+ const replyPromise=waitForSysEx(body=>body[0]===0x43&&body[1]===0x58&&body[2]===0x70&&body[3]===0x0B&&body[4]===0x02&&body[5]===program&&body[6]===0&&body.length>=220,1800);
+ let sent=false;
+ try{sent=await midiFrame([0x43,0x58,0x70,0x0B,0x00,program,0,0,0,0,0,0,0])}
+ catch(error){replyPromise.catch(()=>{});throw error}
+ if(!sent){replyPromise.catch(()=>{});throw new Error('Perintah baca slot '+slotName(program)+' tidak terkirim.')}
+ const body=await replyPromise;
+ let name='';
+ for(let i=0;i<16;i++){const code=bitSlot(body,106+i);if(!code)break;if(code<0x20||code>0x7E)throw new Error('Nama preset '+slotName(program)+' berisi byte yang tidak dapat ditampilkan.');name+=String.fromCharCode(code)}
+ return name.trim();
+}
+async function scanHardwarePresetNames(force=false){
+ if(presetNameScanPromise)return presetNameScanPromise;
+ if(!midiConnected||!midiInput||!midiOutput){const status=$('presetNameScanStatus');if(status)status.textContent='Hubungkan MG-30 untuk membaca nama preset dari perangkat.';return false}
+ if(presetImportBusy||presetExportBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy||window.MG30IRTransferBusy||presetNameScanBusy){const status=$('presetNameScanStatus');if(status)status.textContent='Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.';return false}
+ presetNameScanPromise=(async()=>{
+  let completed=Object.keys(hardwarePresetNames).length;
+  const resumePolling=!!hardwareSyncTimer;
+  presetNameScanBusy=true;window.MG30PresetNameScanBusy=true;
+  const refresh=$('refreshPresetNames');if(refresh)refresh.disabled=true;
+  renderPresetManagerList();
+  const status=$('presetNameScanStatus');
+  try{
+   if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
+   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
+   while(hardwareSyncBusy)await delay(15);
+   stopHardwareStatePolling();hardwareSyncBusy=true;
+   for(let program=0;program<128;program++){
+    if(!force&&Object.prototype.hasOwnProperty.call(hardwarePresetNames,program))continue;
+    const name=await readStoredPresetName(program);
+    hardwarePresetNames[program]=name;
+    completed++;
+    if(program%4===3||program===127){
+     persistHardwarePresetNames();
+     if(status)status.textContent='Membaca nama preset · '+(program+1)+'/128 · '+slotName(program);
+     renderPresetManagerList();
+     if(status)status.textContent='Membaca nama preset · '+(program+1)+'/128 · '+slotName(program);
+     await delay(4);
+    }
+   }
+   persistHardwarePresetNames();
+   if(status)status.textContent='Selesai · '+Object.keys(hardwarePresetNames).length+'/128 nama preset terbaca';
+   renderPresetManagerList();
+   return true;
+  }catch(error){
+   persistHardwarePresetNames();
+   if(status)status.textContent='Pembacaan berhenti di '+completed+'/128 · '+(error?.message||String(error))+' · tekan ↻ untuk mencoba lagi';
+   renderPresetManagerList();
+   return false;
+  }finally{
+   hardwareSyncBusy=false;presetNameScanBusy=false;window.MG30PresetNameScanBusy=false;
+   if(refresh)refresh.disabled=false;
+   renderPresetManagerList();renderSlotPicker();
+   if(midiConnected&&resumePolling)startHardwareStatePolling();
+   presetNameScanPromise=null;
+  }
+ })();
+ return presetNameScanPromise;
+}
 function currentName(){return $('presetName').value.trim()||'Draft '+slotName()}
 function model(){return BLOCKS[selected].models[states[selected].model]}
 function params(){return model()[1].split(',').map(s=>s.trim())}
