@@ -144,8 +144,8 @@ function init() {
         : 'Unduhan browser dimulai.';
       const resourceNameStatus = exportResourceName === source.resourceName
         ? ' Nama IR: "' + source.resourceName + '".'
-        : ' Nama IR mengikuti batas QuickTone: "' + exportResourceName +
-          '" (16 byte awal dari "' + source.resourceName + '"). Nama IR di pedal tidak diubah.';
+        : ' Nama IR di file mengikuti batas QuickTone: "' + exportResourceName +
+          '" (32 byte pertama dari "' + source.resourceName + '"). Nama IR di pedal tidak diubah.';
       setStatus('File tersimpan: ' + savedName + ' · ' +
         Number(saved.bytes || bytes.length).toLocaleString('id-ID') + ' byte. ' + locationText +
         ' File berisi 3 scene, 2.048 sampel waveform, dan 600 nilai kurva.' + resourceNameStatus, 'ok');
