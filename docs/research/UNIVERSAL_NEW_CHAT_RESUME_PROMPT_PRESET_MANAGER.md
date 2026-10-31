@@ -554,3 +554,16 @@ Validation:
 - No build or physical Android UI verification yet.
 
 Current stop point: CSS source and project notes saved. Ask exactly **“Build sekarang atau nanti?”** and wait for approval.
+## Device heading clarification — retain green DEVICE label and main title (1 Nov 2026)
+
+User clarified that only the small descriptive subtitle beneath Device & Settings should be removed. The green DEVICE eyebrow must remain, and the main Device & Settings heading should stay but be slightly smaller. Keep header sticky and Device content close below.
+
+Implemented only in www/ui-redesign.css, commit 95c9fb4d22a861ffa57ddafb64dd04ddf54b0b28:
+- Device hero added to shared sticky heading selectors.
+- Removed prior display:none rule on the whole Device hero.
+- Hide only `#page-device > .hero:first-child p`.
+- Retain green eyebrow and show Device & Settings heading at 23px, line-height 1.12.
+- Existing Device top padding and USB panel 2px margin remain.
+- No HTML/JS/function/protocol edits.
+
+Static assertions passed. Android build run triggered by this CSS push; check the exact run and verify it before providing APK.
