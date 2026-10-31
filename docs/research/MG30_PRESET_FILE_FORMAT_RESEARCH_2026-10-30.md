@@ -806,3 +806,29 @@ This is a save-file-only extension to the existing native MIDI plugin; it does n
 - [ ] Install that APK and run a read-only export. Confirm Android's system file manager Save As UI appears after readback succeeds.
 - [ ] Choose a folder, confirm save, then locate the resulting `.mg30patch` there and verify exact 9,902-byte size.
 - [ ] Cancel the picker once and confirm the app reports "Penyimpanan dibatalkan" and does not claim success.
+
+
+## Physical hardware validation — successful QuickTone Export → Save As → Import round trip (2026-10-31)
+
+The user confirmed on the physical MG-30 that they successfully completed both Export and Import using the updated Android app. This is the first reported end-to-end physical validation after correcting the 10/00 and 11/00 read-request field displacement and adding Android's system Save As picker.
+
+### Confirmed outcomes
+
+- Read-only QuickTone `.mg30patch` Export completed successfully on the user's pedal.
+- Android system file manager / document picker flow was used to choose the save destination.
+- The exported `.mg30patch` was then selected and imported successfully back to the MG-30.
+- This confirms the corrected read request frame layout is compatible with the user's physical device sufficiently to complete Export, and confirms the existing single-preset Import path still operates after the change.
+- Android build used for the native save-picker change: GitHub Actions run #144, source commit `ddc584f33fc7b81248445da5b56d7944deaa2b9b`, completed successfully. Artifact `MG30-Studio-debug-APK`, ID `13042443301`, size 4,018,075 bytes. Run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41201661073
+
+### Scope / claims
+
+This user-reported physical round trip validates file transfer and the single-preset Export/Import workflow. It does not, by itself, document a sonic A/B comparison, confirmation of every preset parameter on the pedal display, or whether every IR-selection scenario has been auditioned. Do not overstate those as tested until the user confirms them.
+
+### Remaining follow-up
+
+- [x] Correct 10/00 and 11/00 request field offsets against QuickTone frame layout.
+- [x] Read all required data sufficiently to produce a complete `.mg30patch` on physical MG-30.
+- [x] Save the patch using Android's system Save As picker.
+- [x] Import the exported single-preset file back to the physical MG-30 successfully (user confirmation).
+- [ ] Optional confidence check: compare the imported preset's three scenes and IR identity/settings against the source slot and audition the result. No destructive/batch test is implied.
+- [ ] Continue separate validation of IR Collection import/assignment and NAM workflows; this round trip does not newly certify those distinct paths.
