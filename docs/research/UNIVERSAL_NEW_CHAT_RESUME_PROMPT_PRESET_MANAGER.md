@@ -508,3 +508,19 @@ Builds:
 - APK archive integrity passed. Embedded index no longer contains either MG30 Studio footer markup; bundled CSS confirms the independent viewport/scroll rules and legacy Preset override.
 - The APK changes only the two approved app files: www/index.html and www/ui-redesign.css. All feature code files remained unchanged.
 - Physical Android test is still needed: scroll NAM & IR, open Presets and verify it retains its own scroll position; then test Editor, Studio and Device independently.
+## Fix Build #200 regression — header position and Preset internal scrolling (1 Nov 2026)
+
+Build #200 screenshots showed the NUX header displaced below a large blank area and the Preset list could not scroll.
+
+Root causes addressed in `www/ui-redesign.css` commit `e636a666d4439fd0bc220c064a93be2d1b29ab87`:
+- Pin `.app` itself to the viewport origin with `position:fixed; inset:0`; reset body to static while root overflow remains locked. This avoids stale/root-scroll offset moving the header down.
+- Restore header to normal flex flow with no inset/transform.
+- Keep each visible tab as its own flex scroll container.
+- Make active Preset page a flex column with `overflow:hidden`; card list becomes the bounded `flex:1; min-height:0; overflow-y:auto` child. The old override had `display:block`, which defeated the card list's flex height.
+- Keep bottom nav fixed.
+
+Only `www/ui-redesign.css` was edited for this correction. `index.html`, `main.js`, `preset-library-ui.js`, `preset-library-ui.css`, and `mg30-preset-export.js` are unchanged. No MIDI/device/protocol/Editor/Signal Chain/NAM/IR logic was edited.
+
+Build #201 automatically triggered from exact commit e636a666d4439fd0bc220c064a93be2d1b29ab87; run ID 41233822485. Monitor this build; its artifact supersedes Build #200 for layout fix. At the last note, dependencies were installing, later build stages pending.
+
+Physical test after install: header returns to normal near top; Preset card list scrolls; switching tabs preserves each tab's own scroll.
