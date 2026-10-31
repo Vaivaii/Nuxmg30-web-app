@@ -1167,3 +1167,12 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 - [x] User confirms IR Collection is a storage/catalog only, not a separate active IR destination.
 - [x] IR selected from Collection is installed/transferred to pedal User (Third Party) for use. Preserve existing mapping; do not create a separate Collection device bank or redirect this path.
 - [ ] NAM hardware test remains pending; user has not tested NAM on physical MG-30 yet.
+
+
+## NAM status correction — transfer works; NAM-containing preset round trip pending (2026-10-31)
+
+- [x] User confirms NAM transfer to physical MG-30 succeeded yesterday, before IR import success.
+- [ ] Test Export from the app of a preset/file containing NAM, then Import that exported file back to the MG-30.
+- [ ] Confirm NAM identity/assignment and preset behavior survive that round trip.
+- [x] Do not label NAM transfer as untested; do not alter its working transfer path.
+- [ ] Keep generic preset Export/Import success separate unless the tested preset is confirmed to contain/use NAM.
