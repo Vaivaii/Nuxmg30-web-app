@@ -15,12 +15,25 @@ function init() {
   const status = $('presetImportStatus');
   const targetLabel = $('presetImportTarget');
   const importBar = $('presetLibraryImportBar');
+  const progressDialog = $('presetImportProgressDialog');
+  const progressTitle = $('presetImportProgressTitle');
+  const progressMessage = $('presetImportProgressMessage');
+  const progressPhase = $('presetImportProgressPhase');
+  const progressTrack = $('presetImportProgressTrack');
+  const progressFill = $('presetImportProgressFill');
+  const progressAck = $('presetImportProgressAck');
+  const progressNote = $('presetImportProgressNote');
+  const progressIcon = $('presetImportProgressIcon');
+  const progressReady = Boolean(progressDialog && progressTitle && progressMessage &&
+    progressPhase && progressTrack && progressFill && progressAck && progressNote && progressIcon);
   if (!input || !choose || !info || !status || !targetLabel || !importBar) return;
 
   let parsed = null;
   let file = null;
   let busy = false;
   let selectedTargetProgram = null;
+  let progressCloseTimer = null;
+  let progressCompleted = 0;
 
   const api = () => window.MG30PresetImportBridge;
   const message = (text, kind = '') => {
@@ -28,6 +41,81 @@ function init() {
     status.classList.remove('ok', 'warn');
     if (kind) status.classList.add(kind);
   };
+
+  function closeProgressDialog() {
+    if (!progressReady) return;
+    if (progressDialog.open && typeof progressDialog.close === 'function') {
+      progressDialog.close();
+    } else {
+      progressDialog.removeAttribute('open');
+    }
+  }
+
+  function openProgressDialog(target, resourceName) {
+    if (progressCloseTimer) window.clearTimeout(progressCloseTimer);
+    progressCloseTimer = null;
+    progressCompleted = 0;
+    message('');
+    if (!progressReady) {
+      message('Import sedang berlangsung ke ' + target + '…');
+      return;
+    }
+    progressDialog.dataset.state = 'loading';
+    progressTitle.textContent = 'Import sedang berlangsung';
+    progressMessage.textContent = 'Mengirim resource IR "' + resourceName +
+      '" ke Third Party / User, lalu menulis tiga scene preset ke slot ' + target + '.';
+    progressPhase.textContent = 'Menyiapkan transfer…';
+    progressTrack.setAttribute('aria-valuenow', '0');
+    progressFill.style.width = '0%';
+    progressAck.textContent = '0/78 ACK';
+    progressNote.textContent = 'Jangan tutup aplikasi atau lepas koneksi USB selama proses berlangsung.';
+    progressIcon.textContent = '';
+    if (!progressDialog.open) {
+      if (typeof progressDialog.showModal === 'function') progressDialog.showModal();
+      else progressDialog.setAttribute('open', '');
+    }
+  }
+
+  function updateProgressDialog(progress) {
+    const completed = Math.max(0, Math.min(78, Number(progress?.completed) || 0));
+    const phase = String(progress?.phase || 'Memproses');
+    progressCompleted = completed;
+    if (progressReady) {
+      progressPhase.textContent = phase;
+      progressTrack.setAttribute('aria-valuenow', String(completed));
+      progressFill.style.width = (completed / 78 * 100) + '%';
+      progressAck.textContent = completed + '/78 ACK';
+    } else {
+      message(phase + ' · ' + completed + '/78 ACK');
+    }
+  }
+
+  function finishProgressDialog(state, title, detail, phase, completed, delay) {
+    if (!progressReady) {
+      message(detail, state === 'error' ? 'warn' : 'ok');
+      window.setTimeout(() => message(''), delay);
+      return;
+    }
+    progressDialog.dataset.state = state;
+    progressTitle.textContent = title;
+    progressMessage.textContent = detail;
+    progressPhase.textContent = phase;
+    progressTrack.setAttribute('aria-valuenow', String(completed));
+    progressFill.style.width = (completed / 78 * 100) + '%';
+    progressAck.textContent = completed + '/78 ACK';
+    progressNote.textContent = 'Dialog akan tertutup otomatis.';
+    progressIcon.textContent = state === 'success' ? '✓' : '!';
+    if (progressCloseTimer) window.clearTimeout(progressCloseTimer);
+    progressCloseTimer = window.setTimeout(() => {
+      closeProgressDialog();
+      progressCloseTimer = null;
+    }, delay);
+  }
+
+  progressDialog?.addEventListener('cancel', event => {
+    // Keep the progress overlay open while the import is running and until its result auto-closes.
+    event.preventDefault();
+  });
   const refreshTarget = () => {
     if (selectedTargetProgram === null) {
       targetLabel.textContent = 'Pilih slot tujuan dengan mengetuk kartu preset di bawah.';
@@ -119,14 +207,14 @@ function init() {
     }
 
     lock(true);
-    message('Memulai impor QuickTone single-preset ke ' + target + '…');
+    openProgressDialog(target, parsed.resourceName);
     try {
-      const result = await bridge.import(plan, progress => {
-        const completed = progress.completed || 0;
-        message((progress.phase || 'Memproses') + ' · ' + completed + '/78 ACK');
-      });
-      message('Impor selesai ke ' + target + ': 78/78 ACK. Tiga scene cocok dengan pembacaan ulang perangkat. ' +
-        'IR "' + result.resourceName + '" mendapat ACK semua fase; readback resource IR belum dilakukan.', 'ok');
+      const result = await bridge.import(plan, updateProgressDialog);
+      const successDetail = 'Import ke ' + target + ' berhasil: 78/78 ACK. ' +
+        'Tiga scene cocok dengan pembacaan ulang perangkat. Resource IR "' +
+        result.resourceName + '" mendapat ACK semua fase; readback resource IR belum dilakukan.';
+      message('');
+      finishProgressDialog('success', 'Import selesai', successDetail, 'Selesai', 78, 1500);
       input.value = '';
       file = null;
       parsed = null;
@@ -135,8 +223,11 @@ function init() {
       importBar.classList.remove('has-file');
       refreshTarget();
     } catch (error) {
-      message('Impor tidak selesai: ' + (error?.message || error) +
-        ' Periksa pedal sebelum mengulangi; transfer terputus dapat meninggalkan resource atau preset parsial.', 'warn');
+      const failureDetail = 'Import tidak selesai: ' + (error?.message || error) +
+        ' Periksa pedal sebelum mengulangi; transfer terputus dapat meninggalkan resource atau preset parsial.';
+      message('');
+      finishProgressDialog('error', 'Import tidak selesai', failureDetail,
+        'Perlu pemeriksaan perangkat', progressCompleted, 2600);
     } finally {
       lock(false);
     }
