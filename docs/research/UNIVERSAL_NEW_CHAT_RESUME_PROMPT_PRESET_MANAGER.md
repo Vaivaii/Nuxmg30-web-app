@@ -456,3 +456,25 @@ Build state:
 - Build #197 was triggered automatically from exact commit d6040b9083f13159a958c6d684b501006df5532a, run ID 41230734572.
 - At last check, dependencies were installing; follow run 41230734572 to completion and retrieve its artifact only after success.
 - No second build should be started while #197 is running.
+## 26. Isolate Preset Manager tab scroll and pin its footer above navigation (1 Nov 2026)
+
+Screenshot diagnosis: NAM & IR and Presets were sharing the app document/root scroll position. Switching tabs inherited the scroll offset; the original global `MG30 Studio` footer is after all sections, so it appeared only when the entire app document reached the bottom. This is unrelated to hidden Draft IDs.
+
+Implemented on `feature/preset-manager-redesign`:
+- `www/index.html` commit `6ada04ac86f35885ed566c3dd2dd3b0c5c71e732`: added local `MG30 Studio` footer inside `#page-presets`, retaining the original global footer for other tabs.
+- `www/preset-library-ui.js` commit `83838af09442e706e444e4a3c093165ed48a742d`: added Preset-only viewport controller. When Presets becomes visible on mobile, it measures `.top` bottom and `.nav` top and activates `body.preset-manager-active`; it clears the mode on page hide through a class MutationObserver. Removed the old list-height-only logic.
+- `www/preset-library-ui.css` commit `0070b958a31ddaac0768057ff670a149306083a3`: positions only the visible Preset section fixed between header and bottom nav, flexes the card-list as its own scroll area, hides global footer only while Presets is active, and keeps its local footer just above nav.
+
+Preservation:
+- All four hidden Draft compatibility IDs remain unchanged in the existing hidden container.
+- The shared nav and header are measured, not restyled or repositioned.
+- `www/main.js` unchanged; `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- No Editor/startup, NAM & IR, Signal Chain, USB-MIDI/native Android, Import/Export protocol, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio or Device code changed.
+- Git compare shows exactly three changed files: index markup for Preset-local footer, Preset UI controller, and page-scoped CSS.
+
+Validation/build:
+- Static checks passed for local/global footer presence, retained Draft IDs, fixed Preset-only viewport, header/nav measurement, independent card scroll and cleanup on tab hide.
+- Build #197 succeeded on previous source d6040b9083f13159a958c6d684b501006df5532a (run 41230734572, artifact 13053622163; ZIP 4,022,454 bytes); it predates this change.
+- No automated tests or physical Android checks run for this isolation change. Do not treat Build #197 as containing it.
+
+**Current stop point:** source and project notes are committed. Ask exactly **“Build sekarang atau nanti?”**; no build until approval.
