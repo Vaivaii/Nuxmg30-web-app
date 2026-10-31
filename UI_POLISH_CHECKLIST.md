@@ -1313,3 +1313,48 @@ Earlier notes that the app and QuickTone had matching `10/00` / `11/00` request 
 **Plan commit:** `8a7074057e1c3f9e93c6feaab3aca6032463fc72`.
 
 **Current stop point:** branch and checklist are prepared. Waiting for the user's next instruction. No build has been started.
+
+
+---
+
+## Strict scope lock — Import/Export, movable signal chain, non-Preset tabs (2026-10-31)
+
+<badge color="danger">Protected areas — do not modify</badge>
+
+### Absolute prohibitions
+
+- [ ] **Preset Import and Export code must not be changed.** This includes controls/IDs/event wiring, Import validation, bridges, SysEx/packet flow, serializers/parsers, binary format, Export readback, Android save picker, transaction timing, and tests. Header buttons are visual placement only; reuse existing controls/handlers without changing their behavior. If moving them needs a protected code edit, stop and ask first.
+- [ ] **Movable Signal Chain must not be touched.** No markup, CSS, drag/drop, touch handling, DOM order, reorder algorithm, state, persistence, callbacks, event propagation or supporting code changes.
+- [ ] **No code outside the Preset Library tab may be modified.** Editor, NAM & IR, Studio, Device, app shell, global header/navigation, shared startup, USB-MIDI/native bridge, global state/helpers, MIDI mappings, Save, Copy Scene, CTRL/EXP and all other non-Preset tabs are protected.
+- [ ] Do not change global/shared CSS or global/shared JavaScript where it could affect a protected area.
+- [ ] If the requested Preset Library UI cannot be completed without touching a protected area, stop and request explicit permission. Never decide to broaden scope yourself.
+
+### Safe implementation boundary
+
+- Prefer a standalone Preset Library controller/module (for example `www/preset-library-ui.js`) and CSS selectors namespaced only to a dedicated Preset Library container.
+- A shared host file such as `www/index.html` is not automatically considered safe. Before editing it, isolate the exact Preset Library-only markup/attachment point and confirm the diff does not touch Editor, startup/connect code, transfer modules or movable signal chain.
+- Import/Export controls in the header may be moved visually only by a narrowly scoped wrapper/CSS while preserving their exact IDs, handler bindings and module behavior.
+- No protocol work, no transfer refactor, no global cleanup, no unrelated fixes.
+
+### Mandatory change record
+
+For each single, small code change, append to this checklist:
+- Date and purpose.
+- Exact list of files changed.
+- Commit SHA.
+- Confirmation that Import/Export, movable signal chain, Editor, USB-MIDI, NAM, IR, MIDI mapping, Save, Copy Scene, CTRL/EXP and non-Preset tabs were not touched.
+- Tests run (or “not run”).
+- Next validation step.
+
+After the code change and checklist update, stop and ask **“Build sekarang atau nanti?”**. Never trigger CI, GitHub Actions, Gradle or APK packaging before the user explicitly says **“build sekarang”**.
+
+### Universal new-chat resume prompt
+
+Saved separately at:
+`docs/research/UNIVERSAL_NEW_CHAT_RESUME_PROMPT_PRESET_MANAGER.md`
+
+Copy that prompt into a new chat in this same project whenever a conversation is interrupted. It instructs the next chat to inspect the latest checklist and resume from the exact last commit/stop point without asking the user to repeat established context.
+
+### Addendum commit
+
+- Plan scope-lock commit: `8e1e1c10997fdfdb0a966b3df746b6fc2ff56a99`.
