@@ -153,3 +153,46 @@ The preset cards are not merely labels. The existing hardware slot synchronizati
 6. If the existing Preset Library tab does not expose enough information to implement device → app card selection without changing protected global/USB-MIDI code, stop and report the exact limitation. Ask the user before touching any protected code.
 
 This bidirectional requirement is higher priority than visual convenience. A card list that only changes its highlight locally is not an acceptable implementation.
+
+
+## Implementation checkpoint — first preset-card UI pass (31 Oct 2026)
+
+### Files changed
+
+- www/index.html: only the Preset Library section was replaced; a page-scoped stylesheet and dedicated Preset Library module were attached. All original Import/Export IDs remain in the section. No Editor/startup/USB-MIDI/Movable Signal Chain code was edited.
+- www/preset-library-ui.js: new isolated controller renders 128 cards, reads/caches stored preset names using the existing 0B/00 read-only helper, and handles card selection and existing active-slot events.
+- www/preset-library-ui.css: new scoped styles; every selector is under #page-presets.
+
+### Interaction and protocol reuse
+
+- App → pedal uses the existing global selectHardwareSlot(program, false) function.
+- Pedal → app selected-card changes listen to the already-existing mg30-active-preset-changed event emitted by the app's existing persist/slot sync path.
+- Active slot is read from the existing slotLabel display; the new module does not keep an independent slot variable.
+- Name scanning runs only when the user opens the Preset Library tab and the existing export bridge reports connected. It does not start on USB connect.
+- Name scan reads stored preset part 0 via existing readSysExPart(0x0B, program, 0), validates the returned program/part and reads packed name slots 106–121. It sends no Program Change and performs no write.
+- The name scan stores partial progress in a page-specific localStorage key and can resume missing entries when the user reopens the tab.
+- The scanner checks exposed in-progress flags for Import, Export and IR transfer, NAM reader dataset.busy, and active Save/Copy Scene status before proceeding.
+
+### Import/Export and protected scope
+
+- Existing Import and Export modules, IDs, validations, transaction ordering, serializers, parsers, binary format, readback, Android save picker and handlers are unchanged. Only their existing controls were repositioned inside the Preset Library UI.
+- Movable Signal Chain remains untouched.
+- Editor, USB-MIDI/native bridge, NAM/IR transfer modules, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+- No shared CSS file was edited; the new CSS file is dedicated to the Preset Library page.
+- www/index.html is a shared host file, but its change is restricted to the Preset Library section and the dedicated stylesheet/module attachment points only.
+
+### Commits
+
+- 2bada7b0359cc79526813762079d63cd29f00304 — add Preset Library card controller.
+- f0f99e65f1a3f02c8c0bfd7bb2f036907f0c4018 — add scoped card styles.
+- 2294e4a5cc86ea79db2bfc13e781e1585673d07c — replace only Preset Library markup and attach page-specific files.
+- 8747a6392b4314a9d7856a195c925041f92117c3 — validate name-field minimum bytes needed by the existing packed-name decoder.
+- 3dcbd03ad7831275ab6d85504a8fa1c25353f012 — make existing Export diagnostics visible when its module opens them.
+- Checklist checkpoint: d2b6c033e49bbaf4f9173e3e0f4eb5f4378eb21a.
+
+### Validation / stop point
+
+- Static source review completed. The application-code diff is limited to the three files listed above.
+- Automated tests not run. Android build not run. No GitHub Actions workflow run was triggered for this feature branch.
+- Physical test pending: connect original MG-30 Gen2 FW 6.0.x, open Preset Manager, allow stored-name scan to complete, verify example names from slots 28A–29B, tap a card and verify the pedal follows, change slot on pedal and verify selected card follows.
+- Next: ask the user Build sekarang atau nanti? Do not start CI/Gradle/APK packaging without explicit Build sekarang approval.
