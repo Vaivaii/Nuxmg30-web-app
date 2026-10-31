@@ -366,7 +366,7 @@ function initUI(){
   throw lastError||Error('Query metadata Collection gagal.');
  }
  async function syncCollectionFromDevice({connection=null,slotIndices=null,silent=false}={}){
-  if(busy||syncBusy)return;
+  if(busy||syncBusy||window.MG30PresetNameScanBusy)return;
   if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Sinkronisasi Collection memerlukan APK Android dan kabel USB OTG.','warn');return}
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
   const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
