@@ -406,3 +406,4 @@
 @media (prefers-reduced-motion: reduce) {
   #page-presets #presetImportProgressFill { animation: none; transition: none; }
 }
+/* Build source: compact shared Import / Export feedback dialog. */
