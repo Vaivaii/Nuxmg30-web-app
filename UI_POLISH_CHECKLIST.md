@@ -1092,3 +1092,17 @@ Goal 2 remains **analysis in progress**. Next work is deeper static call-graph/d
 - [ ] Physical read-only Export test on original MG-30 Gen2 FW 6.0.x; inspect complete unique offset coverage, three scene readbacks and final file.
 - [ ] If only offset 128 arrives without other pages, retain diagnostics; do not redefine the offset field or bypass validation.
 - [x] Protected write/import paths, NAM, IR Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device untouched.
+
+
+## Physical Export diagnostic — slot 04C / program 14; send-timing fix (2026-10-31)
+
+- [x] Review the full diagnostic: read-only Export on slot 04C failed in waveform phase with 4/64 unique returned offsets (0, 256, 512, 768); each appeared 16 times, leaving 60 offsets missing.
+- [x] Confirm the first response sequence was 0, 0, 256, 256, 512, 512, 768, 768, followed by repetitions of those same four offsets. This is not ordinary arbitrary out-of-order coverage; the cause is still unknown.
+- [x] Identify misleading diagnostic timestamps: old sentAtMs was recorded before midiFrame() entered the paced MIDI queue, not at actual output dispatch.
+- [x] Identify a status race where a response could mark a block matched before the send promise resumed, after which the send loop overwrote it as sent and failure handling later marked it not-received.
+- [x] Update read-only Export logging to capture queue time, actual dispatch time immediately before midiOutput.send(), and send completion time; preserve the matched state and distinguish not-sent / not-received / send-failed.
+- [x] Harden offset collection: ignore a page if the request for that same offset has not yet been dispatched in the current batch; include the reason and response-to-dispatch latency fields in diagnostics.
+- [x] Commit: 14d13eb90358a68a82ccdc9b52964aac4fb489d7 — Fix IR export readback send timing and reject pre-request pages.
+- [ ] Wait for the CI workflow from commit 14d13eb to pass before distributing an APK.
+- [ ] Repeat read-only Export on original MG-30 Gen2 FW 6.0.x; inspect dispatch timestamps, pre-request pages, unique waveform and curve offset coverage, and all three scene readbacks.
+- [x] No change to the request encoder, decoded-offset meaning, IR write/import routines, NAM, Collection, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal-chain order, or Save-to-device.
