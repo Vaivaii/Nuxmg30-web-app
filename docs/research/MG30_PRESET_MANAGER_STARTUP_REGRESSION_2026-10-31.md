@@ -73,3 +73,15 @@ Per explicit instruction to restore the Editor and avoid touching working areas,
 This restores the Editor page, USB-MIDI connection handler, and existing transfer pages to the version before the Preset Manager redesign. The 32-byte QuickTone IR-name format/parser/serializer fix is retained because it already existed in Build #155. Earlier NAM transfer, IR User/Third Party and Collection protocols, MIDI map, Save, Copy Scene, and single-preset Import/Export remain at the stable baseline.
 
 The redesign is suspended. Do not reintroduce Preset Manager startup/scan code into the core Editor script. Any future Preset Manager UI work must be strictly isolated and tested so it cannot change or block Editor initialization or USB-MIDI connection.
+
+
+## Restored build verification — Build #184 (2026-10-31)
+
+- GitHub Actions run #184 succeeded: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41213464793
+- Source commit: `e7636279a0c3556a6b994bb4f4ffd242e95c4a4b`.
+- Protocol tests passed; Android debug build and artifact upload succeeded.
+- Artifact ID: `13047232483`; ZIP size 4,018,194 bytes.
+- APK: 4,395,972 bytes.
+- APK SHA-256: `04d67d94cee87a3f70f5be6597451393aa85643f4ffdfa7fe19dc879a99365f4`.
+- The five restored files were verified byte-identical to stable Build #155 baseline: `www/index.html`, `www/ui-redesign.css`, `www/ir-transfer.js`, `www/nam-transfer.js`, and `www/mg30-preset-export.js`.
+- This is a source/build rollback, not proof of physical USB-MIDI recovery. User must install Build #184 and confirm Editor + USB-MIDI on hardware.
