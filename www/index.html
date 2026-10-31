@@ -2024,7 +2024,7 @@ function togglePresetJumpMenu(force){
  if(open){buildPresetJumpMenu();menu.classList.remove('hidden');trigger.setAttribute('aria-expanded','true');const active=menu.querySelector('.preset-jump-option.active');if(active)active.scrollIntoView({block:'nearest'});}
  else{menu.classList.add('hidden');trigger.setAttribute('aria-expanded','false');}
 }
-initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();initPresetManagerList();window.addEventListener('mg30-midi-connected',()=>{renderPresetManagerList();const status=$('presetNameScanStatus');if(status&&Object.keys(hardwarePresetNames).length<128)status.textContent='MG-30 terhubung · tekan ↻ untuk membaca nama 128 preset'});$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
+initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
 function autoConnectMG30FromUsb(deviceInfo=null){
  if(!window.NUXNativeMidi?.available||midiConnected||midiConnectPending)return;
  if(deviceInfo){
@@ -2041,6 +2041,20 @@ window.addEventListener('mg30-native-midi-ready',()=>{
  else window.addEventListener('load',startInitialScan,{once:true});
 },{once:true});
 $('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
+try{
+ initPresetManagerList();
+}catch(error){
+ console.error('[MG30 Preset Manager] UI initialization failed:',error);
+ const status=$('presetNameScanStatus');
+ if(status)status.textContent='Daftar preset gagal dimuat: '+(error?.message||String(error))+' · Editor dan USB-MIDI tetap tersedia.';
+}
+window.addEventListener('mg30-midi-connected',()=>{
+ try{
+  renderPresetManagerList();
+  const status=$('presetNameScanStatus');
+  if(status&&Object.keys(hardwarePresetNames).length<128)status.textContent='MG-30 terhubung · tekan ↻ untuk membaca nama 128 preset';
+ }catch(error){console.error('[MG30 Preset Manager] refresh after USB-MIDI connect failed:',error)}
+});
 
 function ctrlEditorEnter() {
  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
