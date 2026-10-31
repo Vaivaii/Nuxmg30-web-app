@@ -53,9 +53,9 @@ function buildDataReadRequest(command, resourceIndex, offset) {
   if (!Number.isInteger(address) || address < 0 || address > max || address % step !== 0) {
     throw new Error('Offset read IR tidak valid untuk command 0x' + command.toString(16) + '.');
   }
-  // QuickTone request layout: 10/00 or 11/00, two reserved zero bytes,
-  // packed uint16 resource index, packed uint16 sample/curve offset, F7.
-  return Uint8Array.from([...PREFIX, command, 0x00, 0, 0, ...encodeWord16(index), ...encodeWord16(address), 0xF7]);
+  // The device expects the packed resource index and offset immediately after
+  // the command; the two padding bytes are at the end of the frame.
+  return Uint8Array.from([...PREFIX, command, 0x00, ...encodeWord16(index), ...encodeWord16(address), 0, 0, 0xF7]);
 }
 export function buildMG30UserIRWaveReadRequest(resourceIndex, sampleOffset) {
   return buildDataReadRequest(0x10, resourceIndex, sampleOffset);
