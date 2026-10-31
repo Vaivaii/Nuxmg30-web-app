@@ -2122,3 +2122,14 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 
 ### Build
 - Commit 95c9fb4d22a861ffa57ddafb64dd04ddf54b0b28 was pushed to the active branch and triggers the Android build workflow. Verify its run/artifact before distribution.
+### Build #202 — Device heading correction (1 November 2026)
+
+- Build run #202: `41235480866`; completed successfully, source commit `95c9fb4d22a861ffa57ddafb64dd04ddf54b0b28`.
+- All workflow steps passed: dependencies, protocol regression tests, Capacitor Android generation, Gradle assembleDebug, and artifact upload.
+- Artifact ID `13055268057`, ZIP 4,024,455 bytes; downloaded to `MG30_Studio_Build_202_Device_Header_Correction.zip`.
+- Extracted APK: `MG30_Studio_Build_202_Device_Header_Correction.apk`, 4,402,360 bytes.
+- APK SHA-256: `c21d602b8e7d66b952cfd9a1416dbab9dfd7f2e24191bf8692f5446e51af4d53`.
+- ZIP integrity test passed; APK recognized as Android package with APK Signing Block.
+- Inspected packaged `assets/public/index.html` and CSS bundle: green `DEVICE` eyebrow is retained; `<h2>Device & Settings</h2>` retained; explanatory subtitle remains in markup but the scoped CSS hides only its paragraph; Device title is 23px and sticky. Editor/NAM/Studio/Backup sticky heading selectors remain in bundled CSS.
+- `www/index.html` unchanged; `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- No MIDI, SysEx, USB connection, Import/Export protocol, Editor behavior, Signal Chain, NAM/IR or Device function logic changed. Physical Device UI check remains pending.
