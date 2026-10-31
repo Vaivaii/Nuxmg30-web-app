@@ -2061,3 +2061,12 @@ Do not edit other application files. Follow Build #200 to completion, verify the
 
 ### Current state
 Build #201 is the authoritative build for this fix. Continue monitoring its run and provide only its verified artifact.
+### Build #201 — fixed header + restored Preset card scrolling (1 November 2026)
+
+- Run `41233822485`, Build #201, conclusion `success`; exact source commit `e636a666d4439fd0bc220c064a93be2d1b29ab87` on `feature/preset-manager-redesign`.
+- All job steps passed: checkout, Node setup, Java setup, npm install, protocol regression tests, Capacitor Android generation, Gradle `assembleDebug`, and APK artifact upload.
+- Artifact ID `13055051632`, name `MG30-Studio-debug-APK`, ZIP 4,023,993 bytes; downloaded and extracted as `MG30_Studio_Build_201_Fixed_Header_Scroll.apk` (4,401,968 bytes).
+- APK SHA-256: `a04cce7cc5523364b1f3fefb0d0409419a8ede399f23b91217d9772f18bf9b22`.
+- ZIP integrity test passed; APK identified as Android package with APK signing block.
+- Inspected packaged Vite bundle: app fixed viewport recovery present; independent section scroll present; Preset flex-column and card-list internal `overflow-y:auto` present; both MG30 Studio footer strings absent; all four hidden Draft IDs remain.
+- No protocol/device/feature JS code changed for this fix. Physical Android UI validation remains pending; install #201 and verify header top position, Preset scrolling, and tab-to-tab scroll retention.
