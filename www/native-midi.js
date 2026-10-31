@@ -166,6 +166,9 @@ if (Capacitor.isNativePlatform()) {
       const result = await NativeMidi.listDevices();
       return Array.isArray(result?.devices) ? result.devices : [];
     },
+    async savePatch(options = {}) {
+      return NativeMidi.savePatch(options);
+    },
   };
   window.dispatchEvent(new CustomEvent('mg30-native-midi-ready'));
 }
