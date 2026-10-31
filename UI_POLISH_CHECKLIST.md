@@ -1983,3 +1983,36 @@ Build #197 is already running for the edge correction. Do not start a second bui
 ### Mandatory stop point
 All three source commits and the project checkpoint are saved to the active branch. Do not build until the user explicitly chooses **Build sekarang**.
 Next response must ask exactly: **Build sekarang atau nanti?**
+## All tabs — independent scrolling and remove MG30 Studio footer labels (1 November 2026)
+
+### User authorization / scope
+- User explicitly approved changing only www/ui-redesign.css and www/index.html for app-wide independent tab scrolling and removing MG30 Studio footer labels, with the condition that already-working functions must not be changed or touched.
+
+### Application changes
+1. www/index.html — commit 9ee2a812404a1f4b2115bfbfee295086a4e8b83e.
+   - Removed the Preset-local footer `<div class="footer preset-library-footer">MG30 Studio</div>`.
+   - Removed the original shared footer `<div class="footer">MG30 Studio</div>`.
+   - No section markup, nav button, IDs, scripts, handlers or compatibility Draft nodes were changed.
+2. www/ui-redesign.css — commit 6d671aa0dcb53bb613d173d1de0cc812636d4d3c.
+   - On phone viewports (<=720px), fixes the app shell to 100dvh and prevents the document/body from scrolling.
+   - Header remains in the shell; the bottom nav remains fixed.
+   - Each currently visible direct `section[id^="page-"]` becomes its own `flex:1` scroll container with `overflow-y:auto` and `overscroll-behavior-y:contain`. Hidden sections stay `display:none`; their own scrollTop is preserved when switched away and back.
+   - Overrides only the previous Preset-specific fixed viewport so Presets follows the same flex scroll model as every other tab. The existing `preset-manager-active` controller can still add/remove its body class; its former fixed-page effect is neutralized by scoped `!important` layout overrides.
+   - Hides both global footer selectors only; no shared navigation style or behavior changed.
+
+### Protected code verification
+- Git compare from previous branch HEAD `437a9bfe57c808f04bdda55c369617c7f38e5a66` shows exactly two changed application files: `www/index.html` and `www/ui-redesign.css`.
+- `www/main.js` unchanged (SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`).
+- `www/preset-library-ui.js` unchanged (SHA `67ec75258620323492609dcdec559badfb769797`).
+- `www/preset-library-ui.css` unchanged (SHA `ce207d1b218366add1b4916225ee0eedb3a24d6d`).
+- `www/mg30-preset-export.js` unchanged (SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`).
+- All four legacy Draft IDs remain in their original hidden container.
+- No USB-MIDI/native Android, Editor, Signal Chain, Import/Export, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save-to-device, Copy Scene, CTRL/EXP, Studio or Device logic was touched.
+
+### Build runs
+- Push of the HTML commit triggered Build #199, run ID `41233084907`, source commit `9ee2a812404a1f4b2115bfbfee295086a4e8b83e`. This captures only the footer removal and is not the final build for the full feature.
+- Push of the CSS commit triggered Build #200, run ID `41233090589`, source commit `6d671aa0dcb53bb613d173d1de0cc812636d4d3c`. This is the final build containing both approved application changes; use #200 for validation and APK retrieval.
+- Static source assertions passed. Automated protocol regression and Gradle result for #200 are pending at the moment of this record; physical Android UI verification remains pending.
+
+### Stop / next action
+Do not edit other application files. Follow Build #200 to completion, verify the artifact source SHA matches `6d671aa0dcb53bb613d173d1de0cc812636d4d3c`, download/extract/inspect its APK, then provide the verified APK link.
