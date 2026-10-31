@@ -567,3 +567,13 @@ Implemented only in www/ui-redesign.css, commit 95c9fb4d22a861ffa57ddafb64dd04dd
 - No HTML/JS/function/protocol edits.
 
 Static assertions passed. Android build run triggered by this CSS push; check the exact run and verify it before providing APK.
+## Build #202 — corrected Device header (1 Nov 2026)
+
+- CSS fix commit `95c9fb4d22a861ffa57ddafb64dd04ddf54b0b28` on feature/preset-manager-redesign.
+- Build #202 / run `41235480866` completed successfully. Dependencies, protocol regression tests, Capacitor Android generation, Gradle debug APK and artifact upload all passed.
+- Artifact ID `13055268057`, ZIP 4,024,455 bytes; extracted APK `MG30_Studio_Build_202_Device_Header_Correction.apk`, 4,402,360 bytes.
+- APK SHA-256 `c21d602b8e7d66b952cfd9a1416dbab9dfd7f2e24191bf8692f5446e51af4d53`.
+- ZIP integrity passed and APK recognized as Android package with APK Signing Block.
+- Verified bundled HTML/CSS: green DEVICE eyebrow and Device & Settings heading retained; only the small explanatory paragraph is hidden; title size 23px; Device hero sticky. Other tab heading sticky selectors remain.
+- `index.html`, `main.js`, and `mg30-preset-export.js` unchanged. No device/protocol/Editor/Signal Chain/Import/Export/NAM/IR function changed.
+- Physical Android visual check still pending.
