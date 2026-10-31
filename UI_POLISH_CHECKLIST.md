@@ -1641,3 +1641,70 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 
 **Current stop point:** Build #190 completed successfully and its exact APK was extracted and verified. No more build has been started. Physical pedal validation remains next.
 
+## Preset Manager — consolidate Import / Export feedback into compact modal (31 October 2026)
+
+### User screenshot feedback addressed in this stage
+
+- After choosing a `.mg30patch`, keep one compact file panel: show the selected filename and one short target prompt, **“Pilih slot tujuan.”** The duplicate green “File valid...” status box is suppressed.
+- Import progress now uses the smaller shared dialog: title + one progress bar. All explanatory IR/scene/protocol text and the numeric ACK/phase label are removed from the visible dialog.
+- Keep the important warning during an active transfer: **“Jangan tutup aplikasi atau lepas koneksi USB selama proses berlangsung.”**
+- Successful Import shows only **“Import selesai”**, fills the progress bar, and auto-closes after about 1.05 seconds. Failure shows **“Import gagal”** and auto-closes after about 2.1 seconds with only a short connection reminder.
+- Export's existing inline status output is now observed by the Preset Library-only controller and presented through the same modal:
+  - active readback/save phase → **“Export sedang berlangsung”** and progress bar;
+  - saved file → **“Export selesai”**, then auto-close;
+  - initial confirmation cancellation or Android file-manager save cancellation → **“Export dibatalkan”**, then auto-close;
+  - failure/disconnected device → short outcome title, then auto-close.
+- Hide the permanent Export status banner; keep its existing status node as the observer source.
+- Dialog width has been reduced from 380px to 340px and verbose inner content removed.
+- Progress fractions from existing Export status messages (for example 48/64) are converted to a visual percentage; no Export message parsing, readback or save behavior is changed.
+
+### Exact application files and commits
+
+1. `www/index.html`
+   - Commit: `8972f7de1482b78902bbe5f235369c6d5b075b94`
+   - Simplified the shared Preset Manager progress dialog markup to title, progress bar, and USB warning only.
+
+2. `www/preset-library-ui.css`
+   - Commit: `240e1dfe69b6cbf8f83e7f22b5290820b0f8190b`
+   - Made the dialog smaller and compact.
+   - Suppressed the duplicate successful/normal Import status panel and persistent Export status banner; Import validation warnings remain visible.
+   - Every new/modified selector is scoped under `#page-presets`.
+
+3. `www/preset-library-ui.js`
+   - Commit: `bc86d59464cda59ff294bd50959e2005fbe68cfa`
+   - Added a page-local MutationObserver for the existing `presetExportStatus` node.
+   - Routes Export progress, completion, cancellation and failure to the shared modal.
+   - Follow-up parsing correction: `03dc4305c75ec821fa7e9a7508ef54666a5804f5`.
+
+4. `www/mg30-preset-import.js`
+   - Commit: `0b989421174b3352988f791870c322d4603bddd5`
+   - Simplified filename/target copy and Import modal copy/results.
+   - Keeps the native USB warning and non-dismissible modal behavior.
+   - The existing parser, target validation, plan-builder call, `bridge.import(plan, updateProgressDialog)`, and transfer flow remain in place.
+
+### Explicitly untouched
+
+- **`www/mg30-preset-export.js` is unchanged** (source blob SHA remains `7959dea88d42f9433a9ddc06ed7198449e25ba52`). The observer reads its existing status output; no Export function, readback, serializer, .mg30patch content, Android Save As/native bridge or file manager flow is edited.
+- Import parser `parseMG30SinglePresetPatch()`, plan builder `buildMG30SinglePresetImportPlan()`, bridge call, packet/frame payload, packet ordering, ACK validation, readback and USB-MIDI sender are unchanged.
+- Movable Signal Chain, Editor/startup, global CSS/shared JavaScript, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save-to-device, Copy Scene, CTRL/EXP, Studio and Device are untouched.
+- No changes to the original MG-30 Gen2 firmware-specific transfer logic.
+
+### Source checks and validation
+
+- Static source assertions passed for: compact dialog markup, single target prompt, no visible Import phase/ACK text, retained USB warning, short Import result text, Export status observer, Export progress fraction regex, Export cancellation/success outcome routing, existing Import plan-builder call and existing bridge call.
+- Git compare from prior HEAD `0f8f78b23168ab1bb93a21c4982a116f46d7ccc1` confirms only `www/index.html`, `www/preset-library-ui.css`, `www/preset-library-ui.js`, and `www/mg30-preset-import.js` changed.
+- JavaScript automated syntax tests, app tests and physical-device tests: not run.
+- GitHub Actions / CI / Gradle / APK build: not run. All commits use `[skip ci]`.
+- Build #190 does not contain this feedback refinement.
+
+### Remaining screenshot item — separate next stage
+
+- The card scroller still needs a dedicated Preset Library-only viewport-height adjustment so it reaches down to immediately above the fixed bottom navigation and the final card can be shown fully.
+- The hidden legacy draft IDs remain present and at the bottom of `#page-presets`; they must not be removed. This viewport adjustment is the next isolated code change and has **not** been applied in this stage.
+
+### Mandatory stop point
+
+This Import/Export feedback stage and this checklist record are committed. Do not build until the user explicitly chooses **Build sekarang**.
+
+Next response must ask exactly: **Build sekarang atau nanti?**
+
