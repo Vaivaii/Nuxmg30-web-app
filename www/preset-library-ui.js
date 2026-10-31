@@ -66,6 +66,7 @@ function initPresetLibraryUI() {
   const scanStatus = $('presetLibraryScanStatus');
   const importBar = $('presetLibraryImportBar');
   const importInput = $('presetImportFile');
+  const nav = document.querySelector('.nav');
   const exportStatus = $('presetExportStatus');
   const feedbackDialog = $('presetImportProgressDialog');
   const feedbackTitle = $('presetImportProgressTitle');
@@ -78,6 +79,21 @@ function initPresetLibraryUI() {
   let names = loadNameCache();
   let scanPromise = null;
   let exportFeedbackTimer = null;
+
+  // Size only this tab's card scroller to the real gap above the fixed bottom navigation.
+  // The legacy Draft compatibility IDs stay hidden and are not part of this measurement.
+  function resizeCardViewport() {
+    if (page.classList.contains('hidden') || !nav || window.innerWidth > 720) return;
+    const listTop = cards.getBoundingClientRect().top;
+    const navTop = nav.getBoundingClientRect().top;
+    const available = Math.floor(navTop - listTop - 8);
+    if (available < 260) return;
+    cards.style.height = available + 'px';
+    cards.style.maxHeight = available + 'px';
+  }
+
+  window.addEventListener('resize', resizeCardViewport, { passive: true });
+  window.visualViewport?.addEventListener('resize', resizeCardViewport);
 
   function closeExportFeedback() {
     if (!feedbackDialog || feedbackDialog.dataset.owner !== 'export') return;
@@ -284,12 +300,14 @@ function initPresetLibraryUI() {
   // Keep Import's existing file-selection and transfer handlers intact; only reveal its compact action row.
   importInput?.addEventListener('change', () => {
     importBar?.classList.toggle('has-file', Boolean(importInput.files?.length));
+    window.setTimeout(resizeCardViewport, 0);
   });
 
   document.querySelectorAll('.nav button[data-page="presets"]').forEach(button => {
     button.addEventListener('click', () => {
       window.setTimeout(() => {
         if (!page.classList.contains('hidden')) {
+          resizeCardViewport();
           renderCards();
           revealSelectedCard();
           void scanMissingNames();
