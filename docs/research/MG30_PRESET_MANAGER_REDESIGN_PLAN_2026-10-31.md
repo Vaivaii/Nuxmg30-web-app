@@ -237,3 +237,15 @@ NAM transfer, IR Collection behavior, MIDI mappings, signal chain and all other 
 ### Verification state
 
 No source-level automated regression tests, Android build or physical pedal validation has been completed for these follow-up commits. Validate the Cancel path specifically to confirm no writes/frames are sent, then validate OK on a safe slot. Target remains original MG-30 Gen 2 FW 6.0.x, not MKII.
+
+## Build verification — Import flow follow-up (31 Oct 2026)
+
+- Application-code commit: `cfd5b0ab896440806b4faf97e1bfbdc54b875e84`.
+- GitHub Actions run #189 / ID `41218768705`: success.
+- Protocol regression tests, Capacitor Android generation, Android debug compilation and APK artifact upload all succeeded.
+- Artifact ID: `13048698907`.
+- APK: `MG30_Studio_Preset_Manager_Import_Flow_cfd5b0a.apk` (4,020,278 bytes).
+- APK SHA-256: `1b4ce29cff32b478ea433cc78920c17125d59ffe761d76d9fdb42d1d95235101`.
+- Build was triggered automatically by the existing push workflow for this branch. The packaged bundle was inspected and contains the new import destination event, confirmation text and Preset Library CSS.
+
+Build success only confirms CI and packaging. It does not establish that the file picker, slot-selection event or actual hardware import works on the pedal. Physical validation remains mandatory on original MG-30 Gen2 FW 6.0.x, especially the Cancel path (no transfer frames) and the OK path (78/78 ACK and readback).
