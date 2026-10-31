@@ -61,3 +61,24 @@ This is a compatibility workaround for the currently reconstructed single-preset
 - 7d32128470b34da5df3e8d45630aa7559c1c5f9f — add explicit export alias prompt.
 - b879597461a970e1ba366e2628dd5a3b9003c5d0 — add format/alias tests.
 - 61cce3e0f971675e03183b948a2598911c87ac99 — use a 16-byte alias in the boundary test.
+
+## User correction — follow QuickTone name handling, remove alias prompt (31 Oct 2026)
+
+The user tested the alias prompt on Android. For the built-in IR name `YA DXVB 112 Mix 10` (18 bytes), confirming the dialog with OK failed. The user explicitly rejected a manual alias workflow and requested that MG30 Studio behave like QuickTone, which truncates some long names and is acceptable to the user.
+
+The alias prompt implementation was therefore removed. The current export path now:
+- reads and retains the full original IR metadata name during hardware readback;
+- writes only the first 16 printable ASCII bytes into the validated `.mg30patch` resource-name field, trimming any trailing whitespace left at the 16-byte boundary;
+- does not ask the user to type or confirm an alias;
+- does not alter the original IR name on the pedal, waveform samples, curve data, three scene records, importer, Collection workflow, NAM transfer, or MIDI mappings;
+- reports when the file name was shortened, showing both the stored name and the full device name.
+
+This matches the user's observed QuickTone behavior and the 16-byte file field supported by the supplied single-preset sample. It is an evidence-led compatibility behavior based on the user's direct QuickTone comparison; exact internal implementation of QuickTone's string-copy routine was not independently proven by disassembly.
+
+Regression tests now use `YA DXVB 112 Mix 10` and verify the serialized/imported name becomes `YA DXVB 112 Mix` without a prompt, plus exact 16-byte boundary and unsupported-character behavior.
+
+Commits:
+- `110fa30e88d891b5be18bf11e1793f956df54936` — QuickTone name fitter.
+- `3ff07539f750fcd918b66ab677727dbf968182cd` — remove manual alias prompt.
+- `dc529d6c5ec00d0ac4dd226d2676695b808d8343` — regression tests.
+- `10bd2a3b29ce7e4e1c58816c6bb6810139737a0a` — update readback comment.
