@@ -31,7 +31,7 @@ function updateTarget() {
   const target = $('presetExportTarget');
   const button = $('presetExportStart');
   if (target) target.textContent = 'Sumber: ' + label;
-  if (button && !button.disabled) button.textContent = 'Ekspor ' + label + ' sebagai .mg30patch';
+  if (button && !button.disabled) button.textContent = 'Export';
 }
 function downloadPatch(bytes, filename) {
   const blob = new Blob([bytes], { type: 'application/octet-stream' });
