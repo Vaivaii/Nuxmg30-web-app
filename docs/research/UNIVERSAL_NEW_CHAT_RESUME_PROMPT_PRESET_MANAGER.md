@@ -377,3 +377,27 @@ Validation:
 - No CI or APK build has been triggered for this stage.
 
 Current stop point: frame styling and project notes are committed. Ask exactly Build sekarang atau nanti? and wait for approval.
+
+## 22. Preset Manager palette, compact card proportions and sync toast (1 November 2026)
+
+User's latest screenshots compare Preset Manager with Editor and ask for a matching dark background palette, smaller/more proportional frame and cards, and no tiny synchronization text hidden below the list. Synchronization result should appear as the app's existing toast: selesai / gagal / ditunda.
+
+Implemented on feature/preset-manager-redesign:
+- www/preset-library-ui.css commit 2fc0fc0a92aac23fec87d9a50fbec4da5f4b3e12: changed the enclosing card frame to the same charcoal/blue-green tone as Editor panels; reduced frame radius/padding/gap and reduced card proportions (66px base, 62px mobile, narrower slot column, 3px divider and smaller label typography). Hides presetLibraryScanStatus only within the Preset Library.
+- www/preset-library-ui.js commit 3d8635ff38ea33290bc9eb05427fbeb2ccb2b1a9: uses existing window.toast for concise 2.2-second outcome notices: “Sinkronisasi preset selesai”, “Sinkronisasi preset gagal”, and “Sinkronisasi preset ditunda”. No separate toast system or global CSS was added.
+- If a device connects while Presets is open, existing mg30-midi-connected event starts the name scan. Existing scanPromise prevents concurrent scans. Disconnected/busy device is deferred; read error is failed; full completion is done.
+- Background scan still uses the read-only stored preset path readSysExPart(0x0b, program, 0), its retry, name cache and card refresh.
+
+Preservation:
+- All four Draft compatibility IDs remain intact in the same hidden container.
+- Dynamic measured card viewport to just above .nav remains intact.
+- Export picker hand-off fix remains intact; www/mg30-preset-export.js unchanged SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52.
+- Import/Export protocol, Editor/startup, shared navigation, Signal Chain, USB-MIDI/native Android handlers, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio and Device untouched.
+- Only www/preset-library-ui.css and www/preset-library-ui.js changed in this application stage.
+
+Validation/build:
+- Static assertions passed for palette, smaller cards, hidden scan status, all three toast outcomes, auto scan on connection event, retained Draft IDs and unchanged Export module.
+- Build #193 succeeded for older base commit 134dc6dd731a49779ea6f60295e0abf814e2e7cb (artifact ID 13051943991); it does not include this new polish.
+- No automated tests or physical UI check run for this stage. No build was run after current source changes.
+
+Current stop point: code and project notes committed; ask exactly “Build sekarang atau nanti?” and wait for approval.
