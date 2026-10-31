@@ -1366,7 +1366,7 @@ html,body{background:#0b1012}
     padding-top: 5px !important;
   }
 
-  body > .app > #page-device > .device-usb-audio-card:first-of-type {
+  body > .app > #page-device > .device-usb-audio-card {
     margin-top: 2px;
   }
 
