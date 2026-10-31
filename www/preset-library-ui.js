@@ -120,6 +120,14 @@ function initPresetLibraryUI() {
     try {
       // Reuse the existing two-way hardware slot selection; do not maintain a second local slot state.
       await selectHardwareSlot(program, false);
+      // Only announce a destination after the existing slotLabel confirms the selection resolved.
+      if (currentHardwareSlot() === program) {
+        window.dispatchEvent(new CustomEvent('mg30-preset-library-target-selected', {
+          detail: { program }
+        }));
+      } else if (scanStatus) {
+        scanStatus.textContent = 'Slot tujuan belum berubah. Tunggu sinkronisasi perangkat, lalu pilih kembali.';
+      }
     } finally {
       card.disabled = false;
       renderCards();
