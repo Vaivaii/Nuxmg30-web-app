@@ -1119,3 +1119,16 @@ GitHub Actions run #139 completed successfully from source commit 14d13eb90358a6
 - Artifact: MG30-Studio-debug-APK, ID 13025326763, size 4,016,974 bytes.
 
 The build verifies the updated dispatch-time diagnostics and pre-request page rejection at source commit 14d13eb. It does not establish that read-only Export now succeeds on the physical pedal. Install the artifact from run #139 and repeat the read-only test; inspect all 64 unique waveform pages, 10 curve pages and three scene replies before trusting any output.
+
+
+## Goal 3 — Root cause and correction for repeated waveform offsets (2026-10-31)
+
+- [x] Re-examined exact QuickTone v2.6.7.16 frame construction in waveform function `0x4AB340` and curve function `0x4AAEA0`.
+- [x] Confirmed both use command at bytes 4–5, packed resource index at bytes 6–8, packed page offset at bytes 9–11, two trailing zero padding bytes at 12–13, and `F7` at byte 14. Helper `0x4A4910` writes the packed two-word source structure starting at frame byte 6.
+- [x] Identified the app's former two-byte displacement: it placed two reserved zero bytes before the packed index instead of after the packed offset.
+- [x] Matched the exact slot 04C pattern to that displacement: request pairs at offsets 0/32, 64/96, 128/160, 192/224 were misinterpreted by the pedal as reply offsets 0, 256, 512 and 768 respectively; the pattern repeats as the leading packed offset byte changes.
+- [x] Corrected the shared read-only data request builder in commit `4f7833ca203be339769e861b90fd3b43714c8192`.
+- [x] Updated exact waveform and curve request vectors in commit `fca33e90f4ba050a6ae9847bf0742a3279155ef6`; protocol regression tests passed in Actions run #141.
+- [ ] Wait for Actions run #141 Android build and artifact upload to complete; do not use the earlier failed run #140 artifact (protocol tests failed there because the test vectors still described the old layout).
+- [ ] Hardware-test corrected APK on original MG-30 Gen2 FW 6.0.x using read-only Export on slot 04C; inspect 64 waveform offsets, 10 curve offsets and all three scene readbacks.
+- [x] Protected User IR upload, Collection, NAM, preset importer, MIDI mapping, preset sync, Copy Scene, CTRL/EXP, signal chain and Save-to-device code remain unchanged.
