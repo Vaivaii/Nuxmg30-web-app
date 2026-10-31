@@ -1949,3 +1949,37 @@ CSS correction is committed and this checklist updated. Ask exactly **Build seka
 
 ### Current stop point
 Build #197 is already running for the edge correction. Do not start a second build. Continue checking run 41230734572 and download only its artifact after success.
+## Preset Manager — isolate tab scrolling and pin footer above bottom navigation (1 November 2026)
+
+### Screenshot diagnosis
+- The NAM & IR screenshot showed the shared document/root page had been scrolled down to its end; switching to Presets inherited that same root scroll position. The bottom global `.footer` (`MG30 Studio`) also lives after all page sections, so it only appears when the shared document reaches the end.
+- This is not caused by the four hidden Draft compatibility IDs; their container remains `.hidden` and occupies no layout space.
+
+### Implemented change
+1. `www/index.html` — commit `6ada04ac86f35885ed566c3dd2dd3b0c5c71e732`.
+   - Added a Preset Manager-local `MG30 Studio` footer directly inside `#page-presets`, after the card list/status area and before hidden compatibility nodes.
+   - Retained the original shared footer for all other tabs.
+2. `www/preset-library-ui.js` — commit `83838af09442e706e444e4a3c093165ed48a742d`.
+   - Replaced the old card-height-only calculation with a Preset-only viewport controller.
+   - When the Preset page becomes visible on phone layouts, measure the sticky app header bottom and fixed nav top, then set the Preset section's top/bottom viewport variables and add `body.preset-manager-active`.
+   - A page-class MutationObserver removes that mode and clears sizing when Presets is hidden, including direct `showPage()` transitions that are not nav button events.
+   - The card list now scrolls inside the fixed Preset section; its height is controlled by flex layout rather than document scrolling.
+3. `www/preset-library-ui.css` — commit `0070b958a31ddaac0768057ff670a149306083a3`.
+   - Added mobile-only fixed panel rules for `#page-presets`, measured between the sticky header and bottom nav.
+   - Made only the Preset card list the flexible `overflow-y:auto` area.
+   - Hid the original global footer only while `body.preset-manager-active`; the new local footer remains a few pixels above the fixed nav.
+
+### Verification
+- Git compare from prior source checkpoint `0c546d1f17d7867173e3a43923dad5a0d1b00f97` confirms only `www/index.html`, `www/preset-library-ui.js`, and `www/preset-library-ui.css` changed.
+- Static assertions passed: local footer exists; original footer remains; all four Draft IDs and hidden container remain; fixed mode is scoped to active Preset Manager; top/nav positions are measured; list is the independent flex scroller; mode clears when tab is hidden; global footer is hidden only while Presets is active.
+- `www/main.js` is unchanged; `www/mg30-preset-export.js` is unchanged (SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`).
+- No protocol, Editor/startup, Signal Chain, USB-MIDI/native Android, NAM/IR, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio or Device code changed.
+- Automated tests and physical Android checks for this isolation change: not run.
+
+### Build status
+- Build #197 succeeded for prior source commit `d6040b9083f13159a958c6d684b501006df5532a`; run ID `41230734572`, artifact ID `13053622163`, artifact `MG30-Studio-debug-APK`, ZIP size 4,022,454 bytes. It does NOT include this scroll isolation/local-footer change.
+- The scroll isolation and footer change has not been built.
+
+### Mandatory stop point
+All three source commits and the project checkpoint are saved to the active branch. Do not build until the user explicitly chooses **Build sekarang**.
+Next response must ask exactly: **Build sekarang atau nanti?**
