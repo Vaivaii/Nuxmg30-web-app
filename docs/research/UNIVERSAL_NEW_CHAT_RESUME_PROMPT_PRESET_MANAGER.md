@@ -401,3 +401,26 @@ Validation/build:
 - No automated tests or physical UI check run for this stage. No build was run after current source changes.
 
 Current stop point: code and project notes committed; ask exactly “Build sekarang atau nanti?” and wait for approval.
+## 23. Preset Manager bottom fade / sinking-card edge (1 Nov 2026)
+
+User asks for a soft bottom shadow/gradient so cards near the lower edge appear to sink/fade into the frame background instead of ending abruptly.
+
+Implemented on feature/preset-manager-redesign:
+- www/preset-library-ui.css commit 654f9029fdaf745de43765f791c25e5d1de829d7.
+- Added #page-presets .preset-library-card-list::after as a 48px sticky bottom overlay inside the scroll container.
+- Background gradient fades from transparent to the existing frame base (#101619), with a subtle upper shadow.
+- pointer-events: none preserves direct card taps.
+- No new wrapper/markup or card sizing/height measurement change.
+
+Preservation:
+- Editor-matched frame palette, compact cards and nav-measured card list remain in place.
+- Four hidden Draft compatibility IDs remain.
+- Import/Export UI and transfer protocols untouched; www/mg30-preset-export.js remains unchanged.
+- Editor/startup, Signal Chain, USB-MIDI/native Android, NAM, IR User/Third Party, IR Collection, MIDI mappings, Save, Copy Scene, CTRL/EXP, Studio and Device untouched.
+
+Build state:
+- Build #194 succeeded for source commit a49bf650543b58d9b74de10d2a4568d78a96cc53, run ID 41228353932, artifact ID 13052363256, ZIP size 4,022,251 bytes. That artifact predates the fade overlay.
+- The fade overlay has not yet been built or physically tested.
+- No build has been triggered for commit 654f9029.
+
+Current stop point: CSS source and project notes are committed. Ask exactly “Build sekarang atau nanti?” and wait for approval.
