@@ -1616,3 +1616,28 @@ The source change and this checklist record are committed to `feature/preset-man
 
 Next response must ask exactly: **Build sekarang atau nanti?**
 
+## Build verification — Preset Manager import progress dialog (31 October 2026)
+
+- User explicitly approved **Build sekarang**.
+- Build trigger commit: `7ce732bcaae87254d5893286ed168c3d162e0c2b`; the only source difference from the preceding UI commit is a harmless CSS comment in `www/preset-library-ui.css` to produce a push event for the configured APK workflow.
+- Branch: `feature/preset-manager-redesign`.
+- GitHub Actions run **#190**, run ID `41220763279`: **success**.
+- Workflow: `Build MG30 Studio Android APK`.
+- Run head SHA: `7ce732bcaae87254d5893286ed168c3d162e0c2b`.
+- Protocol regression tests: success.
+- Capacitor Android project generation: success.
+- Android debug APK build: success.
+- APK artifact upload: success.
+- Artifact name: `MG30-Studio-debug-APK`.
+- Artifact ID: `13049299836`.
+- Artifact ZIP size: 4,022,237 bytes.
+- Extracted APK: `MG30_Studio_Preset_Manager_Import_Dialog_7ce732b.apk`.
+- APK size: 4,400,648 bytes.
+- APK SHA-256: `c222f563f4506e6ae201000f403e9059a496662b5a6eeb8fe86b0fcc4d83dd13`.
+- APK extracted from the artifact ZIP into the current conversation container and retained at `/mnt/data/MG30_Studio_Preset_Manager_Import_Dialog_7ce732b.apk`.
+- Package inspection confirmed: Preset Manager import progress dialog markup, progress ACK field, scoped modal/spinner CSS, success and failure auto-close code, all four hidden legacy draft IDs, their placement after the card list, and safe-area bottom scroll padding are present in the APK bundle.
+- The source code that drives the transfer remains unchanged apart from progress/result presentation; no packet, ACK, parser, plan, or readback logic was changed.
+- Physical test on original NUX MG-30 Gen 2 FW 6.0.x is still pending. Install this exact APK and verify: loading dialog during import, live phase/ACK count, dialog auto-close, failure message behavior if safely reproducible, last card (32D) fully reachable, and existing preset Import/Export, NAM, IR User/Third Party, IR Collection and MIDI mapping workflows.
+
+**Current stop point:** Build #190 completed successfully and its exact APK was extracted and verified. No more build has been started. Physical pedal validation remains next.
+
