@@ -231,3 +231,32 @@ Latest code commit: `cfd5b0ab896440806b4faf97e1bfbdc54b875e84`.
 - APK was extracted and the packaged JS/CSS checked for the destination-first import event, confirmation copy and updated Library styles.
 
 Next step is physical verification on the original MG-30 Gen2 firmware 6.0.x. Test the Android file picker, select a destination card, Cancel (verify no import frames are sent), then OK on a safe slot and verify 78/78 ACK / readback. Recheck NAM transfer, IR User/Third Party, IR Collection and MIDI mappings. A successful CI build does not replace that hardware test.
+
+## 16. Latest UI refinement — import progress modal and final-card clearance (31 Oct 2026)
+
+Latest source commits on `feature/preset-manager-redesign`:
+- `03ccd46539eab6aad02010d2c2e14956b7848770` — import progress/result dialog in `www/mg30-preset-import.js`.
+- `ab3db2de0f1bbfbd3f5fbaeef255e61e8d6106e7` — scoped dialog styles and extra bottom scroll inset in `www/preset-library-ui.css`.
+- `e7d3249f06166765dd8cc196e02ee810e134ba4b` — dialog markup and legacy draft IDs moved to the final child position in `www/index.html`.
+
+Behavior:
+- Import progress now appears in a modal with spinner, explanatory transfer text, current phase and ACK count out of 78.
+- Escape/cancel cannot dismiss the dialog while the operation is in progress.
+- Success result remains visible for 1.5 seconds, then closes automatically. Failure result is shown for 2.6 seconds, then closes automatically.
+- The old persistent inline success box is cleared.
+- Hidden Editor compatibility IDs `search`, `presetCount`, `newPresetBtn`, and `presetList` remain present and are the final hidden nodes in `#page-presets`.
+- The Preset Manager card scroller has extra bottom/safe-area clearance for the last slot cards.
+
+Preservation:
+- Only Preset Manager markup, its page-scoped CSS, and the progress/result presentation in the Import UI module were changed.
+- Parser, plan builder, `bridge.import(plan, ...)`, packet sender, transfer ordering, ACK/readback implementation and Export are unchanged.
+- Movable Signal Chain, Editor/startup, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio and Device remain untouched.
+
+Validation:
+- Source-level inspection only; automated syntax/tests not run.
+- No CI, Gradle, GitHub Actions or new APK build has been run.
+- Build #189 is the previous build and does not include these commits.
+- Physical verification on the original MG-30 Gen2 FW 6.0.x remains pending.
+
+**Current stop point:** source and checklist are committed. Do not build until the user answers **Build sekarang**. Ask exactly: **Build sekarang atau nanti?**
+
