@@ -90,7 +90,7 @@ User supplied two original-MG30-format sample files for analysis:
 - The all-preset sample is exactly `128 * 0x26AE = 0x135700`; there is no remainder. It parses cleanly as 128 fixed-stride records.
 - Each all-file record begins with a little-endian 32-bit sequential value from 0 through 127. Treat this as a record/slot index candidate; confirm exact pedal slot semantics against a matching import or export capture.
 - The record at index 1 contains the preset name `DELUX DIST`, matching the single-preset filename and its first four bytes (`01 00 00 00`).
-- The single sample and all-file record 1 share the first `0x1B2` bytes. The short label field at offset `0x1B2` differs: single sample `c414_cap_45_dc`; all-file record 1 `CHPBRIT412`.
+- The single sample and all-file record 1 share the first `0x1B2` bytes. The 32-byte IR resource-name field begins at offset `0x1B2`; the sample's short name `c414_cap_45_dc` leaves the remainder zero-filled, while all-file record 1 stores `CHPBRIT412`.
 - Both contain a `RIFF/WAVE` region beginning at offset `0x1D2`. The inspected sample's WAVE header declares PCM format, mono, 48,000 Hz, 24-bit, and a data size of `0x1800`. The all-file contains RIFF/WAVE regions in 26 of its 128 records; some observed records declare `0x2000` data size.
 - The single sample and all-file record 1 are not byte-identical. Apart from the short label field, the WAVE sample data and the `0xCB0)-byte trailing region differ substantially. The meaning of the trailing region is not decoded.
 - This establishes a real WAVE/resource-bearing record layout; it does **not** yet prove whether that resource field is an IR, a cab asset, NAM-related data, or another QuickTone audio resource. Keep the field semantically neutral until correlated with an import capture.
@@ -125,7 +125,7 @@ A cross-check against the existing MG-30 IR capture reports adds an important cl
 - The sample's RIFF WAVE header is PCM, mono, 48 kHz, 24-bit. Its `data` size is `0x1800` = 6,144 bytes = exactly 2,048 mono 24-bit samples.
 - The existing original-MG30 User IR capture uses 64 waveform frames of command `10/01`, with 32-sample address increments from 0 through 2016 (64 × 32 = 2,048 samples), followed by the separate `09/01` name and `11/01` curve phases.
 - The separate Collection capture uses `6A/01` waveform, `6C/01` name and `6B/01` curve. Do not collapse these two workflows: User/Third Party and Collection remain distinct.
-- The preset record's adjacent 16-byte label (`c414_cap_45_dc` in the single sample; `CHPBRIT412` in all-file record 1) looks like an associated resource name. Together with the matching 2,048-sample count, this **strongly suggests** the embedded WAVE is a cab/IR-like resource belonging to the preset.
+- The preset record's 32-byte name field (`c414_cap_45_dc` in the single sample; `CHPBRIT412` in all-file record 1) is associated with the embedded 2,048-sample audio resource. The supplied sample only uses the first 14 bytes, so the zero-filled second 16-byte chunk did not establish the field's full capacity until the later QuickTone disassembly cross-check.
 - This is still a structural correlation, not proof of byte-for-byte identity or proof of which IR destination/workflow QuickTone uses. The `0xCB0)-byte trailer after the WAVE region remains undecoded. Its size can be factored as `0x800 + 0x4B0`; the `0x4B0) portion equals 600 × 2 bytes, which is an interesting size coincidence with the 600 meaningful curve values in the existing IR transfer analysis, but no offset map has been established.
 
 ### Updated import model to test
@@ -232,8 +232,8 @@ The record's WAVE header declares PCM24, mono, 48 kHz, but QuickTone's import pa
 | `0x0000` | 4 | Little-endian source record ordinal (sample = 1; not destination slot) |
 | `0x0004` | 426 | Three scene records, 142 bytes each; each contains 71 little-endian uint16 values |
 | `0x01AE` | 4 | Resource marker; sample value = 1 |
-| `0x01B2` | 16 | ASCII IR resource name; sample = `c414_cap_45_dc` |
-| `0x01C2` | 16 | Padding in supplied sample |
+| `0x01B2` | 32 | ASCII IR resource name; sample = `c414_cap_45_dc` followed by zero terminator/padding bytes |
+| `0x01D2` | 0x182C | RIFF/WAVE-shaped header and first 1,536 raw float32 values |
 | `0x01D2` | 0x182C | WAVE-shaped header and first 1,536 raw float32 values |
 | `0x19FE` | 0x800 | Remaining 512 float32 values, just outside RIFF |
 | `0x21FE` | 0x4B0 | 600 little-endian uint16 curve values (0..305 in the tested sample) |
@@ -276,7 +276,7 @@ No changes were made to NAM import, IR Collection commands, Collection mapping, 
 ### Single-preset export work completed offline
 
 - [x] Add inverse decoder for hardware scene read replies in www/mg30-preset-format.js: decodeMG30PresetSceneReply() validates the 220-byte 0C/02 body, program byte, part index, and reconstructs 71 packed uint16 words into the 142-byte little-endian scene record.
-- [x] Add strict serializer buildMG30SinglePresetPatch() and convenience buildMG30SinglePresetPatchFromReplies(). The serializer writes the 0x26AE-byte Gen2 single-record layout and requires all three scenes, a 1–16 byte printable ASCII IR resource name, 2,048 finite float32 samples, and 600 curve words in range. It refuses to generate a purported QuickTone file when the associated IR resource is missing.
+- [x] Add strict serializer buildMG30SinglePresetPatch() and convenience buildMG30SinglePresetPatchFromReplies(). The serializer writes the 0x26AE-byte Gen2 single-record layout and requires all three scenes, a 1–32 byte printable ASCII IR resource name, 2,048 finite float32 samples, and 600 curve words in range. It refuses to generate a purported QuickTone file when the associated IR resource is missing.
 - [x] Expose the export decoder/serializer through the MG30PresetFormat registry.
 - [x] Offline reconstruction test against supplied 1B DELUX DIST.mg30patch: reconstructed 9,902-byte output is byte-for-byte identical to the sample; SHA-256 remains 0b8f9fecb5150bfe5a96dfcf66f3a777b910cef2910bcaa3100f0fa990aaa67a. This is a local format/serializer test, not a pedal hardware export test.
 - [ ] Do not yet add/enable an Export .mg30patch UI. The current app reads the three preset scene parts but www/ir-transfer.js implements IR uploads and Collection metadata/name reads; no verified readback sequence for User IR waveform samples and curve data is currently available. An export that writes scene data but fills the IR block with zeros or stale cached values would be incomplete and must not be presented as a compatible QuickTone preset.
@@ -398,7 +398,7 @@ The new export path is read-only: it sends 0C/00, 09/00, 10/00 and 11/00 request
 - [x] Executed synthetic end-to-end parser/serializer checks in the development tool: generated 15-byte 09/00, 10/00 and 11/00 requests; decoded a synthetic 09/02 metadata reply; assembled 64 synthetic 10/02 waveform replies into 2,048 float32 samples; assembled 10 synthetic 11/02 replies into 600 curve values; decoded three synthetic 0C/02 scene replies; serialized a 9,902-byte single-preset record. This validates code-level framing/assembly with synthetic replies, not actual MG-30 hardware.
 - [x] Added tests/mg30-preset-read.test.js with Node built-in tests and npm test (node --test) script for request lengths/layout, metadata/index validation, waveform/curve index+offset validation, and complete IR assembly. The repository test runner has not been executed in CI/local Node during this session; only the equivalent synthetic runtime checks were executed here.
 - [x] Added shared transaction locks between preset import, preset export and IR transfer. IR upload refuses to start during preset import/export; preset import/export refuse to start during an IR upload; parameter CC, hardware polling, preset switching and signal-chain updates are held during export.
-- [x] Export now refuses to truncate an IR resource name longer than the 16-byte single-record field.
+- [x] Export preserves the complete 32-byte QuickTone IR name field and limits names longer than 32 ASCII bytes to the first 32 bytes, without prompting.
 - [ ] Hardware validation is still required. The first Export UI is explicitly labeled READ ONLY · UJI AWAL. It assumes the User IR resource index equals the selected preset program number because the working single-preset import targets that index; actual readback must confirm this. If the device returns a different index, or any response has a mismatched index/offset, export aborts without downloading a partial file.
 - [ ] No APK build for these commits has been confirmed yet. Run a fresh build before the user tests the Export UI on original MG-30 Gen2 FW 6.0.x.
 - [ ] Keep batch import disabled until export readback is hardware-tested and batch-import slot mapping/record variants are captured.
@@ -857,3 +857,17 @@ Correction from user: the statement that NAM transfer is untested was wrong. NAM
 - [x] Recent generic `.mg30patch` Export → Android Save As → Import round trip succeeded, but it is not yet explicit that the tested source preset contained NAM. Keep those claims separate.
 
 Do not change NAM transfer code or working IR paths while preparing this validation. The next task is a targeted round-trip test with a preset known to contain/use NAM, not implementation of NAM transfer from scratch.
+
+
+### QuickTone name field disassembly correction (2026-10-31)
+
+The earlier 16-byte interpretation of the name field was wrong. The supplied sample only had a short name, so the second half appeared as zero padding. Reinspection of the bundled QuickTone v2.6.7.16 executable confirms a 32-byte name buffer:
+
+- At VA `0x004B5180`, QuickTone loads 16 bytes from the internal record at `+0x1B2` and stores them to a local name/cache buffer.
+- It then separately loads another 16 bytes from `+0x1C2` and stores them immediately after the first chunk.
+- The subsequent local audio/WAVE area begins at `+0x1D2`. Thus `0x1B2..0x1D1` is one contiguous 32-byte IR resource-name field; `0x1C2..0x1D1` is not a separate padding field.
+- The all-preset serialization path at VA `0x004AB710` also copies the two consecutive 16-byte chunks from the resource metadata into the serialized record buffer. The import/name protocol `09/01` already builds a 32-byte field, and metadata readback `09/02` supplies 32 name bytes after the 4-byte CRC.
+
+Code was corrected accordingly: parser reads 32 bytes at `0x1B2`; serializer writes up to 32 bytes; the preset Import name-frame builder accepts up to 32 bytes; export only truncates names beyond 32 printable ASCII bytes. The user's example `YA DXVB 112 Mix 10` is 18 bytes and now remains intact end-to-end. The separate standalone IR WAV uploader's 20-character UI limit is a different workflow and remains unchanged.
+
+This directly corrects the earlier mistaken 16-byte field/padding interpretation. Do not reintroduce a 16-byte limit or alias prompt.
