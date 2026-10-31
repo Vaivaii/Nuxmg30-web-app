@@ -1750,3 +1750,50 @@ The Export transition and card-viewport source changes are committed and this ch
 
 Next response must ask exactly: **Build sekarang atau nanti?**
 
+## Screenshot clarification — measure Preset Manager list exactly to bottom tab (1 November 2026)
+
+### User's intended result
+
+- The 128 preset cards should use the available vertical area down to immediately above the fixed bottom tab navigation.
+- Show more complete cards at once; if the final card cannot fit entirely on a very short screen, the card list remains scrollable and must never be clipped by the fixed navigation.
+- Do not delete the hidden legacy Draft IDs.
+
+### Why the previous layout stopped early
+
+- The four compatibility IDs `search`, `presetCount`, `newPresetBtn`, and `presetList` are inside a container with class `hidden`; the shared CSS defines `.hidden { display:none!important }`. They therefore consume no layout height.
+- The actual limit was the mobile card scroller's fixed viewport formula `min(720px, calc(100dvh - 280px))`, plus 34px bottom padding.
+- The screenshot also showed the shared `MG30 Studio` footer underneath the preset list; the footer and fixed bottom nav do not need to be moved or edited.
+
+### New dedicated layout adjustment
+
+1. `www/preset-library-ui.js`
+   - Commit: `cae96c435c1a23c000943560465e8cfe63c6f216`.
+   - Added `resizeCardViewport()`, which measures the visible card-list top and the real top edge of the fixed `.nav` and sets the card scroller height to the exact available gap minus an 8px clearance.
+   - Recalculates on window resize, VisualViewport resize, Preset tab activation, and Import file-panel visibility changes.
+   - Runs only for visible Preset Manager on phone-sized layouts (<=720px); it does not reposition/change the shared nav.
+
+2. `www/preset-library-ui.css`
+   - Commit: `b71a5bfccf964977e3943beb88c51edb279b5767`.
+   - Reduces card-list bottom padding and scroll padding from 34px to 8px.
+   - Replaces the hard mobile height/max-height cap with a fallback. The runtime measurement supplies the final inline height and max-height.
+   - All changes are scoped to `#page-presets .preset-library-card-list`.
+
+### Preserved items
+
+- All four Draft compatibility IDs remain present inside their original hidden container in `www/index.html`; no markup changes were made.
+- `www/mg30-preset-export.js` remains unchanged (SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`).
+- Export hand-off fix, Import flow/protocol, parser/plan builder, USB-MIDI, native Android bridge, Editor/startup, Signal Chain, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save, Copy Scene, CTRL/EXP, Studio and Device remain untouched by this layout stage.
+- Git compare from source build-trigger base `2a4310f304faab9a34ed88bda2693e7603766995` confirms only `www/preset-library-ui.js` and `www/preset-library-ui.css` changed in this stage.
+
+### Build status
+
+- Previous Build #192 (run ID `41224584822`) completed successfully against base commit `2a4310f304faab9a34ed88bda2693e7603766995`; artifact ID `13051745621`, ZIP size 4,021,812 bytes. The user screenshot still showed unused space before the bottom tab, so #192 does not contain the exact measurement adjustment in this section.
+- This dynamic-height update is source-only; automated tests and physical screen validation have not yet been run.
+- No CI / GitHub Actions / Gradle / APK build has been triggered for commits `cae96c43` and `b71a5bfc`. Both use `[skip ci]`.
+
+### Mandatory stop point
+
+This one layout change and documentation update are committed. Do not build until the user explicitly chooses **Build sekarang**.
+
+Next response must ask exactly: **Build sekarang atau nanti?**
+
