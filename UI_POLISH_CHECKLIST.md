@@ -3086,3 +3086,32 @@ User installed #231 and provided a screenshot showing TONE3000 controls and 8-mo
 - Outer artifact ZIP and APK ZIP integrity checks both passed. Inspected the bundled JS/CSS from inside the APK and confirmed: panel creation sets `hidden=false`; visible fallback meta and empty-state text are included; new model-library styles and empty-state styling are present; library panel size and scroll rules are included. This explicitly differs from the old #231 bundle, which was proven to have the faulty hide-coupling logic.
 - Protected file hashes at source remain: `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`; `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`; `www/ir-transfer.js` `9f156dade93385d8b4b2c6fc338c1a1ac085a610`; `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`.
 - Physical phone validation is still required. Since previous debug builds used different ephemeral signing certificates, do not assume #233 can update #231 in place. Back up/export local app data before uninstalling the installed APK.
+
+
+## Critical freeze fix after Build #233 screenshot — source commit pending final APK (2 November 2026)
+
+User reported that after opening Build #233 the whole app was stuck and no controls responded. The screenshot showed the Editor tab; diagnosis focused on application main-thread JS rather than MIDI connectivity.
+
+### Confirmed root cause in the previous NAM library UI controller
+- The earlier `www/nam-model-library-ui.js` installed a `MutationObserver` on the entire `#page-nam` subtree and called `syncPanel()` from that observer.
+- `syncPanel()` reassigned `headerToggle.textContent` on every invocation, even when the text was unchanged. Replacing the text node is a child-list mutation inside the observed page subtree, so the observer called `syncPanel()` again indefinitely. This created a self-triggering MutationObserver loop and starved the main UI thread, explaining why the app could launch visually but no taps worked.
+
+### Current corrective implementation
+- `www/nam-model-library-ui.js` now uses idempotent `setText` and attribute/class/hidden comparisons. It no longer observes the page subtree after mounting.
+- It observes only `#namIrTonePane` until the real TONE3000 catalogue appears, disconnects that observer before moving the catalogue node, then observes only the catalogue subtree for title/count/model-list/expanded state updates.
+- Outer Library panel never inherits `hidden` from `#t3kToneDetails`; it always has a visible header. Empty-state hint is visible before a tone loads. When catalogue exists, header delegates Show/Hide to the original TONE3000 button, preserving its localStorage and model selection behavior.
+- `www/ir-transfer.js` layout observer now explicitly excludes node id `namModelLibrary` from automatic movement into the collapsible NAM import pane. This is strictly a UI mount guard; transfer/protocol functions are unchanged.
+- Empty-state visibility corrected to `empty.hidden = ready` (idempotently), so hint is shown only when no catalogue is loaded.
+
+### Dedicated tests added
+- New test file: `tests/nam-model-library-ui.test.js`.
+- Tests run the UI controller in a Node VM with a DOM/MutationObserver fixture and cover: library header visible before TONE3000 catalogue load; empty-state Show/Hide; actual catalogue node moved into dedicated panel; model count/title update; Show then Hide state delegated to original TONE3000 button; no active observer watches the whole page; and ir-transfer observer excludes the new panel.
+- Earlier fixture iterations failed because the fake DOM incorrectly treated detached elements as live document elements, omitted nested title/count nodes, and had a mock innerHTML lookup issue. Those test-fixture defects were corrected. These were test harness failures, not Android app build outputs; no APK was delivered from those runs.
+- Latest Actions run at note creation: [Build #241](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41344811704), run ID `41344811704`, source commit `7429572182df0b3a347e596ffc860de61fca6017`. `npm test` passed all existing protocol tests and all 3 new library tests; Vite build and Android init completed; Gradle `assembleDebug` was still in progress. Append final run result and artifact hash after Gradle completes.
+
+### Protected code remains unchanged at current source
+- `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`.
+- `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`.
+- `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`.
+- `www/ir-transfer.js` has one narrowly scoped presentation guard in the existing NAM page mutation observer; the IR packet builder, User/Collection target selection and transfer/readback code are unchanged. Do not treat the new JS blob hash as a protocol change.
