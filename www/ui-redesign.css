@@ -1827,4 +1827,49 @@ html,body{background:#0b1012}
     padding: 5px 4px;
     font-size: 9px;
   }
+
+/* WebView fallback: if the Collection grid measures near-zero, preserve slot access in page flow. */
+@media (max-width: 720px) {
+  body.ir-collection-layout-fallback > .app > #page-nam:not(.hidden) {
+    display: block !important;
+    position: fixed !important;
+    top: var(--ir-collection-manager-top, 166px) !important;
+    right: 10px !important;
+    bottom: var(--ir-collection-manager-bottom, 107px) !important;
+    left: 10px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 0 0 8px !important;
+    box-sizing: border-box !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.ir-collection-layout-fallback #page-nam > #ir-import-content.ir-import-content {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 4px 0 0 !important;
+  }
+  body.ir-collection-layout-fallback #page-nam #ir-manager-ui.ir-manager-grid {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body.ir-collection-layout-fallback #page-nam #ir-manager-ui > .ir-manager-card:nth-child(2) {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  body.ir-collection-layout-fallback #page-nam .ir-collection-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    height: min(48dvh,420px) !important;
+    min-height: 180px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+}
 }

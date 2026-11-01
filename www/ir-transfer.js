@@ -206,11 +206,32 @@ function initUI(){
   closeModelTools();
 
   function clearCollectionViewport(){
-   document.body.classList.remove('ir-collection-manager-active');
+   document.body.classList.remove('ir-collection-manager-active','ir-collection-layout-fallback');
    if(page){
     page.style.removeProperty('--ir-collection-manager-top');
     page.style.removeProperty('--ir-collection-manager-bottom');
    }
+  }
+  function scheduleCollectionLayoutCheck(){
+   if(!page||page.classList.contains('hidden')||window.innerWidth>720)return;
+   window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>{
+    if(page.classList.contains('hidden'))return;
+    const card=grid?.closest('.ir-manager-card');
+    const gridHeight=grid?.getBoundingClientRect().height||0;
+    const cardHeight=card?.getBoundingClientRect().height||0;
+    const slotCount=grid?.children?.length||0;
+    const missing=slotCount!==24||!card;
+    const collapsed=missing||gridHeight<80||cardHeight<180;
+    document.body.classList.toggle('ir-collection-layout-fallback',collapsed);
+    const status=document.getElementById('irManagerCollectionStatus');
+    if(status&&missing){
+     status.textContent='IR Collection belum terbentuk lengkap ('+slotCount+'/24 slot). Muat ulang aplikasi; bila berulang, kirim screenshot ini.';
+     status.classList.add('warn');
+    }else if(status&&collapsed){
+     status.textContent='Layout Android WebView terlalu pendek. Mode tampilan cadangan diaktifkan agar 24 slot tetap dapat dibuka.';
+     status.classList.add('warn');
+    }
+   }));
   }
   function resizeCollectionViewport(){
    if(!page||page.classList.contains('hidden')||!topBar||!nav||!grid||window.innerWidth>720){
@@ -224,6 +245,7 @@ function initUI(){
    document.body.classList.add('ir-collection-manager-active');
    page.style.setProperty('--ir-collection-manager-top',top+'px');
    page.style.setProperty('--ir-collection-manager-bottom',bottom+'px');
+   scheduleCollectionLayoutCheck();
   }
   if(page){
    const collectionPageObserver=new MutationObserver(()=>{
@@ -597,4 +619,19 @@ function initUI(){
  userButton.addEventListener('click',()=>{if(busy)return;pendingTarget={type:'user',programSlot:currentPresetProgramSlot()};fileInput.value='';fileInput.click()});
  async function restoreLocalSlots(){for(let slot=1;slot<=24;slot++){try{const record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,'Penyimpanan lokal tidak dapat dibaca: '+(e.message||'kesalahan'),'warn');break}updateSlotCard(slot,slotCache.get(slot)||null)}renderSlotCount()}
  restoreLocalSlots();
-}if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initUI,{once:true});else initUI()}
+}
+function bootIRUI(){
+ try{initUI()}
+ catch(error){
+  const root=document.getElementById('ir-import-content');
+  const status=document.createElement('div');
+  status.className='ir-manager-status warn';
+  status.textContent='IR Collection gagal dimuat: '+(error?.message||String(error||'Kesalahan tidak diketahui'));
+  if(root)root.appendChild(status);
+  console.error('MG30 Studio IR manager initialization failed',error);
+ }
+}
+if(typeof document!=='undefined'){
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootIRUI,{once:true});
+ else bootIRUI();
+}
