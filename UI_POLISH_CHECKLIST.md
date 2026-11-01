@@ -2196,3 +2196,33 @@ CSS change and project notes saved. Ask exactly **Build sekarang atau nanti?** b
 - Build #205 (run `41274647488`) was triggered by the intermediate Preset button CSS commit `6335984e7e15626ffa40a262d5706be9252449d3`; intermediate only.
 - Build #206 (run `41274669130`) was triggered by latest commit `4905efbafce0b6babe820464e8d42c77f9d33371`; this is the authoritative full CSS correction build.
 - At time of note, #205 and #206 were in progress; no artifact available yet. Use #206 artifact only.
+## Screenshot-driven correction after Build #206 — verified in browser simulation (1 November 2026)
+
+### User-reported defects
+- Export button showed clipped dynamic text `Ekspor 01A sebagai .mg30patch` instead of the short `Export` label.
+- Fade on Editor and other non-Preset tabs did not reach the fixed bottom navigation edge.
+- Device hero had a 5px top offset caused by `#page-device` padding-top 5px plus a negative hero margin; USB card content could appear as a thin strip above the title.
+
+### CSS-only source correction
+1. `www/preset-library-ui.css` — commit `5dc81d61cf70b8484b9f285c0fbd857d6d8a3a7e`.
+   - Button bridge JS continues writing its full dynamic status text to the real button DOM; no handler, module or export protocol changed.
+   - On mobile, the real button text is visually hidden with `font-size:0!important;color:transparent!important`, while the existing `::after` label is explicitly kept visible as `Export` with 10px font and foreground color.
+   - Fixed 60px button geometry and header grid are retained.
+2. `www/ui-redesign.css` — commit `b400d9ab25f663a97b2535867f6475680f2efbd4`.
+   - Device page top padding set to 0; sticky Device hero margin changed from `-5px -10px 8px` to `0 -10px 8px`, z-index 100, solid background, so it begins exactly at scroll viewport top and covers the USB card behind it.
+   - Non-Preset fade pseudo-element now uses `position:fixed`, `bottom:64px`, `height:42px`, full viewport width, zero margins, matching the 64px fixed bottom nav. Fade remains excluded from Presets and pointer-events remain disabled.
+
+### Browser layout simulation — performed BEFORE triggering Build #207
+- Test basis: extracted Build #206 APK's actual HTML and compiled stylesheet; preserved the inline HTML scripts (including the NAM & IR merge). Test fixture created 128 preset buttons using the same slot/name/card structure as `preset-library-ui.js` so the actual card scroller height and scrolling could be measured. External feature JS / USB hardware operations were not executed; this was a UI/CSS browser simulation, not a pedal protocol test.
+- Viewports: 320x740, 360x800, 393x873 and 432x915 CSS pixels.
+- Export at all tested widths: both buttons 60x38px; actions group 126px; right edge exactly matches header right edge; header/action horizontal overflow 0; document horizontal overflow 0. JS dynamic text remains `Ekspor 01A sebagai .mg30patch` but computed font-size is 0; pseudo label content resolves to `Export`.
+- Preset card list: computed overflow-y `auto`; at 393x873 clientHeight 665px and scrollHeight 8968px; setting scrollTop to 350 succeeded. This confirms the 128-card list has a bounded, independently scrolling viewport.
+- Device at 393x873: section top 80px, sticky hero top 80px (exact alignment). After setting Device scrollTop to 260, hero remains top 80px; hit-testing the top edge returns the hero, not the USB panel, and USB card bottom has scrolled above the hero.
+- Fade: fixed overlay bottom 64px / height 42px; fixed nav top 808.95px; fade lower edge at 809px (0.05px alignment difference); document horizontal overflow 0.
+- Candidate screenshots saved under `/mnt/data/mg30-sim/validated-*.png` for preset 320/360/393/432, Device scrolled, and Editor fade.
+- Static source assertions passed: only the two expected app CSS files changed; `www/main.js`, `www/index.html`, `www/mg30-preset-export.js`, and `www/preset-library-ui.js` are unchanged. No transfer/MIDI/device/editor/Signal Chain feature logic altered.
+
+### Build after successful simulation
+- Because the browser simulation and source checks passed, workflow auto-triggered Build #207 from exact source commit `b400d9ab25f663a97b2535867f6475680f2efbd4`; run ID `41277953622`.
+- Protocol regression tests and Capacitor Android generation passed; Gradle APK compilation was in progress at the time of this note. No artifact yet.
+- #207 is authoritative for this correction. Do not distribute #206 or any intermediate build.
