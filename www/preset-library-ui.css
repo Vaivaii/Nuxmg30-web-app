@@ -591,3 +591,17 @@
     font-size: 10px;
   }
 }
+
+/* Keep the short visual Export label while preserving the dynamic runtime text and handler. */
+@media (max-width: 720px) {
+  #page-presets #presetExportStart {
+    font-size: 0 !important;
+    color: transparent !important;
+  }
+
+  #page-presets #presetExportStart::after {
+    font-size: 10px !important;
+    line-height: 1 !important;
+    color: #13180d !important;
+  }
+}
