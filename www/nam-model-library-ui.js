@@ -10,13 +10,13 @@
     const page = $('page-nam');
     const toolsFrame = page?.querySelector(':scope > .nam-ir-tools-frame');
     const irContent = $('ir-import-content');
-    if (!page || !toolsFrame || !irContent) return false;
+    const tonePane = $('namIrTonePane');
+    if (!page || !toolsFrame || !irContent || !tonePane) return false;
     if ($('namModelLibrary')) return true;
 
     const panel = document.createElement('section');
     panel.id = 'namModelLibrary';
     panel.className = 'nam-model-library-panel';
-    panel.hidden = false;
     panel.innerHTML = `
       <header class="nam-model-library-head">
         <span class="nam-model-library-heading">
@@ -33,7 +33,7 @@
       </div>
     `;
 
-    // Normal page-flow order: controls -> model library -> IR Collection.
+    // Direct page child: the IR layout owns four ordered rows (hero, tools, library, Collection).
     page.insertBefore(panel, irContent);
     const content = $('namModelLibraryContent');
     const empty = $('namModelLibraryEmpty');
@@ -41,57 +41,71 @@
 
     let observedCatalogue = null;
     let catalogueObserver = null;
+    let tonePaneObserver = null;
+
+    function setText(node, value) {
+      if (node && node.textContent !== value) node.textContent = value;
+    }
 
     function syncPanel() {
       const catalogue = $('t3kToneDetails');
+      const stateButton = $('t3kCatalogueToggle');
+      const list = $('t3kModelList');
+
       if (catalogue && !content.contains(catalogue)) {
+        // Stop the mount watcher before reparenting; avoid observing our own move.
+        tonePaneObserver?.disconnect();
         content.appendChild(catalogue);
       }
 
-      const stateButton = $('t3kCatalogueToggle');
-      const list = $('t3kModelList');
-      const catalogueReady = Boolean(catalogue && !catalogue.hidden && list);
+      const ready = Boolean(catalogue && !catalogue.hidden && list);
       const countText = $('t3kCatalogueCount')?.textContent?.trim() || '0 MODELS';
       const count = countText.replace(/\s+MODELS?$/i, '').trim() || '0';
       const toneName = $('t3kCatalogueTitle')?.textContent?.trim() || '';
-      const meta = $('namModelLibraryMeta');
+      const metaText = ready
+        ? count + ' model' + (count === '1' ? '' : 's') + ' · ' + (toneName || 'TONE3000')
+        : 'Pilih tone untuk memuat model';
 
-      // The library header itself must never inherit the catalogue's hidden state.
-      panel.hidden = false;
-      if (meta) {
-        meta.textContent = catalogueReady
-          ? count + ' model' + (count === '1' ? '' : 's') + ' · ' + (toneName || 'TONE3000')
-          : 'Pilih tone untuk memuat model';
-      }
+      // The library header stays visible independently of the inner catalogue's hidden state.
+      if (panel.hidden) panel.hidden = false;
+      setText($('namModelLibraryMeta'), metaText);
 
-      const expanded = catalogueReady
-        ? (stateButton?.getAttribute('aria-expanded') === 'true')
+      const expanded = ready
+        ? stateButton?.getAttribute('aria-expanded') === 'true'
         : localExpanded;
-      panel.classList.toggle('is-expanded', expanded);
-      headerToggle.setAttribute('aria-expanded', String(expanded));
-      headerToggle.textContent = expanded ? 'Hide⌃' : 'Show⌄';
-      content.hidden = !expanded;
-      empty.hidden = catalogueReady;
+      if (panel.classList.contains('is-expanded') !== expanded) {
+        panel.classList.toggle('is-expanded', expanded);
+      }
+      const ariaExpanded = String(expanded);
+      if (headerToggle.getAttribute('aria-expanded') !== ariaExpanded) {
+        headerToggle.setAttribute('aria-expanded', ariaExpanded);
+      }
+      setText(headerToggle, expanded ? 'Hide⌃' : 'Show⌄');
+      if (content.hidden === expanded) content.hidden = !expanded;
+      if (empty.hidden === ready) empty.hidden = !ready;
 
       if (catalogue && catalogue !== observedCatalogue) {
         catalogueObserver?.disconnect();
         observedCatalogue = catalogue;
         catalogueObserver = new MutationObserver(syncPanel);
+        // Observe only the existing catalogue subtree. Never watch the entire page:
+        // changing a header text node from inside a page-wide observer can self-trigger forever.
         catalogueObserver.observe(catalogue, {
           attributes: true,
-          attributeFilter: ['hidden', 'class', 'aria-expanded'],
+          attributeFilter: ['hidden', 'class'],
           childList: true,
           characterData: true,
           subtree: true
         });
       }
+      return ready;
     }
 
     headerToggle.addEventListener('click', () => {
       const catalogue = $('t3kToneDetails');
       const stateButton = $('t3kCatalogueToggle');
       if (catalogue && !catalogue.hidden && stateButton) {
-        // Preserve TONE3000's original state handler and localStorage persistence.
+        // Delegate to TONE3000's original handler to preserve saved expansion state.
         stateButton.click();
       } else {
         localExpanded = !localExpanded;
@@ -99,9 +113,17 @@
       syncPanel();
     });
 
-    // Watch the NAM page because TONE3000 can mount/recreate its catalogue after this panel.
-    const mountObserver = new MutationObserver(syncPanel);
-    mountObserver.observe(page, { childList: true, subtree: true });
+    // TONE3000 mounts its panel into this dedicated pane after ir-transfer initializes.
+    // Observe only this pane until the catalogue is found; disconnect before moving it.
+    tonePaneObserver = new MutationObserver(() => {
+      if ($('t3kToneDetails')) {
+        syncPanel();
+        tonePaneObserver?.disconnect();
+      }
+    });
+    tonePaneObserver.observe(tonePane, { childList: true, subtree: true });
+
+    // Handle a cached catalogue that was restored before this UI controller mounted.
     syncPanel();
     return true;
   }
