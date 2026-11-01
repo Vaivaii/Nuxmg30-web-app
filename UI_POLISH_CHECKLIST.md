@@ -2252,3 +2252,32 @@ CSS change and project notes saved. Ask exactly **Build sekarang atau nanti?** b
 - `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
 - `www/preset-library-ui.js` unchanged SHA `67ec75258620323492609dcdec559badfb769797`.
 - No MIDI, SysEx, USB, NAM/IR, Editor, Signal Chain, Save, Copy Scene, CTRL/EXP or transfer protocol functions were changed.
+
+## Permanent mandatory rule — test every change until the corrected source passes (1 November 2026)
+
+Applies to **every** application/source change, no matter how small (CSS, HTML, JavaScript, text, one-line adjustment, or correction) on `feature/preset-manager-redesign`.
+
+### Required test-and-correction loop
+1. After each individual source change, run a targeted simulation/test pass against the exact current source/commit before considering that stage complete or asking for build approval. Select checks that actually exercise the touched area: syntax/static assertions, relevant regression/protocol tests, and browser/UI simulation using the updated source and realistic fixtures where applicable. Never use an older APK or stale source as proof for a new edit.
+2. **If a test/simulation fails, do not stop and do not mark the change complete.** Diagnose the cause, make the smallest safe correction inside the approved scope, record the failed attempt and correction, and rerun the relevant checks on the corrected source. Repeat until the required checks pass.
+3. Report failures honestly; do not conceal, relabel, or fabricate results. The user-facing hand-off should state the final passing result and any remaining limitations. Preserve the intermediate failure → diagnosis → correction → rerun history in this checklist. If a check cannot be performed because of an environmental or scope limitation, record **NOT RUN/BLOCKED** and the reason; never claim it passed.
+4. Every entry must record: date; every changed file; concise change summary; exact commit SHA; protected files/areas checked and confirmed untouched; test/simulation name and method; exact source commit tested; result; any failure diagnosis and correction commit; final rerun result; checks not run and reasons; next step.
+5. A later source edit invalidates the earlier pass for that changed source. Rerun applicable checks after every correction. Do not accumulate several untested edits and rely on a test of an earlier state.
+6. Keep evidence levels separate: static/syntax checks, automated regression tests, browser simulation, Android build/package validation, and physical Android/MG-30/USB-MIDI testing are not interchangeable. Never describe browser simulation as a physical pedal test.
+
+### Build approval remains mandatory
+- Simulations and local tests that do not trigger a build may be run before asking the user.
+- Do **not** trigger GitHub Actions/CI, Gradle, APK generation or packaging until the user explicitly answers **Build sekarang**. **Build nanti** means no build.
+- If the user authorizes a build and the workflow/build fails, disclose the failure, diagnose and correct it within the approved scope, rerun the applicable test loop, and retry the authorized build until success. Do not present an older APK as the latest.
+- Documentation-only changes do not need an Android build. Use a skip-CI marker where appropriate.
+
+**Hard completion gate:** never hand off a source-change stage as complete, and never ask for the build decision, while a required test/simulation is failing or has not been rerun after the last correction. Never invent a passing result.
+
+### Documentation checkpoint for this rule
+- Application/source code changed: **none**.
+- Checklist updated: `UI_POLISH_CHECKLIST.md`.
+- Resume instructions synchronized: `docs/research/UNIVERSAL_NEW_CHAT_RESUME_PROMPT_PRESET_MANAGER.md`.
+- Resume prompt commit SHA: `ad49e3060508fe3a63f0d941729888e66af56427`.
+- Build/CI/Gradle/APK: **not run** (documentation-only change; build approval rules unchanged).
+- Validation: both updated Markdown files fetched back from the branch and checked for the mandatory loop, failure correction/retest requirement, exact-source requirement, and separate build-approval gate.
+- Next step: apply this test-and-correction loop to every future source change; after all applicable checks pass, update this checklist and ask **“Build sekarang atau nanti?”**.
