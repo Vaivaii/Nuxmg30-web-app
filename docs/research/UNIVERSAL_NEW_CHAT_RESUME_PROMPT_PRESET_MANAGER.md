@@ -654,3 +654,14 @@ This rule is mandatory for every future application/source change on this branch
 8. Documentation-only updates do not require an Android build, but they must still be committed and recorded accurately. Use a skip-CI commit marker when appropriate to avoid triggering a build from documentation-only changes.
 
 **Completion gate:** no source-change stage may be handed off as complete while a required simulation/test is failing or has not been rerun after the final correction. Report limitations honestly; never manufacture success.
+
+## Latest icon-only UI change — Device navigation USB glyph (1 November 2026)
+
+- User authorized only the bottom Device-tab icon replacement; do not make any other visual or code change before user review.
+- Chosen symbol: Lucide `usb` outline, because Device contains USB-MIDI and USB audio settings. Official reference: https://lucide.dev/icons/usb.
+- Source commit: `082c320e847b5cabdf50c7a4802e73cf14a08242`; only `www/index.html` changed, exactly one SVG inside `button[data-page="device"]`. Existing wrapper, button, page identifier, accessible-hidden treatment, label `Device`, sizing/stroke CSS, other four tab icons, and all behaviors remain untouched.
+- Targeted browser simulation against exact commit `082c320e847b5cabdf50c7a4802e73cf14a08242`, using the extracted actual bottom-nav markup and unchanged `www/ui-redesign.css`: Chromium/Playwright sizes 320×740, 360×800, 393×873, 432×915; all passed (five tabs intact, Device label unchanged, SVG 23×23, responsive fit, bottom alignment, correct inactive/active colors, visible icon pixel check).
+- Test harness issues and corrections are fully recorded in the latest `UI_POLISH_CHECKLIST.md` entry: Chromium file URL/CLI trouble switched to Playwright `page.set_content`; corrected expected SVG element count from 9 to 7; corrected pixel sampling to derive the SVG's real bounding box. Final rerun passed all four sizes.
+- No npm test, CI, Actions, Gradle or APK run (not authorized); no physical Android/pedal validation claimed.
+- Latest checklist includes the full failure → diagnosis → corrected test → passing rerun record. The one-change-per-stage and mandatory test-until-pass rule still applies.
+- **Current stop point:** icon-only change recorded. Ask exactly **“Build sekarang atau nanti?”**; do not make any other source change unless the user gives the next instruction.
