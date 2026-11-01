@@ -11,6 +11,8 @@ const Native = () => Capacitor.isNativePlatform();
 const $ = id => document.getElementById(id);
 let panelReady = false;
 let selectedTone = null;
+let selectedModelId = '';
+let callbackLoadedTone = false;
 window.NUXNAMTransfer = Object.freeze({ readMG30NAMSlotNames });
 
 const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -441,14 +443,16 @@ function renderToneCatalogue(snapshot, options = {}) {
     button.addEventListener('click', () => {
       const index = Number(button.dataset.t3kSend), model = selectedTone?.models?.[index];
       if (model) rememberSelectedModel(model.id);
-      void sendModel(index, button);
+      const activeButton = list.querySelector('[data-t3k-send="' + index + '"]');
+      void sendModel(index, activeButton);
     });
   });
   list.querySelectorAll('[data-t3k-save]').forEach(button => {
     button.addEventListener('click', () => {
       const index = Number(button.dataset.t3kSave), model = selectedTone?.models?.[index];
       if (model) rememberSelectedModel(model.id);
-      void saveModel(index, button);
+      const activeButton = list.querySelector('[data-t3k-save="' + index + '"]');
+      void saveModel(index, activeButton);
     });
   });
   const expanded = options.expand ?? localStorage.getItem(PREFIX + 'catalogue_expanded') === '1';
@@ -782,6 +786,7 @@ async function processCallback(rawUrl) {
       return;
     }
     if (toneId) {
+      callbackLoadedTone = true;
       setStatus('Tone selected. Returning to MG30 Studio and loading the available models…');
       await loadSelectedTone(toneId, { expand: true });
     } else {
@@ -829,8 +834,8 @@ async function initTone3000() {
   const cached = restoreCachedCatalogue();
   await processCallback(window.location.href);
   const savedId = localStorage.getItem(PREFIX + 'selected_tone_id') || cached?.toneId;
-  if (savedId && localStorage.getItem(PREFIX + 'access_token') && !new URL(window.location.href).search &&
-      !window.location.hash.includes('tone_id=')) {
+  if (savedId && !callbackLoadedTone && localStorage.getItem(PREFIX + 'access_token') &&
+      !new URL(window.location.href).search && !window.location.hash.includes('tone_id=')) {
     await loadSelectedTone(savedId, {
       expand: localStorage.getItem(PREFIX + 'catalogue_expanded') === '1',
     });
