@@ -143,6 +143,8 @@ function createHarness({ withCatalogue = true } = {}) {
     catalogue.hidden = true;
     const state = elements['t3kCatalogueToggle'];
     state.setAttribute('aria-expanded', 'false');
+    state.appendChild(elements['t3kCatalogueTitle']);
+    state.appendChild(elements['t3kCatalogueCount']);
     catalogue.appendChild(state);
     catalogue.appendChild(elements['t3kModelList']);
     tonePane.appendChild(catalogue);
