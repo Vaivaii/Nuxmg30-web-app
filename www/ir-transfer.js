@@ -164,7 +164,7 @@ function initUI(){
    // TONE3000 may mount just after this controller; move the existing node, keeping its handlers.
    const namContentObserver=new MutationObserver(records=>{
     for(const record of records)for(const node of record.addedNodes){
-     if(node.nodeType!==1||node===pageHero||node===toolsFrame||node===root)continue;
+     if(node.nodeType!==1||node===pageHero||node===toolsFrame||node===root||node.id==='namModelLibrary')continue;
      const isLateTonePanel=node.id==='tone3000Panel'||node.classList.contains('t3k-panel');
      if(isLateTonePanel&&(node.parentElement===page||node.parentElement===namPane))tonePane.appendChild(node);
      else if(node.parentElement===page)namPane.appendChild(node);
