@@ -11,12 +11,31 @@
     }
     return result;
   }
+  const protectedSelectors = [
+    '#statName','#editorTitle','#modelVisual','.block',
+    '.preset > div > strong','.preset-library-card-title',
+    '.ir-collection-slot-name','.studio-take-copy',
+    '.audio-device-card strong','.audio-device-card small',
+    '.youtube-result-copy strong','.youtube-result-copy small',
+    '.nam-profile-top strong','.nam-profile-model-name'
+  ].join(',');
   function processText(node) {
     if (!node || node.nodeType !== 3 || !node.nodeValue) return;
     const parent = node.parentElement;
-    if (parent && parent.closest('script,style,textarea,code,pre')) return;
-    const translated = translate(node.nodeValue);
-    if (translated !== node.nodeValue) node.nodeValue = translated;
+    if (!parent || parent.closest('script,style,textarea,code,pre') || parent.closest(protectedSelectors)) return;
+    const value = node.nodeValue;
+    if (parent.classList.contains('nam-device-slot-meta')) {
+      if (value.startsWith('Nama di MG-30: ')) {
+        node.nodeValue = 'Name on MG-30: ' + value.slice('Nama di MG-30: '.length);
+        return;
+      }
+      if (value.startsWith('QuickTone ID lokal ')) {
+        node.nodeValue = 'Local QuickTone ID ' + value.slice('QuickTone ID lokal '.length);
+        return;
+      }
+    }
+    const translated = translate(value);
+    if (translated !== value) node.nodeValue = translated;
   }
   function processElement(element) {
     if (!element || element.nodeType !== 1) return;
