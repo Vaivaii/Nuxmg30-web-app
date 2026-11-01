@@ -262,7 +262,7 @@ test('TONE3000 visible UI messages are English in initial, OAuth, and local NAM 
   const tone = readFileSync(new URL('../www/tone3000.js', import.meta.url), 'utf8');
   for (const phrase of [
     'Membuka TONE3000', 'Setelah memilih tone', 'Pastikan URI',
-    'Choose a tone to load models', 'Pilih tone dari TONE3000',
+    'Pilih tone untuk memuat model', 'Pilih tone dari TONE3000',
     'Memeriksa arsitektur', 'Jangan cabut USB OTG',
     'Transfer tidak selesai', 'Simpan model di aplikasi',
   ]) {
