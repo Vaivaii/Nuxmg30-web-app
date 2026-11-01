@@ -721,3 +721,14 @@ This rule is mandatory for every future application/source change on this branch
 - Checklist contains full source SHA, test method, viewport measurements, failure/correction history, and next step. Dedicated plan also updated.
 - No npm test, Actions, CI, Gradle, APK build or physical device test. This is a visual-only CSS stage.
 - Current stop point: UI polish 01 complete. Ask exactly **“Build sekarang atau nanti?”**. Do not edit the next component until that build decision is received; then continue one small change at a time.
+
+## Android APK build request — accepted and started (1 November 2026)
+
+- User explicitly answered **“Sekarang”** to the build gate after UI Polish 01.
+- Build workflow originally did not include `feature/dark-performance-ui-polish` in its push branch filter. Added that branch only to `.github/workflows/build-apk.yml`; workflow commands, environment, regression tests and artifact upload steps were not altered.
+- Workflow config commit: `83e6412c1099a29d9512731bf8f393117d70e4e5`.
+- GitHub Actions run: **#210**, run ID `41283669737`, URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41283669737
+- Confirmed run state: `in_progress` at last poll.
+- Completed successfully: checkout, Node 22 setup, Java 21 setup, `npm install`, `npm test` (protocol regression), `npm run android:init` (Capacitor Android project + USB audio plugin).
+- Current step at last poll: `cd android && ./gradlew --no-daemon assembleDebug` (Build debug APK) — in progress. APK upload step pending. No artifact exists yet; do not claim APK produced until Actions confirms success and artifact is present.
+- No changes to NUX MG-30 protocol, NAM, IR import/collection, MIDI mapping, or existing editor/transfer implementation were made for build enablement.
