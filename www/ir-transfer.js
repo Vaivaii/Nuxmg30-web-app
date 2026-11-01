@@ -126,7 +126,7 @@ function initUI(){
   // Separate the NAM/TONE3000 tools from the Collection workspace.
   // Both remain available, but Collection gets the full area above the fixed navigation.
   const page=$('page-nam'),pageHero=page?.querySelector(':scope > .nam-page-hero'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
-  let namPane=null,tonePane=null,toolsFrame=null,irPane=null,namModeButton=null,toneModeButton=null;
+  let namPane=null,tonePane=null,toolsFrame=null,namModeButton=null,toneModeButton=null;
   if(page&&!page.dataset.namIrToolsReady){
    toolsFrame=document.createElement('section');
    toolsFrame.className='nam-ir-tools-frame';
@@ -149,10 +149,6 @@ function initUI(){
    toolStage.append(namPane,tonePane);
    toolsFrame.append(toolNav,toolStage);
 
-   irPane=document.createElement('div');
-   irPane.className='nam-ir-ir-pane';
-   irPane.id='namIrCollectionPane';
-
    const tonePanel=$('tone3000Panel');
    for(const child of Array.from(page.children)){
     if(child===pageHero||child===root)continue;
@@ -166,17 +162,19 @@ function initUI(){
    // TONE3000 may mount just after this controller; move the existing node, keeping its handlers.
    const namContentObserver=new MutationObserver(records=>{
     for(const record of records)for(const node of record.addedNodes){
-     if(node.nodeType!==1||node.parentElement!==page||node===pageHero||node===toolsFrame||node===irPane||node===root)continue;
-     if(node.id==='tone3000Panel'||node.classList.contains('t3k-panel'))tonePane.appendChild(node);
-     else namPane.appendChild(node);
+     if(node.nodeType!==1||node===pageHero||node===toolsFrame||node===root)continue;
+     const isLateTonePanel=node.id==='tone3000Panel'||node.classList.contains('t3k-panel');
+     if(isLateTonePanel&&(node.parentElement===page||node.parentElement===namPane))tonePane.appendChild(node);
+     else if(node.parentElement===page)namPane.appendChild(node);
     }
    });
+   // Watch both insertion locations: TONE3000 mounts after the NAM import panel.
    namContentObserver.observe(page,{childList:true});
+   namContentObserver.observe(namPane,{childList:true});
   }else{
    toolsFrame=page?.querySelector('.nam-ir-tools-frame');
    namPane=$('namIrNamPane');
    tonePane=$('namIrTonePane');
-   irPane=$('namIrCollectionPane');
    namModeButton=$('namIrModeNam');
    toneModeButton=$('namIrModeTone');
   }
