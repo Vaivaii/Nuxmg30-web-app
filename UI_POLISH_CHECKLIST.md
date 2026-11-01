@@ -2470,3 +2470,31 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Protected areas unchanged: `www/main.js`, `www/mg30-preset-import.js`, `www/mg30-preset-export.js`, transfer handlers, NAM/IR/Collection transfer code, preset import/export behavior, MIDI/SysEx mapping, signal-chain behavior and startup code. No JS or protocol code changed.
 - `npm test`, Actions, Gradle/APK build and physical device tests were not run for UI Polish 02; this is a presentation-only CSS change and the user has not yet authorized its build.
 - Current stop point: UI Polish 02 source and browser simulation are complete and documented. Ask exactly **“Build sekarang atau nanti?”**. Do not make a further source change or start an APK build until the user responds.
+
+
+
+## UI Polish 03 — Isolated Collection IR scroll frame (1 November 2026)
+
+- User request: put the Collection IR column inside a frame like Preset Manager so scrolling the 24 slots does not move the other menus; only the Collection IR slot list itself should scroll.
+- Active branch: `feature/dark-performance-ui-polish`.
+- Implementation follows the existing Preset Manager pattern: the NAM & IR page is fixed between the measured shared app header and bottom navigation while the tab is active; the page is clipped; only the Collection IR slot grid receives vertical scrolling with `overscroll-behavior: contain` and `-webkit-overflow-scrolling: touch`.
+- The Collection card heading, sync/hide buttons, current-preset note, footnote, transfer status, NAM & IR title and shared navigation remain outside the scrollable grid. The 24 slot cards remain in the existing 2-column mobile grid (and existing 4-column layout at widths >=680px). Other tabs return to their normal layout when NAM & IR is hidden. Widths >720px do not activate mobile scroll isolation.
+- Source commits:
+  - Initial controller insertion: `a9ca2e3e275c9a293a80ec93d74d84abfdfde8ae`. Static source review caught a temporal-dead-zone risk before test execution: `grid` was declared after the first viewport sizing call.
+  - Correction: `09b8100400bd0a1a426b43c4e3c7db37f2723afc`. Moved `fileInput`, `userButton`, and `grid` references before the viewport controller's first sizing call. No runtime test was run against the intermediate faulty ordering.
+  - CSS frame/scroll implementation: `0f9a1b883d038046e8d28dae3a1eac6e328f114e`.
+- Exact final app source tested: HEAD `0f9a1b883d038046e8d28dae3a1eac6e328f114e`.
+- Compare from previous documentation HEAD `cd9489f94e93bb4a741b7ac33a669e690530f4af` shows only two app files changed: `www/ir-transfer.js` (33 additions; the existing variable declaration was moved before the inserted viewport controller) and `www/ui-redesign.css` (111 additions). The `ir-transfer.js` change is limited to the viewport controller and UI element references; no IR transfer/packet/parser/CRC/ACK routine was modified.
+- Browser test: Chromium / Playwright via `page.set_content()`; fixture based on the actual page markup and generated Collection IR card structure in `www/ir-transfer.js`, with the exact committed viewport controller and CSS rules. Used 24 representative slot cards and the shared top header / fixed five-tab navigation.
+- Viewports all PASS:
+  - 320×740: grid client height 149px, scroll height 1401px, 2 columns.
+  - 360×800: 223px / 1401px, 2 columns.
+  - 393×873: 327px / 1401px, 2 columns.
+  - 432×915: 369px / 1401px, 2 columns.
+  - 680×900: 358px / 705px, 4 columns (existing responsive breakpoint).
+  - 768×1024: mobile isolation correctly disabled; normal desktop document flow remains unchanged.
+- Assertions PASS on mobile: NAM & IR page becomes fixed between measured header and nav; page overflow is hidden; the only scrollable descendant in the Collection view is `#irManagerCollectionGrid`; mouse-wheel gesture inside the grid advances its scrollTop; wheel gesture over the fixed Collection header does not move the grid or document; header, page headings, Collection card heading, and bottom nav retain their positions; document scrollTop stays 0; no horizontal overflow; no uncaught JavaScript errors; switching away from NAM & IR removes the active body class and the dynamic top/bottom CSS properties.
+- Visual preview: `/mnt/data/ir-collection-scroll-393.png` (393×873 fixture screenshot, taken after scrolling inside the slot grid).
+- Protected files/areas verified unchanged at final HEAD: `www/main.js` SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/mg30-preset-import.js` SHA `e2490e6df3f5f32853743fc5eb29c99cc4026ea8`; `www/mg30-preset-export.js` SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`; `www/index.html` SHA `7947eac23fa6e28a208d5a7589e742575a22444c`; `www/preset-library-ui.css` SHA `1be19a3d4e7ce617f5662c6e164b3d79fa770bf7`; `www/preset-library-ui.js` SHA `67ec75258620323492609dcdec559badfb769797`. Existing NAM/IR Collection import flow, file validation, transfer frames, MIDI/SysEx mapping, preset encoding/import/export, Signal Chain, and app startup logic were not edited.
+- `npm test` was not run because this stage changes only viewport/layout behavior; the existing preset-format/read tests exercise unrelated serializer/parser code and were not altered. No GitHub Actions, CI, Gradle, APK build, physical Android test, or MG-30 hardware test was run. A new build still requires explicit user approval.
+- Current stop point: UI Polish 03 source and browser simulation are complete and recorded. Ask exactly **“Build sekarang atau nanti?”**. Do not start Actions/CI/Gradle/APK or make another source change until the user responds.
