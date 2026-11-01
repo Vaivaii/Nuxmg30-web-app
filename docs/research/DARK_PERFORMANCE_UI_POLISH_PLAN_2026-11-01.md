@@ -462,7 +462,17 @@ Validation:
 - Chromium + Playwright `page.set_content` fixture passed at 320×640, 360×740, 393×873, 432×915 and desktop 768×1024. Target dropdown, both TONE3000 action buttons and status remain outside the overlay; the list stays scrollable and ends above bottom navigation. The initial fixture-coordinate/class issue and correction are fully recorded in the checklist.
 - No npm test, Vite, CI, Actions, Gradle or APK build was run. No physical Android/WebView or MG-30 hardware validation is claimed.
 
-Project records:
-- Detailed history, intermediate failure/correction, protected-file hashes, per-viewport metrics and build gate are in `UI_POLISH_CHECKLIST.md` under the matching TONE3000 heading.
-- Latest source commit is `d16dd03e55ce5701409757232fae58cc6546319c`; subsequent commits may update documentation only.
-- Current stop point: source and documentation are saved. Ask exactly **“Build sekarang atau nanti?”** and do not start a build before explicit approval.
+## Follow-on build result — Build #223 (1 November 2026)
+
+The user confirmed Build #221 was still installed and requested a new APK. The active branch was missing from the workflow push trigger, so `feature/dark-performance-ui-polish` was added to `.github/workflows/build-apk.yml`. The original explicit Node.js 22 setup was preserved/restored in commit `221114f161cd705185789a085c13cd99ed432d7c`.
+
+- Workflow: [Build #223](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41324976598), run ID `41324976598`, conclusion `success`.
+- Source commit: `221114f161cd705185789a085c13cd99ed432d7c` on `feature/dark-performance-ui-polish`.
+- npm dependencies, `npm test`, Android project generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13091250306`; ZIP SHA-256 `cf49bf11022324598984a89dc6c97bb5f75d1963d2289f4f46e597224e59c71f`.
+- Extracted APK `MG30-Studio-223-debug.apk`: 4,436,632 bytes; SHA-256 `1da54d82d01f2b874d7984b7ccabee85d8f2809067ba07e9ac5c69b29c8b2ceb`.
+- ZIP integrity passed. The bundled CSS asset was checked and contains the final mobile catalogue top offset `max(270px, calc(env(safe-area-inset-top, 0px) + 260px))`.
+- Protected files `www/tone3000.js`, `www/nam-transfer.js`, `www/ir-transfer.js`, `www/main.js` and `www/native-midi.js` retain their previously recorded SHA values. No NAM/IR/MIDI protocol behaviour was edited for this UI fix.
+- Physical phone/WebView and MG-30 hardware validation are still pending; user should verify the expanded catalogue layout after installing #223.
+
+The detailed build record and all protected hashes are also saved in `UI_POLISH_CHECKLIST.md`.
