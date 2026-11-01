@@ -665,3 +665,14 @@ This rule is mandatory for every future application/source change on this branch
 - No npm test, CI, Actions, Gradle or APK run (not authorized); no physical Android/pedal validation claimed.
 - Latest checklist includes the full failure → diagnosis → corrected test → passing rerun record. The one-change-per-stage and mandatory test-until-pass rule still applies.
 - **Current stop point:** icon-only change recorded. Ask exactly **“Build sekarang atau nanti?”**; do not make any other source change unless the user gives the next instruction.
+
+## Latest build — Build #208 USB Device navigation icon APK (1 November 2026)
+
+- User approved **Build sekarang**.
+- GitHub Actions run #208 / ID `41279514428`, built exact source commit `082c320e847b5cabdf50c7a4802e73cf14a08242`; workflow conclusion success.
+- Protocol regression tests passed; Capacitor Android generation / USB audio plugin install passed; Gradle debug APK build and artifact upload passed.
+- Artifact ID `13073015721`, ZIP SHA-256 `3f3ebe6fb9a1204b26469001fb766b1c906abd4663f61bb3dee028617aaf32dc`, ZIP integrity passed.
+- Extracted current APK: `/mnt/data/MG30_Studio_Build_208.apk`, 4,402,840 bytes, SHA-256 `a798ef248e14d1054afe6a7994c63a175b8e5f8a168add9327eb788f32625970`. It was identified as an Android package with Gradle app metadata and APK Signing Block. `apksigner` unavailable; cryptographic signature verification not run.
+- This supersedes Build #207. Do not provide Build #207 as latest.
+- Icon browser simulation passed four mobile widths; workflow protocol tests and Android build passed. No physical phone/MG-30 test claimed.
+- Full build evidence also recorded in `UI_POLISH_CHECKLIST.md`.
