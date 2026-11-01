@@ -70,14 +70,14 @@ function createPanel() {
     panel.className = 'panel t3k-panel';
     panel.innerHTML = `
       <div class="t3k-head">
-        <div><h3>TONE3000 · impor NAM</h3>
-        <p>Pilih slot tujuan, buka katalog TONE3000, lalu pilih tone. Setelah kembali, aplikasi mencari model A2-Lite yang cocok dan mengimpornya ke MG-30.</p></div>
+        <div><h3>TONE3000 · NAM Import</h3>
+        <p>Select an MG-30 target slot, open the TONE3000 catalog, and choose a tone. When you return, the app finds a compatible A2-Lite model and imports it to the MG-30.</p></div>
         <span class="t3k-mark">T3K</span>
       </div>
       <div class="t3k-form t3k-target-row">
-        <label for="t3kTargetSlot">Slot tujuan MG-30</label>
-        <select id="t3kTargetSlot" aria-label="Pilih slot tujuan TONE3000">
-          <option value="">Pilih slot tujuan</option>
+        <label for="t3kTargetSlot">MG-30 Target Slot</label>
+        <select id="t3kTargetSlot" aria-label="Select a TONE3000 target slot">
+          <option value="">Select target slot</option>
           <option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option>
           <option value="4">Slot 4</option><option value="5">Slot 5</option><option value="6">Slot 6</option>
           <option value="7">Slot 7</option><option value="8">Slot 8</option><option value="9">Slot 9</option><option value="10">Slot 10</option>
@@ -96,7 +96,7 @@ function createPanel() {
         </button>
         <div id="t3kModelList" class="t3k-model-list" hidden></div>
       </section>
-      <p class="t3k-warning">Mengimpor NAM akan menimpa slot tujuan. Pastikan model yang ada sudah dicadangkan sebelum melanjutkan.</p>
+      <p class="t3k-warning">Importing NAM will overwrite the target slot. Back up the existing model before continuing.</p>
     `;
     localPanel.insertAdjacentElement('afterend', panel);
   }
@@ -107,28 +107,28 @@ function createPanel() {
     settings.className = 'panel t3k-panel t3k-settings-panel';
     settings.innerHTML = `
       <summary class="t3k-settings-summary">
-        <span><strong>Pengaturan TONE3000</strong><small>Publishable key dan Redirect URI · disembunyikan saat tertutup</small></span>
+        <span><strong>TONE3000 Settings</strong><small>Publishable key and Redirect URI · hidden when collapsed</small></span>
         <span class="t3k-mark">API</span>
       </summary>
       <div class="t3k-settings-body">
-        <p>Konfigurasi ini cukup diatur sekali. Gunakan publishable key, bukan Secret Key. Nilai key disimpan lokal di perangkat ini dan kolomnya selalu tersamarkan.</p>
+        <p>This only needs to be configured once. Use a publishable key, not a Secret Key. The key is stored locally on this device and the field is always masked.</p>
         <label for="t3kClientId"><small>Publishable key TONE3000</small></label>
         <div class="t3k-form">
           <input id="t3kClientId" type="password" autocomplete="off" spellcheck="false" placeholder="t3k_pub_…" aria-label="Publishable key TONE3000">
-          <button id="t3kSaveKey" type="button">Simpan key</button>
+          <button id="t3kSaveKey" type="button">Save Key</button>
         </div>
         <label for="t3kRedirectUri"><small>Redirect URI Android</small></label>
         <div class="t3k-form">
-          <select id="t3kRedirectUri" aria-label="Pilih Redirect URI yang terdaftar di TONE3000">
+          <select id="t3kRedirectUri" aria-label="Select a Redirect URI registered with TONE3000">
             <option value="tone3000-example://oauth/callback">tone3000-example://oauth/callback</option>
             <option value="mg30studio://oauth/callback">mg30studio://oauth/callback</option>
           </select>
         </div>
-        <small class="t3k-redirect-note">URI di sini harus sama persis dengan salah satu URI pada TONE3000 → Settings → API Keys.</small>
+        <small class="t3k-redirect-note">This URI must exactly match one of the URIs registered in TONE3000 → Settings → API Keys.</small>
         <div class="t3k-actions">
-          <button id="t3kSignOut" type="button">Putuskan akun TONE3000</button>
+          <button id="t3kSignOut" type="button">Disconnect TONE3000 Account</button>
         </div>
-        <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">Dokumentasi API TONE3000</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">Ketentuan API</a></p>
+        <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">TONE3000 API Documentation</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">API Terms</a></p>
       </div>
     `;
     settingsMount.appendChild(settings);
@@ -142,7 +142,7 @@ function createPanel() {
   $('t3kRedirectUri').addEventListener('change', () => {
     const uri = $('t3kRedirectUri').value;
     localStorage.setItem(PREFIX + 'redirect_uri_config', uri);
-    setStatus('Redirect URI dipilih: ' + uri + '. Pastikan URI ini terdaftar persis pada API key TONE3000.');
+    setStatus('Selected Redirect URI: ' + uri + '. Make sure this exact URI is registered for your TONE3000 API key.');
   });
   $('t3kTargetSlot').value = localStorage.getItem(PREFIX + 'target_slot') || '';
   $('t3kTargetSlot').addEventListener('change', () => {
@@ -153,11 +153,11 @@ function createPanel() {
   $('t3kSaveKey').addEventListener('click', () => {
     const key = $('t3kClientId').value.trim();
     if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(key)) {
-      setStatus('Masukkan publishable key dengan format t3k_pub_… . Jangan memasukkan client secret.');
+      setStatus('Enter a publishable key in the format t3k_pub_… . Do not enter a client secret.');
       return;
     }
     localStorage.setItem(PREFIX + 'client_id', key);
-    setStatus('Publishable key disimpan. Kembali ke tab NAM untuk memilih tone.');
+    setStatus('Publishable key saved. Return to the NAM tab to choose a tone.');
   });
   $('t3kChooseTone').addEventListener('click', startSelectFlow);
   $('t3kRefreshModels').addEventListener('click', () => {
@@ -181,7 +181,7 @@ function setStatus(message) {
 function updateAccountStatus() {
   const token = localStorage.getItem(PREFIX + 'access_token');
   if (token && $('t3kStatus')) {
-    setStatus('Akun TONE3000 tersambung pada perangkat ini. Kamu dapat memilih tone A2 atau memuat ulang detail tone yang terakhir dipilih.');
+    setStatus('Your TONE3000 account is connected on this device. You can choose an A2 tone or reload the details of the tone you last selected.');
   }
 }
 
@@ -211,7 +211,7 @@ function getRedirectUri() {
 async function startSelectFlow() {
   const clientId = (localStorage.getItem(PREFIX + 'client_id') || $('t3kClientId')?.value || '').trim();
   if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(clientId)) {
-    setStatus('Masukkan publishable key TONE3000 yang valid sebelum membuka katalog.');
+    setStatus('Enter a valid TONE3000 publishable key before opening the catalog.');
     return;
   }
   const targetSlot = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
@@ -220,7 +220,7 @@ async function startSelectFlow() {
   }
   try {
     $('t3kChooseTone').disabled = true;
-    setStatus('Menyiapkan autentikasi TONE3000…');
+    setStatus('Preparing TONE3000 authentication…');
     const verifier = makeRandomToken();
     const state = makeRandomToken();
     const challenge = await sha256Base64Url(verifier);
@@ -244,11 +244,11 @@ async function startSelectFlow() {
       locale: 'en',
     });
     const url = 'https://www.tone3000.com/api/v1/oauth/authorize?' + params.toString();
-    setStatus('Membuka TONE3000 dengan redirect URI ' + redirectUri + '. Setelah memilih tone, aplikasi akan kembali dan mengimpor model cocok ke slot ' + (targetSlot || 'yang dipilih') + '. Pastikan URI ini terdaftar pada API key.');
+    setStatus('Opening TONE3000 with redirect URI ' + redirectUri + '. After you select a tone, the app will return and import the compatible model into slot ' + (targetSlot || 'the selected slot') + '. Make sure this exact URI is registered for your API key.');
     if (Native()) await Browser.open({ url, presentationStyle: 'fullscreen' });
     else window.location.assign(url);
   } catch (error) {
-    setStatus('Gagal membuka TONE3000: ' + (error?.message || error));
+    setStatus('Could not open TONE3000: ' + (error?.message || error));
   } finally {
     if ($('t3kChooseTone')) $('t3kChooseTone').disabled = false;
   }
@@ -259,7 +259,7 @@ async function exchangeAuthorizationCode(code) {
   const clientId = localStorage.getItem(PREFIX + 'client_id');
   const verifier = localStorage.getItem(PREFIX + 'code_verifier');
   const redirectUri = localStorage.getItem(PREFIX + 'redirect_uri');
-  if (!clientId || !verifier || !redirectUri) throw new Error('Data PKCE tidak lengkap; ulangi proses pilih tone.');
+  if (!clientId || !verifier || !redirectUri) throw new Error('PKCE data is incomplete. Start the tone selection flow again.');
   const response = await fetch(T3K + '/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -277,7 +277,7 @@ async function exchangeAuthorizationCode(code) {
 }
 
 function storeTokens(body) {
-  if (!body?.access_token || !body?.refresh_token) throw new Error('Respons TONE3000 tidak menyertakan token yang diperlukan.');
+  if (!body?.access_token || !body?.refresh_token) throw new Error('The TONE3000 response did not include the required tokens.');
   localStorage.setItem(PREFIX + 'access_token', body.access_token);
   localStorage.setItem(PREFIX + 'refresh_token', body.refresh_token);
   localStorage.setItem(PREFIX + 'expires_at', String(Date.now() + Number(body.expires_in || 3600) * 1000));
@@ -297,7 +297,7 @@ async function ensureAccessToken() {
 
   const refreshToken = localStorage.getItem(PREFIX + 'refresh_token');
   const clientId = localStorage.getItem(PREFIX + 'client_id');
-  if (!refreshToken || !clientId) throw new Error('Sesi TONE3000 belum aktif. Pilih tone untuk masuk kembali.');
+  if (!refreshToken || !clientId) throw new Error('Your TONE3000 session is inactive. Select a tone to sign in again.');
   const response = await fetch(T3K + '/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -533,16 +533,16 @@ function toBase64(buffer) {
 async function saveModel(index, button) {
   const model = selectedTone?.models?.[index];
   if (!model?.model_url) {
-    setStatus('URL model tidak tersedia untuk pilihan ini.');
+    setStatus('The model URL is unavailable for this selection.');
     return;
   }
-  if (button) { button.disabled = true; button.textContent = 'Mengunduh…'; }
+  if (button) { button.disabled = true; button.textContent = 'Downloading…'; }
   try {
     const token = await ensureAccessToken();
     const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
-    if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
+    if (!response.ok) throw new Error('Model download HTTP ' + response.status);
     const blob = await response.blob();
-    if (!blob.size) throw new Error('File model yang diterima kosong.');
+    if (!blob.size) throw new Error('The downloaded model file is empty.');
     let fileName = String(model.name || '').trim() || ('tone-' + selectedTone.id + '-model-' + (index + 1) + '.nam');
     fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
     if (!/\.(nam|namb|image)$/i.test(fileName)) fileName += '.nam';
@@ -550,7 +550,7 @@ async function saveModel(index, button) {
     if (Native()) {
       const base64 = toBase64(await blob.arrayBuffer());
       const result = await NativeMidi.saveModel({ fileName, base64 });
-      setStatus('Model tersimpan di penyimpanan internal aplikasi: ' + result.fileName + ' (' + result.bytes + ' byte). Lokasi ini bersifat app-private; pengiriman langsung menyusul setelah protokol tervalidasi.');
+      setStatus('Model saved to the app's internal storage: ' + result.fileName + ' (' + result.bytes + ' bytes). This location is app-private; direct device transfer will be enabled after the transfer protocol is validated.');
     } else {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
@@ -561,12 +561,12 @@ async function saveModel(index, button) {
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      setStatus('Unduhan dimulai: ' + fileName + '. File belum dikirim ke MG-30; unggah langsung akan diaktifkan setelah protokol tervalidasi.');
+      setStatus('Download started: ' + fileName + '. The file has not been sent to the MG-30; direct upload will be enabled after the transfer protocol is validated.');
     }
   } catch (error) {
-    setStatus('Gagal menyimpan model: ' + (error?.message || error));
+    setStatus('Failed to save model: ' + (error?.message || error));
   } finally {
-    if (button) { button.disabled = false; button.textContent = 'Simpan model di aplikasi'; }
+    if (button) { button.disabled = false; button.textContent = 'Save Model in App'; }
   }
 }
 
@@ -648,8 +648,8 @@ function initLocalNamImport() {
 
   const setLocalStatus = message => { status.textContent = String(message || ''); };
   const renderSelection = file => {
-    fileTitle.textContent = file ? file.name : 'Pilih file NAM untuk dikirim';
-    fileMeta.textContent = file ? (file.size.toLocaleString() + ' byte · file dibaca lokal di perangkat') :
+    fileTitle.textContent = file ? file.name : 'Choose a NAM file to send';
+    fileMeta.textContent = file ? (file.size.toLocaleString() + ' bytes · file read locally on this device') :
       'Mendukung .nam (JSON SlimmableContainer) dan .namb A2-Lite 1.871 bobot';
   };
 
@@ -660,17 +660,17 @@ function initLocalNamImport() {
     sendButton.disabled = true;
     if (!file) {
       renderSelection(null);
-      setLocalStatus('Belum ada file dipilih.');
+      setLocalStatus('No file selected.');
       return;
     }
     renderSelection(file);
     if (file.size <= 0 || file.size > 20 * 1024 * 1024) {
-      setLocalStatus('Ukuran file kosong atau terlalu besar untuk diproses.');
+      setLocalStatus('The file is empty or too large to process.');
       fileInput.value = '';
       return;
     }
     try {
-      setLocalStatus('Memeriksa arsitektur dan bobot A2-Lite…');
+      setLocalStatus('Checking A2-Lite architecture and weights…');
       const bytes = await file.arrayBuffer();
       const weightBytes = extractMG30A2LiteWeights(bytes);
       selectedLocalNamFile = {
@@ -680,14 +680,14 @@ function initLocalNamImport() {
         label: safeMG30SlotLabel(file.name),
       };
       sendButton.disabled = !Native();
-      setLocalStatus('Valid: A2-Lite, 1.871 bobot (' + weightBytes.length.toLocaleString() +
-        ' byte). ' + (Native()
-          ? 'Pilih slot tujuan dan tekan Kirim NAM ke MG-30.'
-          : 'File bisa diperiksa di browser, tetapi transfer hanya tersedia di APK Android melalui USB OTG.'));
+      setLocalStatus('Valid: A2-Lite, 1.871 weights (' + weightBytes.length.toLocaleString() +
+        ' bytes). ' + (Native()
+          ? 'Select a target slot and tap Send NAM to MG-30.'
+          : 'The file can be inspected in a browser, but transfers are available only in the Android APK through USB OTG.'));
     } catch (error) {
       selectedLocalNamFile = null;
       sendButton.disabled = true;
-      setLocalStatus('File tidak cocok untuk MG-30 Gen 2 A2-Lite: ' + (error?.message || error));
+      setLocalStatus('The file is not compatible with MG-30 Gen 2 A2-Lite: ' + (error?.message || error));
     }
   });
 
@@ -695,48 +695,48 @@ function initLocalNamImport() {
     const selected = selectedLocalNamFile;
     const slotNumber = Number(slotSelect.value || 0);
     if (!selected) {
-      setLocalStatus('Pilih dan validasi file NAM terlebih dahulu.');
+      setLocalStatus('Select and validate a NAM file first.');
       return;
     }
     if (!Native() || !window.NUXNativeMidi) {
-      setLocalStatus('Transfer langsung memerlukan APK Android dan USB OTG ke MG-30.');
+      setLocalStatus('Direct transfer requires the Android APK and a USB OTG connection to the MG-30.');
       return;
     }
     if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
-      setLocalStatus('Pilih slot tujuan 1–10.');
+      setLocalStatus('Select a target slot from 1–10.');
       return;
     }
     const fileName = selected.file.name.replace(/[\\/:*?"<>|]/g, '_');
-    if (!window.confirm('Kirim "' + selected.label + '" ke MG-30 slot ' + slotNumber +
-      '? Model lama di slot ini akan ditimpa. Cadangkan dahulu atau gunakan slot uji.')) return;
+    if (!window.confirm('Send "' + selected.label + '" ke MG-30 slot ' + slotNumber +
+      '? The existing model in this slot will be overwritten. Back it up first or use a test slot.')) return;
 
     sendButton.disabled = true;
     chooseButton.disabled = true;
     slotSelect.disabled = true;
     fileInput.disabled = true;
     try {
-      setLocalStatus('Menyimpan salinan model dan menyiapkan transfer…');
+      setLocalStatus('Saving a model copy and preparing the transfer…');
       await NativeMidi.saveModel({ fileName, base64: toBase64(selected.bytes) });
       const plan = buildMG30A2LiteTransferPlan(selected.weightBytes, selected.label, slotNumber);
       const connection = await window.NUXNativeMidi.connect();
       const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
         if (progress.stage === 'write') {
           setLocalStatus('Slot ' + slotNumber + ': ACK ' + progress.completed + '/' + progress.total +
-            ' · ' + progress.label + '. Jangan cabut USB OTG.');
+            ' · ' + progress.label + '. Do not disconnect USB OTG.');
         } else if (progress.stage === 'retry') {
-          setLocalStatus('ACK belum diterima untuk ' + progress.label +
-            '; percobaan ulang ' + progress.attempt + '. Jangan cabut USB OTG.');
+          setLocalStatus('ACK not received for ' + progress.label +
+            '; retry attempt ' + progress.attempt + '. Do not disconnect USB OTG.');
         } else if (progress.stage === 'readback') {
-          setLocalStatus('Memeriksa metadata slot: putaran ' + progress.round + '/2, slot ' +
+          setLocalStatus('Checking slot metadata: pass ' + progress.round + '/2, slot ' +
             progress.slot + '/10.');
         }
       });
-      setLocalStatus('Transfer selesai ke slot ' + result.slotNumber + ' (' + result.label + '). Semua ' +
-        result.acknowledgedWriteFrames + ' frame tulis mendapat ACK dan nama slot cocok pada dua putaran readback. ' +
-        'Perangkat tidak menyediakan readback bobot; coba mainkan model untuk memastikan suara.');
+      setLocalStatus('Transfer completed to slot ' + result.slotNumber + ' (' + result.label + '). All ' +
+        result.acknowledgedWriteFrames + ' write frames received ACKs and the slot name matched across both readback passes. ' +
+        'The device does not provide weight readback; play the model to verify its sound.');
     } catch (error) {
-      setLocalStatus('Transfer tidak selesai: ' + (error?.message || error) +
-        '. Jika proses sudah mulai menulis, slot mungkin berisi data parsial; periksa perangkat sebelum mengulang.');
+      setLocalStatus('Transfer failed: ' + (error?.message || error) +
+        '. If writing has started, the slot may contain partial data. Check the device before retrying.');
     } finally {
       sendButton.disabled = !selectedLocalNamFile || !Native();
       chooseButton.disabled = false;
@@ -753,7 +753,7 @@ const handledCallbackStates = new Set();
 async function processCallback(rawUrl) {
   let url;
   try { url = new URL(rawUrl); } catch {
-    if ($('t3kStatus')) setStatus('Callback TONE3000 tidak terbaca sebagai URL yang valid.');
+    if ($('t3kStatus')) setStatus('The TONE3000 callback is not a valid URL.');
     return;
   }
   const query = new URLSearchParams(url.search || '');
@@ -773,7 +773,7 @@ async function processCallback(rawUrl) {
 
   const expected = localStorage.getItem(PREFIX + 'state');
   if (!state || !expected || state !== expected) {
-    setStatus('Callback TONE3000 diterima, tetapi parameter state tidak cocok. Proses dihentikan demi keamanan. Buka kembali TONE3000 dari aplikasi.');
+    setStatus('A TONE3000 callback was received, but its state parameter does not match. The process was stopped for security. Reopen TONE3000 from the app.');
     return;
   }
   handledCallbackStates.add(state);
@@ -795,7 +795,7 @@ async function processCallback(rawUrl) {
       history.replaceState({}, document.title, clean.href);
     }
     if (canceled) {
-      setStatus('Pemilihan tone dibatalkan. Tidak ada model yang ditulis ke perangkat.');
+      setStatus('Tone selection canceled. No model was written to the device.');
       return;
     }
     if (toneId) {
@@ -803,10 +803,10 @@ async function processCallback(rawUrl) {
       setStatus('Tone selected. Returning to MG30 Studio and loading the available models…');
       await loadSelectedTone(toneId, { expand: true });
     } else {
-      setStatus('TONE3000 kembali tanpa tone_id. Login bisa berhasil, tetapi pilihan tone tidak dikirim di callback. Coba ulangi pemilihan tone; jika berulang, periksa redirect URI mg30studio://oauth/callback pada pengaturan API TONE3000.');
+      setStatus('TONE3000 returned without a tone_id. Login may have succeeded, but the selected tone was not included in the callback. Try selecting the tone again. If this happens again, check that mg30studio://oauth/callback is registered in your TONE3000 API settings.');
     }
   } catch (callbackError) {
-    setStatus('Autentikasi/impor TONE3000 gagal: ' + (callbackError?.message || callbackError));
+    setStatus('TONE3000 authentication/import failed: ' + (callbackError?.message || callbackError));
   }
 }
 
@@ -822,7 +822,7 @@ async function initTone3000() {
         if (event?.url) void processCallback(event.url);
       });
     } catch (error) {
-      setStatus('Listener callback Android gagal dipasang: ' + (error?.message || error));
+      setStatus('Could not install the Android callback listener: ' + (error?.message || error));
     }
     try {
       const launch = await App.getLaunchUrl();

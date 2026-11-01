@@ -198,7 +198,7 @@ test('NAM library header stays visible before a TONE3000 catalogue is loaded', (
   assert.equal(panel.parentElement, page, 'library remains a direct page row');
   assert.equal(panel.hidden, false, 'outer panel is never hidden before a tone loads');
   assert.equal(elements.namModelLibraryMeta.textContent, 'Pilih tone untuk memuat model');
-  assert.equal(elements.namModelLibraryToggle.textContent, 'Show⌄');
+  assert.equal(elements.namModelLibraryToggle.textContent, 'Show');
   assert.equal(elements.namModelLibraryContent.hidden, true);
 
   elements.namModelLibraryToggle.click();
@@ -215,7 +215,7 @@ test('NAM library moves the real catalogue, keeps header state and avoids page-w
   assert.equal(panel.parentElement, page);
   assert.equal(catalogue.parentElement, elements.namModelLibraryContent);
   assert.equal(panel.hidden, false, 'catalogue hidden state must not hide its library header');
-  assert.equal(toggle.textContent, 'Show⌄');
+  assert.equal(toggle.textContent, 'Show');
 
   const observers = FakeMutationObserver.all;
   assert.equal(observers.some(observer => observer.target === page && !observer.disconnected), false);
@@ -250,10 +250,35 @@ test('IR page observer does not move the NAM library into the collapsible NAM im
 
 test('NAM library presentation uses compact Hide label and explicit dark/lime model actions', () => {
   const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
-  assert.match(moduleSource, /expanded \? 'Hide' : 'Show⌄'/);
+  assert.match(moduleSource, /expanded \? 'Hide' : 'Show'/);
   assert.match(css, /#namModelLibrary \.nam-model-library-toggle[\s\S]*?width: 84px !important/);
   assert.match(css, /#namModelLibrary \.t3k-actions \{[\s\S]*?display: grid !important/);
   assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-send\][\s\S]*?background: #c5f36b !important/);
   assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-save\][\s\S]*?grid-column: 1 \/ -1/);
   assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-select\]:disabled[\s\S]*?background: #1a2225 !important/);
+});
+
+test('TONE3000 visible UI messages are English in initial, OAuth, and local NAM states', () => {
+  const tone = readFileSync(new URL('../www/tone3000.js', import.meta.url), 'utf8');
+  for (const phrase of [
+    'Membuka TONE3000', 'Setelah memilih tone', 'Pastikan URI',
+    'Pilih tone untuk memuat model', 'Pilih tone dari TONE3000',
+    'Memeriksa arsitektur', 'Jangan cabut USB OTG',
+    'Transfer tidak selesai', 'Simpan model di aplikasi',
+  ]) {
+    assert.equal(tone.includes(phrase) || moduleSource.includes(phrase), false, 'Indonesian UI copy remains: ' + phrase);
+  }
+  assert.match(tone, /Opening TONE3000 with redirect URI/);
+  assert.match(tone, /After you select a tone/);
+  assert.match(moduleSource, /expanded \? 'Hide' : 'Show'/);
+  assert.match(moduleSource, /Choose a tone to load models/);
+});
+
+test('NAM model cards use compact spacing, inline selected badge and shorter touch buttons', () => {
+  const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
+  assert.match(css, /#namModelLibrary \.t3k-card \{[\s\S]*?padding: 9px 10px !important/);
+  assert.match(css, /#namModelLibrary \.t3k-card-head \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto/);
+  assert.match(css, /#namModelLibrary \.t3k-mark \{[\s\S]*?min-height: 22px/);
+  assert.match(css, /#namModelLibrary \.t3k-actions button \{[\s\S]*?min-height: 36px !important/);
+  assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-send\][\s\S]*?background: #c5f36b !important/);
 });

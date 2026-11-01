@@ -21,14 +21,14 @@
       <header class="nam-model-library-head">
         <span class="nam-model-library-heading">
           <strong>Downloaded / Available NAM</strong>
-          <small id="namModelLibraryMeta">Pilih tone untuk memuat model</small>
+          <small id="namModelLibraryMeta">Choose a tone to load models</small>
         </span>
         <button id="namModelLibraryToggle" class="nam-model-library-toggle" type="button"
-          aria-expanded="false" aria-controls="namModelLibraryContent">Show⌄</button>
+          aria-expanded="false" aria-controls="namModelLibraryContent">Show</button>
       </header>
       <div id="namModelLibraryContent" class="nam-model-library-content" hidden>
         <div id="namModelLibraryEmpty" class="nam-model-library-empty">
-          Pilih tone dari TONE3000 untuk menampilkan model NAM di sini.
+          Choose a tone from TONE3000 to display NAM models here.
         </div>
       </div>
     `;
@@ -64,7 +64,7 @@
       const toneName = $('t3kCatalogueTitle')?.textContent?.trim() || '';
       const metaText = ready
         ? count + ' model' + (count === '1' ? '' : 's') + ' · ' + (toneName || 'TONE3000')
-        : 'Pilih tone untuk memuat model';
+        : 'Choose a tone to load models';
 
       // The library header stays visible independently of the inner catalogue's hidden state.
       if (panel.hidden) panel.hidden = false;
@@ -80,7 +80,7 @@
       if (headerToggle.getAttribute('aria-expanded') !== ariaExpanded) {
         headerToggle.setAttribute('aria-expanded', ariaExpanded);
       }
-      setText(headerToggle, expanded ? 'Hide' : 'Show⌄');
+      setText(headerToggle, expanded ? 'Hide' : 'Show');
       if (content.hidden === expanded) content.hidden = !expanded;
       if (empty.hidden !== ready) empty.hidden = ready;
 
