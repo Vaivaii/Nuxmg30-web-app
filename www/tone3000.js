@@ -550,7 +550,7 @@ async function saveModel(index, button) {
     if (Native()) {
       const base64 = toBase64(await blob.arrayBuffer());
       const result = await NativeMidi.saveModel({ fileName, base64 });
-      setStatus('Model saved to the app's internal storage: ' + result.fileName + ' (' + result.bytes + ' bytes). This location is app-private; direct device transfer will be enabled after the transfer protocol is validated.');
+      setStatus('Model saved to internal app storage: ' + result.fileName + ' (' + result.bytes + ' bytes). This location is app-private; direct device transfer will be enabled after the transfer protocol is validated.');
     } else {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
@@ -650,7 +650,7 @@ function initLocalNamImport() {
   const renderSelection = file => {
     fileTitle.textContent = file ? file.name : 'Choose a NAM file to send';
     fileMeta.textContent = file ? (file.size.toLocaleString() + ' bytes · file read locally on this device') :
-      'Mendukung .nam (JSON SlimmableContainer) dan .namb A2-Lite 1.871 bobot';
+      'Supported formats: .nam (JSON SlimmableContainer) and .namb (A2-Lite, 1,871 weights)';
   };
 
   chooseButton.addEventListener('click', () => fileInput.click());
@@ -707,7 +707,7 @@ function initLocalNamImport() {
       return;
     }
     const fileName = selected.file.name.replace(/[\\/:*?"<>|]/g, '_');
-    if (!window.confirm('Send "' + selected.label + '" ke MG-30 slot ' + slotNumber +
+    if (!window.confirm('Send "' + selected.label + '" to MG-30 slot ' + slotNumber +
       '? The existing model in this slot will be overwritten. Back it up first or use a test slot.')) return;
 
     sendButton.disabled = true;

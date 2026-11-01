@@ -282,3 +282,11 @@ test('NAM model cards use compact spacing, inline selected badge and shorter tou
   assert.match(css, /#namModelLibrary \.t3k-actions button \{[\s\S]*?min-height: 36px !important/);
   assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-send\][\s\S]*?background: #c5f36b !important/);
 });
+
+test('TONE3000 source contains no remaining Indonesian prompts from the NAM workflows', () => {
+  const tone = readFileSync(new URL('../www/tone3000.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(tone, /Mendukung \.nam|ke MG-30 slot|Membuka TONE3000|Setelah memilih tone|Pastikan URI|Jangan cabut USB OTG/);
+  assert.match(tone, /Supported formats: \.nam/);
+  assert.match(tone, /to MG-30 slot/);
+  assert.match(tone, /Model saved to internal app storage/);
+});
