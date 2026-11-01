@@ -1474,7 +1474,33 @@ html,body{background:#0b1012}
 }
 
 
-/* Keep the NAM & IR tab fixed like Preset Manager; only Collection IR slots scroll. */
+/* Two focused workspaces share the NAM & IR page without clipping either feature. */
+.nam-ir-workspace-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.nam-ir-workspace-tabs button {
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #33413b;
+  border-radius: 12px;
+  background: #12191a;
+  color: #9ba8a1;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .45px;
+}
+.nam-ir-workspace-tabs button[aria-pressed="true"] {
+  border-color: rgba(197, 243, 107, .58);
+  background: rgba(197, 243, 107, .10);
+  color: #d7f59f;
+}
+.nam-ir-workspace-pane[hidden] { display: none !important; }
+
 @media (max-width: 720px) {
   body.ir-collection-manager-active > .app > #page-nam:not(.hidden) {
     position: fixed;
@@ -1507,6 +1533,35 @@ html,body{background:#0b1012}
     margin: 0 2px 8px;
   }
 
+  body.ir-collection-manager-active #page-nam > .nam-ir-workspace-tabs {
+    flex: 0 0 auto;
+  }
+
+  body.ir-collection-manager-active #page-nam > .nam-ir-workspace-pane[hidden] {
+    display: none !important;
+  }
+
+  body.ir-collection-manager-active #page-nam > .nam-ir-nam-pane:not([hidden]) {
+    display: flex !important;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 2px 12px;
+  }
+
+  body.ir-collection-manager-active #page-nam > .nam-ir-ir-pane:not([hidden]) {
+    display: flex !important;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   body.ir-collection-manager-active #page-nam #ir-import-content.ir-import-content {
     display: flex !important;
     flex: 1 1 0;
@@ -1514,14 +1569,15 @@ html,body{background:#0b1012}
     width: 100%;
     min-height: 0;
     margin: 0;
-    padding: 8px 0 0;
+    padding: 7px 0 0;
+    border-top: 0;
     overflow: hidden;
     box-sizing: border-box;
   }
 
   body.ir-collection-manager-active #page-nam .ir-manager-head {
     flex: 0 0 auto;
-    margin: 0 2px 8px;
+    margin: 0 2px 7px;
   }
 
   body.ir-collection-manager-active #page-nam #ir-manager-ui.ir-manager-grid {

@@ -123,31 +123,94 @@ function initUI(){
  const fileInput=$('irManagerFileInput'),userButton=$('irManagerUserImport'),grid=$('irManagerCollectionGrid');
  // Isolate the Collection IR workspace between the shared app header and bottom navigation.
  // Only the 24-slot grid scrolls; the tab page and the other tabs never join that scroll.
- const page=$('page-nam'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
- function clearCollectionViewport(){
-  document.body.classList.remove('ir-collection-manager-active');
+  // Separate the NAM/TONE3000 tools from the Collection workspace.
+  // Both remain available, but Collection gets the full area above the fixed navigation.
+  const page=$('page-nam'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
+  let namPane=null,irPane=null,namModeButton=null,collectionModeButton=null;
+  if(page&&!page.dataset.namIrWorkspaceReady){
+   const hero=page.querySelector(':scope > .nam-page-hero');
+   const tabs=document.createElement('div');
+   tabs.className='nam-ir-workspace-tabs';
+   tabs.setAttribute('role','group');
+   tabs.setAttribute('aria-label','Ruang kerja NAM dan IR');
+   tabs.innerHTML='<button type="button" id="namIrModeNam" aria-pressed="false">NAM / TONE3000</button><button type="button" id="namIrModeCollection" aria-pressed="true">IR COLLECTION</button>';
+   namModeButton=tabs.querySelector('#namIrModeNam');
+   collectionModeButton=tabs.querySelector('#namIrModeCollection');
+   namPane=document.createElement('div');
+   namPane.className='nam-ir-workspace-pane nam-ir-nam-pane';
+   namPane.id='namIrNamPane';
+   irPane=document.createElement('div');
+   irPane.className='nam-ir-workspace-pane nam-ir-ir-pane';
+   irPane.id='namIrCollectionPane';
+   // Preserve the page title and move all existing NAM/TONE3000 panels into their own pane.
+   for(const child of Array.from(page.children)){
+    if(child===hero||child===root)continue;
+    namPane.appendChild(child);
+   }
+   page.appendChild(tabs);
+   page.appendChild(namPane);
+   page.appendChild(irPane);
+   irPane.appendChild(root);
+   page.dataset.namIrWorkspaceReady='true';
+   // Catch a late-mounted TONE3000 panel without disturbing its existing handlers.
+   const namContentObserver=new MutationObserver(records=>{
+    for(const record of records)for(const node of record.addedNodes){
+     if(node.nodeType===1&&node.parentElement===page&&node!==hero&&node!==tabs&&node!==namPane&&node!==irPane&&node!==root){
+      namPane.appendChild(node);
+     }
+    }
+   });
+   namContentObserver.observe(page,{childList:true});
+  }else{
+   namPane=$('namIrNamPane');
+   irPane=$('namIrCollectionPane');
+   namModeButton=$('namIrModeNam');
+   collectionModeButton=$('namIrModeCollection');
+  }
+  function clearCollectionViewport(){
+   document.body.classList.remove('ir-collection-manager-active');
+   if(page){
+    page.style.removeProperty('--ir-collection-manager-top');
+    page.style.removeProperty('--ir-collection-manager-bottom');
+   }
+  }
+  function resizeCollectionViewport(){
+   if(!page||page.classList.contains('hidden')||!topBar||!nav||!grid||window.innerWidth>720){
+    clearCollectionViewport();
+    return;
+   }
+   const headerBottom=topBar.getBoundingClientRect().bottom;
+   const navTop=nav.getBoundingClientRect().top;
+   const top=Math.max(0,Math.ceil(headerBottom+7));
+   const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop));
+   document.body.classList.add('ir-collection-manager-active');
+   page.style.setProperty('--ir-collection-manager-top',top+'px');
+   page.style.setProperty('--ir-collection-manager-bottom',bottom+'px');
+  }
+  function setWorkspaceMode(mode){
+   const collection=mode==='collection';
+   if(namPane)namPane.hidden=collection;
+   if(irPane)irPane.hidden=!collection;
+   if(namModeButton)namModeButton.setAttribute('aria-pressed',String(!collection));
+   if(collectionModeButton)collectionModeButton.setAttribute('aria-pressed',String(collection));
+   try{localStorage.setItem('mg30-studio-nam-ir-workspace',collection?'collection':'nam')}catch{}
+   if(page&&!page.classList.contains('hidden'))window.requestAnimationFrame(resizeCollectionViewport);
+  }
+  namModeButton?.addEventListener('click',()=>setWorkspaceMode('nam'));
+  collectionModeButton?.addEventListener('click',()=>setWorkspaceMode('collection'));
+  let savedWorkspace='collection';
+  try{savedWorkspace=localStorage.getItem('mg30-studio-nam-ir-workspace')==='nam'?'nam':'collection'}catch{}
+  setWorkspaceMode(savedWorkspace);
   if(page){
-   page.style.removeProperty('--ir-collection-manager-top');
-   page.style.removeProperty('--ir-collection-manager-bottom');
+   const collectionPageObserver=new MutationObserver(()=>{
+    if(page.classList.contains('hidden'))clearCollectionViewport();
+    else resizeCollectionViewport();
+   });
+   collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
   }
- }
- function resizeCollectionViewport(){
-  if(!page||page.classList.contains('hidden')||!topBar||!nav||!grid||window.innerWidth>720){
-   clearCollectionViewport();
-   return;
-  }
-  const headerBottom=topBar.getBoundingClientRect().bottom;
-  const navTop=nav.getBoundingClientRect().top;
-  const top=Math.max(0,Math.ceil(headerBottom+7));
-  const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop));
-  document.body.classList.add('ir-collection-manager-active');
-  page.style.setProperty('--ir-collection-manager-top',top+'px');
-  page.style.setProperty('--ir-collection-manager-bottom',bottom+'px');
- }
- if(page){
-  const collectionPageObserver=new MutationObserver(()=>{
-   if(page.classList.contains('hidden'))clearCollectionViewport();
-   else resizeCollectionViewport();
+  window.addEventListener('resize',resizeCollectionViewport,{passive:true});
+  window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
+  resizeCollectionViewport();
   });
   collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
  }
