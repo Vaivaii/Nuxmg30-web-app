@@ -2139,6 +2139,9 @@ html,body{background:#0b1012}
 /* TONE3000's existing catalogue node and handlers now live inside this dedicated panel. */
 #namModelLibrary #t3kToneDetails {
   display: block;
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
   min-width: 0;
   width: 100%;
   height: 100%;
@@ -2148,6 +2151,7 @@ html,body{background:#0b1012}
   border: 0;
   border-radius: 0;
   background: transparent;
+  box-shadow: none !important;
 }
 #namModelLibrary #t3kCatalogueToggle,
 #namModelLibrary .t3k-list-toolbar {
