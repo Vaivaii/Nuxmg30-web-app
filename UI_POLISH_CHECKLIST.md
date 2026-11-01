@@ -2919,12 +2919,39 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - www/native-midi.js SHA a912c6e7379e193877122c9010b38bdbc0daae64.
 - No changes to NAM download/import, A2-Lite transfer plan/sender, IR User/Third Party or Collection transfer, USB-MIDI/native Android connection, MIDI mappings, preset Import/Export, Editor/startup, Studio/Device behaviour, model catalogue persistence, or TONE3000 API/authentication logic.
 
-### Not run / build gate
-- npm test, Vite production build, Android/Gradle build and APK packaging were not run in this stage.
-- Workflow remains manual-only: workflow_dispatch is present and feature/dark-performance-ui-polish is absent from the automatic push branch filter.
-- No physical Android WebView screenshot or TONE3000 account/device test is claimed. The browser simulation is layout validation only.
-- No new APK exists for this CSS change. Build #221 remains the last successful APK and does not contain this refinement.
+### Initial stop state before the approved build (superseded)
+- At the end of the screenshot/layout-only pass, npm test, Android/Gradle packaging and APK generation had not yet been run. The next section records the user's subsequent approval and the completed build.
 
-### Current stop point
-- Source correction and this project record are committed. Do not run Actions / CI / Gradle / APK until the user explicitly chooses Build sekarang.
-- Ask exactly: Build sekarang atau nanti?
+## Follow-on Android APK build — Build #223 (1 November 2026)
+
+### Why the workflow was adjusted
+- User reported that the phone still had Build #221 installed and explicitly requested a new APK with the TONE3000 mobile catalogue correction.
+- The workflow had `workflow_dispatch`, but the active branch `feature/dark-performance-ui-polish` was missing from `push.branches`. The connected GitHub interface has repository file-write and run-read/download actions but no workflow-dispatch action.
+- Added `feature/dark-performance-ui-polish` to the push branch filter. The workflow file is already included in the existing `paths` filter, so this commit safely triggered a normal push build without changing application behaviour.
+- Workflow commit to enable the branch: `f5d14c087855d651d512b0c7faed6b86ec331c21`.
+- Restored the explicit original Node.js 22 setup in a follow-up workflow commit: `221114f161cd705185789a085c13cd99ed432d7c`. Build #223 below is the authoritative result using that corrected workflow configuration. Build #222 was a transitional run before the Node 22 declaration was restored and is not the delivery APK.
+
+### Build #223 result
+- Workflow run: [Build #223](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41324976598).
+- Run ID: `41324976598`; conclusion: `success`.
+- Branch: `feature/dark-performance-ui-polish`.
+- Source/workflow commit: `221114f161cd705185789a085c13cd99ed432d7c`.
+- Completed successfully: checkout, Node.js 22 setup, Java setup, npm dependency installation, `npm test` protocol regression tests, Capacitor Android project generation / USB audio plugin installation, Gradle `assembleDebug`, and artifact upload.
+- Artifact ID: `13091250306`; artifact: `MG30-Studio-debug-APK`; uploaded as `MG30-Studio-build-223.zip`.
+- Artifact ZIP SHA-256: `cf49bf11022324598984a89dc6c97bb5f75d1963d2289f4f46e597224e59c71f`.
+- Extracted APK: `MG30-Studio-223-debug.apk`; size: 4,436,632 bytes; SHA-256: `1da54d82d01f2b874d7984b7ccabee85d8f2809067ba07e9ac5c69b29c8b2ceb`.
+- ZIP integrity check passed and the APK entry was extracted successfully.
+- Verified the packaged CSS asset `assets/public/assets/index-B_ynwlAO.css` contains the final mobile catalogue offset `max(270px, calc(env(safe-area-inset-top, 0px) + 260px))`. This confirms the screenshot correction is included in the delivered APK, not only in the source tree.
+
+### Protected files re-verified at Build #223 source commit
+- `www/tone3000.js`: `13632a59bb4d5b66f41df13e2972a15a4ec0b029`.
+- `www/nam-transfer.js`: `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`.
+- `www/ir-transfer.js`: `9f156dade93385d8b4b2c6fc338c1a1ac085a610`.
+- `www/main.js`: `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/native-midi.js`: `a912c6e7379e193877122c9010b38bdbc0daae64`.
+- These hashes match the previously protected values. No NAM, IR transfer, MIDI mapping, native USB-MIDI, preset import/export, Editor/startup, or device-control logic was changed for this UI correction/build-enablement work.
+
+### Remaining device validation
+- Build #223 is a successful debug APK and the CSS bundle was checked. No physical Android installation/WebView screenshot, real app-restart persistence check, or live MG-30 hardware test has been performed in this session.
+- Install Build #223 on the phone and verify the expanded TONE3000 catalogue keeps the target-slot dropdown, Choose/Refresh buttons and status visible. Continue to protect working NAM and IR/MIDI paths during subsequent protocol work.
+- The workflow now automatically runs on this branch when the existing watched paths (including `.github/workflows/build-apk.yml`) change; `workflow_dispatch` remains available.
