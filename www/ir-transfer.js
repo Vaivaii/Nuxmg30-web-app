@@ -126,47 +126,85 @@ function initUI(){
   // Separate the NAM/TONE3000 tools from the Collection workspace.
   // Both remain available, but Collection gets the full area above the fixed navigation.
   const page=$('page-nam'),pageHero=page?.querySelector(':scope > .nam-page-hero'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
-  let namPane=null,irPane=null,namModeButton=null,collectionModeButton=null;
-  if(page&&!page.dataset.namIrWorkspaceReady){
-   const hero=page.querySelector(':scope > .nam-page-hero');
-   const tabs=document.createElement('div');
-   tabs.className='nam-ir-workspace-tabs';
-   tabs.setAttribute('role','group');
-   tabs.setAttribute('aria-label','Ruang kerja NAM dan IR');
-   tabs.innerHTML='<button type="button" id="namIrModeNam" aria-pressed="false">NAM / TONE3000</button><button type="button" id="namIrModeCollection" aria-pressed="true">IR COLLECTION</button>';
-   namModeButton=tabs.querySelector('#namIrModeNam');
-   collectionModeButton=tabs.querySelector('#namIrModeCollection');
+  let namPane=null,tonePane=null,toolsFrame=null,irPane=null,namModeButton=null,toneModeButton=null;
+  if(page&&!page.dataset.namIrToolsReady){
+   toolsFrame=document.createElement('section');
+   toolsFrame.className='nam-ir-tools-frame';
+   toolsFrame.setAttribute('aria-label','Import model NAM');
+   const toolNav=document.createElement('div');
+   toolNav.className='nam-ir-tools-nav';
+   toolNav.innerHTML='<button type="button" id="namIrModeNam" aria-expanded="false">NAM</button><button type="button" id="namIrModeTone" aria-expanded="false">TONE3000</button>';
+   namModeButton=toolNav.querySelector('#namIrModeNam');
+   toneModeButton=toolNav.querySelector('#namIrModeTone');
+   const toolStage=document.createElement('div');
+   toolStage.className='nam-ir-tools-stage';
    namPane=document.createElement('div');
-   namPane.className='nam-ir-workspace-pane nam-ir-nam-pane';
+   namPane.className='nam-ir-tool-pane nam-ir-nam-pane';
    namPane.id='namIrNamPane';
+   namPane.hidden=true;
+   tonePane=document.createElement('div');
+   tonePane.className='nam-ir-tool-pane nam-ir-tone-pane';
+   tonePane.id='namIrTonePane';
+   tonePane.hidden=true;
+   toolStage.append(namPane,tonePane);
+   toolsFrame.append(toolNav,toolStage);
+
    irPane=document.createElement('div');
-   irPane.className='nam-ir-workspace-pane nam-ir-ir-pane';
+   irPane.className='nam-ir-ir-pane';
    irPane.id='namIrCollectionPane';
-   // Preserve the page title and move all existing NAM/TONE3000 panels into their own pane.
+
+   const tonePanel=$('tone3000Panel');
    for(const child of Array.from(page.children)){
-    if(child===hero||child===root)continue;
-    namPane.appendChild(child);
+    if(child===pageHero||child===root)continue;
+    if(child===tonePanel||child.id==='tone3000Panel')tonePane.appendChild(child);
+    else namPane.appendChild(child);
    }
-   page.appendChild(tabs);
-   page.appendChild(namPane);
-   page.appendChild(irPane);
+   page.append(toolsFrame,irPane);
    irPane.appendChild(root);
-   page.dataset.namIrWorkspaceReady='true';
-   // Catch a late-mounted TONE3000 panel without disturbing its existing handlers.
+   page.dataset.namIrToolsReady='true';
+
+   // TONE3000 may mount just after this controller; move the existing node, keeping its handlers.
    const namContentObserver=new MutationObserver(records=>{
     for(const record of records)for(const node of record.addedNodes){
-     if(node.nodeType===1&&node.parentElement===page&&node!==hero&&node!==tabs&&node!==namPane&&node!==irPane&&node!==root){
-      namPane.appendChild(node);
-     }
+     if(node.nodeType!==1||node.parentElement!==page||node===pageHero||node===toolsFrame||node===irPane||node===root)continue;
+     if(node.id==='tone3000Panel'||node.classList.contains('t3k-panel'))tonePane.appendChild(node);
+     else namPane.appendChild(node);
     }
    });
    namContentObserver.observe(page,{childList:true});
   }else{
+   toolsFrame=page?.querySelector('.nam-ir-tools-frame');
    namPane=$('namIrNamPane');
+   tonePane=$('namIrTonePane');
    irPane=$('namIrCollectionPane');
    namModeButton=$('namIrModeNam');
-   collectionModeButton=$('namIrModeCollection');
+   toneModeButton=$('namIrModeTone');
   }
+  function closeModelTools(){
+   if(namPane)namPane.hidden=true;
+   if(tonePane)tonePane.hidden=true;
+   if(namModeButton)namModeButton.setAttribute('aria-expanded','false');
+   if(toneModeButton)toneModeButton.setAttribute('aria-expanded','false');
+   namModeButton?.classList.remove('is-active');
+   toneModeButton?.classList.remove('is-active');
+   if(page&&!page.classList.contains('hidden'))window.requestAnimationFrame(resizeCollectionViewport);
+  }
+  function toggleModelTool(mode){
+   const target=mode==='nam'?namPane:tonePane;
+   const button=mode==='nam'?namModeButton:toneModeButton;
+   const other=mode==='nam'?tonePane:namPane;
+   const otherButton=mode==='nam'?toneModeButton:namModeButton;
+   const show=Boolean(target?.hidden);
+   if(target)target.hidden=!show;
+   if(other)other.hidden=true;
+   if(button){button.setAttribute('aria-expanded',String(show));button.classList.toggle('is-active',show)}
+   if(otherButton){otherButton.setAttribute('aria-expanded','false');otherButton.classList.remove('is-active')}
+   if(page&&!page.classList.contains('hidden'))window.requestAnimationFrame(resizeCollectionViewport);
+  }
+  namModeButton?.addEventListener('click',()=>toggleModelTool('nam'));
+  toneModeButton?.addEventListener('click',()=>toggleModelTool('tone'));
+  closeModelTools();
+
   function clearCollectionViewport(){
    document.body.classList.remove('ir-collection-manager-active');
    if(page){
@@ -187,33 +225,17 @@ function initUI(){
    page.style.setProperty('--ir-collection-manager-top',top+'px');
    page.style.setProperty('--ir-collection-manager-bottom',bottom+'px');
   }
-  function setWorkspaceMode(mode){
-   const collection=mode==='collection';
-   // The NAM page title is redundant in Collection mode; reclaim its height on phones.
-   if(pageHero)pageHero.hidden=collection;
-   if(namPane)namPane.hidden=collection;
-   if(irPane)irPane.hidden=!collection;
-   if(namModeButton)namModeButton.setAttribute('aria-pressed',String(!collection));
-   if(collectionModeButton)collectionModeButton.setAttribute('aria-pressed',String(collection));
-   try{localStorage.setItem('mg30-studio-nam-ir-workspace',collection?'collection':'nam')}catch{}
-   if(page&&!page.classList.contains('hidden'))window.requestAnimationFrame(resizeCollectionViewport);
-  }
-  namModeButton?.addEventListener('click',()=>setWorkspaceMode('nam'));
-  collectionModeButton?.addEventListener('click',()=>setWorkspaceMode('collection'));
-  let savedWorkspace='collection';
-  try{savedWorkspace=localStorage.getItem('mg30-studio-nam-ir-workspace')==='nam'?'nam':'collection'}catch{}
-  setWorkspaceMode(savedWorkspace);
   if(page){
    const collectionPageObserver=new MutationObserver(()=>{
     if(page.classList.contains('hidden'))clearCollectionViewport();
     else resizeCollectionViewport();
-  });
-  collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
- }
- window.addEventListener('resize',resizeCollectionViewport,{passive:true});
- window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
- resizeCollectionViewport();
- const userStatus=$('irManagerUserStatus'),collectionStatus=$('irManagerCollectionStatus'),countLabel=$('irManagerCollectionCount'),toggle=$('irManagerToggleSlots'),syncButton=$('irManagerSyncCollection');
+   });
+   collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
+  }
+  window.addEventListener('resize',resizeCollectionViewport,{passive:true});
+  window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
+  resizeCollectionViewport();
+  const userStatus=$('irManagerUserStatus'),collectionStatus=$('irManagerCollectionStatus'),countLabel=$('irManagerCollectionCount'),toggle=$('irManagerToggleSlots'),syncButton=$('irManagerSyncCollection');
  let pendingTarget=null,busy=false,syncBusy=false,slotCache=new Map(),deviceSlots=new Map(),lastUserName='';
  let lastSyncAt=0;
  const IR_PRESET_COLLECTION_MAP_KEY='mg30-ir-collection-preset-map';
