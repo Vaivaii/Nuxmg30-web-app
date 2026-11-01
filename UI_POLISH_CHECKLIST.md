@@ -2329,3 +2329,33 @@ User request: replace only the irrelevant icon in the bottom **Device** tab. Do 
 - UI/browser simulation for the USB glyph passed at 320×740, 360×800, 393×873 and 432×915 before build. Protocol regression tests and Android Gradle build passed in workflow #208.
 - No physical Android install test or MG-30 hardware/USB-MIDI test is claimed.
 - Build result: **PASS**. This is the new latest APK; do not substitute Build #207.
+
+## Device navigation icon — Multi-effects processor / guitar multi-FX (1 November 2026)
+
+User feedback: the USB connector symbol still did not represent the Device tab well. User requested a recognizable **multi-FX** symbol and approved building the result immediately. Only the icon itself may change.
+
+### Source change
+- Changed exactly one SVG inside the existing `button[data-page="device"]` in `www/index.html`.
+- New hand-authored, 24×24 outline icon depicts a compact guitar floor multi-effects processor: rounded pedalboard enclosure, small display, three parameter controls and two footswitches.
+- Retained the Device button, `data-page="device"`, `.nav-icon` wrapper, `aria-hidden`, label `Device`, viewBox, all sizing / stroke / color CSS and other four bottom-navigation icons.
+- Source commit: `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d` — `Use multi-effects processor icon for Device navigation tab`.
+- Git compare from prior HEAD `db2f0774047f7fb765043354fc0c4eacc81b6f59` shows exactly one changed file: `www/index.html`, one insertion / one deletion. No CSS or functionality files changed.
+
+### Targeted simulation and correction loop — exact source
+- Exact source commit tested: `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d`.
+- Static source review: one Device tab; five navigation buttons retained; Device label and button attributes preserved; new SVG contains 8 vector shapes; source diff isolated to Device SVG. PASS.
+- Protected-file comparison: `www/ui-redesign.css` unchanged blob SHA `f3afcf6454220c7d032b743148ce11667bda7a71`; `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/mg30-preset-import.js` unchanged SHA `e2490e6df3f5f32853743fc5eb29c99cc4026ea8`; `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- Browser simulation: Chromium + Playwright `page.set_content`, using the exact updated Device SVG / five-tab navigation markup and mobile nav SVG layout/styling from unchanged `www/ui-redesign.css`. Test viewports 320×740, 360×800, 393×873, 432×915. Every viewport: exactly five buttons; Device label unchanged; icon geometry 23×23px; 8 shapes present; no horizontal nav overflow; button stays inside screen; navigation bottom aligns to viewport bottom; Device active stroke is lime `rgb(196,245,107)`. All PASS.
+- Render screenshots saved as `/mnt/data/device-nav-multifx-320.png`, `-360.png`, `-393.png`, `-432.png`. 393px screenshot visually confirms the enclosure/display/controls/footswitch glyph reads as a compact multi-effects unit.
+
+### Failed attempt and correction (preserved)
+- First Playwright attempt used `page.goto(file://...)`; container policy blocked local-file navigation with `ERR_BLOCKED_BY_ADMINISTRATOR`. No application issue indicated. Corrected harness to use `page.set_content` on the same locally saved exact nav test fixture; reran all four viewports successfully. No application-source correction required.
+
+### Build status
+- User explicitly said to replace the icon, build, and extract / place the APK directly in the chat.
+- Workflow #209 was automatically triggered by the source push: run ID `41281944052`, source commit `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d`, URL https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41281944052. At this checklist update the run is **in_progress**; final build outcome and artifact not yet available.
+- Do not distribute Build #208 or any older APK as the result for this change. Download, extract, inspect, and provide only the artifact from this exact run after success. Record run conclusion, steps, artifact ID / ZIP integrity, extracted APK path, size and SHA-256 in a follow-up entry.
+
+### Protected scope
+- No changes to Editor, Signal Chain, Preset Manager, Import/Export implementation, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mappings, Save-to-device, Copy Scene, CTRL/EXP, Studio, Device page logic, startup, global JS or CSS.
+- No physical Android install / MG-30 hardware test is claimed.
