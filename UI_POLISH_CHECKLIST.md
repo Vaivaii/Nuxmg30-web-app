@@ -2133,3 +2133,36 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 - Inspected packaged `assets/public/index.html` and CSS bundle: green `DEVICE` eyebrow is retained; `<h2>Device & Settings</h2>` retained; explanatory subtitle remains in markup but the scoped CSS hides only its paragraph; Device title is 23px and sticky. Editor/NAM/Studio/Backup sticky heading selectors remain in bundled CSS.
 - `www/index.html` unchanged; `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
 - No MIDI, SysEx, USB connection, Import/Export protocol, Editor behavior, Signal Chain, NAM/IR or Device function logic changed. Physical Device UI check remains pending.
+## Preset header button fit + subtle bottom fade on other tabs (1 November 2026)
+
+### User screenshot feedback
+- Preset Export button was clipped at the right edge. Reduce Import/Export button size and move the action group slightly left while allowing the title to shrink before the actions overflow.
+- Non-Preset tab bottom gradient looked too strong and had a visible transition line. Shorten it and make the ramp much softer, just enough to mask the scroll viewport boundary above bottom navigation.
+
+### Source edits
+1. `www/preset-library-ui.css` — commit `11ecead956a222eb37003318516ff9f460846c3d`.
+   - Mobile header gap 8px, right padding 12px.
+   - Title flexes with `min-width:0` so action buttons retain space.
+   - Action group gap reduced to 6px and margin-right 5px (visually shifts it left inside the header).
+   - Buttons minimum width reduced 72px -> 62px, minimum height 36px, padding 7px 9px, label font 10px.
+   - Export text remains provided by the existing CSS pseudo-label; no button markup or handler changed.
+2. `www/ui-redesign.css` — commit `85f5de0f6f9e91b96d2fab63b3e442e8632c8c55`.
+   - Non-Preset tab fade shortened 58px -> 32px.
+   - Reduced intermediate alpha stops to 0.035 / 0.16 / 0.48 and removed the hard upper box shadow, keeping a gentle gradient into #0b1012.
+   - Still applies only to Editor, NAM & IR, Studio, Device and Backup; Preset is excluded because its own frame fade remains.
+
+### Protected files / checks
+- Git compare from base `2b163a26a446cb49b3efc7d953739486bdb66e06` shows only two application files changed: `www/preset-library-ui.css` and `www/ui-redesign.css`.
+- `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- `www/index.html` unchanged SHA `75f32a4ed4a83b76596099e731acf8485f60bbb3`.
+- No handlers, import/export protocol, MIDI/SysEx, Editor, Signal Chain, NAM/IR, scene, or device function code changed.
+- Static checks passed for smaller/left-shifted actions, title shrink, retained Export label, shorter softer fade, no hard shadow, Preset fade exclusion, and unchanged main/export code.
+
+### Build / testing
+- Build #202 (run `41235480866`) is the prior successful APK and does not include these button/fade refinements.
+- Current CSS refinements have not been physically tested on Android.
+- Do not manually trigger CI/Gradle/APK until the user explicitly chooses Build sekarang. Check recent Actions state because path-based workflow may automatically run on www/ CSS commits.
+
+### Stop point
+CSS change and project notes saved. Ask exactly **Build sekarang atau nanti?** before any manual build.
