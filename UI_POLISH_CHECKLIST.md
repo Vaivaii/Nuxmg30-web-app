@@ -2226,3 +2226,29 @@ CSS change and project notes saved. Ask exactly **Build sekarang atau nanti?** b
 - Because the browser simulation and source checks passed, workflow auto-triggered Build #207 from exact source commit `b400d9ab25f663a97b2535867f6475680f2efbd4`; run ID `41277953622`.
 - Protocol regression tests and Capacitor Android generation passed; Gradle APK compilation was in progress at the time of this note. No artifact yet.
 - #207 is authoritative for this correction. Do not distribute #206 or any intermediate build.
+### Build #207 — successful, browser-tested UI corrections (1 November 2026)
+
+- Run #207: `41277953622`; conclusion `success`; exact app source commit `b400d9ab25f663a97b2535867f6475680f2efbd4` on `feature/preset-manager-redesign`.
+- All workflow stages passed: dependencies, `npm test` protocol regression suite, Capacitor Android generation, Gradle debug APK compilation, and artifact upload.
+- Artifact ID `13071882537`, name `MG30-Studio-debug-APK`, ZIP size 4,025,004 bytes; ZIP integrity test passed.
+- Extracted APK: `/mnt/data/MG30_Studio_Build_207_Validated_UI.apk`; size `4,402,812` bytes; SHA-256 `3833716ed0bbc7e0224ef7bd9afa6bf0005b1a389737fec8114ce9339391c810`.
+- `file` identifies the output as an Android package with Gradle app metadata and APK Signing Block. `apksigner` was not installed in this environment; no apksigner verification claim is made.
+- The APK's compiled HTML/CSS bundle was extracted and inspected; all seven bundle assertions passed: dynamic Export text visually hidden, `Export` pseudo-label still present, Device page padding reset, Device sticky hero flush/opaque, non-Preset fade fixed to bottom64px, non-Preset selectors present, and Preset's existing card-frame fade retained.
+
+### Post-build browser simulation against the actual Build #207 package
+- Used the extracted Build #207 APK `assets/public/index.html` and its actual compiled CSS bundle. Inline page scripts were retained, including the NAM & IR merge. For the Preset list, 128 card elements were seeded with the exact slot/card DOM structure from the unchanged `preset-library-ui.js` renderer; this verifies layout/scroll geometry, not hardware protocol.
+- Tested 320x740, 360x800, 393x873, and 432x915 CSS-pixel viewports.
+- At all four widths: Import and Export each 60x38px; actions group 126px; header/action overflow 0; document horizontal overflow 0. Export button's dynamic DOM text remains `Ekspor 01A sebagai .mg30patch`, its computed font size is 0, and its pseudo-label displays `Export`.
+- At 393x873: card list client height 665px, scroll height 8968px, `overflow-y:auto`; scrollTop successfully changed to 350px.
+- Device at 393x873: Device hero top exactly matches section scrollport top at 80px. After Device scrollTop 260px, hero remains at 80px and hit-testing at the scrollport top resolves to the hero, not the USB card; no top sliver is exposed.
+- Fade at 393x873: fixed pseudo bottom 64px / height 42px; nav top 808.95px, fade bottom 809px (0.05px alignment difference); root horizontal overflow 0.
+- Validation screenshots: `/mnt/data/mg30-build207/verified-preset-320.png`, `-360.png`, `-393.png`, `-432.png`, `verified-device-scroll.png`, `verified-editor-fade.png`.
+- This is a browser layout simulation using packaged HTML/CSS and a matching card fixture. It is not a physical Android touch test or USB pedal/protocol test; user still needs to confirm on phone and MG-30 Gen 2.
+
+### Protected code
+- Only `www/preset-library-ui.css` and `www/ui-redesign.css` changed for this fix.
+- `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/index.html` unchanged SHA `75f32a4ed4a83b76596099e731acf8485f60bbb3`.
+- `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- `www/preset-library-ui.js` unchanged SHA `67ec75258620323492609dcdec559badfb769797`.
+- No MIDI, SysEx, USB, NAM/IR, Editor, Signal Chain, Save, Copy Scene, CTRL/EXP or transfer protocol functions were changed.
