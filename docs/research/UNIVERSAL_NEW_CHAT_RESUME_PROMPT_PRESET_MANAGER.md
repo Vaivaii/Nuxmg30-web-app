@@ -686,3 +686,12 @@ This rule is mandatory for every future application/source change on this branch
 - Protected files verified unchanged: `main.js`, `ui-redesign.css`, Import and Export modules. No Editor / Signal Chain / USB-MIDI / NAM / IR / mapping / Studio / Device behavior changed.
 - User explicitly approved an immediate build and requested that every APK be extracted and placed directly in chat. Workflow #209 / run ID `41281944052` was triggered from source commit `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d`; status was in progress at note time. Wait for exact run #209 artifact only; never send Build #208 as the new result.
 - Latest checklist contains source scope, test results, failed test-harness attempt / correction and pending workflow. After successful build, update both documents with artifact ID, run conclusion, ZIP integrity, extracted APK path, size and SHA-256.
+
+## Latest APK — Build #209 Device multi-FX processor icon (1 November 2026)
+
+- Build #209 / GitHub Actions run ID `41281944052`; exact application source commit `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d`; conclusion success. All workflow steps passed: dependency install, protocol regression tests, Capacitor Android generation / USB audio plugin install, Gradle debug APK and artifact upload.
+- Artifact ID `13073289470`, ZIP size 4,025,041 bytes, SHA-256 `8d8f08b96f675db411434392cf28af9296850983a0cb96a48b78582d3aaa8eb3`; downloaded ZIP integrity passed.
+- Extracted latest APK: `/mnt/data/MG30_Studio_Build_209.apk`, size 4,402,848 bytes, SHA-256 `b20d2d54dfa616502e888564bd06e13db7951878b8ca9ce62773071297b13651`; APK archive integrity passed. Package contains the expected multi-FX SVG in `assets/public/index.html`, one Device nav button and one Device label.
+- APK is newer than Build #208 and supersedes it. Use Build #209 as latest. Direct sandbox link is in the build delivery message.
+- Pre-build UI simulation passed for 320×740, 360×800, 393×873, 432×915. Protocol regression tests and Android build passed. Physical Android / MG-30 test not claimed. `apksigner` unavailable; cryptographic signature verification not run.
+- Full logs / source file scope / checks are in `UI_POLISH_CHECKLIST.md`.
