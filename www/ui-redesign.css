@@ -2049,3 +2049,167 @@ html,body{background:#0b1012}
     background: #101718;
   }
 }
+
+/* Dedicated NAM Model Library panel — mirrors the approved three-part mobile layout. */
+.nam-model-library-panel {
+  min-width: 0;
+  margin: 0 0 9px;
+  display: grid;
+  grid-template-rows: auto;
+  align-content: start;
+  overflow: hidden;
+  border: 1px solid #35443e;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #151e1e 0%, #101718 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+}
+.nam-model-library-panel[hidden] { display: none !important; }
+.nam-model-library-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 10px 13px 10px 15px;
+  border-bottom: 1px solid #293633;
+  background: #151e1e;
+  box-sizing: border-box;
+}
+.nam-model-library-heading {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.nam-model-library-heading strong {
+  overflow: hidden;
+  color: #eef3ef;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nam-model-library-heading small {
+  overflow: hidden;
+  color: #8f9e9c;
+  font-size: 10px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nam-model-library-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  min-height: 42px;
+  padding: 7px 12px;
+  border: 1px solid #3a474b;
+  border-radius: 13px;
+  background: #202a2f;
+  color: #edf3f0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.nam-model-library-toggle:active { transform: scale(.98); }
+.nam-model-library-content {
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.nam-model-library-panel.is-expanded {
+  height: min(280px, 34dvh);
+  max-height: min(280px, 34dvh);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.nam-model-library-panel.is-expanded .nam-model-library-content {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  padding: 7px 9px 9px;
+  box-sizing: border-box;
+}
+/* TONE3000's existing catalogue node and handlers now live inside this dedicated panel. */
+#namModelLibrary #t3kToneDetails {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+#namModelLibrary #t3kCatalogueToggle,
+#namModelLibrary .t3k-list-toolbar {
+  display: none !important;
+}
+#namModelLibrary #t3kModelList {
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: none !important;
+  margin: 0;
+  padding: 1px 2px 7px;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  scrollbar-width: thin;
+  scrollbar-color: #46565a transparent;
+  box-sizing: border-box;
+}
+#namModelLibrary #t3kModelList[hidden] { display: none !important; }
+#namModelLibrary .t3k-card { min-width: 0; margin: 0; }
+@media (max-width: 720px) {
+  body.ir-collection-manager-active > .app > #page-nam:not(.hidden) {
+    grid-template-rows: max-content max-content max-content minmax(0, 1fr) !important;
+  }
+  body.ir-collection-manager-active #page-nam > .nam-page-hero { grid-row: 1; }
+  body.ir-collection-manager-active #page-nam > .nam-ir-tools-frame {
+    grid-row: 2;
+    margin-bottom: 6px;
+  }
+  body.ir-collection-manager-active #page-nam > #namModelLibrary {
+    grid-row: 3;
+    margin-bottom: 8px;
+  }
+  body.ir-collection-manager-active #page-nam > #ir-import-content.ir-import-content {
+    grid-row: 4;
+    min-height: 0;
+  }
+  body.ir-collection-manager-active #page-nam .nam-model-library-heading strong {
+    font-size: 14px;
+  }
+  body.ir-collection-manager-active #page-nam .nam-model-library-toggle {
+    min-width: 72px;
+    min-height: 42px;
+  }
+}
+@media (max-width: 390px) {
+  .nam-model-library-head { gap: 8px; padding-right: 9px; }
+  .nam-model-library-heading strong { font-size: 13px; }
+  .nam-model-library-heading small { font-size: 9px; }
+  .nam-model-library-toggle { min-width: 66px; min-height: 39px; }
+}
