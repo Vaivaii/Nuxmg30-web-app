@@ -676,3 +676,13 @@ This rule is mandatory for every future application/source change on this branch
 - This supersedes Build #207. Do not provide Build #207 as latest.
 - Icon browser simulation passed four mobile widths; workflow protocol tests and Android build passed. No physical phone/MG-30 test claimed.
 - Full build evidence also recorded in `UI_POLISH_CHECKLIST.md`.
+
+## Latest UI change — Device bottom tab multi-effects pedal icon (1 November 2026)
+
+- Replaced only the SVG in `button[data-page="device"]` within `www/index.html` with a compact multi-FX processor pictogram (enclosure, display, three controls, two footswitches). Kept Device label, button, wrapper, size/color CSS, the other navigation icons and all functions unchanged.
+- Source commit: `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d`. Git diff changes exactly one file / one SVG.
+- Targeted browser simulation against this exact source with Playwright `page.set_content` passed at 320×740, 360×800, 393×873 and 432×915. Five tabs intact, Device label unchanged, icon 23×23, active lime color correct, no horizontal overflow, nav bottom aligned. Screenshots: `/mnt/data/device-nav-multifx-{320,360,393,432}.png`.
+- Initial `file://` navigation blocked by container policy; switching to `page.set_content` fixed the test harness and final simulation passed. Full history in checklist.
+- Protected files verified unchanged: `main.js`, `ui-redesign.css`, Import and Export modules. No Editor / Signal Chain / USB-MIDI / NAM / IR / mapping / Studio / Device behavior changed.
+- User explicitly approved an immediate build and requested that every APK be extracted and placed directly in chat. Workflow #209 / run ID `41281944052` was triggered from source commit `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d`; status was in progress at note time. Wait for exact run #209 artifact only; never send Build #208 as the new result.
+- Latest checklist contains source scope, test results, failed test-harness attempt / correction and pending workflow. After successful build, update both documents with artifact ID, run conclusion, ZIP integrity, extracted APK path, size and SHA-256.
