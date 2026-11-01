@@ -709,3 +709,15 @@ This rule is mandatory for every future application/source change on this branch
 - Current HEAD contains only branch setup and documentation so far. `UI_POLISH_CHECKLIST.md` has the branch checkpoint. No build or CI was triggered.
 - Next: review the UI source/screenshot layout for the first smallest visual-only improvement, report the proposal, then wait for explicit approval before changing source.
 - Continue mandatory workflow: one small change → test/simulate exact source until passing → record all attempts and commit SHA in checklist → update resume → ask **“Build sekarang atau nanti?”**. Upon build approval, immediately verify run, download artifact, extract APK and deliver direct sandbox link.
+
+## Dark Performance UI polish — UI change 01 complete (1 November 2026)
+
+- Active branch: `feature/dark-performance-ui-polish`.
+- First visual refinement completed on Editor: Scene 1–3 label fonts increased 10px → 11px and descriptions Clean/Rhythm/Lead 8px → 9px, using only the page-scoped rules under `#page-editor .main-editor-card .scene-button` in `www/ui-redesign.css`.
+- Exact source commit tested: `54ae2c69dbe59d011457ecd8a8dfd80c49a29dba`. Only one file changed: `www/ui-redesign.css` (2 additions / 2 deletions). Git compare confirms no other app files changed.
+- Targeted Chromium/Playwright test from existing `renderSceneButtons()` markup and relevant scoped styles passed 320×740, 360×800, 393×873, 432×915. All three cards remain in one row; text fits; selected highlight remains; no horizontal overflow.
+- Initial local-file `page.goto(file://...)` was blocked by container policy; switched to Playwright `page.set_content()` and reran all four tests successfully. Exact failed attempt and correction preserved in `UI_POLISH_CHECKLIST.md`.
+- Verified untouched: `www/index.html`, `www/main.js`, `www/mg30-preset-import.js`, `www/mg30-preset-export.js`; no Editor handlers, Copy Scene, Signal Chain/drag-drop, USB-MIDI, NAM/IR, preset transfer, MIDI/SysEx or startup code changed.
+- Checklist contains full source SHA, test method, viewport measurements, failure/correction history, and next step. Dedicated plan also updated.
+- No npm test, Actions, CI, Gradle, APK build or physical device test. This is a visual-only CSS stage.
+- Current stop point: UI polish 01 complete. Ask exactly **“Build sekarang atau nanti?”**. Do not edit the next component until that build decision is received; then continue one small change at a time.
