@@ -3065,3 +3065,24 @@ User approved the separate-column mockup: TONE3000 controls first, a dedicated D
 - Build #226 certificate SHA-256: `001786d9c33cab0c8e41fbe5e6a0731eaec89bab218024e6413062af50c7f3af`.
 - Build #231 certificate SHA-256: `208d04ece7a0a6e2a56c7c8649cba17adbbe83ec3717a01cb186e65a447baf61`.
 - These also differ, so do not expect #231 to update #226 in place. Back up/export app-local data before any uninstall/reinstall. The debug signing key remains ephemeral per clean GitHub runner.
+
+
+## Follow-up fix after user screenshot: NAM Model Library not appearing — Build #233 (2 November 2026)
+
+User installed #231 and provided a screenshot showing TONE3000 controls and 8-model status, but no Downloaded / Available NAM panel at all. Investigation of the actual #231 APK bundle confirmed it contained the earlier controller code with `panel.hidden = Boolean(catalogue.hidden)`; this coupled the outer library header to the inner TONE3000 catalogue's hidden state. As the catalogue can begin hidden before it is rendered, the complete panel was hidden even while the TONE3000 controls/status were visible. This is the confirmed reason for the screenshot, not a guess about CSS.
+
+### Fix
+- Latest application source commit used for the delivered APK: `a1228db924a77b133c48badcbd2309530f96896e` on `feature/dark-performance-ui-polish`.
+- Updated `www/nam-model-library-ui.js`: the outer panel is always visible after its NAM/IR page mount; it no longer inherits `hidden` from `#t3kToneDetails`. If no catalogue is ready, the panel shows the helper text “Pilih tone untuk menampilkan model NAM di sini.” Header Show/Hide remains visible and toggles the existing TONE3000 handler when a catalogue exists; otherwise it toggles the local empty-state view.
+- The catalogue node is still moved, not cloned, to preserve existing TONE3000 model state, event handlers, selection and transfer actions. A page-level child-list observer catches late catalogue mount/recreation.
+- Updated `www/ui-redesign.css` with a clear empty state; the header-only panel remains compact when closed.
+- No edits to TONE3000, NAM transfer, IR transfer, main/native MIDI logic, or User/Collection mappings.
+
+### Verification of delivered APK #233
+- Actions [Build #233](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41343795058), run ID `41343795058`, success; source commit `a1228db924a77b133c48badcbd2309530f96896e`.
+- Node 22, npm install, `npm test`, Android init, Gradle `assembleDebug` and artifact upload passed.
+- Artifact ID `13098780187`; archive `MG30-Studio-build-233.zip`; ZIP SHA-256 `bd5f22ef7256075ff4f9db6781b97947ea74954558007b8a801356837541fb54`.
+- Extracted APK `MG30-Studio-233-debug.apk`, 4,438,444 bytes; SHA-256 `623ea83781e6d82df84d8440a76e13dc5a05b4dd573cc802262e5fcbd88edc99`.
+- Outer artifact ZIP and APK ZIP integrity checks both passed. Inspected the bundled JS/CSS from inside the APK and confirmed: panel creation sets `hidden=false`; visible fallback meta and empty-state text are included; new model-library styles and empty-state styling are present; library panel size and scroll rules are included. This explicitly differs from the old #231 bundle, which was proven to have the faulty hide-coupling logic.
+- Protected file hashes at source remain: `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`; `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`; `www/ir-transfer.js` `9f156dade93385d8b4b2c6fc338c1a1ac085a610`; `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`.
+- Physical phone validation is still required. Since previous debug builds used different ephemeral signing certificates, do not assume #233 can update #231 in place. Back up/export local app data before uninstalling the installed APK.
