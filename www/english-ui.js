@@ -24,8 +24,11 @@
     ['? Scene tujuan akan ditimpa. QuickTone menulis ulang ketiga bagian scene agar perubahan tersimpan ke pedal.', '? The target scene will be overwritten. QuickTone rewrites all three scene sections to save the changes to the pedal.'],
     ['? Pastikan sudah backup.', '? Make sure you have a backup.'],
     ['Slot tujuan akan ditimpa.', 'The target slot will be overwritten.'],
+    ['Target slot akan ditimpa.', 'The target slot will be overwritten.'],
+    ['Make sure data penting sudah dicadangkan before continuing.', 'Make sure important data is backed up before continuing.'],
+    ['? Make sure sudah backup.', '? Make sure you have a backup.'],
+    ['? Model lama di slot ini akan ditimpa. Cadangkan dahulu atau gunakan slot uji.', '? The existing model in this slot will be overwritten. Back it up first or use a test slot.'],
     ['Batch 128 preset belum didukung. Collection dan NAM tidak disentuh. ', 'Batch import of 128 presets is not supported yet. Collection and NAM will not be affected. '],
-    ['Pastikan data penting sudah dicadangkan sebelum melanjutkan.', 'Make sure important data is backed up before continuing.'],
     ['Jika proses sudah mulai menulis, slot mungkin berisi data parsial; periksa perangkat sebelum mencoba lagi.', 'If writing has started, the slot may contain partial data. Check the device before trying again.']
   ];
   function translateDialog(value) {
