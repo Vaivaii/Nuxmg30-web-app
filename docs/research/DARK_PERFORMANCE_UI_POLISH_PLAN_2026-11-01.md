@@ -268,3 +268,16 @@ UI polish 01 is complete and recorded. Do not edit the next component until the 
 - IR packet generation, 75-frame transfer, command routing, ACK checks, NAM protocol, preset handling, Signal Chain and MIDI/SysEx mapping were not changed. Manual build gate remains active: `workflow_dispatch` enabled and no push trigger for this feature branch.
 - Build #212 includes the previous nested wrapper version, so it is NOT the screenshot regression fix. The corrected source at `ef34c8658979bc7b7158d66955228b3ad6534c6a` has not yet been built or installed on the user's phone. Wait for explicit approval before starting replacement APK build.
 - Browser fixture preview: `/mnt/data/mg30-restored-layout-v2.png`.
+
+
+## Corrected APK Build #213 — restore NAM title and Collection after Android screenshot regression (1 November 2026)
+
+- User approved replacement build after Build #212 screenshot showed only the NAM/TONE3000 buttons while “NAM / PROFILE LAB”, “Native NAM Profile” and IR Collection were invisible.
+- Corrected source commit built: trigger commit `9b0882b518b1c0613a492b06edafeaaff5b71b9a`, based on source commit `ef34c8658979bc7b7158d66955228b3ad6534c6a` plus project documentation. It uses the direct-child `#ir-import-content` layout, restored NAM hero title, compact NAM/TONE3000 frame, and TONE3000 late-mount observer.
+- GitHub Actions Build #213 / run ID `41297695316`: **completed / success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41297695316
+- All workflow steps passed: checkout, Node + Java setup, npm dependencies, `npm test`, Capacitor Android init + USB audio plugin, Gradle `assembleDebug`, upload artifact.
+- Artifact: `MG30-Studio-debug-APK`, ID `13080236325`, size 4,028,299 bytes, expiry `2026-11-15T10:31:11Z`, artifact ZIP SHA-256 `789ba064ce01ea21174076fe0adb71da95b183f9c115249e96b4642b9d57025d`.
+- Downloaded ZIP and extracted `app-debug.apk`: size 4,405,464 bytes, SHA-256 `c022ee9b7b47ef73b7f632aface80742c27caf242aa80004e725004224ca0f77`. Active container path: `/mnt/data/MG30-Studio-Restored-NAM-Collection-Build-213.apk`.
+- APK format inspection recognized Android package; packaged assets confirmed `NAM / PROFILE LAB`, `Native NAM Profile`, `irManagerCollectionGrid`, `namIrModeNam`, `namIrModeTone`, `nam-ir-tools-frame`, and TONE3000 panel markers.
+- Manual build gate restored immediately after trigger: feature branch push trigger absent; `workflow_dispatch` remains.
+- Build #213 includes the restored-title and direct Collection layout fix. Still not physically installed or tested on the user's Android phone / MG-30; only workflow success and packaged-asset checks are confirmed. Ask the user to install and visually confirm both the restored title and 24 Collection slots before treating the UI regression as physically resolved.
