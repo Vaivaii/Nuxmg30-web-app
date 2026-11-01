@@ -531,39 +531,60 @@
 
 /* Build checkpoint: user-approved build for Preset Manager scroll isolation. */
 
-/* Compact and inset Preset actions so both buttons remain fully inside the mobile header. */
+/* Fixed two-column header geometry prevents Export from overflowing the viewport. */
 @media (max-width: 720px) {
   #page-presets .preset-library-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 126px;
+    align-items: center;
+    column-gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 4px 0 16px;
+    padding: 0;
     box-sizing: border-box;
-    gap: 8px;
-    padding-right: 12px;
   }
 
   #page-presets .preset-library-title {
-    flex: 1 1 0;
     min-width: 0;
   }
 
   #page-presets .preset-library-header h2 {
-    font-size: clamp(21px, 4.8vw, 27px);
+    min-width: 0;
+    font-size: clamp(19px, 5.2vw, 22px);
+    letter-spacing: -.65px;
     white-space: nowrap;
   }
 
   #page-presets .preset-library-actions {
-    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 60px);
+    justify-content: end;
+    align-items: center;
     gap: 6px;
-    min-width: 0;
-    margin-right: 5px;
+    width: 126px;
+    min-width: 126px;
+    margin: 0;
   }
 
-  #page-presets .preset-library-actions .btn {
+  #page-presets .preset-library-actions .btn,
+  #page-presets #presetImportChoose,
+  #page-presets #presetExportStart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     box-sizing: border-box;
-    flex: 0 0 auto;
-    min-width: 62px;
-    min-height: 36px;
-    padding: 7px 9px;
-    max-width: 100%;
+    flex: 0 0 60px;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    height: 38px;
+    min-height: 38px;
+    padding: 6px 3px;
+    overflow: hidden;
     font-size: 10px;
+    white-space: nowrap;
   }
 
   #page-presets #presetExportStart::after {
