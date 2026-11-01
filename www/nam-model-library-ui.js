@@ -94,9 +94,12 @@
 
   function boot() {
     if (initNamModelLibrary()) return;
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', boot, { once: true });
-    }
+    // ir-transfer.js creates the tools frame at runtime. Observe only until it exists,
+    // then disconnect so normal preset/IR collection updates are not watched here.
+    const observer = new MutationObserver(() => {
+      if (initNamModelLibrary()) observer.disconnect();
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   boot();
