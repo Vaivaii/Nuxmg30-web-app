@@ -550,3 +550,34 @@ User supplied a fresh screenshot from Build #224 and reported that the Available
 - Build #221 certificate SHA-256: `6237669d1b68b5aec0ad557f0753a254e2f5db04997ea08644a7eddabd37e151`.
 - Build #226 certificate SHA-256: `001786d9c33cab0c8e41fbe5e6a0731eaec89bab218024e6413062af50c7f3af`.
 - These are different. Android will not accept #226 as an in-place update over #221 using package installation. Do not uninstall #221 until any local application data has been backed up/exported. A persistent signing key is required for a continuous update channel; #221's original private key is not available in the current repository artifacts.
+
+
+## Dedicated NAM Model Library — approved mockup implemented (Build #231, 2 November 2026)
+
+User approved the separate-column mockup: TONE3000 controls first, a dedicated Downloaded / Available NAM panel with a persistent Show/Hide header second, then IR Collection. The request specifically replaces the previous floating/fixed catalogue overlay because its Hide state left clipped remnants and reduced Collection usability.
+
+### Implementation
+- Source commit used for final APK: `00fed3243681047f69fa295992b2f73325c1b96d` on `feature/dark-performance-ui-polish`.
+- New file: `www/nam-model-library-ui.js` (content is presentation/controller glue only). It creates `#namModelLibrary` between `.nam-ir-tools-frame` and `#ir-import-content`, moves the existing `#t3kToneDetails` node into it, and provides a dedicated sticky header reading “Downloaded / Available NAM” with live model count/tone name and Show/Hide action.
+- The new Show/Hide button delegates to the existing hidden `#t3kCatalogueToggle` click handler. The existing TONE3000 localStorage state, model selection persistence, and download/import handlers remain the source of truth; the module does not reimplement transfer actions.
+- `www/index.html` loads the new module immediately after `main.js`, after the existing TONE3000 and IR UI modules have initialized.
+- `www/ui-redesign.css` places the page in four ordered rows: page identity, NAM/TONE3000 controls, NAM Model Library, and IR Collection. The library panel is about 58px high when closed and expands to `min(280px, 34dvh)`; the header remains outside the internal model-list scroller. Hiding the library leaves the header and returns the vertical space to Collection.
+- The old catalogue root and model list had legacy fixed-overlay CSS. Final commit explicitly resets root position/inset/z-index and list position/inset inside the new library; the previous 270px fixed-overlay positioning can no longer control this moved node. The old duplicate toolbar inside the model list is hidden because the new dedicated header replaces it.
+- Existing TONE3000 panel, transfer functions, Collection grid and bottom navigation remain in their current roles.
+
+### Protected behavior source hashes at final build commit
+- `www/tone3000.js`: `13632a59bb4d5b66f41df13e2972a15a4ec0b029` (unchanged).
+- `www/nam-transfer.js`: `e854d2a7a122272b8971a3023f4e1d5e81b48cc4` (unchanged).
+- `www/ir-transfer.js`: `9f156dade93385d8b4b2c6fc338c1a1ac085a610` (unchanged).
+- `www/main.js`: `e2697b26e1d673be2002b8f1a085f12e9618b1de` (unchanged).
+- `www/native-midi.js`: `a912c6e7379e193877122c9010b38bdbc0daae64` (unchanged).
+- No NAM protocol, User/Collection IR mapping, MIDI mapping, preset I/O, signal-chain or device-control changes were made. The only new runtime file is the NAM Model Library presentation controller.
+
+### Build #231 verification
+- GitHub Actions: [Build #231](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41343165458), run ID `41343165458`, conclusion `success` from exact commit `00fed3243681047f69fa295992b2f73325c1b96d`.
+- Node.js 22 setup, npm install, protocol regression `npm test`, Android project/USB audio plugin generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13098286652`; archive `MG30-Studio-build-231.zip`; archive SHA-256 `8ce55dbc594079f63252e786ada119ff020e5708bad03add21884c0d96f3f8dc`.
+- Extracted APK: `MG30-Studio-231-debug.apk`; 4,438,328 bytes; SHA-256 `2d945b65fd4cec50c4a0408575654357d8fda78a308a2f9def3dfb5b0abe1578`.
+- ZIP integrity and APK ZIP integrity checks passed. Packaged CSS and JS were inspected: the dedicated library title/controller, 4-row page layout, 280px/34dvh expanded sizing, sticky header panel rules, internal list scroller, and explicit reset of legacy fixed positioning are present in the APK. The header controller delegates to the existing `t3kCatalogueToggle` via its click handler.
+- Signing certificate differs from Build #221 (221: `6237669d1b68b5aec0ad557f0753a254e2f5db04997ea08644a7eddabd37e151`; 231: `208d04ece7a0a6e2a56c7c8649cba17adbbe83ec3717a01cb186e65a447baf61`). Android will not install #231 as an in-place update over #221 using the current ephemeral debug signing. Do not uninstall #221 until local app data is backed up/exported.
+- No physical Android WebView screenshot or live MG-30 hardware test was performed. User must install #231 in a safe manner and send a phone screenshot for final visual confirmation. Keep all NAM/IR/MIDI paths protected during follow-up adjustments.
