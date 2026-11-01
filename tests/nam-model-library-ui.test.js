@@ -136,6 +136,7 @@ function createHarness({ withCatalogue = true } = {}) {
   page.appendChild(irContent);
 
   const tonePane = elements['namIrTonePane'];
+  toolsFrame.appendChild(tonePane);
   if (withCatalogue) {
     const catalogue = elements['t3kToneDetails'];
     catalogue.classList.toggle('t3k-catalogue', true);
@@ -147,11 +148,23 @@ function createHarness({ withCatalogue = true } = {}) {
     tonePane.appendChild(catalogue);
   }
 
+  const documentElement = new FakeElement('documentElement');
+  documentElement.appendChild(page);
   const document = {
     elements,
     readyState: 'complete',
-    documentElement: new FakeElement('documentElement'),
-    getElementById: id => elements[id] || null,
+    documentElement,
+    getElementById(id) {
+      const find = node => {
+        if (node.id === id) return node;
+        for (const child of node.children) {
+          const match = find(child);
+          if (match) return match;
+        }
+        return null;
+      };
+      return find(documentElement);
+    },
     createElement: () => {
       const node = new FakeElement();
       node.ownerDocument = document;
@@ -160,8 +173,7 @@ function createHarness({ withCatalogue = true } = {}) {
     addEventListener() {}
   };
   for (const element of Object.values(elements)) element.ownerDocument = document;
-  const panelChildren = ['namModelLibraryHead','namModelLibraryHeading','namModelLibraryMeta','namModelLibraryToggle','namModelLibraryContent','namModelLibraryEmpty'];
-  for (const id of panelChildren) elements[id].ownerDocument = document;
+  documentElement.ownerDocument = document;
   toolsFrame.ownerDocument = document;
   toolsFrame.classList.toggle('nam-ir-tools-frame', true);
 
