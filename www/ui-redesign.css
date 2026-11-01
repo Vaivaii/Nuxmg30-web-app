@@ -1737,7 +1737,7 @@ html,body{background:#0b1012}
   }
   body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card:nth-child(2) {
     display: grid !important;
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     align-content: stretch;
     min-width: 0;
     min-height: 0;
@@ -1759,22 +1759,33 @@ html,body{background:#0b1012}
   body.ir-collection-manager-active #page-nam .ir-manager-footnote {
     display: none !important;
   }
-  body.ir-collection-manager-active #page-nam .ir-collection-toolbar {
+  body.ir-collection-manager-active #page-nam .ir-collection-card-head {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 5px;
-    margin: 4px 0 6px;
+    gap: 8px;
+    margin: 0 0 7px;
+  }
+  body.ir-collection-manager-active #page-nam .ir-collection-card-title {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+    align-content: center;
+  }
+  body.ir-collection-manager-active #page-nam .ir-collection-card-title h3 {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.15;
   }
   body.ir-collection-manager-active #page-nam #irManagerCollectionCount {
     min-width: 0;
     font-size: 9px;
-    line-height: 1.15;
+    line-height: 1.1;
   }
-  body.ir-collection-manager-active #page-nam .ir-collection-toolbar .btn {
+  body.ir-collection-manager-active #page-nam #irManagerSyncCollection {
     min-width: 0;
     min-height: 30px;
-    padding: 5px 6px;
+    padding: 5px 9px;
     font-size: 9px;
     line-height: 1.1;
     white-space: nowrap;

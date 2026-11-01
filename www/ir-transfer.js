@@ -111,8 +111,8 @@ function initUI(){
   '<div class="ir-manager-status" id="irManagerUserStatus" role="status" aria-live="polite">Belum ada import melalui MG30 Studio.</div>'+
  '</section>'+
  '<section class="ir-manager-card">'+
-  '<div class="ir-manager-card-head"><div><h3>Collection IR</h3><p>Import ke slot Collection 01–24. Pilih slot, lalu WAV otomatis divalidasi dan dikirim.</p></div></div>'+
-  '<div class="ir-collection-toolbar"><span class="slot-note" id="irManagerCollectionCount">Belum sinkron</span><button class="btn primary" id="irManagerSyncCollection" type="button">Sinkronkan</button></div>'+
+  '<div class="ir-manager-card-head ir-collection-card-head"><div class="ir-collection-card-title"><h3>Collection IR</h3><span class="slot-note" id="irManagerCollectionCount">Belum sinkron</span></div><button class="btn primary" id="irManagerSyncCollection" type="button">Sinkronkan</button></div>'+
+  
   '<p class="ir-current-preset-ir-note">Kotak nomor merah menandai IR Collection yang digunakan preset terpilih.</p>'+
   '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
   '<p class="ir-manager-footnote">Nama dan status slot dibaca dari MG-30. Tombol Gunakan di User tersedia bila WAV sumber juga disimpan oleh MG30 Studio.</p>'+
