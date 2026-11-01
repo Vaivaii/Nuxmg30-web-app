@@ -1533,6 +1533,16 @@ html,body{background:#0b1012}
     margin: 0 2px 8px;
   }
 
+  body.ir-collection-manager-active #page-nam > .nam-page-hero[hidden] {
+    display: none !important;
+  }
+
+  /* Remove duplicate labels and secondary notes so a complete slot row fits on short screens. */
+  body.ir-collection-manager-active #page-nam .ir-manager-card:nth-child(2) > .ir-manager-card-head > div,
+  body.ir-collection-manager-active #page-nam .ir-manager-card:nth-child(2) > .ir-manager-footnote {
+    display: none !important;
+  }
+
   body.ir-collection-manager-active #page-nam > .nam-ir-workspace-tabs {
     flex: 0 0 auto;
   }

@@ -125,7 +125,7 @@ function initUI(){
  // Only the 24-slot grid scrolls; the tab page and the other tabs never join that scroll.
   // Separate the NAM/TONE3000 tools from the Collection workspace.
   // Both remain available, but Collection gets the full area above the fixed navigation.
-  const page=$('page-nam'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
+  const page=$('page-nam'),pageHero=page?.querySelector(':scope > .nam-page-hero'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
   let namPane=null,irPane=null,namModeButton=null,collectionModeButton=null;
   if(page&&!page.dataset.namIrWorkspaceReady){
    const hero=page.querySelector(':scope > .nam-page-hero');
@@ -189,6 +189,8 @@ function initUI(){
   }
   function setWorkspaceMode(mode){
    const collection=mode==='collection';
+   // The NAM page title is redundant in Collection mode; reclaim its height on phones.
+   if(pageHero)pageHero.hidden=collection;
    if(namPane)namPane.hidden=collection;
    if(irPane)irPane.hidden=!collection;
    if(namModeButton)namModeButton.setAttribute('aria-pressed',String(!collection));
