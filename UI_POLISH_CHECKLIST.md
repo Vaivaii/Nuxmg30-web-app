@@ -3127,3 +3127,27 @@ User reported that after opening Build #233 the whole app was stuck and no contr
 - APK v2 signer certificate SHA-256: #233 `e58377c7108920b010093574c31b78af0d797f256dfd8ec72d6968716d670ba8`; #241 `6b304ec584e8089c5770a7f3e092b9afa2e6ed4d119f74bf5caddea8bf92c214`. They differ, so Android will not install #241 as an in-place update over #233. Back up/export important app-local data before uninstalling #233; the old signing private key is not available.
 - Source hashes at the exact #241 commit: `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`; `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`; `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`. `www/ir-transfer.js` includes only the UI observer skip for node id `namModelLibrary`; the User/Collection SysEx packet builder, routing maps and transfer/readback logic are not changed.
 - Important validation boundary: these are Node DOM/MutationObserver fixture tests, protocol regression tests, Vite bundle validation, and Android Gradle packaging. We do not have remote access to the user's physical handset, so no direct Android WebView install/tap test was possible. User should install #241 safely and confirm the Editor tab is responsive, then verify NAM library Show/Hide and Collection. Do not claim physical phone runtime validation until that screenshot arrives.
+
+
+## NAM Model Library action-button polish — Build #244 (2 November 2026)
+
+User confirmed the NAM Model Library panel now appears and requested only visual cleanup of its model action buttons and compact Hide control.
+
+### UI changes
+- `www/nam-model-library-ui.js`: Hide control label is now exactly `Hide` with no up-arrow. Show still displays `Show⌄`.
+- `www/ui-redesign.css`: Hide control is explicitly 84px wide × 38px high, compact dark Studio style.
+- Model cards are styled with dark rounded surfaces and subtle selected lime outline. Model title/architecture/size have explicit hierarchy and spacing.
+- Actions use a two-column grid: Select Model/Selected at left, lime Download & Import at right, and dark Download Only spanning the full row below. Disabled Selected has a muted dark fill, not browser-gray default styling.
+- Mobile <=390px uses slightly tighter card/button spacing and font sizes.
+- All new selectors are scoped under `#namModelLibrary`; no TONE3000 download/import JS handlers were changed.
+
+### Verification and APK
+- Final source commit: `346a0a85951cf62365db34fca83651da50d3ff9e`, branch `feature/dark-performance-ui-polish`.
+- GitHub Actions [Build #244](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41345848361), run ID `41345848361`, completed successfully.
+- `npm test`: 19/19 passed, 0 failures. Includes new visual contract assertions for no-arrow Hide label, compact 84px header control, two-column actions, lime Download & Import, full-width Download Only, and muted disabled Selected.
+- Vite production build, Android/Capacitor setup, Gradle `assembleDebug`, and artifact upload all succeeded.
+- Artifact ID `13098649464`; archive `MG30-Studio-build-244.zip`; 4,062,304 bytes; SHA-256 `8cdb5a49148550c4d6096aabae9a2ebd318219889881dacc22cc913759300d3a`.
+- Extracted APK `MG30-Studio-244-debug.apk`; 4,439,168 bytes; SHA-256 `2184a556d9c9de68a5c96971e315bf07080a31241c00bda2d09424500effe4f4`.
+- ZIP and APK integrity checks passed. Inspected compiled CSS/JS inside the actual APK and verified all six visual requirements: Hide has no arrow, width 84px, actions grid, lime Download & Import, full-row Download Only, dark disabled Selected.
+- Protected files unchanged: `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`; `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`; `www/ir-transfer.js` `6389f3ba51000c02a1b37495cb28cdbccd4197eb`; `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`.
+- Validation boundary: CI tests, Vite build, Gradle packaging, APK ZIP integrity, and inspection of the packaged CSS/JS passed. No physical Android handset/WebView touch test was run in this environment. User should install and confirm actual visual appearance. Debug signing may differ from the previous APK; back up local app data before uninstall/reinstall if Android refuses in-place update.
