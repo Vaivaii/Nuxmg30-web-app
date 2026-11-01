@@ -1009,3 +1009,17 @@ This rule is mandatory for every future application/source change on this branch
   - Import/transfer-related package strings include `Import WAV`, WAV RIFF parsing errors, and phase ACK diagnostics.
 - Workflow trigger was restored after the one-off build. Workflow blob: `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled; `feature/dark-performance-ui-polish` is absent from push trigger filters. Restore commit: `13adead664657e8f2637a1d73d5efc6e088dd9e3`.
 - Build #216 supersedes #215 for the latest header-alignment request. This is a successful build and package-content check, not a physical Android WebView screenshot test and not MG-30 hardware validation.
+
+
+## English UI + IR Collection naming (1 November 2026)
+
+- User approved a consistent English-language interface and requested the small “Collection IR” subheading be removed, with the main page heading changed to “IR Collection”.
+- Source commit: `4976fc7a2b847c8b93d5ea143b1f0febc8c4ab65` on `feature/dark-performance-ui-polish`.
+- Source changes in this checkpoint:
+  - `www/index.html`: main IR page heading changed from “Impulse Response” to “IR Collection”; loads `english-ui.js` before the application modules.
+  - `www/ir-transfer.js`: removes the redundant “Collection IR” card title; Collection status and sync action remain.
+  - `www/english-ui.js`: new English UI translation layer for static and dynamically rendered UI text, including attributes and runtime status/error messages. User/device-defined preset names, model names, IR slot names, recordings and other identified data fields are protected from translation.
+- The translator observes DOM additions and text/attribute changes so late-rendered screens and transfer messages are translated too.
+- No intentional changes to NAM import/transfer, Collection/User routing, IR packet generation, SysEx/ACK flow, preset data, USB-MIDI, or MIDI mappings.
+- Validation boundary: source files and branch refs were fetched and checked for the new heading, removal of the redundant card title, and translator load order. A JavaScript syntax check, protocol regression test, APK build, physical Android WebView test and MG-30 hardware test have NOT yet been run for this checkpoint.
+- Next step: validate the translation layer for syntax and runtime behaviour, refine any remaining Indonesian UI strings, then update the project notes. Do not start an APK build until the user explicitly asks for it.
