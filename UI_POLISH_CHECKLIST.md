@@ -2979,3 +2979,35 @@ User reviewed the #223 mobile screenshot and requested two refinements: (1) inte
 - Extracted APK: `MG30-Studio-224-debug.apk`, 4,436,620 bytes; SHA-256 `9babd91ae700c22f3b9694eab004b2d9de392c38d359e6789902f8599f58435d`.
 - ZIP integrity passed. Packaged CSS asset `assets/public/assets/index-Bhps5bY3.css` was checked and contains all four expected rules: integrated catalogue header, compact NAM title, compact tool-pane height, and the prior mobile catalogue top offset.
 - No physical Android/WebView or MG-30 hardware validation has yet been performed. Signing-key continuity with the user's installed #221 must not be assumed; prior #223 was already found to have a different debug certificate from #221. Avoid telling the user to uninstall without warning about local app data.
+
+
+## Screenshot-driven catalogue panel correction — Build #226 candidate (2 November 2026)
+
+User supplied a fresh screenshot from Build #224 and reported that the Available Models / Hide header and profile panel still looked untidy. Root cause in the prior CSS: only `#t3kModelList` was fixed-positioned; its parent `#t3kToneDetails.t3k-catalogue` remained in normal flow, leaving the original catalogue outline/edge behind the overlay. The sticky toolbar also inherited a reduced content width from `scrollbar-gutter: stable`.
+
+### Source correction
+- Latest CSS commit: `7b5750fde71216d8e16ddb6872465d87615c224f` on `feature/dark-performance-ui-polish`.
+- Only application file changed: `www/ui-redesign.css` (blob `2aef33e3e0c070c1fad0477c206d3c18c10d0f91`).
+- On mobile, the complete `.t3k-catalogue.is-expanded` wrapper is now the fixed overlay panel, with one border, rounded corners, background and shadow. The collapsed Saved Tone trigger is hidden only while expanded.
+- `#t3kModelList` is now the inner scroll container within that outer panel, not a second fixed card. The Available Models / Hide toolbar remains sticky and is styled as the integrated top strip with a single bottom divider.
+- Removed reserved scrollbar gutter from the inner list and set thin scrollbar styling so the toolbar spans the full panel width.
+- Preserved the mobile overlay top offset at `max(270px, calc(env(safe-area-inset-top, 0px) + 260px))` and bottom clearance above fixed navigation.
+- Compact profile adjustment: visible NAM/TONE3000 pane max-height reduced to `min(128px, 18dvh)`; overflow remains scrollable so controls are not deleted or hidden from the DOM.
+
+### Browser layout fixture validation
+- Chromium + Playwright HTML fixture validated at 393×873, 360×740, 320×640 and 432×915.
+- On all four viewports: the catalogue parent is `position: fixed`, root bounds start at 270px and end 76px above viewport bottom, list remains internally scrollable, the overlay ends above bottom navigation, and toolbar right edge matches the panel inner right edge (0px gap).
+- At 393×873: outer panel x=12, y=270, width=369, height=527, bottom=797; nav top=809; toolbar width=367 matching inner list width exactly.
+- This is a focused layout fixture test, not a physical Android WebView test. The fixture mimics the relevant DOM/ancestor overflow structure; it is not a full live-app screenshot.
+
+### Protected behavior files rechecked at latest branch source
+- `www/tone3000.js`: `13632a59bb4d5b66f41df13e2972a15a4ec0b029`.
+- `www/nam-transfer.js`: `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`.
+- `www/ir-transfer.js`: `9f156dade93385d8b4b2c6fc338c1a1ac085a610`.
+- `www/main.js`: `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/native-midi.js`: `a912c6e7379e193877122c9010b38bdbc0daae64`.
+- No edits to NAM/IR transfer protocols, User/Collection mappings, MIDI mapping, preset I/O, or device-control paths.
+
+### APK build status at note creation
+- Build #226 was triggered automatically from commit `7b5750fde71216d8e16ddb6872465d87615c224f`; run ID `41338505989`.
+- At the time of this note: dependency setup, `npm test`, and Capacitor Android project generation had passed; Gradle `assembleDebug` was still running. Final success/failure and APK hash must be appended after the run completes.
