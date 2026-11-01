@@ -2125,6 +2125,17 @@ html,body{background:#0b1012}
   min-height: 0;
   overflow: hidden;
 }
+.nam-model-library-empty {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  padding: 12px;
+  color: #8f9e9c;
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+}
+.nam-model-library-empty[hidden] { display: none !important; }
 .nam-model-library-panel.is-expanded {
   height: min(280px, 34dvh);
   max-height: min(280px, 34dvh);
