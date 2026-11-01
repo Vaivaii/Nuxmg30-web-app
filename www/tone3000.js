@@ -344,7 +344,7 @@ async function fetchAllToneModels(toneId) {
   }
   const seen = new Set();
   return collected.filter(model => {
-    if (!model || typeof model !== 'object' || !(model.model_url || model.modelUrl)) return false;
+    if (!model || typeof model !== 'object') return false;
     const key = String(model.id ?? model.model_id ?? model.uuid ?? model.model_url ?? model.modelUrl);
     if (seen.has(key)) return false;
     seen.add(key);
@@ -369,6 +369,7 @@ function setCatalogueExpanded(expanded, persist = true) {
   const root = $('t3kToneDetails'), toggle = $('t3kCatalogueToggle'), list = $('t3kModelList');
   if (!root || !toggle || !list || root.hidden) return;
   const open = Boolean(expanded);
+  root.classList.toggle('is-expanded', open);
   toggle.setAttribute('aria-expanded', String(open));
   list.hidden = !open;
   if ($('t3kCatalogueChevron')) $('t3kCatalogueChevron').textContent = open ? '⌃' : '⌄';
@@ -415,10 +416,12 @@ function renderToneCatalogue(snapshot, options = {}) {
     (normalized.tone.creator ? ' · Creator: ' + normalized.tone.creator : '');
   $('t3kCatalogueCount').textContent = normalized.models.length + ' MODELS';
   $('t3kRefreshModels').disabled = false;
+  const listHeader = '<div class="t3k-list-toolbar"><span><strong>Available Models</strong><small>' +
+    safe(normalized.tone.name) + '</small></span><button id="t3kCatalogueClose" type="button">Hide</button></div>';
   if (!normalized.models.length) {
-    list.innerHTML = '<div class="t3k-card"><small>No downloadable models were returned for this tone.</small></div>';
+    list.innerHTML = listHeader + '<div class="t3k-card"><small>No models were returned for this tone.</small></div>';
   } else {
-    list.innerHTML = normalized.models.map((model, index) => {
+    list.innerHTML = listHeader + normalized.models.map((model, index) => {
       const selected = model.id === selectedModelId;
       const size = typeof model.size === 'number' ? model.size + ' bytes' : (model.size || 'Size unavailable');
       const architecture = model.architecture_version ?? model.architecture ?? 'A2';
@@ -429,11 +432,15 @@ function renderToneCatalogue(snapshot, options = {}) {
         '<div class="t3k-actions">' +
         '<button type="button" data-t3k-select="' + safe(model.id) + '"' +
         (selected ? ' disabled' : '') + '>' + (selected ? 'Selected' : 'Select Model') + '</button>' +
-        '<button class="primary" type="button" data-t3k-send="' + index + '">Download &amp; Import</button>' +
-        '<button type="button" data-t3k-save="' + index + '">Download Only</button>' +
-        '</div></article>';
+        '<button class="primary" type="button" data-t3k-send="' + index + '"' +
+        (model.model_url ? '' : ' disabled title="No downloadable file URL"') + '>Download &amp; Import</button>' +
+        '<button type="button" data-t3k-save="' + index + '"' +
+        (model.model_url ? '' : ' disabled title="No downloadable file URL"') + '>Download Only</button>' +
+        '</div>' + (model.model_url ? '' : '<small>Download unavailable for this model.</small>') + '</article>';
     }).join('');
   }
+  const closeCatalogue = $('t3kCatalogueClose');
+  if (closeCatalogue) closeCatalogue.addEventListener('click', () => setCatalogueExpanded(false));
   list.querySelectorAll('[data-t3k-select]').forEach(button => {
     button.addEventListener('click', () => {
       if (rememberSelectedModel(button.dataset.t3kSelect)) setStatus('Selected model saved. Choose Download & Import when ready.');
