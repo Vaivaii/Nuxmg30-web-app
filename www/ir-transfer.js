@@ -120,6 +120,39 @@ function initUI(){
  '</section>'+
  '<input class="hidden" type="file" id="irManagerFileInput" accept=".wav,audio/wav,audio/x-wav">';
  root.appendChild(ui);
+ // Isolate the Collection IR workspace between the shared app header and bottom navigation.
+ // Only the 24-slot grid scrolls; the tab page and the other tabs never join that scroll.
+ const page=$('page-nam'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
+ function clearCollectionViewport(){
+  document.body.classList.remove('ir-collection-manager-active');
+  if(page){
+   page.style.removeProperty('--ir-collection-manager-top');
+   page.style.removeProperty('--ir-collection-manager-bottom');
+  }
+ }
+ function resizeCollectionViewport(){
+  if(!page||page.classList.contains('hidden')||!topBar||!nav||!grid||window.innerWidth>720){
+   clearCollectionViewport();
+   return;
+  }
+  const headerBottom=topBar.getBoundingClientRect().bottom;
+  const navTop=nav.getBoundingClientRect().top;
+  const top=Math.max(0,Math.ceil(headerBottom+7));
+  const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop));
+  document.body.classList.add('ir-collection-manager-active');
+  page.style.setProperty('--ir-collection-manager-top',top+'px');
+  page.style.setProperty('--ir-collection-manager-bottom',bottom+'px');
+ }
+ if(page){
+  const collectionPageObserver=new MutationObserver(()=>{
+   if(page.classList.contains('hidden'))clearCollectionViewport();
+   else resizeCollectionViewport();
+  });
+  collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
+ }
+ window.addEventListener('resize',resizeCollectionViewport,{passive:true});
+ window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
+ resizeCollectionViewport();
  const fileInput=$('irManagerFileInput'),userButton=$('irManagerUserImport'),grid=$('irManagerCollectionGrid');
  const userStatus=$('irManagerUserStatus'),collectionStatus=$('irManagerCollectionStatus'),countLabel=$('irManagerCollectionCount'),toggle=$('irManagerToggleSlots'),syncButton=$('irManagerSyncCollection');
  let pendingTarget=null,busy=false,syncBusy=false,slotCache=new Map(),deviceSlots=new Map(),lastUserName='';
