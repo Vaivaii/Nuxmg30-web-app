@@ -592,3 +592,14 @@ Protection:
 - Static assertions passed. Physical phone verification pending.
 
 Build #202 is an older APK and does not include these two CSS refinements. No manual build approval has yet been given for the latest CSS stage. Check recent Actions runs for any automatic path-triggered build.
+## Latest UI refinement — Export fits, bottom fade reaches scroll boundary, Device header joined (1 Nov 2026)
+
+User screenshots showed three defects after Build #204: Export still clipped, non-Preset fade did not reach the bottom edge, and Device sticky header was visually detached with USB panel content showing above/behind.
+
+Fixes:
+- `www/preset-library-ui.css` commit `6335984e7e15626ffa40a262d5706be9252449d3`: Preset mobile header explicit grid `minmax(0,1fr) 126px`; actions grid with two 60px fixed buttons, 38px height; title can shrink; both button IDs receive explicit width/min/max of 60px, overriding old min-width. Export pseudo-label retained; no handler/module touched.
+- `www/ui-redesign.css` commit `4905efbafce0b6babe820464e8d42c77f9d33371`: non-Preset tab fade now ends at `bottom:0` with no negative bottom margin; 42px smooth gradient, no hard shadow. Presets excluded. Device hero is full-width, opaque app-background, sticky at top with z-index 45 and aligned negative top margin to cover underlying USB content while scrolling; eyebrow and heading retained, only subtitle hidden.
+
+Only two app CSS files changed. `main.js`, `index.html`, and `mg30-preset-export.js` unchanged. No MIDI, SysEx, USB, Import/Export, Editor, Signal Chain, NAM/IR function code touched.
+
+Automatic builds: #205 run 41274647488 includes intermediate button sizing only. #206 run 41274669130 is the authoritative build with both fixes; latest source commit 4905efbafce0b6babe820464e8d42c77f9d33371. At note time both in progress; wait/check #206 artifact only.
