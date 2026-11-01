@@ -82,7 +82,7 @@
       }
       setText(headerToggle, expanded ? 'Hide⌃' : 'Show⌄');
       if (content.hidden === expanded) content.hidden = !expanded;
-      if (empty.hidden === ready) empty.hidden = !ready;
+      if (empty.hidden !== ready) empty.hidden = ready;
 
       if (catalogue && catalogue !== observedCatalogue) {
         catalogueObserver?.disconnect();
