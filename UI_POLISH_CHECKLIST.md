@@ -2964,3 +2964,18 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - The certificates are different. Both APKs identify as Android Debug certificates, but Android will reject installing #223 as an in-place update over #221 because the signing identity does not match.
 - `scripts/init-android.mjs` creates/syncs the Android project and copies native plugins; it does not copy or configure a persistent signing keystore. The workflow uses Gradle `assembleDebug` on a fresh `ubuntu-latest` runner, which generates a runner-local debug key. The #221 private key was not present in the APK artifact and is not available from the current repository state, so #223 cannot be re-signed as #221 using the available material.
 - Do not tell the user to uninstall #221 without warning: uninstalling may delete local application data. User should back up/export any important app data first. Safer immediate testing options are a separate Android device or a future preview build using a distinct application ID. A future stable update channel requires a persistent signing key to be managed securely; that will still not retroactively match #221 unless its original private key is recovered.
+
+
+## Follow-on visual refinement — Build #224 (1 November 2026)
+
+User reviewed the #223 mobile screenshot and requested two refinements: (1) integrate the TONE3000 Available Models / Hide toolbar into the catalogue panel rather than rendering it as a detached card; (2) reduce the visual size/height of the NAM profile tool area.
+
+- CSS-only source commit: `5cd89bd6abf1f16ed97886087cc7cb5d49daec92` on `feature/dark-performance-ui-polish`.
+- `www/ui-redesign.css` changes: toolbar now has no independent border or rounded card; it uses the catalogue background and a subtle bottom divider. Mobile NAM title is smaller; the NAM/TONE3000 tool frame padding is reduced and the visible tool pane max height is reduced from 190px/29dvh to 150px/23dvh.
+- Existing mobile catalogue placement correction (top offset 270px / safe-area + 260px) is preserved.
+- Protected source hashes unchanged: `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`; `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`; `www/ir-transfer.js` `9f156dade93385d8b4b2c6fc338c1a1ac085a610`; `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`.
+- Build workflow [#224](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41335417957), run ID `41335417957`, completed with conclusion `success` from the CSS source commit above. Node 22 setup, npm install, `npm test`, Capacitor Android project generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13095222551`; ZIP SHA-256 `bcab00a8f9d8ffb382aebcd3c7d8e1c5ab289cdbb2746a4847dcc3835d9f6f8f`.
+- Extracted APK: `MG30-Studio-224-debug.apk`, 4,436,620 bytes; SHA-256 `9babd91ae700c22f3b9694eab004b2d9de392c38d359e6789902f8599f58435d`.
+- ZIP integrity passed. Packaged CSS asset `assets/public/assets/index-Bhps5bY3.css` was checked and contains all four expected rules: integrated catalogue header, compact NAM title, compact tool-pane height, and the prior mobile catalogue top offset.
+- No physical Android/WebView or MG-30 hardware validation has yet been performed. Signing-key continuity with the user's installed #221 must not be assumed; prior #223 was already found to have a different debug certificate from #221. Avoid telling the user to uninstall without warning about local app data.
