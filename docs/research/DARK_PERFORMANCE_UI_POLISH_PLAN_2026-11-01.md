@@ -443,3 +443,26 @@ UI polish 01 is complete and recorded. Do not edit the next component until the 
 - No intended changes to `www/nam-transfer.js`, `www/native-midi.js`, `www/ir-transfer.js`, `www/main.js`, `www/mg30-preset-import.js` or `www/mg30-preset-export.js`; their source blobs remain unchanged from the pre-TONE workspace checkpoint. NAM/IR transfer protocols, Collection/User routing, USB-MIDI and MIDI mapping were not modified in this feature.
 - Workflow restored to manual-only: blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`, `workflow_dispatch` remains enabled, and `feature/dark-performance-ui-polish` is absent from push branch filters.
 - Validation boundary: GitHub workflow/tests and APK archive/package checks passed. Physical Android WebView testing of the TONE3000 OAuth callback, catalogue scrolling, persistence across a true app restart, and actual MG-30 NAM transfer have not yet been performed. User must install and verify on the phone/device.
+
+
+## Latest screenshot-driven correction — TONE3000 expanded catalogue position (1 November 2026)
+
+User supplied two Build #221 screenshots. The expanded TONE3000 model list was opening over the MG-30 Target Slot dropdown and nearby Choose a Tone / Refresh Models / status controls. Preserve the floating, independently scrollable mobile catalogue, but keep the whole TONE3000 control cluster visible above it.
+
+Application source:
+- File: `www/ui-redesign.css` only.
+- Final source commit: `d16dd03e55ce5701409757232fae58cc6546319c`.
+- Final mobile overlay offset: `top: max(270px, calc(env(safe-area-inset-top, 0px) + 260px));` under `.t3k-catalogue.is-expanded #t3kModelList` in the existing max-width 720px media rule.
+- The initial 214/204px attempt still overlapped the action/status controls; it was corrected to 270/260px and this failed intermediate is retained in `UI_POLISH_CHECKLIST.md`.
+- No TONE3000 JavaScript, model persistence, OAuth/API, NAM download/import, A2-Lite transfer plan/sender, IR transfer, USB-MIDI, Editor, Signal Chain or other device logic changed.
+
+Validation:
+- Exact final source commit tested: `d16dd03e55ce5701409757232fae58cc6546319c`.
+- Git compare against the prior branch HEAD confirms one application file and one net CSS line changed.
+- Chromium + Playwright `page.set_content` fixture passed at 320×640, 360×740, 393×873, 432×915 and desktop 768×1024. Target dropdown, both TONE3000 action buttons and status remain outside the overlay; the list stays scrollable and ends above bottom navigation. The initial fixture-coordinate/class issue and correction are fully recorded in the checklist.
+- No npm test, Vite, CI, Actions, Gradle or APK build was run. No physical Android/WebView or MG-30 hardware validation is claimed.
+
+Project records:
+- Detailed history, intermediate failure/correction, protected-file hashes, per-viewport metrics and build gate are in `UI_POLISH_CHECKLIST.md` under the matching TONE3000 heading.
+- Latest source commit is `d16dd03e55ce5701409757232fae58cc6546319c`; subsequent commits may update documentation only.
+- Current stop point: source and documentation are saved. Ask exactly **“Build sekarang atau nanti?”** and do not start a build before explicit approval.
