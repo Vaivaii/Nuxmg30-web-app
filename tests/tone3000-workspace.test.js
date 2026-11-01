@@ -78,3 +78,16 @@ test('storage errors are handled without crashing the TONE3000 screen', () => {
   assert.equal(readToneCatalogue(broken), null);
   assert.equal(writeToneCatalogue(broken, normalizeToneCatalogue('1', {}, [])), false);
 });
+
+
+test('the saved catalogue retains model entries even when the API has no download URL', () => {
+  const catalogue = normalizeToneCatalogue('77', { name: 'Test Tone' }, [
+    { id: 'downloadable', name: 'Downloadable Model', model_url: 'https://cdn.example/model.nam' },
+    { id: 'metadata-only', name: 'Metadata Only Model' },
+  ]);
+  assert.equal(catalogue.models.length, 2);
+  assert.equal(catalogue.models[1].id, 'metadata-only');
+  assert.equal(catalogue.models[1].model_url, '');
+  const restored = parseToneCatalogue(JSON.stringify(catalogue));
+  assert.equal(restored.models.length, 2);
+});

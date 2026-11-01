@@ -332,24 +332,26 @@ function extractToneModels(body) {
 }
 
 async function fetchAllToneModels(toneId) {
-  const pageSize = 50, collected = [];
+  const pageSize = 50, collected = [], seen = new Set();
   for (let page = 1; page <= 20; page++) {
     const response = await apiJSON('/models?tone_id=' + encodeURIComponent(toneId) +
       '&architecture=2&page=' + page + '&page_size=' + pageSize);
     const rows = extractToneModels(response);
-    collected.push(...rows);
+    let added = 0;
+    rows.forEach((model, index) => {
+      if (!model || typeof model !== 'object') return;
+      const key = String(model.id ?? model.model_id ?? model.uuid ?? model.slug ??
+        model.model_url ?? model.modelUrl ?? (String(model.name || '') + ':' + page + ':' + index));
+      if (seen.has(key)) return;
+      seen.add(key);
+      collected.push(model);
+      added++;
+    });
     const totalPages = Number(response?.meta?.total_pages || response?.pagination?.total_pages ||
       response?.data?.meta?.total_pages || 0);
-    if (rows.length < pageSize || (totalPages > 0 && page >= totalPages)) break;
+    if (rows.length < pageSize || added === 0 || (totalPages > 0 && page >= totalPages)) break;
   }
-  const seen = new Set();
-  return collected.filter(model => {
-    if (!model || typeof model !== 'object') return false;
-    const key = String(model.id ?? model.model_id ?? model.uuid ?? model.model_url ?? model.modelUrl);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return collected;
 }
 
 function saveWorkspaceSnapshot(snapshot) {
