@@ -2281,3 +2281,38 @@ Applies to **every** application/source change, no matter how small (CSS, HTML, 
 - Build/CI/Gradle/APK: **not run** (documentation-only change; build approval rules unchanged).
 - Validation: both updated Markdown files fetched back from the branch and checked for the mandatory loop, failure correction/retest requirement, exact-source requirement, and separate build-approval gate.
 - Next step: apply this test-and-correction loop to every future source change; after all applicable checks pass, update this checklist and ask **“Build sekarang atau nanti?”**.
+
+## Device bottom-navigation icon — USB symbol only (1 November 2026)
+
+User request: replace only the irrelevant icon in the bottom **Device** tab. Do not change anything else before the user reviews this icon-only result.
+
+### Choice and source
+- Replaced the former generic branching/connector glyph with the official Lucide **USB** outline SVG.
+- Icon reference: https://lucide.dev/icons/usb — Lucide categorizes USB under Devices / Multimedia / Home and tags it universal, serial, bus, controller, connector and interface. This is a direct fit for MG-30 Studio's Device tab, which includes USB-MIDI and USB audio connection functions.
+- Retained the existing `<button data-page="device">`, `.nav-icon` wrapper, `aria-hidden`, viewBox 24×24 and visible label `Device`. Only SVG child shapes changed.
+
+### Source commit / scope
+- File changed: `www/index.html` only.
+- App source commit: `082c320e847b5cabdf50c7a4802e73cf14a08242` — `Replace Device tab navigation glyph with USB icon`.
+- Diff: exactly one existing Device-nav SVG replaced; Git compare reports one file, one insertion and one deletion. No CSS file changed.
+- Verified untouched: Editor/NAM & IR/Presets/Studio nav icons and labels; tab IDs and handlers; nav layout and responsive CSS; Editor, movable Signal Chain, Import/Export, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mapping, Save-to-device, Copy Scene, CTRL/EXP, Studio, Device page logic and startup.
+
+### Test and simulation loop — exact tested source
+- Source commit tested: `082c320e847b5cabdf50c7a4802e73cf14a08242`.
+- Static source check: exactly one `data-page="device"`; five nav buttons remain; Device label, button attributes and wrapper remain unchanged; only the Device SVG differs from the prior commit. PASS.
+- CSS compatibility check: existing `www/ui-redesign.css` unchanged blob SHA `f3afcf6454220c7d032b743148ce11667bda7a71`; nav icon rules still set width/height 23px on mobile, `fill:none`, `stroke:currentColor`, stroke width 1.75px, round caps and joins. PASS.
+- Browser simulation: Chromium via Playwright `page.set_content`, using the exact five-button nav markup extracted from the tested commit and the existing nav/mobile SVG CSS rules extracted from the unchanged `www/ui-redesign.css`. Viewports: 320×740, 360×800, 393×873, 432×915 CSS px. At all four: five buttons present, visible Device label unchanged, SVG 23×23, seven SVG shapes, button stays inside viewport, nav bottom aligned to viewport bottom, inactive stroke `rgb(132,147,151)`, active Device stroke `rgb(196,245,107)`; screenshot pixel check found 99 active-lime icon pixels. PASS.
+- Rendered test screenshots: `/mnt/data/device-nav-320.png`, `device-nav-360.png`, `device-nav-393.png`, `device-nav-432.png`.
+
+### Failed attempts and corrections (preserved)
+- Initial Chromium CLI screenshot attempts timed out in the container; Playwright navigation to the local `file://` URL was blocked by the environment. Switched to Playwright `page.set_content` with the exact source snippets; Chromium launched and rendered successfully.
+- First test assertion expected nine SVG shapes; inspection of the official SVG showed the icon has seven shapes (two circles and five paths). Corrected the test expectation to seven; rerun passed.
+- First pixel-check crop was positioned above the actual icon and returned zero; the next crop used an estimated position and was still offset on the 320px viewport. Corrected the test to derive the SVG's actual `getBoundingClientRect()` for each viewport; all four pixel checks then passed with 99 visible lime pixels. These were test-harness corrections; no further application code change was required.
+
+### Not run / limitations
+- No `npm test`, GitHub Actions, CI, Gradle or APK build run. The change is a presentation-only SVG replacement and the user has not approved a build. Preserve the explicit **Build sekarang / Build nanti** gate.
+- No physical Android-device screenshot or MG-30 hardware/USB-MIDI test; browser simulation is not represented as physical-device validation.
+
+### Stop point
+- The icon-only source change and this documentation record are committed. Do not change any other icon, style or layout until the user reviews this result.
+- Ask exactly: **Build sekarang atau nanti?**
