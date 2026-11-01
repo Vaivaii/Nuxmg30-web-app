@@ -1388,23 +1388,39 @@ html,body{background:#0b1012}
     content: "";
     display: block;
     position: sticky;
-    bottom: -5px;
+    bottom: 0;
     z-index: 25;
     width: calc(100% + 20px);
-    height: 32px;
-    flex: 0 0 32px;
-    margin-top: -32px;
+    height: 42px;
+    flex: 0 0 42px;
+    margin-top: -42px;
     margin-right: -10px;
-    margin-bottom: -5px;
+    margin-bottom: 0;
     margin-left: -10px;
     background: linear-gradient(
       180deg,
       rgba(11, 16, 18, 0) 0%,
-      rgba(11, 16, 18, .035) 42%,
-      rgba(11, 16, 18, .16) 72%,
-      rgba(11, 16, 18, .48) 90%,
+      rgba(11, 16, 18, .018) 38%,
+      rgba(11, 16, 18, .07) 62%,
+      rgba(11, 16, 18, .22) 82%,
+      rgba(11, 16, 18, .58) 94%,
       #0b1012 100%
     );
     pointer-events: none;
+  }
+
+  /* Device hero stays visually joined to the app header and masks content scrolling behind it. */
+  body > .app > #page-device > .hero:first-child {
+    top: 0;
+    z-index: 45;
+    width: calc(100% + 20px);
+    margin: -5px -10px 8px;
+    padding: 9px 13px 10px;
+    background: #0b1012 !important;
+    border-bottom: 1px solid #263136;
+    box-shadow: 0 8px 14px rgba(0, 0, 0, .14);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    isolation: isolate;
   }
 }
