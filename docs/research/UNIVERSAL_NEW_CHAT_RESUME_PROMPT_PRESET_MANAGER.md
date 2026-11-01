@@ -867,3 +867,17 @@ This rule is mandatory for every future application/source change on this branch
 - Source files changed: `www/ir-transfer.js` and `www/ui-redesign.css` only. Protected SHAs remain: `www/index.html` 7947eac23fa6e28a208d5a7589e742575a22444c; `www/main.js` e2697b26e1d673be2002b8f1a085f12e9618b1de; `www/mg30-preset-import.js` e2490e6df3f5f32853743fc5eb29c99cc4026ea8; `www/mg30-preset-export.js` 7959dea88d42f9433a9ddc06ed7198449e25ba52; `www/preset-library-ui.js` 67ec75258620323492609dcdec559badfb769797; `www/preset-library-ui.css` 1be19a3d4e7ce617f5662c6e164b3d79fa770bf7; `www/native-midi.js` a912c6e7379e193877122c9010b38bdbc0daae64; `www/nam-transfer.js` e854d2a7a122272b8971a3023f4e1d5e81b48cc4; `www/tone3000.js` 34b29972051c6db4dad3994f4ab12961d517139a.
 - No NAM/IR protocol packets, ACK logic, Collection/User command routing, MIDI/SysEx mappings, NAM transfer code, preset import/export, or startup logic were changed.
 - No replacement APK build was started. Build #211 still contains the old clipped layout and must not be distributed as the fix. The compact-frame refinement has not been installed on the user's Android device. Ask for explicit approval before creating a new APK.
+
+
+## APK Build #212 — compact NAM/TONE3000 + Collection layout (1 November 2026)
+
+- User approved “Build sekarang” for the compact NAM/TONE3000 tool frame.
+- GitHub Actions run #212 / ID `41294916777`: **completed / success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41294916777
+- Build source commit: `e4bd93ff8d16d7472b1c4eb55afe5f02d9066bae`; contains compact-frame changes. Current branch after restoring manual build gate: `c66091d37c9d4edc961ff161419c5b39c71d529f`.
+- All stages passed: Node/Java setup, dependency install, `npm test`, Capacitor Android init + USB audio plugin, Gradle `assembleDebug`, and APK artifact upload.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `13078499442`, size 4,028,221 bytes; GitHub expiry `2026-11-15T09:53:05Z`. Artifact ZIP SHA-256: `54c212a017741ea77bba75063ad98f54cd11fe15cdf847a10f75362c8cb09f62`.
+- Downloaded artifact ZIP and extracted `app-debug.apk`; APK size 4,405,424 bytes; APK SHA-256: `b9d322979d6ba3f60b2579bd0514f7021a841756dfa72f88b85ca6481b20be1e`.
+- APK contents inspection passed: packaged web assets include compact NAM/TONE3000 frame marker and toggle controls, NAM chooser and send button, TONE3000 action, Collection sync action, Collection grid, and isolated Collection scroll CSS.
+- APK is available in the active conversation container as `/mnt/data/MG30-Studio-Compact-NAM-IR-Build-212.apk`.
+- Manual build gate restored immediately after triggering: push trigger for `feature/dark-performance-ui-polish` is absent again; `workflow_dispatch` remains available.
+- This is a successful software build and packaged-asset inspection, not a physical Android/WebView UI test and not MG-30 hardware protocol validation. User should install and check the NAM and TONE3000 compact controls, Collection 24 slots and scrolling on their phone; connect MG-30 afterward for hardware checks. Do not imply physical-device verification.
