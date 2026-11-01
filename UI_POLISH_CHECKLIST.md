@@ -2359,3 +2359,18 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 ### Protected scope
 - No changes to Editor, Signal Chain, Preset Manager, Import/Export implementation, USB-MIDI/native Android connection, NAM, IR User/Third Party, IR Collection, MIDI mappings, Save-to-device, Copy Scene, CTRL/EXP, Studio, Device page logic, startup, global JS or CSS.
 - No physical Android install / MG-30 hardware test is claimed.
+
+## Build #209 — Multi-effects processor icon APK (1 November 2026)
+
+- User requested the Device navigation icon be changed from USB to a recognizable guitar multi-FX processor icon, then explicitly asked for immediate build and direct APK delivery in chat.
+- Exact source commit: `7dc18bd497684eb7eef75a98e7b5d17f9f74b31d` (only the SVG inside `button[data-page="device"]` in `www/index.html` changed).
+- GitHub Actions run **#209**, run ID `41281944052`, URL https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41281944052; branch `feature/preset-manager-redesign`; source SHA matches the commit above; workflow conclusion **success**.
+- Job `Build debug APK`: dependency installation passed; protocol regression tests passed; Capacitor Android generation + USB audio plugin installation passed; Gradle debug APK build passed; artifact upload passed.
+- Artifact ID `13073289470`, artifact name `MG30-Studio-debug-APK`, ZIP size `4,025,041` bytes, SHA-256 `8d8f08b96f675db411434392cf28af9296850983a0cb96a48b78582d3aaa8eb3` (matches downloaded ZIP digest).
+- Downloaded ZIP: `/mnt/data/MG30-Studio-Build-209.zip`. `unzip -t` reports no compressed-data errors.
+- Extracted APK: `/mnt/data/MG30_Studio_Build_209.apk`, size **4,402,848 bytes**, SHA-256 `b20d2d54dfa616502e888564bd06e13db7951878b8ca9ce62773071297b13651`.
+- APK integrity: `unzip -t` reports no errors. `file` identifies an Android package with Gradle app metadata and APK Signing Block. APK inspected internally (454 archive entries): `assets/public/index.html` exists; exact new multi-FX SVG is present; exactly one Device tab button and one Device label are present.
+- `apksigner` is unavailable in this environment; cryptographic signing verification was **NOT RUN**, and no such claim is made.
+- Pre-build UI simulation of the exact source commit passed at 320×740, 360×800, 393×873 and 432×915 using Chromium/Playwright; five tabs and Device label retained, 23×23px icon, 8 SVG shapes, correct active lime color, no horizontal overflow, nav bottom alignment correct.
+- Browser simulation and GitHub Actions are separate evidence. No physical Android installation or MG-30 / USB-MIDI hardware test is claimed.
+- This build supersedes Build #208 for the current Device icon. APK is ready for direct installation by the user.
