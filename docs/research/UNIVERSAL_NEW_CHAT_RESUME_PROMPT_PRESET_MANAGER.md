@@ -695,3 +695,17 @@ This rule is mandatory for every future application/source change on this branch
 - APK is newer than Build #208 and supersedes it. Use Build #209 as latest. Direct sandbox link is in the build delivery message.
 - Pre-build UI simulation passed for 320×740, 360×800, 393×873, 432×915. Protocol regression tests and Android build passed. Physical Android / MG-30 test not claimed. `apksigner` unavailable; cryptographic signature verification not run.
 - Full logs / source file scope / checks are in `UI_POLISH_CHECKLIST.md`.
+
+## Current active workstream — separate Dark Performance 2.0 visual branch (1 November 2026)
+
+**Important branch switch:** For the new cross-tab UI polish work, the active branch is now `feature/dark-performance-ui-polish`. Do not continue the new visual work on `feature/preset-manager-redesign`.
+
+- New branch was created from the exact latest preserved `feature/preset-manager-redesign` HEAD `cd9fcf2daf09a143edcb895b8d11275d8f1aaaf3`, which carries Build #209 and the multi-effects Device icon. The prior branch remains untouched as the reference / recovery point.
+- Visual direction approved by user: **Dark Performance 2.0** — preserve the current near-black / charcoal background, graphite panels, subtle blue-grey borders, lime-green accents, outline icons, five-tab navigation and current MG-30 Studio identity; improve spacing, hierarchy, density, consistency and polish. It is refinement, not redesign.
+- Dedicated plan: `docs/research/DARK_PERFORMANCE_UI_POLISH_PLAN_2026-11-01.md` (commit `5d7834fe1f6bfbf985875015c662db9e6fd26dbd`).
+- User's screenshots are the primary visual reference. Planned visual-only areas: Editor; NAM & IR; Collection IR; Preset Manager; Studio; Device. Choose one isolated change at a time.
+- Hard boundaries: do not alter Editor behavior/startup; USB-MIDI/native Android connection; NAM/IR/Collection transfers; Preset Import/Export behavior/protocol; MIDI/SysEx mapping/packet behavior; Movable Signal Chain/drag-drop/order; Save, Copy Scene, CTRL/EXP; Studio/Device services, capture pipelines, shared state or app startup. Avoid global CSS/shared JS. Ask before touching a protected/shared area or if the change is not demonstrably presentational.
+- Preserve Build #209 multi-FX Device icon. No app code has been edited on the new branch yet.
+- Current HEAD contains only branch setup and documentation so far. `UI_POLISH_CHECKLIST.md` has the branch checkpoint. No build or CI was triggered.
+- Next: review the UI source/screenshot layout for the first smallest visual-only improvement, report the proposal, then wait for explicit approval before changing source.
+- Continue mandatory workflow: one small change → test/simulate exact source until passing → record all attempts and commit SHA in checklist → update resume → ask **“Build sekarang atau nanti?”**. Upon build approval, immediately verify run, download artifact, extract APK and deliver direct sandbox link.
