@@ -622,3 +622,20 @@ Browser simulation BEFORE building:
 - Only two app CSS files changed. main.js, index.html, preset-library-ui.js and mg30-preset-export.js unchanged.
 
 Build #207 auto-triggered AFTER successful simulation from commit b400d9ab25f663a97b2535867f6475680f2efbd4, run 41277953622. Protocol tests and Capacitor generation passed; Gradle build pending at record time. Use #207 artifact only after success.
+## Build #207 validated APK — Export label, Device header and tab fade corrected (1 Nov 2026)
+
+- Source commits: `www/preset-library-ui.css` `5dc81d61cf70b8484b9f285c0fbd857d6d8a3a7e`; `www/ui-redesign.css` `b400d9ab25f663a97b2535867f6475680f2efbd4`.
+- Build #207 / run `41277953622` completed successfully from source commit `b400d9ab25f663a97b2535867f6475680f2efbd4`. npm/protocol tests, Capacitor, Gradle, and upload succeeded.
+- Artifact ID `13071882537`, ZIP size 4,025,004 bytes. Extracted APK `/mnt/data/MG30_Studio_Build_207_Validated_UI.apk`, 4,402,812 bytes; SHA-256 `3833716ed0bbc7e0224ef7bd9afa6bf0005b1a389737fec8114ce9339391c810`.
+- ZIP integrity passed. `file` recognizes an Android package with APK Signing Block; apksigner unavailable, so no signature verification beyond archive/package recognition.
+
+Validated actual Build #207 package in Chromium using bundled HTML/CSS, inline page scripts and a 128-card DOM fixture matching the unchanged renderer:
+- Viewports 320x740, 360x800, 393x873, 432x915.
+- Export/Import each 60x38, action group width126, all header/action/root overflow measurements zero. Runtime long Export text remains in DOM but font-size0; CSS pseudo label is `Export`.
+- Card list clientHeight665px / scrollHeight8968px at 393x873; overflow auto; scrollTop350 succeeded.
+- Device hero exactly at section top80px and remains there after scrollTop260; top hit-test is hero, not USB card.
+- Fade bottom64px, height42px; nav top808.95px and fade bottom809px (0.05px alignment); no document horizontal overflow.
+- Verified screenshots under `/mnt/data/mg30-build207/verified-*.png`.
+- These are browser layout simulations, not a physical Android/USB pedal test.
+
+Only `www/preset-library-ui.css` and `www/ui-redesign.css` were modified. `index.html`, `main.js`, `preset-library-ui.js`, `mg30-preset-export.js` and all device/protocol function code are unchanged.
