@@ -1023,3 +1023,24 @@ This rule is mandatory for every future application/source change on this branch
 - No intentional changes to NAM import/transfer, Collection/User routing, IR packet generation, SysEx/ACK flow, preset data, USB-MIDI, or MIDI mappings.
 - Validation boundary: source files and branch refs were fetched and checked for the new heading, removal of the redundant card title, and translator load order. A JavaScript syntax check, protocol regression test, APK build, physical Android WebView test and MG-30 hardware test have NOT yet been run for this checkpoint.
 - Next step: validate the translation layer for syntax and runtime behaviour, refine any remaining Indonesian UI strings, then update the project notes. Do not start an APK build until the user explicitly asks for it.
+
+
+## English UI validation checkpoint — IR Collection naming (1 November 2026)
+
+- User requested removal of the duplicate “Collection IR” card title, renaming the main page heading to “IR Collection”, and converting the app interface to English.
+- Latest application source commit: `53003dbfdcaee07e060befc41e5e8e7c384b0f59` on `feature/dark-performance-ui-polish`.
+- `www/index.html` now displays the page heading **IR Collection**, loads `english-ui.js` as a module before the application modules, and no longer uses a classic script tag that Vite warned it could not bundle.
+- `www/ir-transfer.js` no longer renders the redundant “Collection IR” card subheading. The Collection title is represented by the main page heading; sync control and status remain in place.
+- `www/english-ui.js` contains the English UI translation layer for static and dynamic DOM text, common labels, status/error messages, ARIA/title/placeholder attributes, and native confirm/prompt/alert dialogs. Latest inspected dictionary: 769 exact entries and 113 phrase rules.
+- Data-preservation guardrails: preset names, hardware preset names, model labels, IR slot names, recording names, NAM profile names, TONE3000 model names, and device-returned name values are protected from translation. This is a display-only layer.
+- Source checks:
+  - JavaScript syntax: `node --check www/english-ui.js` passed.
+  - Text sweep: 238 static HTML text nodes checked; no Indonesian UI strings remained after translation. Dynamic text/HTML string scan across the nine inspected UI source modules also showed no remaining Indonesian UI text in the checked strings.
+  - Translation spot checks for Third Party/User labels, Collection sync counters, file-selection prompts and destructive-action wording passed.
+- GitHub Actions validation-only run **#218**, ID `41305767689`, completed **success**: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41305767689
+  - `npm test`: **9 passed, 0 failed**.
+  - `npm run build`: Vite web production build succeeded; 31 modules transformed. The earlier warning about `english-ui.js` not being bundleable disappeared after changing it to an ordered module script.
+  - This was a web asset build only. No Capacitor Android generation, Gradle, or APK build ran.
+- The one-off validation workflow trigger has been removed. `.github/workflows/build-apk.yml` is restored to its original blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled and `feature/dark-performance-ui-polish` is absent from automatic push filters. Restore commit: `714cc3d8c162c4328b61d0807822bf3f8e2c6da1`.
+- No changes were made to NAM transfer code, IR SysEx frame generation/ACK handling, Collection/User routing, TONE3000 transfer logic, preset import/export logic, USB-MIDI implementation, or MIDI mapping. The checked source hashes for `www/ir-transfer.js`, `www/nam-transfer.js`, `www/main.js`, `www/tone3000.js`, and `www/native-midi.js` remain unchanged from the preceding checkpoint.
+- Validation boundary: source/static tests and web build passed. The new English UI has not yet been installed for a physical Android WebView test; MG-30 hardware and IR/NAM transfer have not been tested as part of this language pass. Do not treat Build #216 as containing these English UI changes. APK has not been built; await explicit user approval before building.
