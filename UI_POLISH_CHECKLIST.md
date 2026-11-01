@@ -2316,3 +2316,16 @@ User request: replace only the irrelevant icon in the bottom **Device** tab. Do 
 ### Stop point
 - The icon-only source change and this documentation record are committed. Do not change any other icon, style or layout until the user reviews this result.
 - Ask exactly: **Build sekarang atau nanti?**
+
+## Build #208 — Device tab USB icon APK (1 November 2026)
+
+- User explicitly approved: **Build sekarang**.
+- Built source commit: `082c320e847b5cabdf50c7a4802e73cf14a08242` (icon-only `www/index.html` change). The two later commits only append this checkpoint to Markdown documentation; no application source changed after the tested/built commit.
+- GitHub Actions run: **#208**, run ID `41279514428`, workflow `Build MG30 Studio Android APK`, event `push`, branch `feature/preset-manager-redesign`, conclusion **success**.
+- Job `Build debug APK`: all steps successful, including dependency install, protocol regression tests, Capacitor Android generation / USB audio plugin install, Gradle debug APK build and artifact upload.
+- Artifact ID `13073015721`, name `MG30-Studio-debug-APK`, ZIP size 4,025,030 bytes, SHA-256 `3f3ebe6fb9a1204b26469001fb766b1c906abd4663f61bb3dee028617aaf32dc`.
+- Downloaded and extracted artifact; ZIP integrity test passed. APK copied to `/mnt/data/MG30_Studio_Build_208.apk`, size **4,402,840 bytes**, SHA-256 `a798ef248e14d1054afe6a7994c63a175b8e5f8a168add9327eb788f32625970`.
+- `file` identifies the output as an Android package with Gradle app metadata and APK Signing Block. `apksigner` is unavailable in this environment; cryptographic signature verification was **NOT RUN** and is not claimed.
+- UI/browser simulation for the USB glyph passed at 320×740, 360×800, 393×873 and 432×915 before build. Protocol regression tests and Android Gradle build passed in workflow #208.
+- No physical Android install test or MG-30 hardware/USB-MIDI test is claimed.
+- Build result: **PASS**. This is the new latest APK; do not substitute Build #207.
