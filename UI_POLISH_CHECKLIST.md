@@ -2872,3 +2872,59 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - No intended changes to `www/nam-transfer.js`, `www/native-midi.js`, `www/ir-transfer.js`, `www/main.js`, `www/mg30-preset-import.js` or `www/mg30-preset-export.js`; their source blobs remain unchanged from the pre-TONE workspace checkpoint. NAM/IR transfer protocols, Collection/User routing, USB-MIDI and MIDI mapping were not modified in this feature.
 - Workflow restored to manual-only: blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`, `workflow_dispatch` remains enabled, and `feature/dark-performance-ui-polish` is absent from push branch filters.
 - Validation boundary: GitHub workflow/tests and APK archive/package checks passed. Physical Android WebView testing of the TONE3000 OAuth callback, catalogue scrolling, persistence across a true app restart, and actual MG-30 NAM transfer have not yet been performed. User must install and verify on the phone/device.
+
+
+## TONE3000 mobile expanded catalogue — preserve target controls (1 November 2026)
+
+### Screenshot diagnosis and intended correction
+- The user supplied two screenshots from Build #221. The collapsed TONE3000 workspace shows the target-slot selector, Choose a Tone / Refresh Models actions, current status, and saved-tone summary in sequence.
+- When the model catalogue is expanded on mobile, the fixed #t3kModelList overlay began at top: max(190px, calc(env(safe-area-inset-top, 0px) + 180px)). In the supplied screenshot this placed the catalogue over the MG-30 Target Slot control and the nearby TONE3000 action/status area.
+- Keep the catalogue as a fixed, independently scrollable mobile overlay so the IR Collection grid does not resize, but move its top edge below the complete TONE3000 control cluster. The target slot and Choose/Refresh/status must remain visible while choosing a model.
+
+### Source change and correction history
+1. Initial position attempt:
+   - Commit: 69c9a9c057192551f939f7fd9b94886cdea81038.
+   - Changed only the mobile catalogue top offset from 190/180px to 214/204px.
+   - First layout check showed this cleared the target dropdown but still overlapped the Choose/Refresh buttons and status. This intermediate was not accepted as complete.
+2. Final correction:
+   - Commit: d16dd03e55ce5701409757232fae58cc6546319c.
+   - Changed the same single declaration to top: max(270px, calc(env(safe-area-inset-top, 0px) + 260px)).
+   - The final position starts below the target row, action row and status row. The existing fixed left/right bounds, bottom safe-area offset, z-index, background, card list and scroll behaviour are unchanged.
+- Final changed application file: www/ui-redesign.css only. The declaration remains inside @media(max-width:720px) and selector .t3k-catalogue.is-expanded #t3kModelList.
+- Git compare from pre-change HEAD a12ed9a8bc5690cd58ac56bd447d7c50cff96935 to final source commit d16dd03e55ce5701409757232fae58cc6546319c confirms exactly one application file changed, one insertion / one deletion. The net source change is one CSS value line.
+- Final CSS blob SHA: 0c87ffefbc31ab63039708261e40cf0af33ef7c4.
+
+### Targeted static and browser validation — exact final source
+- Exact source commit tested: d16dd03e55ce5701409757232fae58cc6546319c.
+- Static checks: final top declaration occurs exactly once; old 190/180px declaration is absent; fixed position, 12px side inset, safe-area bottom 76px, mobile media scope, and hidden-state rule are retained. PASS.
+- Chromium + Playwright page.set_content simulation used a representative NAM/TONE3000 panel, target row, action row, status strip, saved-tone summary, expanded overlay header and two model cards. It checked actual computed bounding rectangles, fixed positioning, scroll overflow and bottom-navigation clearance.
+- Mobile viewports all passed:
+  - 320×640: target bottom 208px; action bottom 241px; status bottom 264px; overlay top 270px; overlay bottom 564px; bottom navigation top 586px. List content 378px / viewport 292px; internal scrolling remains available.
+  - 360×740: target/action/status all clear of overlay; overlay bottom 664px; navigation top 686px.
+  - 393×873: target/action/status all clear; overlay bottom 797px; navigation top 819px.
+  - 432×915: target/action/status all clear; overlay bottom 839px; navigation top 861px.
+- Desktop 768×1024: mobile fixed-overlay rule does not apply; existing normal inline catalogue positioning remains. PASS.
+- Final result: controls remain above the expanded list, list is scrollable on constrained mobile heights, and list stays above the fixed bottom navigation. PASS.
+
+### Failed test attempts and corrections (preserved)
+- Initial Chromium CLI --dump-dom attempt timed out in the container; switched to Playwright.
+- Playwright navigation to local file:// was blocked by the environment (ERR_BLOCKED_BY_ADMINISTRATOR); switched to page.set_content with the local HTML fixture.
+- First fixture run failed because the fixture counted the app-header offset twice and omitted the .t3k-model-list class. Corrected the fixture coordinates to the screenshot's viewport positions and restored the real list class; reran all five viewports successfully. This was a test-fixture correction, not an application-source defect.
+
+### Protected files / areas verified unchanged
+- www/tone3000.js SHA 13632a59bb4d5b66f41df13e2972a15a4ec0b029.
+- www/nam-transfer.js SHA e854d2a7a122272b8971a3023f4e1d5e81b48cc4.
+- www/ir-transfer.js SHA 9f156dade93385d8b4b2c6fc338c1a1ac085a610.
+- www/main.js SHA e2697b26e1d673be2002b8f1a085f12e9618b1de.
+- www/native-midi.js SHA a912c6e7379e193877122c9010b38bdbc0daae64.
+- No changes to NAM download/import, A2-Lite transfer plan/sender, IR User/Third Party or Collection transfer, USB-MIDI/native Android connection, MIDI mappings, preset Import/Export, Editor/startup, Studio/Device behaviour, model catalogue persistence, or TONE3000 API/authentication logic.
+
+### Not run / build gate
+- npm test, Vite production build, Android/Gradle build and APK packaging were not run in this stage.
+- Workflow remains manual-only: workflow_dispatch is present and feature/dark-performance-ui-polish is absent from the automatic push branch filter.
+- No physical Android WebView screenshot or TONE3000 account/device test is claimed. The browser simulation is layout validation only.
+- No new APK exists for this CSS change. Build #221 remains the last successful APK and does not contain this refinement.
+
+### Current stop point
+- Source correction and this project record are committed. Do not run Actions / CI / Gradle / APK until the user explicitly chooses Build sekarang.
+- Ask exactly: Build sekarang atau nanti?
