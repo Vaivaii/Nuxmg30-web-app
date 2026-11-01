@@ -205,12 +205,6 @@ function initUI(){
    const collectionPageObserver=new MutationObserver(()=>{
     if(page.classList.contains('hidden'))clearCollectionViewport();
     else resizeCollectionViewport();
-   });
-   collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
-  }
-  window.addEventListener('resize',resizeCollectionViewport,{passive:true});
-  window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
-  resizeCollectionViewport();
   });
   collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
  }
