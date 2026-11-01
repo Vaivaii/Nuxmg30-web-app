@@ -2955,3 +2955,12 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Build #223 is a successful debug APK and the CSS bundle was checked. No physical Android installation/WebView screenshot, real app-restart persistence check, or live MG-30 hardware test has been performed in this session.
 - Install Build #223 on the phone and verify the expanded TONE3000 catalogue keeps the target-slot dropdown, Choose/Refresh buttons and status visible. Continue to protect working NAM and IR/MIDI paths during subsequent protocol work.
 - The workflow now automatically runs on this branch when the existing watched paths (including `.github/workflows/build-apk.yml`) change; `workflow_dispatch` remains available.
+
+
+### Install compatibility warning — debug signing identity differs from Build #221
+- Compared the APK signing certificates extracted from the v2 APK Signing Block, not just the filenames or archive metadata.
+- Build #221 certificate SHA-256: `6237669d1b68b5aec0ad557f0753a254e2f5db04997ea08644a7eddabd37e151`.
+- Build #223 certificate SHA-256: `bc0908b8ae405d55a0e3524b99507a0a741651cac7abcadd3548d86b1c63e8d3`.
+- The certificates are different. Both APKs identify as Android Debug certificates, but Android will reject installing #223 as an in-place update over #221 because the signing identity does not match.
+- `scripts/init-android.mjs` creates/syncs the Android project and copies native plugins; it does not copy or configure a persistent signing keystore. The workflow uses Gradle `assembleDebug` on a fresh `ubuntu-latest` runner, which generates a runner-local debug key. The #221 private key was not present in the APK artifact and is not available from the current repository state, so #223 cannot be re-signed as #221 using the available material.
+- Do not tell the user to uninstall #221 without warning: uninstalling may delete local application data. User should back up/export any important app data first. Safer immediate testing options are a separate Android device or a future preview build using a distinct application ID. A future stable update channel requires a persistent signing key to be managed securely; that will still not retroactively match #221 unless its original private key is recovered.
