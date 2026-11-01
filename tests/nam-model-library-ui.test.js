@@ -247,3 +247,13 @@ test('IR page observer does not move the NAM library into the collapsible NAM im
   assert.doesNotMatch(moduleSource, /observe\(page\s*,\s*\{\s*childList\s*:\s*true\s*,\s*subtree\s*:\s*true/);
   assert.match(moduleSource, /node\.textContent\s*!==\s*value/);
 });
+
+test('NAM library presentation uses compact Hide label and explicit dark/lime model actions', () => {
+  const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
+  assert.match(moduleSource, /expanded \? 'Hide' : 'Show⌄'/);
+  assert.match(css, /#namModelLibrary \.nam-model-library-toggle[\s\S]*?width: 84px !important/);
+  assert.match(css, /#namModelLibrary \.t3k-actions \{[\s\S]*?display: grid !important/);
+  assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-send\][\s\S]*?background: #c5f36b !important/);
+  assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-save\][\s\S]*?grid-column: 1 \/ -1/);
+  assert.match(css, /#namModelLibrary \.t3k-actions \[data-t3k-select\]:disabled[\s\S]*?background: #1a2225 !important/);
+});
