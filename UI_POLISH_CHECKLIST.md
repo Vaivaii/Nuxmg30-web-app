@@ -2688,3 +2688,17 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Manual build gate restored after the one-off trigger. Workflow blob returned to `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled and `feature/dark-performance-ui-polish` is absent from push branch filters. Restore commit: `5af1e9b80e4cfb454674051cf48360420208488b`.
 - Build #215 is the current APK containing the compact Collection controls. Build #214 is superseded for this UI change.
 - Validation boundary: workflow + source/package asset checks passed. APK has not been installed on the user's physical Android device, and the MG-30 hardware has not been tested as part of this build. No claim of physical WebView rendering or IR protocol operation is made.
+
+
+## Collection IR — sejajarkan Sinkronkan dan naikkan slot grid (1 November 2026)
+
+- Screenshot Build #215 menunjukkan tombol Sinkronkan masih berada satu baris di bawah judul Collection IR; pengguna meminta tombol tepat sejajar dengan judul dan kartu slot naik.
+- Source commit UI: `1a5959b08a31fe35b79c4808f0f665068eae1c87` pada `feature/dark-performance-ui-polish`.
+- Perubahan hanya menyentuh `www/ir-transfer.js` dan `www/ui-redesign.css`:
+  - Memindahkan indikator “Belum sinkron” ke bawah judul Collection IR dalam satu blok judul.
+  - Memindahkan tombol Sinkronkan ke sisi kanan dalam header Collection yang sama.
+  - Menghapus toolbar terpisah; grid 24 slot menjadi baris konten utama tepat di bawah header.
+  - Status proses/error tetap dipertahankan sebagai live region tersembunyi ketika kosong.
+- Jalur impor Collection, status sinkronisasi, 75-frame transfer/SysEx, ACK, User/Third Party, NAM, TONE3000, preset dan pemetaan MIDI tidak sengaja diubah.
+- Pengguna secara eksplisit meminta “langsung build”; build APK akan dijalankan dari source commit ini.
+- Belum ada uji fisik Android/WebView atau MG-30 untuk perubahan UI ini. Hasil build dan package asset check akan dicatat terpisah setelah workflow selesai.
