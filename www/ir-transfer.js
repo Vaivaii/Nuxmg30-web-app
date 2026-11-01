@@ -120,6 +120,7 @@ function initUI(){
  '</section>'+
  '<input class="hidden" type="file" id="irManagerFileInput" accept=".wav,audio/wav,audio/x-wav">';
  root.appendChild(ui);
+ const fileInput=$('irManagerFileInput'),userButton=$('irManagerUserImport'),grid=$('irManagerCollectionGrid');
  // Isolate the Collection IR workspace between the shared app header and bottom navigation.
  // Only the 24-slot grid scrolls; the tab page and the other tabs never join that scroll.
  const page=$('page-nam'),topBar=document.querySelector('.top'),nav=document.querySelector('.nav');
@@ -153,7 +154,6 @@ function initUI(){
  window.addEventListener('resize',resizeCollectionViewport,{passive:true});
  window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
  resizeCollectionViewport();
- const fileInput=$('irManagerFileInput'),userButton=$('irManagerUserImport'),grid=$('irManagerCollectionGrid');
  const userStatus=$('irManagerUserStatus'),collectionStatus=$('irManagerCollectionStatus'),countLabel=$('irManagerCollectionCount'),toggle=$('irManagerToggleSlots'),syncButton=$('irManagerSyncCollection');
  let pendingTarget=null,busy=false,syncBusy=false,slotCache=new Map(),deviceSlots=new Map(),lastUserName='';
  let lastSyncAt=0;
