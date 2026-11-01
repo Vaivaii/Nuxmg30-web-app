@@ -4,34 +4,39 @@
   'use strict';
 
   const $ = id => document.getElementById(id);
+  let localExpanded = false;
 
   function initNamModelLibrary() {
     const page = $('page-nam');
     const toolsFrame = page?.querySelector(':scope > .nam-ir-tools-frame');
     const irContent = $('ir-import-content');
-    const tonePane = $('namIrTonePane');
-    if (!page || !toolsFrame || !irContent || !tonePane) return false;
+    if (!page || !toolsFrame || !irContent) return false;
     if ($('namModelLibrary')) return true;
 
     const panel = document.createElement('section');
     panel.id = 'namModelLibrary';
     panel.className = 'nam-model-library-panel';
-    panel.hidden = true;
+    panel.hidden = false;
     panel.innerHTML = `
       <header class="nam-model-library-head">
         <span class="nam-model-library-heading">
           <strong>Downloaded / Available NAM</strong>
-          <small id="namModelLibraryMeta">Belum ada model yang dimuat</small>
+          <small id="namModelLibraryMeta">Pilih tone untuk memuat model</small>
         </span>
         <button id="namModelLibraryToggle" class="nam-model-library-toggle" type="button"
           aria-expanded="false" aria-controls="namModelLibraryContent">Show⌄</button>
       </header>
-      <div id="namModelLibraryContent" class="nam-model-library-content" hidden></div>
+      <div id="namModelLibraryContent" class="nam-model-library-content" hidden>
+        <div id="namModelLibraryEmpty" class="nam-model-library-empty">
+          Pilih tone dari TONE3000 untuk menampilkan model NAM di sini.
+        </div>
+      </div>
     `;
 
-    // Keep the library in normal page flow between the TONE3000 controls and Collection.
+    // Normal page-flow order: controls -> model library -> IR Collection.
     page.insertBefore(panel, irContent);
     const content = $('namModelLibraryContent');
+    const empty = $('namModelLibraryEmpty');
     const headerToggle = $('namModelLibraryToggle');
 
     let observedCatalogue = null;
@@ -42,26 +47,33 @@
       if (catalogue && !content.contains(catalogue)) {
         content.appendChild(catalogue);
       }
-      if (!catalogue) {
-        panel.hidden = true;
-        return;
-      }
 
       const stateButton = $('t3kCatalogueToggle');
-      const expanded = stateButton?.getAttribute('aria-expanded') === 'true';
+      const list = $('t3kModelList');
+      const catalogueReady = Boolean(catalogue && !catalogue.hidden && list);
       const countText = $('t3kCatalogueCount')?.textContent?.trim() || '0 MODELS';
       const count = countText.replace(/\s+MODELS?$/i, '').trim() || '0';
-      const toneName = $('t3kCatalogueTitle')?.textContent?.trim() || 'TONE3000';
+      const toneName = $('t3kCatalogueTitle')?.textContent?.trim() || '';
       const meta = $('namModelLibraryMeta');
 
-      panel.hidden = Boolean(catalogue.hidden);
+      // The library header itself must never inherit the catalogue's hidden state.
+      panel.hidden = false;
+      if (meta) {
+        meta.textContent = catalogueReady
+          ? count + ' model' + (count === '1' ? '' : 's') + ' · ' + (toneName || 'TONE3000')
+          : 'Pilih tone untuk memuat model';
+      }
+
+      const expanded = catalogueReady
+        ? (stateButton?.getAttribute('aria-expanded') === 'true')
+        : localExpanded;
       panel.classList.toggle('is-expanded', expanded);
       headerToggle.setAttribute('aria-expanded', String(expanded));
       headerToggle.textContent = expanded ? 'Hide⌃' : 'Show⌄';
       content.hidden = !expanded;
-      if (meta) meta.textContent = count + ' model' + (count === '1' ? '' : 's') + ' · ' + toneName;
+      empty.hidden = catalogueReady;
 
-      if (catalogue !== observedCatalogue) {
+      if (catalogue && catalogue !== observedCatalogue) {
         catalogueObserver?.disconnect();
         observedCatalogue = catalogue;
         catalogueObserver = new MutationObserver(syncPanel);
@@ -76,26 +88,27 @@
     }
 
     headerToggle.addEventListener('click', () => {
+      const catalogue = $('t3kToneDetails');
       const stateButton = $('t3kCatalogueToggle');
-      if (!stateButton) return;
-      // Delegate to TONE3000's original state handler so localStorage and catalogue
-      // selection persistence continue to behave exactly as before.
-      stateButton.click();
+      if (catalogue && !catalogue.hidden && stateButton) {
+        // Preserve TONE3000's original state handler and localStorage persistence.
+        stateButton.click();
+      } else {
+        localExpanded = !localExpanded;
+      }
       syncPanel();
     });
 
-    // TONE3000 mounts its panel before this module normally runs. Keep a narrow observer
-    // for delayed/recreated catalogues without observing unrelated IR slot updates.
+    // Watch the NAM page because TONE3000 can mount/recreate its catalogue after this panel.
     const mountObserver = new MutationObserver(syncPanel);
-    mountObserver.observe(tonePane, { childList: true, subtree: true });
+    mountObserver.observe(page, { childList: true, subtree: true });
     syncPanel();
     return true;
   }
 
   function boot() {
     if (initNamModelLibrary()) return;
-    // ir-transfer.js creates the tools frame at runtime. Observe only until it exists,
-    // then disconnect so normal preset/IR collection updates are not watched here.
+    // ir-transfer.js creates the tools frame at runtime; wait until it exists.
     const observer = new MutationObserver(() => {
       if (initNamModelLibrary()) observer.disconnect();
     });
