@@ -603,3 +603,22 @@ Fixes:
 Only two app CSS files changed. `main.js`, `index.html`, and `mg30-preset-export.js` unchanged. No MIDI, SysEx, USB, Import/Export, Editor, Signal Chain, NAM/IR function code touched.
 
 Automatic builds: #205 run 41274647488 includes intermediate button sizing only. #206 run 41274669130 is the authoritative build with both fixes; latest source commit 4905efbafce0b6babe820464e8d42c77f9d33371. At note time both in progress; wait/check #206 artifact only.
+## Post-Build #206 correction — tested in browser before Build #207 (1 Nov 2026)
+
+Screenshot defects: Export showed the full dynamic status string clipped; non-Preset fade did not reach the nav; Device sticky heading had a gap/sliver caused by page padding and negative sticky hero margin.
+
+CSS fixes:
+- `www/preset-library-ui.css` commit `5dc81d61cf70b8484b9f285c0fbd857d6d8a3a7e`: visually suppress the long runtime Export button text using font-size:0 and transparent color while retaining JS text/handler/aria. Existing ::after pseudo-label `Export` remains visible. Button grid remains 60px per control.
+- `www/ui-redesign.css` commit `b400d9ab25f663a97b2535867f6475680f2efbd4`: Device scrollport padding-top 0; sticky hero margin top 0 and z-index100, solid background, aligned to section top. Non-Preset fades fixed at bottom64px/height42px, exactly where 64px bottom nav begins; Presets excluded.
+
+Browser simulation BEFORE building:
+- Basis: extracted Build #206 APK HTML and CSS; inline scripts preserved; 128 preset cards injected with the exact DOM structure used by preset-library-ui.js for layout testing. This is visual/layout simulation, not external JS protocol test or physical USB pedal test.
+- Viewports 320x740, 360x800, 393x873, 432x915.
+- Both buttons: 60x38px, actions 126px; header and actions overflow 0 and root horizontal overflow 0. Dynamic button DOM text remains; CSS hides it visually and pseudo content returns `Export`.
+- Preset list overflow-y:auto; at 393x873 clientHeight 665px and scrollHeight 8968px; scrollTop=350 worked.
+- Device: hero top=section top=80px; after Device scrollTop=260 hero stays fixed at 80px and top-edge hit-test belongs to hero, not card.
+- Fade: nav top=808.95px, fade bottom=809px, 0.05px difference; no root horizontal overflow.
+- Screenshots stored `/mnt/data/mg30-sim/validated-*.png`.
+- Only two app CSS files changed. main.js, index.html, preset-library-ui.js and mg30-preset-export.js unchanged.
+
+Build #207 auto-triggered AFTER successful simulation from commit b400d9ab25f663a97b2535867f6475680f2efbd4, run 41277953622. Protocol tests and Capacitor generation passed; Gradle build pending at record time. Use #207 artifact only after success.
