@@ -2773,3 +2773,21 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Protocol safety: IR transfer source, NAM transfer source, USB-MIDI source and MIDI mappings were not changed in this language pass. Do not alter them as part of UI language polish without explicit user approval.
 - Workflow remains manual-only for APK builds: `workflow_dispatch` is present; the feature branch is absent from automatic push filters. No APK was built in run #218. Wait for explicit user instruction before building an APK.
 - Remaining validation: install the eventual APK on Android, inspect the full English UI in WebView, and test MG-30 connection/IR/NAM workflows on physical hardware. These have not yet been claimed as tested.
+
+
+## Android APK Build #219 — English UI (1 November 2026)
+
+- User explicitly requested: “Buat sekarang” for the English-language UI revision.
+- Application source built: branch checkpoint `7815614612242a74341808357b72b27df8cebfe8`. Trigger commit `2a1df648a4f3310ff9182a4eab2b1fdedf05e407` changed only the workflow push filter to initiate this one-off build. App source blobs match the previously validated English UI checkpoint.
+- GitHub Actions **Build #219**, run ID `41307338405`, completed **success**: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41307338405
+- All workflow steps succeeded: checkout, Node.js 22, Java 21, dependency install, protocol regression tests, Capacitor Android project generation + USB audio plugin, Gradle `assembleDebug`, APK artifact upload.
+- Artifact `MG30-Studio-debug-APK`, ID `13083991458`, ZIP size 4,056,664 bytes, ZIP SHA-256 `22ac940f93540706bb1010a5e644dc3fac0a68fa6516a83565165dea637886a7`; artifact expiry 15 November 2026 12:38:48 UTC.
+- Downloaded ZIP: `/mnt/data/MG30-Studio-English-UI-Build-219.zip`; `unzip -t` passed. Extracted APK: `/mnt/data/MG30_Studio_English_UI_Build_219.apk`, size 4,434,640 bytes, SHA-256 `b0e67ec05b70191912d0989c849db47d6afb0d58260145befe4fe279db9b9b2c`; `file` identifies it as an Android package with Gradle metadata and APK Signing Block; APK `unzip -t` passed. `apksigner` was not installed, so cryptographic signature verification was not performed.
+- Package checks passed:
+  - Includes AndroidManifest.xml, classes.dex, `assets/public/index.html`, bundled Vite JS and CSS.
+  - Bundled JS includes `IR Collection`, `MG30EnglishUI`, `Use in User`, `Third Party / User`, `No device data`, `Connect the MG-30`, and `Import WAV` English UI strings.
+  - The Indonesian strings found in static scanning occur as translation dictionary keys/source phrases, not as unprocessed visible labels; source validation #218 recorded zero remaining Indonesian static UI text and English checks.
+  - User/device-defined names remain protected from translation.
+- Workflow trigger restored after one-off build. Restore commit: `7ea441b73298571ae3e39e832d0b2d843934dfff`; workflow blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled and `feature/dark-performance-ui-polish` is absent from automatic push filters.
+- Current APK for English UI is Build #219. Previous Build #216 is superseded for this language change.
+- Validation boundary: successful workflow and package/archive checks only. APK has not yet been installed on the user's physical Android device. No physical MG-30 USB-MIDI, IR Collection, Third Party/User transfer, or NAM transfer testing has been claimed.
