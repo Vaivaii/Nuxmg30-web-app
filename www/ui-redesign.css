@@ -1583,8 +1583,8 @@ html,body{background:#0b1012}
   }
 
   body.ir-collection-manager-active #page-nam .nam-ir-tool-pane:not([hidden]) {
-    max-height: min(150px, 23dvh);
-    margin-top: 5px;
+    max-height: min(128px, 18dvh);
+    margin-top: 4px;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -1977,19 +1977,74 @@ html,body{background:#0b1012}
 .t3k-list-toolbar small { color: var(--muted,#a6b1b4); font-size: 9px; }
 .t3k-list-toolbar button { flex: 0 0 auto; min-height: 30px; padding: 5px 12px; }
 @media(max-width:720px) {
-  .t3k-catalogue.is-expanded #t3kModelList {
+  /* Treat the expanded catalogue as one overlay card. Do not leave its old
+     in-flow wrapper behind the fixed model list (that produced a doubled frame). */
+  body.ir-collection-manager-active #page-nam .t3k-catalogue.is-expanded {
     position: fixed;
     z-index: 85;
     top: max(270px, calc(env(safe-area-inset-top, 0px) + 260px));
     right: 12px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
     left: 12px;
-    max-height: none;
-    padding: 10px;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
     border: 1px solid #35443e;
     border-radius: 16px;
     background: #101718;
     box-shadow: 0 18px 55px rgba(0,0,0,.72);
+    box-sizing: border-box;
   }
-  .t3k-catalogue.is-expanded #t3kModelList[hidden] { display:none !important; }
+
+  /* The expanded panel gets one title bar (Available Models / Hide).
+     Hide the collapsed saved-tone trigger while the overlay is open. */
+  body.ir-collection-manager-active #page-nam .t3k-catalogue.is-expanded #t3kCatalogueToggle {
+    display: none !important;
+  }
+
+  /* The list is now an internal scroller inside the single outer panel. */
+  body.ir-collection-manager-active #page-nam .t3k-catalogue.is-expanded #t3kModelList {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    scrollbar-gutter: stable;
+    box-sizing: border-box;
+  }
+
+  body.ir-collection-manager-active #page-nam .t3k-catalogue.is-expanded #t3kModelList[hidden] {
+    display: none !important;
+  }
+
+  /* Keep the toolbar flush with the panel edges and visually joined to its body. */
+  body.ir-collection-manager-active #page-nam .t3k-catalogue.is-expanded .t3k-list-toolbar {
+    top: -10px;
+    margin: -10px -10px 0;
+    padding: 10px 13px;
+    border: 0;
+    border-bottom: 1px solid #2b3735;
+    border-radius: 0;
+    background: #101718;
+  }
 }
