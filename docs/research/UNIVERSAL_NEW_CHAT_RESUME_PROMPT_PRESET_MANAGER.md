@@ -1094,3 +1094,24 @@ This rule is mandatory for every future application/source change on this branch
 - User explicitly requested immediate APK build after this correction; proceed to Build #220.
 - No intended changes to NAM/IR transfer protocol, Collection/User routing, USB-MIDI, preset data, or MIDI mappings.
 - Physical Android WebView and MG-30 hardware validation remain pending until the user installs/tests the APK.
+
+
+## Android APK Build #220 — final English UI corrections + Gen 2 firmware reference (1 November 2026)
+
+- User sent screenshots of Build #219 and requested that remaining Indonesian labels be translated, the Device “Important” message be in English, the protocol firmware reference be updated to the latest original Gen 2 firmware, and an immediate APK build.
+- Source commit: `fed9023cf1c6fa69387cd5944ae514269998b6cc`; changed file: `www/index.html`.
+- UI corrections:
+  - Preset header disconnected fallback: `Connect to read preset`.
+  - Connected/no-readback fallback: `Preset name not read yet`.
+  - NAM slot disclosure pseudo-elements: `Show` / `Hide`.
+  - Important warning translated to English and firmware version reference corrected to latest original MG-30 Gen 2 firmware `6.0.x`, explicitly excluding MKII and clearly noting reverse-engineered / unofficial protocol status.
+  - Removed outdated `5.0.2` firmware wording.
+- Source assertions and package checks passed for all above strings; old Indonesian `Tampilkan` / `Sembunyikan` and old firmware `5.0.2` strings are absent from the corresponding packaged UI.
+- GitHub Actions **Build #220**, run ID `41308495904`: completed **success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41308495904
+  - All workflow steps succeeded: checkout, Node/Java setup, dependency install, `npm test`, Capacitor Android generation + USB audio plugin, Gradle `assembleDebug`, artifact upload.
+- APK artifact ID `13084143256`, size 4,056,744 bytes; ZIP SHA-256 `0d17c7e0ed2e062c49fbf574ae67465e0500fc1c70e7dd67b17b7c32d5784385`; expiry 15 November 2026 12:53:39 UTC.
+- Downloaded ZIP: `/mnt/data/MG30-Studio-English-Gen2-6.0x-Build-220.zip`; ZIP integrity passed.
+- Extracted APK: `/mnt/data/MG30_Studio_English_Gen2_6.0x_Build_220.apk`; 4,434,700 bytes; SHA-256 `8527c47a7970d2f182a6912f1840b01a93dd2467bf9a6e3d5ff2efbb473d462b`; APK archive integrity passed and `file` recognizes it as Android APK with Gradle metadata and APK Signing Block. Cryptographic signature verification with apksigner was not performed.
+- Packaged checks passed: AndroidManifest + DEX present; Important warning in English; text says latest original Gen 2 firmware 6.0.x and “not the MKII”; old firmware 5.0.2 absent; preset initial/dynamic fallbacks English; Show/Hide English and Indonesian labels absent; translator JS bundled; IR Collection and Native NAM Profile retained.
+- Manual-only build gate restored after one-off trigger. Restore commit: `f8258defad55e422fb9245028b6c38625e0b7f00`; workflow blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` enabled; feature branch absent from automatic push filters.
+- No changes to IR/NAM protocol code, Collection/User routing, USB-MIDI handling, TONE3000 transfer logic, preset data, or MIDI mapping. Physical Android WebView and MG-30 hardware testing still remain with the user after install.
