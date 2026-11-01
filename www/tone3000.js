@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { normalizeToneCatalogue, parseToneCatalogue, readToneCatalogue, writeToneCatalogue, selectToneModel } from './tone3000-workspace.js';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
 import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer, safeMG30SlotLabel, readMG30NAMSlotNames } from './nam-transfer.js';
@@ -10,7 +11,6 @@ const Native = () => Capacitor.isNativePlatform();
 const $ = id => document.getElementById(id);
 let panelReady = false;
 let selectedTone = null;
-const modelBytesCache = new WeakMap();
 window.NUXNAMTransfer = Object.freeze({ readMG30NAMSlotNames });
 
 const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -82,10 +82,18 @@ function createPanel() {
         </select>
       </div>
       <div class="t3k-actions">
-        <button id="t3kChooseTone" class="primary" type="button">Pilih tone dari TONE3000</button>
+        <button id="t3kChooseTone" class="primary" type="button">Choose a Tone from TONE3000</button>
+        <button id="t3kRefreshModels" type="button" disabled>Refresh Models</button>
       </div>
-      <div class="t3k-status" id="t3kStatus" role="status" aria-live="polite">Siap. Pengaturan API tersedia di tab Device → Pengaturan TONE3000.</div>
-      <div id="t3kToneDetails" class="t3k-tone"></div>
+      <div class="t3k-status" id="t3kStatus" role="status" aria-live="polite">Ready. Configure your TONE3000 API key in Device → TONE3000 Settings.</div>
+      <section id="t3kToneDetails" class="t3k-catalogue" hidden>
+        <button id="t3kCatalogueToggle" class="t3k-catalogue-toggle" type="button" aria-expanded="false">
+          <span class="t3k-catalogue-title"><strong id="t3kCatalogueTitle">Saved Tone</strong><small id="t3kCatalogueMeta"></small></span>
+          <span class="t3k-catalogue-count" id="t3kCatalogueCount">0 MODELS</span>
+          <span class="t3k-catalogue-chevron" id="t3kCatalogueChevron" aria-hidden="true">⌄</span>
+        </button>
+        <div id="t3kModelList" class="t3k-model-list" hidden></div>
+      </section>
       <p class="t3k-warning">Mengimpor NAM akan menimpa slot tujuan. Pastikan model yang ada sudah dicadangkan sebelum melanjutkan.</p>
     `;
     localPanel.insertAdjacentElement('afterend', panel);
@@ -150,6 +158,14 @@ function createPanel() {
     setStatus('Publishable key disimpan. Kembali ke tab NAM untuk memilih tone.');
   });
   $('t3kChooseTone').addEventListener('click', startSelectFlow);
+  $('t3kRefreshModels').addEventListener('click', () => {
+    const toneId = selectedTone?.id || localStorage.getItem(PREFIX + 'selected_tone_id');
+    if (toneId) void loadSelectedTone(toneId, { expand: true });
+  });
+  $('t3kCatalogueToggle').addEventListener('click', () => {
+    const expanded = $('t3kCatalogueToggle').getAttribute('aria-expanded') === 'true';
+    setCatalogueExpanded(!expanded);
+  });
   $('t3kSignOut').addEventListener('click', signOut);
   updateAccountStatus();
   return true;
@@ -197,20 +213,8 @@ async function startSelectFlow() {
     return;
   }
   const targetSlot = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
-  if (Native() && (!Number.isInteger(targetSlot) || targetSlot < 1 || targetSlot > 10)) {
-    setStatus('Pilih slot tujuan 1–10 terlebih dahulu.');
-    $('t3kTargetSlot')?.focus();
-    return;
-  }
   if (Number.isInteger(targetSlot) && targetSlot >= 1 && targetSlot <= 10) {
     localStorage.setItem(PREFIX + 'target_slot', String(targetSlot));
-  }
-  if (Native() && !window.confirm(
-    'Setelah memilih tone di TONE3000, aplikasi akan mengunduh model A2-Lite yang cocok dan langsung mengimpornya ke MG-30 slot ' +
-    targetSlot + '. Slot ini akan ditimpa. Lanjutkan?'
-  )) {
-    setStatus('Pemilihan tone dibatalkan. Tidak ada model yang ditulis ke perangkat.');
-    return;
   }
   try {
     $('t3kChooseTone').disabled = true;
@@ -235,7 +239,7 @@ async function startSelectFlow() {
       architecture: '2',
       gears: 'amp-cab',
       menubar: 'true',
-      locale: 'id',
+      locale: 'en',
     });
     const url = 'https://www.tone3000.com/api/v1/oauth/authorize?' + params.toString();
     setStatus('Membuka TONE3000 dengan redirect URI ' + redirectUri + '. Setelah memilih tone, aplikasi akan kembali dan mengimpor model cocok ke slot ' + (targetSlot || 'yang dipilih') + '. Pastikan URI ini terdaftar pada API key.');
@@ -278,12 +282,10 @@ function storeTokens(body) {
 }
 
 function signOut() {
-  for (const key of ['access_token', 'refresh_token', 'expires_at', 'selected_tone_id', 'code_verifier', 'state', 'redirect_uri']) {
+  for (const key of ['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri']) {
     localStorage.removeItem(PREFIX + key);
   }
-  selectedTone = null;
-  if ($('t3kToneDetails')) $('t3kToneDetails').innerHTML = '';
-  setStatus('Akun TONE3000 diputuskan dari aplikasi ini. Publishable key tetap tersimpan.');
+  setStatus('TONE3000 account disconnected. Your saved tone and model list remain on this device.');
 }
 
 async function ensureAccessToken() {
@@ -319,81 +321,185 @@ async function apiJSON(path) {
   return body;
 }
 
+function extractToneModels(body) {
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body?.models)) return body.models;
+  if (Array.isArray(body?.items)) return body.items;
+  if (Array.isArray(body?.data?.items)) return body.data.items;
+  return [];
+}
+
+async function fetchAllToneModels(toneId) {
+  const pageSize = 50, collected = [];
+  for (let page = 1; page <= 20; page++) {
+    const response = await apiJSON('/models?tone_id=' + encodeURIComponent(toneId) +
+      '&architecture=2&page=' + page + '&page_size=' + pageSize);
+    const rows = extractToneModels(response);
+    collected.push(...rows);
+    const totalPages = Number(response?.meta?.total_pages || response?.pagination?.total_pages ||
+      response?.data?.meta?.total_pages || 0);
+    if (rows.length < pageSize || (totalPages > 0 && page >= totalPages)) break;
+  }
+  const seen = new Set();
+  return collected.filter(model => {
+    if (!model || typeof model !== 'object' || !(model.model_url || model.modelUrl)) return false;
+    const key = String(model.id ?? model.model_id ?? model.uuid ?? model.model_url ?? model.modelUrl);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function saveWorkspaceSnapshot(snapshot) {
+  if (!snapshot) return false;
+  const selected = selectedModelId && snapshot.models.some(model => model.id === selectedModelId)
+    ? selectedModelId : (snapshot.selectedModelId || snapshot.models[0]?.id || '');
+  const next = { ...snapshot, selectedModelId: selected };
+  const saved = writeToneCatalogue(localStorage, next);
+  if (saved) {
+    localStorage.setItem(PREFIX + 'selected_tone_id', next.toneId);
+    if (selected) localStorage.setItem(PREFIX + 'selected_model_id', selected);
+  }
+  return saved;
+}
+
+function setCatalogueExpanded(expanded, persist = true) {
+  const root = $('t3kToneDetails'), toggle = $('t3kCatalogueToggle'), list = $('t3kModelList');
+  if (!root || !toggle || !list || root.hidden) return;
+  const open = Boolean(expanded);
+  toggle.setAttribute('aria-expanded', String(open));
+  list.hidden = !open;
+  if ($('t3kCatalogueChevron')) $('t3kCatalogueChevron').textContent = open ? '⌃' : '⌄';
+  if (persist) localStorage.setItem(PREFIX + 'catalogue_expanded', open ? '1' : '0');
+}
+
+function rememberSelectedModel(modelId) {
+  if (!selectedTone) return false;
+  const base = {
+    version: 1,
+    toneId: selectedTone.id,
+    tone: {
+      name: selectedTone.tone?.name || selectedTone.tone?.title || '',
+      creator: selectedTone.tone?.username || selectedTone.tone?.creator || '',
+      description: selectedTone.tone?.description || '',
+    },
+    models: selectedTone.models,
+    selectedModelId,
+    updatedAt: Date.now(),
+  };
+  const next = selectToneModel(base, String(modelId));
+  if (!next) return false;
+  selectedModelId = next.selectedModelId;
+  saveWorkspaceSnapshot(next);
+  renderToneCatalogue(next, { expand: true, persist: false });
+  return true;
+}
+
+function renderToneCatalogue(snapshot, options = {}) {
+  const root = $('t3kToneDetails'), list = $('t3kModelList');
+  const normalized = parseToneCatalogue(snapshot);
+  if (!root || !list || !normalized) return;
+  const previous = localStorage.getItem(PREFIX + 'selected_model_id') || normalized.selectedModelId;
+  selectedModelId = normalized.models.some(model => model.id === previous)
+    ? previous : (normalized.selectedModelId || normalized.models[0]?.id || '');
+  selectedTone = {
+    id: normalized.toneId,
+    tone: { name: normalized.tone.name, username: normalized.tone.creator, description: normalized.tone.description },
+    models: normalized.models,
+  };
+  root.hidden = false;
+  $('t3kCatalogueTitle').textContent = normalized.tone.name;
+  $('t3kCatalogueMeta').textContent = 'TONE3000 ID ' + normalized.toneId +
+    (normalized.tone.creator ? ' · Creator: ' + normalized.tone.creator : '');
+  $('t3kCatalogueCount').textContent = normalized.models.length + ' MODELS';
+  $('t3kRefreshModels').disabled = false;
+  if (!normalized.models.length) {
+    list.innerHTML = '<div class="t3k-card"><small>No downloadable models were returned for this tone.</small></div>';
+  } else {
+    list.innerHTML = normalized.models.map((model, index) => {
+      const selected = model.id === selectedModelId;
+      const size = typeof model.size === 'number' ? model.size + ' bytes' : (model.size || 'Size unavailable');
+      const architecture = model.architecture_version ?? model.architecture ?? 'A2';
+      return '<article class="t3k-card' + (selected ? ' is-selected' : '') + '" data-t3k-model-card="' + safe(model.id) + '">' +
+        '<div class="t3k-card-head"><div><strong>' + safe(model.name) + '</strong><small>' +
+        safe(architecture) + ' · ' + safe(size) + '</small></div>' +
+        (selected ? '<span class="t3k-mark">SELECTED</span>' : '') + '</div>' +
+        '<div class="t3k-actions">' +
+        '<button type="button" data-t3k-select="' + safe(model.id) + '"' +
+        (selected ? ' disabled' : '') + '>' + (selected ? 'Selected' : 'Select Model') + '</button>' +
+        '<button class="primary" type="button" data-t3k-send="' + index + '">Download &amp; Import</button>' +
+        '<button type="button" data-t3k-save="' + index + '">Download Only</button>' +
+        '</div></article>';
+    }).join('');
+  }
+  list.querySelectorAll('[data-t3k-select]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (rememberSelectedModel(button.dataset.t3kSelect)) setStatus('Selected model saved. Choose Download & Import when ready.');
+    });
+  });
+  list.querySelectorAll('[data-t3k-send]').forEach(button => {
+    button.addEventListener('click', () => {
+      const index = Number(button.dataset.t3kSend), model = selectedTone?.models?.[index];
+      if (model) rememberSelectedModel(model.id);
+      void sendModel(index, button);
+    });
+  });
+  list.querySelectorAll('[data-t3k-save]').forEach(button => {
+    button.addEventListener('click', () => {
+      const index = Number(button.dataset.t3kSave), model = selectedTone?.models?.[index];
+      if (model) rememberSelectedModel(model.id);
+      void saveModel(index, button);
+    });
+  });
+  const expanded = options.expand ?? localStorage.getItem(PREFIX + 'catalogue_expanded') === '1';
+  setCatalogueExpanded(expanded, options.persist !== false);
+  if (options.persist !== false) saveWorkspaceSnapshot({ ...normalized, selectedModelId });
+}
+
+function restoreCachedCatalogue() {
+  const cached = readToneCatalogue(localStorage);
+  if (!cached) return null;
+  const storedId = localStorage.getItem(PREFIX + 'selected_model_id');
+  const snapshot = storedId ? (selectToneModel(cached, storedId) || cached) : cached;
+  renderToneCatalogue(snapshot, {
+    expand: localStorage.getItem(PREFIX + 'catalogue_expanded') === '1',
+    persist: false,
+  });
+  return snapshot;
+}
+
 async function loadSelectedTone(toneId, options = {}) {
   const id = String(toneId || '').trim();
   if (!/^\d+$/.test(id)) return;
-  const holder = $('t3kToneDetails');
-  if (!holder) return;
-  holder.innerHTML = '';
-  setStatus('Memuat metadata tone dan daftar model A2…');
+  const cached = readToneCatalogue(localStorage);
+  const matchingCache = cached?.toneId === id ? cached : null;
+  if (matchingCache) renderToneCatalogue(matchingCache, { expand: options.expand ?? false, persist: false });
+  setStatus('Loading tone details and all available models…');
   try {
-    const [toneBody, modelBody] = await Promise.all([
+    const [toneBody, models] = await Promise.all([
       apiJSON('/tones/' + encodeURIComponent(id) + '?architecture=2'),
-      apiJSON('/models?tone_id=' + encodeURIComponent(id) + '&architecture=2&page=1&page_size=50'),
+      fetchAllToneModels(id),
     ]);
     const tone = toneBody?.data || toneBody?.tone || toneBody;
-    const allModels = Array.isArray(modelBody?.data) ? modelBody.data
-      : Array.isArray(modelBody?.models) ? modelBody.models
-      : Array.isArray(modelBody?.items) ? modelBody.items
-      : Array.isArray(modelBody?.data?.items) ? modelBody.data.items
-      : [];
-    const models = allModels.filter(item => item && (item.model_url || item.modelUrl));
-    models.forEach(model => { if (!model.model_url && model.modelUrl) model.model_url = model.modelUrl; });
-    selectedTone = { id, tone, models };
-    localStorage.setItem(PREFIX + 'selected_tone_id', id);
-    const title = tone?.name || tone?.title || ('TONE3000 tone #' + id);
-    const creator = tone?.username || tone?.creator?.username || tone?.user?.username || tone?.user?.name || '';
-    const description = tone?.description || '';
-    const header = document.createElement('div');
-    header.className = 't3k-card';
-    header.innerHTML = '<div class="t3k-card-head"><div><strong>' + safe(title) + '</strong><small>TONE3000 ID ' + safe(id) + (creator ? ' · Pembuat: ' + safe(creator) : '') + '</small></div><span class="t3k-mark">' + models.length + ' MODEL</span></div>' +
-      (description ? '<small>' + safe(description) + '</small>' : '');
-    holder.appendChild(header);
-
-    if (!models.length) {
-      holder.insertAdjacentHTML('beforeend', '<div class="t3k-card"><small>Tidak ada model yang dapat diunduh melalui respons API untuk tone ini. Coba pilih tone NAM A2 lainnya.</small></div>');
-      setStatus('Tone dimuat, tetapi API tidak mengembalikan file model A2 yang dapat diunduh.');
-      return;
-    }
-    models.forEach((model, index) => {
-      const card = document.createElement('div');
-      card.className = 't3k-card';
-      const size = typeof model.size === 'number' ? (model.size + ' bytes') : (model.size?.label || model.size?.name || model.size || 'Ukuran tidak tersedia');
-      const architecture = model.architecture_version ?? model.architecture ?? 'A2 (difilter API)';
-      const fileName = model.name || ('tone-' + id + '-model-' + (index + 1) + '.nam');
-      const slotOptions = '<option value="">Pilih slot tujuan</option>' +
-        Array.from({ length: 10 }, (_, slot) => '<option value="' + (slot + 1) + '">Slot ' + (slot + 1) + '</option>').join('');
-      card.innerHTML = '<div class="t3k-card-head"><div><strong>' + safe(fileName) + '</strong><small>Arsitektur: ' + safe(architecture) + ' · Ukuran: ' + safe(size) + '</small></div></div>' +
-        '<small>Setelah tone dipilih, aplikasi mencoba mengunduh model A2-Lite yang cocok untuk MG-30. Kamu juga bisa memakai tombol Kirim ke MG-30 untuk memilih model dan slot secara manual.</small>' +
-        '<div class="t3k-actions"><button class="primary" type="button" data-t3k-save="' + index + '">Simpan model di aplikasi</button></div>' +
-        '<div class="t3k-actions t3k-transfer-actions"><select data-t3k-slot="' + index + '" aria-label="Slot tujuan untuk ' + safe(fileName) + '">' + slotOptions + '</select>' +
-        '<button type="button" data-t3k-send="' + index + '"' + (Native() ? '' : ' disabled title="Transfer langsung tersedia di aplikasi Android"') + '>Kirim ke MG-30</button></div>';
-      holder.appendChild(card);
-    });
-    const defaultSlot = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
-    holder.querySelectorAll('[data-t3k-slot]').forEach(select => {
-      if (Number.isInteger(defaultSlot) && defaultSlot >= 1 && defaultSlot <= 10) select.value = String(defaultSlot);
-      select.addEventListener('change', () => {
-        const slot = Number(select.value || 0);
-        if (Number.isInteger(slot) && slot >= 1 && slot <= 10) {
-          if ($('t3kTargetSlot')) $('t3kTargetSlot').value = String(slot);
-          localStorage.setItem(PREFIX + 'target_slot', String(slot));
-        }
-      });
-    });
-    holder.querySelectorAll('[data-t3k-save]').forEach(button => {
-      button.addEventListener('click', () => saveModel(Number(button.dataset.t3kSave), button));
-    });
-    holder.querySelectorAll('[data-t3k-send]').forEach(button => {
-      button.addEventListener('click', () => sendModel(Number(button.dataset.t3kSend), button));
-    });
-    setStatus(Native()
-      ? 'Tone siap. Aplikasi akan mencari model A2-Lite yang cocok lalu mengimpor ke slot tujuan. Jika ada beberapa model, pilih model yang ingin dikirim.'
-      : 'Tone siap. Kamu bisa menyimpan model di browser; transfer langsung membutuhkan APK Android dan USB OTG.');
-    const autoSlot = Number(options.autoImportSlot || 0);
-    if (Native() && autoSlot >= 1 && autoSlot <= 10) await autoImportFirstCompatibleModel(autoSlot);
+    const snapshot = normalizeToneCatalogue(id, tone, models);
+    const previous = localStorage.getItem(PREFIX + 'selected_model_id');
+    if (previous && snapshot.models.some(model => model.id === previous)) snapshot.selectedModelId = previous;
+    selectedModelId = snapshot.selectedModelId;
+    saveWorkspaceSnapshot(snapshot);
+    renderToneCatalogue(snapshot, { expand: options.expand ?? true, persist: true });
+    setStatus(snapshot.models.length
+      ? snapshot.models.length + ' models loaded in MG30 Studio. Select a model and choose Download & Import.'
+      : 'Tone loaded, but no downloadable models were returned by the TONE3000 API.');
+    return snapshot;
   } catch (error) {
-    setStatus('Gagal memuat tone/model: ' + (error?.message || error));
+    if (matchingCache) {
+      renderToneCatalogue(matchingCache, { expand: options.expand ?? false, persist: false });
+      setStatus('Could not refresh TONE3000. Your saved model list is still available; reconnect and select Refresh Models to try again. ' +
+        (error?.message || error));
+      return matchingCache;
+    }
+    setStatus('Failed to load tone/models: ' + (error?.message || error));
+    throw error;
   }
 }
 
@@ -447,137 +553,68 @@ async function saveModel(index, button) {
   }
 }
 
-async function sendModel(index, button, options = {}) {
+async function sendModel(index, button) {
   const model = selectedTone?.models?.[index];
-  if (!model?.model_url) {
-    setStatus('URL model tidak tersedia untuk pilihan ini.');
-    return false;
-  }
-  if (!Native()) {
-    setStatus('Transfer langsung hanya tersedia di APK Android dengan koneksi USB OTG ke MG-30.');
-    return false;
-  }
-  const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
-  const slotNumber = Number(slotSelect?.value || $('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
+  if (!model?.model_url) { setStatus('The model download URL is not available.'); return false; }
+  if (!Native()) { setStatus('Direct import is available only in the Android APK with USB OTG.'); return false; }
+  const slotNumber = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
   if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
-    setStatus('Pilih slot tujuan 1–10 sebelum memulai transfer.');
+    setStatus('Select an MG-30 target slot from 1 to 10.');
+    $('t3kTargetSlot')?.focus();
     return false;
   }
   const rawLabel = String(model.name || ('TONE3000 tone ' + selectedTone.id + ' model ' + (index + 1)))
     .replace(/\.(nam|namb)$/i, '').trim();
-  if (!options.confirmed && !window.confirm(
-    'Kirim "' + rawLabel + '" ke MG-30 slot ' + slotNumber +
-    '? Isi slot tersebut akan ditimpa. Pastikan model lama sudah dicadangkan.'
+  if (!window.confirm(
+    'Import "' + rawLabel + '" to MG-30 slot ' + slotNumber +
+    '? This will overwrite the slot. Make sure the existing model is backed up.'
   )) {
-    setStatus('Transfer dibatalkan. Model belum ditulis ke slot ' + slotNumber + '.');
+    setStatus('Import canceled. No model was written to slot ' + slotNumber + '.');
     return false;
   }
-
-  if (button) { button.disabled = true; button.textContent = 'Menyiapkan transfer…'; }
-  if (slotSelect) slotSelect.disabled = true;
+  if (button) { button.disabled = true; button.textContent = 'Downloading & importing…'; }
+  const slotControl = $('t3kTargetSlot');
+  if (slotControl) slotControl.disabled = true;
   try {
-    setStatus('Mengunduh model dari TONE3000…');
-    let modelBytes = modelBytesCache.get(model);
-    if (modelBytes) modelBytesCache.delete(model);
-    else {
-      const token = await ensureAccessToken();
-      const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
-      if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
-      const blob = await response.blob();
-      if (!blob.size) throw new Error('File model yang diterima kosong.');
-      modelBytes = await blob.arrayBuffer();
-    }
-
+    setStatus('Downloading the selected model from TONE3000…');
+    const token = await ensureAccessToken();
+    const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+    if (!response.ok) throw new Error('Model download HTTP ' + response.status);
+    const blob = await response.blob();
+    if (!blob.size) throw new Error('The downloaded model file is empty.');
+    const modelBytes = await blob.arrayBuffer();
     const weightBytes = extractMG30A2LiteWeights(modelBytes);
     const plan = buildMG30A2LiteTransferPlan(weightBytes, rawLabel, slotNumber);
     let fileName = String(model.name || ('tone-' + selectedTone.id + '-model-' + (index + 1) + '.nam')).trim();
     fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
     if (!/\.(nam|namb|image)$/i.test(fileName)) fileName += '.nam';
-
     const saved = await NativeMidi.saveModel({ fileName, base64: toBase64(modelBytes) });
-    setStatus('Model valid (' + weightBytes.length + ' byte bobot A2-Lite), tersimpan sebagai ' +
-      saved.fileName + '. Membuka USB-MIDI…');
+    setStatus('A2-Lite model validated (' + weightBytes.length + ' weight bytes) and saved as ' +
+      saved.fileName + '. Connecting to USB-MIDI…');
     const connection = await window.NUXNativeMidi.connect();
     const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
-      if (progress.stage === 'write') {
-        setStatus('Transfer ke slot ' + slotNumber + ': ACK frame ' + progress.completed + '/' +
-          progress.total + ' (' + progress.label + '). Jangan cabut USB OTG.');
-      } else if (progress.stage === 'retry') {
-        setStatus('ACK belum diterima untuk ' + progress.label + '; mencoba ulang ' + progress.attempt + '. Jangan cabut USB OTG.');
-      } else if (progress.stage === 'readback') {
-        setStatus('Bobot sudah dikirim. Sinkronisasi nama perangkat: putaran ' + progress.round +
-          '/2, slot ' + progress.slot + '/10.');
-      }
+      if (progress.stage === 'write') setStatus('Transfer to slot ' + slotNumber + ': ACK frame ' +
+        progress.completed + '/' + progress.total + ' (' + progress.label + '). Do not disconnect USB OTG.');
+      else if (progress.stage === 'retry') setStatus('ACK not received for ' + progress.label +
+        '; retry ' + progress.attempt + '. Do not disconnect USB OTG.');
+      else if (progress.stage === 'readback') setStatus('Model data sent. Reading device slot names: pass ' +
+        progress.round + '/2, slot ' + progress.slot + '/10.');
     });
-    window.dispatchEvent(new CustomEvent('mg30-nam-names-sync', {
-      detail: { slots: result.slots, source: 'transfer' }
-    }));
-    setStatus('Transfer selesai ke slot ' + result.slotNumber + ' (' + result.label + '). Semua ' +
-      result.acknowledgedWriteFrames + ' frame tulis mendapat ACK; nama slot disinkronkan dari MG-30. ' +
-      'Isi bobot tidak bisa dibaca balik oleh protokol ini, jadi suara tetap perlu diperiksa.');
+    window.dispatchEvent(new CustomEvent('mg30-nam-names-sync', { detail: { slots: result.slots, source: 'transfer' } }));
+    setStatus('Import complete to slot ' + result.slotNumber + ' (' + result.label + '). All ' +
+      result.acknowledgedWriteFrames + ' write frames received ACKs and the slot name synced from the MG-30. ' +
+      'The protocol does not read back model weights, so verify the sound on the device.');
     return true;
   } catch (error) {
-    setStatus('Transfer tidak selesai: ' + (error?.message || error) +
-      '. Model sudah diunduh/disimpan bila tahap itu berhasil. Jika penulisan sudah dimulai, slot mungkin berisi data parsial; periksa perangkat sebelum mencoba lagi.');
+    setStatus('Import did not complete: ' + (error?.message || error) +
+      '. If writing already started, the slot may contain partial data; check the device before retrying.');
     return false;
   } finally {
-    if (button) { button.disabled = false; button.textContent = 'Kirim ke MG-30'; }
-    if (slotSelect) slotSelect.disabled = false;
+    if (button) { button.disabled = false; button.textContent = 'Download & Import'; }
+    if (slotControl) slotControl.disabled = false;
   }
 }
 
-async function autoImportFirstCompatibleModel(slotNumber) {
-  if (!Native() || !window.NUXNativeMidi) {
-    setStatus('Impor langsung membutuhkan APK Android dan MG-30 melalui USB OTG.');
-    return;
-  }
-  const models = selectedTone?.models || [];
-  if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
-    setStatus('Pilih slot tujuan 1–10 sebelum transfer.');
-    return;
-  }
-  if (!models.length) {
-    setStatus('Tone dipilih, tetapi TONE3000 tidak mengembalikan daftar file model. Periksa akses akun/API lalu coba lagi.');
-    return;
-  }
-
-  let lastError = '';
-  let candidatesChecked = 0;
-  for (let index = 0; index < models.length; index++) {
-    const model = models[index];
-    if (!model?.model_url) continue;
-    const label = String(model.name || ('model ' + (index + 1)));
-    let modelBytes;
-    try {
-      candidatesChecked++;
-      setStatus('Tone dipilih. Mengunduh dan memeriksa model ' + (index + 1) + '/' +
-        models.length + ' (' + label + ') untuk mencari A2-Lite yang cocok…');
-      const token = await ensureAccessToken();
-      const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
-      if (!response.ok) throw new Error('Unduhan model HTTP ' + response.status);
-      modelBytes = await response.arrayBuffer();
-      if (!modelBytes.byteLength) throw new Error('File model yang diterima kosong.');
-      extractMG30A2LiteWeights(modelBytes);
-    } catch (error) {
-      modelBytesCache.delete(model);
-      lastError = label + ': ' + (error?.message || error);
-      continue;
-    }
-    modelBytesCache.set(model, modelBytes);
-    const slotSelect = document.querySelector('[data-t3k-slot="' + index + '"]');
-    if (slotSelect) slotSelect.value = String(slotNumber);
-    const button = document.querySelector('[data-t3k-send="' + index + '"]');
-    setStatus('Model A2-Lite cocok ditemukan (' + label + '). Mengimpor langsung ke slot ' + slotNumber + '…');
-    // User confirmed the target-slot overwrite before the TONE3000 browser opened.
-    // Do not require a second confirmation after returning from the selected tone.
-    await sendModel(index, button, { confirmed: true });
-    return;
-  }
-  setStatus('Tone berhasil dipilih, tetapi dari ' + candidatesChecked +
-    ' file model yang diperiksa tidak ditemukan A2-Lite native (1.871 bobot). ' +
-    (lastError ? 'Detail: ' + lastError + '. ' : '') +
-    'Coba tone NAM A2 lain atau gunakan impor file lokal.');
-}
 
 let selectedLocalNamFile = null;
 
@@ -745,13 +782,8 @@ async function processCallback(rawUrl) {
       return;
     }
     if (toneId) {
-      const targetSlot = Number(localStorage.getItem(PREFIX + 'target_slot') || $('t3kTargetSlot')?.value || 0);
-      if (Native() && (!Number.isInteger(targetSlot) || targetSlot < 1 || targetSlot > 10)) {
-        setStatus('Tone TONE3000 terpilih (ID ' + toneId + '), tetapi slot tujuan tidak ditemukan. Pilih slot 1–10 dan ulangi.');
-        return;
-      }
-      setStatus('Callback berhasil. Memuat tone ' + toneId + ' untuk impor ke slot ' + (targetSlot || '—') + '…');
-      await loadSelectedTone(toneId, { autoImportSlot: Native() ? targetSlot : 0 });
+      setStatus('Tone selected. Returning to MG30 Studio and loading the available models…');
+      await loadSelectedTone(toneId, { expand: true });
     } else {
       setStatus('TONE3000 kembali tanpa tone_id. Login bisa berhasil, tetapi pilihan tone tidak dikirim di callback. Coba ulangi pemilihan tone; jika berulang, periksa redirect URI mg30studio://oauth/callback pada pengaturan API TONE3000.');
     }
@@ -794,10 +826,14 @@ async function initTone3000() {
       console.warn('TONE3000 appStateChange listener failed', error);
     }
   }
+  const cached = restoreCachedCatalogue();
   await processCallback(window.location.href);
-  const savedId = localStorage.getItem(PREFIX + 'selected_tone_id');
-  if (savedId && localStorage.getItem(PREFIX + 'access_token') && !new URL(window.location.href).search) {
-    await loadSelectedTone(savedId);
+  const savedId = localStorage.getItem(PREFIX + 'selected_tone_id') || cached?.toneId;
+  if (savedId && localStorage.getItem(PREFIX + 'access_token') && !new URL(window.location.href).search &&
+      !window.location.hash.includes('tone_id=')) {
+    await loadSelectedTone(savedId, {
+      expand: localStorage.getItem(PREFIX + 'catalogue_expanded') === '1',
+    });
   }
 }
 
