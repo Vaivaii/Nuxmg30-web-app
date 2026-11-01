@@ -581,3 +581,8 @@ User approved the separate-column mockup: TONE3000 controls first, a dedicated D
 - ZIP integrity and APK ZIP integrity checks passed. Packaged CSS and JS were inspected: the dedicated library title/controller, 4-row page layout, 280px/34dvh expanded sizing, sticky header panel rules, internal list scroller, and explicit reset of legacy fixed positioning are present in the APK. The header controller delegates to the existing `t3kCatalogueToggle` via its click handler.
 - Signing certificate differs from Build #221 (221: `6237669d1b68b5aec0ad557f0753a254e2f5db04997ea08644a7eddabd37e151`; 231: `208d04ece7a0a6e2a56c7c8649cba17adbbe83ec3717a01cb186e65a447baf61`). Android will not install #231 as an in-place update over #221 using the current ephemeral debug signing. Do not uninstall #221 until local app data is backed up/exported.
 - No physical Android WebView screenshot or live MG-30 hardware test was performed. User must install #231 in a safe manner and send a phone screenshot for final visual confirmation. Keep all NAM/IR/MIDI paths protected during follow-up adjustments.
+
+### Additional signing check against the screenshot build #226
+- Build #226 certificate SHA-256: `001786d9c33cab0c8e41fbe5e6a0731eaec89bab218024e6413062af50c7f3af`.
+- Build #231 certificate SHA-256: `208d04ece7a0a6e2a56c7c8649cba17adbbe83ec3717a01cb186e65a447baf61`.
+- These also differ, so do not expect #231 to update #226 in place. Back up/export app-local data before any uninstall/reinstall. The debug signing key remains ephemeral per clean GitHub runner.
