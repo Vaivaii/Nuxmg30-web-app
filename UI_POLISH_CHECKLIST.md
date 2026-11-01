@@ -2374,3 +2374,16 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Pre-build UI simulation of the exact source commit passed at 320×740, 360×800, 393×873 and 432×915 using Chromium/Playwright; five tabs and Device label retained, 23×23px icon, 8 SVG shapes, correct active lime color, no horizontal overflow, nav bottom alignment correct.
 - Browser simulation and GitHub Actions are separate evidence. No physical Android installation or MG-30 / USB-MIDI hardware test is claimed.
 - This build supersedes Build #208 for the current Device icon. APK is ready for direct installation by the user.
+
+## New isolated visual-polish branch created — Dark Performance 2.0 (1 November 2026)
+
+- User approved the visual direction: retain the existing screenshots' dark graphite / charcoal panels, lime accent, outline icons and MG-30 Studio identity; refine toward a more premium, tidy, consistent interface rather than redesigning it.
+- Created new branch: `feature/dark-performance-ui-polish`.
+- Starting point is the latest preserved `feature/preset-manager-redesign` HEAD: `cd9fcf2daf09a143edcb895b8d11275d8f1aaaf3` (contains Build #209 checkpoint and the current multi-effects Device icon baseline).
+- The prior `feature/preset-manager-redesign` branch is not modified by this new branch creation and remains the protected reference branch.
+- Added plan: `docs/research/DARK_PERFORMANCE_UI_POLISH_PLAN_2026-11-01.md`, documentation commit `5d7834fe1f6bfbf985875015c662db9e6fd26dbd`.
+- Planned visual-only candidates: Editor, NAM & IR, Collection IR, Preset Manager, Studio and Device. First target still needs review; no UI edit has been authorized or made yet.
+- Hard preservation scope recorded in the new plan: no Editor rendering/startup or USB-MIDI/native connection changes; no NAM/IR/Collection transfers; no Preset Import/Export behavior; no MIDI/SysEx mappings; no Movable Signal Chain; no Save/Copy Scene/CTRL-EXP; no Studio/Device backend or capture behavior; avoid global CSS/shared JS. Ask before any edit that cannot be proven presentational.
+- Build #209 / source application baseline is preserved. `www/index.html` carries the multi-effects Device icon; `www/ui-redesign.css` inherited unchanged. No app source changed during branch setup.
+- Branch creation and documentation only; no browser test, npm test, CI, Actions, Gradle or APK run required. No build was triggered.
+- Current stop point: inspect screenshots and source on this branch, propose the first smallest visual-only change, and wait for authorization before editing code.
