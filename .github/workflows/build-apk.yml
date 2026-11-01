@@ -1,24 +1,34 @@
-name: English UI validation (no APK)
+name: Build MG30 Studio Android APK
 
 on:
   push:
     branches:
-      - feature/dark-performance-ui-polish
+      - android/mg30-studio-apk
+      - android/mg30-studio-apk-gen2-image-nam
+      - android/nam-slot-readback-probe
+      - android/nam-transfer-tone3000
+      - android/ir-import-test
+      - android/ui-polish-pass-1
+      - feature/preset-manager-redesign
     paths:
       - 'www/**'
       - 'tests/**'
+      - 'native-android/**'
+      - 'scripts/**'
       - 'package.json'
-      - 'package-lock.json'
+      - 'capacitor.config.ts'
+      - 'vite.config.js'
       - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  validate-english-ui:
-    name: Validate English UI and protocol tests (no APK)
+  build-debug-apk:
+    name: Build debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,11 +36,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install dependencies
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install JavaScript dependencies
         run: npm install
-      - name: Check English UI JavaScript syntax
-        run: node --check www/english-ui.js
       - name: Run protocol regression tests
         run: npm test
-      - name: Build web assets only (no Android project or APK)
-        run: npm run build
+      - name: Generate Capacitor Android project and install USB audio plugin
+        run: npm run android:init
+      - name: Build debug APK
+        run: cd android && ./gradlew --no-daemon assembleDebug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MG30-Studio-debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
