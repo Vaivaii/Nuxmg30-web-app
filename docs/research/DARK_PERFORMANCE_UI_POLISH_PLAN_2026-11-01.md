@@ -329,3 +329,18 @@ UI polish 01 is complete and recorded. Do not edit the next component until the 
 - Pemeriksaan sumber lulus: chip/tombol collapse tidak lagi dirender; seluruh referensi handler toggle dihapus; ID count/sinkronisasi dan live status dipertahankan; fungsi inti transfer, sync, dan import masih ada.
 - Build belum dijalankan dan APK belum dibuat. Build #214 tetap APK terakhir; jangan menganggap perubahan ini sudah ada di APK. Manual build gate tetap aktif: `workflow_dispatch` tersedia dan branch ini tidak ditambahkan ke push trigger. Minta persetujuan eksplisit sebelum build APK berikutnya.
 - Batas validasi: pemeriksaan statis sumber dan workflow saja; belum ada uji WebView Android fisik atau uji perangkat MG-30 untuk revisi UI ini.
+
+
+## APK Build #215 — Collection IR controls compact (1 November 2026)
+
+- User menyetujui “Build sekarang” setelah meminta menghilangkan badge “24 SLOT”, tombol “Sembunyikan”, dan panel petunjuk awal di bawah grid Collection IR.
+- Application source yang dibangun: `2e33d7ccbccb2f11320e65b0e01f3db9fe000119`. Build trigger commit: `7ca8a59c73195e21b3e8d2296428a7f834f81ea0`. Perbandingan source → trigger menunjukkan hanya perubahan workflow sementara dan penambahan catatan proyek; tidak ada perubahan app source tambahan.
+- GitHub Actions **Build #215**, run ID `41301409541`: **completed / success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41301409541
+- Semua langkah workflow lulus: checkout, Node.js, Java, `npm install`, `npm test` (protocol regression), Capacitor Android init + USB audio plugin, Gradle `assembleDebug`, dan upload artifact.
+- Artifact `MG30-Studio-debug-APK`, ID `13081296928`, ZIP size 4,028,924 bytes, SHA-256 `4454220c6c06b3e53f5c1903dca4aaa3d94f51f52d5f5287d8a59c18a1c39ee3`; expiry 15 November 2026 11:21:14 UTC.
+- Extracted APK: `/mnt/data/MG30_Studio_Collection_Compact_Build_215.apk`, size 4,406,024 bytes, SHA-256 `f1a1c7ff79b6498dcd95d5c0d416ca0f7c3a1f0ae6baf4a705767f05c946b0cb`.
+- ZIP integrity and APK archive integrity passed. APK is recognized as Android package with Gradle app metadata and APK Signing Block.
+- Packaged asset checks: removed badge `24 SLOT`, removed collapse control identifier `irManagerToggleSlots`, removed default prompt `Pilih slot untuk import WAV.`; retained Collection IR heading, sync label and button, live status node, NAM/Profile heading, and NAM/TONE3000 controls. The remaining word “Sembunyikan” found elsewhere belongs to the unrelated collapsible NAM reader label, not the Collection toolbar.
+- Manual build gate restored after the one-off trigger. Workflow blob returned to `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled and `feature/dark-performance-ui-polish` is absent from push branch filters. Restore commit: `5af1e9b80e4cfb454674051cf48360420208488b`.
+- Build #215 is the current APK containing the compact Collection controls. Build #214 is superseded for this UI change.
+- Validation boundary: workflow + source/package asset checks passed. APK has not been installed on the user's physical Android device, and the MG-30 hardware has not been tested as part of this build. No claim of physical WebView rendering or IR protocol operation is made.
