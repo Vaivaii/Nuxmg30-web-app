@@ -1557,16 +1557,18 @@ html,body{background:#0b1012}
     letter-spacing: 1.7px;
   }
   body.ir-collection-manager-active #page-nam > .nam-page-hero h2 {
-    margin: 2px 0 0;
-    font-size: clamp(20px, 5vw, 23px);
-    line-height: 1.12;
+    margin: 1px 0 0;
+    font-size: clamp(18px, 4.4vw, 20px);
+    line-height: 1.08;
+    letter-spacing: -.45px;
   }
 
   body.ir-collection-manager-active #page-nam > .nam-ir-tools-frame {
     flex: 0 0 auto;
-    margin: 0 0 7px;
-    padding: 6px;
-    border-radius: 12px;
+    margin: 0 0 6px;
+    padding: 5px;
+    border-radius: 11px;
+    box-shadow: none;
   }
 
   body.ir-collection-manager-active #page-nam .nam-ir-tools-nav {
@@ -1581,8 +1583,8 @@ html,body{background:#0b1012}
   }
 
   body.ir-collection-manager-active #page-nam .nam-ir-tool-pane:not([hidden]) {
-    max-height: min(190px, 29dvh);
-    margin-top: 6px;
+    max-height: min(150px, 23dvh);
+    margin-top: 5px;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -1957,16 +1959,18 @@ html,body{background:#0b1012}
 /* Expanded TONE3000 catalogue floats over the workspace so the IR grid keeps its own height. */
 .t3k-list-toolbar {
   position: sticky;
-  top: 0;
+  top: -10px;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 9px;
-  border: 1px solid #34423b;
-  border-radius: 10px;
-  background: #151e1e;
+  margin: -10px -10px 0;
+  padding: 10px 13px;
+  border: 0;
+  border-bottom: 1px solid #2b3735;
+  border-radius: 0;
+  background: #101718;
 }
 .t3k-list-toolbar span { display: grid; min-width: 0; gap: 3px; }
 .t3k-list-toolbar strong { font-size: 12px; }
