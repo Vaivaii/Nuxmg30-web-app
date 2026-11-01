@@ -577,3 +577,18 @@ Static assertions passed. Android build run triggered by this CSS push; check th
 - Verified bundled HTML/CSS: green DEVICE eyebrow and Device & Settings heading retained; only the small explanatory paragraph is hidden; title size 23px; Device hero sticky. Other tab heading sticky selectors remain.
 - `index.html`, `main.js`, and `mg30-preset-export.js` unchanged. No device/protocol/Editor/Signal Chain/Import/Export/NAM/IR function changed.
 - Physical Android visual check still pending.
+## Preset Export button fit + subtle bottom fades (1 Nov 2026)
+
+User screenshots show the Export button clipped on the right and bottom fade on Editor/other tabs too strong with a visible edge line.
+
+Implemented two CSS-only commits:
+- `www/preset-library-ui.css` commit `11ecead956a222eb37003318516ff9f460846c3d`: mobile header right padding 12px, title flex/shrink enabled, actions group 6px gap with 5px right margin, buttons minimum width 62px / height 36px / padding 7px 9px / font 10px. Export pseudo-label retained; no markup or event handler change.
+- `www/ui-redesign.css` commit `85f5de0f6f9e91b96d2fab63b3e442e8632c8c55`: non-Preset tab fade shortened 58px -> 32px, much lower alpha ramp and no hard box-shadow. Applies to Editor, NAM & IR, Studio, Device and Backup only; Presets keeps its existing frame fade.
+
+Protection:
+- Only the two CSS files changed.
+- main.js SHA e2697b26e1d673be2002b8f1a085f12e9618b1de; mg30-preset-export.js SHA 7959dea88d42f9433a9ddc06ed7198449e25ba52; index.html SHA 75f32a4ed4a83b76596099e731acf8485f60bbb3 remain unchanged.
+- No functions/protocol/MIDI/device/Editor/Signal Chain/Import/Export behavior touched.
+- Static assertions passed. Physical phone verification pending.
+
+Build #202 is an older APK and does not include these two CSS refinements. No manual build approval has yet been given for the latest CSS stage. Check recent Actions runs for any automatic path-triggered build.
