@@ -1976,7 +1976,7 @@ html,body{background:#0b1012}
   .t3k-catalogue.is-expanded #t3kModelList {
     position: fixed;
     z-index: 85;
-    top: max(190px, calc(env(safe-area-inset-top, 0px) + 180px));
+    top: max(214px, calc(env(safe-area-inset-top, 0px) + 204px));
     right: 12px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
     left: 12px;
