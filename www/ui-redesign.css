@@ -2228,3 +2228,134 @@ html,body{background:#0b1012}
   .nam-model-library-heading small { font-size: 9px; }
   .nam-model-library-toggle { min-width: 66px; min-height: 39px; }
 }
+
+
+/* Dedicated NAM library controls: match the Studio dark/lime button system.
+   These rules are scoped to the moved TONE3000 cards so transfer logic is untouched. */
+#namModelLibrary .nam-model-library-toggle {
+  width: 84px !important;
+  min-width: 84px !important;
+  max-width: 84px;
+  min-height: 38px !important;
+  height: 38px;
+  padding: 0 10px !important;
+  border: 1px solid #39464a !important;
+  border-radius: 12px !important;
+  background: #202a2f !important;
+  color: #edf3f0 !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0 !important;
+}
+#namModelLibrary .t3k-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px !important;
+  border: 1px solid #2b3739 !important;
+  border-radius: 16px !important;
+  background: #151d1f !important;
+  box-shadow: none !important;
+}
+#namModelLibrary .t3k-card.is-selected {
+  border-color: rgba(197,243,107,.72) !important;
+  box-shadow: inset 0 0 0 1px rgba(197,243,107,.16) !important;
+}
+#namModelLibrary .t3k-card-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+#namModelLibrary .t3k-card-head > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+#namModelLibrary .t3k-card-head strong {
+  color: #edf3f0;
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+#namModelLibrary .t3k-card-head small {
+  color: #8f9e9c;
+  font-size: 11px;
+}
+#namModelLibrary .t3k-mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 3px 11px;
+  border: 1px solid #426653;
+  border-radius: 999px;
+  color: #a9d4bc;
+  font-size: 10px;
+  letter-spacing: .35px;
+}
+#namModelLibrary .t3k-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px !important;
+  margin: 0 !important;
+}
+#namModelLibrary .t3k-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px !important;
+  padding: 8px 10px !important;
+  border: 1px solid #39464a !important;
+  border-radius: 12px !important;
+  background: #202a2f !important;
+  color: #edf3f0 !important;
+  font: inherit;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+  box-sizing: border-box;
+}
+#namModelLibrary .t3k-actions [data-t3k-select] {
+  background: #202a2f !important;
+  color: #e4ece8 !important;
+}
+#namModelLibrary .t3k-actions [data-t3k-select]:disabled {
+  border-color: #293336 !important;
+  background: #1a2225 !important;
+  color: #75817f !important;
+  opacity: 1 !important;
+}
+#namModelLibrary .t3k-actions [data-t3k-send] {
+  border-color: #c5f36b !important;
+  background: #c5f36b !important;
+  color: #11190e !important;
+}
+#namModelLibrary .t3k-actions [data-t3k-save] {
+  grid-column: 1 / -1;
+  border-color: #39464a !important;
+  background: #202a2f !important;
+  color: #edf3f0 !important;
+}
+#namModelLibrary .t3k-actions button:disabled {
+  cursor: not-allowed;
+}
+#namModelLibrary .t3k-card > small {
+  color: #9ba8a4;
+  font-size: 10px;
+}
+@media (max-width: 390px) {
+  #namModelLibrary .t3k-card { padding: 12px !important; gap: 9px; }
+  #namModelLibrary .t3k-card-head strong { font-size: 13px; }
+  #namModelLibrary .t3k-actions { gap: 7px !important; }
+  #namModelLibrary .t3k-actions button {
+    min-height: 40px !important;
+    padding: 7px 7px !important;
+    font-size: 11px !important;
+  }
+}
