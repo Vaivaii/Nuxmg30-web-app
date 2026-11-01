@@ -24,7 +24,7 @@ export function normalizeToneCatalogue(toneId, tone, models) {
         description: label(model.description),
       };
     })
-    .filter(model => model.model_url);
+    ;
   const creator = label(tone?.username || tone?.creator?.username || tone?.user?.username || tone?.user?.name);
   return {
     version: 1,
@@ -35,7 +35,7 @@ export function normalizeToneCatalogue(toneId, tone, models) {
       description: label(tone?.description),
     },
     models: normalizedModels,
-    selectedModelId: normalizedModels[0]?.id || '',
+    selectedModelId: normalizedModels.find(model => model.model_url)?.id || normalizedModels[0]?.id || '',
     updatedAt: Date.now(),
   };
 }
@@ -50,7 +50,7 @@ export function parseToneCatalogue(raw) {
       model && typeof model === 'object' &&
       typeof model.id === 'string' &&
       typeof model.name === 'string' &&
-      typeof model.model_url === 'string' && model.model_url
+      typeof model.model_url === 'string'
     );
     return {
       version: 1,

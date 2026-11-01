@@ -31,10 +31,12 @@ test('TONE3000 catalogue normalizes and preserves the complete model list', () =
   assert.equal(snapshot.toneId, '106431');
   assert.equal(snapshot.tone.name, 'Bogner Ecstasy 101B');
   assert.equal(snapshot.tone.creator, 'signaltheoryaudio');
-  assert.equal(snapshot.models.length, 2);
+  assert.equal(snapshot.models.length, 3);
   assert.equal(snapshot.models[0].id, '51');
   assert.equal(snapshot.models[1].id, 'model-two');
   assert.equal(snapshot.models[1].model_url, 'https://cdn.example/two.nam');
+  assert.equal(snapshot.models[2].name, 'No URL model');
+  assert.equal(snapshot.models[2].model_url, '');
   assert.equal(snapshot.selectedModelId, '51');
 });
 
