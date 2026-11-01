@@ -197,7 +197,7 @@ test('NAM library header stays visible before a TONE3000 catalogue is loaded', (
   assert.ok(panel, 'library panel is mounted');
   assert.equal(panel.parentElement, page, 'library remains a direct page row');
   assert.equal(panel.hidden, false, 'outer panel is never hidden before a tone loads');
-  assert.equal(elements.namModelLibraryMeta.textContent, 'Pilih tone untuk memuat model');
+  assert.equal(elements.namModelLibraryMeta.textContent, 'Choose a tone to load models');
   assert.equal(elements.namModelLibraryToggle.textContent, 'Show');
   assert.equal(elements.namModelLibraryContent.hidden, true);
 
@@ -262,7 +262,7 @@ test('TONE3000 visible UI messages are English in initial, OAuth, and local NAM 
   const tone = readFileSync(new URL('../www/tone3000.js', import.meta.url), 'utf8');
   for (const phrase of [
     'Membuka TONE3000', 'Setelah memilih tone', 'Pastikan URI',
-    'Pilih tone untuk memuat model', 'Pilih tone dari TONE3000',
+    'Choose a tone to load models', 'Pilih tone dari TONE3000',
     'Memeriksa arsitektur', 'Jangan cabut USB OTG',
     'Transfer tidak selesai', 'Simpan model di aplikasi',
   ]) {
