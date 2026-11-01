@@ -943,3 +943,19 @@ This rule is mandatory for every future application/source change on this branch
 - Workflow push branch filter was enabled for one trigger only, then restored. Current workflow file does not include `feature/dark-performance-ui-polish` in push branches; `workflow_dispatch` remains. Restoration commit is `c3380ef98c6d862d3a3d8c164ff28aae6be4879c`.
 - Build #213 is obsolete for the missing-Collection issue; never distribute it as the fix. Build #214 is the current APK for user install/review.
 - No physical Android WebView runtime test or MG-30 hardware test is claimed. Next: user installs #214 and verifies that the Collection card and all 24 slots are visible and independently scrollable, while NAM and TONE3000 controls remain accessible. Resume from this branch and do not build again without explicit approval.
+
+
+## Collection IR — rapikan kontrol & ruang grid (1 November 2026)
+
+- User mengonfirmasi melalui screenshot bahwa Build #214 sudah menampilkan kembali NAM/Profile, panel Collection IR, dan kartu-kartu slot.
+- Permintaan UI lanjutan: hilangkan badge “24 SLOT”, tombol “Sembunyikan”, serta kotak petunjuk awal “Pilih slot untuk import WAV.” agar grid Collection naik dan mendapat area lebih luas.
+- Source commit: `2e33d7ccbccb2f11320e65b0e01f3db9fe000119` pada `feature/dark-performance-ui-polish`, berbasis Build #214.
+- Perubahan terbatas pada `www/ir-transfer.js` dan `www/ui-redesign.css`:
+  - Menghapus chip 24 SLOT dan tombol collapse; grid 24 slot selalu terbuka.
+  - Toolbar tinggal menampilkan status sinkronisasi dinamis dan tombol Sinkronkan.
+  - Status Collection tetap menjadi elemen ARIA live untuk progres/error saat operasi; teks awal dikosongkan, status kosong disembunyikan, dan pesan dinamis tampil tanpa kotak/border.
+  - Mengurangi susunan baris kartu Collection dari empat menjadi tiga serta toolbar dari tiga kolom menjadi dua, sehingga ruang yang sebelumnya dipakai kontrol/status kosong kembali ke grid.
+- Handler sinkronisasi, baca metadata, impor WAV, alur Collection/User, generator paket SysEx, ACK, NAM, TONE3000, preset, dan pemetaan MIDI tidak sengaja diubah.
+- Pemeriksaan sumber lulus: chip/tombol collapse tidak lagi dirender; seluruh referensi handler toggle dihapus; ID count/sinkronisasi dan live status dipertahankan; fungsi inti transfer, sync, dan import masih ada.
+- Build belum dijalankan dan APK belum dibuat. Build #214 tetap APK terakhir; jangan menganggap perubahan ini sudah ada di APK. Manual build gate tetap aktif: `workflow_dispatch` tersedia dan branch ini tidak ditambahkan ke push trigger. Minta persetujuan eksplisit sebelum build APK berikutnya.
+- Batas validasi: pemeriksaan statis sumber dan workflow saja; belum ada uji WebView Android fisik atau uji perangkat MG-30 untuk revisi UI ini.
