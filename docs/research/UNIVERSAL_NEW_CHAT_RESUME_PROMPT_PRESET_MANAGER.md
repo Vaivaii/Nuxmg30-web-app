@@ -988,3 +988,24 @@ This rule is mandatory for every future application/source change on this branch
 - Jalur impor Collection, status sinkronisasi, 75-frame transfer/SysEx, ACK, User/Third Party, NAM, TONE3000, preset dan pemetaan MIDI tidak sengaja diubah.
 - Pengguna secara eksplisit meminta “langsung build”; build APK akan dijalankan dari source commit ini.
 - Belum ada uji fisik Android/WebView atau MG-30 untuk perubahan UI ini. Hasil build dan package asset check akan dicatat terpisah setelah workflow selesai.
+
+
+## APK Build #216 — Collection IR header alignment (1 November 2026)
+
+- User mengirim screenshot Build #215 dan meminta tombol Sinkronkan sejajar dengan judul Collection IR, serta grid slot dinaikkan.
+- Source UI yang dibangun: `1a5959b08a31fe35b79c4808f0f665068eae1c87`; file app yang berubah pada source commit: `www/ir-transfer.js` dan `www/ui-redesign.css`.
+- Perubahan layout: judul Collection IR + indikator “Belum sinkron” menjadi satu blok di kiri; tombol Sinkronkan di sisi kanan header yang sama; toolbar terpisah dihapus; grid 24 slot langsung menjadi area konten di bawah header.
+- GitHub Actions **Build #216**, run ID `41302162108`: **completed / success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41302162108
+- Workflow steps semuanya sukses: checkout, Node.js, Java, `npm install`, `npm test` (protocol regression), Capacitor Android generation + USB audio plugin, Gradle `assembleDebug`, dan artifact upload.
+- Trigger commit: `166b5b672edd8519f98dd5bbe248908d013cc73c`; trigger hanya menambahkan push branch sementara ke workflow. Source UI tetap pada commit di atas.
+- Artifact `MG30-Studio-debug-APK`, ID `13081787932`, ZIP size 4,028,945 bytes, SHA-256 `aea62a241f84db3f0c15b0f0be8a42d18862a059065f2e44762bac3e7e051dc7`, expiry 15 November 2026 11:32:05 UTC.
+- ZIP: `/mnt/data/MG30-Studio-Collection-Header-Aligned-Build-216.zip`; archive integrity passed. Extracted APK: `/mnt/data/MG30_Studio_Collection_Header_Aligned_Build_216.apk`, size 4,406,032 bytes, SHA-256 `9987bf5b6e814975003d6287f7a82e20e57b37503f84a3a700a36d728a0cff7a`; APK ZIP integrity passed and `file` recognizes Android package with Gradle metadata and APK Signing Block.
+- Packaged-asset checks passed:
+  - Collection heading and `ir-collection-card-head` markup in JS bundle; `irManagerSyncCollection` and `irManagerCollectionCount` retained; `irManagerCollectionGrid` retained.
+  - The count/status string is nested in the left title block; sync button is the sibling in the same header.
+  - Old `ir-collection-toolbar`, collapse control ID `irManagerToggleSlots`, and initial hint `Pilih slot untuk import WAV.` are absent from packaged JS.
+  - CSS contains the combined header class and updated card grid sizing.
+  - Static `Native NAM Profile` title remains in packaged `index.html`; NAM/TONE3000 mode controls remain in JS bundle.
+  - Import/transfer-related package strings include `Import WAV`, WAV RIFF parsing errors, and phase ACK diagnostics.
+- Workflow trigger was restored after the one-off build. Workflow blob: `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled; `feature/dark-performance-ui-polish` is absent from push trigger filters. Restore commit: `13adead664657e8f2637a1d73d5efc6e088dd9e3`.
+- Build #216 supersedes #215 for the latest header-alignment request. This is a successful build and package-content check, not a physical Android WebView screenshot test and not MG-30 hardware validation.
