@@ -112,11 +112,11 @@ function initUI(){
  '</section>'+
  '<section class="ir-manager-card">'+
   '<div class="ir-manager-card-head"><div><h3>Collection IR</h3><p>Import ke slot Collection 01–24. Pilih slot, lalu WAV otomatis divalidasi dan dikirim.</p></div><span class="chip">24 SLOT</span></div>'+
-  '<div class="ir-collection-toolbar"><span class="slot-note" id="irManagerCollectionCount">Belum disinkronkan</span><button class="btn primary" id="irManagerSyncCollection" type="button">Sinkronkan dari MG-30</button><button class="btn ghost" id="irManagerToggleSlots" type="button" aria-expanded="true">Sembunyikan slot</button></div>'+
+  '<div class="ir-collection-toolbar"><span class="slot-note" id="irManagerCollectionCount">Belum sinkron</span><button class="btn primary" id="irManagerSyncCollection" type="button">Sinkronkan</button><button class="btn ghost" id="irManagerToggleSlots" type="button" aria-expanded="true">Sembunyikan</button></div>'+
   '<p class="ir-current-preset-ir-note">Kotak nomor merah menandai IR Collection yang digunakan preset terpilih.</p>'+
   '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
   '<p class="ir-manager-footnote">Nama dan status slot dibaca dari MG-30. Tombol Gunakan di User tersedia bila WAV sumber juga disimpan oleh MG30 Studio.</p>'+
-  '<div class="ir-manager-status" id="irManagerCollectionStatus" role="status" aria-live="polite">Pilih slot Collection untuk menambahkan IR.</div>'+
+  '<div class="ir-manager-status" id="irManagerCollectionStatus" role="status" aria-live="polite">Pilih slot untuk import WAV.</div>'+
  '</section>'+
  '<input class="hidden" type="file" id="irManagerFileInput" accept=".wav,audio/wav,audio/x-wav">';
  root.appendChild(ui);
@@ -387,9 +387,9 @@ function initUI(){
   const records=[...deviceSlots.values()];
   const occupied=records.filter(x=>x.read&&x.stable&&x.occupied).length;
   const read=records.filter(x=>x.read&&x.stable).length;
-  countLabel.textContent=syncBusy?(read+'/24 slot stabil · membaca…'):(read===24?occupied+' IR di perangkat · 24/24 slot stabil':(read?read+'/24 slot stabil dibaca':'Menunggu sinkronisasi perangkat'));
+  countLabel.textContent=syncBusy?(read+'/24 slot stabil · membaca…'):(read===24?occupied+' IR di perangkat · 24/24 slot stabil':(read?read+'/24 slot dibaca':'Belum sinkron'));
  }
- toggle.addEventListener('click',()=>{const collapsed=!grid.classList.contains('collapsed');grid.classList.toggle('collapsed',collapsed);toggle.textContent=collapsed?'Tampilkan 24 slot':'Sembunyikan slot';toggle.setAttribute('aria-expanded',String(!collapsed))});
+ toggle.addEventListener('click',()=>{const collapsed=!grid.classList.contains('collapsed');grid.classList.toggle('collapsed',collapsed);toggle.textContent=collapsed?'Tampilkan slot':'Sembunyikan';toggle.setAttribute('aria-expanded',String(!collapsed))});
  function setBusy(on){
   busy=on;userButton.disabled=on||syncBusy;syncButton.disabled=on||syncBusy;
   grid.querySelectorAll('button').forEach(button=>{
@@ -535,7 +535,7 @@ function initUI(){
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
   }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
-  finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan dari MG-30';syncButton.removeAttribute('aria-busy');renderSlotCount()}
+  finally{syncBusy=false;setBusy(false);syncButton.textContent='Sinkronkan';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
  async function readCollectionSlotStable(connection,slotIndex){
   const first=await readCollectionSlotFromDevice(connection,slotIndex);
