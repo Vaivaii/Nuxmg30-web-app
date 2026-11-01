@@ -2829,3 +2829,29 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Packaged checks passed: AndroidManifest + DEX present; Important warning in English; text says latest original Gen 2 firmware 6.0.x and “not the MKII”; old firmware 5.0.2 absent; preset initial/dynamic fallbacks English; Show/Hide English and Indonesian labels absent; translator JS bundled; IR Collection and Native NAM Profile retained.
 - Manual-only build gate restored after one-off trigger. Restore commit: `f8258defad55e422fb9245028b6c38625e0b7f00`; workflow blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` enabled; feature branch absent from automatic push filters.
 - No changes to IR/NAM protocol code, Collection/User routing, USB-MIDI handling, TONE3000 transfer logic, preset data, or MIDI mapping. Physical Android WebView and MG-30 hardware testing still remain with the user after install.
+
+
+## TONE3000 Native Workspace — persistent model selection and expandable catalogue (1 November 2026)
+
+- User approved implementation and APK build for a TONE3000 workflow change:
+  - Select the tone on the TONE3000 website, then return to MG30 Studio.
+  - All model selection and download actions happen inside the app, not on the website.
+  - The returned model catalogue opens automatically in an expandable workspace and can be hidden afterward.
+  - Remember the entire model list, last selected model and target slot permanently.
+- Source revision: `bdddeb5e7c40df0a07bc665b8d1cccfe0f09e605` on `feature/dark-performance-ui-polish`.
+- Source files changed: `www/tone3000.js`, new `www/tone3000-workspace.js`, and `www/ui-redesign.css`; new tests: `tests/tone3000-workspace.test.js`.
+- Implemented behaviour:
+  - TONE3000 authorization still uses the existing PKCE and app deep-link callback. The authorization request now requests English locale.
+  - The callback closes the browser and fetches tone metadata plus paginated model metadata (50 per page, up to 20 pages; duplicate/repeated pages are detected to stop further requests).
+  - Callback no longer selects the first A2-Lite model or auto-writes anything to the MG-30. User selects a model in MG30 Studio, selects the target slot, and explicitly confirms before overwrite.
+  - The in-app catalogue has a persistent header and Expand/Hide control. After a new tone callback, it expands automatically. On mobile the expanded catalogue is a large overlay with its own scrolling and a Hide action, so the IR Collection grid keeps its viewport height.
+  - Model rows show the entire API catalogue, including entries without a downloadable URL; unavailable download actions are disabled rather than silently omitting those entries.
+  - `Download & Import` fetches the selected model, validates native A2-Lite weights, saves the file to app-private storage, and then calls the existing `buildMG30A2LiteTransferPlan` / `sendMG30A2LiteTransfer` route. `Download Only` retains the app-private save action.
+  - The persistent `mg30-t3k-workspace-v1` localStorage record stores tone metadata, all returned model metadata/URLs, and the selected model ID. Separate keys retain the selected tone, model ID, target slot and expanded/collapsed preference. Model bytes are not stored in Local Storage; they are fetched when the user chooses an action.
+  - The saved catalogue restores immediately after app launch. Refresh Models re-fetches the current tone catalogue. Sign-out clears tokens but keeps the saved tone/model list.
+  - Selection state is scoped to the active tone, preventing a previous tone's selected model from carrying over when switching tones.
+- Added unit tests for catalogue normalization (including numeric model IDs), full model-list persistence, selection persistence, invalid payloads, storage errors and models without a download URL.
+- Protected transfer scope: no modifications to `www/nam-transfer.js`, `www/native-midi.js`, `www/ir-transfer.js`, `www/main.js`, `www/mg30-preset-import.js`, or `www/mg30-preset-export.js` in this change. Existing USB-MIDI mapping, IR Collection/User routing, IR SysEx/ACK, NAM transfer packets and preset import/export remain untouched.
+- Source validation before build: branch and protected file hashes checked; legacy first-model auto-import and session-only WeakMap cache removed. Automated `npm test`, Vite production build, Gradle APK build and packaged asset inspection are still pending for the build run.
+- User explicitly requested both implementation and APK build. The approved build will be a one-off trigger; restore the workflow to manual-only immediately after triggering.
+- Physical Android WebView/TONE3000 account callback and MG-30 hardware transfer testing remain pending until user installs and tests the APK.
