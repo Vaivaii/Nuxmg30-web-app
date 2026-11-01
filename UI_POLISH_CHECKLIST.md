@@ -2533,3 +2533,18 @@ User feedback: the USB connector symbol still did not represent the Device tab w
   - `www/preset-library-ui.js`: `67ec75258620323492609dcdec559badfb769797`
 - Build #211 (run ID `41286541498`, artifact `13075337014`) succeeded but contains the earlier clipped-layout version. Do not give that APK to the user as the fix.
 - The corrected source has NOT yet been built into a new APK or verified on the user's Android device. Await explicit approval before starting a replacement APK build. Ask: **Build sekarang atau nanti?**
+
+
+## Conversation resume checkpoint — Collection slots missing on Android (1 November 2026)
+
+- User reported “Slotnya malah hilang” with a mobile screenshot: NAM import and TONE3000 panels occupy the fixed page; the Collection grid is clipped below the viewport.
+- Root cause: the mobile frame fixed the entire `#page-nam` and hid overflow while NAM/TONE3000 panels still preceded the IR manager. The earlier layout fixture did not represent the complete page composition.
+- Corrective source commits on this branch:
+  - `d8581446216f433352f8af8b8e27a544a8da1fd1`: split into NAM / TONE3000 and IR COLLECTION workspaces; move existing panel nodes rather than recreate them; persist workspace selection; allocate mobile viewport to the active pane and isolate slot-grid scrolling.
+  - `25e0afe6988084746351eecdcdf8366d2733352f`: remove duplicate viewport-controller tail.
+  - `a66f87e83ff47eb8b7031285dd3bd42db9a78da1`: clean obsolete comments. Source branch was verified at `dbcb043035ef46d52437308da00981eff7795bde` before this documentation update.
+- Current `www/ir-transfer.js` syntax check passed after stripping ESM export declarations. This is not an Android/WebView runtime test.
+- Previous fixture results belong to the old layout and do not validate the final two-workspace implementation. Re-run a browser fixture against the full page structure (hero, NAM import, TONE3000, workspace tabs, IR manager and 24 slots). Check default IR COLLECTION, NAM/TONE3000 access, grid-only scrolling, and desktop normal flow.
+- Source scope is `www/ir-transfer.js` and `www/ui-redesign.css`. No IR transfer packets, NAM transfer, Collection/User protocol routing, MIDI/SysEx mappings, preset import/export, or main app logic were intentionally changed.
+- Build #211 / run ID `41286541498` completed successfully but its head `17927754a2efd0985ec2295b18ab0c429d094630` contains the earlier clipped layout. Do not distribute it as the fix.
+- Current two-workspace source has not been built into a replacement APK or tested on the user's Android device. Do not start CI/Gradle/APK until explicit approval. After full-page fixture validation, ask exactly **“Build sekarang atau nanti?”**.
