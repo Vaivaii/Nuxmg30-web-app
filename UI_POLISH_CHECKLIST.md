@@ -3115,3 +3115,15 @@ User reported that after opening Build #233 the whole app was stuck and no contr
 - `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
 - `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`.
 - `www/ir-transfer.js` has one narrowly scoped presentation guard in the existing NAM page mutation observer; the IR packet builder, User/Collection target selection and transfer/readback code are unchanged. Do not treat the new JS blob hash as a protocol change.
+
+
+### Final APK #241 — freeze-loop fix verified (2 November 2026)
+- Final build source commit: `7429572182df0b3a347e596ffc860de61fca6017` on `feature/dark-performance-ui-polish`.
+- GitHub Actions [Build #241](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41344811704), run ID `41344811704`, completed successfully.
+- `npm test`: 18/18 passed, including the 3 dedicated NAM library visibility/toggle/observer lifecycle tests. Build step also completed Vite production bundling via `npm run build`, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload.
+- Artifact ID `13098539446`; ZIP `MG30-Studio-build-241.zip`, size 4,061,478 bytes; SHA-256 `5e6250446a21c7b14e0254e91734e09d4d5bd3ee51318aaeaa866232fdd9a206`.
+- Extracted APK `MG30-Studio-241-debug.apk`: 4,438,564 bytes; SHA-256 `8db9fa33b6078b639f234785bc1c4de6aa6e15acbe64aec638a38db23a8b42eb`.
+- ZIP integrity and APK ZIP integrity checks both passed. Inspected the actual APK's bundled JS/CSS: library header text and empty state present; idempotent text guard present; persistent observer is limited to the catalogue; no page-wide library observer remains; IR layout observer excludes `namModelLibrary`; dedicated panel CSS and legacy fixed-position reset are present.
+- APK v2 signer certificate SHA-256: #233 `e58377c7108920b010093574c31b78af0d797f256dfd8ec72d6968716d670ba8`; #241 `6b304ec584e8089c5770a7f3e092b9afa2e6ed4d119f74bf5caddea8bf92c214`. They differ, so Android will not install #241 as an in-place update over #233. Back up/export important app-local data before uninstalling #233; the old signing private key is not available.
+- Source hashes at the exact #241 commit: `www/tone3000.js` `13632a59bb4d5b66f41df13e2972a15a4ec0b029`; `www/nam-transfer.js` `e854d2a7a122272b8971a3023f4e1d5e81b48cc4`; `www/main.js` `e2697b26e1d673be2002b8f1a085f12e9618b1de`; `www/native-midi.js` `a912c6e7379e193877122c9010b38bdbc0daae64`. `www/ir-transfer.js` includes only the UI observer skip for node id `namModelLibrary`; the User/Collection SysEx packet builder, routing maps and transfer/readback logic are not changed.
+- Important validation boundary: these are Node DOM/MutationObserver fixture tests, protocol regression tests, Vite bundle validation, and Android Gradle packaging. We do not have remote access to the user's physical handset, so no direct Android WebView install/tap test was possible. User should install #241 safely and confirm the Editor tab is responsive, then verify NAM library Show/Hide and Collection. Do not claim physical phone runtime validation until that screenshot arrives.
