@@ -3011,3 +3011,14 @@ User supplied a fresh screenshot from Build #224 and reported that the Available
 ### APK build status at note creation
 - Build #226 was triggered automatically from commit `7b5750fde71216d8e16ddb6872465d87615c224f`; run ID `41338505989`.
 - At the time of this note: dependency setup, `npm test`, and Capacitor Android project generation had passed; Gradle `assembleDebug` was still running. Final success/failure and APK hash must be appended after the run completes.
+
+
+### Final result for the unified catalogue correction — Build #226 SUCCESS
+- Workflow [Build #226](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41338505989), run ID `41338505989`, completed with conclusion `success` from exact source commit `7b5750fde71216d8e16ddb6872465d87615c224f`.
+- Node.js 22 setup, npm install, protocol regression `npm test`, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13095774838`, artifact `MG30-Studio-debug-APK`, archive size 4,059,097 bytes; ZIP SHA-256 `01e0d75ffff678985505a972c5978c6197829847bf0e0938a670260635c43be0`.
+- Extracted APK `MG30-Studio-226-debug.apk`: 4,436,820 bytes; SHA-256 `d4484c3690ae5d5182feff67446c927bbccac1fd52bd2da25075402ffa52dbf0`.
+- ZIP integrity test passed (`testzip() = None`); APK is a valid ZIP archive (`testzip() = None`).
+- Packaged CSS asset `assets/public/assets/index-DMgiSMTr.css` confirmed to contain the unified fixed outer catalogue panel, hidden collapsed trigger while expanded, integrated full-width toolbar divider, no reserved scrollbar gutter, internally scrollable model list, compact 128px/18dvh tool-pane cap, and the original mobile top offset. CSS inspection confirms this is the final #226 source, not #225.
+- Protected JS hashes remain unchanged as documented above. No NAM/IR/MIDI transfer logic or mappings were edited.
+- Physical installation/screenshot and actual MG-30 hardware tests remain pending. The APK is a new debug build; do not promise in-place update compatibility with #221 because earlier checks established that debug keys from clean workflow runners differed. Back up important app-local data before considering uninstall/reinstall.
