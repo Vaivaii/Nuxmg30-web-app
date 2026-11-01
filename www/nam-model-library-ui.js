@@ -80,7 +80,7 @@
       if (headerToggle.getAttribute('aria-expanded') !== ariaExpanded) {
         headerToggle.setAttribute('aria-expanded', ariaExpanded);
       }
-      setText(headerToggle, expanded ? 'Hide⌃' : 'Show⌄');
+      setText(headerToggle, expanded ? 'Hide' : 'Show⌄');
       if (content.hidden === expanded) content.hidden = !expanded;
       if (empty.hidden !== ready) empty.hidden = ready;
 
