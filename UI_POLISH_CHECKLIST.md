@@ -2758,3 +2758,18 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - The one-off validation workflow trigger has been removed. `.github/workflows/build-apk.yml` is restored to its original blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled and `feature/dark-performance-ui-polish` is absent from automatic push filters. Restore commit: `714cc3d8c162c4328b61d0807822bf3f8e2c6da1`.
 - No changes were made to NAM transfer code, IR SysEx frame generation/ACK handling, Collection/User routing, TONE3000 transfer logic, preset import/export logic, USB-MIDI implementation, or MIDI mapping. The checked source hashes for `www/ir-transfer.js`, `www/nam-transfer.js`, `www/main.js`, `www/tone3000.js`, and `www/native-midi.js` remain unchanged from the preceding checkpoint.
 - Validation boundary: source/static tests and web build passed. The new English UI has not yet been installed for a physical Android WebView test; MG-30 hardware and IR/NAM transfer have not been tested as part of this language pass. Do not treat Build #216 as containing these English UI changes. APK has not been built; await explicit user approval before building.
+
+
+## Conversation resume / verified current state (1 November 2026)
+
+- The conversation resumed after an interruption. Current branch HEAD: `8cc12751216cb098e4833a822315f12843b4c2e6`.
+- English UI validation run #218 (run ID `41305767689`) is confirmed completed successfully: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41305767689
+  - Job `Validate English UI and protocol tests (no APK)`: all steps successful, including English UI JavaScript syntax check, protocol regression tests, and Vite web asset build.
+  - Test result recorded in run checkpoint: 9 passed, 0 failed; Vite transformed 31 modules.
+  - This did not generate an Android project or APK.
+- Verified that the exact source blobs tested by run #218 are still the current branch blobs for `www/index.html`, `www/english-ui.js`, `www/ir-transfer.js`, `www/nam-transfer.js`, `www/main.js`, `www/tone3000.js`, and `www/native-midi.js`.
+- UI heading is `IR Collection`; redundant `Collection IR` card title is absent; `english-ui.js` loads before the main app module.
+- English translator has 765 exact phrase entries and 97 phrase-fragment rules at the checked source revision. It protects user/device-defined names and uses translated native confirm/prompt/alert messages.
+- Protocol safety: IR transfer source, NAM transfer source, USB-MIDI source and MIDI mappings were not changed in this language pass. Do not alter them as part of UI language polish without explicit user approval.
+- Workflow remains manual-only for APK builds: `workflow_dispatch` is present; the feature branch is absent from automatic push filters. No APK was built in run #218. Wait for explicit user instruction before building an APK.
+- Remaining validation: install the eventual APK on Android, inspect the full English UI in WebView, and test MG-30 connection/IR/NAM workflows on physical hardware. These have not yet been claimed as tested.
