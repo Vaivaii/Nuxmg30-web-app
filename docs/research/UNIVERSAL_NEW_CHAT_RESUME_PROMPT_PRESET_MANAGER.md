@@ -1077,3 +1077,20 @@ This rule is mandatory for every future application/source change on this branch
 - Workflow trigger restored after one-off build. Restore commit: `7ea441b73298571ae3e39e832d0b2d843934dfff`; workflow blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; `workflow_dispatch` remains enabled and `feature/dark-performance-ui-polish` is absent from automatic push filters.
 - Current APK for English UI is Build #219. Previous Build #216 is superseded for this language change.
 - Validation boundary: successful workflow and package/archive checks only. APK has not yet been installed on the user's physical Android device. No physical MG-30 USB-MIDI, IR Collection, Third Party/User transfer, or NAM transfer testing has been claimed.
+
+
+## English UI follow-up — preset fallback and Device firmware warning (1 November 2026)
+
+- User supplied screenshots from English UI Build #219 and pointed out remaining Indonesian strings in the preset header and Device warning.
+- Source commit: `fed9023cf1c6fa69387cd5944ae514269998b6cc`; modified file: `www/index.html` only.
+- Corrections:
+  - Disconnected preset placeholder: `Connect to read preset`.
+  - Connected but unread preset fallback: `Preset name not read yet`.
+  - NAM slot reader disclosure labels from CSS pseudo content: `Show` / `Hide` (replacing Indonesian `Tampilkan` / `Sembunyikan`).
+  - Device warning now reads fully in English:
+    “Android Chrome does not always expose Web MIDI/USB-MIDI in the way this app requires. Testing on this page does not guarantee compatibility with the NUX MG-30 (original Gen 2). The protocol reference targets the latest original Gen 2 firmware (6.0.x), not the MKII. It is based on reverse engineering and is not official documentation.”
+  - Removed outdated firmware reference `5.0.2`; the project target is original MG-30 Gen 2 firmware 6.0.x, not MKII.
+- Source assertions passed for Show/Hide, both preset fallback strings, the complete Important warning, 6.0.x, no 5.0.2, and explicit not-MKII wording.
+- User explicitly requested immediate APK build after this correction; proceed to Build #220.
+- No intended changes to NAM/IR transfer protocol, Collection/User routing, USB-MIDI, preset data, or MIDI mappings.
+- Physical Android WebView and MG-30 hardware validation remain pending until the user installs/tests the APK.
