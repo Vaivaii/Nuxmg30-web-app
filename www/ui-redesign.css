@@ -1537,8 +1537,28 @@ html,body{background:#0b1012}
     display: none !important;
   }
 
+  /* Keep the NAM/Profile lab identity visible above the compact tool frame. */
   body.ir-collection-manager-active #page-nam > .nam-page-hero {
-    display: none !important;
+    display: flex !important;
+    position: relative !important;
+    top: auto !important;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    margin: 0 2px 6px;
+    padding: 0 2px 4px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  body.ir-collection-manager-active #page-nam > .nam-page-hero .eyebrow {
+    font-size: 9px;
+    line-height: 1.15;
+    letter-spacing: 1.7px;
+  }
+  body.ir-collection-manager-active #page-nam > .nam-page-hero h2 {
+    margin: 2px 0 0;
+    font-size: clamp(20px, 5vw, 23px);
+    line-height: 1.12;
   }
 
   body.ir-collection-manager-active #page-nam > .nam-ir-tools-frame {
@@ -1672,14 +1692,7 @@ html,body{background:#0b1012}
     overscroll-behavior: contain;
   }
 
-  /* Collection uses all remaining height. Only its 24-slot grid scrolls. */
-  body.ir-collection-manager-active #page-nam > .nam-ir-ir-pane {
-    display: flex !important;
-    flex: 1 1 0;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
+  /* Collection remains a direct child so Android WebView cannot collapse a nested flex wrapper. */
   body.ir-collection-manager-active #page-nam #ir-import-content.ir-import-content {
     display: flex !important;
     flex: 1 1 0;

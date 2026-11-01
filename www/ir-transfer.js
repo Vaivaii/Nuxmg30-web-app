@@ -159,8 +159,8 @@ function initUI(){
     if(child===tonePanel||child.id==='tone3000Panel')tonePane.appendChild(child);
     else namPane.appendChild(child);
    }
-   page.append(toolsFrame,irPane);
-   irPane.appendChild(root);
+   // Keep Collection as a direct child of the fixed page; no nested flex wrapper.
+   page.insertBefore(toolsFrame,root);
    page.dataset.namIrToolsReady='true';
 
    // TONE3000 may mount just after this controller; move the existing node, keeping its handlers.
