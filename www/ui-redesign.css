@@ -2029,7 +2029,8 @@ html,body{background:#0b1012}
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #46565a transparent;
     box-sizing: border-box;
   }
 
