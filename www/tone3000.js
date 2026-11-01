@@ -404,7 +404,10 @@ function renderToneCatalogue(snapshot, options = {}) {
   const root = $('t3kToneDetails'), list = $('t3kModelList');
   const normalized = parseToneCatalogue(snapshot);
   if (!root || !list || !normalized) return;
-  const previous = localStorage.getItem(PREFIX + 'selected_model_id') || normalized.selectedModelId;
+  const savedToneId = localStorage.getItem(PREFIX + 'selected_tone_id');
+  const previous = savedToneId === normalized.toneId
+    ? localStorage.getItem(PREFIX + 'selected_model_id')
+    : normalized.selectedModelId;
   selectedModelId = normalized.models.some(model => model.id === previous)
     ? previous : (normalized.selectedModelId || normalized.models[0]?.id || '');
   selectedTone = {
@@ -495,7 +498,8 @@ async function loadSelectedTone(toneId, options = {}) {
     ]);
     const tone = toneBody?.data || toneBody?.tone || toneBody;
     const snapshot = normalizeToneCatalogue(id, tone, models);
-    const previous = localStorage.getItem(PREFIX + 'selected_model_id');
+    const previousToneId = localStorage.getItem(PREFIX + 'selected_tone_id');
+    const previous = previousToneId === id ? localStorage.getItem(PREFIX + 'selected_model_id') : '';
     if (previous && snapshot.models.some(model => model.id === previous)) snapshot.selectedModelId = previous;
     selectedModelId = snapshot.selectedModelId;
     saveWorkspaceSnapshot(snapshot);
