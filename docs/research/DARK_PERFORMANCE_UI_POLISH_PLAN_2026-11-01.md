@@ -168,3 +168,25 @@ UI polish 01 is complete and recorded. Do not edit the next component until the 
 - Current step summaries: [{"name":"Build debug APK","status":"in_progress","conclusion":null,"steps":[{"name":"Set up job","status":"completed","conclusion":"success"},{"name":"Checkout","status":"completed","conclusion":"success"},{"name":"Set up Node.js","status":"completed","conclusion":"success"},{"name":"Set up Java","status":"completed","conclusion":"success"},{"name":"Install JavaScript dependencies","status":"completed","conclusion":"success"},{"name":"Run protocol regression tests","status":"completed","conclusion":"success"},{"name":"Generate Capacitor Android project and install USB audio plugin","status":"completed","conclusion":"success"},{"name":"Build debug APK","status":"in_progress","conclusion":null},{"name":"Upload APK artifact","status":"pending","conclusion":null},{"name":"Post Set up Java","status":"pending","conclusion":null},{"name":"Post Set up Node.js","status":"pending","conclusion":null},{"name":"Post Checkout","status":"pending","conclusion":null}]}]
 - Artifacts currently listed: [].
 - Do not report APK complete or offer a download until the run concludes successfully and the artifact is downloaded, extracted, and verified. Continue polling run `41286541498`.
+
+
+
+## UI Polish 03 — Collection slots restored after scroll-frame regression (1 November 2026)
+
+- User reported that Collection slots disappeared in the installed build (screenshot showed the NAM import panel and TONE3000 above the Impulse Response heading, while the 24-slot Collection grid was clipped below the fixed viewport).
+- Root cause: the previous mobile frame fixed the entire `#page-nam` and applied `overflow:hidden`, but the same page still contained the NAM import and TONE3000 panels before `#ir-import-content`. Those preceding panels consumed the fixed height and pushed the Collection card outside the visible frame.
+- Source fix commit: `a66f87e83ff47eb8b7031285dd3bd42db9a78da1` on `feature/dark-performance-ui-polish`.
+- Added two internal workspaces: **NAM / TONE3000** and **IR COLLECTION**. The first retains the existing NAM and TONE3000 panels in their own scrollable pane; the second gets the available viewport and keeps only the 24-slot grid vertically scrollable. First-open default is IR COLLECTION; the selected workspace is remembered locally.
+- Late-mounted direct children of `#page-nam` are moved into the NAM/TONE3000 pane by a child-list observer; the existing panel nodes and their event handlers are moved, not recreated.
+- Responsive fixture simulation passed at 320×740, 360×800, 393×873, 432×915, and 680×900: all 24 slot nodes present; Collection grid heights 249–424px; grid scrollHeight 1905px; setting grid.scrollTop did not move document.scrollTop; toggling to NAM pane restored the NAM content pane. At 768×1024 the fixed mobile frame is disabled and desktop normal flow remains.
+- JavaScript syntax parse check passed after removing ESM export declarations for parser compatibility.
+- Change scope is limited to `www/ir-transfer.js` (workspace UI mounting/layout controller only) and `www/ui-redesign.css`. Transfer packet generation/sending/ACK, Collection/User command routing, NAM, preset import/export, main app/MIDI mapping, and `www/index.html` were not changed.
+- Protected file SHAs remain unchanged:
+  - `www/main.js`: `e2697b26e1d673be2002b8f1a085f12e9618b1de`
+  - `www/mg30-preset-import.js`: `e2490e6df3f5f32853743fc5eb29c99cc4026ea8`
+  - `www/mg30-preset-export.js`: `7959dea88d42f9433a9ddc06ed7198449e25ba52`
+  - `www/index.html`: `7947eac23fa6e28a208d5a7589e742575a22444c`
+  - `www/preset-library-ui.css`: `1be19a3d4e7ce617f5662c6e164b3d79fa770bf7`
+  - `www/preset-library-ui.js`: `67ec75258620323492609dcdec559badfb769797`
+- Build #211 (run ID `41286541498`, artifact `13075337014`) succeeded but contains the earlier clipped-layout version. Do not give that APK to the user as the fix.
+- The corrected source has NOT yet been built into a new APK or verified on the user's Android device. Await explicit approval before starting a replacement APK build. Ask: **Build sekarang atau nanti?**
