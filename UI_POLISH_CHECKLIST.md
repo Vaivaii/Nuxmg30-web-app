@@ -3164,3 +3164,40 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size 4,439,292 bytes, SHA-256 e159309181d13273c167180c326ad8b9de002f50da42194e24b3a9ca7dc38078. Inspected compiled APK assets: English empty-state and OAuth strings present, old Indonesian empty-state phrase absent, Show arrow absent, and compact-card CSS present.
 - Protected transfer/native files unchanged relative to the current baseline: www/nam-transfer.js SHA e854d2a7a122272b8971a3023f4e1d5e81b48cc4; www/ir-transfer.js SHA 6389f3ba51000c02a1b37495cb28cdbccd4197eb; www/main.js SHA e2697b26e1d673be2002b8f1a085f12e9618b1de; www/native-midi.js SHA a912c6e7379e193877122c9010b38bdbc0daae64. No IR collection import mapping or MIDI mapping was edited in this follow-up.
 - Validation boundary: CI tests, Android packaging, and compiled asset inspection passed. A physical phone/WebView visual check and MG-30 hardware transfer test remain outstanding; confirm actual card readability/touch behavior on the phone. This APK is a debug build.
+## NEXT SESSION ENDPOINT — PRESET RENAME, PEDAL TRANSFER & SAVE AS (2026-11-02)
+
+### Confirmed handoff state
+- User confirmed Build #248 was installed successfully and the latest NAM library UI/copy changes are working on the phone.
+- Last delivered build: MG30 Studio APK #248; GitHub Actions run 41347208794; source commit 5315c3d0be8b79a8dfaf8ed911f05d8ac79c4259; 22/22 automated tests passed; APK packaging and artifact inspection passed.
+- The current branch remains feature/dark-performance-ui-polish. Repository HEAD may be newer than the source commit used by Build #248 because the handoff notes themselves were committed afterward. Always re-check branch HEAD and Actions before starting the next session.
+- No preset rename/transfer/Save As implementation has been started in this session. This section is the next-work endpoint, not a claim that the feature already exists.
+
+### Next target
+1. **Rename Preset** — provide a clear way to rename a preset. First inspect whether the current preset name exists only in the app's local preset record or is also part of the pedal's stored preset metadata. Do not assume local rename also renames the pedal slot.
+2. **Transfer Preset to Pedal** — allow a selected preset to be sent/written to the connected original NUX MG-30 Gen 2 pedal. Reuse and verify the existing preset transfer/import/export protocol and current USB-MIDI connection path; do not invent packet formats or alter the working NAM/IR transfer path.
+3. **Save As / overwrite a preset slot** — add a Save As action that lets the user choose the destination pedal preset slot. If the target slot already contains a preset, show its slot number/name and require explicit overwrite confirmation before writing.
+
+### Required investigation before implementation
+- Inspect the current Presets page, preset data model, rename controls (if any), import/export serialization, slot selection, and existing device read/write functions.
+- Review existing USB-MIDI/SysEx captures and any current preset readback/writeback notes. Identify confirmed command IDs, payload layout, checksums, chunking, ACK/timeouts, and slot addressing from evidence already collected; capture additional traffic only when needed.
+- Establish whether the device supports a separate rename operation or whether the name is written as part of a complete preset-slot transfer. Keep this distinction explicit in the UI and documentation.
+- Identify a safe read-before-write and post-write verification path. Preserve/export a backup of the destination slot before overwriting whenever supported.
+
+### Acceptance criteria
+- Rename changes the intended preset name and persists correctly after app restart; behavior on the pedal is explicitly verified rather than assumed.
+- A preset can be selected and transferred to a chosen MG-30 slot through the real device connection.
+- Save As presents the valid destination slot list and clearly identifies occupied slots.
+- Overwrite requires explicit confirmation; cancellation sends no write commands.
+- Successful write is confirmed by ACK and, where supported, slot-name/preset readback. A partial/timeout result is reported honestly and does not claim success.
+- Existing preset import/export remains functional.
+- Existing NAM import, custom IR, IR Collection/User mapping, MIDI mapping, USB-MIDI, Signal Chain and Editor functions remain unchanged.
+- Add regression tests for preset naming, slot selection, overwrite confirmation/cancel, transfer framing, and post-write verification. Run full tests, production build, Android Gradle build, then inspect the actual APK before delivery.
+
+### Safety rules for the preset write path
+- Target device: original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
+- Do not test destructive overwrite on a valuable user preset. Start with an empty or explicitly chosen disposable/test slot and back up the destination first.
+- Never send a write on a guessed slot, unverified packet format, or stale device connection.
+- Keep all working NAM and IR features protected; do not alter IR collection imports or the known-correct MIDI mapping.
+
+### Session start instruction
+- When work resumes, read this endpoint section, re-check the latest branch/commit/build and the current Presets implementation, then continue with protocol and UI investigation. Do not redo Build #248's completed NAM library polish.
