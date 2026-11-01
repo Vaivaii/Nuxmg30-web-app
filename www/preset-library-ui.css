@@ -531,22 +531,42 @@
 
 /* Build checkpoint: user-approved build for Preset Manager scroll isolation. */
 
-/* Keep Preset Manager Import / Export buttons aligned inside the right edge of the header. */
+/* Compact and inset Preset actions so both buttons remain fully inside the mobile header. */
 @media (max-width: 720px) {
   #page-presets .preset-library-header {
     box-sizing: border-box;
-    padding-right: 5px;
+    gap: 8px;
+    padding-right: 12px;
+  }
+
+  #page-presets .preset-library-title {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  #page-presets .preset-library-header h2 {
+    font-size: clamp(21px, 4.8vw, 27px);
+    white-space: nowrap;
   }
 
   #page-presets .preset-library-actions {
     flex: 0 0 auto;
+    gap: 6px;
     min-width: 0;
+    margin-right: 5px;
   }
 
   #page-presets .preset-library-actions .btn {
     box-sizing: border-box;
     flex: 0 0 auto;
-    min-width: 72px;
+    min-width: 62px;
+    min-height: 36px;
+    padding: 7px 9px;
     max-width: 100%;
+    font-size: 10px;
+  }
+
+  #page-presets #presetExportStart::after {
+    font-size: 10px;
   }
 }
