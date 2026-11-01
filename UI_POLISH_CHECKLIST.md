@@ -2166,3 +2166,33 @@ Next response must ask exactly: **Build sekarang atau nanti?**
 
 ### Stop point
 CSS change and project notes saved. Ask exactly **Build sekarang atau nanti?** before any manual build.
+## Correct Export width, full-bottom fade and joined Device header (1 November 2026)
+
+### Latest screenshots / defects
+- Preset Export remained clipped because its old explicit min-width/intrinsic sizing exceeded the available header width even after reducing the action group gap.
+- Non-Preset tab fade appeared to stop short of the bottom edge because the pseudo-element used `bottom:-5px` and `margin-bottom:-5px`.
+- Device screenshot showed USB panel content visible through/above the sticky Device heading, making the label/title appear detached from the app header.
+
+### CSS corrections
+1. `www/preset-library-ui.css` commit `6335984e7e15626ffa40a262d5706be9252449d3`.
+   - Mobile Preset header changed to an explicit two-column grid: flexible title + fixed 126px action group.
+   - Import and Export buttons are now exactly 60px wide, 38px high, with equal columns/gap; title can shrink with `min-width:0`.
+   - Explicit width/min/max widths override the earlier `#presetImportChoose` / `#presetExportStart` min-width rules, preventing Export from expanding past the right edge.
+   - Existing Export label remains CSS-generated; no element, click handler or export module changed.
+2. `www/ui-redesign.css` commit `4905efbafce0b6babe820464e8d42c77f9d33371`.
+   - Non-Preset tab bottom fade now uses `bottom:0` and `margin-bottom:0`, so it ends exactly at the scrollport bottom; height 42px, gradual alpha ramp and no hard box shadow.
+   - Presets remains excluded from the shared fade and keeps its own card-frame fade.
+   - Device sticky hero is made opaque (`#0b1012`), full scroller width, z-index 45, with an aligned negative top margin to cover any USB card content scrolling behind the heading; Device eyebrow/title remain, subtitle remains CSS-hidden.
+
+### Protected files / source checks
+- Git compare from previous checkpoint `d4afe433fc70c5795e3f9ac3484c98f4cec85f3f` confirms only `www/preset-library-ui.css` and `www/ui-redesign.css` changed among app source files.
+- `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- `www/index.html` unchanged SHA `75f32a4ed4a83b76596099e731acf8485f60bbb3`.
+- Static assertions passed for fixed button widths, bounded header grid, retained Export label, fade ending at bottom:0 with no bottom margin/shadow, Preset fade exclusion, and opaque full-width Device heading.
+- No MIDI/USB/SysEx/device handlers, Import/Export implementation, Editor/Signal Chain, NAM/IR or other feature code changed.
+
+### Automatic builds
+- Build #205 (run `41274647488`) was triggered by the intermediate Preset button CSS commit `6335984e7e15626ffa40a262d5706be9252449d3`; intermediate only.
+- Build #206 (run `41274669130`) was triggered by latest commit `4905efbafce0b6babe820464e8d42c77f9d33371`; this is the authoritative full CSS correction build.
+- At time of note, #205 and #206 were in progress; no artifact available yet. Use #206 artifact only.
