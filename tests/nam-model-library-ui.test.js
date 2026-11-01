@@ -37,12 +37,12 @@ class FakeElement {
     this._innerHTML = value;
     if (this.id === 'namModelLibrary' && this.ownerDocument) {
       const doc = this.ownerDocument;
-      const head = doc.getElementById('namModelLibraryHead');
-      const heading = doc.getElementById('namModelLibraryHeading');
-      const meta = doc.getElementById('namModelLibraryMeta');
-      const toggle = doc.getElementById('namModelLibraryToggle');
-      const content = doc.getElementById('namModelLibraryContent');
-      const empty = doc.getElementById('namModelLibraryEmpty');
+      const head = doc.elements.namModelLibraryHead;
+      const heading = doc.elements.namModelLibraryHeading;
+      const meta = doc.elements.namModelLibraryMeta;
+      const toggle = doc.elements.namModelLibraryToggle;
+      const content = doc.elements.namModelLibraryContent;
+      const empty = doc.elements.namModelLibraryEmpty;
       head.appendChild(heading);
       heading.appendChild(meta);
       head.appendChild(toggle);
