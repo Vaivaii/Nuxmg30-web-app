@@ -155,9 +155,10 @@ function initUI(){
     if(child===tonePanel||child.id==='tone3000Panel')tonePane.appendChild(child);
     else namPane.appendChild(child);
    }
-   // #ir-import-content is authored as a sibling after #page-nam in index.html.
-   // Move it into the NAM & IR page explicitly; insertBefore(root) would throw NotFoundError.
-   page.append(toolsFrame,root);
+   // index.html normally moves #ir-import-content into #page-nam before modules load.
+   // Enforce that parent relationship before inserting the compact tool frame.
+   if(root.parentElement!==page)page.appendChild(root);
+   page.insertBefore(toolsFrame,root);
    page.dataset.namIrToolsReady='true';
 
    // TONE3000 may mount just after this controller; move the existing node, keeping its handlers.

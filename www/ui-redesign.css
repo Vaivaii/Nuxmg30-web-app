@@ -1520,8 +1520,9 @@ html,body{background:#0b1012}
     right: 10px;
     bottom: var(--ir-collection-manager-bottom, 107px);
     left: 10px;
-    display: flex;
-    flex-direction: column;
+    display: grid !important;
+    grid-template-rows: max-content max-content minmax(0, 1fr);
+    align-content: stretch;
     width: auto;
     max-width: 1100px;
     min-width: 0;
@@ -1693,12 +1694,13 @@ html,body{background:#0b1012}
   }
 
   /* Collection remains a direct child so Android WebView cannot collapse a nested flex wrapper. */
-  body.ir-collection-manager-active #page-nam #ir-import-content.ir-import-content {
-    display: flex !important;
-    flex: 1 1 0;
-    flex-direction: column;
+  body.ir-collection-manager-active #page-nam > #ir-import-content.ir-import-content {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
+    min-width: 0;
     min-height: 0;
+    height: 100%;
     margin: 0;
     padding: 4px 0 0;
     border-top: 0;
@@ -1722,21 +1724,24 @@ html,body{background:#0b1012}
     display: none !important;
   }
   body.ir-collection-manager-active #page-nam #ir-manager-ui.ir-manager-grid {
-    display: flex !important;
-    flex: 1 1 0;
-    flex-direction: column;
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr);
     gap: 0;
+    min-width: 0;
     min-height: 0;
+    height: 100%;
     overflow: hidden;
   }
   body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card:first-child {
     display: none !important;
   }
   body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card:nth-child(2) {
-    display: flex !important;
-    flex: 1 1 0;
-    flex-direction: column;
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    align-content: stretch;
+    min-width: 0;
     min-height: 0;
+    height: 100%;
     margin: 0;
     padding: 8px 9px;
     overflow: hidden;
@@ -1786,9 +1791,9 @@ html,body{background:#0b1012}
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
-    flex: 1 1 0;
+    min-width: 0;
     min-height: 0;
-    height: auto !important;
+    height: 100% !important;
     max-height: none !important;
     margin: 0;
     padding: 7px 6px;
