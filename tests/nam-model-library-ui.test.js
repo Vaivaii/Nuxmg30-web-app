@@ -18,7 +18,7 @@ class FakeClassList {
 
 class FakeElement {
   constructor(id = '') {
-    this.id = id;
+    this._id = id;
     this.hidden = false;
     this.classList = new FakeClassList();
     this.attributes = new Map();
@@ -27,6 +27,11 @@ class FakeElement {
     this.listeners = new Map();
     this.textContent = '';
     this._innerHTML = '';
+  }
+  get id() { return this._id; }
+  set id(value) {
+    this._id = value;
+    if (this.ownerDocument?.elements) this.ownerDocument.elements[value] = this;
   }
   set innerHTML(value) {
     this._innerHTML = value;
@@ -143,6 +148,7 @@ function createHarness({ withCatalogue = true } = {}) {
   }
 
   const document = {
+    elements,
     readyState: 'complete',
     documentElement: new FakeElement('documentElement'),
     getElementById: id => elements[id] || null,
@@ -154,6 +160,8 @@ function createHarness({ withCatalogue = true } = {}) {
     addEventListener() {}
   };
   for (const element of Object.values(elements)) element.ownerDocument = document;
+  const panelChildren = ['namModelLibraryHead','namModelLibraryHeading','namModelLibraryMeta','namModelLibraryToggle','namModelLibraryContent','namModelLibraryEmpty'];
+  for (const id of panelChildren) elements[id].ownerDocument = document;
   toolsFrame.ownerDocument = document;
   toolsFrame.classList.toggle('nam-ir-tools-frame', true);
 
