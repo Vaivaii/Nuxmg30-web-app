@@ -543,3 +543,10 @@ User supplied a fresh screenshot from Build #224 and reported that the Available
 - Packaged CSS asset `assets/public/assets/index-DMgiSMTr.css` confirmed to contain the unified fixed outer catalogue panel, hidden collapsed trigger while expanded, integrated full-width toolbar divider, no reserved scrollbar gutter, internally scrollable model list, compact 128px/18dvh tool-pane cap, and the original mobile top offset. CSS inspection confirms this is the final #226 source, not #225.
 - Protected JS hashes remain unchanged as documented above. No NAM/IR/MIDI transfer logic or mappings were edited.
 - Physical installation/screenshot and actual MG-30 hardware tests remain pending. The APK is a new debug build; do not promise in-place update compatibility with #221 because earlier checks established that debug keys from clean workflow runners differed. Back up important app-local data before considering uninstall/reinstall.
+
+
+### Signing certificate comparison: Build #221 vs #226
+- Extracted the first signer certificate from each APK's v2 APK Signing Block and compared SHA-256.
+- Build #221 certificate SHA-256: `6237669d1b68b5aec0ad557f0753a254e2f5db04997ea08644a7eddabd37e151`.
+- Build #226 certificate SHA-256: `001786d9c33cab0c8e41fbe5e6a0731eaec89bab218024e6413062af50c7f3af`.
+- These are different. Android will not accept #226 as an in-place update over #221 using package installation. Do not uninstall #221 until any local application data has been backed up/exported. A persistent signing key is required for a continuous update channel; #221's original private key is not available in the current repository artifacts.
