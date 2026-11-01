@@ -298,3 +298,18 @@ UI polish 01 is complete and recorded. Do not edit the next component until the 
 - JavaScript syntax check passes after stripping ESM exports; CSS brace balance is zero. The exact transfer core from `buildMG30IRTransferPlan` through the end of send-logic before the UI helper remains byte-identical to the pre-patch source. Protected files unchanged: `www/index.html` 7947eac23fa6e28a208d5a7589e742575a22444c; `www/main.js` e2697b26e1d673be2002b8f1a085f12e9618b1de; `www/mg30-preset-import.js` e2490e6df3f5f32853743fc5eb29c99cc4026ea8; `www/mg30-preset-export.js` 7959dea88d42f9433a9ddc06ed7198449e25ba52; `www/preset-library-ui.js` 67ec75258620323492609dcdec559badfb769797; `www/preset-library-ui.css` 1be19a3d4e7ce617f5662c6e164b3d79fa770bf7; `www/native-midi.js` a912c6e7379e193877122c9010b38bdbc0daae64; `www/nam-transfer.js` e854d2a7a122272b8971a3023f4e1d5e81b48cc4; `www/tone3000.js` 34b29972051c6db4dad3994f4ab12961d517139a.
 - No IR packet generation, 75-frame command sets, ACK handling, Collection/User command routing, NAM transfer, MIDI/SysEx mappings, preset logic, or main startup module was changed.
 - Manual build gate remains active: `workflow_dispatch` is present and feature branch push trigger is absent. No APK build has been started for commit `41f7d620d021e280a8321fe2162f5ea4032d13a9`. Explicit user approval required before replacement APK build. Build #213 is known to reproduce the missing-card issue and must not be reissued.
+
+
+## Latest build checkpoint — Build #214 (1 November 2026)
+
+- User approved **Build sekarang** for the latest corrected Collection layout.
+- Application source: `41f7d620d021e280a8321fe2162f5ea4032d13a9` (`www/ir-transfer.js` and `www/ui-redesign.css` UI mounting/layout controller and mobile CSS only).
+- One-off workflow trigger commit: `aa920f3682907bd0147fce27e1265c062c599a38`. No application source beyond the tested source checkpoint was changed for the build trigger.
+- Build #214 / run ID `41299957248`: **success**. Run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41299957248
+- `npm test`, Capacitor Android init + USB audio plugin, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13080459335`, ZIP size 4,029,191 bytes, ZIP SHA-256 `d7ce9f191eb4269df07ea294cdce48b1b9331e5cdf69d095d69536cbb166c7a6`; expiry 15 November 2026.
+- Extracted APK: `/mnt/data/MG30_Studio_Dark_Performance_Build_214.apk`, size 4,406,196 bytes, SHA-256 `7db3d6da6faa6f57e3f94fd1507fe666d038c1c96e37c84dcf40c31051774250`.
+- ZIP and APK integrity passed; APK package inspection found the Collection grid, NAM/TONE3000 controls, layout fallback, NAM title/import panel and TONE3000 panel.
+- Manual build gate restored: workflow blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`; no push trigger for this branch; manual `workflow_dispatch` remains. Restoration commit `c3380ef98c6d862d3a3d8c164ff28aae6be4879c`.
+- Build #214 supersedes #213. Physical Android / MG-30 verification remains pending; the APK and browser fixture do not prove hardware/runtime behavior.
+- Next step: install Build #214 on Android; verify NAM/Profile title, compact NAM/TONE3000 controls, Collection card + all 24 slots, slot actions, and independent grid scrolling. Then capture a screenshot if any part is still missing. Do not start another build without explicit approval.
