@@ -2387,3 +2387,47 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Build #209 / source application baseline is preserved. `www/index.html` carries the multi-effects Device icon; `www/ui-redesign.css` inherited unchanged. No app source changed during branch setup.
 - Branch creation and documentation only; no browser test, npm test, CI, Actions, Gradle or APK run required. No build was triggered.
 - Current stop point: inspect screenshots and source on this branch, propose the first smallest visual-only change, and wait for authorization before editing code.
+
+## UI polish 01 — Editor Scene button typography (1 November 2026)
+
+### User-approved scope and rationale
+- First isolated Dark Performance 2.0 refinement, beginning with Editor as agreed by the user.
+- Slightly increased the readability of Scene 1–3 labels and their Clean / Rhythm / Lead descriptions. Previous page-scoped values were 10px / 8px; new values are 11px / 9px.
+- The visual adjustment deliberately preserves the existing three-column grid, 49/52px min-height rules, padding, colors, active scene highlight and all card layout.
+
+### Exact source change
+- Changed file: `www/ui-redesign.css` only.
+- Scoped selectors only: `#page-editor .main-editor-card .scene-button strong` and `#page-editor .main-editor-card .scene-button small`.
+- Exact change: title `font-size:10px → 11px`; description `font-size:8px → 9px`. No other declaration changed.
+- Source commit: `54ae2c69dbe59d011457ecd8a8dfd80c49a29dba` — `Improve Editor scene label readability`.
+- New CSS blob SHA: `fbdb3be89b8db4a07e07a4756c1f7f3f7c23891a`.
+- Git compare from pre-change branch HEAD `7f5f8c5429e9b9d30fadc01f2821c2e4bcd93f04` reports exactly one file: `www/ui-redesign.css`, 2 additions / 2 deletions.
+
+### Protected scope verification
+- `www/index.html` unchanged blob SHA `20f40485c77251ebe79964100fcd5b10c37550fe`.
+- `www/main.js` unchanged SHA `e2697b26e1d673be2002b8f1a085f12e9618b1de`.
+- `www/mg30-preset-import.js` unchanged SHA `e2490e6df3f5f32853743fc5eb29c99cc4026ea8`.
+- `www/mg30-preset-export.js` unchanged SHA `7959dea88d42f9433a9ddc06ed7198449e25ba52`.
+- Because the compare shows only this CSS file changed, no Editor rendering, scene click handler / hardware scene switching, Copy Scene behavior, Signal Chain/drag-drop, USB-MIDI/native bridge, NAM/IR/Collection transfer, Preset Import/Export, MIDI/SysEx mapping, Save-to-device, CTRL/EXP, Studio, Device behavior, or startup code was modified.
+
+### Test / simulation — exact source commit
+- Source tested: `54ae2c69dbe59d011457ecd8a8dfd80c49a29dba`.
+- Static source assertion: exactly one scoped Scene heading rule at 11px and one description rule at 9px; the existing three-column layout and min-height declarations remain. PASS.
+- Test fixture used the exact Scene button structure returned by the existing `renderSceneButtons()` renderer: button `.scene-button` + `strong` + `small`, labels Scene 1/2/3, descriptions Clean/Rhythm/Lead, and exactly one active state. No event or renderer code was changed.
+- Chromium / Playwright simulation with `page.set_content()`, extracted exact scoped final CSS declarations and relevant existing Scene card styles from `www/ui-redesign.css`. Tested 320×740, 360×800, 393×873 and 432×915.
+- All four sizes: heading computed to 11px, description 9px, all 3 cards in one row, text fits within each card, one active Scene remains highlighted, no horizontal overflow. Card widths: 86px / 99.3px / 110.3px / 123.3px respectively; card heights: 49px on 320/360 and 52px on 393/432. PASS.
+- Visual screenshot from the 393px test fixture: `/mnt/data/scene-ui-393.png`. This is an isolated component/browser simulation, not a full Android package test or physical-device test.
+
+### Failed test attempt and correction (preserved)
+- First browser harness attempt called `page.goto(file://...)`; Chromium returned `ERR_BLOCKED_BY_ADMINISTRATOR`. This is an environment restriction on local-file navigation, not an application failure.
+- Corrected the harness to call Playwright `page.set_content()` with the same fixture contents and reran the simulation. All four viewport runs passed. No source correction was required after the original CSS change.
+- An additional final rerun asserted that each label and description fits its own card; all four sizes passed.
+
+### Not run / limits
+- `npm test` was not run because this is a strictly presentational CSS-only change; no protocol, handler, serialization or device logic changed.
+- GitHub Actions / CI / Gradle / APK build not run yet. Build gate remains: ask **“Build sekarang atau nanti?”** and do not build until the user answers.
+- No physical Android / MG-30 test is claimed.
+
+### Next step / stop point
+- UI polish 01 source, test result and this record are committed; no additional source edit is queued.
+- Ask exactly **“Build sekarang atau nanti?”** before the next stage. The next visual candidate is to review the Editor Signal Chain card hierarchy, but do not begin another code edit until the user gives the next instruction.
