@@ -2855,3 +2855,20 @@ User feedback: the USB connector symbol still did not represent the Device tab w
 - Source validation before build: branch and protected file hashes checked; legacy first-model auto-import and session-only WeakMap cache removed. Automated `npm test`, Vite production build, Gradle APK build and packaged asset inspection are still pending for the build run.
 - User explicitly requested both implementation and APK build. The approved build will be a one-off trigger; restore the workflow to manual-only immediately after triggering.
 - Physical Android WebView/TONE3000 account callback and MG-30 hardware transfer testing remain pending until user installs and tests the APK.
+
+
+## Android APK Build #221 — Persistent TONE3000 Native Workspace (1 November 2026)
+
+- User approved the complete TONE3000 workflow redesign and immediate APK build.
+- App source commit: `bdddeb5e7c40df0a07bc665b8d1cccfe0f09e605`. Build trigger commit: `a8545ca1b959341c956bb1785a90f76510fda5fc`, which temporarily enabled this feature branch in the push filter. Restore commit: `0f105dc9d493093824e4b784ed754236f2e06258`.
+- GitHub Actions **Build #221**, run ID `41316863805`: **completed / success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41316863805
+- Regression tests: **15 passed, 0 failed, 0 skipped**, including the new `tests/tone3000-workspace.test.js` cases for full catalogue persistence, selected model, numeric IDs, malformed storage and models without download URLs.
+- Workflow steps all succeeded: checkout, Node.js 22, Java 21, npm install, protocol regression tests, Capacitor Android project generation + USB audio plugin, Gradle `assembleDebug`, artifact upload.
+- Artifact `MG30-Studio-debug-APK`, ID `13087627186`, size 4,058,814 bytes; ZIP SHA-256 `0408c918ef30b2e3a6611f180ecd30a3bdb43a6524790d035992d4b1f79d5b64`; expiry 15 November 2026 14:36:15 UTC.
+- Downloaded ZIP: `/mnt/data/MG30-Studio-TONE3000-Native-Workspace-Build-221.zip`; ZIP integrity verified.
+- Extracted APK: `/mnt/data/MG30_Studio_TONE3000_Native_Workspace_Build_221.apk`; size 4,436,632 bytes; SHA-256 `7be158699a94db1cda67335ae5cec3db33fb6cea2c3058882d66d97df44711c6`; APK archive integrity verified.
+- Packaged asset checks passed: `Available Models`, `Select Model`, `Download & Import`, `Download Only`, `Refresh Models`, workspace key `mg30-t3k-workspace-v1`, and IR Collection/NAM page assets present; first-model auto-import and WeakMap-only model cache strings absent.
+- TONE3000 behaviour in this build: user selects tone on TONE3000 website, app receives callback and loads the catalogue; model selection and download happen in MG30 Studio; full model metadata is remembered; selected model and target slot persist; model catalogue can be expanded/hidden; mobile list opens as a large overlay with its own scroll; model download URL absence disables its download actions. Import to MG-30 still requires explicit model choice, target slot choice and overwrite confirmation.
+- No intended changes to `www/nam-transfer.js`, `www/native-midi.js`, `www/ir-transfer.js`, `www/main.js`, `www/mg30-preset-import.js` or `www/mg30-preset-export.js`; their source blobs remain unchanged from the pre-TONE workspace checkpoint. NAM/IR transfer protocols, Collection/User routing, USB-MIDI and MIDI mapping were not modified in this feature.
+- Workflow restored to manual-only: blob `15484977fbfda4c1beea5a1132e30edd669bc0d2`, `workflow_dispatch` remains enabled, and `feature/dark-performance-ui-polish` is absent from push branch filters.
+- Validation boundary: GitHub workflow/tests and APK archive/package checks passed. Physical Android WebView testing of the TONE3000 OAuth callback, catalogue scrolling, persistence across a true app restart, and actual MG-30 NAM transfer have not yet been performed. User must install and verify on the phone/device.
