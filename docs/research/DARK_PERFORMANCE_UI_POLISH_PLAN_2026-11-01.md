@@ -74,3 +74,17 @@ At branch creation:
 
 Branch setup and design direction are recorded. **No application code has been changed.**
 Next step: inspect the existing mobile UI structure on this branch and propose the first smallest visual-only refinement before editing. The user has not authorized a first UI code change yet.
+
+## First UI implementation checkpoint — Editor Scene typography (1 November 2026)
+
+- Completed first user-approved small visual refinement: Editor Scene card title 10px → 11px and description 8px → 9px.
+- Source commit: `54ae2c69dbe59d011457ecd8a8dfd80c49a29dba`; only `www/ui-redesign.css` changed, limited to two selectors under `#page-editor .main-editor-card .scene-button`.
+- No card sizing, grid, spacing, state, scene event handlers, copy scene, Editor render, or hardware behavior changed.
+- Targeted Chromium / Playwright fixture based on the existing `renderSceneButtons()` DOM and exact scoped CSS. PASS at 320×740, 360×800, 393×873, 432×915: 3 cards remain in one row, labels 11px and descriptions 9px, all text fits, single active highlight remains, no horizontal overflow.
+- Test harness initial `file://` navigation was blocked by environment; fixed using `page.set_content()`. Rerun passed all four sizes; history is in `UI_POLISH_CHECKLIST.md`.
+- Protected JS/HTML and transfer modules verified unchanged. No app behavior or device protocol was modified.
+- No CI, Android build or physical hardware test run. Wait for user response **Build sekarang ou Build nanti**.
+
+## Current stop point
+
+UI polish 01 is complete and recorded. Do not edit the next component until the build decision is received. After the user responds, continue one small UI refinement at a time, with simulation and complete checklist/resume records.
