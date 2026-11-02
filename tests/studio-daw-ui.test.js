@@ -326,3 +326,51 @@ test('DAW page selection is stored separately from Jam/Record/DAW mode', () => {
   assert.ok(daw.includes("localStorage.getItem('mg30-studio-daw-page')"));
   assert.ok(daw.includes("['timeline', 'mixer', 'track-settings'].includes(savedPage)"));
 });
+
+
+test('Timeline status remains accessible but no longer reserves a visible status card', () => {
+  assert.ok(html.includes('id="dawStatus" class="daw-status daw-status-sr-only"'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-status-sr-only'));
+  assert.ok(css.includes('clip:rect(0,0,0,0)!important'));
+});
+
+test('Jam / Record / DAW mode tabs stay sticky above the Studio page content', () => {
+  assert.ok(css.includes('#page-studio>.studio-mode-tabs'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('top:0!important'));
+  assert.ok(css.includes('z-index:205!important'));
+});
+
+test('Mixer page hides page and channel headings to maximize fader area', () => {
+  assert.ok(!html.includes('DAW · MIX'));
+  assert.ok(!js.includes("'<strong>' + safeText(track.name) + '</strong>'"));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-subpage-heading{display:none!important}'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-strip>strong{display:none!important}'));
+});
+
+test('Each Mixer fader has its own 12-segment LED meter', () => {
+  assert.ok(js.includes('data-vu-track="\' + track.id + \'"'));
+  assert.ok(js.includes('data-vu-segment="\' + segment + \'"'));
+  assert.ok(js.includes('trackMeter = context.createAnalyser()') || js.includes('const trackMeter = context.createAnalyser()'));
+  assert.ok(js.includes('liveTrackNodes.set(track.id, { gain, pan, meter: trackMeter'));
+  assert.ok(js.includes('nodes.meter.getFloatTimeDomainData(samples)'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-vu'));
+  assert.ok(css.includes('i:nth-child(n+11).active'));
+});
+
+test('Mixer fader and LED VU ladder fit the channel without internal page scrolling', () => {
+  assert.ok(css.includes('#page-studio #dawMixerPage{'));
+  assert.ok(css.includes('overflow:hidden!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage #dawMixer'));
+  assert.ok(css.includes('grid-template-rows:minmax(0,1fr)!important'));
+  assert.ok(css.includes('height:100%!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-fader{'));
+});
+
+test('Ruler and track lanes use one common beat/bar grid origin and dimensions', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-ruler-inner,'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-lane{'));
+  assert.ok(css.includes('var(--daw-beat-width,23px) 100%'));
+  assert.ok(css.includes('var(--daw-bar-width,92px) 100%'));
+  assert.ok(css.includes('background-position:1px 0,1px 0!important'));
+});
