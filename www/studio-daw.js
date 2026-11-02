@@ -370,7 +370,7 @@ function renderMixer() {
     const vuSegments = Array.from({ length: 12 }, (_, segment) => '<i data-vu-segment="' + segment + '"></i>').join('');
     return '<div class="daw-mixer-strip" style="--track-color:' + track.color + '" aria-label="' + safeText(track.name) + ' channel">' +
       '<span class="daw-mixer-index" aria-label="' + safeText(track.name) + ' channel ' + (index + 1) + '">' + (index + 1) + '</span>' +
-      '<strong class="daw-mixer-track-name">' + safeText(track.name) + '</strong>' +
+      '<span class="daw-mixer-track-name">' + safeText(track.name) + '</span>' +
       '<div class="daw-mixer-pan-row"><span>L</span><div class="daw-pan-dial" style="--pan-angle:' + panAngle + 'deg"><i></i><input type="range" min="-100" max="100" step="1" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '" aria-label="' + safeText(track.name) + ' pan"></div><span>R</span></div>' +
       '<div class="daw-mixer-pan-readout" data-pan-readout="' + track.id + '">' + panLabel + '</div>' +
       '<div class="daw-mixer-control-row">' +
@@ -1306,34 +1306,22 @@ function updateProjectField(field, value) {
 
 function syncStudioPinnedControls() {
   const dock = $('dawStudioDock');
-  const studio = $('page-studio');
   const appNav = document.querySelector('.nav');
-  const appHeader = document.querySelector('.top');
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
-  if (dock && appNav && viewportHeight > 0) {
-    const navRect = appNav.getBoundingClientRect();
-    const navIsAtBottom = navRect.height > 0 && navRect.top > viewportHeight * 0.58 && navRect.top < viewportHeight;
-    const dockBottom = navIsAtBottom
-      ? Math.ceil(viewportHeight - navRect.top + 8)
-      : Math.max(96, Math.ceil((appNav.offsetHeight || 64) + 28));
-    dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px');
+  if (!dock || !appNav || !viewportHeight) return;
+  const navRect = appNav.getBoundingClientRect();
+  const navIsFixedAtBottom = navRect.height > 0
+    && navRect.top < viewportHeight
+    && Math.abs(viewportHeight - navRect.bottom) < Math.max(8, navRect.height * 0.15);
 
-    const appRect = $('page-studio')?.getBoundingClientRect();
-    if (appRect && appRect.width > 0) {
-      const dockWidth = Math.max(280, Math.min(1172, appRect.width - 24));
-      dock.style.setProperty('--studio-dock-width', dockWidth + 'px');
-      dock.style.setProperty('--studio-dock-left', (appRect.left + appRect.width / 2) + 'px');
-    }
-  }
-
-  if (studio && appHeader) {
-    const headerRect = appHeader.getBoundingClientRect();
-    const modeTabsTop = headerRect.height > 0
-      ? Math.max(0, Math.ceil(headerRect.bottom + 8))
-      : 8;
-    studio.style.setProperty('--studio-mode-tabs-top', modeTabsTop + 'px');
-  }
+  // The nav occupies the safe-area too. Place the dock 8px above its actual top.
+  // If the nav is not currently measurable, fall back to the known mobile nav
+  // footprint rather than using a stale Studio content width/offset.
+  const dockBottom = navIsFixedAtBottom
+    ? Math.ceil(viewportHeight - navRect.top + 8)
+    : Math.ceil((appNav.offsetHeight || 64) + 16);
+  dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px');
 }
 
 function setDawPage(page) {
@@ -1373,8 +1361,8 @@ function setStudioMode(mode) {
     const active = panel.dataset.studioModePanel === selected;
     panel.hidden = !active;
     panel.setAttribute('aria-hidden', String(!active));
-    // The DAW workspace has an explicit grid layout; force the display state
-    // inline so its !important grid rule can never leak into Jam or Record.
+    // The DAW workspace uses an explicit flex layout; keep its display state
+    // scoped to Studio so page rules cannot leak into Jam or Record.
     panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'flex' : 'block') : 'none', 'important');
   });
   try { localStorage.setItem('mg30-studio-last-mode', selected); } catch (_) {}
