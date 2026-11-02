@@ -132,7 +132,8 @@ test('approved Studio mockup hierarchy is present and the bottom navigation stay
   assert.ok(html.includes('Jamm &amp; Record'));
   assert.ok(html.includes('Mini DAW – 4 Track'));
   assert.ok(html.includes('Project: <strong id="dawProjectSummary">'));
-  assert.ok(html.includes('id="dawMixerDetails"'));
+  assert.ok(html.includes('id="dawMixerPage"'));
+  assert.ok(html.includes('id="dawTrackSettingsPage"'));
   assert.ok(html.includes('id="page-device"'));
   assert.ok(html.includes('id="page-studio"'));
 });
@@ -176,7 +177,7 @@ test('timeline canvas extends as the playhead advances beyond the initial bars',
 
 test('Jam and Record modes explicitly hide the entire DAW workspace', () => {
   assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
-  assert.ok(daw.includes("panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'grid' : 'block') : 'none', 'important')"));
+  assert.ok(daw.includes("panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'flex' : 'block') : 'none', 'important')"));
   assert.ok(css.includes('#page-studio #studio-daw-workspace[hidden]{display:none!important}'));
 });
 
