@@ -628,12 +628,19 @@
 const NAM_SLOT_PARAMETER_LABELS='gain, bass, middle, treble, master';
 const AMP_NAM_SLOT_PROFILES=(()=>{
  let saved={};try{saved=JSON.parse(localStorage.getItem('mg30-nam-slot-names')||'{}')||{}}catch{}
- return Array.from({length:10},(_,i)=>{
+ let migratedLegacyAatrName=false;
+ const legacyAatrLabels=new Set(['AATR SX3 Clean BAL3 CAB · NAM 07','AATR SX3 Clean BAL3 CAB · ID 61']);
+ const profiles=Array.from({length:10},(_,i)=>{
   const slot=i+1,id=53+slot,number=String(slot).padStart(2,'0');
-  const defaultName=slot===8?'AATR SX3 Clean BAL3 CAB · ID 61':('NAM Slot '+number+' · ID '+id);
+  const defaultName='NAM Slot '+number+' · ID '+id;
   const stored=saved[String(id)];
-  return {slot,id,defaultName,name:typeof stored==='string'&&stored.trim()?stored.trim():defaultName};
+  const storedName=typeof stored==='string'?stored.trim():'';
+  const isLegacyAatrLabel=legacyAatrLabels.has(storedName);
+  if(isLegacyAatrLabel){saved[String(id)]=defaultName;migratedLegacyAatrName=true;}
+  return {slot,id,defaultName,name:isLegacyAatrLabel||!storedName?defaultName:storedName};
  });
+ if(migratedLegacyAatrName){try{localStorage.setItem('mg30-nam-slot-names',JSON.stringify(saved))}catch{}}
+ return profiles;
 })();
 const BLOCKS=[
 {id:'WAH',icon:'⌁',models:[['Clyde','pedal'],['Cry BB','pedal'],['V847','pedal'],['Horse Wah','pedal, contour, range'],['Octave-Shift','pedal, updown']]},
