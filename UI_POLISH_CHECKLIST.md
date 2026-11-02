@@ -3343,3 +3343,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - New Project should create the four named lanes and a project timeline immediately, without requiring the user to configure all four tracks first. Track 1 should accept imported backing audio; Track 2 should be ready for the verified MG-30 USB guitar input. Track 3 and Track 4 remain available for later overdubs or imported audio.
 - The default layout does not mean Bass/Vocals have dedicated independent hardware inputs or that four tracks can record simultaneously. Input routing must be explicit and verified; preserve the existing USB route checks and do not fall back silently to the phone microphone.
 - Keep Jam and Quick Record as distinct workflows. A saved Quick Record WAV should be importable into a DAW track without re-recording; DAW Record should record into the selected/armed track as a project clip. The YouTube reference remains a play-along reference, not an automatically imported audio source.
+
+
+## Product decision confirmed — DAW stem export and full mix export (2 November 2026)
+
+- User requires two distinct DAW export workflows:
+  1. **Export Stems:** open a stem-export screen/menu showing a checklist of the four project tracks (Backing, Guitar, Bass, Vocals). User can check only the tracks they want; each selected track is rendered/exported as its own separate audio file (not combined into one file). Unchecked tracks are omitted. Allow selecting any subset, including one track or all four.
+  2. **Export Mix:** render the complete project as one combined stereo audio file, using the DAW mix (track levels, pan, mute/solo and other applicable mix settings), similar to a conventional DAW master mix export.
+- The two choices must be explicit and separate in the Project/Export UI: “Export Stems” and “Export Full Mix” (or equivalent clear English labels).
+- Stem files should have useful track-based filenames and share the project's export format/sample-rate settings. The exact file container/delivery method, bit depth, sample rate, and whether selected stems are bundled in a ZIP or saved individually remain implementation decisions to validate on Android.
+- Stem export should preserve each track's timing/position relative to the project start so the files can be imported into another DAW and remain aligned. Do not normalize/trim leading silence independently unless user explicitly chooses that behavior.
+- This is a product requirement/design note only. No export engine, audio renderer, project format, existing quick-record export, or other production code has been changed.
