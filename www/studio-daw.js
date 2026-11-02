@@ -266,7 +266,7 @@ function renderInspector() {
   const clipTools = clip
     ? '<div class="daw-clip-tools"><small>' + safeText(clip.name) + '</small>' +
       '<div class="daw-fade-control"><label>Fade in <strong data-fade-readout="in">' + (Number(clip.fadeInSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeInSeconds) || 0) + '" data-clip-fade="in" aria-label="Clip fade in"></label>' +
-      '<label>Fade out <strong data-fade-readout="out">' + (Number(clip.fadeOutSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds / 2) + '" step="0.05" value="' + (Number(clip.fadeOutSeconds) || 0) + '" data-clip-fade="out" aria-label="Clip fade out"></label></div>' +
+      '<label>Fade out <strong data-fade-readout="out">' + (Number(clip.fadeOutSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeOutSeconds) || 0) + '" data-clip-fade="out" aria-label="Clip fade out"></label></div>' +
       '<div><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
     : '<p class="daw-inspector-note">Select a clip to trim its edges, split it, or set individual fades.</p>';
   holder.innerHTML =
