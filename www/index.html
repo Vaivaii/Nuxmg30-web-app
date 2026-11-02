@@ -427,7 +427,7 @@
     </div>
     <audio id="backingAudio" class="studio-audio-player hidden" preload="metadata"></audio>
     <div id="backingPlaybackControls" class="studio-backing-player hidden">
-      <button class="studio-backing-transport" id="backingPlayBtn" type="button" aria-label="Putar backing track" title="Play">▶</button>
+      <button class="studio-backing-transport" id="backingPlayBtn" type="button" aria-label="Play backing track" title="Play">▶</button>
       <div class="studio-backing-timeline">
         <input id="backingSeek" type="range" min="0" max="1000" value="0" aria-label="Backing track position">
         <div><span id="backingElapsed">00:00</span><span id="backingDuration">--:--</span></div>
@@ -470,8 +470,8 @@
     </div>
     <div class="studio-transport studio-transport-icons">
       <button class="studio-transport-btn studio-record-icon" id="guitarRecordBtn" type="button" disabled aria-label="Start recording" title="Record"><span class="transport-glyph">●</span><small>REC</small></button>
-      <button class="studio-transport-btn studio-play-icon" id="guitarPlayBtn" type="button" disabled aria-label="Play recording" title="Putar"><span class="transport-glyph" id="guitarPlayGlyph">▶</span><small id="guitarPlayLabel">PLAY</small></button>
-      <button class="studio-transport-btn studio-stop-icon" id="guitarStopBtn" type="button" disabled aria-label="Stop dan simpan rekaman" title="Stop / Save"><span class="transport-glyph">■</span><small>STOP</small></button>
+      <button class="studio-transport-btn studio-play-icon" id="guitarPlayBtn" type="button" disabled aria-label="Play recording" title="Play"><span class="transport-glyph" id="guitarPlayGlyph">▶</span><small id="guitarPlayLabel">PLAY</small></button>
+      <button class="studio-transport-btn studio-stop-icon" id="guitarStopBtn" type="button" disabled aria-label="Stop and save recording" title="Stop / Save"><span class="transport-glyph">■</span><small>STOP</small></button>
     </div>
     <div id="recordStatus" class="studio-inline-status" role="status" aria-live="polite">Test the USB input first.</div>
     <audio id="guitarPlayback" class="hidden" preload="metadata"></audio>
@@ -581,7 +581,7 @@
       <div class="studio-dialog-title">Rename Recording</div>
       <p>The file name will be updated in app storage.</p>
       <label for="renameTakeInput">Recording name</label>
-      <input id="renameTakeInput" type="text" maxlength="90" autocomplete="off" placeholder="Contoh: Solo chorus take 1">
+      <input id="renameTakeInput" type="text" maxlength="90" autocomplete="off" placeholder="e.g. Solo chorus take 1">
       <div id="renameTakeError" class="studio-dialog-error" role="status"></div>
       <div class="studio-dialog-actions">
         <button class="btn" type="button" id="renameTakeCancel">Cancel</button>

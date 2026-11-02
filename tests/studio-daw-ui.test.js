@@ -566,3 +566,26 @@ test('Build 329: Studio Record, backing and YouTube runtime messages are English
   assert.ok(main.includes('Backing track is ready.'));
   assert.ok(main.includes('YouTube search failed:'));
 });
+
+
+test('Build 330: no Indonesian copy remains in Studio mode controls or the recording rename dialog', () => {
+  const studioStart = html.indexOf('<section id="page-studio"');
+  const studioEnd = html.indexOf('</section>', html.indexOf('id="dawStudioDock"', studioStart)) + 10;
+  const studioMarkup = html.slice(studioStart, studioEnd);
+  const dialogStart = html.indexOf('<dialog id="renameTakeDialog"');
+  const dialogEnd = html.indexOf('</dialog>', dialogStart) + 9;
+  const recordingDialog = html.slice(dialogStart, dialogEnd);
+  for (const phrase of ['Pilih file', 'Cari lagu', 'Putar backing', 'Putar rekaman', 'Stop dan simpan', 'Ganti nama', 'Batal', 'Contoh:', 'Rekaman tersimpan', 'Tes input USB']) {
+    assert.ok(!studioMarkup.includes(phrase), 'Indonesian Studio label remains: ' + phrase);
+    assert.ok(!recordingDialog.includes(phrase), 'Indonesian recording dialog label remains: ' + phrase);
+  }
+});
+
+test('Build 330: Record, backing playback and YouTube failure messages use English wording', () => {
+  for (const phrase of ['Recording name diubah', 'Ganti nama', 'Backing sedang diputar', 'Backing selesai diputar', 'Periksa API key', 'Kuota YouTube Data API', 'Tidak dapat memutar', 'Pilih file audio']) {
+    assert.ok(!main.includes(phrase), 'Indonesian Studio runtime text remains: ' + phrase);
+  }
+  for (const phrase of ['Recording renamed to', 'Backing track is playing.', 'Backing track playback finished.', 'Check your API key.', 'The YouTube Data API daily quota has been exceeded.']) {
+    assert.ok(main.includes(phrase), 'Missing English Studio runtime text: ' + phrase);
+  }
+});

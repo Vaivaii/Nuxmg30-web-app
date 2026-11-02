@@ -123,7 +123,7 @@ function renderTakes() {
     '<br>' + safeText(take.routeName || 'USB-Audio · NUX MG-30') + '</small></div>' +
     '<div class="studio-take-actions">' +
     '<button class="studio-take-action" type="button" data-play-take="' + index + '" aria-label="Play ' + safeText(take.fileName) + '" title="Play">▶</button>' +
-    '<button class="studio-take-action" type="button" data-rename-take="' + index + '" aria-label="Ganti nama ' + safeText(take.fileName) + '" title="Ganti nama">✎</button>' +
+    '<button class="studio-take-action" type="button" data-rename-take="' + index + '" aria-label="Rename ' + safeText(take.fileName) + '" title="Rename recording">✎</button>' +
     '<button class="studio-take-action" type="button" data-export-take="' + index + '" aria-label="Export ' + safeText(take.fileName) + '" title="Save a copy to device">⇩</button>' +
     '</div></div>'
   ).join('');
@@ -207,7 +207,7 @@ async function saveRenamedTake(index, rawName) {
     }
     renderTakes();
     $('renameTakeDialog').close();
-    setStatus('recordStatus', 'Recording name diubah menjadi ' + result.fileName, 'ok');
+    setStatus('recordStatus', 'Recording renamed to ' + result.fileName, 'ok');
   } catch (error) {
     $('renameTakeError').textContent = error?.message || 'Could not rename the file.';
   } finally {
@@ -406,7 +406,7 @@ $('backingPlayBtn')?.addEventListener('click', async () => {
   if (audio.paused) {
     try {
       await audio.play();
-      setBackingStatus('Backing sedang diputar.', 'ok');
+      setBackingStatus('Backing track is playing.', 'ok');
     } catch (error) {
       setBackingStatus('File selected, but this WebView cannot play it. Try PCM WAV or MP3; some FLAC files are not supported on this device.', 'warn');
     }
@@ -436,7 +436,7 @@ $('backingAudio')?.addEventListener('play', refreshBackingControls);
 $('backingAudio')?.addEventListener('pause', refreshBackingControls);
 $('backingAudio')?.addEventListener('ended', () => {
   refreshBackingControls();
-  setBackingStatus('Backing selesai diputar.');
+  setBackingStatus('Backing track playback finished.');
 });
 $('backingAudio')?.addEventListener('error', () => {
   setBackingStatus('This audio format cannot be played in Android WebView. Convert it to MP3 or PCM WAV, then import it again.', 'warn');
@@ -531,8 +531,8 @@ async function searchYoutubeInStudio() {
       const message = data.error?.message || ('HTTP ' + response.status);
       $('youtubeResults').classList.remove('hidden');
       $('youtubeResults').innerHTML = '<div class="studio-empty">YouTube search failed: ' + safeText(message) +
-        (reason === 'keyInvalid' ? '<br>Periksa API key.' : '') +
-        (reason === 'quotaExceeded' ? '<br>Kuota YouTube Data API hari ini habis.' : '') +
+        (reason === 'keyInvalid' ? '<br>Check your API key.' : '') +
+        (reason === 'quotaExceeded' ? '<br>The YouTube Data API daily quota has been exceeded.' : '') +
         '</div>';
       return;
     }
