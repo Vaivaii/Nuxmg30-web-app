@@ -484,6 +484,7 @@
 
   </div>
   <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw">
+  <section id="dawTimelinePage" class="daw-subpage daw-timeline-page" data-daw-page-panel="timeline">
     <div class="daw-quick-toolbar">
       <div class="daw-quick-toolbar-primary">
         <label class="daw-tempo-control" for="dawTempo"><span>♫</span><input id="dawTempo" type="number" min="40" max="240" step="1" value="120"><small>BPM</small></label>
@@ -523,9 +524,47 @@
       </div>
       <span id="dawTimelineInfo" class="hidden">4 tracks · 48 kHz / 24-bit</span>
     </div>
-    <input id="dawAudioFileInput" class="hidden" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac">
 
-    <div id="dawStudioDock" class="daw-studio-dock">
+    <div id="dawStatus" class="daw-status" role="status" aria-live="polite">4-track Mini DAW ready. Backing and Guitar are prepared; Bass and Vocals are ready for import or one-at-a-time overdubs.</div>
+  </section>
+
+  <section id="dawMixerPage" class="daw-subpage daw-mixer-page" data-daw-page-panel="mixer" hidden>
+    <div class="daw-subpage-heading">
+      <div><div class="eyebrow">DAW · MIX</div><h3>Mixer</h3><p>Atur level, pan, mute dan solo untuk setiap track.</p></div>
+      <span class="daw-subpage-count">4 CHANNELS</span>
+    </div>
+    <div id="dawMixer" class="daw-mixer"></div>
+  </section>
+
+  <section id="dawTrackSettingsPage" class="daw-subpage daw-track-settings-page" data-daw-page-panel="track-settings" hidden>
+    <div class="daw-subpage-heading">
+      <div><div class="eyebrow">DAW · CONFIGURATION</div><h3>Track Settings</h3><p>Pengaturan track aktif dan konfigurasi proyek.</p></div>
+      <span id="dawSelectedTrackLabel" class="daw-subpage-selection">Guitar selected</span>
+    </div>
+    <div class="daw-settings-section">
+      <h4>Selected Track</h4>
+      <div id="dawTrackInspector"></div>
+    </div>
+    <section class="daw-project-settings">
+      <div class="daw-project-settings-heading">
+        <div><h4>Project Settings</h4><p>Nama, penyimpanan, format, dan ekspor proyek.</p></div>
+        <span class="daw-project-settings-icon">▱</span>
+      </div>
+      <div class="daw-project-tools">
+        <div class="daw-project-main">
+          <label class="daw-project-name-wrap">PROJECT<input id="dawProjectName" type="text" maxlength="80" value="Untitled Project" autocomplete="off"></label>
+          <div class="daw-project-actions"><button class="daw-tool-btn" id="dawNewProject" type="button">＋ New</button><button class="daw-tool-btn daw-save-btn" id="dawSaveProject" type="button">Save</button></div>
+        </div>
+        <select id="dawSavedProjects" aria-label="Saved projects"><option value="">Open saved project…</option></select>
+        <div class="daw-export-actions"><button type="button" class="btn" id="dawExportStems">Export Stems · ZIP</button><button type="button" class="btn primary" id="dawExportMix">Export Full Mix · WAV</button></div>
+        <div class="daw-quick-takes"><strong>Import a saved Quick Record take</strong><div class="daw-quick-take-row"><select id="dawQuickTakeSelect" aria-label="Saved Quick Record takes"><option value="">Select a saved take</option></select><button class="btn" id="dawImportQuickTake" type="button">Add to selected track</button></div></div>
+      </div>
+    </section>
+  </section>
+
+  <input id="dawAudioFileInput" class="hidden" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac">
+
+  <div id="dawStudioDock" class="daw-studio-dock">
     <div class="daw-transport-row" aria-label="Transport controls">
       <div class="daw-transport-buttons">
         <button type="button" id="dawRecord" class="daw-transport-record" aria-label="Record" title="Record">●</button>
@@ -538,33 +577,14 @@
         <span>L</span><i><b id="dawMasterLeft"></b></i><span>R</span><i><b id="dawMasterRight"></b></i>
       </div>
     </div>
-
-    <details id="dawMixerDetails" class="daw-mixer-disclosure" open>
-      <summary><span class="daw-disclosure-title"><span class="daw-mixer-icon">☷</span> Mixer</span><span class="daw-disclosure-chevron">⌃</span></summary>
-      <div id="dawMixer" class="daw-mixer"></div>
-    </details>
+    <div class="daw-subnav" role="tablist" aria-label="DAW pages">
+      <button type="button" class="active" data-daw-page="timeline" role="tab" aria-selected="true"><span class="daw-subnav-icon">∿</span><span>Timeline</span></button>
+      <button type="button" data-daw-page="mixer" role="tab" aria-selected="false"><span class="daw-subnav-icon">☷</span><span>Mixer</span></button>
+      <button type="button" data-daw-page="track-settings" role="tab" aria-selected="false"><span class="daw-subnav-icon">⚙</span><span>Track Settings</span></button>
     </div>
-
-    <details class="daw-bottom-disclosure daw-track-settings-disclosure">
-      <summary><span class="daw-disclosure-title"><span class="daw-track-settings-icon">⚙</span> Track Settings</span><span id="dawSelectedTrackLabel">Guitar selected</span><span class="daw-disclosure-chevron">⌄</span></summary>
-      <div id="dawTrackInspector"></div>
-    </details>
-
-    <details class="daw-bottom-disclosure daw-project-disclosure">
-      <summary><span class="daw-disclosure-title">▱&nbsp; Project: <strong id="dawProjectSummary">Untitled Project</strong></span><span id="dawProjectMeta">4 Tracks · 48 kHz · 24-bit WAV</span><span class="daw-disclosure-chevron">⌄</span></summary>
-      <div class="daw-project-tools">
-        <div class="daw-project-main">
-          <label class="daw-project-name-wrap">PROJECT<input id="dawProjectName" type="text" maxlength="80" value="Untitled Project" autocomplete="off"></label>
-          <div class="daw-project-actions"><button class="daw-tool-btn" id="dawNewProject" type="button">＋ New</button><button class="daw-tool-btn daw-save-btn" id="dawSaveProject" type="button">Save</button></div>
-        </div>
-        <select id="dawSavedProjects" aria-label="Saved projects"><option value="">Open saved project…</option></select>
-        <div class="daw-export-actions"><button type="button" class="btn" id="dawExportStems">Export Stems · ZIP</button><button type="button" class="btn primary" id="dawExportMix">Export Full Mix · WAV</button></div>
-        <div class="daw-quick-takes"><strong>Import a saved Quick Record take</strong><div class="daw-quick-take-row"><select id="dawQuickTakeSelect" aria-label="Saved Quick Record takes"><option value="">Select a saved take</option></select><button class="btn" id="dawImportQuickTake" type="button">Add to selected track</button></div></div>
-      </div>
-    </details>
-    <div id="dawStatus" class="daw-status" role="status" aria-live="polite">New projects start with Backing and Guitar prepared. Import audio or arm Guitar to record from MG-30 USB.</div>
-  </section>
-  <dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
+  </div>
+</section>
+<dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
   <dialog id="renameTakeDialog" class="studio-dialog">
     <form method="dialog" id="renameTakeForm">
       <div class="studio-dialog-title">Ganti nama rekaman</div>
