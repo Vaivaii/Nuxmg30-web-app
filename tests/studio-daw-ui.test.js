@@ -491,7 +491,7 @@ test('Build 321: Mixer fader is centered independently of the right-side VU mete
 
 
 test('Build 327: Studio title and Jam / Record / DAW selector share one pinned header wrapper', () => {
-  assert.match(html, /<section id="page-studio"[^>]*>[\s\S]*?<div class="studio-fixed-header">[\s\S]*?class="studio-page-hero studio-daw-hero"[\s\S]*?class="studio-mode-tabs"[\s\S]*?<\/div>\s*<div class="studio-mode-panel"/);
+  assert.match(html, /<section id="page-studio"[^>]*>[\s\S]*?<div class="studio-fixed-header">[\s\S]*?class="hero studio-page-hero studio-daw-hero"[\s\S]*?class="studio-mode-tabs"[\s\S]*?<\/div>\s*<div class="studio-mode-panel"/);
   assert.ok(css.includes('#page-studio > .studio-fixed-header{'));
   assert.ok(css.includes('position:sticky!important'));
   assert.ok(css.includes('top:0!important'));
