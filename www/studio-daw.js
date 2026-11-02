@@ -427,6 +427,7 @@ function renderPlayhead() {
   updatePlayheadReadout();
 }
 
+// Expand the shared timeline horizon as the live cursor advances during long playback/overdubs.
 function followPlayheadDuringPlayback() {
   if (!playing && !recording) return;
   const scroller = $('dawTimelineScroll');
