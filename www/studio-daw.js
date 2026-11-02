@@ -367,13 +367,15 @@ function renderMixer() {
   mixer.innerHTML = project.tracks.map((track, index) => {
     const panLabel = track.pan < -0.05 ? 'L ' + Math.round(Math.abs(track.pan) * 100) : track.pan > 0.05 ? 'R ' + Math.round(track.pan * 100) : 'CENTER';
     const panAngle = Math.round(track.pan * 45);
-    return '<div class="daw-mixer-strip" style="--track-color:' + track.color + '">' +
-      '<span class="daw-mixer-index">' + (index + 1) + '</span>' +
-      '<strong>' + safeText(track.name) + '</strong>' +
-      '<div class="daw-mixer-meter"><span data-meter-track="' + track.id + '"></span></div>' +
+    const vuSegments = Array.from({ length: 12 }, (_, segment) => '<i data-vu-segment="' + segment + '"></i>').join('');
+    return '<div class="daw-mixer-strip" style="--track-color:' + track.color + '" aria-label="' + safeText(track.name) + ' channel">' +
+      '<span class="daw-mixer-index" aria-label="' + safeText(track.name) + ' channel ' + (index + 1) + '">' + (index + 1) + '</span>' +
       '<div class="daw-mixer-pan-row"><span>L</span><div class="daw-pan-dial" style="--pan-angle:' + panAngle + 'deg"><i></i><input type="range" min="-100" max="100" step="1" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '" aria-label="' + safeText(track.name) + ' pan"></div><span>R</span></div>' +
-      '<div class="daw-mixer-fader-wrap"><input class="daw-mixer-fader" type="range" min="0" max="150" step="1" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '" aria-label="' + safeText(track.name) + ' level"></div>' +
       '<div class="daw-mixer-pan-readout" data-pan-readout="' + track.id + '">' + panLabel + '</div>' +
+      '<div class="daw-mixer-control-row">' +
+        '<div class="daw-mixer-fader-wrap"><input class="daw-mixer-fader" type="range" min="0" max="150" step="1" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '" aria-label="' + safeText(track.name) + ' level"></div>' +
+        '<div class="daw-mixer-vu" data-vu-track="' + track.id + '" role="meter" aria-label="' + safeText(track.name) + ' playback level" aria-valuemin="0" aria-valuemax="12" aria-valuenow="0">' + vuSegments + '</div>' +
+      '</div>' +
       '<div class="daw-mixer-buttons"><button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '">M</button><button type="button" data-track-action="solo" data-track-id="' + track.id + '" class="' + (track.solo ? 'active' : '') + '">S</button></div>' +
     '</div>';
   }).join('');
@@ -833,9 +835,15 @@ function stopScheduledAudio() {
     try { source.disconnect(); } catch (_) {}
   });
   liveSources = [];
-  liveTrackNodes.forEach((nodes) => {
+  liveTrackNodes.forEach((nodes, trackId) => {
     try { nodes.gain.disconnect(); } catch (_) {}
     try { nodes.pan.disconnect(); } catch (_) {}
+    try { nodes.meter?.disconnect(); } catch (_) {}
+    const vu = document.querySelector('[data-vu-track="' + trackId + '"]');
+    if (vu) {
+      vu.setAttribute('aria-valuenow', '0');
+      vu.querySelectorAll('[data-vu-segment]').forEach((led) => led.classList.remove('active'));
+    }
   });
   liveTrackNodes.clear();
   if (playbackMaster) {
@@ -861,15 +869,41 @@ function scheduleMetronomeClick(context, when, beatIndex) {
 }
 
 function updateAudioMeters() {
-  if (!analyser) return;
-  const samples = new Float32Array(analyser.fftSize);
-  analyser.getFloatTimeDomainData(samples);
-  let sum = 0;
-  for (const sample of samples) sum += sample * sample;
-  const rms = Math.min(1, Math.sqrt(sum / samples.length) * 2.2);
-  const width = Math.max(0, Math.round(rms * 100));
-  if ($('dawMasterLeft')) $('dawMasterLeft').style.width = width + '%';
-  if ($('dawMasterRight')) $('dawMasterRight').style.width = width + '%';
+  if (analyser) {
+    const samples = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(samples);
+    let sum = 0;
+    for (const sample of samples) sum += sample * sample;
+    const rms = Math.min(1, Math.sqrt(sum / samples.length) * 2.2);
+    const width = Math.max(0, Math.round(rms * 100));
+    if ($('dawMasterLeft')) $('dawMasterLeft').style.width = width + '%';
+    if ($('dawMasterRight')) $('dawMasterRight').style.width = width + '%';
+  }
+
+  // Read an independent analyser tap for each active track. The LED ladders
+  // therefore show which channel is playing instead of duplicating master VU.
+  liveTrackNodes.forEach((nodes, trackId) => {
+    if (!nodes.meter) return;
+    const samples = nodes.meterSamples || new Float32Array(nodes.meter.fftSize);
+    nodes.meterSamples = samples;
+    nodes.meter.getFloatTimeDomainData(samples);
+    let sum = 0;
+    let peak = 0;
+    for (const sample of samples) {
+      sum += sample * sample;
+      peak = Math.max(peak, Math.abs(sample));
+    }
+    const rms = Math.sqrt(sum / samples.length);
+    const normalized = Math.min(1, Math.max(rms * 4.6, peak * 0.62));
+    const activeSegments = Math.max(0, Math.min(12, Math.round(normalized * 12)));
+    const vu = document.querySelector('[data-vu-track="' + trackId + '"]');
+    if (!vu) return;
+    vu.setAttribute('aria-valuenow', String(activeSegments));
+    vu.querySelectorAll('[data-vu-segment]').forEach((led) => {
+      const segment = Number(led.dataset.vuSegment);
+      led.classList.toggle('active', segment < activeSegments);
+    });
+  });
 }
 
 function updatePlayheadFrame() {
@@ -934,9 +968,12 @@ async function startPlayback(position = playheadSeconds) {
       gain.gain.value = track.gain;
       const pan = context.createStereoPanner ? context.createStereoPanner() : context.createGain();
       if ('pan' in pan) pan.pan.value = track.pan;
+      const trackMeter = context.createAnalyser();
+      trackMeter.fftSize = 256;
       gain.connect(pan);
-      pan.connect(playbackMaster);
-      liveTrackNodes.set(track.id, { gain, pan });
+      pan.connect(trackMeter);
+      trackMeter.connect(playbackMaster);
+      liveTrackNodes.set(track.id, { gain, pan, meter: trackMeter, meterSamples: new Float32Array(trackMeter.fftSize) });
       for (const clip of track.clips) {
         const buffer = mediaBuffers.get(clip.mediaId);
         if (!buffer) continue;
