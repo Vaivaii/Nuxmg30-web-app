@@ -303,7 +303,6 @@ function renderTrackRows() {
   if (canvas) canvas.style.width = metrics.width + 'px';
   holder.style.width = metrics.width + 'px';
   holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
-  holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
   holder.style.setProperty('--daw-bar-width', project.zoom + 'px');
 
   rail.innerHTML = project.tracks.map((track, index) => {
@@ -1248,6 +1247,7 @@ function bindEvents() {
   $('dawProjectName')?.addEventListener('change', (event) => {
     project.name = event.target.value.trim().slice(0, 80) || 'Untitled Project';
     event.target.value = project.name;
+    if ($('dawProjectSummary')) $('dawProjectSummary').textContent = project.name;
     scheduleProjectSave();
     void populateSavedProjects();
   });
