@@ -31,6 +31,7 @@ No NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset trans
 - Run ID: `41483971689`
 - Source commit: `01e75b9cf645a0652b7b19499c96d949d03db93d`
 - `npm test`: **119/119 passed, 0 failed, 0 skipped** (confirmed from final Actions log).
+- Production frontend build: `npm run build` → Vite 7.3.7 production build completed successfully in 735 ms (invoked by `npm run android:init`).
 - Capacitor Android generation and USB audio plugin setup: step completed successfully.
 - Gradle `assembleDebug`: **BUILD SUCCESSFUL** (completed 2 November 2026 at 16:44:08 UTC).
 - Actions conclusion: **success**, completed 2 November 2026 at 16:44:23 UTC. [Run #333](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41483971689).
