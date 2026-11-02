@@ -88,3 +88,15 @@ Use only the original MG-30 Gen 2 FW 6.0.x. Start on a disposable/test slot:
 5. Recheck Editor, USB-MIDI, NAM, IR User/Third Party, IR Collection, MIDI mappings, Import/Export and Signal Chain.
 
 Do not test overwrite on a valuable user preset. Keep the NAM/IR paths and MIDI mapping untouched.
+
+## Build #249 verification (2 November 2026)
+
+- User approved the build.
+- Actions run #249: `41387125375`, success, source commit `34445a918ca07a71f6f89250dd026cdc3a2ce4a3`.
+- All repository tests: **29/29 passed**.
+- Vite production build and Capacitor Android generation: successful.
+- Gradle: `BUILD SUCCESSFUL` (183 actionable tasks executed).
+- Artifact `13116156136`, ZIP size 4,066,594 bytes, SHA-256 `038742c4a92fa5234436cefe7745dcbb39414352c7ba2025e883538a5de1e7e3`.
+- Extracted APK `MG30_Studio_Build249.apk`: 4,444,032 bytes, SHA-256 `ebcef8e69ea9c4d2c1daab886b76b86c7ece13b266e4e0ae4f0a56348b6b464d`.
+- ZIP/APK integrity and compiled bundle string checks passed; Rename/Save As UI and operation logic are present in the APK.
+- This verifies CI, compilation, packaging and inclusion of the new feature only. It does not constitute physical device or pedal transfer verification. Perform the physical validation plan above on original Gen2 firmware 6.0.x before treating the write path as proven.
