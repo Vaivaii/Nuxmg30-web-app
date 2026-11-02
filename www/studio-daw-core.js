@@ -129,9 +129,11 @@ export function trimClipStart(clip, deltaSeconds, sourceDurationSeconds, minimum
   const originalStart = Math.max(0, Number(clip.startSeconds) || 0);
   const originalOffset = Math.max(0, Number(clip.sourceOffsetSeconds) || 0);
   const originalDuration = Math.max(minimumSeconds, Number(clip.durationSeconds) || minimumSeconds);
-  const maxOffset = Math.max(0, sourceDuration - minimumSeconds);
-  const nextOffset = clamp(originalOffset + Number(deltaSeconds), 0, Math.min(maxOffset, originalOffset + originalDuration - minimumSeconds));
-  const appliedDelta = nextOffset - originalOffset;
+  const maxOffset = Math.max(0, Math.min(sourceDuration - minimumSeconds, originalOffset + originalDuration - minimumSeconds));
+  const minimumDelta = -Math.min(originalOffset, originalStart);
+  const maximumDelta = Math.max(0, maxOffset - originalOffset);
+  const appliedDelta = clamp(deltaSeconds, minimumDelta, maximumDelta);
+  const nextOffset = originalOffset + appliedDelta;
   const nextDuration = originalDuration - appliedDelta;
   const next = { ...clip, startSeconds: Math.max(0, originalStart + appliedDelta), sourceOffsetSeconds: nextOffset, durationSeconds: nextDuration };
   const fades = normalizeClipFades(nextDuration, clip.fadeInSeconds, clip.fadeOutSeconds);
