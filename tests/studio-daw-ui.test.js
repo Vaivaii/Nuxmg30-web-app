@@ -606,13 +606,21 @@ test('Build 332: decorative ellipsis is removed from every track header', () => 
   assert.ok(css.includes('display:none!important'));
 });
 
-test('Build 332: left track rail uses rounded cards and matching gaps without horizontal separator borders', () => {
-  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-rail-column'));
-  assert.ok(css.includes('border-right:0!important'));
-  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-rail,'));
-  assert.ok(css.includes('gap:6px!important'));
-  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-head'));
-  assert.ok(css.includes('border:1px solid #344139!important'));
-  assert.ok(css.includes('border-radius:11px!important'));
-  assert.ok(css.includes('border-left:5px solid var(--track-color)!important'));
+test('Build 333: track-head columns keep square corners at every viewport size', () => {
+  const build333Styles = css.slice(css.lastIndexOf('Build #332 track-rail alignment retained'));
+  assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-head'));
+  assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-head.selected'));
+  assert.equal((build333Styles.match(/border-radius:0!important/g) || []).length, 3);
+  assert.ok(!build333Styles.includes('border-radius:11px!important'));
+  assert.ok(!build333Styles.includes('border-radius:10px!important'));
+});
+
+test('Build 333: square track rail retains aligned gaps and colored left accents', () => {
+  const build333Styles = css.slice(css.lastIndexOf('Build #332 track-rail alignment retained'));
+  assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-rail-column'));
+  assert.ok(build333Styles.includes('border-right:0!important'));
+  assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-rail,'));
+  assert.ok(build333Styles.includes('gap:6px!important'));
+  assert.ok(build333Styles.includes('border:1px solid #344139!important'));
+  assert.ok(build333Styles.includes('border-left:5px solid var(--track-color)!important'));
 });
