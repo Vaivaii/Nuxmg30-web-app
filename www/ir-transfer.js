@@ -501,7 +501,7 @@ function initUI(){
  }
  async function syncCollectionFromDevice({connection=null,slotIndices=null,silent=false}={}){
   if(busy||syncBusy)return;
-  if(!window.NUXNativeMidi?.available){setMessage(collectionStatus,'Sinkronisasi Collection memerlukan APK Android dan kabel USB OTG.','warn');return}
+  if(!window.NUXNativeMidi?.available){if(typeof window.toast==='function')window.toast('Collection sync requires the Android APK and a USB OTG connection.',2600);return}
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
   const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   const errors=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
@@ -514,7 +514,7 @@ function initUI(){
     for(let i=0;i<indices.length;i++){
      const idx=indices[i];
      countLabel.textContent='Pass '+(round+1)+'/2 · slot '+String(idx+1).padStart(2,'0')+'/'+String(indices.length).padStart(2,'0');
-     setMessage(collectionStatus,'Sinkronisasi dua arah Collection: putaran '+(round+1)+'/2 · membaca slot '+String(idx+1).padStart(2,'0')+'…');
+     setMessage(collectionStatus,'Collection sync: pass '+(round+1)+'/2 · reading slot '+String(idx+1).padStart(2,'0')+'…');
      try{
       const record=await readCollectionSlotFromDevice(conn,idx);
       rounds[round][i]=Uint8Array.from(record.metadata);
