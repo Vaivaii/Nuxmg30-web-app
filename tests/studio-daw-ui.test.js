@@ -166,3 +166,10 @@ test('timeline grid is offset to align beat/bar boundaries with ruler marks', ()
   assert.ok(css.includes('var(--daw-beat-width,23px)'));
   assert.ok(css.includes('var(--daw-bar-width,92px)'));
 });
+
+
+test('timeline canvas extends as the playhead advances beyond the initial bars', () => {
+  assert.ok(daw.includes('const playheadBars = Math.ceil(Math.max(0, playheadSeconds) / barSeconds) + 2;'));
+  assert.ok(daw.includes('ruler.children.length < metrics.bars'));
+  assert.ok(daw.includes("lane.style.width = metrics.width + 'px'"));
+});
