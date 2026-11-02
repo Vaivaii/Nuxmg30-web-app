@@ -67,8 +67,11 @@ function activeDeviceOperation() {
   if (window.MG30PresetManagerBusy || window.MG30PresetImportBusy ||
       window.MG30PresetExportBusy || window.MG30IRTransferBusy) return true;
   if ($('readNamSlotsBtn')?.dataset.busy === '1') return true;
+  if ($('copySceneToggle')?.disabled ||
+      [...document.querySelectorAll('#sceneButtons button')].some(button => button.disabled) ||
+      $('ctrlEditorDialog')?.open) return true;
   const status = String($('deviceStatus')?.textContent || '');
-  return /Menyimpan:|Menyimpan preset|Copy Scene:|Menulis bagian|Impor preset:|menunggu antrean MIDI/i.test(status);
+  return /Menyimpan:|Menyimpan preset|Copy Scene:|Menulis bagian|Impor preset:|menunggu antrean MIDI|Membaca (?:preset|buffer|status)|Program Change/i.test(status);
 }
 
 function initPresetLibraryUI() {
@@ -360,8 +363,10 @@ function initPresetLibraryUI() {
 
   function setOperationControlsDisabled(disabled) {
     const selectors = [
-      "#page-presets button", "#saveDeviceBtn", "#copySceneToggle", "#chainEditToggle",
-      "#sceneButtons button", "#blockQuickSelect", "#modelPrev", "#modelNext", "#blockSwitch"
+      "#page-presets button", ".nav button", "#saveDeviceBtn", "#connectMidi",
+      "#connectMidiDevice", "#copySceneToggle", "#chainEditToggle", "#chain button",
+      "#sceneButtons button", "#blockQuickSelect", "#modelPrev", "#modelNext",
+      "#blockSwitch", "#knobs input", "#knobs button"
     ];
     const nodes = [...new Set(selectors.flatMap(selector => [...document.querySelectorAll(selector)]))];
     if (disabled) {
