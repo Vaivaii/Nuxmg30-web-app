@@ -106,17 +106,17 @@ function initUI(){
  const ui=document.createElement('div');ui.id='ir-manager-ui';ui.className='ir-manager-grid';
  ui.innerHTML=
  '<section class="ir-manager-card">'+
-  '<div class="ir-manager-card-head"><div><h3>Third Party / User IR</h3><p>Upload langsung ke jalur User yang sudah teruji.</p></div><span class="chip">USER</span></div>'+
-  '<button class="ir-manager-upload" id="irManagerUserImport" type="button"><span class="studio-file-icon">IR</span><span class="ir-manager-upload-copy"><strong>Import IR WAV ke User</strong><small>Memvalidasi file lalu langsung mengirim ke MG-30.</small></span><span class="studio-file-arrow">↗</span></button>'+
-  '<div class="ir-manager-status" id="irManagerUserStatus" role="status" aria-live="polite">Belum ada import melalui MG30 Studio.</div>'+
+  '<div class="ir-manager-card-head"><div><h3>Third Party / User IR</h3><p>Upload directly to the verified User path.</p></div><span class="chip">USER</span></div>'+
+  '<button class="ir-manager-upload" id="irManagerUserImport" type="button"><span class="studio-file-icon">IR</span><span class="ir-manager-upload-copy"><strong>Import IR WAV to User</strong><small>Validates the file and sends it directly to the MG-30.</small></span><span class="studio-file-arrow">↗</span></button>'+
+  '<div class="ir-manager-status" id="irManagerUserStatus" role="status" aria-live="polite">No imports from MG30 Studio yet.</div>'+
  '</section>'+
  '<section class="ir-manager-card">'+
   '<div class="ir-manager-card-head ir-collection-card-head"><div class="ir-collection-card-title"><span class="slot-note" id="irManagerCollectionCount">Not synced</span></div><button class="btn primary" id="irManagerSyncCollection" type="button">Sync</button></div>'+
   
-  '<p class="ir-current-preset-ir-note">Kotak nomor merah menandai IR Collection yang digunakan preset terpilih.</p>'+
+  '<p class="ir-current-preset-ir-note">The red slot marker identifies the IR Collection item used by the selected preset.</p>'+
   '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
-  '<p class="ir-manager-footnote">Nama dan status slot dibaca dari MG-30. Tombol Gunakan di User tersedia bila WAV sumber juga disimpan oleh MG30 Studio.</p>'+
-  '<div class="ir-manager-status" id="irManagerCollectionStatus" role="status" aria-live="polite"></div>'+
+  ''+
+  '<div class="ir-manager-status hidden" id="irManagerCollectionStatus" role="status" aria-live="polite" hidden></div>'+
  '</section>'+
  '<input class="hidden" type="file" id="irManagerFileInput" accept=".wav,audio/wav,audio/x-wav">';
  root.appendChild(ui);
@@ -284,7 +284,7 @@ function initUI(){
   }catch{return {}}
  }
  const DB_NAME='mg30-studio-ir-collection-v1',STORE='slots';
- const setMessage=(node,message,kind='')=>{node.textContent=message;node.classList.remove('ok','warn');if(kind)node.classList.add(kind)};
+ const setMessage=(node,message,kind='')=>{if(!node)return;node.textContent=message;node.classList.remove('ok','warn');if(kind)node.classList.add(kind)};
  function openDb(){return new Promise((resolve,reject)=>{if(!('indexedDB' in window)){reject(Error('Penyimpanan lokal tidak tersedia di perangkat ini.'));return}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'slot'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error('Tidak bisa membuka penyimpanan lokal.'))})}
  async function readSlot(slot){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),req=tx.objectStore(STORE).get(slot);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||Error('Gagal membaca slot lokal.'))})}finally{db.close()}}
  async function writeSlot(record){const db=await openDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(record);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('Gagal menyimpan WAV ke penyimpanan lokal.'));tx.onabort=()=>reject(tx.error||Error('Penyimpanan lokal dibatalkan.'))})}finally{db.close()}}
@@ -411,7 +411,7 @@ function initUI(){
   const records=[...deviceSlots.values()];
   const occupied=records.filter(x=>x.read&&x.stable&&x.occupied).length;
   const read=records.filter(x=>x.read&&x.stable).length;
-  countLabel.textContent=syncBusy?(read+'/24 slot stabil · membaca…'):(read===24?occupied+' IR di perangkat · 24/24 slot stabil':(read?read+'/24 slot dibaca':'Not synced'));
+  countLabel.textContent=syncBusy?(read+'/24 slots stable · reading…'):(read===24?occupied+' IRs on device · 24/24 slots stable':(read?read+'/24 slots read':'Not synced'));
  }
  function setBusy(on){
   busy=on;userButton.disabled=on||syncBusy;syncButton.disabled=on||syncBusy;
@@ -505,7 +505,7 @@ function initUI(){
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
   const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   const errors=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
-  syncBusy=true;setBusy(true);syncButton.textContent='Menyinkronkan…';syncButton.setAttribute('aria-busy','true');
+  syncBusy=true;setBusy(true);syncButton.textContent='Syncing…';syncButton.setAttribute('aria-busy','true');
   setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama/CRC Collection dengan pola sinkronisasi NAM (2 putaran)…');
   let conn=connection,success=0,empty=0;
   try{
@@ -513,7 +513,7 @@ function initUI(){
    for(let round=0;round<2;round++){
     for(let i=0;i<indices.length;i++){
      const idx=indices[i];
-     countLabel.textContent='Putaran '+(round+1)+'/2 · slot '+String(idx+1).padStart(2,'0')+'/'+String(indices.length).padStart(2,'0');
+     countLabel.textContent='Pass '+(round+1)+'/2 · slot '+String(idx+1).padStart(2,'0')+'/'+String(indices.length).padStart(2,'0');
      setMessage(collectionStatus,'Sinkronisasi dua arah Collection: putaran '+(round+1)+'/2 · membaca slot '+String(idx+1).padStart(2,'0')+'…');
      try{
       const record=await readCollectionSlotFromDevice(conn,idx);
@@ -529,7 +529,7 @@ function initUI(){
     }
     for(const idx of indices)updateSlotCard(idx+1,slotCache.get(idx+1)||null);
     renderSlotCount();
-    setMessage(collectionStatus,'Tidak ada satu pun balasan 6C/02 pada putaran pertama. Sinkronisasi dihentikan agar tidak menunggu putaran kedua dengan query yang belum terkonfirmasi. Periksa progres slot dan pesan gagal pada kartu.','warn');
+    if(typeof window.toast==='function')window.toast('Collection sync stopped: no valid slot responses. Check the USB connection and retry.',2600);
     return;
    }
    deviceSlots.clear();
@@ -556,7 +556,8 @@ function initUI(){
    const detail='Sinkronisasi dua putaran selesai: '+success+'/'+indices.length+' slot stabil · '+empty+' kosong · '+failed+' gagal/tidak stabil.'+(firstErrors.length?' Rincian: '+firstErrors.join(' | '):'');
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
-  }catch(error){setMessage(collectionStatus,'Sinkronisasi Collection gagal: '+(error?.message||error),'warn')}
+    if(typeof window.toast==='function')window.toast(failed?'Collection sync completed with '+success+'/'+indices.length+' stable slots.':'Collection sync complete · '+success+'/'+indices.length+' stable slots · '+empty+' empty.',2600);
+  }catch(error){if(typeof window.toast==='function')window.toast('Collection sync failed: '+(error?.message||String(error)),2800)}
   finally{syncBusy=false;setBusy(false);syncButton.textContent='Sync';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
  async function readCollectionSlotStable(connection,slotIndex){
