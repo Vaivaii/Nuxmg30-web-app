@@ -488,3 +488,27 @@ test('Build 321: Mixer fader is centered independently of the right-side VU mete
   assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-vu{'));
   assert.ok(css.includes('right:1px!important'));
 });
+
+
+test('Build 327: Studio title and Jam / Record / DAW selector share one pinned header wrapper', () => {
+  assert.match(html, /<section id="page-studio"[^>]*>[\s\S]*?<div class="studio-fixed-header">[\s\S]*?class="studio-page-hero studio-daw-hero"[\s\S]*?class="studio-mode-tabs"[\s\S]*?<\/div>\s*<div class="studio-mode-panel"/);
+  assert.ok(css.includes('#page-studio > .studio-fixed-header{'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('top:0!important'));
+  assert.ok(css.includes('z-index:230!important'));
+});
+
+test('Build 327: Studio hero and mode tabs are not independently sticky or scrollable', () => {
+  assert.ok(css.includes('#page-studio > .studio-fixed-header > .studio-page-hero{'));
+  assert.ok(css.includes('#page-studio > .studio-fixed-header > .studio-mode-tabs{'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(css.includes('flex:0 0 auto!important'));
+  assert.ok(css.includes('background:#0b1012!important'));
+});
+
+test('Build 327: Studio mode panels remain after the pinned header and retain independent mode visibility', () => {
+  assert.ok(html.includes('data-studio-mode-panel="jam"'));
+  assert.ok(html.includes('data-studio-mode-panel="record"'));
+  assert.ok(html.includes('data-studio-mode-panel="daw"'));
+  assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
+});
