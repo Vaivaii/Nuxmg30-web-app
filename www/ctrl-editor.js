@@ -235,8 +235,7 @@ function renderExpression(which) {
     optionList(choiceSelect, [["Parameter belum dipetakan", selectedChoice]], selectedChoice);
     choiceSelect.disabled = true;
     choiceSelect.dataset.locked = "true";
-    $("ctrlParameterNotice").textContent = "Pasangan parameter model ini belum ada pada tabel QuickTone original MG-30. Assignment dapat dibaca, tetapi pilihan parameter dikunci agar tidak mengirim enum tebakan.";
-    $("ctrlParameterNotice").hidden = false;
+    $("ctrlParameterNotice").hidden = true;
     return;
   }
   choiceSelect.disabled = false;
