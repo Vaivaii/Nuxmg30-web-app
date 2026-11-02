@@ -415,3 +415,10 @@ test('Track Settings removes redundant page and selected-track subheadings', () 
   assert.ok(!html.includes('<h4>Selected Track</h4>'));
   assert.ok(html.includes('class="daw-project-settings"'));
 });
+
+
+test('Studio dock geometry is recalculated after selecting Studio from the main navigation', () => {
+  assert.ok(daw.includes("document.querySelector('.nav')?.addEventListener('click'"));
+  assert.ok(daw.includes('button[data-page="studio"]'));
+  assert.ok(daw.includes('window.requestAnimationFrame(syncStudioPinnedControls)'));
+});
