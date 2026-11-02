@@ -3460,3 +3460,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size **4,493,584 bytes**, SHA-256 `b62fb89dd22e27e9dea1977ea606253a4619e8445ec01bf699fbac0e8a70004d`. ZIP and APK archive integrity tests passed. Packaged CSS was inspected and confirms square corners in normal, selected, and mobile rules.
 - Source scope: only `www/studio-daw.css` and `tests/studio-daw-ui.test.js` changed for the app correction. NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI protocol, Presets, Signal Chain, Editor, and Studio audio logic remain untouched.
 - Physical validation remains required: install Build #333, confirm all individual track-head corners are square on the phone, and recheck row spacing, timeline alignment, playhead drag, transport, and MG-30 USB audio behavior. CI does not verify physical handset rendering or pedal operation.
+
+
+## Timeline ruler artefact correction — Build #337 passed (2 November 2026)
+
+- User screenshot after Build #333 still showed a small white/gray block-like artefact at the start of the Timeline ruler just to the right of the playhead. The playhead triangle had already been suppressed, so the previous pseudo-element-only correction was insufficient.
+- Source diagnosis: the 32px playhead drag target is an empty native HTML `button`. Previous CSS made its background and border transparent but left Android/WebView native appearance and WebKit focus-inner/focus decoration enabled. This is the strongest source-level explanation; exact handset rendering still requires post-install confirmation.
+- Build #337 adds a scoped reset for `#dawPlayheadHit`: `appearance:none`, `-webkit-appearance:none`, transparent/no-border/no-shadow/no-outline styling, zero font/text paint, transparent tap highlight, WebKit focus-inner reset, focus/focus-visible reset, and suppression of both pseudo-elements.
+- Preserved 32px pointer hit target, pointer events, touch-action, parent pointer event handler and visible vertical playhead line. No ruler text generation or time-coordinate logic changed.
+- Final Build #337: run ID `41487170159`, source commit `4056b22f11df811bc60974c6208b6aeeea81e818`, conclusion **success**. [Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41487170159).
+- `npm test`: **121/121 passed**. Vite production build, Capacitor Android generation/USB audio plugin setup, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13162163169`; ZIP size **4,116,108 bytes**, SHA-256 `08b71d38af28ff6f6f8223534410ac7e08ac253739e76a96996e068885de947f`.
+- Extracted APK size **4,493,716 bytes**, SHA-256 `6564256d22f7e0746f65170a0dc68269e166cb57cb7501567aaa023ee2e2bfe5`. ZIP/APK integrity and packaged CSS checks passed.
+- Protected modules (NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, Presets, Signal Chain and Studio audio logic) were not changed.
+- Physical validation remains required: install Build #337 and send a screenshot showing whether the ruler artefact is gone; recheck drag/playhead and transport.
