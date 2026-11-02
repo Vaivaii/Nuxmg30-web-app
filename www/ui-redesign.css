@@ -2483,3 +2483,52 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
     transition-delay:0ms!important;
   }
 }
+
+
+/* NAM/TONE3000 catalogue width guard.
+   A loaded TONE3000 model list can contribute a large min-content width to the
+   NAM page's implicit grid column in Android WebView. Keep the viewport page and
+   every direct grid item inside the phone width in both normal and fallback
+   Collection layouts. This is layout-only; model selection/transfer DOM stays intact. */
+@media (max-width: 720px) {
+  body.ir-collection-manager-active > .app > #page-nam:not(.hidden) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 20px) !important;
+    box-sizing: border-box !important;
+  }
+  body.ir-collection-manager-active > .app > #page-nam:not(.hidden) > *,
+  body.ir-collection-layout-fallback > .app > #page-nam:not(.hidden) > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  body.ir-collection-layout-fallback > .app > #page-nam:not(.hidden) {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 20px) !important;
+    box-sizing: border-box !important;
+  }
+  body.ir-collection-manager-active #page-nam > #namModelLibrary,
+  body.ir-collection-manager-active #namModelLibrary .nam-model-library-content,
+  body.ir-collection-manager-active #namModelLibrary #t3kToneDetails,
+  body.ir-collection-manager-active #namModelLibrary #t3kModelList,
+  body.ir-collection-manager-active #namModelLibrary .t3k-card,
+  body.ir-collection-manager-active #namModelLibrary .t3k-card-head,
+  body.ir-collection-manager-active #namModelLibrary .t3k-actions {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  body.ir-collection-layout-fallback #namModelLibrary,
+  body.ir-collection-layout-fallback #namModelLibrary .nam-model-library-content,
+  body.ir-collection-layout-fallback #namModelLibrary #t3kToneDetails,
+  body.ir-collection-layout-fallback #namModelLibrary #t3kModelList,
+  body.ir-collection-layout-fallback #namModelLibrary .t3k-card,
+  body.ir-collection-layout-fallback #namModelLibrary .t3k-card-head,
+  body.ir-collection-layout-fallback #namModelLibrary .t3k-actions {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
