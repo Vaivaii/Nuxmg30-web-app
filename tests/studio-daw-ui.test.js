@@ -176,8 +176,8 @@ test('timeline canvas extends as the playhead advances beyond the initial bars',
 
 
 test('Jam and Record modes explicitly hide the entire DAW workspace', () => {
-  assert.ok(js.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
-  assert.ok(js.includes("panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'grid' : 'block') : 'none', 'important')"));
+  assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
+  assert.ok(daw.includes("panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'grid' : 'block') : 'none', 'important')"));
   assert.ok(css.includes('#page-studio #studio-daw-workspace[hidden]{display:none!important}'));
 });
 
@@ -196,22 +196,22 @@ test('mixer channel strip has a dedicated pan readout row below its fader', () =
 });
 
 test('all four track rails fill the label column and expose arm, mute, solo and import', () => {
-  assert.ok(!js.includes("track.id === 'backing'"));
+  assert.ok(!daw.includes("track.id === 'backing'"));
   assert.ok(css.includes('#page-studio .daw-track-head{'));
   assert.ok(css.includes('width:100%!important'));
   assert.ok(css.includes('overflow:visible!important'));
-  assert.ok(js.includes('data-track-action="import"'));
-  assert.ok(js.includes('data-track-action="arm"'));
+  assert.ok(daw.includes('data-track-action="import"'));
+  assert.ok(daw.includes('data-track-action="arm"'));
 });
 
 test('Backing can be armed and recorded through the existing MG-30 USB route', () => {
-  assert.ok(!js.includes("track.id === 'backing'"));
-  assert.ok(js.includes('const track = project.tracks.find((item) => item.armed);'));
-  assert.ok(js.includes('const recorder = window.NUXStudioRecorder;'));
+  assert.ok(!daw.includes("track.id === 'backing'"));
+  assert.ok(daw.includes('const track = project.tracks.find((item) => item.armed);'));
+  assert.ok(daw.includes('const recorder = window.NUXStudioRecorder;'));
 });
 
 test('playhead drag uses a wide full-height hit target and pointer capture', () => {
-  assert.ok(js.includes("$('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);"));
+  assert.ok(daw.includes("$('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);"));
   assert.ok(css.includes('width:28px!important'));
   assert.ok(css.includes('touch-action:none!important'));
 });
