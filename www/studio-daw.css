@@ -2695,3 +2695,37 @@
     border-radius:0!important;
   }
 }
+
+
+/* Build #334: neutralize Android/WebView native chrome on the invisible playhead hit button.
+   The target stays interactive but must never paint a platform button glyph or focus decoration. */
+#page-studio #dawTimelinePage #dawPlayheadHit{
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  display:block!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline:0!important;
+  padding:0!important;
+  margin:0!important;
+  color:transparent!important;
+  font:0/0 sans-serif!important;
+  text-shadow:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#page-studio #dawTimelinePage #dawPlayheadHit::-webkit-focus-inner{
+  border:0!important;
+  padding:0!important;
+}
+#page-studio #dawTimelinePage #dawPlayheadHit:focus,
+#page-studio #dawTimelinePage #dawPlayheadHit:focus-visible{
+  outline:0!important;
+  box-shadow:none!important;
+}
+#page-studio #dawTimelinePage #dawPlayheadHit::before,
+#page-studio #dawTimelinePage #dawPlayheadHit::after{
+  content:none!important;
+  display:none!important;
+}
