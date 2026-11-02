@@ -101,3 +101,16 @@ The first implementation pass is now in the isolated feature branch. It includes
 ## Smartphone UI refinement after Build #263 screenshots (2 November 2026)
 
 The user reported that the built DAW UI looked less tidy than the approved portrait mockup. The top Project area had an oversized Save row, the session toolbar clipped horizontally, the project/export/quick-take cards consumed excessive vertical space, and the four timeline tracks were not visible early enough. The refinement groups New/Save beside the project name, keeps the saved-project selector compact, wraps session controls into two mobile rows, reduces track/clip/transport/mixer spacing, starts Track Settings and Project & Export collapsed, and nests Quick Record take import inside Project & Export. Audio engine, recording source, mixer logic, project data model and WAV/ZIP render behavior are unchanged. Automated UI regression tests were added; a new build is required to judge the resulting screen.
+
+
+## Studio Mini DAW — refined mobile UI Build #265 passed (2 November 2026)
+
+- Fixed the first UI refinement CI test issues: track names are defined by `www/studio-daw-core.js`, not hardcoded in static HTML, and selector regression assertions now inspect the actual CSS text.
+- Authoritative CI Build #265: run ID `41404284603`, source commit `4f9142d1cb78c9781c7228baa655bd3b2541c63b`, conclusion **success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41404284603
+- `npm test`: **42/42 passed, 0 failed**. Capacitor Android generation and native-plugin registration passed. Gradle `assembleDebug` passed. Artifact upload passed.
+- APK artifact ID `13122871521`; artifact ZIP `MG30-Studio-UI-Refinement-Build265.zip`, size **4,093,723 bytes**, SHA-256 `3e2c3e4e9ea96eb8decce55e9ccb8e4ee296691a126739a0eddb4f728959348a`. ZIP integrity passed.
+- Extracted APK `MG30_Studio_Build265.apk`, size **4,470,920 bytes**, SHA-256 `a54e91892537ddb02610c899769a64177147ee601b9b1b06b8dcfe792f111fb2`. APK ZIP integrity passed; packaged HTML/CSS inspection confirms the compact project row, saved-project selector, two-row mobile toolbar, collapsed panels, and nested Quick Record import are present.
+- All UI refinements remain scoped to Studio markup and `www/studio-daw.css`; the new tests read the DAW model and Studio markup. Audio engine, IndexedDB persistence, USB-MG30 recorder interface, mixer, WAV render, ZIP stem render and Android export bridge were not changed in this UI pass.
+- Comparison from the feature branch checkpoint shows changes only to Studio UI/assets, Studio logic and Android file-export integration, the Quick Record take interface exposed for Studio, regression tests and documentation. NAM, IR User/Third Party, IR Collection, MIDI mapping, Presets, Editor, signal chain and Device feature source remain untouched.
+- Temporary branch push trigger was removed after Build #265 queued; restoration commit `7715b10f6335b9c02705cdf98048c110d523d8e0`. Workflow remains on its prior manual/allowlisted policy.
+- Device-validation note remains: install and visually check Build #265 on the Android phone. CI/package inspection does not verify the MG-30 physical USB record route, playback/dropout behavior, or Android File Picker permissions on the user's device.
