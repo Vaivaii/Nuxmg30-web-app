@@ -465,3 +465,64 @@ Install Build #326 and confirm:
 - Existing project save/load, clip trim/split/fades, undo/redo, export, per-track VU and the original MG-30 Gen 2 USB overdub path still work.
 
 Automated source tests and APK packaging are verified; waveform appearance and touch alignment still require physical Android testing. Do not change non-Studio tabs or merge to `main` without explicit direction.
+
+
+## Follow-up: pin the entire Studio header (title + Jam / Record / DAW) (Build #328)
+
+**Date:** 2 November 2026  
+**Validated app source commit:** `67c0b83934865ee77cc92464ff09796a16fc028b`  
+**GitHub Actions:** run `41467199554`, conclusion `success`.
+
+### Screenshot feedback and root cause
+
+The user's latest screenshot confirmed that the Studio page title (`STUDIO / Jamm & Record`) and Jam / Record / DAW selector still moved as the Track Settings content was scrolled.
+
+Root cause:
+- The main mobile app uses each visible `section[id^="page-"]` as its own vertical scroll container.
+- Earlier Studio-only CSS overrode the original hero sticky behavior with `position:relative`, while the mode tabs were sticky as a separate element. That left the title outside the pinned tab group and allowed the title to leave the viewport.
+- Two independently sticky elements were not the correct layout for the requested behavior.
+
+### Structural correction
+
+- Wrapped the Studio hero and Jam / Record / DAW selector together in one new direct child: `#page-studio > .studio-fixed-header`.
+- The entire wrapper is now one sticky header at `top:0` within the Studio scroll container, with its own opaque background and higher stacking order.
+- The hero and mode selector are normal-flow children inside the wrapper, not separate sticky elements.
+- Jam, Record and DAW mode panels remain direct children of `#page-studio`, so the existing `setStudioMode()` visibility selection remains unchanged.
+- Only the area below the pinned wrapper scrolls. The app title at the top of the global shell, global bottom navigation and fixed transport/sub-tab dock are unchanged.
+- Dock positioning, waveform SVG generation/migration, centered faders, per-track VU and all playback functions are unchanged from Build #326.
+
+### Validation
+
+- Automated tests: **107 passed, 0 failed, 0 skipped**.
+- Added UI source tests verify:
+  - Studio title and mode selector are enclosed in the same sticky wrapper.
+  - The wrapper is pinned to the top of the Studio scroll region.
+  - Hero and mode selector are not independently sticky.
+  - Jam, Record and DAW panels remain after the wrapper and continue using the existing visibility logic.
+- Capacitor Android generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,115,713 bytes, SHA-256 `664fa075608f4f530fbe22e83014c5a313a2e17e0c0b39c4c0126b5656cde237`.
+- Extracted `app-debug.apk`: 4,493,048 bytes, SHA-256 `2990dedf439c8c6f3eb4c6fe334156824058b88dc1bc0150a5839add72a1ec9d`.
+- ZIP archive and APK internal archive both passed integrity checks.
+
+### Source boundary
+
+The app/test changes for Build #328 are limited to:
+- `www/index.html` — wrapper around the existing Studio hero and mode selector
+- `www/studio-daw.css` — pinned wrapper layout, normal-flow hero and mode tab children
+- `tests/studio-daw-ui.test.js` — pinned Studio header structural regressions
+- This research note
+
+No code in Jam/Record panel logic, Studio DAW playback, waveform, mixer, dock, global navigation, NAM, IR User/Third Party, IR Collection, MIDI, Presets, Editor/Signal Chain or Device was changed.
+
+### Physical-device validation still required
+
+Install Build #328 and confirm on the actual phone:
+- The full `STUDIO / Jamm & Record` title and Jam / Record / DAW selector remain visible together when scrolling far down Track Settings.
+- Neither the title nor the mode selector overlaps the first content card or Project Settings.
+- Timeline, Mixer and Track Settings content remain vertically scrollable underneath the pinned header.
+- Switching Jam / Record / DAW still switches the appropriate panel, and the dock remains visible only in DAW mode.
+- Transport, bottom navigation, dock alignment, waveform and fader position remain correct.
+
+CI verifies 107 automated tests and APK packaging; it does not emulate the exact physical Android scroll gesture. Do not change other tabs or merge to `main` without explicit user direction.
