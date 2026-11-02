@@ -82,13 +82,14 @@ test("Rename changes only the packed name in scene 1 and keeps source readback i
 test("Save As applies the new name and selected scene chain order without mutating source", () => {
   const source = makeParts(0x0c, 0);
   setName(source[0], "SOURCE");
+  const sourceBefore = source.map(part => [...part]);
   const order = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 10, 11];
   const result = prepareMG30SaveAsParts(source, "COPY A", 2, order);
   assert.equal(readMG30PresetName(result[0]), "COPY A");
   assert.equal(readMG30PresetName(source[0]), "SOURCE");
   order.forEach((id, index) => assert.equal(bitSlot(result[2], 94 + index), id));
   assert.equal(bitSlot(result[0], 94), 0);
-  assert.equal(source[2].some(value => value !== 0), false);
+  assert.deepEqual(source.map(part => [...part]), sourceBefore);
 });
 
 test("Save As rejects invalid scene and incomplete/duplicate chain order", () => {
