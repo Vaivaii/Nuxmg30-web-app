@@ -160,3 +160,63 @@ Compared with Build #294, the changes are limited to:
 No `www/index.html`, global navigation, NAM, IR, MIDI, Presets, Editor, or Device source was changed in this follow-up.
 
 Physical touch behavior still needs confirmation on the user's handset. The build was CI-verified; it was not directly run on the user's phone in this session.
+
+
+## Follow-up: separate Timeline / Mixer / Track Settings pages (Build #303)
+
+**Date:** 2 November 2026  
+**Validated source commit:** `2e58a2fdfa649e2ebb126d2c6f76e6e1601ea10d`  
+**GitHub Actions:** run `41437440594`, conclusion `success`.
+
+### User-approved DAW navigation model
+
+The Jam / Record / DAW mode selector remains unchanged. When DAW is active, a second navigation row appears at the bottom of the Studio workspace with three independent pages:
+1. **Timeline** — tempo/meter and DAW timeline controls, ruler, four aligned tracks and clip editing.
+2. **Mixer** — only the four channel strips (gain, pan, mute and solo).
+3. **Track Settings** — selected-track controls and Project Settings in the same page, including project name, save/new, saved project selection, WAV mix export, stems ZIP export and Quick Record import.
+
+The fixed transport (Record / Stop / Play / Rewind / Forward plus L/R master meter) sits immediately above the three DAW page tabs. These two rows form a single fixed dock above the unchanged app navigation. The DAW sub-navigation is inside the DAW mode panel and is therefore hidden automatically in Jam and Record modes.
+
+### Implementation
+
+- Replaced the old inline Mixer accordion and separate Track Settings / Project accordions with three mutually exclusive `data-daw-page-panel` page sections.
+- Added the Timeline / Mixer / Track Settings sub-navigation with `setDawPage()`; each selection hides the two inactive pages instead of stacking or overlaying them.
+- Stored DAW page selection independently from Jam / Record / DAW mode selection using local storage key `mg30-studio-daw-page`.
+- Moved the existing `dawMixer` render target into the Mixer page without changing its track/mix state model or event delegation.
+- Moved `dawTrackInspector` and all Project Settings controls into the Track Settings page. Project summary/meta IDs remain available to the existing toolbar update code.
+- Kept the existing transport IDs and event handlers in one fixed bottom dock, with the new DAW sub-navigation immediately below.
+- Timeline is now the only content page containing timeline controls; its panel expands within the available content area. Mixer and Track Settings no longer take vertical space while Timeline is active.
+- Restored flexible tall track rows on the Timeline page rather than the earlier compact 38px rows. The fixed left track rail and scrollable right lanes share equal row heights.
+
+### Validation
+
+- Automated tests: **83 passed, 0 failed, 0 skipped**.
+- Capacitor Android generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,111,726 bytes, SHA-256 `fdf2e72f5a97c58740ba455168470e83c6fa88731fbae8c453a64692b055b91a`.
+- Extracted `app-debug.apk`: 4,488,496 bytes, SHA-256 `cc4dea9e257bd7c768ae5611cafb4ad0f98851c0cdc98416ee5e33b79fd139dd`.
+- Both the artifact ZIP and embedded APK archive passed integrity checks.
+
+### Source boundary
+
+Compared with Build #297, the source changes are limited to:
+- `www/index.html` — DAW page markup only
+- `www/studio-daw.js` — sub-page state and page-selection event handling
+- `www/studio-daw.css` — page layout and fixed transport/sub-navigation dock, scoped to `#page-studio`
+- `tests/studio-daw-ui.test.js`
+- This research note
+
+The global app navigation and NAM, IR User/Third Party, IR Collection, MIDI, Presets, Editor/Signal Chain, and Device source remain unchanged.
+
+### Physical-device validation still required
+
+CI verifies the app build and automated DOM/CSS/source regression assertions, but does not emulate the user's exact Android touch experience. After installing Build #303, confirm:
+- Timeline fills the space down to the fixed transport dock.
+- Selecting Mixer replaces Timeline entirely; the four faders and M/S controls fit without changing the Timeline page's height.
+- Selecting Track Settings shows both selected-track controls and Project Settings.
+- Transport remains fixed above the internal three-tab navigation.
+- Switching to Jam or Record hides the internal DAW sub-navigation and dock.
+- Playback, playhead drag, clip editing, import, overdub, save/load and export continue to work on the target phone and original MG-30 Gen 2 firmware 6.0.x.
+
+Do not merge to `main` or modify other tabs without explicit user direction.
