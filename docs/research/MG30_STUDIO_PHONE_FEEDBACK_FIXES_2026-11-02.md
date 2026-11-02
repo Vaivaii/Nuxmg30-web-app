@@ -220,3 +220,58 @@ CI verifies the app build and automated DOM/CSS/source regression assertions, bu
 - Playback, playhead drag, clip editing, import, overdub, save/load and export continue to work on the target phone and original MG-30 Gen 2 firmware 6.0.x.
 
 Do not merge to `main` or modify other tabs without explicit user direction.
+
+
+## Follow-up: Timeline cleanup, no-scroll VU Mixer, sticky mode tabs and aligned grid (Build #308)
+
+**Date:** 2 November 2026  
+**Validated source commit:** `35963bd8cff39ed58292e33b499ee53bbef3ae54`  
+**GitHub Actions:** run `41439766111`, conclusion `success`.
+
+### Screenshot feedback addressed
+
+- Removed the visible status card beneath Timeline tracks; its `aria-live` status text remains available to assistive technology without reserving layout height.
+- Removed the Mixer page's large heading and the visual Backing/Guitar/Bass/Vocals title line inside each mixer strip. Channel numbers and accessible channel names remain.
+- Kept the Mixer as a no-scroll page and sized the faders to the available viewport height above the fixed transport + DAW sub-navigation dock.
+- Added a 12-segment LED VU ladder beside each fader.
+- Made the top Jam / Record / DAW selector sticky while scrolling Studio content.
+- Removed independent grid painting from the timeline canvas. Ruler and every track lane now draw their beat/bar lines using the same inherited bar width, beat width, repeat interval and 1px background origin.
+
+### Per-track VU implementation
+
+- Each active playback track now has its own `AnalyserNode` tap between pan and the master bus.
+- The per-track analyzer computes RMS and peak from that channel's playback signal and updates only that channel's 12 LED segments.
+- Muted or non-playing channels remain dark; stopping playback disconnects per-track analyzers and clears their LED states.
+- The master L/R meter remains intact and continues to show the master bus.
+- No microphone fallback or new recording input path was introduced.
+
+### Validation
+
+- Automated tests: **89 passed, 0 failed, 0 skipped**.
+- Capacitor Android project generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,113,608 bytes, SHA-256 `c15c517c6472b2b57b94fc8249a3acdb62d6e3424a3dc7381d84d6878eab717f`.
+- Extracted `app-debug.apk`: 4,490,168 bytes, SHA-256 `444d0bbb19c928101ea070d42fd72dac27de1967bec12c96a59d25b289733309`.
+- Both the artifact ZIP and APK archive passed integrity checks.
+
+### Source boundary
+
+Compared with Build #303, only these paths changed:
+- `www/index.html` — Studio status accessibility class and Mixer heading
+- `www/studio-daw.js` — per-track VU meter markup, independent analyzers and level updates
+- `www/studio-daw.css` — Studio-only mode sticky bar, no-scroll Mixer layout, VU LEDs and common ruler/lane grid
+- `tests/studio-daw-ui.test.js`
+- This research note
+
+The global app navigation and all NAM, IR, MIDI, Presets, Editor/Signal Chain, Device and non-Studio sources remain unchanged.
+
+### Physical-device checks still required
+
+- On the actual Android phone, confirm Mixer fits without vertical scrolling and all four faders plus LED ladders remain above the dock.
+- Play a clip on one track at a time and verify only that track's LED ladder responds; then play multiple tracks and verify independent activity.
+- Scroll Track Settings and confirm Jam / Record / DAW remains sticky.
+- Check ruler and grid boundaries across all four tracks at several zoom levels and after horizontal scrolling.
+- Reconfirm audio playback, per-track gain/pan/mute/solo, clip editing, save/load, import, export and original MG-30 Gen 2 USB overdub route.
+
+CI verifies source regression tests and APK packaging; it does not simulate touch/audio on the user's handset. Do not merge to `main` or modify other tabs without explicit user direction.
