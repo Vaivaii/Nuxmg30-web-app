@@ -61,3 +61,7 @@ Also verify playback synchronization, independent clip timing, offline local pro
 ## Decision pending
 
 This is the first visual direction only. Review the generated mockup image in the conversation before implementing the interactive Studio UI or audio engine.
+
+## Smartphone portrait mockup revision
+
+The desktop-like first concept was revised at the user's request to a true tall smartphone composition. The second visual uses a narrow portrait viewport rather than a wide dashboard. Its arrangement is: Studio title and Jam/Record/DAW mode tabs; compact project/timeline controls and bar/beat position; four stacked Backing/Guitar/Bass/Vocals lanes with their own mute/solo/arm controls; global transport and L/R meters; four condensed mixer strips; collapsed Track Settings and Project rows; the original bottom navigation. Keep this narrow-screen information hierarchy as the primary implementation target. The visual remains a mockup: no multi-track capture or audio mixing capability is claimed by the image.

@@ -3326,3 +3326,11 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Existing Studio baseline observed in source: Track 01 uses a local audio file and HTML audio playback controls, with YouTube search/reference; Track 02 records through the MG30 native USB audio plugin and saves WAV takes. The native plugin currently uses a single AudioRecord field and a single recording state; it does not establish multi-input or simultaneous four-track recording capability.
 - Track 3 Bass and Track 4 Vocals are visual lanes only at this stage. Their input routing, overdub workflow, and simultaneous capture capability must be designed and tested before they are represented as working features. Do not silently fall back to the phone microphone; the existing MG-30 USB capture route and its safety checks must be preserved.
 - The design brief and staged implementation plan are in docs/research/MG30_STUDIO_MINI_DAW_4_TRACK_MOCKUP_2026-11-02.md. No APK build is required for this documentation/mockup-only checkpoint.
+
+
+## Mockup revision — smartphone portrait layout (2 November 2026)
+
+- User approved the overall four-track Mini DAW direction but requested that the visual be composed at a true smartphone screen size, rather than a desktop/tablet-shaped canvas.
+- Generated a dedicated portrait mobile mockup with a tall 9:20-style phone viewport and the existing NUX MG-30 dark/neon-green design language.
+- Mobile composition: compact Studio title and Jam / Record / DAW mode selector; two-row timeline toolbar/position; four stacked waveform lanes with track controls; compact global transport and stereo meters; four narrow mixer strips; collapsed Track Settings and Project panels; existing five-item bottom navigation with Studio selected.
+- This is still a design image only. No application source, project model, audio engine, native recorder, USB-MIDI, NAM/IR/Collection, Presets, or Editor behavior was changed.
