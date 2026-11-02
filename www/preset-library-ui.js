@@ -51,13 +51,13 @@ function currentHardwareSlot() {
 
 function readPresetName(body) {
   if (!body || body.length < 190 || typeof window.bitSlot !== 'function') {
-    throw new Error('Data slot preset tidak lengkap.');
+    throw new Error('Preset slot data is incomplete.');
   }
   let name = '';
   for (let index = 0; index < 16; index++) {
     const code = window.bitSlot(body, 106 + index);
     if (code === 0) break;
-    if (code < 0x20 || code > 0x7e) throw new Error('Nama preset berisi karakter yang tidak dapat ditampilkan.');
+    if (code < 0x20 || code > 0x7e) throw new Error('Preset name contains unsupported characters.');
     name += String.fromCharCode(code);
   }
   return name.trimEnd();
@@ -228,19 +228,13 @@ function initPresetLibraryUI() {
   renameButton.type = "button";
   renameButton.className = "btn";
   renameButton.textContent = "Rename";
-  renameButton.setAttribute("aria-label", "Rename preset pedal yang dipilih");
+  renameButton.setAttribute("aria-label", "Rename selected pedal preset");
   const saveAsButton = document.createElement("button");
   saveAsButton.type = "button";
   saveAsButton.className = "btn primary";
   saveAsButton.textContent = "Save As";
-  saveAsButton.setAttribute("aria-label", "Simpan edit buffer sebagai preset baru di pedal");
+  saveAsButton.setAttribute("aria-label", "Save the current edit buffer to another pedal slot");
   operationRow.append(renameButton, saveAsButton);
-
-  const opsStatus = document.createElement("p");
-  opsStatus.className = "preset-library-ops-status";
-  opsStatus.hidden = true;
-  opsStatus.setAttribute("role", "status");
-  opsStatus.setAttribute("aria-live", "polite");
 
   const operationDialog = document.createElement("dialog");
   operationDialog.className = "preset-library-ops-dialog";
@@ -248,39 +242,57 @@ function initPresetLibraryUI() {
   operationDialog.innerHTML = `
     <div class="preset-library-ops-shell">
       <h3 id="presetLibraryOpsTitle">Preset operation</h3>
-      <p id="presetLibraryOpsSummary"></p>
       <label id="presetLibraryOpsDestinationWrap" hidden>
         <span>Destination slot</span>
         <select id="presetLibraryOpsDestination"></select>
       </label>
       <label class="preset-library-ops-name">
-        <span>Preset name · max. 16 ASCII characters</span>
+        <span>Preset name</span>
         <input id="presetLibraryOpsName" type="text" maxlength="16" autocomplete="off" spellcheck="false">
       </label>
-      <p class="preset-library-ops-note">Sebelum menulis, aplikasi membaca tiga bagian slot tujuan dan menyimpan raw snapshot lokal. Snapshot ini belum memiliki fitur restore di aplikasi.</p>
       <div class="preset-library-ops-dialog-actions">
         <button type="button" class="btn" id="presetLibraryOpsCancel">Cancel</button>
         <button type="button" class="btn primary" id="presetLibraryOpsConfirm">Continue</button>
       </div>
     </div>`;
   const opsHeader = page.querySelector(".preset-library-header");
-  if (opsHeader) opsHeader.after(operationRow, opsStatus);
-  else page.prepend(operationRow, opsStatus);
+  if (opsHeader) opsHeader.after(operationRow);
+  else page.prepend(operationRow);
   page.append(operationDialog);
   const opsTitle = $("presetLibraryOpsTitle");
-  const opsSummary = $("presetLibraryOpsSummary");
   const destinationWrap = $("presetLibraryOpsDestinationWrap");
   const destinationSelect = $("presetLibraryOpsDestination");
   const nameInput = $("presetLibraryOpsName");
   const opsConfirm = $("presetLibraryOpsConfirm");
   let operationBusy = false;
 
-  function showOperationStatus(message, kind = "") {
-    opsStatus.textContent = message;
-    opsStatus.hidden = !message;
-    opsStatus.classList.toggle("is-error", kind === "error");
-    opsStatus.classList.toggle("is-success", kind === "success");
-    if (message && scanStatus) scanStatus.textContent = message;
+  function showOperationToast(message, kind = "success") {
+    if (typeof window.toast === "function") {
+      window.toast(message, kind === "error" ? 3200 : 1900);
+    }
+  }
+
+  function operationErrorMessage(error) {
+    const detail = String(error?.message || error || "");
+    if (/read.?back|readback|payload|header|tidak cocok/i.test(detail)) {
+      return "Verification failed. Check the pedal before trying again.";
+    }
+    if (/destination.*invalid|slot tujuan tidak valid/i.test(detail)) {
+      return "Choose a valid destination slot.";
+    }
+    if (/same.*source|slot berbeda|different.*slot/i.test(detail)) {
+      return "Choose a different destination slot.";
+    }
+    if (/USB|connect|terhubung/i.test(detail)) {
+      return "Connect the MG-30 and try again.";
+    }
+    if (/busy|running|operation|operasi|berlangsung|sinkronisasi/i.test(detail)) {
+      return "Another device operation is running. Try again shortly.";
+    }
+    if (/name|nama|ASCII|character|karakter/i.test(detail)) {
+      return "Enter a valid preset name (1–16 characters).";
+    }
+    return "Preset operation failed. Please try again.";
   }
 
   function storeSlotBackup(program, parts, operation, sourceProgram = null) {
@@ -314,7 +326,7 @@ function initPresetLibraryUI() {
   function buildDestinationOptions(sourceProgram) {
     destinationSelect.replaceChildren();
     for (let program = 0; program < 128; program++) {
-      const label = names[program] ? names[program] : "nama belum dibaca";
+      const label = names[program] ? names[program] : "Name not loaded";
       const option = new Option(slotLabel(program) + " · " + label, String(program));
       if (program === sourceProgram) option.disabled = true;
       destinationSelect.add(option);
@@ -328,15 +340,9 @@ function initPresetLibraryUI() {
     operationDialog.dataset.mode = mode;
     destinationWrap.hidden = mode !== "save-as";
     opsTitle.textContent = mode === "rename" ? "Rename preset" : "Save As to pedal";
-    opsSummary.textContent = mode === "rename"
-      ? "Nama preset hardware " + slotLabel(sourceProgram) +
-        " akan diperbarui. Data tiga scene lainnya dibaca lalu dipertahankan."
-      : "Salin edit buffer dari slot aktif " + slotLabel(sourceProgram) +
-        " ke slot tujuan lain. Slot aktif tidak akan dipindahkan.";
     nameInput.value = sourceName.slice(0, 16);
     opsConfirm.textContent = mode === "rename" ? "Rename on pedal" : "Write / overwrite";
     if (mode === "save-as") buildDestinationOptions(sourceProgram);
-    showOperationStatus("");
     if (typeof operationDialog.showModal === "function") operationDialog.showModal();
     else operationDialog.setAttribute("open", "");
     nameInput.focus();
@@ -386,12 +392,11 @@ function initPresetLibraryUI() {
     const restoreControls = setOperationControlsDisabled(true);
     if (typeof window.stopHardwareStatePolling === "function") window.stopHardwareStatePolling();
     closeOperationsDialog();
-    showOperationStatus(label + " · menunggu antrean USB-MIDI…");
     try {
       await action();
     } catch (error) {
       console.error("[Preset Library operation]", error);
-      showOperationStatus(label + " gagal: " + (error?.message || String(error)), "error");
+      showOperationToast(operationErrorMessage(error), "error");
     } finally {
       restoreControls();
       operationBusy = false;
@@ -404,7 +409,7 @@ function initPresetLibraryUI() {
   async function readActiveSourceProgram(expectedProgram) {
     const status = await window.readActiveProgramScene();
     if (!Number.isInteger(Number(status?.program)) || Number(status.program) !== expectedProgram) {
-      throw new Error("Slot aktif pedal tidak cocok dengan kartu terpilih. Tidak ada data yang ditulis.");
+      throw new Error("The selected slot does not match the active pedal slot. No data was written.");
     }
   }
 
@@ -418,26 +423,23 @@ function initPresetLibraryUI() {
       );
       const previousName = readMG30PresetName(stored[0]);
       if (previousName === name) {
-        showOperationStatus("Nama " + slotLabel(program) + " sudah sama. Tidak ada penulisan.", "success");
+        showOperationToast("Name unchanged");
         return;
       }
       const confirmed = window.confirm(
-        "Ubah nama preset pedal " + slotLabel(program) + " dari \"" +
-        (previousName || "(kosong)") + "\" menjadi \"" + name + "\"?\n\n" +
-        "Aplikasi akan menulis ulang tiga bagian preset yang dibaca dari slot yang sama. " +
-        "Isi scene selain field nama dipertahankan dan diverifikasi melalui read-back."
+        "Rename preset " + slotLabel(program) + " from \"" +
+        (previousName || "(unnamed)") + "\" to \"" + name + "\"?"
       );
       if (!confirmed) {
-        showOperationStatus("Rename dibatalkan. Tidak ada perintah tulis yang dikirim.");
         return;
       }
       await readActiveSourceProgram(program);
       storeSlotBackup(program, stored, "rename", program);
       const updated = renameMG30PresetParts(stored, name);
       const verified = await window.writeHardwarePreset(program, updated);
-      if (!verified) throw new Error("Read-back slot tidak cocok. Jangan ulangi penulisan dulu; periksa preset pada pedal.");
+      if (!verified) throw new Error("Preset read-back verification failed.");
       names[program] = name;
-      const cached = persistNameCache();
+      persistNameCache();
       const editorName = $("presetName");
       if (editorName && editorName.value.trim() === previousName) {
         editorName.value = name;
@@ -446,12 +448,7 @@ function initPresetLibraryUI() {
       window.dispatchEvent(new CustomEvent("mg30-preset-library-name-changed", {
         detail: { program, name, operation: "rename" }
       }));
-      showOperationStatus(
-        "Rename terverifikasi: " + slotLabel(program) + " · " + name +
-        ". Tiga bagian slot cocok saat read-back." +
-        (cached ? " Nama disimpan di cache Preset Manager." : " Cache nama tidak dapat disimpan."),
-        "success"
-      );
+      showOperationToast("Preset renamed · " + slotLabel(program));
     });
   }
 
@@ -460,10 +457,10 @@ function initPresetLibraryUI() {
     const destinationProgram = Number(destinationValue);
     const name = normalizeMG30PresetName(nameValue);
     if (!Number.isInteger(destinationProgram) || destinationProgram < 0 || destinationProgram > 127) {
-      throw new Error("Slot tujuan Save As tidak valid.");
+      throw new Error("Destination slot is invalid.");
     }
     if (destinationProgram === sourceProgram) {
-      throw new Error("Save As harus memakai slot berbeda dari sumber aktif.");
+      throw new Error("Choose a destination slot different from the active slot.");
     }
     await runPresetLibraryOperation("Save As " + slotLabel(destinationProgram), async () => {
       await readActiveSourceProgram(sourceProgram);
@@ -475,16 +472,13 @@ function initPresetLibraryUI() {
       );
       const previousName = readMG30PresetName(destinationParts[0]);
       const destinationDescription = previousName
-        ? "Slot tujuan " + slotLabel(destinationProgram) + ' saat ini berisi "' + previousName + '".'
-        : "Nama slot " + slotLabel(destinationProgram) + " kosong/tidak terbaca; data slot tetap akan ditimpa.";
+        ? 'The existing preset "' + previousName + '" will be replaced.'
+        : "The destination contents may be overwritten.";
       const confirmed = window.confirm(
-        "Save As dari " + slotLabel(sourceProgram) + " ke " + slotLabel(destinationProgram) + "?\n\n" +
-        destinationDescription + "\nNama baru: \"" + name + "\".\n\n" +
-        "Aplikasi membaca dan menyimpan snapshot lokal tiga bagian slot tujuan sebelum menulis. " +
-        "Slot aktif pedal tidak akan berpindah."
+        'Save "' + name + '" to ' + slotLabel(destinationProgram) + "?\n" +
+        destinationDescription
       );
       if (!confirmed) {
-        showOperationStatus("Save As dibatalkan. Tidak ada perintah tulis yang dikirim.");
         return;
       }
       await readActiveSourceProgram(sourceProgram);
@@ -495,19 +489,13 @@ function initPresetLibraryUI() {
       const sceneIndex = Number($("sceneSelect")?.selectedIndex);
       const outputParts = prepareMG30SaveAsParts(bufferParts, name, sceneIndex, chainOrder);
       const verified = await window.writeHardwarePreset(destinationProgram, outputParts);
-      if (!verified) throw new Error("Read-back slot tujuan tidak cocok. Jangan ulangi penulisan dulu; periksa pedal.");
+      if (!verified) throw new Error("Destination preset verification failed.");
       names[destinationProgram] = name;
-      const cached = persistNameCache();
+      persistNameCache();
       window.dispatchEvent(new CustomEvent("mg30-preset-library-name-changed", {
         detail: { program: destinationProgram, sourceProgram, name, operation: "save-as" }
       }));
-      showOperationStatus(
-        "Save As terverifikasi: " + slotLabel(sourceProgram) + " → " +
-        slotLabel(destinationProgram) + " · " + name +
-        ". Slot aktif tetap " + slotLabel(sourceProgram) + "." +
-        (cached ? " Nama slot diperbarui." : " Cache nama tidak dapat disimpan."),
-        "success"
-      );
+      showOperationToast("Preset saved · " + slotLabel(destinationProgram));
     });
   }
 
@@ -521,7 +509,7 @@ function initPresetLibraryUI() {
       if (mode === "rename") await runRename(name);
       else await runSaveAs(destinationSelect.value, name);
     } catch (error) {
-      showOperationStatus(error?.message || String(error), "error");
+      showOperationToast(operationErrorMessage(error), "error");
     }
   });
 
@@ -562,7 +550,7 @@ function initPresetLibraryUI() {
     if (!Number.isInteger(program) || program < 0 || program > 127) return;
     const selectHardwareSlot = window.selectHardwareSlot;
     if (typeof selectHardwareSlot !== 'function') {
-      if (scanStatus) scanStatus.textContent = 'Sinkronisasi slot perangkat tidak tersedia.';
+      if (scanStatus) scanStatus.textContent = 'Hardware slot selection is unavailable.';
       return;
     }
     card.disabled = true;
@@ -575,7 +563,7 @@ function initPresetLibraryUI() {
           detail: { program }
         }));
       } else if (scanStatus) {
-        scanStatus.textContent = 'Slot tujuan belum berubah. Tunggu sinkronisasi perangkat, lalu pilih kembali.';
+        scanStatus.textContent = 'The hardware slot has not changed. Wait for synchronization, then try again.';
       }
     } finally {
       card.disabled = false;
@@ -584,7 +572,7 @@ function initPresetLibraryUI() {
   });
 
   async function readStoredName(program) {
-    if (typeof window.readSysExPart !== 'function') throw new Error('Pembaca slot preset tidak tersedia.');
+    if (typeof window.readSysExPart !== 'function') throw new Error('Preset slot reader is unavailable.');
     // 0B/00 is the existing read-only stored-preset path already used by device read-back.
     // Read one scene part only; this does not send Program Change or write to the pedal.
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -592,14 +580,14 @@ function initPresetLibraryUI() {
       if (Number(body?.[5]) !== program || Number(body?.[6]) !== 0) continue;
       return readPresetName(body);
     }
-    throw new Error('Balasan slot ' + slotLabel(program) + ' tidak cocok dengan permintaan.');
+    throw new Error('The response for slot ' + slotLabel(program) + ' did not match the request.');
   }
 
   function showScanToast(result) {
     const messages = {
-      selesai: 'Sinkronisasi preset selesai',
-      gagal: 'Sinkronisasi preset gagal',
-      ditunda: 'Sinkronisasi preset ditunda'
+      selesai: 'Preset list updated',
+      gagal: 'Could not update preset list',
+      ditunda: 'Preset list update postponed'
     };
     if (typeof window.toast === 'function') window.toast(messages[result], 2200);
   }
