@@ -3287,3 +3287,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK: `MG30_Studio_Build258.apk`, size 4,446,588 bytes, SHA-256 `7763322c219a25ea526343e7ad76a66789616bfd874023b7d093e3fef6e56d92`. ZIP and APK integrity checks passed. The packaged JS bundle was inspected for Jamm & Record, Collection sync toast, English IR upload labels and progress text.
 - The temporary feature-branch push trigger was removed after the build. Subsequent APK builds on this branch remain manual-dispatch only.
 - Hardware boundary: this is a successful automated test/build and package inspection, not a physical MG-30/phone run. Confirm that the sync toast appears, the CTRL footer buttons are visible, and the IR/NAM/MIDI behavior remains intact on the actual device before release.
+
+
+## English UI / IR Collection / CTRL footer polish — Build #260 (2026-11-02)
+- IR Collection: removed the visible status/footer paragraph under the 24-slot grid; added explicit `.ir-manager-status[hidden]{display:none!important}` because the base status CSS could override the browser's default hidden behavior. Collection progress remains in the slot counter; completion/failure is reported by a short English toast.
+- CTRL / EXP: the unsupported-parameter notice remains hidden and the parameter selector remains locked for unknown mappings. Explicit `.ctrl-parameter-notice[hidden]{display:none!important}` keeps the dialog footer actions visible.
+- Studio title is standardized to **Jamm & Record**; document language is `en`.
+- English UI audit covered 17 UI/source modules (IR, NAM, USB-MIDI, audio/recording, preset import/export/read, CTRL/EXP, YouTube/Studio and the translation dictionary). Added 48 exact English translations for remaining UI/status/error strings. Dynamic device/model data and protocol identifiers are not translated.
+- No NAM transfer path, User IR / Third Party import sequence, IR Collection transfer sequence, USB-MIDI framing, MIDI mapping, preset transfer, or signal-chain behavior was intentionally changed.
+- CI Build #260: `npm test` passed; Capacitor Android generation passed; Gradle `assembleDebug` passed; artifact upload passed. Run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41393237044
+- Artifact ID `13117969550`, ZIP SHA-256 `4dab62e9a67b8364006a2d2a058c9995f6d5bd8640d1baf49b408a70b3be55d2`; extracted APK SHA-256 `21e641c7b733aa2676eff04bbf28ca6c97bc83ad01d9869181219b2e0f6f9f8d`. ZIP and APK integrity checks passed. Packaged JS/CSS inspected for title, English status strings, and hidden status/notice CSS.
+- Temporary branch push trigger removed after the build; workflow returned to its original restricted branch allowlist. Physical phone/pedal validation remains pending; CI success is not a substitute for testing the IR sync toast, CTRL footer, NAM, USB-MIDI, and existing MIDI mappings on hardware.
