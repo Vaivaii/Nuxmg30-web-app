@@ -489,10 +489,13 @@
         <label class="daw-tempo-control" for="dawTempo"><span>♫</span><input id="dawTempo" type="number" min="40" max="240" step="1" value="120"><small>BPM</small></label>
         <select id="dawTimeSignature" class="daw-meter-control" aria-label="Time signature"><option>4/4</option><option>3/4</option><option>6/8</option></select>
         <label class="daw-icon-toggle" title="Metronome"><input id="dawMetronome" type="checkbox"><span>♩</span></label>
-        <div class="daw-history-tools">
-          <button type="button" id="dawUndo" aria-label="Undo" title="Undo" disabled>↶</button>
-          <button type="button" id="dawRedo" aria-label="Redo" title="Redo" disabled>↷</button>
-        </div>
+        <details class="daw-more-menu">
+          <summary aria-label="More Studio options" title="More options">•••</summary>
+          <div class="daw-history-tools">
+            <button type="button" id="dawUndo" aria-label="Undo" title="Undo" disabled>↶ Undo</button>
+            <button type="button" id="dawRedo" aria-label="Redo" title="Redo" disabled>↷ Redo</button>
+          </div>
+        </details>
       </div>
       <div class="daw-quick-toolbar-position">
         <label class="daw-loop-control" title="Loop project"><input id="dawLoop" type="checkbox"><span>⟲</span></label>
