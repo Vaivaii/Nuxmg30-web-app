@@ -1133,3 +1133,7 @@
   #page-studio .daw-snap-control select{width:39px!important}
   #page-studio .daw-zoom-control{flex-basis:27px!important;width:27px!important}
 }
+
+/* Explicit content width prevents the scroll canvas from shrinking to the viewport. */
+#page-studio .daw-timeline-canvas{width:var(--daw-timeline-width,736px)!important;min-width:100%!important}
+#page-studio .daw-track-list{width:var(--daw-timeline-width,736px)!important;min-width:100%!important}
