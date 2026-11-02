@@ -1858,3 +1858,264 @@
   #page-studio .daw-subnav button{height:32px!important;min-height:32px!important;font-size:9px!important;gap:3px!important}
   #page-studio #studio-daw-workspace{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
 }
+
+
+/* -------------------------------------------------------------------------
+   Screenshot polish: sticky Studio mode tabs, clean Timeline, no-scroll Mixer,
+   per-track LED VU meters, and identical ruler / lane grid origins.
+   ------------------------------------------------------------------------- */
+
+/* Keep Jam / Record / DAW reachable while scrolling any Studio mode page. */
+#page-studio>.studio-mode-tabs{
+  position:sticky!important;
+  top:0!important;
+  z-index:205!important;
+  margin-top:0!important;
+  padding-top:4px!important;
+  padding-bottom:4px!important;
+  background:rgba(12,18,17,.97)!important;
+  box-shadow:0 7px 14px #0005!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+}
+
+/* The status remains an aria-live region but no longer consumes Timeline height. */
+#page-studio #dawTimelinePage .daw-status-sr-only{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+
+/* Mixer is a single no-scroll viewport page. Its old section heading and track
+   names are intentionally omitted; channel numbers and accessible labels remain. */
+#page-studio #dawMixerPage{
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  height:clamp(340px,calc(100dvh - 380px),640px)!important;
+  min-height:340px!important;
+  max-height:calc(100dvh - 350px)!important;
+  overflow:hidden!important;
+  padding:0!important;
+  gap:4px!important;
+}
+#page-studio #dawMixerPage .daw-subpage-heading{display:none!important}
+#page-studio #dawMixerPage #dawMixer{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  grid-auto-rows:minmax(0,1fr)!important;
+  align-items:stretch!important;
+  align-content:stretch!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  gap:5px!important;
+  padding:5px 3px!important;
+  overflow:hidden!important;
+  border:1px solid #334139!important;
+  border-radius:14px!important;
+  background:linear-gradient(145deg,#101917,#0c1413)!important;
+}
+#page-studio #dawMixerPage .daw-mixer-strip{
+  display:grid!important;
+  grid-template-rows:24px 40px 12px minmax(0,1fr) 31px!important;
+  grid-auto-rows:auto!important;
+  align-content:stretch!important;
+  align-items:stretch!important;
+  justify-items:center!important;
+  gap:4px!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  padding:6px 3px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  border:1px solid #34433c!important;
+  border-radius:10px!important;
+  background:#111b17!important;
+}
+#page-studio #dawMixerPage .daw-mixer-index{
+  display:grid!important;
+  place-items:center!important;
+  width:24px!important;
+  height:23px!important;
+  align-self:center!important;
+  border-radius:7px!important;
+  font-size:12px!important;
+}
+#page-studio #dawMixerPage .daw-mixer-strip>strong{display:none!important}
+#page-studio #dawMixerPage .daw-mixer-meter{display:none!important}
+#page-studio #dawMixerPage .daw-mixer-pan-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  width:100%!important;
+  height:40px!important;
+  min-height:40px!important;
+  font-size:9px!important;
+}
+#page-studio #dawMixerPage .daw-pan-dial{
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  min-height:34px!important;
+}
+#page-studio #dawMixerPage .daw-pan-dial input{
+  left:-8px!important;
+  top:-8px!important;
+  width:50px!important;
+  height:50px!important;
+}
+#page-studio #dawMixerPage .daw-mixer-pan-readout{
+  width:100%!important;
+  height:12px!important;
+  min-height:12px!important;
+  max-height:12px!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:12px!important;
+  font-size:8px!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+#page-studio #dawMixerPage .daw-mixer-control-row{
+  display:flex!important;
+  align-items:stretch!important;
+  justify-content:center!important;
+  gap:7px!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+#page-studio #dawMixerPage .daw-mixer-fader-wrap{
+  display:flex!important;
+  flex:1 1 auto!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:hidden!important;
+}
+#page-studio #dawMixerPage .daw-mixer-fader{
+  display:block!important;
+  width:20px!important;
+  min-width:20px!important;
+  max-width:20px!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  writing-mode:vertical-lr!important;
+  direction:rtl!important;
+  accent-color:var(--track-color)!important;
+  touch-action:pan-x!important;
+}
+#page-studio #dawMixerPage .daw-mixer-vu{
+  display:flex!important;
+  flex:0 0 9px!important;
+  flex-direction:column-reverse!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:3px!important;
+  width:9px!important;
+  min-width:9px!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  padding:2px!important;
+  border:1px solid #344139!important;
+  border-radius:5px!important;
+  background:#080f0d!important;
+  overflow:hidden!important;
+}
+#page-studio #dawMixerPage .daw-mixer-vu i{
+  display:block!important;
+  flex:1 1 0!important;
+  width:100%!important;
+  min-height:2px!important;
+  border-radius:2px!important;
+  background:#26352d!important;
+  box-shadow:none!important;
+}
+#page-studio #dawMixerPage .daw-mixer-vu i.active{background:#79d85c!important;box-shadow:0 0 5px #79d85c88!important}
+#page-studio #dawMixerPage .daw-mixer-vu i:nth-child(n+9).active{background:#f0ca58!important;box-shadow:0 0 5px #f0ca5888!important}
+#page-studio #dawMixerPage .daw-mixer-vu i:nth-child(n+11).active{background:#ef6868!important;box-shadow:0 0 5px #ef686888!important}
+#page-studio #dawMixerPage .daw-mixer-buttons{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  width:100%!important;
+  height:31px!important;
+  min-height:31px!important;
+}
+#page-studio #dawMixerPage .daw-mixer-buttons button{
+  width:30px!important;
+  height:29px!important;
+  min-height:29px!important;
+  max-height:29px!important;
+  padding:0!important;
+  border-radius:7px!important;
+  font-size:10px!important;
+}
+
+/* Ruler and lanes now paint their own grid from the same inherited bar/beat
+   widths and the same 1px origin. No parent canvas grid sits behind them. */
+#page-studio #dawTimelinePage .daw-timeline-canvas{
+  background-image:none!important;
+  background-color:#0d1514!important;
+}
+#page-studio #dawTimelinePage .daw-ruler-inner,
+#page-studio #dawTimelinePage .daw-track-lane{
+  background-color:transparent!important;
+  background-image:
+    linear-gradient(to right,transparent calc(100% - 1px),rgba(153,174,155,.22) calc(100% - 1px)),
+    linear-gradient(to right,transparent calc(100% - 1px),rgba(173,200,176,.52) calc(100% - 1px))!important;
+  background-size:
+    var(--daw-beat-width,23px) 100%,
+    var(--daw-bar-width,92px) 100%!important;
+  background-repeat:repeat-x!important;
+  background-position:1px 0,1px 0!important;
+}
+#page-studio #dawTimelinePage .daw-ruler-inner{
+  background-color:#0e1715!important;
+}
+#page-studio #dawTimelinePage .daw-ruler-mark{
+  left:calc(var(--ruler-mark-x,0px))!important;
+}
+#page-studio #dawTimelinePage .daw-track-row{
+  background:transparent!important;
+}
+@media(max-width:430px){
+  #page-studio #dawMixerPage{
+    height:clamp(330px,calc(100dvh - 365px),590px)!important;
+    min-height:330px!important;
+    max-height:calc(100dvh - 340px)!important;
+  }
+  #page-studio #dawMixerPage #dawMixer{gap:3px!important;padding:4px 2px!important}
+  #page-studio #dawMixerPage .daw-mixer-strip{padding:5px 2px!important;gap:3px!important}
+  #page-studio #dawMixerPage .daw-mixer-pan-row{gap:3px!important}
+  #page-studio #dawMixerPage .daw-pan-dial{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important}
+  #page-studio #dawMixerPage .daw-mixer-control-row{gap:4px!important}
+  #page-studio #dawMixerPage .daw-mixer-fader{width:17px!important;min-width:17px!important}
+  #page-studio #dawMixerPage .daw-mixer-vu{flex-basis:8px!important;width:8px!important;min-width:8px!important;gap:2px!important}
+  #page-studio #dawMixerPage .daw-mixer-buttons{gap:3px!important}
+  #page-studio #dawMixerPage .daw-mixer-buttons button{width:25px!important}
+}
