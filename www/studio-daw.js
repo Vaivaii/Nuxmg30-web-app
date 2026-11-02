@@ -265,7 +265,7 @@ function renderInspector() {
   const clip = track.clips.find((item) => item.id === selectedClipId) || null;
   const clipTools = clip
     ? '<div class="daw-clip-tools"><small>' + safeText(clip.name) + '</small>' +
-      '<div class="daw-fade-control"><label>Fade in <strong data-fade-readout="in">' + (Number(clip.fadeInSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds / 2) + '" step="0.05" value="' + (Number(clip.fadeInSeconds) || 0) + '" data-clip-fade="in" aria-label="Clip fade in"></label>' +
+      '<div class="daw-fade-control"><label>Fade in <strong data-fade-readout="in">' + (Number(clip.fadeInSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeInSeconds) || 0) + '" data-clip-fade="in" aria-label="Clip fade in"></label>' +
       '<label>Fade out <strong data-fade-readout="out">' + (Number(clip.fadeOutSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds / 2) + '" step="0.05" value="' + (Number(clip.fadeOutSeconds) || 0) + '" data-clip-fade="out" aria-label="Clip fade out"></label></div>' +
       '<div><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
     : '<p class="daw-inspector-note">Select a clip to trim its edges, split it, or set individual fades.</p>';
@@ -1174,8 +1174,14 @@ function bindEvents() {
     );
     clip.fadeInSeconds = next.fadeInSeconds;
     clip.fadeOutSeconds = next.fadeOutSeconds;
-    const readout = $('dawTrackInspector')?.querySelector('[data-fade-readout="' + fade.dataset.clipFade + '"]');
-    if (readout) readout.textContent = Number(fade.value).toFixed(2) + ' s';
+    $('dawTrackInspector')?.querySelectorAll('[data-clip-fade]').forEach((input) => {
+      input.max = String(Math.min(10, clip.durationSeconds));
+      input.value = String(input.dataset.clipFade === 'in' ? clip.fadeInSeconds : clip.fadeOutSeconds);
+    });
+    $('dawTrackInspector')?.querySelectorAll('[data-fade-readout]').forEach((readout) => {
+      const value = readout.dataset.fadeReadout === 'in' ? clip.fadeInSeconds : clip.fadeOutSeconds;
+      readout.textContent = Number(value).toFixed(2) + ' s';
+    });
     scheduleProjectSave();
   });
   $('dawOpenControl')?.addEventListener('click', () => {
