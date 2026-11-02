@@ -30,10 +30,13 @@ No NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset trans
 - GitHub Actions run: [Build #333](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41483971689)
 - Run ID: `41483971689`
 - Source commit: `01e75b9cf645a0652b7b19499c96d949d03db93d`
-- `npm test`: step completed successfully (exact test count to be recorded from final run logs).
+- `npm test`: **119/119 passed, 0 failed, 0 skipped** (confirmed from final Actions log).
 - Capacitor Android generation and USB audio plugin setup: step completed successfully.
-- Gradle `assembleDebug`: still running when this note was written.
-- APK artifact: not yet available at note creation time. Do not distribute Build #332 as the square-corner correction.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** (completed 2 November 2026 at 16:44:08 UTC).
+- Actions conclusion: **success**, completed 2 November 2026 at 16:44:23 UTC. [Run #333](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41483971689).
+- Artifact ID: `13161895873`; ZIP size **4,116,033 bytes**; SHA-256 `f95a8ef37ff59d80cfbedc801783658cc927362bfa6de420efa1e5268ab47641`.
+- Extracted `app-debug.apk`: **4,493,584 bytes**; SHA-256 `b62fb89dd22e27e9dea1977ea606253a4619e8445ec01bf699fbac0e8a70004d`.
+- Downloaded ZIP and APK both passed archive integrity checks. The APK's packaged CSS was inspected and shows `border-radius:0!important` for normal, selected, and mobile track-head rules.
 
 ## Device validation still required
 

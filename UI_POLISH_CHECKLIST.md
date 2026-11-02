@@ -3447,3 +3447,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted `app-debug.apk`, size **4,493,560 bytes**, SHA-256 `06b6d2debcc321a0294f912ab4a9d48be15199637c92da8ae0a971f109ebaca4`. ZIP and APK archive integrity checks passed.
 - Source comparison from Build #331: only `www/studio-daw.js` and `www/studio-daw.css` changed, along with focused UI tests and this checklist/research note. NAM, IR, MIDI mapping, Presets, Editor, Device, app-wide navigation and Studio playback/USB recorder code remain unchanged.
 - Device verification still required: confirm the white artifact is gone, left rail gaps no longer show a continuous horizontal line, all track ellipses are absent, and playhead drag/transport still work on the Android phone. CI verifies source tests and APK packaging; it does not emulate the phone's rendering.
+
+
+## Studio track rail square corners — Build #333 passed (2 November 2026)
+
+- User reviewed Build #332 and corrected the track-column appearance: each individual track head/left rail column must have square corners, not rounded corners. The outer timeline workspace frame remains unchanged.
+- Changed the normal `.daw-track-head`, selected `.daw-track-head.selected`, and mobile media-query rules to `border-radius:0!important`. The 6px row gaps, track borders, colored left accents, selected-state styling, and aligned timeline lanes remain.
+- Added regression assertions that require all three square-corner declarations and reject 10px/11px rounded track-head radii.
+- Authoritative Build #333: run ID `41483971689`, source commit `01e75b9cf645a0652b7b19499c96d949d03db93d`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41483971689).
+- `npm test`: **119/119 passed, 0 failed, 0 skipped**. Capacitor Android generation and USB audio plugin registration passed. Gradle `assembleDebug`: **BUILD SUCCESSFUL**. Artifact upload passed.
+- Artifact ID `13161895873`; ZIP size **4,116,033 bytes**, SHA-256 `f95a8ef37ff59d80cfbedc801783658cc927362bfa6de420efa1e5268ab47641`.
+- Extracted APK size **4,493,584 bytes**, SHA-256 `b62fb89dd22e27e9dea1977ea606253a4619e8445ec01bf699fbac0e8a70004d`. ZIP and APK archive integrity tests passed. Packaged CSS was inspected and confirms square corners in normal, selected, and mobile rules.
+- Source scope: only `www/studio-daw.css` and `tests/studio-daw-ui.test.js` changed for the app correction. NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI protocol, Presets, Signal Chain, Editor, and Studio audio logic remain untouched.
+- Physical validation remains required: install Build #333, confirm all individual track-head corners are square on the phone, and recheck row spacing, timeline alignment, playhead drag, transport, and MG-30 USB audio behavior. CI does not verify physical handset rendering or pedal operation.
