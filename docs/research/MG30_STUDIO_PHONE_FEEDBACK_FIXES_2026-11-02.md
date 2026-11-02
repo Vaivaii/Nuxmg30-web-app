@@ -115,3 +115,48 @@ Compared with Build #288, only the following paths changed:
 No NAM, IR, MIDI, Presets, Editor, Device, or global bottom-navigation module was changed.
 
 Physical phone interaction remains to be verified. The debug APK has not been tested directly on the user's phone in this session.
+
+
+## Follow-up: low fixed dock and live draggable playhead (Build #297)
+
+**Date:** 2 November 2026  
+**Validated source commit:** `41abee8fb5835ac445f2111834e8a1b8b2076784`  
+**GitHub Actions:** run `41433313054`, conclusion `success`.
+
+### Problems identified from the user's Build #294 screenshot
+
+- The transport/Mixer dock still occupied normal document flow despite sticky positioning, taking vertical space away from the timeline.
+- JavaScript updated `element.style.left`, but the final CSS rule `left:0!important` overrode it. As a result, the time readout advanced while the visible white marker remained fixed.
+- Drag coordinates were computed against the canvas rectangle without explicitly accounting for the shared scroller offset, making manual seeking unreliable after horizontal scrolling.
+
+### Corrections
+
+- The Studio dock is now `position:fixed` and anchored lower in the viewport above the app navigation. It is removed from normal layout flow, so it no longer reserves timeline height.
+- Dock width is constrained to the viewport/app content width and horizontally centered; the existing bottom navigation remains untouched.
+- `renderPlayhead()` writes `--daw-playhead-x` from the same `playheadSeconds` value updated by the playback animation frame.
+- The playhead CSS reads that variable, removing the conflict with the old fixed `left:0!important` rule.
+- Drag seeking calculates content coordinates using the timeline scroller's viewport rectangle plus `scrollLeft`.
+- During a drag, reaching either horizontal edge auto-scrolls the shared timeline while the pointer continues to seek.
+- The transparent touch target remains 32px wide around the visible 2px line; pointer capture is retained for touch/mouse dragging.
+
+### Validation
+
+- Automated tests: **76 passed, 0 failed, 0 skipped**.
+- Capacitor Android project generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,108,036 bytes, SHA-256 `1e2ebe4cfaaead03eedb17d6c454bf03c3c37f9d9ad253093c3ab255a57c7bc1`.
+- Extracted `app-debug.apk`: 4,485,812 bytes, SHA-256 `42cff3c15e88bb1fc91bd0c1adef228ea2cc8d39619f9588a2286b69a0fd3c2a`.
+- Both ZIP archive integrity checks passed.
+
+### Source boundary
+
+Compared with Build #294, the changes are limited to:
+- `www/studio-daw.js` — dynamic playhead position and scroller-aware drag/edge scroll
+- `www/studio-daw.css` — fixed lower dock and dynamic playhead position
+- `tests/studio-daw-ui.test.js` — regression assertions
+- This research note
+
+No `www/index.html`, global navigation, NAM, IR, MIDI, Presets, Editor, or Device source was changed in this follow-up.
+
+Physical touch behavior still needs confirmation on the user's handset. The build was CI-verified; it was not directly run on the user's phone in this session.
