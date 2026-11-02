@@ -3489,3 +3489,20 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size **4,493,664 bytes**, SHA-256 `42e41c399dbd790445b8bb199075adecc55c0590fe61cce1604e8fa80c5e98de`. ZIP and APK integrity passed. Packaged CSS inspection confirmed `--ruler-mark-x` is absent.
 - App source/test scope for this fix: only `www/studio-daw.css` and `tests/studio-daw-ui.test.js`. No NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset, Signal Chain, Editor, Device, or Studio audio/USB recorder code changed.
 - Physical validation remains required: install Build #338, verify the small glyph is gone on the actual phone, confirm bar labels are individually positioned, and recheck playhead drag and transport. Chromium simulation and CI do not replace handset confirmation.
+
+
+## App-wide lightweight UI motion — Build #341 passed (3 November 2026)
+
+- User confirmed the Build #338 ruler correction and requested lightweight animations across all app UI, including popup dialogs.
+- Added a shared CSS-only motion layer to `www/ui-redesign.css`; updated the stylesheet query in `www/index.html` to `motion-lite-1` for WebView cache refresh.
+- Main tab transitions use a short opacity fade only, preserving sticky/fixed geometry. Internal Studio/NAM pages use subtle opacity/5px reveals. Buttons have short press transitions; fields/cards have short border/shadow/background transitions. Desktop card hover is subtle and is not applied as movement on touch devices.
+- All native `dialog[open]` elements animate in with a short opacity/translate/scale entrance; the backdrop fades in. Menu/popover and all open `details` disclosure children also animate. The Copy Scene menu is appended to `document.body`, so its selector is global and still covers it.
+- Toast retains its existing lifecycle with a short entrance. `prefers-reduced-motion: reduce` globally reduces durations to near-zero and disables smooth scrolling.
+- Motion uses opacity/transform only; no JS animation loop, JS timer, or new infinite animation was added. The draggable DAW playhead button is explicitly excluded from button press scaling.
+- Added `tests/ui-motion.test.js` covering app tabs, dialogs/backdrop, menus, cards, buttons, fields, toast, disclosure panels, reduced motion, and stylesheet cache token.
+- Authoritative Build #341: run ID `41493465845`, source commit `54d3f015c56ae98403947d852778388a4bf498c4`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41493465845).
+- `npm test`: **127/127 passed, 0 failed**. Vite 7.3.7 production build passed. Capacitor Android generation/USB-audio plugin registration passed. Gradle `assembleDebug` passed. Artifact upload passed.
+- Artifact ZIP ID `13164259987`, size **4,116,665 bytes**, SHA-256 `19c7545394b3b2ca31071192d42168be79e5ca0543988eeaed598033775aa31c`.
+- Extracted APK SHA-256 `10b23287008dfff110958f02cf0cbac31ac0a8efc432636d425de82a517d03f5`; ZIP and APK integrity checks passed. Packaged CSS was inspected for all motion keyframes, menu/dialog/disclosure selectors, and reduced-motion support.
+- Code scope: `www/ui-redesign.css`, `www/index.html`, and `tests/ui-motion.test.js`. NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, presets transfer, Signal Chain, native Android plugin, and Studio audio/playhead logic were not changed.
+- Physical-device motion feel and reduced-motion behavior remain to be confirmed on the Android phone. CI and APK inspection do not replace handset interaction testing.
