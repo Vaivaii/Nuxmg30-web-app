@@ -624,3 +624,25 @@ test('Build 333: square track rail retains aligned gaps and colored left accents
   assert.ok(build333Styles.includes('border:1px solid #344139!important'));
   assert.ok(build333Styles.includes('border-left:5px solid var(--track-color)!important'));
 });
+
+
+test('Build 334: invisible playhead hit button has no Android/WebView native appearance', () => {
+  const build334Styles = css.slice(css.lastIndexOf('Build #334: neutralize Android/WebView native chrome'));
+  assert.ok(build334Styles.includes('#page-studio #dawTimelinePage #dawPlayheadHit{'));
+  assert.ok(build334Styles.includes('-webkit-appearance:none!important'));
+  assert.ok(build334Styles.includes('appearance:none!important'));
+  assert.ok(build334Styles.includes('background:transparent!important'));
+  assert.ok(build334Styles.includes('border:0!important'));
+  assert.ok(build334Styles.includes('color:transparent!important'));
+  assert.ok(build334Styles.includes('font:0/0 sans-serif!important'));
+  assert.ok(build334Styles.includes('#dawPlayheadHit::-webkit-focus-inner'));
+  assert.ok(build334Styles.includes('#dawPlayheadHit:focus-visible'));
+});
+
+test('Build 334: playhead hit button cannot create pseudo-element artifacts', () => {
+  const build334Styles = css.slice(css.lastIndexOf('Build #334: neutralize Android/WebView native chrome'));
+  assert.equal((build334Styles.match(/content:none!important/g) || []).length, 2);
+  assert.equal((build334Styles.match(/display:none!important/g) || []).length, 2);
+  assert.ok(html.includes('id="dawPlayheadHit"'));
+  assert.ok(daw.includes("$('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);"));
+});
