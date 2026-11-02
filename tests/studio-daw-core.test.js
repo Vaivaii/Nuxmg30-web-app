@@ -45,7 +45,7 @@ test('bar timing, project duration, and snap quantization use tempo and meter', 
   const project = createDefaultProject();
   assert.equal(barDurationSeconds(120, '4/4'), 2);
   project.tracks[0].clips.push({ startSeconds: 5, durationSeconds: 3 });
-  assert.equal(projectDurationSeconds(project), 8);
+  assert.equal(projectDurationSeconds(project), 9.6); // minimum four-bar project timeline at 120 BPM
   assert.equal(snapTime(0.62, { tempo: 120, timeSignature: '4/4' }, 'beat'), 0.5);
   assert.equal(snapTime(2.9, { tempo: 120, timeSignature: '4/4' }, 'bar'), 2);
 });
