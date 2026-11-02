@@ -621,29 +621,6 @@
   font-size: 11px;
   font-weight: 800;
 }
-#page-presets .preset-library-ops-status {
-  flex: 0 0 auto;
-  margin: -2px 2px 10px;
-  padding: 8px 10px;
-  border: 1px solid #536247;
-  border-radius: 10px;
-  background: #171f18;
-  color: #dce9d1;
-  font-size: 10px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-#page-presets .preset-library-ops-status[hidden] {
-  display: none !important;
-}
-#page-presets .preset-library-ops-status.is-error {
-  border-color: rgba(235, 155, 118, .55);
-  color: #f0c5b1;
-}
-#page-presets .preset-library-ops-status.is-success {
-  border-color: rgba(166, 211, 104, .42);
-  color: #d7eabf;
-}
 #page-presets .preset-library-ops-dialog {
   width: min(420px, calc(100% - 34px));
   max-width: 420px;
