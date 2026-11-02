@@ -3561,3 +3561,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - ZIP artifact ID `13172016621`, size **4,116,805 bytes**, SHA-256 `75c27095a0e0c472cc0a0adc3375eedb1b16683cb2a22fc82975185be81a531e`.
 - Extracted APK size **4,494,672 bytes**, SHA-256 `42f86608c540ccce8ac1e711ed7256190715c91eeec5c17ce17faf7008302dd3`. ZIP and APK integrity passed. Packaged initializer simulation confirmed all ten defaults and both legacy migrations.
 - Physical phone confirmation remains: install Build #347 and verify Slot 07 is `NAM Slot 07 · ID 60`, Slot 08 is `NAM Slot 08 · ID 61`, and no AATR default appears in the model list.
+
+
+## NAM pane width after motion effects — Build #349 passed (3 November 2026)
+
+- User reported NAM mode content stretched horizontally after the app-wide animations; TONE3000 mode remained visually normal.
+- The shared .nam-ir-tool-pane received the mg30-content-enter keyframe, which animates transform: translate3d(0,5px,0). The pane contains the NAM import form and is one of two sibling panes created in www/ir-transfer.js.
+- Changed visible NAM/TONE3000 tool panes to opacity-only mg30-nam-pane-fade, no transform. Existing min-width:0 layout rules were retained; no width, flex, grid, padding or content layout rules were changed.
+- Bumped the stylesheet cache token to motion-lite-2 so WebView loads the corrected style rather than a cached earlier bundle.
+- Added regression test to tests/ui-motion.test.js for pane creation, opacity-only animation, and retained width constraints.
+- Only www/ui-redesign.css, www/index.html, and tests/ui-motion.test.js changed. NAM transfer/readback/protocol, www/ir-transfer.js behavior, TONE3000 logic, IR transfer and device communication were untouched.
+- Authoritative Build #349: run ID 41511616371, source HEAD 9892b78adde105ac2ecaa25d4d9df83369febd41, conclusion success. GitHub Actions: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41511616371.
+- npm test: 137/137 passed, 0 failed. Vite production build, Capacitor Android generation/USB audio plugin, Gradle assembleDebug, and artifact upload all passed.
+- ZIP artifact ID 13174180450, size 4,116,816 bytes, SHA-256 a3bddbb068fdb0b061a9c75b2ad7b49eadde63f0c57243f622a4916cb38702c3.
+- Extracted APK size 4,494,676 bytes, SHA-256 c899bddfb70cbc69e1f4993e5434d304abaa2233a260d7c5973504e0d4d61c31. ZIP/APK integrity passed. Packaged CSS verified opacity-only NAM-pane animation and retained min-width constraints.
+- Physical handset confirmation remains: install Build #349 and verify NAM pane width is contained before, during, and after entrance animation; check switch to/from TONE3000.
