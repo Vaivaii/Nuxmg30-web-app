@@ -509,6 +509,7 @@ function initPresetLibraryUI() {
       if (mode === "rename") await runRename(name);
       else await runSaveAs(destinationSelect.value, name);
     } catch (error) {
+      closeOperationsDialog();
       showOperationToast(operationErrorMessage(error), "error");
     }
   });
