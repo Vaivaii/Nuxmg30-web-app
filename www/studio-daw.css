@@ -781,3 +781,23 @@
   .daw-control-dialog .daw-lower-panels{grid-template-columns:1fr!important}
   .daw-control-dialog .daw-export-actions{grid-template-columns:1fr!important}
 }
+
+/* Keep the transport hidden outside DAW mode even when its layout is explicitly displayed. */
+#page-studio .daw-sticky-transport[hidden]{display:none!important}
+#page-studio .daw-sticky-transport{grid-template-columns:56px minmax(0,1fr) 43px 36px!important}
+#page-studio .daw-sticky-meter{
+  display:grid!important;
+  grid-template-columns:7px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:3px!important;
+  color:#8d9a84!important;
+  font-size:7px!important;
+}
+#page-studio .daw-sticky-meter i{display:block!important;height:4px!important;overflow:hidden!important;border-radius:5px!important;background:#303b2c!important}
+#page-studio .daw-sticky-meter b{display:block!important;width:0;height:100%!important;background:#c5f36b!important}
+.daw-control-dialog[open]{display:block!important}
+@media(max-width:430px){
+  #page-studio .daw-sticky-transport{grid-template-columns:53px minmax(0,1fr) 36px 32px!important}
+  #page-studio .daw-sticky-meter{font-size:6px!important;gap:2px!important;grid-template-columns:6px minmax(0,1fr)!important}
+  #page-studio .daw-sticky-meter i{height:3px!important}
+}
