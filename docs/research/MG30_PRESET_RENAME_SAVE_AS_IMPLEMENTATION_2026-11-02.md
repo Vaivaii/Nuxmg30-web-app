@@ -114,3 +114,19 @@ Do not test overwrite on a valuable user preset. Keep the NAM/IR paths and MIDI 
 - Removed `feature/preset-rename-save-as` from automatic push-build branches. APK builds remain available via manual workflow dispatch after the user explicitly requests a build.
 - Build/test status: no APK build was started for this UI-only follow-up. Repository tests and Android packaging have not been rerun yet; Build #249 remains the last delivered APK and does not include this cleanup.
 - Hardware evidence boundary: the success/read-back results above are user-reported from the supplied device screenshots. No additional restart/reconnect test was reported in this update.
+
+## Build #251 — CI and APK verification (2 November 2026)
+
+Build #251 is the first successful Android debug package after the Preset Library feedback cleanup that removed the persistent banner and changed Rename/Save As success/error messages to concise toasts.
+
+- Branch: `feature/preset-rename-save-as`.
+- Build run: [#251 / 41390573757](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41390573757), success.
+- Build trigger source: `b452d51d099464837b31861591c41c6bcde63287`.
+- Application source checkpoint: `c1f58382cb8411855ffb7ef86a9685da69d43832`. The only post-checkpoint changes included in the build were a workflow trigger line and English-aligned assertion patterns; no Preset Library runtime implementation changed after that application checkpoint.
+- Full suite: **29/29 passed**; Vite production build passed; Capacitor Android generation passed; Gradle `assembleDebug` passed (183 actionable tasks).
+- Artifact ID: `13117006565`; ZIP size 4,066,352 bytes; SHA-256 `51ed77df4f796a58763b77d0c817c51d5c51895b6d0540e8cd30c6f19fdeb2b5`.
+- Extracted APK: `MG30_Studio_Build251.apk`, 4,443,588 bytes; SHA-256 `7b513140228d7dd249848c1fcefdc5ed8ff7194fa907f723cba1218f113a8b53`.
+- ZIP/APK integrity passed and the compiled APK bundle contains the Rename/Save As UI and current operation feedback strings.
+- Build #250 failed before Android packaging because three preset unit tests expected old Indonesian validation strings. Six assertion patterns were aligned to the current English messages in test-only commit `6ef22c1`; no production logic was changed. The corrected run #251 passed all 29 tests.
+- The push-build branch allowlist was restored after run creation; final workflow restoration commit `670438cb5090f2ae3ba6453f0d3bb48f53a9c3ac`. This feature branch remains manual-build-only.
+- Physical phone and pedal verification of this particular APK is still pending. Do not treat successful CI or ZIP inspection as proof of hardware behavior.
