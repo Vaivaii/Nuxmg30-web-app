@@ -260,7 +260,10 @@ function initPresetLibraryUI() {
         <button type="button" class="btn primary" id="presetLibraryOpsConfirm">Continue</button>
       </div>
     </div>`;
-  page.append(operationRow, opsStatus, operationDialog);
+  const opsHeader = page.querySelector(".preset-library-header");
+  if (opsHeader) opsHeader.after(operationRow, opsStatus);
+  else page.prepend(operationRow, opsStatus);
+  page.append(operationDialog);
   const opsTitle = $("presetLibraryOpsTitle");
   const opsSummary = $("presetLibraryOpsSummary");
   const destinationWrap = $("presetLibraryOpsDestinationWrap");
