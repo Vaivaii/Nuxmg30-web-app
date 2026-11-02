@@ -39,10 +39,10 @@ test('mobile DAW toolbar wraps into a tidy two-row grid instead of clipping Snap
   assert.ok(css.includes('daw-session-toolbar label:nth-child(5)'));
 });
 
-test('track settings and project/export tools are collapsed below the visible mixer', () => {
-  assert.match(html, /<details class="daw-bottom-disclosure daw-track-settings-disclosure">/);
-  assert.match(html, /<details class="daw-bottom-disclosure daw-project-disclosure">/);
-  assert.match(html, /class="daw-quick-takes"/);
+test('Track Settings and Project Settings are grouped on their own DAW page', () => {
+  assert.match(html, /<section id="dawTrackSettingsPage"[^>]*>/);
+  assert.match(html, /class="daw-settings-section"/);
+  assert.match(html, /class="daw-project-settings"/);
   assert.match(html, /id="dawProjectName"/);
 });
 
@@ -57,13 +57,12 @@ test('Studio title and three mode tabs follow the approved mockup hierarchy', ()
   assert.ok(css.includes('min-height:42px!important'));
 });
 
-test('Studio transport sits below the timeline and mixer is inline/collapsible', () => {
-  for (const id of ['dawPlay', 'dawStop', 'dawRecord', 'dawRewind', 'dawForward', 'dawMixer', 'dawMixerDetails', 'dawUndo', 'dawRedo']) {
+test('Studio transport remains available and Mixer is rendered on its dedicated page', () => {
+  for (const id of ['dawPlay','dawStop','dawRecord','dawRewind','dawForward','dawMixer','dawUndo','dawRedo']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing Studio control: ' + id);
   }
-  assert.match(html, /<details id="dawMixerDetails" class="daw-mixer-disclosure" open>/);
-  assert.ok(!html.includes('dawControlDialog'));
-  assert.ok(css.includes('#page-studio .daw-mixer-disclosure:not([open]) .daw-disclosure-chevron'));
+  assert.match(html, /<section id="dawMixerPage"[^>]*>/);
+  assert.ok(!html.includes('dawMixerDetails'));
   assert.ok(daw.includes("$('dawMixer')?.addEventListener('click', handleTrackClick);"));
 });
 
@@ -181,12 +180,12 @@ test('Jam and Record modes explicitly hide the entire DAW workspace', () => {
   assert.ok(css.includes('#page-studio #studio-daw-workspace[hidden]{display:none!important}'));
 });
 
-test('transport is sticky and Mixer opens upward as a bounded overlay', () => {
-  assert.ok(css.includes('position:sticky!important;'));
-  assert.ok(css.includes('bottom:calc(86px + env(safe-area-inset-bottom,0px))'));
-  assert.ok(css.includes('#page-studio .daw-mixer-disclosure[open] #dawMixer'));
-  assert.ok(css.includes('bottom:calc(100% + 8px)!important'));
-  assert.ok(css.includes('overflow-y:auto!important'));
+test('transport and DAW sub-navigation are fixed together without an accordion overlay', () => {
+  assert.ok(css.includes('#page-studio #dawStudioDock{'));
+  assert.ok(css.includes('position:fixed!important'));
+  assert.ok(css.includes('#page-studio .daw-subnav'));
+  assert.ok(html.includes('data-daw-page="timeline"'));
+  assert.ok(html.includes('data-daw-page="mixer"'));
 });
 
 test('mixer channel strip has a dedicated pan readout row below its fader', () => {
@@ -217,42 +216,37 @@ test('playhead drag uses a wide full-height hit target and pointer capture', () 
 });
 
 
-test('transport and Mixer header share one sticky Studio dock', () => {
-  assert.match(html, /<div id="dawStudioDock" class="daw-studio-dock">[\s\S]*?class="daw-transport-row"[\s\S]*?id="dawMixerDetails"/);
-  assert.ok(css.includes('#page-studio .daw-studio-dock{'));
-  assert.ok(css.includes('position:sticky!important'));
-  assert.ok(css.includes('bottom:calc(60px + env(safe-area-inset-bottom,0px))'));
+test('transport and all DAW page tabs share one fixed dock', () => {
+  assert.match(html, /<div id="dawStudioDock"[^>]*>[\s\S]*?class="daw-transport-row"[\s\S]*?class="daw-subnav"/);
+  assert.ok(css.includes('#page-studio #dawStudioDock{'));
+  assert.ok(css.includes('position:fixed!important'));
 });
 
-test('Mixer overlay has a fixed compact height and does not scroll internally', () => {
-  assert.ok(css.includes('grid-auto-rows:136px!important'));
-  assert.ok(css.includes('height:136px!important'));
-  assert.ok(css.includes('max-height:none!important'));
-  assert.ok(css.includes('overflow:visible!important'));
-  assert.ok(css.includes('height:46px!important'));
-  assert.ok(css.includes('grid-auto-rows:136px!important'));
-  assert.ok(css.includes('overflow:visible!important'));
-  assert.ok(css.includes('bottom:calc(100% + 43px)!important'));
+test('Mixer has a full-page channel layout with usable vertical faders', () => {
+  assert.ok(css.includes('#page-studio #dawMixerPage #dawMixer'));
+  assert.ok(css.includes('grid-template-columns:repeat(4,minmax(0,1fr))!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-fader'));
+  assert.ok(css.includes('min-height:140px!important'));
 });
 
-test('transport stays in the dock instead of sticking over the track lanes', () => {
-  assert.ok(css.includes('#page-studio .daw-studio-dock .daw-transport-row'));
+test('transport is part of the fixed bottom dock above internal DAW navigation', () => {
+  assert.ok(css.includes('#page-studio #dawStudioDock .daw-transport-row'));
   assert.ok(css.includes('position:relative!important'));
-  assert.ok(css.includes('bottom:auto!important'));
+  assert.ok(css.includes('.daw-subnav button.active'));
 });
 
-test('four track rows and their fixed rail stay at mockup compact height', () => {
-  assert.ok(css.includes('grid-template-rows:repeat(4,38px)!important'));
-  assert.ok(css.includes('height:38px!important'));
-  assert.ok(css.includes('max-height:38px!important'));
-  assert.ok(css.includes('height:30px!important'));
+test('Timeline page restores full-height track lanes and aligned rail', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-list'));
+  assert.ok(css.includes('grid-template-rows:repeat(4,minmax(68px,1fr))!important'));
+  assert.ok(css.includes('min-height:68px!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-head'));
 });
 
 
-test('fixed track rail starts exactly below the ruler without a vertical offset', () => {
-  assert.ok(css.includes('grid-template-rows:31px auto!important'));
+test('Timeline rail and lane rows use the same flexible height below the ruler', () => {
+  assert.ok(css.includes('grid-template-rows:31px minmax(0,1fr)!important'));
+  assert.ok(css.includes('grid-template-rows:repeat(4,minmax(68px,1fr))!important'));
   assert.ok(css.includes('row-gap:0!important'));
-  assert.ok(css.includes('grid-template-rows:repeat(4,38px)!important'));
 });
 
 
@@ -276,4 +270,58 @@ test('Studio dock is fixed to the lower viewport and removed from normal timelin
   assert.ok(css.includes('left:50%!important'));
   assert.ok(css.includes('bottom:calc(50px + env(safe-area-inset-bottom,0px))!important'));
   assert.ok(css.includes('width:min(calc(100vw - 20px),1172px)!important'));
+});
+
+
+test('DAW uses three independent pages: Timeline, Mixer and Track Settings', () => {
+  for (const page of ['timeline', 'mixer', 'track-settings']) {
+    assert.ok(html.includes('data-daw-page-panel="' + page + '"'), 'missing page panel ' + page);
+    assert.ok(html.includes('data-daw-page="' + page + '"'), 'missing sub-navigation tab ' + page);
+  }
+  assert.ok(html.includes('id="dawTimelinePage"'));
+  assert.ok(html.includes('id="dawMixerPage"'));
+  assert.ok(html.includes('id="dawTrackSettingsPage"'));
+  assert.ok(!html.includes('id="dawMixerDetails"'));
+});
+
+test('Mixer page contains a standalone four-channel mixer, not an accordion under Timeline', () => {
+  assert.match(html, /<section id="dawMixerPage"[^>]*>[\s\S]*?id="dawMixer"/);
+  assert.ok(!html.includes('<details id="dawMixerDetails"'));
+  assert.ok(css.includes('#page-studio #dawMixerPage #dawMixer'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-strip'));
+});
+
+test('Track Settings page includes selected-track controls and Project Settings', () => {
+  assert.match(html, /<section id="dawTrackSettingsPage"[^>]*>[\s\S]*?id="dawTrackInspector"[\s\S]*?class="daw-project-settings"/);
+  for (const id of ['dawProjectName','dawSavedProjects','dawExportMix','dawExportStems','dawQuickTakeSelect','dawImportQuickTake']) {
+    assert.ok(html.includes('id="' + id + '"'), 'missing Project Settings control ' + id);
+  }
+});
+
+test('Transport and three DAW page tabs share one fixed dock', () => {
+  assert.match(html, /<div id="dawStudioDock"[^>]*>[\s\S]*?class="daw-transport-row"[\s\S]*?class="daw-subnav"/);
+  assert.ok(css.includes('#page-studio #dawStudioDock{'));
+  assert.ok(css.includes('position:fixed!important'));
+  assert.ok(css.includes('#page-studio .daw-subnav'));
+});
+
+test('Internal DAW sub-navigation changes only one page at a time', () => {
+  assert.ok(daw.includes('function setDawPage(page)'));
+  assert.ok(daw.includes("panel.dataset.dawPagePanel === selected"));
+  assert.ok(daw.includes("button.dataset.dawPage === selected"));
+  assert.ok(daw.includes("button.addEventListener('click', () => setDawPage(button.dataset.dawPage));"));
+  assert.ok(css.includes('#page-studio #studio-daw-workspace>.daw-subpage[hidden]'));
+});
+
+test('Timeline gets its own full-height workspace independent of Mixer and Track Settings', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-timeline-panel'));
+  assert.ok(css.includes('flex:1 1 auto!important'));
+  assert.ok(css.includes('min-height:clamp(320px,calc(100dvh - 560px),720px)!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-list'));
+});
+
+test('DAW page selection is stored separately from Jam/Record/DAW mode', () => {
+  assert.ok(daw.includes("localStorage.setItem('mg30-studio-daw-page', selected)"));
+  assert.ok(daw.includes("localStorage.getItem('mg30-studio-daw-page')"));
+  assert.ok(daw.includes("['timeline', 'mixer', 'track-settings'].includes(savedPage)"));
 });
