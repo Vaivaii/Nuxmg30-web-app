@@ -3306,3 +3306,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Corrected the source strings directly: OTG failure prefix and native bridge errors are English; YouTube placeholder reads “Search for a song or artist…”; signal-chain count reads “12 blocks”; drag handle reads “MOVE”; initial/reorder helper and accessibility labels are English.
 - Changes are presentation/error wording only. The signal-chain order algorithm, gesture handling, USB-MIDI device selection, SysEx framing, connection bridge behavior, NAM, USER IR / Third Party, IR Collection, and MIDI mappings are unchanged.
 - Added a focused regression test for the exact screenshot strings. CI/APK verification is pending.
+
+
+## Build #261 — screenshot-driven English UI corrections (2 November 2026)
+
+- User screenshots after Build #260 showed untranslated text in the mobile Editor and Studio pages. Corrected the YouTube search placeholder, signal-chain count chip, MOVE drag handle, signal-chain reorder helper/accessibility labels, OTG failure toast prefix, and native USB-MIDI connection errors.
+- Source commit: `6d0123adc4a5c26abc47849bd3abd25bbefe1733`. Files changed: `www/index.html`, `www/native-midi.js`, new `tests/english-ui-polish.test.js`, plus the project notes. No signal-chain ordering algorithm, drag/drop event logic, USB-MIDI framing/device-selection logic, NAM transfer, USER IR / Third Party import, IR Collection, preset transfer, or MIDI mapping was modified.
+- CI: [Build #261 / run 41394537804](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41394537804), conclusion **success**. `npm test`: **30/30 passed, 0 failed**. Capacitor Android generation passed. Gradle `assembleDebug`: **BUILD SUCCESSFUL**. APK artifact upload passed.
+- Artifact ID: `13118548527`; ZIP size **4,069,917 bytes**, SHA-256 `4d679b888994dc0b1f3c020fa04bd8c2fa18d5c783296bc0c2c364a25239961d`.
+- Extracted APK: `MG30_Studio_Build261.apk`, size **4,448,492 bytes**, SHA-256 `5574fce9e587422347817b40d43b51f1bbc6467f50e4b01edc74c00547b2d609`. ZIP and APK integrity checks passed. Packaged asset inspection confirmed the corrected visible English strings are present.
+- The feature branch push trigger was temporarily added only to queue Build #261, then removed in restoration commit `6a13ee30625fa8328770f16a401df461709c9e66`. The current workflow allowlist does not include `feature/preset-rename-save-as`; subsequent builds remain manual/explicit.
+- Hardware validation remains pending. Install Build #261 and check the English OTG failure toast, Studio search placeholder, and signal-chain MOVE label on the phone. A failed USB connection does not itself imply a protocol regression; NAM, both IR destinations, MIDI mappings and preset operations still need device validation as usual.
