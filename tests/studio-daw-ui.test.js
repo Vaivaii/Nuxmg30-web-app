@@ -55,14 +55,13 @@ test('Studio title and mode tabs are compact with no redundant subtitle', () => 
   assert.ok(css.includes('min-height:29px!important'));
 });
 
-test('DAW transport remains sticky and opens the mixer/settings control dialog', () => {
-  assert.ok(html.includes('class="daw-sticky-transport" data-studio-mode-panel="daw"'));
-  for (const id of ['dawPlay', 'dawStop', 'dawRecord', 'dawRewind', 'dawOpenControl', 'dawControlDialog', 'dawCloseControl']) {
-    assert.ok(html.includes('id="' + id + '"'), 'missing sticky transport/control: ' + id);
+test('Studio transport sits below the timeline and mixer is inline/collapsible', () => {
+  for (const id of ['dawPlay', 'dawStop', 'dawRecord', 'dawRewind', 'dawForward', 'dawMixer', 'dawMixerDetails', 'dawUndo', 'dawRedo']) {
+    assert.ok(html.includes('id="' + id + '"'), 'missing Studio control: ' + id);
   }
-  assert.ok(html.includes('id="dawMixer"'));
-  assert.ok(html.includes('class="daw-control-group"'));
-  assert.ok(css.includes('.daw-sticky-transport[hidden]{display:none!important}'));
+  assert.match(html, /<details id="dawMixerDetails" class="daw-mixer-disclosure" open>/);
+  assert.ok(!html.includes('dawControlDialog'));
+  assert.ok(css.includes('#page-studio .daw-mixer-disclosure:not([open]) .daw-disclosure-chevron'));
 });
 
 test('four timeline lanes use one global playhead and consistent fixed-height track rows', () => {
@@ -95,4 +94,42 @@ test('clip edges expose non-destructive trim handles and individual fade control
 test('clip fade envelope is applied to live playback and offline WAV rendering', () => {
   assert.ok(daw.includes('connectClipWithFade(context, source, clip, elapsedIntoClip, available'));
   assert.ok(daw.includes('connectClipWithFade(context, source, clip, offsetIntoClip, playbackDuration'));
+});
+
+
+test('ruler and all four track lanes use one shared horizontal timeline scroller', () => {
+  for (const id of ['dawTimelineScroll', 'dawTimelineCanvas', 'dawTrackRail', 'dawTrackList', 'dawRulerInner', 'dawGlobalPlayhead']) {
+    assert.ok(html.includes('id="' + id + '"'), 'missing shared timeline element: ' + id);
+  }
+  assert.ok(js.includes("const canvas = $('dawTimelineCanvas')"));
+  assert.ok(!js.includes('dawRulerScroll'));
+  assert.ok(!js.includes('data-lane-scroll'));
+  assert.ok(css.includes('#page-studio .daw-timeline-canvas'));
+  assert.ok(css.includes('var(--daw-bar-width'));
+});
+
+test('playhead can be dragged freely and lane clicks seek without snap quantization', () => {
+  assert.ok(html.includes('id="dawPlayheadHit"'));
+  assert.ok(js.includes('function startPlayheadDrag(event)'));
+  assert.ok(js.includes('function movePlayheadDrag(event)'));
+  assert.ok(js.includes('function setPlayheadFromClientX(clientX)'));
+  assert.ok(!/playheadSeconds = snapTime\(Math\.max\(0, x \/ project\.zoom \* metrics\.barSeconds\), project\)/.test(js));
+});
+
+test('Studio provides project-scoped undo and redo controls with keyboard shortcuts', () => {
+  for (const value of ['function historyState()', 'function commitHistoryChange()', 'function applyHistory(direction)', 'function resetHistory()']) {
+    assert.ok(js.includes(value), 'missing undo/redo implementation: ' + value);
+  }
+  assert.ok(js.includes("event.key.toLowerCase() === 'z'"));
+  assert.ok(js.includes("event.key.toLowerCase() === 'y'"));
+  assert.ok(css.includes('#page-studio .daw-history-tools button:disabled'));
+});
+
+test('approved Studio mockup hierarchy is present and the bottom navigation stays in the app shell', () => {
+  assert.ok(html.includes('Jamm &amp; Record'));
+  assert.ok(html.includes('Mini DAW – 4 Track'));
+  assert.ok(html.includes('Project: <strong id="dawProjectSummary">'));
+  assert.ok(html.includes('id="dawMixerDetails"'));
+  assert.ok(html.includes('id="page-device"'));
+  assert.ok(html.includes('id="page-studio"'));
 });
