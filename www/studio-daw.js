@@ -2,7 +2,8 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import {
   DAW_TRACKS, createDefaultProject, normalizeProject, makeId, projectDurationSeconds,
   barDurationSeconds, snapTime, selectStemTracks, safeExportName, floatStereoToPcm24,
-  makeWavBlob, createStoredZip,
+  makeWavBlob, createStoredZip, trimClipStart, trimClipEnd, splitClipAt,
+  normalizeClipFades, clipFadeGainAt,
 } from './studio-daw-core.js';
 
 const NativeDawFiles = registerPlugin('MG30DawFiles');
@@ -174,47 +175,53 @@ function renderTrackRows() {
   const metrics = timelineMetrics();
   holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
   holder.style.setProperty('--daw-bar-width', project.zoom + 'px');
-  holder.innerHTML = project.tracks.map((track, index) => {
+  const rows = project.tracks.map((track, index) => {
     const isSelected = selectedTrackId === track.id;
     const clips = track.clips.map((clip) => {
       const left = clip.startSeconds / metrics.barSeconds * project.zoom;
       const width = Math.max(20, clip.durationSeconds / metrics.barSeconds * project.zoom);
       const isClipSelected = selectedClipId === clip.id;
-      return '<button type="button" class="daw-clip' + (isClipSelected ? ' selected' : '') + '" data-clip-id="' + safeText(clip.id) + '" data-track-id="' + track.id + '" style="--track-color:' + track.color + ';left:' + left + 'px;width:' + width + 'px" title="' + safeText(clip.name) + '">' +
-        '<strong>' + safeText(clip.name) + '</strong>' + waveformMarkup(clip.waveform) + '</button>';
+      const fadeInPercent = clip.durationSeconds > 0 ? Math.min(50, (Number(clip.fadeInSeconds) || 0) / clip.durationSeconds * 100) : 0;
+      const fadeOutPercent = clip.durationSeconds > 0 ? Math.min(50, (Number(clip.fadeOutSeconds) || 0) / clip.durationSeconds * 100) : 0;
+      return '<div role="button" tabindex="0" class="daw-clip' + (isClipSelected ? ' selected' : '') + '" data-clip-id="' + safeText(clip.id) + '" data-track-id="' + track.id + '" style="--track-color:' + track.color + ';--clip-fade-in:' + fadeInPercent + '%;--clip-fade-out:' + fadeOutPercent + '%;left:' + left + 'px;width:' + width + 'px" title="' + safeText(clip.name) + '">' +
+        '<span class="daw-clip-edge daw-clip-edge-start" data-clip-edge="start" aria-label="Trim clip start"></span>' +
+        '<span class="daw-clip-edge daw-clip-edge-end" data-clip-edge="end" aria-label="Trim clip end"></span>' +
+        '<strong>' + safeText(clip.name) + '</strong>' + waveformMarkup(clip.waveform) + '</div>';
     }).join('');
+    const recordButton = track.id === 'backing'
+      ? '<span class="daw-track-action-spacer" aria-hidden="true"></span>'
+      : '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="daw-track-record ' + (track.armed ? 'arm-active' : '') + '" aria-label="' + (track.armed ? 'Disarm ' : 'Arm ') + safeText(track.name) + '" title="' + (track.armed ? 'Armed for USB overdub' : 'Arm for USB overdub') + '">●</button>';
     return '<div class="daw-track-row' + (isSelected ? ' selected' : '') + (track.mute ? ' is-muted' : '') + '" data-track-row="' + track.id + '">' +
       '<div class="daw-track-head" style="--track-color:' + track.color + '">' +
         '<div class="daw-track-title"><span class="daw-track-color"></span><strong>' + String(index + 1).padStart(2, '0') + ' ' + safeText(track.name) + '</strong></div>' +
         '<div class="daw-track-input">' + safeText(track.input) + '</div>' +
-        '<div class="daw-track-actions">' +
-          (track.id === 'backing' ? '' : '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="' + (track.armed ? 'arm-active' : '') + '">' + (track.armed ? 'ARM' : 'ARM') + '</button>') +
-          '<button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '">M</button>' +
-          '<button type="button" data-track-action="solo" data-track-id="' + track.id + '" class="' + (track.solo ? 'active' : '') + '">S</button>' +
-          '<button type="button" data-track-action="import" data-track-id="' + track.id + '" class="import">＋</button>' +
+        '<div class="daw-track-actions">' + recordButton +
+          '<button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '" aria-label="Mute ' + safeText(track.name) + '">M</button>' +
+          '<button type="button" data-track-action="solo" data-track-id="' + track.id + '" class="' + (track.solo ? 'active' : '') + '" aria-label="Solo ' + safeText(track.name) + '">S</button>' +
+          '<button type="button" data-track-action="import" data-track-id="' + track.id + '" class="import" aria-label="Import audio to ' + safeText(track.name) + '">＋</button>' +
         '</div>' +
       '</div>' +
-      '<div class="daw-lane-scroll" data-lane-scroll="' + track.id + '"><div class="daw-track-lane" data-track-lane="' + track.id + '" style="--daw-timeline-width:' + metrics.width + 'px;--daw-bar-width:' + project.zoom + 'px">' +
-        clips + '<span class="daw-playhead"></span></div></div>' +
+      '<div class="daw-lane-scroll" data-lane-scroll="' + track.id + '"><div class="daw-track-lane" data-track-lane="' + track.id + '" style="--daw-timeline-width:' + metrics.width + 'px;--daw-bar-width:' + project.zoom + 'px">' + clips + '</div></div>' +
     '</div>';
   }).join('');
+  holder.innerHTML = rows + '<span id="dawGlobalPlayhead" class="daw-global-playhead" aria-hidden="true"></span>';
   renderPlayhead();
-  holder.querySelectorAll('[data-lane-scroll]').forEach((scroller) => {
-    scroller.addEventListener('scroll', () => {
-      const left = scroller.scrollLeft;
-      const ruler = $('dawRulerScroll');
-      if (ruler && ruler !== scroller) ruler.scrollLeft = left;
-      holder.querySelectorAll('[data-lane-scroll]').forEach((other) => {
-        if (other !== scroller) other.scrollLeft = left;
-      });
-    }, { passive: true });
-  });
-  const rulerScroll = $('dawRulerScroll');
-  if (rulerScroll) rulerScroll.addEventListener('scroll', () => {
-    holder.querySelectorAll('[data-lane-scroll]').forEach((other) => { other.scrollLeft = rulerScroll.scrollLeft; });
-  }, { passive: true });
-}
 
+  const syncScroll = (source) => {
+    const left = source.scrollLeft;
+    holder.style.setProperty('--daw-scroll-left', left + 'px');
+    holder.querySelectorAll('[data-lane-scroll]').forEach((other) => {
+      if (other !== source && other.scrollLeft !== left) other.scrollLeft = left;
+    });
+    const ruler = $('dawRulerScroll');
+    if (ruler && ruler !== source && ruler.scrollLeft !== left) ruler.scrollLeft = left;
+  };
+  holder.querySelectorAll('[data-lane-scroll]').forEach((scroller) => {
+    scroller.addEventListener('scroll', () => syncScroll(scroller), { passive: true });
+  });
+  const ruler = $('dawRulerScroll');
+  if (ruler) ruler.onscroll = () => syncScroll(ruler);
+}
 function renderMixer() {
   const mixer = $('dawMixer');
   if (!mixer) return;
@@ -238,14 +245,18 @@ function renderInspector() {
   if (!track) return;
   if (label) label.textContent = track.name + ' selected';
   const clip = track.clips.find((item) => item.id === selectedClipId) || null;
+  const clipTools = clip
+    ? '<div class="daw-clip-tools"><small>' + safeText(clip.name) + '</small>' +
+      '<div class="daw-fade-control"><label>Fade in <strong data-fade-readout="in">' + (Number(clip.fadeInSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds / 2) + '" step="0.05" value="' + (Number(clip.fadeInSeconds) || 0) + '" data-clip-fade="in" aria-label="Clip fade in"></label>' +
+      '<label>Fade out <strong data-fade-readout="out">' + (Number(clip.fadeOutSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds / 2) + '" step="0.05" value="' + (Number(clip.fadeOutSeconds) || 0) + '" data-clip-fade="out" aria-label="Clip fade out"></label></div>' +
+      '<div><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
+    : '<p class="daw-inspector-note">Select a clip to trim its edges, split it, or set individual fades.</p>';
   holder.innerHTML =
     '<div class="daw-inspector-grid">' +
       '<label>Track level <strong data-gain-readout="' + track.id + '">' + Math.round(track.gain * 100) + '%</strong><input type="range" min="0" max="150" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '"></label>' +
       '<label>Pan <strong data-pan-readout="' + track.id + '">' + Math.round(track.pan * 100) + '</strong><input type="range" min="-100" max="100" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '"></label>' +
-    '</div>' +
-    (clip ? '<div class="daw-clip-tools"><small>' + safeText(clip.name) + '</small><div><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>' : '<p class="daw-inspector-note">Select a clip to split it at the cursor or remove it.</p>');
+    '</div>' + clipTools;
 }
-
 function renderProject() {
   updateToolbar();
   const metrics = timelineMetrics();
@@ -279,9 +290,8 @@ function updatePlayheadReadout() {
 function renderPlayhead() {
   const metrics = timelineMetrics();
   const left = (playheadSeconds / metrics.barSeconds) * project.zoom;
-  document.querySelectorAll('#dawTrackList .daw-track-lane').forEach((lane) => {
-    lane.style.setProperty('--daw-playhead', left + 'px');
-  });
+  const holder = $('dawTrackList');
+  if (holder) holder.style.setProperty('--daw-playhead', left + 'px');
   updatePlayheadReadout();
 }
 
@@ -525,19 +535,11 @@ function splitSelectedClip() {
     setStatus('Move the playhead inside the selected clip before splitting it.', 'warn');
     return;
   }
-  const rightDuration = end - splitAt;
-  const offset = splitAt - clip.startSeconds;
-  const right = {
-    ...clip,
-    id: makeId('clip'),
-    name: clip.name + ' (split)',
-    startSeconds: splitAt,
-    sourceOffsetSeconds: clip.sourceOffsetSeconds + offset,
-    durationSeconds: rightDuration,
-  };
-  clip.durationSeconds = offset;
-  track.clips.splice(index + 1, 0, right);
-  selectedClipId = right.id;
+  const split = splitClipAt(clip, splitAt);
+  if (!split) { setStatus('The split point is too close to a clip edge.', 'warn'); return; }
+  track.clips[index] = split.left;
+  track.clips.splice(index + 1, 0, split.right);
+  selectedClipId = split.right.id;
   renderProject();
   scheduleProjectSave();
   setStatus('Clip split at the playhead.', 'ok');
@@ -576,18 +578,27 @@ function handleTrackClick(event) {
 }
 
 function startClipDrag(event) {
-  const clipButton = event.target.closest('[data-clip-id]');
-  if (!clipButton || event.button !== 0 || recording || playing) return;
-  const track = getTrack(clipButton.dataset.trackId);
-  const clip = track?.clips.find((item) => item.id === clipButton.dataset.clipId);
+  const clipNode = event.target.closest('[data-clip-id]');
+  if (!clipNode || event.button !== 0 || recording || playing) return;
+  const track = getTrack(clipNode.dataset.trackId);
+  const clip = track?.clips.find((item) => item.id === clipNode.dataset.clipId);
   if (!clip) return;
-  dragClip = { pointerId: event.pointerId, x: event.clientX, start: clip.startSeconds, trackId: track.id, clipId: clip.id, moved: false };
-  try { clipButton.setPointerCapture(event.pointerId); } catch (_) {}
+  const edge = event.target.closest('[data-clip-edge]')?.dataset.clipEdge || 'move';
+  dragClip = {
+    pointerId: event.pointerId,
+    x: event.clientX,
+    mode: edge,
+    trackId: track.id,
+    clipId: clip.id,
+    initial: { ...clip },
+    moved: false,
+  };
+  try { clipNode.setPointerCapture(event.pointerId); } catch (_) {}
 }
 
 function moveClipDrag(event) {
   if (!dragClip || dragClip.pointerId !== event.pointerId) return;
-  if (Math.abs(event.clientX - dragClip.x) > 5) dragClip.moved = true;
+  if (Math.abs(event.clientX - dragClip.x) > 4) dragClip.moved = true;
 }
 
 function finishClipDrag(event) {
@@ -596,17 +607,29 @@ function finishClipDrag(event) {
   dragClip = null;
   if (!drag.moved) return;
   const track = getTrack(drag.trackId);
-  const clip = track?.clips.find((item) => item.id === drag.clipId);
-  if (!clip) return;
+  const index = track?.clips.findIndex((item) => item.id === drag.clipId) ?? -1;
+  if (index < 0) return;
+  const initial = drag.initial;
   const metrics = timelineMetrics();
-  const scroll = $('dawTrackList')?.querySelector('[data-lane-scroll="' + drag.trackId + '"]');
-  const movement = event.clientX - drag.x;
-  const next = drag.start + (movement / project.zoom) * metrics.barSeconds;
-  clip.startSeconds = snapTime(next, project);
+  const movement = ((event.clientX - drag.x) / project.zoom) * metrics.barSeconds;
+  const source = mediaBuffers.get(initial.mediaId);
+  const sourceDuration = source?.duration || (initial.sourceOffsetSeconds + initial.durationSeconds);
+  let next = { ...initial };
+  if (drag.mode === 'start') {
+    const requestedStart = snapTime(Math.max(0, initial.startSeconds + movement), project);
+    next = trimClipStart(initial, requestedStart - initial.startSeconds, sourceDuration);
+  } else if (drag.mode === 'end') {
+    const requestedEnd = snapTime(Math.max(initial.startSeconds + 0.05, initial.startSeconds + initial.durationSeconds + movement), project);
+    next = trimClipEnd(initial, requestedEnd - (initial.startSeconds + initial.durationSeconds), sourceDuration);
+  } else {
+    next.startSeconds = snapTime(Math.max(0, initial.startSeconds + movement), project);
+  }
+  track.clips[index] = next;
   selectedTrackId = track.id;
-  selectedClipId = clip.id;
+  selectedClipId = next.id;
   renderProject();
   scheduleProjectSave();
+  setStatus(drag.mode === 'move' ? 'Clip moved without changing its source audio.' : 'Clip edge trimmed non-destructively.', 'ok');
 }
 
 function createPlaybackMaster(context) {
@@ -1118,6 +1141,31 @@ function bindEvents() {
     const action = event.target.closest('[data-clip-action]')?.dataset.clipAction;
     if (action === 'delete') deleteSelectedClip();
     if (action === 'split') splitSelectedClip();
+  });
+  $('dawTrackInspector')?.addEventListener('input', (event) => {
+    const fade = event.target.closest('[data-clip-fade]');
+    if (!fade) return;
+    const track = getTrack(selectedTrackId);
+    const clip = track?.clips.find((item) => item.id === selectedClipId);
+    if (!clip) return;
+    const next = normalizeClipFades(
+      clip.durationSeconds,
+      fade.dataset.clipFade === 'in' ? fade.value : clip.fadeInSeconds,
+      fade.dataset.clipFade === 'out' ? fade.value : clip.fadeOutSeconds,
+    );
+    clip.fadeInSeconds = next.fadeInSeconds;
+    clip.fadeOutSeconds = next.fadeOutSeconds;
+    const readout = $('dawTrackInspector')?.querySelector('[data-fade-readout="' + fade.dataset.clipFade + '"]');
+    if (readout) readout.textContent = Number(fade.value).toFixed(2) + ' s';
+    scheduleProjectSave();
+  });
+  $('dawOpenControl')?.addEventListener('click', () => {
+    const dialog = $('dawControlDialog');
+    if (dialog?.showModal) dialog.showModal();
+  });
+  $('dawCloseControl')?.addEventListener('click', () => $('dawControlDialog')?.close());
+  $('dawControlDialog')?.addEventListener('click', (event) => {
+    if (event.target === $('dawControlDialog')) $('dawControlDialog').close();
   });
   $('dawPlay')?.addEventListener('click', () => { void togglePlayback(); });
   $('dawStop')?.addEventListener('click', async () => {
