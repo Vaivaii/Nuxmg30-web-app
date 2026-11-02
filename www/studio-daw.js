@@ -137,6 +137,9 @@ function movePlayheadDrag(event) {
 
 function finishPlayheadDrag(event) {
   if (playheadDragPointerId === null || event.pointerId !== playheadDragPointerId) return;
+  try {
+    if (event.currentTarget?.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  } catch (_) {}
   playheadDragPointerId = null;
 }
 
@@ -309,9 +312,7 @@ function renderTrackRows() {
 
   rail.innerHTML = project.tracks.map((track, index) => {
     const isSelected = selectedTrackId === track.id;
-    const recordButton = track.id === 'backing'
-      ? '<span class="daw-track-action-spacer" aria-hidden="true"></span>'
-      : '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="daw-track-record ' + (track.armed ? 'arm-active' : '') + '" aria-label="' + (track.armed ? 'Disarm ' : 'Arm ') + safeText(track.name) + '" title="' + (track.armed ? 'Armed for USB overdub' : 'Arm for USB overdub') + '">●</button>';
+    const recordButton = '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="daw-track-record ' + (track.armed ? 'arm-active' : '') + '" aria-label="' + (track.armed ? 'Disarm ' : 'Arm ') + safeText(track.name) + '" title="' + (track.armed ? 'Armed for MG-30 USB overdub' : 'Arm for MG-30 USB overdub') + '">●</button>';
     return '<div class="daw-track-head' + (isSelected ? ' selected' : '') + '" data-track-select="' + track.id + '" style="--track-color:' + track.color + '">' +
       '<div class="daw-track-title"><span class="daw-track-color"></span><strong>' + String(index + 1).padStart(1, '0') + ' ' + safeText(track.name) + '</strong><span class="daw-track-menu">•••</span></div>' +
       '<div class="daw-track-input">' + safeText(track.input) + '</div>' +
@@ -654,10 +655,6 @@ function setTrackMuteSolo(trackId, action) {
 }
 
 function armTrack(trackId) {
-  if (trackId === 'backing') {
-    setStatus('Backing is an audio-file track and cannot be armed for MG-30 USB recording.', 'warn');
-    return;
-  }
   if (recording) {
     setStatus('Stop the current overdub before changing the armed track.', 'warn');
     return;
@@ -988,10 +985,6 @@ async function startDawRecording() {
     setStatus('Arm one track before recording.', 'warn');
     return;
   }
-  if (track.id === 'backing') {
-    setStatus('Backing is an imported-audio lane. Arm Guitar, Bass, or Vocals for an overdub.', 'warn');
-    return;
-  }
   const recorder = window.NUXStudioRecorder;
   if (!recorder?.isNative?.()) {
     setStatus('USB recording for DAW overdubs is available in the Android APK only. No phone-microphone fallback is used.', 'warn');
@@ -1257,14 +1250,23 @@ function setStudioMode(mode) {
     button.classList.toggle('active', active);
     button.setAttribute('aria-selected', String(active));
   });
-  document.querySelectorAll('[data-studio-mode-panel]').forEach((panel) => {
-    panel.hidden = panel.dataset.studioModePanel !== selected;
+  const studio = $('page-studio');
+  studio?.querySelectorAll(':scope > [data-studio-mode-panel]').forEach((panel) => {
+    const active = panel.dataset.studioModePanel === selected;
+    panel.hidden = !active;
+    panel.setAttribute('aria-hidden', String(!active));
+    // The DAW workspace has an explicit grid layout; force the display state
+    // inline so its !important grid rule can never leak into Jam or Record.
+    panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'grid' : 'block') : 'none', 'important');
   });
   try { localStorage.setItem('mg30-studio-last-mode', selected); } catch (_) {}
   if (selected === 'daw') {
     renderPlayhead();
     refreshQuickTakes();
-  } else if (selected === 'jam' && playing) pausePlayback();
+  } else {
+    if (recording) void stopDawRecording();
+    else if (playing) pausePlayback();
+  }
 }
 
 function bindEvents() {
@@ -1335,7 +1337,8 @@ function bindEvents() {
     });
     scheduleProjectSave();
   });
-  $('dawPlayheadHit')?.addEventListener('pointerdown', startPlayheadDrag);
+  $('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);
+  $('dawGlobalPlayhead')?.addEventListener('lostpointercapture', finishPlayheadDrag);
   document.addEventListener('pointermove', movePlayheadDrag, { passive: false });
   document.addEventListener('pointerup', finishPlayheadDrag);
   document.addEventListener('pointercancel', finishPlayheadDrag);
