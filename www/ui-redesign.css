@@ -2458,11 +2458,7 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
 .scene-copy-menu:not([hidden]),
 .app .preset-jump-menu:not(.hidden),
 .app [role="menu"]:not([hidden]),
-.app details[open]>.daw-history-tools,
-.app details[open]>.nam-reader-content,
-.app details[open]>.studio-device-content,
-.app details[open]>.studio-take-content,
-.app details[open]>.studio-youtube-search-content{
+.app details[open]>:not(summary){
   animation:mg30-popup-enter .15s ease-out both;
 }
 
