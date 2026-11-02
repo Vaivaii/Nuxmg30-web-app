@@ -136,3 +136,25 @@ test('approved Studio mockup hierarchy is present and the bottom navigation stay
   assert.ok(html.includes('id="page-device"'));
   assert.ok(html.includes('id="page-studio"'));
 });
+
+
+test('Undo and Redo are tucked inside the mockup three-dot options control', () => {
+  assert.match(html, /<details class="daw-more-menu">/);
+  assert.match(html, /aria-label="More Studio options"/);
+  assert.match(html, /id="dawUndo"/);
+  assert.match(html, /id="dawRedo"/);
+  assert.ok(css.includes('#page-studio .daw-more-menu>summary'));
+});
+
+test('imported audio and Quick Record takes are undoable Studio edits', () => {
+  assert.ok(daw.includes('commitHistoryChange();\\n  await saveProject(false);'));
+  assert.ok(daw.includes('async function importQuickTake('));
+  assert.ok(daw.includes('await addAudioBlobToTrack(blob, trackId, take.fileName, startAt, take);'));
+});
+
+test('playhead auto-follows during playback while the left track rail remains separate', () => {
+  assert.ok(daw.includes('function followPlayheadDuringPlayback()'));
+  assert.ok(daw.includes('followPlayheadDuringPlayback();'));
+  assert.ok(html.includes('id="dawTimelineScroll"'));
+  assert.ok(css.includes('#page-studio .daw-track-rail-column'));
+});
