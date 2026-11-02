@@ -100,3 +100,17 @@ Do not test overwrite on a valuable user preset. Keep the NAM/IR paths and MIDI 
 - Extracted APK `MG30_Studio_Build249.apk`: 4,444,032 bytes, SHA-256 `ebcef8e69ea9c4d2c1daab886b76b86c7ece13b266e4e0ae4f0a56348b6b464d`.
 - ZIP/APK integrity and compiled bundle string checks passed; Rename/Save As UI and operation logic are present in the APK.
 - This verifies CI, compilation, packaging and inclusion of the new feature only. It does not constitute physical device or pedal transfer verification. Perform the physical validation plan above on original Gen2 firmware 6.0.x before treating the write path as proven.
+
+
+## Preset Manager — concise Rename / Save As feedback (2 November 2026)
+
+- User confirmed that Rename and Save As now complete successfully on the connected original MG-30 Gen 2. The supplied screenshots show Rename on slot 15D reporting a matching three-part read-back, and Save As from 16B to 22C succeeding while slot 16B remains active.
+- Removed the persistent operation/status banner above the preset cards. Rename and Save As no longer write operation messages into the Preset Manager scan-status element.
+- Removed the explanatory paragraphs and raw-snapshot technical note from both dialogs. The name field label is now simply “Preset name”. The local raw destination snapshot behavior remains in code and is not removed.
+- Success feedback is now a short toast: “Preset renamed · 15D” or “Preset saved · 22C”. Same-name and error results also use concise toast feedback; detailed technical errors remain in the console rather than appearing as banners.
+- Kept the Rename and overwrite confirmation prompts, destination selection, original source-slot behavior, three-scene read/write/read-back path, local backup capture, and name cache update logic intact.
+- Translated remaining Rename/Save As validation and preset-list toast strings to English. NAM, IR User/Third Party, IR Collection, MIDI mappings, USB-MIDI protocol, preset transfer logic, and Signal Chain behavior were not edited.
+- Source files changed: `www/preset-library-ui.js`, `www/preset-library-operations.js`, and `www/preset-library-ui.css`.
+- Removed `feature/preset-rename-save-as` from automatic push-build branches. APK builds remain available via manual workflow dispatch after the user explicitly requests a build.
+- Build/test status: no APK build was started for this UI-only follow-up. Repository tests and Android packaging have not been rerun yet; Build #249 remains the last delivered APK and does not include this cleanup.
+- Hardware evidence boundary: the success/read-back results above are user-reported from the supplied device screenshots. No additional restart/reconnect test was reported in this update.
