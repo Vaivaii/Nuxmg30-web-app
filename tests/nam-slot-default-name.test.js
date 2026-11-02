@@ -18,7 +18,7 @@ test('NAM slot 07 returns to its generic default label and ID 60', () => {
 });
 
 test('NAM transfer implementation retains its existing source and protocol markers', () => {
-  assert.ok(namTransfer.includes('export async function transferMG30NAM'));
+  assert.ok(namTransfer.includes('export async function sendMG30A2LiteTransfer'));
   assert.ok(namTransfer.includes('ACK'));
   assert.ok(namTransfer.includes('readMG30NAMSlotNames'));
 });
