@@ -159,3 +159,10 @@ test('playhead auto-follows during playback while the left track rail remains se
   assert.ok(html.includes('id="dawTimelineScroll"'));
   assert.ok(css.includes('#page-studio .daw-track-rail-column'));
 });
+
+
+test('timeline grid is offset to align beat/bar boundaries with ruler marks', () => {
+  assert.ok(css.includes('background-position:1px 0!important'));
+  assert.ok(css.includes('var(--daw-beat-width,23px)'));
+  assert.ok(css.includes('var(--daw-bar-width,92px)'));
+});
