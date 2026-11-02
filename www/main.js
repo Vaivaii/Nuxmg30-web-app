@@ -192,7 +192,7 @@ async function saveRenamedTake(index, rawName) {
     return;
   }
   if (!isNative()) {
-    $('renameTakeError').textContent = 'Ganti nama file memerlukan APK Android.';
+    $('renameTakeError').textContent = 'Renaming files requires the Android APK.';
     return;
   }
   $('renameTakeSave').disabled = true;
