@@ -3433,3 +3433,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - **Language scope note:** Build #331 makes the Studio Jam / Record / DAW UI English. Other app areas (Editor, NAM / IR, Presets, Device and Backup) still contain Indonesian UI text; the app-wide English-only requirement is not yet complete and should be handled as a separate localization pass without changing protocol behavior.
 - **Validation boundary:** Build #331 is a successful debug APK and CI/package validation. Visual alignment, touch targets, MG-30 USB audio behavior and device-specific rendering still need verification on the user's Android phone with the original MG-30 Gen 2 firmware 6.0.x.
 - Protected features remain out of scope: NAM import/transfer, IR User / Third Party, IR Collection, MIDI mapping, preset transfer, Signal Chain and native USB audio recording logic were not modified in this UI pass.
+
+
+## Studio Timeline cleanup — Build #332 passed (2 November 2026)
+
+- User reviewed Build #331 and reported three remaining visual defects: a small white marker artifact beside the playhead at the ruler, straight horizontal separator lines in the left track-name rail gaps, and a decorative three-dot marker on each track.
+- Removed the pseudo-element marker from both `#dawGlobalPlayhead` and its hit target while preserving the vertical playhead line and drag interaction.
+- Removed the `•••` span directly from the `renderTrackRows()` track-title template (not only hidden with CSS).
+- Converted the left track rail into individual rounded cards: transparent rail-column background, no continuous right border in the rail column, consistent 6px row gaps on left rail and right timeline lanes, and full rounded track-head borders with the existing colored left accent.
+- Authoritative Build #332: run ID `41480640764`, source commit `4ec0d9b90937ae1c9600ee6946c508626bfa985e`, conclusion **success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41480640764
+- `npm test`: **118/118 passed, 0 failed, 0 skipped**. Capacitor Android generation/plugin registration passed. Gradle `assembleDebug` passed. APK artifact upload passed.
+- Artifact ID `13159232373`; ZIP `MG30-Studio-Track-Rail-Cleanup-Build332.zip`, size **4,116,021 bytes**, SHA-256 `24fa528fb486f61906cc28d78941aa2f6c6d252b853c94f938e34bd076007e73`.
+- Extracted `app-debug.apk`, size **4,493,560 bytes**, SHA-256 `06b6d2debcc321a0294f912ab4a9d48be15199637c92da8ae0a971f109ebaca4`. ZIP and APK archive integrity checks passed.
+- Source comparison from Build #331: only `www/studio-daw.js` and `www/studio-daw.css` changed, along with focused UI tests and this checklist/research note. NAM, IR, MIDI mapping, Presets, Editor, Device, app-wide navigation and Studio playback/USB recorder code remain unchanged.
+- Device verification still required: confirm the white artifact is gone, left rail gaps no longer show a continuous horizontal line, all track ellipses are absent, and playhead drag/transport still work on the Android phone. CI verifies source tests and APK packaging; it does not emulate the phone's rendering.
