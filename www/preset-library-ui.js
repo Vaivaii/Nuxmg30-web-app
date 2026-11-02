@@ -71,7 +71,7 @@ function activeDeviceOperation() {
       [...document.querySelectorAll('#sceneButtons button')].some(button => button.disabled) ||
       $('ctrlEditorDialog')?.open) return true;
   const status = String($('deviceStatus')?.textContent || '');
-  return /Menyimpan:|Menyimpan preset|Copy Scene:|Menulis bagian|Impor preset:|menunggu antrean MIDI|Membaca (?:preset|buffer|status)|Program Change/i.test(status);
+  return /Menyimpan:|Menyimpan preset|Copy Scene:|Menulis bagian|Impor preset:|menunggu antrean MIDI|Membaca .*preset|Membaca (?:buffer|status)|Program Change/i.test(status);
 }
 
 function initPresetLibraryUI() {
@@ -349,6 +349,7 @@ function initPresetLibraryUI() {
   }
 
   function validateOperationRuntime() {
+    if (scanPromise) throw new Error("Sinkronisasi daftar nama preset masih berjalan. Tunggu sampai selesai.");
     const bridge = window.MG30PresetExportBridge;
     if (!bridge?.isConnected?.()) throw new Error("Hubungkan NUX MG-30 melalui USB-MIDI terlebih dahulu.");
     if (typeof window.readActiveProgramScene !== "function" ||
