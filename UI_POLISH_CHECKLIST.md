@@ -3354,3 +3354,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Stem files should have useful track-based filenames and share the project's export format/sample-rate settings. The exact file container/delivery method, bit depth, sample rate, and whether selected stems are bundled in a ZIP or saved individually remain implementation decisions to validate on Android.
 - Stem export should preserve each track's timing/position relative to the project start so the files can be imported into another DAW and remain aligned. Do not normalize/trim leading silence independently unless user explicitly chooses that behavior.
 - This is a product requirement/design note only. No export engine, audio renderer, project format, existing quick-record export, or other production code has been changed.
+
+
+## Export delivery decision confirmed — ZIP bundle for stems (2 November 2026)
+
+- User selected ZIP packaging for Stem Export. After checking the desired tracks in the Export Stems checklist and confirming export, the app should render each selected track as a separate audio file and package those files into one ZIP archive.
+- ZIP contains one file per selected track, with clear track-based filenames (for example: 01-Backing.wav, 02-Guitar.wav, 03-Bass.wav, 04-Vocals.wav). Only selected tracks are included.
+- Preserve project-relative start time / timeline alignment in every stem; do not trim leading silence by default. Include a small project/metadata file in the ZIP only if it materially helps preserve tempo, sample rate, bit depth, and export alignment; this is an implementation detail to decide.
+- Full Mix remains a separate export action that creates one combined stereo master WAV, not a ZIP of stems.
+- This is a confirmed product/design requirement only. No production export code or current Quick Record export behavior has been changed.
