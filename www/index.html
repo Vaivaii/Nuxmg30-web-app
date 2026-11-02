@@ -485,10 +485,14 @@
   </div>
   <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw">
     <div class="daw-project-bar">
-      <div class="daw-project-name-wrap"><label for="dawProjectName">PROJECT</label><input id="dawProjectName" type="text" maxlength="80" value="Untitled Project" autocomplete="off"></div>
-      <button class="daw-tool-btn" id="dawNewProject" type="button">＋ New</button>
-      <select id="dawSavedProjects" aria-label="Saved projects"><option value="">Saved projects</option></select>
-      <button class="daw-tool-btn daw-save-btn" id="dawSaveProject" type="button">Save</button>
+      <div class="daw-project-main">
+        <div class="daw-project-name-wrap"><label for="dawProjectName">PROJECT</label><input id="dawProjectName" type="text" maxlength="80" value="Untitled Project" autocomplete="off"></div>
+        <div class="daw-project-actions">
+          <button class="daw-tool-btn" id="dawNewProject" type="button">＋ New</button>
+          <button class="daw-tool-btn daw-save-btn" id="dawSaveProject" type="button">Save</button>
+        </div>
+      </div>
+      <select id="dawSavedProjects" aria-label="Saved projects"><option value="">Open saved project…</option></select>
     </div>
     <div class="daw-session-toolbar">
       <label>Tempo <span class="daw-bpm-wrap"><input id="dawTempo" type="number" min="40" max="240" step="1" value="100"><small>BPM</small></span></label>
@@ -515,11 +519,14 @@
     </div>
     <div class="daw-mixer-panel"><div class="daw-section-heading"><strong>MIXER</strong><small>4 channel strips</small></div><div id="dawMixer" class="daw-mixer"></div></div>
     <div class="daw-lower-panels">
-      <details class="daw-collapse-panel" open><summary>Track settings <span id="dawSelectedTrackLabel">Guitar selected</span></summary><div id="dawTrackInspector"></div></details>
-      <details class="daw-collapse-panel"><summary>Project &amp; export</summary><div class="daw-export-actions"><button type="button" class="btn" id="dawExportStems">Export Stems · ZIP</button><button type="button" class="btn primary" id="dawExportMix">Export Full Mix · WAV</button></div><p class="daw-export-note">Stems keep their original timeline position. Full Mix renders the audible stereo master.</p></details>
+      <details class="daw-collapse-panel"><summary>Track settings <span id="dawSelectedTrackLabel">Guitar selected</span></summary><div id="dawTrackInspector"></div></details>
+      <details class="daw-collapse-panel"><summary>Project &amp; export</summary>
+        <div class="daw-export-actions"><button type="button" class="btn" id="dawExportStems">Export Stems · ZIP</button><button type="button" class="btn primary" id="dawExportMix">Export Full Mix · WAV</button></div>
+        <p class="daw-export-note">Stems keep their original timeline position. Full Mix renders the audible stereo master.</p>
+        <details class="daw-quick-takes"><summary>Import a saved Quick Record take</summary><div class="daw-quick-take-row"><select id="dawQuickTakeSelect" aria-label="Saved Quick Record takes"><option value="">Select a saved take</option></select><button class="btn" id="dawImportQuickTake" type="button">Add to selected track</button></div></details>
+      </details>
     </div>
     <div id="dawStatus" class="daw-status" role="status" aria-live="polite">New projects start with Backing and Guitar prepared. Import audio or arm Guitar to record from MG-30 USB.</div>
-    <details class="daw-quick-takes"><summary>Import a saved Quick Record take</summary><div class="daw-quick-take-row"><select id="dawQuickTakeSelect" aria-label="Saved Quick Record takes"><option value="">Select a saved take</option></select><button class="btn" id="dawImportQuickTake" type="button">Add to selected track</button></div></details>
   </section>
   <dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
   <dialog id="renameTakeDialog" class="studio-dialog">
