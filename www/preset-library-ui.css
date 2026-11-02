@@ -691,16 +691,6 @@
   border-color: #a6d368;
   box-shadow: 0 0 0 2px rgba(166, 211, 104, .13);
 }
-#page-presets .preset-library-ops-note {
-  margin: 0;
-  padding: 9px 10px;
-  border: 1px solid #384538;
-  border-radius: 9px;
-  background: #101711;
-  color: #9eaa98;
-  font-size: 9px;
-  line-height: 1.5;
-}
 #page-presets .preset-library-ops-dialog-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
