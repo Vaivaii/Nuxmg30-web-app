@@ -1641,3 +1641,9 @@
   #page-studio .daw-track-row,
   #page-studio .daw-track-lane{height:38px!important;min-height:38px!important;max-height:38px!important}
 }
+
+/* Ruler spacer and first fixed track header share the same row origin. */
+#page-studio .daw-track-rail-column{
+  grid-template-rows:31px auto!important;
+  row-gap:0!important;
+}
