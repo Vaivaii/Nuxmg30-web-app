@@ -204,7 +204,7 @@ function renderTrackRows() {
       return '<div role="button" tabindex="0" class="daw-clip' + (isClipSelected ? ' selected' : '') + '" data-clip-id="' + safeText(clip.id) + '" data-track-id="' + track.id + '" style="--track-color:' + track.color + ';--clip-fade-in:' + fadeInPercent + '%;--clip-fade-out:' + fadeOutPercent + '%;left:' + left + 'px;width:' + width + 'px" title="' + safeText(clip.name) + '">' +
         '<span class="daw-clip-edge daw-clip-edge-start" data-clip-edge="start" aria-label="Trim clip start"></span>' +
         '<span class="daw-clip-edge daw-clip-edge-end" data-clip-edge="end" aria-label="Trim clip end"></span>' +
-        '<strong>' + safeText(clip.name) + '</strong>' + waveformMarkup(clip.waveform) + '</div>';
+        '<strong>' + safeText(clip.name) + '</strong><span class="daw-clip-fade daw-clip-fade-in"></span><span class="daw-clip-fade daw-clip-fade-out"></span>' + waveformMarkup(clip.waveform) + '</div>';
     }).join('');
     const recordButton = track.id === 'backing'
       ? '<span class="daw-track-action-spacer" aria-hidden="true"></span>'
