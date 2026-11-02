@@ -3534,3 +3534,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size **4,494,548 bytes**, SHA-256 `8516638dee93993ca40125374842a6edb08d93c8fbc5f5ff3cf91bd6f9a3f8d3`. ZIP/APK integrity checks passed. Embedded APK HTML verified the new icon and unchanged Editor navigation target/label.
 - Only `www/index.html` and `tests/editor-nav-icon.test.js` changed in source/test. No application behavior, other icons, NAM, IR, MIDI, preset features, Signal Chain, Studio, audio, or Android device communication was changed.
 - Physical-device visual review remains optional for this icon-only change; install Build #344 to see the amp-head icon on the device.
+
+
+## NAM AATR default display name restored to ID 61 — Build #346 passed (3 November 2026)
+
+- User identified the AATR SX3 Clean BAL3 CAB label was incorrectly attached to NAM Slot 07 after earlier NAM transfer testing; ID 61 was still generic under Slot 08.
+- Corrected only the default UI name expression in `www/index.html`: AATR now belongs to `slot===8` and is displayed as **AATR SX3 Clean BAL3 CAB · ID 61**. Slot 07 returns to generated default **NAM Slot 07 · ID 60**.
+- Preserved the existing `id=53+slot` formula and all numeric IDs. No changes to `www/nam-transfer.js`, NAM transfer/readback modules, selectors, packet construction, ACK/retry, timing, storage, serialization, or protocol handling.
+- Added `tests/nam-slot-default-name.test.js` for slot 07/08 default-name assertions, unchanged ID formula, and transfer-module markers. Build #345 was skipped as a release after a bad test function-name assertion; that test was corrected before Build #346. No #345 APK distributed.
+- Authoritative Build #346: run ID `41505759334`, source commit `42c320545f060e50733997b088a6865ffccee66d`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41505759334).
+- `npm test`: **133/133 passed, 0 failed**. Capacitor Android/USB-audio generation, Gradle `assembleDebug`, and APK upload passed.
+- Artifact ZIP ID `13170303439`, size **4,116,751 bytes**, SHA-256 `b2ff86a935e07b27ec88e43464451b2c7104d9793144d08e246e103bf9ca7108`.
+- Extracted APK size **4,494,548 bytes**, SHA-256 `544f99bb42af4c3e5a9e3cd5d35b105f993e88f0819681b3b7a67e925c39170c`. ZIP and APK integrity passed; packaged HTML contains the exact AATR → ID 61 expression.
+- Physical device confirmation remains: install Build #346 and verify AATR appears at ID 61 and Slot 07 reads as ID 60.
