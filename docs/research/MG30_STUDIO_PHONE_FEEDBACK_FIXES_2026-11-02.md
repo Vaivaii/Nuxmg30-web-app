@@ -399,3 +399,69 @@ Install Build #320 and confirm on the target phone:
 - Playback, playhead, import, clip editing, save/load/export and original MG-30 Gen 2 USB overdub remain intact.
 
 CI verifies 99 automated tests and successful APK packaging. It does not emulate the user's Android screen geometry, physical fader touch, playback VU response or MG-30 USB audio hardware. Do not merge to `main` or modify other tabs without explicit user direction.
+
+
+## Follow-up: real clip waveforms and horizontally centered Mixer faders (Build #326)
+
+**Date:** 2 November 2026  
+**Validated source commit:** `658917824eed6009754206a6acfcad52cfb0f3df`  
+**GitHub Actions:** run `41451292714`, conclusion `success`.
+
+### Screenshot/video findings
+
+- Imported clips were rendered as solid-looking colored blocks; although a 72-bin peak array was already stored on import, old saved projects could retain empty waveform arrays and the HTML-bar presentation had insufficient contrast to resemble a DAW waveform.
+- Mixer fader controls were horizontally offset because the fader wrapper and the VU ladder shared a flex row. The ladder consumed horizontal width, so the slider's apparent center did not align with the center of the channel strip.
+- The user asked for a conventional DAW waveform and the four faders centered within their channel strips.
+
+### Waveform implementation
+
+- Added a pure helper `analyzeWaveformPeaks(firstChannel, secondChannel, count)` to `studio-daw-core.js`. It computes 128 mono/stereo bins from decoded PCM samples, combining peak amplitude (to preserve transients) and RMS (to keep sustained/quiet content visible). Output is bounded to 3–100.
+- `studio-daw.js` now uses the tested helper for imported audio and renders a symmetric SVG waveform envelope inside each clip. The SVG uses a centered baseline and 128 filled peak bars, scaled to the clip width.
+- Increased visual contrast between waveform peaks and the clip background, while retaining the track color as the waveform accent.
+- When loading an older saved project, the app decodes each clip's media blob from IndexedDB. Clips whose waveform array is absent or not 128 bins are reanalyzed, then the updated project is saved locally. Existing clips therefore gain a true waveform without asking the user to re-import audio.
+- The old deterministic pseudo-waveform fallback was removed; the rendered waveform now comes from the real source audio. If audio data is unavailable, the clip shows only a subtle center baseline rather than fabricated peaks.
+
+### Mixer fader alignment
+
+- `.daw-mixer-control-row` is now a positioning context rather than a flex row.
+- The fader wrapper is absolutely centered at 50% with a translateX(-50%), so the physical slider axis is centered in the channel regardless of the VU meter.
+- The LED VU ladder is positioned independently at the right edge of its channel strip.
+- The current vertical fader orientation, gain mapping, pan, Mute, Solo and independent VU analyzer path are retained.
+
+### Validation
+
+- Automated tests: **104 passed, 0 failed, 0 skipped**.
+- Added deterministic mono/stereo waveform unit tests:
+  - A known mono signal with quiet/loud/medium/quiet sections yields higher bins in the loud section.
+  - A stereo signal is analyzed using both channels.
+  - Silence returns a safe non-empty floor; empty input returns an empty array.
+- Studio UI regression tests confirm SVG waveform rendering, old-project waveform regeneration, and fader centering independent of the VU ladder.
+- Capacitor Android generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,115,559 bytes, SHA-256 `e1ec3a3e4e38ed91ab6717e1bad0bb4b4d7d66275fc043fc42b56b5fe458c2fd`.
+- Extracted `app-debug.apk`: 4,492,784 bytes, SHA-256 `aac1605f5993a8b0ffed5a70591c93ac6cdab2a6d3b9bfae5556da12a6b4558d`.
+- ZIP archive integrity and embedded APK archive integrity both passed.
+
+### Source boundary
+
+The app/test changes are limited to:
+- `www/studio-daw-core.js` — pure PCM waveform peak analysis helper
+- `www/studio-daw.js` — real waveform creation, SVG markup and old-project waveform migration
+- `www/studio-daw.css` — waveform contrast/placement and centered fader/VU positioning
+- `tests/studio-daw-core.test.js` — mono/stereo signal tests
+- `tests/studio-daw-ui.test.js` — waveform and fader regression assertions
+- This research note
+
+No main navigation, Jam/Record mode logic, MG-30 USB audio routing, NAM, IR, MIDI, Presets, Editor/Signal Chain or Device code was modified.
+
+### Physical-device validation still required
+
+Install Build #326 and confirm:
+- The previously imported blue clips now display a real waveform even when loaded from an older saved project.
+- Quiet sections, transients and pauses have visible relative amplitude differences, resembling a conventional DAW clip.
+- All four fader axes align with the horizontal center of their channel strips; VU ladders remain independently at the right.
+- Dragging the faders still updates track gain and playback level.
+- Existing project save/load, clip trim/split/fades, undo/redo, export, per-track VU and the original MG-30 Gen 2 USB overdub path still work.
+
+Automated source tests and APK packaging are verified; waveform appearance and touch alignment still require physical Android testing. Do not change non-Studio tabs or merge to `main` without explicit direction.
