@@ -37,6 +37,7 @@ let projectSaveTimer = null;
 let lastMetronomeBeat = -1;
 let dragClip = null;
 let playheadDragPointerId = null;
+let selectedDawPage = 'timeline';
 let historyPast = [];
 let historyFuture = [];
 let historySnapshot = '';
@@ -1264,6 +1265,30 @@ function updateProjectField(field, value) {
   scheduleProjectSave();
 }
 
+function setDawPage(page) {
+  const selected = ['timeline', 'mixer', 'track-settings'].includes(page) ? page : 'timeline';
+  selectedDawPage = selected;
+  const workspace = $('studio-daw-workspace');
+  workspace?.querySelectorAll('[data-daw-page-panel]').forEach((panel) => {
+    const active = panel.dataset.dawPagePanel === selected;
+    panel.hidden = !active;
+    panel.setAttribute('aria-hidden', String(!active));
+    panel.style.setProperty('display', active ? 'flex' : 'none', 'important');
+  });
+  workspace?.querySelectorAll('[data-daw-page]').forEach((button) => {
+    const active = button.dataset.dawPage === selected;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  try { localStorage.setItem('mg30-studio-daw-page', selected); } catch (_) {}
+  if (selected === 'mixer') renderMixer();
+  if (selected === 'track-settings') {
+    renderInspector();
+    void populateSavedProjects();
+  }
+}
+
 function setStudioMode(mode) {
   const selected = ['jam', 'record', 'daw'].includes(mode) ? mode : 'daw';
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
@@ -1278,7 +1303,7 @@ function setStudioMode(mode) {
     panel.setAttribute('aria-hidden', String(!active));
     // The DAW workspace has an explicit grid layout; force the display state
     // inline so its !important grid rule can never leak into Jam or Record.
-    panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'grid' : 'block') : 'none', 'important');
+    panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'flex' : 'block') : 'none', 'important');
   });
   try { localStorage.setItem('mg30-studio-last-mode', selected); } catch (_) {}
   if (selected === 'daw') {
@@ -1293,6 +1318,9 @@ function setStudioMode(mode) {
 function bindEvents() {
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
     button.addEventListener('click', () => setStudioMode(button.dataset.studioMode));
+  });
+  document.querySelectorAll('[data-daw-page]').forEach((button) => {
+    button.addEventListener('click', () => setDawPage(button.dataset.dawPage));
   });
   $('dawNewProject')?.addEventListener('click', () => { void createNewProject(); });
   $('dawSaveProject')?.addEventListener('click', () => { void saveProject(true); });
@@ -1419,6 +1447,12 @@ async function initDaw() {
   bindEvents();
   resetHistory();
   renderProject();
+  let dawPage = 'timeline';
+  try {
+    const savedPage = localStorage.getItem('mg30-studio-daw-page');
+    if (['timeline', 'mixer', 'track-settings'].includes(savedPage)) dawPage = savedPage;
+  } catch (_) {}
+  setDawPage(dawPage);
   let mode = 'daw';
   try {
     const savedMode = localStorage.getItem(storageKey);
