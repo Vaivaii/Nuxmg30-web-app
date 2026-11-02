@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
+const studioCss = readFileSync(new URL('../www/studio-daw.css', import.meta.url), 'utf8');
 
 test('app-wide motion layer provides short entrances for every main app tab', () => {
   assert.ok(css.includes('@keyframes mg30-page-enter'));
@@ -57,6 +58,6 @@ test('Studio panels containing the fixed DAW dock use opacity-only entrance anim
   assert.ok(css.includes('#page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-studio-panel-fade .16s ease-out both}'));
   assert.ok(!css.includes('#page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-content-enter'));
   assert.ok(!css.includes('#page-studio [data-studio-mode-panel]:not(.hidden){animation:mg30-content-enter'));
-  assert.ok(css.includes('#page-studio #dawStudioDock'));
-  assert.ok(css.includes('position:fixed!important'));
+  assert.ok(studioCss.includes('#page-studio #dawStudioDock'));
+  assert.ok(studioCss.includes('position:fixed!important'));
 });
