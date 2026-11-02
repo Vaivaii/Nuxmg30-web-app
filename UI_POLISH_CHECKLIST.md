@@ -3547,3 +3547,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Artifact ZIP ID `13170303439`, size **4,116,751 bytes**, SHA-256 `b2ff86a935e07b27ec88e43464451b2c7104d9793144d08e246e103bf9ca7108`.
 - Extracted APK size **4,494,548 bytes**, SHA-256 `544f99bb42af4c3e5a9e3cd5d35b105f993e88f0819681b3b7a67e925c39170c`. ZIP and APK integrity passed; packaged HTML contains the exact AATR → ID 61 expression.
 - Physical device confirmation remains: install Build #346 and verify AATR appears at ID 61 and Slot 07 reads as ID 60.
+
+
+## NAM default labels normalized across IDs 54–63 — Build #347 passed (3 November 2026)
+
+- User clarified that AATR SX3 Clean BAL3 CAB is not a default NAM slot name. All ten slots must be labeled uniformly by the sequential ID mapping shown in the screenshot.
+- Removed all special AATR defaults; every UI profile now defaults to `NAM Slot NN · ID (53 + slot)`: Slot 01=54 through Slot 10=63.
+- Added a narrowly-scoped migration for the two exact legacy AATR labels from prior builds in localStorage keys 60/61. Those stale erroneous values are replaced with the generic label for their own slot/ID. Other custom slot names are preserved; no unrelated storage keys or content are cleared.
+- Added runtime regression tests using a VM/localStorage harness for all ten default labels, both old AATR migrations, preservation of unrelated custom names, unchanged ID formula, and NAM-transfer module markers. Same tests were rerun against the exact initializer extracted from the packaged Build #347 APK and passed.
+- Only `www/index.html` and `tests/nam-slot-default-name.test.js` changed. `www/nam-transfer.js` and all NAM protocol/transfer/readback code remain untouched.
+- Authoritative Build #347: run ID `41507690980`, source commit `df9b02206438aad0a550620246b90958abc62fa6`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41507690980).
+- `npm test`: **136/136 passed, 0 failed**. Capacitor Android generation, USB audio plugin registration, Gradle `assembleDebug`, and artifact upload all passed.
+- ZIP artifact ID `13172016621`, size **4,116,805 bytes**, SHA-256 `75c27095a0e0c472cc0a0adc3375eedb1b16683cb2a22fc82975185be81a531e`.
+- Extracted APK size **4,494,672 bytes**, SHA-256 `42f86608c540ccce8ac1e711ed7256190715c91eeec5c17ce17faf7008302dd3`. ZIP and APK integrity passed. Packaged initializer simulation confirmed all ten defaults and both legacy migrations.
+- Physical phone confirmation remains: install Build #347 and verify Slot 07 is `NAM Slot 07 · ID 60`, Slot 08 is `NAM Slot 08 · ID 61`, and no AATR default appears in the model list.
