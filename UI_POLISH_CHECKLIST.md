@@ -3506,3 +3506,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size **4,494,432 bytes**, SHA-256 `10b23287008dfff110958f02cf0cbac31ac0a8efc432636d425de82a517d03f5`; ZIP and APK integrity checks passed. Packaged CSS was inspected for all motion keyframes, menu/dialog/disclosure selectors, and reduced-motion support.
 - Code scope: `www/ui-redesign.css`, `www/index.html`, and `tests/ui-motion.test.js`. NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, presets transfer, Signal Chain, native Android plugin, and Studio audio/playhead logic were not changed.
 - Physical-device motion feel and reduced-motion behavior remain to be confirmed on the Android phone. CI and APK inspection do not replace handset interaction testing.
+
+
+## Studio DAW dock viewport anchoring — Build #343 passed (3 November 2026)
+
+- User reported the Studio dock moved up and overlapped track rows after Build #341 added app-wide animations.
+- Root cause: `mg30-content-enter` animated `transform` on `[data-studio-mode-panel]`; `#studio-daw-workspace` is an ancestor of the `position:fixed` `#dawStudioDock`. The non-none ancestor transform caused Chromium/WebView to rebase the fixed dock to the workspace rather than the viewport.
+- Correction: added opacity-only `mg30-studio-panel-fade` and applied it to Studio mode and DAW subpage panels. NAM internal panes retain the original short transform entrance. Existing fixed dock CSS, dynamic bottom offset measurement, dock geometry and transport are unchanged.
+- Added regression coverage verifying opacity-only Studio ancestor animations and checking fixed dock declaration from `www/studio-daw.css`. Build #342's first test run failed because the new test looked for dock CSS in the wrong file; fixture now reads the correct Studio stylesheet. No APK was distributed from #342.
+- Authoritative Build #343: run ID `41494977902`, source commit `6412ff109cb8b087160243f2d82d0afc70832109`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41494977902).
+- `npm test`: **128/128 passed, 0 failed**. Vite 7.3.7 production build, Capacitor Android generation/USB audio plugin registration, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ZIP ID `13166356204`, size **4,116,670 bytes**, SHA-256 `2d51e817dda4365bec45cb6228bb5930e905e5f77a336547ea07447cc1ab0835`.
+- Extracted APK size **4,494,444 bytes**, SHA-256 `83a2287323b5a28bd293e12bc890395f4f3b06f7961e664f36ca2b77806fb5e6`. ZIP/APK integrity passed. Packaged CSS contains opacity-only rules for Studio ancestors and preserves fixed dock positioning.
+- Only `www/ui-redesign.css` and `tests/ui-motion.test.js` changed for this fix. NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset transfer, Signal Chain, Studio DAW CSS/JS, audio engine and Android plugins were untouched.
+- Physical device check remains required: install Build #343, confirm dock returns to the bottom above the nav and no longer obscures tracks, while all other animations still work.
