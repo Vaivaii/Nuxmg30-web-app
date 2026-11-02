@@ -76,3 +76,42 @@ CI and archive checks do not prove actual touch behavior on the user's phone or 
 - CENTER text remains separated below the pan/fader controls.
 
 Do not merge to `main` or modify other tabs without explicit user direction.
+
+
+## Follow-up: sticky dock and compact mockup proportions (Build #294)
+
+**Date:** 2 November 2026  
+**Validated commit:** `fea8a59224eb26dffb261ef25fdfeac133c973a7`  
+**GitHub Actions:** run `41431843644`, conclusion `success`.
+
+### Additional corrections
+
+- Wrapped the transport row and Mixer disclosure header in a single `#dawStudioDock` sticky dock above the unchanged bottom navigation.
+- Transport now remains in the dock rather than sticking independently over the four track lanes.
+- Mixer opens upward from its disclosure header into the timeline area while the transport controls remain visible beneath it.
+- Removed internal vertical scrolling from the Mixer overlay; the four channel strips use fixed dimensions.
+- Set Mixer channel strip height to 136 CSS px and fader height to 46 CSS px. The CENTER readout remains in its own row.
+- Reduced each of the four track lanes and fixed labels to 38 CSS px; clips are 30 CSS px high, bringing the timeline closer to the supplied mockup's proportions.
+- Removed the 4px rail spacer gap below the ruler so the first fixed track label begins on the same row as the first timeline lane.
+
+### Validation
+
+- Automated tests: **73 passed, 0 failed, 0 skipped**.
+- Capacitor Android generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,107,603 bytes, SHA-256 `d40d658ce18d5f73620cdcc9378d67ef1cb34760e2a3ff77f26f52e05ea1a4e4`.
+- Extracted `app-debug.apk`: 4,485,476 bytes, SHA-256 `cf74aa8016d1136196e5fd274af6f0bd266ee9354b24ec29d59b02d3388e662b`.
+- Artifact ZIP and APK archive both passed integrity tests.
+
+### Source boundary
+
+Compared with Build #288, only the following paths changed:
+- `www/index.html` — wraps Studio transport and Mixer in the dock
+- `www/studio-daw.css` — Studio-only dock and compact dimensions
+- `tests/studio-daw-ui.test.js` — regression tests
+- This research note
+
+No NAM, IR, MIDI, Presets, Editor, Device, or global bottom-navigation module was changed.
+
+Physical phone interaction remains to be verified. The debug APK has not been tested directly on the user's phone in this session.
