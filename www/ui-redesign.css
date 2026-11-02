@@ -2427,7 +2427,8 @@ body>.app>section[id^="page-"]:not(.hidden){animation:mg30-page-enter .18s ease-
 @keyframes mg30-studio-panel-fade{from{opacity:0}to{opacity:1}}
 #page-studio [data-studio-mode-panel]:not(.hidden),
 #page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-studio-panel-fade .16s ease-out both}
-#page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-content-enter .16s ease-out both}
+@keyframes mg30-nam-pane-fade{from{opacity:0}to{opacity:1}}
+#page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-nam-pane-fade .16s ease-out both}
 
 /* Small, consistent response on controls throughout every app tab. */
 .app button:not(.daw-playhead-hit){

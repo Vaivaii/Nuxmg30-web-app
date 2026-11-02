@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 const studioCss = readFileSync(new URL('../www/studio-daw.css', import.meta.url), 'utf8');
+const irTransfer = readFileSync(new URL('../www/ir-transfer.js', import.meta.url), 'utf8');
 
 test('app-wide motion layer provides short entrances for every main app tab', () => {
   assert.ok(css.includes('@keyframes mg30-page-enter'));
@@ -60,4 +61,15 @@ test('Studio panels containing the fixed DAW dock use opacity-only entrance anim
   assert.ok(!css.includes('#page-studio [data-studio-mode-panel]:not(.hidden){animation:mg30-content-enter'));
   assert.ok(studioCss.includes('#page-studio #dawStudioDock'));
   assert.ok(studioCss.includes('position:fixed!important'));
+});
+
+
+test('NAM and TONE3000 panes use opacity-only entrance to preserve mobile width layout', () => {
+  assert.ok(irTransfer.includes("namPane.className='nam-ir-tool-pane nam-ir-nam-pane'"));
+  assert.ok(irTransfer.includes("tonePane.className='nam-ir-tool-pane nam-ir-tone-pane'"));
+  assert.ok(css.includes('@keyframes mg30-nam-pane-fade{from{opacity:0}to{opacity:1}}'));
+  assert.ok(css.includes('#page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-nam-pane-fade .16s ease-out both}'));
+  assert.ok(!css.includes('#page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-content-enter'));
+  assert.ok(css.includes('.nam-ir-tools-stage { min-width: 0; }'));
+  assert.ok(css.includes('.nam-ir-tool-pane:not([hidden]) { display: block; min-width: 0; margin-top: 7px; }'));
 });
