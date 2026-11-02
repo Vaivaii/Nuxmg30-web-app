@@ -1391,6 +1391,11 @@ function setStudioMode(mode) {
 function bindEvents() {
   syncStudioPinnedControls();
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
+  document.querySelector('.nav')?.addEventListener('click', (event) => {
+    if (event.target.closest('button[data-page="studio"]')) {
+      window.requestAnimationFrame(syncStudioPinnedControls);
+    }
+  });
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
     button.addEventListener('click', () => setStudioMode(button.dataset.studioMode));
   });
