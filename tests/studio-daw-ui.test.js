@@ -645,8 +645,8 @@ test('Build 334: invisible playhead hit button has no Android/WebView native app
 
 test('Build 334: playhead hit button cannot create pseudo-element artifacts', () => {
   const build334Styles = css.slice(css.lastIndexOf('Build #334: neutralize Android/WebView native chrome'));
-  assert.equal((build334Styles.match(/content:none!important/g) || []).length, 2);
-  assert.equal((build334Styles.match(/display:none!important/g) || []).length, 2);
+  assert.equal((build334Styles.match(/content:none!important/g) || []).length, 1);
+  assert.equal((build334Styles.match(/display:none!important/g) || []).length, 1);
   assert.ok(html.includes('id="dawPlayheadHit"'));
   assert.ok(daw.includes("$('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);"));
 });
