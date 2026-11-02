@@ -53,6 +53,7 @@ export function normalizeProject(input) {
       const sourceOffsetSeconds = Math.max(0, Number(clip.sourceOffsetSeconds) || 0);
       const durationSeconds = Math.max(0, Number(clip.durationSeconds) || 0);
       if (!Number.isFinite(startSeconds + sourceOffsetSeconds + durationSeconds) || durationSeconds <= 0) return null;
+      const fades = normalizeClipFades(durationSeconds, clip.fadeInSeconds, clip.fadeOutSeconds);
       return {
         id: String(clip.id || makeId('clip')).slice(0, 100),
         mediaId: String(clip.mediaId).slice(0, 120),
@@ -60,6 +61,8 @@ export function normalizeProject(input) {
         startSeconds,
         sourceOffsetSeconds,
         durationSeconds,
+        fadeInSeconds: fades.fadeInSeconds,
+        fadeOutSeconds: fades.fadeOutSeconds,
         sampleRate: Math.max(8000, Math.min(384000, Number(clip.sampleRate) || 48000)),
         channels: Math.max(1, Math.min(8, Math.round(Number(clip.channels) || 2))),
         waveform: Array.isArray(clip.waveform) ? clip.waveform.slice(0, 128).map((value) => Math.max(0, Math.min(100, Number(value) || 0))) : [],
@@ -98,6 +101,90 @@ export function normalizeProject(input) {
     masterGain: Number.isFinite(Number(input.masterGain)) ? Math.max(0, Math.min(1.5, Number(input.masterGain))) : defaults.masterGain,
     tracks: normalizedTracks,
   };
+}
+
+
+const MIN_CLIP_SECONDS = 0.05;
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, Number(value) || 0));
+}
+
+export function normalizeClipFades(durationSeconds, fadeInSeconds = 0, fadeOutSeconds = 0) {
+  const duration = Math.max(MIN_CLIP_SECONDS, Number(durationSeconds) || MIN_CLIP_SECONDS);
+  let fadeIn = clamp(fadeInSeconds, 0, duration);
+  let fadeOut = clamp(fadeOutSeconds, 0, duration);
+  const total = fadeIn + fadeOut;
+  if (total > duration && total > 0) {
+    const factor = duration / total;
+    fadeIn *= factor;
+    fadeOut *= factor;
+  }
+  return { fadeInSeconds: fadeIn, fadeOutSeconds: fadeOut };
+}
+
+export function trimClipStart(clip, deltaSeconds, sourceDurationSeconds, minimumSeconds = MIN_CLIP_SECONDS) {
+  if (!clip || !Number.isFinite(Number(deltaSeconds))) throw new TypeError('A clip and finite trim delta are required.');
+  const sourceDuration = Math.max(minimumSeconds, Number(sourceDurationSeconds) || Number(clip.sourceOffsetSeconds) + Number(clip.durationSeconds));
+  const originalStart = Math.max(0, Number(clip.startSeconds) || 0);
+  const originalOffset = Math.max(0, Number(clip.sourceOffsetSeconds) || 0);
+  const originalDuration = Math.max(minimumSeconds, Number(clip.durationSeconds) || minimumSeconds);
+  const maxOffset = Math.max(0, sourceDuration - minimumSeconds);
+  const nextOffset = clamp(originalOffset + Number(deltaSeconds), 0, Math.min(maxOffset, originalOffset + originalDuration - minimumSeconds));
+  const appliedDelta = nextOffset - originalOffset;
+  const nextDuration = originalDuration - appliedDelta;
+  const next = { ...clip, startSeconds: Math.max(0, originalStart + appliedDelta), sourceOffsetSeconds: nextOffset, durationSeconds: nextDuration };
+  const fades = normalizeClipFades(nextDuration, clip.fadeInSeconds, clip.fadeOutSeconds);
+  return { ...next, ...fades };
+}
+
+export function trimClipEnd(clip, deltaSeconds, sourceDurationSeconds, minimumSeconds = MIN_CLIP_SECONDS) {
+  if (!clip || !Number.isFinite(Number(deltaSeconds))) throw new TypeError('A clip and finite trim delta are required.');
+  const sourceDuration = Math.max(minimumSeconds, Number(sourceDurationSeconds) || Number(clip.sourceOffsetSeconds) + Number(clip.durationSeconds));
+  const sourceOffset = Math.max(0, Number(clip.sourceOffsetSeconds) || 0);
+  const originalDuration = Math.max(minimumSeconds, Number(clip.durationSeconds) || minimumSeconds);
+  const available = Math.max(minimumSeconds, sourceDuration - sourceOffset);
+  const durationSeconds = clamp(originalDuration + Number(deltaSeconds), minimumSeconds, available);
+  const next = { ...clip, durationSeconds };
+  const fades = normalizeClipFades(durationSeconds, clip.fadeInSeconds, clip.fadeOutSeconds);
+  return { ...next, ...fades };
+}
+
+export function splitClipAt(clip, splitAtSeconds) {
+  if (!clip || !Number.isFinite(Number(splitAtSeconds))) throw new TypeError('A clip and finite split position are required.');
+  const start = Math.max(0, Number(clip.startSeconds) || 0);
+  const duration = Math.max(0, Number(clip.durationSeconds) || 0);
+  const end = start + duration;
+  const splitAt = Number(splitAtSeconds);
+  if (splitAt <= start + MIN_CLIP_SECONDS || splitAt >= end - MIN_CLIP_SECONDS) return null;
+  const leftDuration = splitAt - start;
+  const rightDuration = end - splitAt;
+  const offset = splitAt - start;
+  const leftFades = normalizeClipFades(leftDuration, clip.fadeInSeconds, 0);
+  const rightFades = normalizeClipFades(rightDuration, 0, clip.fadeOutSeconds);
+  return {
+    left: { ...clip, durationSeconds: leftDuration, ...leftFades },
+    right: {
+      ...clip,
+      id: makeId('clip'),
+      name: String(clip.name || 'Audio clip') + ' (split)',
+      startSeconds: splitAt,
+      sourceOffsetSeconds: Math.max(0, Number(clip.sourceOffsetSeconds) || 0) + offset,
+      durationSeconds: rightDuration,
+      ...rightFades,
+    },
+  };
+}
+
+export function clipFadeGainAt(clip, elapsedSeconds) {
+  const duration = Math.max(0, Number(clip?.durationSeconds) || 0);
+  const elapsed = clamp(elapsedSeconds, 0, duration);
+  const fadeIn = Math.max(0, Number(clip?.fadeInSeconds) || 0);
+  const fadeOut = Math.max(0, Number(clip?.fadeOutSeconds) || 0);
+  const fadeInGain = fadeIn > 0 ? clamp(elapsed / fadeIn, 0, 1) : 1;
+  const remaining = duration - elapsed;
+  const fadeOutGain = fadeOut > 0 ? clamp(remaining / fadeOut, 0, 1) : 1;
+  return fadeInGain * fadeOutGain;
 }
 
 export function beatsPerBar(timeSignature = '4/4') {
