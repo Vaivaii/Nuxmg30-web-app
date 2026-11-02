@@ -64,6 +64,7 @@ test('Studio transport sits below the timeline and mixer is inline/collapsible',
   assert.match(html, /<details id="dawMixerDetails" class="daw-mixer-disclosure" open>/);
   assert.ok(!html.includes('dawControlDialog'));
   assert.ok(css.includes('#page-studio .daw-mixer-disclosure:not([open]) .daw-disclosure-chevron'));
+  assert.ok(daw.includes("$('dawMixer')?.addEventListener('click', handleTrackClick);"));
 });
 
 test('four timeline lanes share one global playhead and uniform lane heights', () => {
@@ -147,7 +148,7 @@ test('Undo and Redo are tucked inside the mockup three-dot options control', () 
 });
 
 test('imported audio and Quick Record takes are undoable Studio edits', () => {
-  assert.ok(daw.includes('commitHistoryChange();\\n  await saveProject(false);'));
+  assert.match(daw, /commitHistoryChange\(\);\s*await saveProject\(false\);/);
   assert.ok(daw.includes('async function importQuickTake('));
   assert.ok(daw.includes('await addAudioBlobToTrack(blob, trackId, take.fileName, startAt, take);'));
 });
