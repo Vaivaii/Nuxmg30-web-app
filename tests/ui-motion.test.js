@@ -49,3 +49,14 @@ test('shared stylesheet cache token is bumped for the motion layer', () => {
   assert.ok(html.includes('ui-redesign.css?v=motion-lite-1'));
   assert.ok(!html.includes('ui-redesign.css?v=param-quantize-1'));
 });
+
+
+test('Studio panels containing the fixed DAW dock use opacity-only entrance animations', () => {
+  assert.ok(css.includes('@keyframes mg30-studio-panel-fade{from{opacity:0}to{opacity:1}}'));
+  assert.ok(css.includes('#page-studio [data-studio-mode-panel]:not(.hidden),'));
+  assert.ok(css.includes('#page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-studio-panel-fade .16s ease-out both}'));
+  assert.ok(!css.includes('#page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-content-enter'));
+  assert.ok(!css.includes('#page-studio [data-studio-mode-panel]:not(.hidden){animation:mg30-content-enter'));
+  assert.ok(css.includes('#page-studio #dawStudioDock'));
+  assert.ok(css.includes('position:fixed!important'));
+});

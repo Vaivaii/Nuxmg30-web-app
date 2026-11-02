@@ -2421,8 +2421,12 @@ html,body{background:#0b1012}
 body>.app>section[id^="page-"]:not(.hidden){animation:mg30-page-enter .18s ease-out both}
 
 /* Internal page changes: small opacity/vertical reveal for newly selected panels. */
+/* Studio mode and DAW panels contain the viewport-fixed transport dock.
+   Never apply transform to these ancestors: WebView would rebase the dock to the
+   animated panel instead of the viewport. Keep their entrance opacity-only. */
+@keyframes mg30-studio-panel-fade{from{opacity:0}to{opacity:1}}
 #page-studio [data-studio-mode-panel]:not(.hidden),
-#page-studio [data-daw-page-panel]:not(.hidden),
+#page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-studio-panel-fade .16s ease-out both}
 #page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-content-enter .16s ease-out both}
 
 /* Small, consistent response on controls throughout every app tab. */
