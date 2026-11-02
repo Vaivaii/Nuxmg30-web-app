@@ -230,7 +230,9 @@ test('Mixer overlay has a fixed compact height and does not scroll internally', 
   assert.ok(css.includes('max-height:none!important'));
   assert.ok(css.includes('overflow:visible!important'));
   assert.ok(css.includes('height:46px!important'));
-  assert.ok(!css.includes('max-height:min(56dvh,460px)!important'));
+  assert.ok(css.includes('grid-auto-rows:136px!important'));
+  assert.ok(css.includes('overflow:visible!important'));
+  assert.ok(css.includes('bottom:calc(100% + 43px)!important'));
 });
 
 test('transport stays in the dock instead of sticking over the track lanes', () => {
