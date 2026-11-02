@@ -2096,9 +2096,6 @@
 #page-studio #dawTimelinePage .daw-ruler-inner{
   background-color:#0e1715!important;
 }
-#page-studio #dawTimelinePage .daw-ruler-mark{
-  left:calc(var(--ruler-mark-x,0px))!important;
-}
 #page-studio #dawTimelinePage .daw-track-row{
   background:transparent!important;
 }

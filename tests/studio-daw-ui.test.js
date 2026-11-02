@@ -650,3 +650,11 @@ test('Build 334: playhead hit button cannot create pseudo-element artifacts', ()
   assert.ok(html.includes('id="dawPlayheadHit"'));
   assert.ok(daw.includes("$('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);"));
 });
+
+
+test('Build 338: ruler labels retain their per-bar horizontal positions', () => {
+  assert.ok(daw.includes("'<span class=\"daw-ruler-mark\" style=\"left:' + (index * project.zoom) + 'px\">' + (index + 1) + '</span>'"));
+  assert.ok(!css.includes('--ruler-mark-x'));
+  assert.ok(!css.includes('left:calc(var(--ruler-mark-x,0px))!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-ruler-mark'));
+});
