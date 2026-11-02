@@ -1,4 +1,14 @@
+import {
+  normalizeMG30PresetName,
+  readMG30PresetName,
+  validateMG30PresetReadParts,
+  renameMG30PresetParts,
+  prepareMG30SaveAsParts,
+  createMG30PresetSlotBackup,
+} from "./preset-library-operations.js";
+
 const $ = id => document.getElementById(id);
+const SLOT_BACKUP_KEY_PREFIX = "mg30-preset-slot-backup-v1-";
 const NAME_CACHE_KEY = 'mg30-preset-library-card-names-v1';
 const SLOT_LETTERS = 'ABCD';
 
@@ -54,7 +64,8 @@ function readPresetName(body) {
 }
 
 function activeDeviceOperation() {
-  if (window.MG30PresetImportBusy || window.MG30PresetExportBusy || window.MG30IRTransferBusy) return true;
+  if (window.MG30PresetManagerBusy || window.MG30PresetImportBusy ||
+      window.MG30PresetExportBusy || window.MG30IRTransferBusy) return true;
   if ($('readNamSlotsBtn')?.dataset.busy === '1') return true;
   const status = String($('deviceStatus')?.textContent || '');
   return /Menyimpan:|Menyimpan preset|Copy Scene:|Menulis bagian|Impor preset:|menunggu antrean MIDI/i.test(status);
@@ -207,6 +218,302 @@ function initPresetLibraryUI() {
   function selectedProgram() {
     return currentHardwareSlot();
   }
+
+  const operationRow = document.createElement("div");
+  operationRow.className = "preset-library-ops-actions";
+  const renameButton = document.createElement("button");
+  renameButton.type = "button";
+  renameButton.className = "btn";
+  renameButton.textContent = "Rename";
+  renameButton.setAttribute("aria-label", "Rename preset pedal yang dipilih");
+  const saveAsButton = document.createElement("button");
+  saveAsButton.type = "button";
+  saveAsButton.className = "btn primary";
+  saveAsButton.textContent = "Save As";
+  saveAsButton.setAttribute("aria-label", "Simpan edit buffer sebagai preset baru di pedal");
+  operationRow.append(renameButton, saveAsButton);
+
+  const opsStatus = document.createElement("p");
+  opsStatus.className = "preset-library-ops-status";
+  opsStatus.hidden = true;
+  opsStatus.setAttribute("role", "status");
+  opsStatus.setAttribute("aria-live", "polite");
+
+  const operationDialog = document.createElement("dialog");
+  operationDialog.className = "preset-library-ops-dialog";
+  operationDialog.setAttribute("aria-labelledby", "presetLibraryOpsTitle");
+  operationDialog.innerHTML = `
+    <div class="preset-library-ops-shell">
+      <h3 id="presetLibraryOpsTitle">Preset operation</h3>
+      <p id="presetLibraryOpsSummary"></p>
+      <label id="presetLibraryOpsDestinationWrap" hidden>
+        <span>Destination slot</span>
+        <select id="presetLibraryOpsDestination"></select>
+      </label>
+      <label class="preset-library-ops-name">
+        <span>Preset name · max. 16 ASCII characters</span>
+        <input id="presetLibraryOpsName" type="text" maxlength="16" autocomplete="off" spellcheck="false">
+      </label>
+      <p class="preset-library-ops-note">Sebelum menulis, aplikasi membaca tiga bagian slot tujuan dan menyimpan raw snapshot lokal. Snapshot ini belum memiliki fitur restore di aplikasi.</p>
+      <div class="preset-library-ops-dialog-actions">
+        <button type="button" class="btn" id="presetLibraryOpsCancel">Cancel</button>
+        <button type="button" class="btn primary" id="presetLibraryOpsConfirm">Continue</button>
+      </div>
+    </div>`;
+  page.append(operationRow, opsStatus, operationDialog);
+  const opsTitle = $("presetLibraryOpsTitle");
+  const opsSummary = $("presetLibraryOpsSummary");
+  const destinationWrap = $("presetLibraryOpsDestinationWrap");
+  const destinationSelect = $("presetLibraryOpsDestination");
+  const nameInput = $("presetLibraryOpsName");
+  const opsConfirm = $("presetLibraryOpsConfirm");
+  let operationBusy = false;
+
+  function showOperationStatus(message, kind = "") {
+    opsStatus.textContent = message;
+    opsStatus.hidden = !message;
+    opsStatus.classList.toggle("is-error", kind === "error");
+    opsStatus.classList.toggle("is-success", kind === "success");
+    if (message) scanStatus.textContent = message;
+  }
+
+  function storeSlotBackup(program, parts, operation, sourceProgram = null) {
+    const record = createMG30PresetSlotBackup({
+      program,
+      label: slotLabel(program),
+      parts,
+      operation,
+      sourceProgram
+    });
+    const key = SLOT_BACKUP_KEY_PREFIX + program;
+    let history = [];
+    try {
+      const prior = JSON.parse(localStorage.getItem(key) || "[]");
+      if (Array.isArray(prior)) history = prior;
+    } catch {}
+    history.unshift(record);
+    localStorage.setItem(key, JSON.stringify(history.slice(0, 3)));
+    return record;
+  }
+
+  function persistNameCache() {
+    try {
+      localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function buildDestinationOptions(sourceProgram) {
+    destinationSelect.replaceChildren();
+    for (let program = 0; program < 128; program++) {
+      const label = names[program] ? names[program] : "nama belum dibaca";
+      const option = new Option(slotLabel(program) + " · " + label, String(program));
+      if (program === sourceProgram) option.disabled = true;
+      destinationSelect.add(option);
+    }
+    destinationSelect.value = String(sourceProgram === 127 ? 0 : sourceProgram + 1);
+  }
+
+  function openOperationsDialog(mode) {
+    const sourceProgram = selectedProgram();
+    const sourceName = names[sourceProgram] || $("presetName")?.value || "";
+    operationDialog.dataset.mode = mode;
+    destinationWrap.hidden = mode !== "save-as";
+    opsTitle.textContent = mode === "rename" ? "Rename preset" : "Save As to pedal";
+    opsSummary.textContent = mode === "rename"
+      ? "Nama preset hardware " + slotLabel(sourceProgram) +
+        " akan diperbarui. Data tiga scene lainnya dibaca lalu dipertahankan."
+      : "Salin edit buffer dari slot aktif " + slotLabel(sourceProgram) +
+        " ke slot tujuan lain. Slot aktif tidak akan dipindahkan.";
+    nameInput.value = sourceName.slice(0, 16);
+    opsConfirm.textContent = mode === "rename" ? "Rename on pedal" : "Write / overwrite";
+    if (mode === "save-as") buildDestinationOptions(sourceProgram);
+    showOperationStatus("");
+    if (typeof operationDialog.showModal === "function") operationDialog.showModal();
+    else operationDialog.setAttribute("open", "");
+    nameInput.focus();
+    nameInput.select();
+  }
+
+  function closeOperationsDialog() {
+    if (operationDialog.open && typeof operationDialog.close === "function") operationDialog.close();
+    else operationDialog.removeAttribute("open");
+  }
+
+  function validateOperationRuntime() {
+    const bridge = window.MG30PresetExportBridge;
+    if (!bridge?.isConnected?.()) throw new Error("Hubungkan NUX MG-30 melalui USB-MIDI terlebih dahulu.");
+    if (typeof window.readActiveProgramScene !== "function" ||
+        typeof window.readPresetParts !== "function" ||
+        typeof window.writeHardwarePreset !== "function" ||
+        typeof window.setBitSlot !== "function") {
+      throw new Error("Jalur baca/tulis preset Gen2 yang ada tidak tersedia. Tidak ada data yang dikirim.");
+    }
+    if (activeDeviceOperation() || operationBusy) {
+      throw new Error("Operasi perangkat lain sedang berlangsung. Tunggu sampai selesai.");
+    }
+  }
+
+  function setOperationControlsDisabled(disabled) {
+    const selectors = [
+      "#page-presets button", "#saveDeviceBtn", "#copySceneToggle", "#chainEditToggle",
+      "#sceneButtons button", "#blockQuickSelect", "#modelPrev", "#modelNext", "#blockSwitch"
+    ];
+    const nodes = [...new Set(selectors.flatMap(selector => [...document.querySelectorAll(selector)]))];
+    if (disabled) {
+      const previous = new Map(nodes.map(node => [node, Boolean(node.disabled)]));
+      nodes.forEach(node => { node.disabled = true; });
+      return () => previous.forEach((value, node) => { node.disabled = value; });
+    }
+    nodes.forEach(node => { node.disabled = false; });
+    return () => {};
+  }
+
+  async function runPresetLibraryOperation(label, action) {
+    validateOperationRuntime();
+    operationBusy = true;
+    window.MG30PresetManagerBusy = true;
+    const restoreControls = setOperationControlsDisabled(true);
+    if (typeof window.stopHardwareStatePolling === "function") window.stopHardwareStatePolling();
+    closeOperationsDialog();
+    showOperationStatus(label + " · menunggu antrean USB-MIDI…");
+    try {
+      await action();
+    } catch (error) {
+      console.error("[Preset Library operation]", error);
+      showOperationStatus(label + " gagal: " + (error?.message || String(error)), "error");
+    } finally {
+      restoreControls();
+      operationBusy = false;
+      window.MG30PresetManagerBusy = false;
+      if (typeof window.startHardwareStatePolling === "function") window.startHardwareStatePolling();
+      renderCards();
+    }
+  }
+
+  async function readActiveSourceProgram(expectedProgram) {
+    const status = await window.readActiveProgramScene();
+    if (!Number.isInteger(Number(status?.program)) || Number(status.program) !== expectedProgram) {
+      throw new Error("Slot aktif pedal tidak cocok dengan kartu terpilih. Tidak ada data yang ditulis.");
+    }
+  }
+
+  async function runRename(nameValue) {
+    const program = selectedProgram();
+    const name = normalizeMG30PresetName(nameValue);
+    await runPresetLibraryOperation("Rename " + slotLabel(program), async () => {
+      await readActiveSourceProgram(program);
+      const stored = validateMG30PresetReadParts(
+        await window.readPresetParts(0x0b, program), 0x0b, program
+      );
+      const previousName = readMG30PresetName(stored[0]);
+      if (previousName === name) {
+        showOperationStatus("Nama " + slotLabel(program) + " sudah sama. Tidak ada penulisan.", "success");
+        return;
+      }
+      const confirmed = window.confirm(
+        "Ubah nama preset pedal " + slotLabel(program) + " dari \"" +
+        (previousName || "(kosong)") + "\" menjadi \"" + name + "\"?\n\n" +
+        "Aplikasi akan menulis ulang tiga bagian preset yang dibaca dari slot yang sama. " +
+        "Isi scene selain field nama dipertahankan dan diverifikasi melalui read-back."
+      );
+      if (!confirmed) {
+        showOperationStatus("Rename dibatalkan. Tidak ada perintah tulis yang dikirim.");
+        return;
+      }
+      storeSlotBackup(program, stored, "rename", program);
+      const updated = renameMG30PresetParts(stored, name);
+      const verified = await window.writeHardwarePreset(program, updated);
+      if (!verified) throw new Error("Read-back slot tidak cocok. Jangan ulangi penulisan dulu; periksa preset pada pedal.");
+      names[program] = name;
+      const cached = persistNameCache();
+      const editorName = $("presetName");
+      if (editorName && editorName.value.trim() === previousName) {
+        editorName.value = name;
+        editorName.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      window.dispatchEvent(new CustomEvent("mg30-preset-library-name-changed", {
+        detail: { program, name, operation: "rename" }
+      }));
+      showOperationStatus(
+        "Rename terverifikasi: " + slotLabel(program) + " · " + name +
+        ". Tiga bagian slot cocok saat read-back." +
+        (cached ? " Nama disimpan di cache Preset Manager." : " Cache nama tidak dapat disimpan."),
+        "success"
+      );
+    });
+  }
+
+  async function runSaveAs(destinationValue, nameValue) {
+    const sourceProgram = selectedProgram();
+    const destinationProgram = Number(destinationValue);
+    const name = normalizeMG30PresetName(nameValue);
+    if (!Number.isInteger(destinationProgram) || destinationProgram < 0 || destinationProgram > 127) {
+      throw new Error("Slot tujuan Save As tidak valid.");
+    }
+    if (destinationProgram === sourceProgram) {
+      throw new Error("Save As harus memakai slot berbeda dari sumber aktif.");
+    }
+    await runPresetLibraryOperation("Save As " + slotLabel(destinationProgram), async () => {
+      await readActiveSourceProgram(sourceProgram);
+      const bufferParts = validateMG30PresetReadParts(
+        await window.readPresetParts(0x0c, 0), 0x0c
+      );
+      const destinationParts = validateMG30PresetReadParts(
+        await window.readPresetParts(0x0b, destinationProgram), 0x0b, destinationProgram
+      );
+      const previousName = readMG30PresetName(destinationParts[0]);
+      const destinationDescription = previousName
+        ? "Slot tujuan " + slotLabel(destinationProgram) + ' saat ini berisi "' + previousName + '".'
+        : "Nama slot " + slotLabel(destinationProgram) + " kosong/tidak terbaca; data slot tetap akan ditimpa.";
+      const confirmed = window.confirm(
+        "Save As dari " + slotLabel(sourceProgram) + " ke " + slotLabel(destinationProgram) + "?\n\n" +
+        destinationDescription + "\nNama baru: \"" + name + "\".\n\n" +
+        "Aplikasi membaca dan menyimpan snapshot lokal tiga bagian slot tujuan sebelum menulis. " +
+        "Slot aktif pedal tidak akan berpindah."
+      );
+      if (!confirmed) {
+        showOperationStatus("Save As dibatalkan. Tidak ada perintah tulis yang dikirim.");
+        return;
+      }
+      storeSlotBackup(destinationProgram, destinationParts, "save-as-overwrite", sourceProgram);
+
+      const chainOrder = [...document.querySelectorAll("#chain > .block[data-i]")]
+        .map(element => Number(element.dataset.i));
+      const sceneIndex = Number($("sceneSelect")?.selectedIndex);
+      const outputParts = prepareMG30SaveAsParts(bufferParts, name, sceneIndex, chainOrder);
+      const verified = await window.writeHardwarePreset(destinationProgram, outputParts);
+      if (!verified) throw new Error("Read-back slot tujuan tidak cocok. Jangan ulangi penulisan dulu; periksa pedal.");
+      names[destinationProgram] = name;
+      const cached = persistNameCache();
+      window.dispatchEvent(new CustomEvent("mg30-preset-library-name-changed", {
+        detail: { program: destinationProgram, sourceProgram, name, operation: "save-as" }
+      }));
+      showOperationStatus(
+        "Save As terverifikasi: " + slotLabel(sourceProgram) + " → " +
+        slotLabel(destinationProgram) + " · " + name +
+        ". Slot aktif tetap " + slotLabel(sourceProgram) + "." +
+        (cached ? " Nama slot diperbarui." : " Cache nama tidak dapat disimpan."),
+        "success"
+      );
+    });
+  }
+
+  renameButton.addEventListener("click", () => openOperationsDialog("rename"));
+  saveAsButton.addEventListener("click", () => openOperationsDialog("save-as"));
+  $("presetLibraryOpsCancel").addEventListener("click", closeOperationsDialog);
+  opsConfirm.addEventListener("click", async () => {
+    try {
+      const mode = operationDialog.dataset.mode;
+      const name = normalizeMG30PresetName(nameInput.value);
+      if (mode === "rename") await runRename(name);
+      else await runSaveAs(destinationSelect.value, name);
+    } catch (error) {
+      showOperationStatus(error?.message || String(error), "error");
+    }
+  });
 
   function renderCards() {
     const selected = selectedProgram();
