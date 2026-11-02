@@ -3474,3 +3474,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size **4,493,716 bytes**, SHA-256 `6564256d22f7e0746f65170a0dc68269e166cb57cb7501567aaa023ee2e2bfe5`. ZIP/APK integrity and packaged CSS checks passed.
 - Protected modules (NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, Presets, Signal Chain and Studio audio logic) were not changed.
 - Physical validation remains required: install Build #337 and send a screenshot showing whether the ruler artefact is gone; recheck drag/playhead and transport.
+
+
+## Studio Timeline ruler label stacking — Build #338 passed (2 November 2026)
+
+- User reported that the small white glyph/block remained after installing Build #337. This disproved the prior hypothesis that the native WebView playhead button was the root cause.
+- Source investigation found the actual cause in `www/studio-daw.css`: `#page-studio #dawTimelinePage .daw-ruler-mark { left: calc(var(--ruler-mark-x, 0px)) !important; }`. No Studio JS set `--ruler-mark-x`; the `!important` rule overrode the per-bar inline positions created by `renderRuler()`, stacking every bar number at x=0 into the visible artefact.
+- Removed only that stale CSS override. Retained the JavaScript per-bar positioning formula `index * project.zoom`, ruler/grid alignment, playhead coordinate and drag handling.
+- Added regression coverage that requires per-bar inline ruler positioning and rejects the undefined ruler CSS variable override.
+- Before/after simulation using the CSS extracted from Build #337 reproduced the stacked labels, then displayed distinct bar labels after removal. Repeated using the actual packaged CSS from Build #338 at 691×1536; labels remained distinct and the artifact was absent in the Chromium simulation.
+- Authoritative Build #338: run ID `41490334484`, source commit `c506c0d590492947d0766e0333a812ea8001795e`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41490334484).
+- `npm test`: **122/122 passed, 0 failed**. Vite 7.3.7 production build, Capacitor Android generation/USB audio plugin registration, Gradle `assembleDebug`, and APK upload all passed.
+- Artifact ID `13163093795`; ZIP size **4,116,068 bytes**, SHA-256 `8d9ec6b71b06647979c86d0192aa54a95732abbeb9b79f855274c4a3b708540f`.
+- Extracted APK size **4,493,664 bytes**, SHA-256 `42e41c399dbd790445b8bb199075adecc55c0590fe61cce1604e8fa80c5e98de`. ZIP and APK integrity passed. Packaged CSS inspection confirmed `--ruler-mark-x` is absent.
+- App source/test scope for this fix: only `www/studio-daw.css` and `tests/studio-daw-ui.test.js`. No NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset, Signal Chain, Editor, Device, or Studio audio/USB recorder code changed.
+- Physical validation remains required: install Build #338, verify the small glyph is gone on the actual phone, confirm bar labels are individually positioned, and recheck playhead drag and transport. Chromium simulation and CI do not replace handset confirmation.
