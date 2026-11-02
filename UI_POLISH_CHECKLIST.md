@@ -3334,3 +3334,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Generated a dedicated portrait mobile mockup with a tall 9:20-style phone viewport and the existing NUX MG-30 dark/neon-green design language.
 - Mobile composition: compact Studio title and Jam / Record / DAW mode selector; two-row timeline toolbar/position; four stacked waveform lanes with track controls; compact global transport and stereo meters; four narrow mixer strips; collapsed Track Settings and Project panels; existing five-item bottom navigation with Studio selected.
 - This is still a design image only. No application source, project model, audio engine, native recorder, USB-MIDI, NAM/IR/Collection, Presets, or Editor behavior was changed.
+
+
+## Product decision confirmed — default four-track DAW project (2 November 2026)
+
+- User approved the three-mode Studio concept: JAM for play-along/backing practice, RECORD for quick standalone USB guitar takes, and DAW for project-based multitrack production.
+- User selected the recommended DAW project default: **Track 1 = Backing** and **Track 2 = Guitar** are created/prepared by default; **Track 3 = Bass** and **Track 4 = Vocals** are present but initially empty.
+- New Project should create the four named lanes and a project timeline immediately, without requiring the user to configure all four tracks first. Track 1 should accept imported backing audio; Track 2 should be ready for the verified MG-30 USB guitar input. Track 3 and Track 4 remain available for later overdubs or imported audio.
+- The default layout does not mean Bass/Vocals have dedicated independent hardware inputs or that four tracks can record simultaneously. Input routing must be explicit and verified; preserve the existing USB route checks and do not fall back silently to the phone microphone.
+- Keep Jam and Quick Record as distinct workflows. A saved Quick Record WAV should be importable into a DAW track without re-recording; DAW Record should record into the selected/armed track as a project clip. The YouTube reference remains a play-along reference, not an automatically imported audio source.
