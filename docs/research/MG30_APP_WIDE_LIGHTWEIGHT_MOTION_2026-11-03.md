@@ -55,7 +55,7 @@ Added `tests/ui-motion.test.js` with assertions for:
 ## Artifact verification
 
 - Artifact ZIP: **4,116,665 bytes**, SHA-256 `19c7545394b3b2ca31071192d42168be79e5ca0543988eeaed598033775aa31c`.
-- Extracted `app-debug.apk`: **4,493,? bytes** (see exact APK size in the verified local artifact) with SHA-256 `10b23287008dfff110958f02cf0cbac31ac0a8efc432636d425de82a517d03f5`.
+- Extracted `app-debug.apk`: **4,494,432 bytes**, SHA-256 `10b23287008dfff110958f02cf0cbac31ac0a8efc432636d425de82a517d03f5`.
 - ZIP and APK archive integrity checks: **passed**.
 - Packaged Vite CSS inspection: confirmed all six `mg30-*` keyframe families, native dialog/backdrop animation, scene-copy menu portal animation, disclosure animation, button press motion, and reduced-motion rules. The packaged index links the bundled stylesheet `./assets/index-B56Gqfb-.css`.
 
