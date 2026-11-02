@@ -3576,3 +3576,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - ZIP artifact ID 13174180450, size 4,116,816 bytes, SHA-256 a3bddbb068fdb0b061a9c75b2ad7b49eadde63f0c57243f622a4916cb38702c3.
 - Extracted APK size 4,494,676 bytes, SHA-256 c899bddfb70cbc69e1f4993e5434d304abaa2233a260d7c5973504e0d4d61c31. ZIP/APK integrity passed. Packaged CSS verified opacity-only NAM-pane animation and retained min-width constraints.
 - Physical handset confirmation remains: install Build #349 and verify NAM pane width is contained before, during, and after entrance animation; check switch to/from TONE3000.
+
+
+## NAM pane stretches after TONE3000 external return — Build #351 passed (3 November 2026)
+
+- User reproduced the issue only after selecting a tone in TONE3000 externally, returning to the app, then tapping NAM. The pane became horizontally stretched although TONE3000 mode was normal.
+- Source flow: OAuth callback loads and renders the selected tone/model catalogue; `nam-model-library-ui.js` moves the existing `#t3kToneDetails` node into the Downloaded/Available NAM panel. That populated subtree becomes part of the fixed mobile `#page-nam` grid. The active CSS previously set rows only, leaving the one implicit grid column `auto`-sized by minimum intrinsic content width. When the catalogue became populated, the implicit track could expand the NAM page. The Collection fallback uses block layout and also needed a width clamp.
+- Corrected mobile NAM grid to `grid-template-columns:minmax(0,1fr)`; capped the page, all direct children, the moved catalogue subtree, model list and model cards with `min-width:0`, `max-width:100%` and border-box sizing. The fallback page receives the same viewport max width. This is layout-only; no content structure is moved or rewritten.
+- Bumped stylesheet query to `motion-lite-3` so Android WebView loads the new CSS.
+- Added `tests/nam-tone3000-width.test.js` for active/fallback page width, nested catalogue containment and preserving existing TONE3000 catalogue node/handlers. Updated the existing UI motion test cache token. Build #350 did not create an APK because that old assertion still expected motion-lite-2; corrected before Build #351.
+- No changes to `www/tone3000.js`, `www/nam-model-library-ui.js`, `www/ir-transfer.js`, `www/nam-transfer.js`, OAuth, model-selection logic, transfer protocol, IR, MIDI, presets or Studio DAW.
+- Authoritative Build #351: run ID `41517135543`, source HEAD `534fb0049f87a9d2a5e6f5eaa3229026ac121ee6`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41517135543).
+- CI protocol regression test step, Capacitor Android generation/USB audio plugin, Gradle `assembleDebug` and APK upload all passed.
+- Artifact ZIP ID `13176995035`, size **4,116,944 bytes**, SHA-256 `922823f6bd9b382640441c2b4240f467c4117878e07b1740e1687437fe411191`.
+- Extracted APK size **4,494,948 bytes**, SHA-256 `bfd3120ca348abcf9f1cb20309479caa520883d2f7b4182f544bfe7f033f3211`. ZIP/APK integrity passed. Packaged CSS in `assets/public/assets/index-DNyHPIoq.css` was checked for the one-column grid, page width guard, child width clamp, catalogue list fallback clamp and active TONE3000 card clamp.
+- Physical device check remains: reproduce selecting a TONE3000 tone externally, return to app, click NAM, and verify the pane/control widths do not stretch; repeat switching between NAM and TONE3000.
