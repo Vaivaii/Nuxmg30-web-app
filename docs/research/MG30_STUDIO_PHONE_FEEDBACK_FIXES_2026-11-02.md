@@ -332,3 +332,70 @@ No NAM, IR User/Third Party, IR Collection, MIDI, Presets, Editor/Signal Chain, 
 - Reconfirm playback, gain/pan/mute/solo, per-track VU activity, import, export and original MG-30 Gen 2 USB overdub behavior.
 
 CI confirms automated regression tests and successful APK packaging; it does not emulate the user's Android touch or USB-audio hardware. Do not merge to `main` or modify other tabs without explicit user direction.
+
+
+## Follow-up: restore proportional dock, sticky Studio mode selector and Mixer fader grid (Build #320)
+
+**Date:** 2 November 2026  
+**Validated source commit:** `31b5d546a596c18e2bf4fdab4665fd361de6cf8b`  
+**GitHub Actions:** run `41445448490`, conclusion `success`.
+
+### Regressions reported from Build #315
+
+The user's phone screenshots showed:
+- The transport + sub-navigation dock had an inconsistent/narrow horizontal width.
+- The Jam / Record / DAW selector used a sticky top offset calculated from the application header even though `#page-studio` is already its own scrolling region. That made the selector sit too far down and overlap Studio content.
+- Mixer faders collapsed/disappeared. The Mixer channel markup has six direct children, but the CSS grid defined only five rows. The fader/control row was therefore pushed into an implicit row with no reliable height.
+- The channel-name element was also changed from `strong` to a dedicated `span` to avoid legacy rules that intentionally hide direct-child `strong` channel headings.
+
+### Corrections
+
+#### Dock geometry
+- Removed dynamic left and width values derived from the page content rectangle.
+- Dock is now centered to the viewport with `width:min(calc(100vw - 20px),1172px)`, keeping proportional horizontal margins on mobile and a bounded desktop width.
+- Bottom position is still measured against the actual fixed main navigation: `viewportHeight - navRect.top + 8px`. This aligns the dock bottom 8px above the main nav top.
+- The dock geometry is refreshed after selecting Studio from the main app navigation and on viewport resize.
+- Transport buttons and the stereo meter now use an explicit proportional two-column grid; the sub-navigation takes the full dock width beneath it.
+
+#### Studio mode selector
+- Removed the calculated `headerRect.bottom` top offset, which was being applied twice inside the Studio scrolling region.
+- The Studio hero now scrolls normally; only Jam / Record / DAW stays sticky at `top:0` inside `#page-studio`.
+- The application header remains outside the Studio scroll region and retains its existing behavior.
+- The mode selector no longer overlaps the transport content or DAW sub-navigation.
+
+#### Mixer faders
+- Mixer strip CSS now declares six explicit rows matching the six direct children: channel number, track name, pan dial, pan readout, fader/VU control row and M/S buttons.
+- Fader/VU row has a minimum height of 150px; both the fader wrapper and slider have explicit height/min-height rules.
+- Track name is a dedicated `span.daw-mixer-track-name`, not a hidden legacy `strong`.
+- Channel name, per-channel LED VU, pan, fader, Mute and Solo remain present.
+
+### Validation
+
+- Automated tests: **99 passed, 0 failed, 0 skipped**.
+- Capacitor Android generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,114,862 bytes, SHA-256 `6c019ae9929ea60e007a6684d6072ea81d18719a8bfb8d0eaf4356962229b790`.
+- Extracted `app-debug.apk`: 4,491,852 bytes, SHA-256 `1564ab761b1ab8b39efc2f759c5143853beede61697c3bc3acb611b276944795`.
+- Artifact ZIP integrity and embedded APK ZIP integrity both passed.
+
+### Source boundary
+
+Compared with Build #315, source changes are limited to:
+- `www/studio-daw.js` — dock geometry helper and Mixer name element
+- `www/studio-daw.css` — final Studio dock, sticky mode selector and six-row Mixer channel overrides
+- `tests/studio-daw-ui.test.js`
+- This research note
+
+The following remain unchanged: `www/index.html`, `www/ui-redesign.css`, global bottom navigation, NAM, IR User/Third Party, IR Collection, MIDI, Presets, Editor/Signal Chain and Device.
+
+### Physical-device validation still required
+
+Install Build #320 and confirm on the target phone:
+- Dock left/right margins are visually equal and the dock bottom sits just above the fixed main navigation.
+- Jam / Record / DAW remains below the app header, with no overlap against the quick toolbar or DAW sub-tabs while Track Settings scrolls.
+- All four Mixer faders appear at full vertical length with independent LED VU ladders; no Mixer page vertical scrolling occurs.
+- Track names remain visible and editable; project rename persistence still works.
+- Playback, playhead, import, clip editing, save/load/export and original MG-30 Gen 2 USB overdub remain intact.
+
+CI verifies 99 automated tests and successful APK packaging. It does not emulate the user's Android screen geometry, physical fader touch, playback VU response or MG-30 USB audio hardware. Do not merge to `main` or modify other tabs without explicit user direction.
