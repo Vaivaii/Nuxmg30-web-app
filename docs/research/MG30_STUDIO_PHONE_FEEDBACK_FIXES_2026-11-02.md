@@ -275,3 +275,60 @@ The global app navigation and all NAM, IR, MIDI, Presets, Editor/Signal Chain, D
 - Reconfirm audio playback, per-track gain/pan/mute/solo, clip editing, save/load, import, export and original MG-30 Gen 2 USB overdub route.
 
 CI verifies source regression tests and APK packaging; it does not simulate touch/audio on the user's handset. Do not merge to `main` or modify other tabs without explicit user direction.
+
+
+## Follow-up: dock-to-navigation alignment, pinned Studio modes and editable track names (Build #315)
+
+**Date:** 2 November 2026  
+**Validated source commit:** `bae179e9260b50b1c57a8a8d2961a4e2efcbc5bd`  
+**GitHub Actions:** run `41443250106`, conclusion `success`.
+
+### Changes based on the latest Android screenshots
+
+#### Transport + DAW sub-navigation dock
+- The dock bottom offset is no longer a hard-coded phone-specific number.
+- `syncStudioPinnedControls()` measures the actual `.nav` bounding rectangle. When the app navigation is at the bottom of the viewport, the dock's bottom position is set to 8px above the navigation's top edge.
+- The dock width and horizontal center are measured against the visible Studio page content when Studio is selected.
+- The geometry is recalculated on app resize and on the Studio page navigation click (after the page is made visible), avoiding stale measurements taken while Studio was hidden.
+- The app's main navigation is read for geometry only; its markup and behavior are unchanged.
+
+#### Jam / Record / DAW mode tabs
+- The mode selector remains sticky while Track Settings is scrolled.
+- Its sticky top offset is calculated from the application header's live bottom edge plus an 8px separation, so the three mode buttons remain below the app header rather than covering it.
+- The mode tabs remain scoped to the Studio page and do not alter navigation behavior in other tabs.
+
+#### Track names
+- Each Mixer channel now displays its editable track name underneath the numbered channel badge.
+- Track Settings now exposes a `Track name` text field for the currently selected track (up to 32 characters).
+- Renaming a track updates its Timeline label, Mixer label, accessible channel names and selected-track summary, then schedules project persistence.
+- The redundant `DAW · CONFIGURATION`, `Track Settings`, descriptive heading and `Selected Track` subheading were removed from the Track Settings content. Project Settings remains as its own section.
+
+### Validation
+
+- Automated tests: **95 passed, 0 failed, 0 skipped**.
+- Capacitor Android project generation: success.
+- Gradle `assembleDebug`: success.
+- APK artifact upload: success.
+- Artifact ZIP: 4,114,389 bytes, SHA-256 `1824f3e82ddfc9cb29221cb658999bb496c619d0a57a8f20835e5ef472f7b6f7`.
+- Extracted `app-debug.apk`: 4,491,080 bytes, SHA-256 `daea04faaad652060be614cea137c3d1471c5a61fde57efdceb6d11063395c4d`.
+- Artifact ZIP and APK internal ZIP structure both passed integrity tests.
+
+### Source boundary
+
+Compared with Build #308, the only source and test files changed are:
+- `www/index.html` — redundant Track Settings heading removal only
+- `www/studio-daw.js` — dock geometry measurement, Studio nav/resize recalculation and track rename persistence
+- `www/studio-daw.css` — dock alignment, sticky mode selector, Mixer channel name and rename-field styling
+- `tests/studio-daw-ui.test.js`
+- This research note
+
+No NAM, IR User/Third Party, IR Collection, MIDI, Presets, Editor/Signal Chain, Device, or main navigation source was changed.
+
+### Physical-device validation still required
+
+- Confirm the dock's lower edge stops just above the app's main navigation on the actual phone.
+- Scroll Track Settings and confirm Jam / Record / DAW stays below the app header without covering it.
+- Rename each of the four tracks in Track Settings; verify the name persists after saving/reopening the project and appears under the matching Mixer channel number.
+- Reconfirm playback, gain/pan/mute/solo, per-track VU activity, import, export and original MG-30 Gen 2 USB overdub behavior.
+
+CI confirms automated regression tests and successful APK packaging; it does not emulate the user's Android touch or USB-audio hardware. Do not merge to `main` or modify other tabs without explicit user direction.
