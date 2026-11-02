@@ -50,7 +50,8 @@ test('track settings and project/export tools start collapsed to keep all four l
 test('Studio title and mode tabs are compact with no redundant subtitle', () => {
   assert.ok(html.includes('<h2>Studio</h2>'));
   assert.ok(!html.includes('Jam · Quick Record · Mini DAW'));
-  assert.ok(css.includes('.studio-daw-hero h2{font-size:19px'));
+  assert.ok(css.includes('#page-studio .studio-daw-hero h2{'));
+  assert.ok(css.includes('font-size:19px!important'));
   assert.ok(css.includes('min-height:29px!important'));
 });
 
