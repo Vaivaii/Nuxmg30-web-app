@@ -32,7 +32,7 @@ const mainActivityLines = [
   '    public void onCreate(Bundle savedInstanceState) {',
   '        registerPlugin(MG30AudioPlugin.class);',
   '        registerPlugin(MG30MidiPlugin.class);',
-  '        registerPlugin(MG30DawFilesPlugin.class);'
+  '        registerPlugin(MG30DawFilesPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
