@@ -3375,3 +3375,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Core tests cover default four-track model, project normalization, timing/snap, stem selection, filename sanitation, 24-bit WAV encoding and ZIP structure. Full Node test suite, Vite build, Capacitor generation and Gradle build are pending the CI run.
 - Important scope boundary: all application edits are Studio-only plus the Android export plugin and build registration required by Studio. No NAM, IR USER/Third Party, IR Collection, MIDI mapping, Preset, Editor, signal-chain or other tab source was intentionally changed. Existing Quick Record code was touched only to expose its existing saved-take interface to Studio.
 - Physical MG-30 USB input/output and Android File Picker behavior cannot be truthfully certified by CI alone; they still require a real device test after a successful build. Do not label hardware-dependent functions physically verified based only on simulation.
+
+
+## Studio Mini DAW — Build #263 passed CI and APK package checks (2 November 2026)
+
+- Corrected the minimum timeline duration test after the first simulation: at 120 BPM and 4/4, four minimum bars equal 9.6 seconds. Build #262 was intentionally rejected (36/37 tests); no APK from that run was distributed.
+- Corrected DAW overdub clock handling so the timeline advances during USB recording even when the project has no backing clip. The capture still uses the existing MG-30 USB recorder; no phone microphone fallback was added.
+- Authoritative CI Build #263: run ID `41402590599`, source commit `9b8512d6a8f2d293a69ad154a2c9a3fc62d47673`, conclusion **success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41402590599
+- `npm test`: **37/37 passed, 0 failed**. Capacitor Android generation/plugin registration passed. Gradle `assembleDebug` passed. Artifact upload passed.
+- Artifact ID `13122011912`; artifact ZIP `MG30-Studio-Build263.zip`, size **4,091,716 bytes**, SHA-256 `6a48fb04ee092b80ad3ec9899db0e431f7499449a84055ed71cd641bdf606de4`. ZIP integrity check passed.
+- Extracted APK `MG30_Studio_Build263.apk`, size **4,469,516 bytes**, SHA-256 `b8289b0d9def64d9dd11621e99b0cec585b42a76686afc6edffd4a502ab7c2a6`. APK ZIP integrity check passed.
+- Packaged asset inspection passed for four track names, DAW mode entrypoint, local project persistence, Full Mix WAV path, Stems ZIP path, Android export bridge and explicit no-phone-microphone fallback messaging.
+- Temporary push trigger for this feature branch was removed immediately after Build #263 queued. Restoration commit: `ef79ffc6bcf336956c1b50713b7cdaad29e77a5b`. Current workflow retains its prior manual/allowlisted policy.
+- Scope comparison from the feature-branch starting checkpoint lists only Studio markup/style/logic, a small Quick Record take interface exposure in `www/main.js`, Android Studio export bridge/registration, focused DAW tests, and project notes. No NAM, IR USER/Third Party, IR Collection, MIDI mapping, Preset, Editor, signal-chain or other-tab feature module was changed.
+- **Validation boundary:** CI and packaged APK checks are green, but CI cannot emulate the physical NUX MG-30 USB interface or Android Storage Access Framework picker end-to-end. Do not claim those hardware/OS interactions are physically certified until tested on the user's Android phone with the original MG-30 Gen 2 firmware 6.0.x. This APK is a successful engineering build, not yet a device-verified release.
