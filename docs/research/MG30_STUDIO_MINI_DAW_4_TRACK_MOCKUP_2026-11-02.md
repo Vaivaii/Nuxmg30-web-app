@@ -114,3 +114,26 @@ The user reported that the built DAW UI looked less tidy than the approved portr
 - Comparison from the feature branch checkpoint shows changes only to Studio UI/assets, Studio logic and Android file-export integration, the Quick Record take interface exposed for Studio, regression tests and documentation. NAM, IR User/Third Party, IR Collection, MIDI mapping, Presets, Editor, signal chain and Device feature source remain untouched.
 - Temporary branch push trigger was removed after Build #265 queued; restoration commit `7715b10f6335b9c02705cdf98048c110d523d8e0`. Workflow remains on its prior manual/allowlisted policy.
 - Device-validation note remains: install and visually check Build #265 on the Android phone. CI/package inspection does not verify the MG-30 physical USB record route, playback/dropout behavior, or Android File Picker permissions on the user's device.
+
+## Follow-up UI and clip editing pass — 2026-11-02
+
+User reviewed the portrait DAW screen and requested a more compact, integrated control surface:
+- Reduce the Studio heading and mode tabs; remove the redundant subtitle.
+- Keep Play/Pause/Stop/Record/rewind sticky at the bottom of the DAW workspace.
+- Open a compact control-room dialog from the sticky bar for mixer, tempo, meter, click, loop, snap, track inspector and project/export settings.
+- Make track lanes a consistent fixed height, replace the text ARM button with a circular record control, and draw one global vertical playhead spanning the four tracks.
+- Add per-clip non-destructive start/end trim handles, Split at playhead, and independent fade-in/fade-out controls.
+
+Implementation notes:
+- www/index.html: compact Studio hero; removed the always-visible session toolbar, mixer, inspector and export controls from the timeline; added a bottom sticky transport and a modal control drawer. Existing Jam and Quick Record markup and controls are left intact.
+- www/studio-daw.css: appended mobile-focused styling for the sticky transport, modal drawer, equal 82px lanes, compact track controls, circular record indicators, clip edge handles, fade overlays and one global playhead.
+- www/studio-daw.js: global playhead and compact track rendering; clip selection exposes inspector; drag clip body to move, drag left/right edges to trim; Split at cursor uses the selected clip; fade metadata is applied to live playback and offline WAV rendering. Existing audio source buffer is reused; trim/split do not rewrite the source audio.
+- www/studio-daw-core.js: pure helpers trimClipStart, trimClipEnd, splitClipAt, normalizeClipFades, clipFadeGainAt; project normalization retains fade metadata. Start-trim boundaries are constrained by both source bounds and project time zero.
+- tests/studio-daw-core.test.js: five new tests for non-destructive trim, source bounds, split, fade envelope, and persisted fade normalization.
+- tests/studio-daw-ui.test.js: six new UI regression checks for compact Studio header, sticky controls/dialog, equal lane/global playhead, circular record, edit handles/fade controls, and applying fades to preview/render.
+
+Validation caveats before release:
+- This pass has not yet completed a fresh CI simulation/build. Do not distribute an APK until the full npm test, Vite/Capacitor generation, Android Gradle build, artifact integrity checks and packaged-asset inspection pass.
+- Physical MG-30 USB overdub/playback and Android phone visual checks remain separate device-validation tasks.
+- No changes are intended to NAM, IR User/Third Party, IR Collection, MIDI mapping, preset transfer, signal chain, or USB-MIDI protocol.
+- Temporary workflow push allowlist entry for this branch is being added solely to queue validation; remove it after the run is queued/completed, restoring the prior workflow policy.

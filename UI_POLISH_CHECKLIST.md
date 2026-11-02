@@ -3413,3 +3413,6 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Comparison from the feature branch checkpoint shows changes only to Studio UI/assets, Studio logic and Android file-export integration, the Quick Record take interface exposed for Studio, regression tests and documentation. NAM, IR User/Third Party, IR Collection, MIDI mapping, Presets, Editor, signal chain and Device feature source remain untouched.
 - Temporary branch push trigger was removed after Build #265 queued; restoration commit `7715b10f6335b9c02705cdf98048c110d523d8e0`. Workflow remains on its prior manual/allowlisted policy.
 - Device-validation note remains: install and visually check Build #265 on the Android phone. CI/package inspection does not verify the MG-30 physical USB record route, playback/dropout behavior, or Android File Picker permissions on the user's device.
+
+
+- 2026-11-02: Studio Mini DAW follow-up UI/clip-editing implementation and validation checkpoint are documented in docs/research/MG30_STUDIO_MINI_DAW_4_TRACK_MOCKUP_2026-11-02.md. Pending CI test/build before APK release.
