@@ -1647,3 +1647,61 @@
   grid-template-rows:31px auto!important;
   row-gap:0!important;
 }
+
+
+/* -------------------------------------------------------------------------
+   Final phone adjustment: lower fixed dock + live/draggable playhead.
+   ------------------------------------------------------------------------- */
+
+/* The dock is a viewport overlay, not a normal-flow sticky block. This removes
+   its reserved layout height from the DAW page, giving the timeline its full
+   vertical space; transport and Mixer remain attached above bottom navigation. */
+#page-studio .daw-studio-dock{
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:calc(50px + env(safe-area-inset-bottom,0px))!important;
+  width:min(calc(100vw - 20px),1172px)!important;
+  max-width:1172px!important;
+  margin:0!important;
+  padding:4px 0 0!important;
+  transform:translateX(-50%)!important;
+  z-index:180!important;
+}
+
+/* The marker X now follows playheadSeconds on every animation frame. The
+   transparent 32px handle keeps a generous touch target around the thin line. */
+#page-studio .daw-global-playhead{
+  left:var(--daw-playhead-x,0px)!important;
+  width:32px!important;
+  transform:translateX(-16px)!important;
+  pointer-events:auto!important;
+  touch-action:none!important;
+  cursor:ew-resize!important;
+  z-index:70!important;
+}
+#page-studio .daw-global-playhead:after{
+  left:15px!important;
+  width:2px!important;
+  pointer-events:none!important;
+}
+#page-studio .daw-global-playhead:before{
+  left:11px!important;
+  pointer-events:none!important;
+}
+#page-studio .daw-playhead-hit{
+  inset:0!important;
+  left:0!important;
+  width:32px!important;
+  min-width:32px!important;
+  height:100%!important;
+  pointer-events:auto!important;
+  touch-action:none!important;
+  cursor:ew-resize!important;
+}
+@media(max-width:430px){
+  #page-studio .daw-studio-dock{
+    bottom:calc(50px + env(safe-area-inset-bottom,0px))!important;
+    width:calc(100vw - 20px)!important;
+  }
+}
