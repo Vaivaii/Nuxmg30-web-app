@@ -111,17 +111,34 @@ function applyHistory(direction) {
 }
 
 function setPlayheadFromClientX(clientX) {
+  const scroller = $('dawTimelineScroll');
   const canvas = $('dawTimelineCanvas');
-  if (!canvas) return;
+  if (!scroller || !canvas) return;
   const metrics = timelineMetrics();
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.max(0, Math.min(metrics.width, clientX - rect.left));
+  const rect = scroller.getBoundingClientRect();
+  let viewportX = clientX - rect.left;
+
+  // While dragging, scroll the shared timeline when the pointer reaches either
+  // viewport edge. Ruler, clips, lanes and the marker all retain one X coordinate.
+  if (playheadDragPointerId !== null) {
+    const edge = Math.min(28, Math.max(18, scroller.clientWidth * 0.08));
+    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    if (viewportX < edge && scroller.scrollLeft > 0) {
+      scroller.scrollLeft = Math.max(0, scroller.scrollLeft - (edge - viewportX));
+    } else if (viewportX > scroller.clientWidth - edge && scroller.scrollLeft < maxScroll) {
+      scroller.scrollLeft = Math.min(maxScroll, scroller.scrollLeft + (viewportX - (scroller.clientWidth - edge)));
+    }
+  }
+
+  const contentX = viewportX + scroller.scrollLeft;
+  const x = Math.max(0, Math.min(metrics.width, contentX));
   playheadSeconds = (x / project.zoom) * metrics.barSeconds;
   renderPlayhead();
 }
 
 function startPlayheadDrag(event) {
-  if (event.button !== 0 || recording) return;
+  if (recording || playheadDragPointerId !== null) return;
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
   event.preventDefault();
   if (playing) pausePlayback();
   playheadDragPointerId = event.pointerId;
@@ -424,7 +441,11 @@ function renderPlayhead() {
   }
   const left = Math.max(0, (playheadSeconds / metrics.barSeconds) * project.zoom);
   const playhead = $('dawGlobalPlayhead');
-  if (playhead) playhead.style.left = left + 'px';
+  if (playhead) {
+    // CSS left is driven by this variable; inline style.left was previously
+    // overridden by the legacy !important left:0 rule and froze the marker.
+    playhead.style.setProperty('--daw-playhead-x', left + 'px');
+  }
   updatePlayheadReadout();
 }
 
