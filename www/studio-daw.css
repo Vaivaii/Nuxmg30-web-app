@@ -1,0 +1,128 @@
+/* Smartphone-first 4-track Mini DAW. All selectors are scoped to Studio. */
+.studio-daw-hero{display:flex;align-items:flex-end;gap:10px;justify-content:space-between}
+.studio-mode-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;background:#101510;border:1px solid #2c3528;border-radius:12px;flex:0 0 auto}
+.studio-mode-tabs button{min-width:58px;border:0;background:transparent;color:#8f9a86;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
+.studio-mode-tabs button.active{background:#c5f36b;color:#11160b}
+.studio-mode-panel[hidden],#studio-daw-workspace[hidden]{display:none!important}
+.studio-daw-workspace{display:grid;gap:10px;min-width:0;padding-bottom:12px}
+.daw-project-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:end;padding:10px;border:1px solid #30392c;border-radius:13px;background:linear-gradient(145deg,#171d16,#101510)}
+.daw-project-name-wrap{display:flex;flex-direction:column;gap:4px;min-width:0}
+.daw-project-name-wrap label,.daw-session-toolbar label,.daw-timeline-heading,.daw-section-heading{font-size:9px;font-weight:850;letter-spacing:.8px;color:#96a28d}
+.daw-project-name-wrap input{min-width:0;width:100%;height:33px;background:#0d120e;color:#f1f5eb;border:1px solid #394432;border-radius:8px;padding:0 9px;font:700 12px system-ui}
+.daw-tool-btn{border:1px solid #38442f;background:#20291d;color:#e8f0df;border-radius:8px;padding:8px 10px;font-size:10px;font-weight:800;min-height:33px}
+.daw-save-btn{border-color:#c5f36b;background:#c5f36b;color:#11160b}
+#dawSavedProjects{grid-column:1/-1;width:100%;min-width:0;height:33px;border:1px solid #38442f;background:#0e130f;color:#dce5d4;border-radius:8px;padding:0 8px;font:11px system-ui}
+.daw-session-toolbar{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:8px 9px;background:#111711;border:1px solid #293328;border-radius:11px;scrollbar-width:none}
+.daw-session-toolbar label{display:flex;align-items:center;gap:5px;white-space:nowrap;letter-spacing:.2px;font-size:10px}
+.daw-session-toolbar input[type=number],.daw-session-toolbar select{height:30px;min-width:50px;padding:0 5px;border-radius:7px;border:1px solid #3a4632;background:#0b100c;color:#e6eddf;font:11px system-ui}
+.daw-bpm-wrap{display:flex;align-items:center;gap:3px}
+.daw-bpm-wrap input{width:47px!important}
+.daw-bpm-wrap small{font-size:9px;color:#829079}
+.daw-check-label input{accent-color:#c5f36b}
+.daw-timeline-panel{border:1px solid #30392c;background:#111611;border-radius:14px;overflow:hidden}
+.daw-timeline-heading{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 10px 8px}
+.daw-timeline-heading strong,.daw-section-heading strong{font-size:10px;color:#e5eddf;letter-spacing:1.1px}
+.daw-timeline-heading>span,.daw-section-heading small{font-size:9px;color:#778571;letter-spacing:0}
+.daw-timeline-heading label{display:flex;align-items:center;gap:4px;font-size:9px}
+.daw-timeline-heading input{width:60px;accent-color:#c5f36b}
+.daw-ruler-row,.daw-track-row{display:grid;grid-template-columns:100px minmax(0,1fr);min-width:0;border-top:1px solid #252e24}
+.daw-track-rail-label{display:flex;align-items:center;padding:0 9px;color:#6f7b68;font-size:9px;font-weight:800;letter-spacing:.8px}
+.daw-lane-scroll{min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain}
+.daw-lane-scroll::-webkit-scrollbar{display:none}
+.daw-ruler-inner{position:relative;height:29px;width:var(--daw-timeline-width,368px);background:repeating-linear-gradient(90deg,transparent 0,transparent calc(var(--daw-bar-width,92px) - 1px),#3b4934 calc(var(--daw-bar-width,92px) - 1px),#3b4934 var(--daw-bar-width,92px))}
+.daw-ruler-mark{position:absolute;top:7px;font-size:9px;color:#9aa78f;transform:translateX(5px)}
+.daw-track-head{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0;padding:8px;border-right:1px solid #293328;background:#151b14}
+.daw-track-title{display:flex;align-items:center;gap:5px;min-width:0}
+.daw-track-color{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:var(--track-color)}
+.daw-track-title strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e8efdf;font-size:10px}
+.daw-track-input{font-size:8px;color:#84917b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.daw-track-actions{display:flex;gap:3px;flex-wrap:wrap}
+.daw-track-actions button{border:1px solid #35402f;background:#1b231a;color:#95a18a;border-radius:5px;padding:4px 5px;font-size:8px;font-weight:850;min-height:22px}
+.daw-track-actions button.active{background:#c5f36b;color:#12180c;border-color:#c5f36b}
+.daw-track-actions button.arm-active{background:#e64f54;color:white;border-color:#e64f54}
+.daw-track-actions button.import{color:#d5e6c5}
+.daw-track-lane{position:relative;height:76px;width:var(--daw-timeline-width,368px);background-color:#0d120e;background-image:repeating-linear-gradient(90deg,transparent 0,transparent calc(var(--daw-bar-width,92px) - 1px),#293328 calc(var(--daw-bar-width,92px) - 1px),#293328 var(--daw-bar-width,92px)),linear-gradient(180deg,transparent 49%,#202a20 50%,transparent 51%)}
+.daw-track-row.selected .daw-track-head{background:#1b2618}
+.daw-track-row.selected .daw-track-lane{box-shadow:inset 0 0 0 1px #9cbd61}
+.daw-track-row.is-muted .daw-track-title strong{opacity:.45}
+.daw-track-row.is-muted .daw-clip{opacity:.28}
+.daw-clip{position:absolute;top:9px;height:57px;min-width:18px;overflow:hidden;border:1px solid var(--track-color);border-radius:7px;background:color-mix(in srgb,var(--track-color) 18%,#121a12);color:#eaf1e3;text-align:left;padding:4px 6px;touch-action:pan-y;cursor:grab}
+.daw-clip:active{cursor:grabbing}
+.daw-clip strong{position:relative;z-index:1;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;font-weight:850}
+.daw-waveform{position:absolute;inset:18px 5px 4px;display:flex;align-items:center;gap:1px;opacity:.9;pointer-events:none}
+.daw-waveform i{display:block;flex:1;min-width:1px;border-radius:2px;background:var(--track-color);height:var(--wave-height,30%)}
+.daw-playhead{position:absolute;z-index:5;top:0;bottom:0;left:var(--daw-playhead,0px);width:2px;background:#f6f7e9;box-shadow:0 0 5px #f6f7e9;pointer-events:none}
+.daw-playhead:before{content:"";position:absolute;top:0;left:-4px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #f6f7e9}
+.daw-transport-bar{display:grid;grid-template-columns:66px minmax(0,1fr) 76px;align-items:center;gap:7px;padding:10px;background:linear-gradient(140deg,#1b2418,#101510);border:1px solid #37452e;border-radius:13px}
+.daw-transport-position strong{display:block;color:#f0f5e8;font:800 12px ui-monospace,monospace}
+.daw-transport-position small{display:block;margin-top:2px;color:#879580;font:9px ui-monospace,monospace}
+.daw-transport-buttons{display:flex;justify-content:center;gap:5px}
+.daw-transport-buttons button{width:34px;height:35px;border:1px solid #3b4733;border-radius:9px;background:#1b2419;color:#dfe9d5;font-size:13px;font-weight:900}
+.daw-transport-buttons .daw-play-button{background:#c5f36b;border-color:#c5f36b;color:#10160a}
+.daw-transport-buttons .daw-record-button{color:#ff666b}
+.daw-transport-buttons .daw-record-button.is-recording{background:#7d2326;color:white;border-color:#f46a6e}
+.daw-master-meter{display:grid;grid-template-columns:8px 1fr;gap:3px;align-items:center;font-size:8px;color:#93a08a}
+.daw-master-meter i{height:5px;overflow:hidden;background:#263124;border-radius:5px}
+.daw-master-meter b{display:block;height:100%;width:0;background:#c5f36b}
+.daw-mixer-panel{padding:10px;border:1px solid #30392c;border-radius:13px;background:#111611}
+.daw-section-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.daw-mixer{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.daw-mixer-strip{min-width:0;padding:7px 5px;border:1px solid #303b2d;border-radius:9px;background:#151c14;text-align:center}
+.daw-mixer-strip strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e6eedf;font-size:9px}
+.daw-mixer-strip .daw-mixer-meter{height:4px;background:#263124;border-radius:5px;margin:7px 0;overflow:hidden}
+.daw-mixer-meter span{display:block;width:0;height:100%;background:var(--track-color)}
+.daw-mixer-strip input[type=range]{display:block;width:100%;margin:6px 0;accent-color:var(--track-color)}
+.daw-mixer-pan{font-size:8px;color:#879580}
+.daw-mixer-buttons{display:flex;justify-content:center;gap:3px}
+.daw-mixer-buttons button{border:1px solid #384431;border-radius:5px;background:#1b2419;color:#a8b59e;padding:3px 5px;font-size:8px}
+.daw-mixer-buttons button.active{background:#c5f36b;color:#11160b}
+.daw-lower-panels{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.daw-collapse-panel{min-width:0;border:1px solid #30392c;border-radius:11px;background:#111611}
+.daw-collapse-panel>summary{display:flex;align-items:center;justify-content:space-between;gap:5px;list-style:none;padding:10px;font-size:10px;font-weight:800;color:#e1e9d9;cursor:pointer}
+.daw-collapse-panel>summary::-webkit-details-marker{display:none}
+.daw-collapse-panel>summary:after{content:"＋";color:#c5f36b;font-size:13px}
+.daw-collapse-panel[open]>summary:after{content:"−"}
+.daw-collapse-panel>summary span{font-size:8px;color:#899780;font-weight:600}
+#dawTrackInspector{padding:0 9px 10px}
+.daw-inspector-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.daw-inspector-grid label{display:flex;flex-direction:column;gap:4px;font-size:9px;color:#9ba792}
+.daw-inspector-grid input[type=range]{width:100%;accent-color:#c5f36b}
+.daw-export-actions{display:grid;gap:6px;padding:0 8px 8px}
+.daw-export-actions .btn{min-height:34px;padding:7px;font-size:9px}
+.daw-export-note{padding:0 9px 8px;margin:0;color:#82907a;font-size:8px;line-height:1.4}
+.daw-status{padding:9px 10px;border:1px solid #30392c;border-radius:9px;background:#101510;color:#9daa92;font-size:9px;line-height:1.5}
+.daw-status.ok{border-color:#5d783d;color:#d5eeae}
+.daw-status.warn{border-color:#75532c;color:#f2ca91}
+.daw-quick-takes{border:1px solid #30392c;border-radius:10px;padding:8px 10px;background:#111611}
+.daw-quick-takes>summary{font-size:9px;color:#b8c4af;font-weight:750}
+.daw-quick-take-row{display:flex;gap:6px;margin-top:8px}
+.daw-quick-take-row select{min-width:0;flex:1;background:#0d120e;color:#dfe8d7;border:1px solid #384431;border-radius:7px;font-size:9px}
+.daw-quick-take-row button{font-size:9px;padding:7px}
+.daw-dialog{width:min(92vw,390px);max-height:80vh;padding:0;border:1px solid #44533a;border-radius:16px;background:#121812;color:#eff3e9}
+.daw-dialog::backdrop{background:#000b;backdrop-filter:blur(3px)}
+.daw-dialog-card{padding:16px}
+.daw-dialog-title{font-size:16px;font-weight:900}
+.daw-dialog-card>p{font-size:10px;line-height:1.5;color:#9aa690}
+.daw-stem-checklist{display:grid;gap:7px;max-height:42vh;overflow:auto;padding:7px 0}
+.daw-stem-option{display:flex;align-items:center;gap:8px;border:1px solid #34402f;border-radius:8px;padding:9px;font-size:11px}
+.daw-stem-option input{accent-color:#c5f36b}
+.daw-stem-option small{margin-left:auto;color:#87937d;font-size:9px}
+.daw-dialog-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
+.daw-dialog-actions .btn{font-size:10px}
+@media(max-width:390px){
+ .studio-daw-hero{display:block}
+ .studio-mode-tabs{margin-top:10px;width:100%}
+ .studio-mode-tabs button{padding:8px 5px}
+ .daw-project-bar{grid-template-columns:minmax(0,1fr) auto auto}
+ .daw-project-name-wrap{grid-column:1/-1}
+ #dawSavedProjects{grid-column:1/-1;grid-row:2}
+ .daw-session-toolbar{gap:6px;padding:7px}
+ .daw-ruler-row,.daw-track-row{grid-template-columns:88px minmax(0,1fr)}
+ .daw-track-head{padding:6px}
+ .daw-track-actions button{padding:4px;font-size:7px}
+ .daw-transport-bar{grid-template-columns:58px minmax(0,1fr) 62px;padding:8px 6px;gap:4px}
+ .daw-transport-buttons{gap:3px}
+ .daw-transport-buttons button{width:30px;height:33px}
+ .daw-lower-panels{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.daw-clip,.daw-transport-buttons button{transition:none!important}}
