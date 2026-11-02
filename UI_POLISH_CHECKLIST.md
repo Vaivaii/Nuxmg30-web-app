@@ -3363,3 +3363,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Preserve project-relative start time / timeline alignment in every stem; do not trim leading silence by default. Include a small project/metadata file in the ZIP only if it materially helps preserve tempo, sample rate, bit depth, and export alignment; this is an implementation detail to decide.
 - Full Mix remains a separate export action that creates one combined stereo master WAV, not a ZIP of stems.
 - This is a confirmed product/design requirement only. No production export code or current Quick Record export behavior has been changed.
+
+
+## Studio Mini DAW — implementation checkpoint before CI simulation (2 November 2026)
+
+- Isolated implementation is on `feature/studio-mini-daw-4-track-mockup`; the previously verified `feature/preset-rename-save-as` baseline remains separate.
+- Studio now has Jam / Record / DAW mode panels. The Jam and Quick Record markup remains wrapped in their original Studio content; the new DAW surface is a separate section.
+- Added four project lanes (Backing, Guitar, Bass, Vocals), local IndexedDB project/media persistence, audio file import, clip selection/move/split/delete, tempo/meter/snap/loop/metronome controls, playback, gain/pan/mute/solo, Quick Record take import, USB overdub using the existing native recorder (no microphone fallback), Full Mix WAV render, selected stem WAV render and ZIP packaging.
+- Added Android SAF export bridge with chunked cache-file writes and ACTION_CREATE_DOCUMENT for WAV/ZIP delivery. Native plugin is registered by the Android generation script.
+- Fixed DAW overdub transport so the timeline clock continues even when no backing clip exists; stopping the overdub captures the elapsed timeline position.
+- Core tests cover default four-track model, project normalization, timing/snap, stem selection, filename sanitation, 24-bit WAV encoding and ZIP structure. Full Node test suite, Vite build, Capacitor generation and Gradle build are pending the CI run.
+- Important scope boundary: all application edits are Studio-only plus the Android export plugin and build registration required by Studio. No NAM, IR USER/Third Party, IR Collection, MIDI mapping, Preset, Editor, signal-chain or other tab source was intentionally changed. Existing Quick Record code was touched only to expose its existing saved-take interface to Studio.
+- Physical MG-30 USB input/output and Android File Picker behavior cannot be truthfully certified by CI alone; they still require a real device test after a successful build. Do not label hardware-dependent functions physically verified based only on simulation.

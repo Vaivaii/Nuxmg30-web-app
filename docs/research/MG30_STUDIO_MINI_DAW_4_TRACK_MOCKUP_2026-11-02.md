@@ -77,3 +77,8 @@ The user explicitly requires two separate export workflows. **Export Stems** ope
 ## Confirmed stem package format: ZIP
 
 Stem export must produce one ZIP archive containing one separate WAV file for each checked track. Use stable, clear names such as 01-Backing.wav, 02-Guitar.wav, 03-Bass.wav, and 04-Vocals.wav; omit unchecked tracks. Keep every stem aligned to the project timeline (including leading silence from project start by default) so the stems line up when imported into another DAW. Full Mix remains a separate export action that creates one combined stereo master WAV file. A small project metadata/manifest file may be included if useful for tempo, sample rate, bit depth and alignment, subject to implementation design. This ZIP choice is confirmed by the user; it does not alter the existing standalone Quick Record export.
+
+
+## Implementation and CI verification checkpoint (2 November 2026)
+
+The first implementation pass is now in the isolated feature branch. It includes the three Studio modes, four-track project state, IndexedDB media/project persistence, file import, transport/timeline, mixer, Quick Record take import, one-at-a-time overdub via the existing MG-30 USB recorder, 24-bit WAV Full Mix export, selected-track stem rendering, ZIP packaging and the Android Storage Access Framework export bridge. The DAW recording clock was corrected to advance even when no backing clip is loaded. Automated CI validation is being triggered; until the Node suite, Vite, Capacitor and Gradle all pass, this is not an installable/approved APK. Physical USB capture and Android document-picker validation remain a separate device-test gate.
