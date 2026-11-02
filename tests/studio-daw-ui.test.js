@@ -395,14 +395,14 @@ test('Jam / Record / DAW tabs remain pinned below the application header while S
 
 test('Mixer channel strips display the editable track name below the channel number', () => {
   assert.ok(daw.includes('class="daw-mixer-track-name"'));
-  assert.ok(daw.includes("'<strong class="daw-mixer-track-name">' + safeText(track.name)"));
+  assert.ok(daw.includes(`'<strong class="daw-mixer-track-name">' + safeText(track.name)`));
   assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-track-name'));
   assert.ok(css.includes('display:block!important'));
 });
 
 test('Selected Track settings exposes a persistent editable track name field', () => {
   assert.ok(daw.includes('class="daw-track-name-field"'));
-  assert.ok(daw.includes('data-track-name="' + track.id + '"'));
+  assert.ok(daw.includes(`data-track-name="' + track.id + '"`));
   assert.ok(daw.includes("addEventListener('change', (event) => {"));
   assert.ok(daw.includes('nameInput.dataset.trackName'));
   assert.ok(daw.includes('track.name = nameInput.value.trim().slice(0, 32) || track.name'));
