@@ -373,3 +373,35 @@ export async function createStoredZip(entries) {
   eocd.setUint32(16, localOffset, true);
   return new Blob([...localParts, ...centralParts, end], { type: 'application/zip' });
 }
+
+
+/**
+ * Build a compact, symmetrical DAW waveform from decoded audio samples.
+ * Peak preserves transients while RMS keeps sustained, quieter material visible.
+ */
+export function analyzeWaveformPeaks(firstChannel, secondChannel = firstChannel, count = 128) {
+  const first = firstChannel && Number.isFinite(firstChannel.length) ? firstChannel : [];
+  const second = secondChannel && Number.isFinite(secondChannel.length) ? secondChannel : first;
+  if (!first.length) return [];
+
+  const bins = Math.max(16, Math.min(256, Math.round(Number(count) || 128)));
+  const result = [];
+  for (let index = 0; index < bins; index += 1) {
+    const start = Math.floor(index * first.length / bins);
+    const end = Math.min(first.length, Math.max(start + 1, Math.floor((index + 1) * first.length / bins)));
+    let peak = 0;
+    let squareSum = 0;
+    let samples = 0;
+    for (let sample = start; sample < end; sample += 1) {
+      const left = Number(first[sample]) || 0;
+      const right = sample < second.length ? (Number(second[sample]) || 0) : left;
+      peak = Math.max(peak, Math.abs(left), Math.abs(right));
+      squareSum += (left * left + right * right) * 0.5;
+      samples += 1;
+    }
+    const rms = samples ? Math.sqrt(squareSum / samples) : 0;
+    const amplitude = Math.min(1, Math.max(peak * 0.9, rms * 1.7));
+    result.push(Math.max(3, Math.min(100, Math.round(amplitude * 100))));
+  }
+  return result;
+}
