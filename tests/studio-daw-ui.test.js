@@ -343,17 +343,17 @@ test('Jam / Record / DAW mode tabs stay sticky above the Studio page content', (
 
 test('Mixer page hides page and channel headings to maximize fader area', () => {
   assert.ok(!html.includes('DAW · MIX'));
-  assert.ok(!js.includes("'<strong>' + safeText(track.name) + '</strong>'"));
+  assert.ok(!daw.includes("'<strong>' + safeText(track.name) + '</strong>'"));
   assert.ok(css.includes('#page-studio #dawMixerPage .daw-subpage-heading{display:none!important}'));
   assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-strip>strong{display:none!important}'));
 });
 
 test('Each Mixer fader has its own 12-segment LED meter', () => {
-  assert.ok(js.includes('data-vu-track="\' + track.id + \'"'));
-  assert.ok(js.includes('data-vu-segment="\' + segment + \'"'));
-  assert.ok(js.includes('trackMeter = context.createAnalyser()') || js.includes('const trackMeter = context.createAnalyser()'));
-  assert.ok(js.includes('liveTrackNodes.set(track.id, { gain, pan, meter: trackMeter'));
-  assert.ok(js.includes('nodes.meter.getFloatTimeDomainData(samples)'));
+  assert.ok(daw.includes('data-vu-track="\' + track.id + \'"'));
+  assert.ok(daw.includes('data-vu-segment="\' + segment + \'"'));
+  assert.ok(daw.includes('trackMeter = context.createAnalyser()') || daw.includes('const trackMeter = context.createAnalyser()'));
+  assert.ok(daw.includes('liveTrackNodes.set(track.id, { gain, pan, meter: trackMeter'));
+  assert.ok(daw.includes('nodes.meter.getFloatTimeDomainData(samples)'));
   assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-vu'));
   assert.ok(css.includes('i:nth-child(n+11).active'));
 });
