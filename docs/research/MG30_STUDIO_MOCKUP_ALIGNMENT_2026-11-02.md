@@ -42,14 +42,19 @@ No source modules for NAM, IR User/Third Party, IR Collection, MIDI mapping, USB
 
 ## Test/build status
 
-- Earlier code checkpoint `ea5b46fe9bd05e4363f00b6952d5a8f011dcb47e` passed the complete GitHub Actions workflow, including protocol regression tests, Capacitor generation and Gradle debug APK build (Build #272, run ID `41424044769`). This checkpoint did **not yet** contain the later playhead auto-follow / import-history / three-dot-menu refinements.
-- Latest intended code checkpoint at time of writing: `76fd9512bec53ea29f826709d307df8cf8d367d8`. Newer runs are in progress; do not mark this checkpoint as build-approved until its own complete test + Gradle + artifact-upload workflow succeeds.
-- CI cannot verify physical MG-30 USB audio behavior or touch behavior on the user's exact Android handset. Those remain required device checks after APK installation.
+- **Final validated app source:** `3dead361ef69a652d4981002804826c6d2914716` (Build #282). The later branch-head commit `32faa8c3ab0f0245c5d844b588fcb86e2b6b92bf` adds only an explanatory JavaScript comment; it does not change executable behavior.
+- **GitHub Actions Build #282:** run ID `41425250987`, conclusion `success`: protocol regression tests, Capacitor Android generation, Gradle `assembleDebug`, and APK artifact upload all succeeded.
+- **Automated tests:** 62 passed, 0 failed, 0 skipped.
+- **Artifact:** `MG30-Studio-debug-APK`, artifact ID `13131731884`, ZIP size 4,105,289 bytes, SHA-256 `03247392c08a7afdfc4808a3c313cc96ae99c47cdb7f1969601694c038c73427`.
+- **APK:** `app-debug.apk`, 4,483,364 bytes, SHA-256 `83540a501f942b017f6b380b15879cf612b11e128b80742f7719631d51509c19`. Both the artifact ZIP and APK ZIP structure passed integrity checks.
+- The validated APK is a **debug APK**, not a production/release-signed package.
+- CI cannot verify physical MG-30 USB audio behavior or touch behavior on the user's exact Android handset. Those remain required device checks after APK installation. No claim is made that hardware verification was performed.
 
 ## Next validation steps
 
-- Confirm the latest workflow run passes the complete Node test suite and Gradle build.
-- Verify APK ZIP and APK archive integrity and record SHA-256 values.
-- Check the Studio UI in portrait mode at the same viewport dimensions as the approved mockup.
-- On the phone, test timeline horizontal drag with fixed track rail, aligned ruler/grid, draggable playhead, playhead auto-follow during playback, Mixer collapse/expand, Undo/Redo after import and clip edits, and preserve existing Jam / Quick Record USB route.
+- Install Build #282 on the target Android phone and compare the Studio portrait screen against the approved mockup.
+- Test horizontal timeline movement with the track rail fixed; confirm all bar/beat lines remain aligned across ruler and four lanes.
+- Drag the white playhead freely, start/stop playback, and confirm the timeline auto-follows during playback and long overdubs.
+- Collapse/expand Mixer; test Undo/Redo after clip import, Quick Record take import, clip edits, mute/solo and mixer changes.
+- Re-test Jam and existing USB Quick Record route on the phone and original MG-30 Gen 2 firmware 6.0.x.
 - Do not merge to `main` or change non-Studio modules without explicit user direction.
