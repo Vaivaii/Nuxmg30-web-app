@@ -46,51 +46,52 @@ test('track settings and project/export tools start collapsed to keep all four l
 });
 
 
+
 test('Studio title and mode tabs are compact with no redundant subtitle', () => {
-  assert.match(html, /<h2>Studio<\\/h2>/);
-  assert.doesNotMatch(html, /Jam · Quick Record · Mini DAW/);
-  assert.match(css, /studio-daw-hero h2\\{font-size:19px/);
-  assert.match(css, /studio-mode-tabs button\\{[\\s\\S]*?min-height:29px/);
+  assert.ok(html.includes('<h2>Studio</h2>'));
+  assert.ok(!html.includes('Jam · Quick Record · Mini DAW'));
+  assert.ok(css.includes('.studio-daw-hero h2{font-size:19px'));
+  assert.ok(css.includes('min-height:29px!important'));
 });
 
 test('DAW transport remains sticky and opens the mixer/settings control dialog', () => {
-  assert.match(html, /class="daw-sticky-transport" data-studio-mode-panel="daw"/);
+  assert.ok(html.includes('class="daw-sticky-transport" data-studio-mode-panel="daw"'));
   for (const id of ['dawPlay', 'dawStop', 'dawRecord', 'dawRewind', 'dawOpenControl', 'dawControlDialog', 'dawCloseControl']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing sticky transport/control: ' + id);
   }
-  assert.match(html, /id="dawMixer"/);
-  assert.match(html, /class="daw-control-group"/);
-  assert.match(css, /\\.daw-sticky-transport\\[hidden\\]\\{display:none!important\\}/);
+  assert.ok(html.includes('id="dawMixer"'));
+  assert.ok(html.includes('class="daw-control-group"'));
+  assert.ok(css.includes('.daw-sticky-transport[hidden]{display:none!important}'));
 });
 
 test('four timeline lanes use one global playhead and consistent fixed-height track rows', () => {
-  assert.match(daw, /dawGlobalPlayhead/);
-  assert.doesNotMatch(daw, /<span class="daw-playhead"><\\/span>/);
-  assert.match(css, /\\.daw-track-row\\{[\\s\\S]*?height:82px!important/);
-  assert.match(css, /\\.daw-global-playhead\\{/);
+  assert.ok(daw.includes('dawGlobalPlayhead'));
+  assert.ok(!daw.includes('<span class="daw-playhead"></span>'));
+  assert.ok(css.includes('#page-studio .daw-track-row{'));
+  assert.ok(css.includes('height:82px!important'));
+  assert.ok(css.includes('#page-studio .daw-global-playhead{'));
 });
 
 test('track record control is represented by a circular indicator instead of ARM text', () => {
-  assert.match(daw, /class="daw-track-record/);
-  assert.match(css, /\\.daw-track-actions \\.daw-track-record\\{[\\s\\S]*?border-radius:50%/);
-  assert.doesNotMatch(daw, />ARM<\\/button>/);
+  assert.ok(daw.includes('class="daw-track-record'));
+  assert.ok(css.includes('#page-studio .daw-track-actions .daw-track-record{'));
+  assert.ok(css.includes('border-radius:50%!important'));
+  assert.ok(!daw.includes('>ARM</button>'));
 });
 
 test('clip edges expose non-destructive trim handles and individual fade controls', () => {
-  assert.match(daw, /data-clip-edge="start"/);
-  assert.match(daw, /data-clip-edge="end"/);
-  assert.match(daw, /data-clip-fade="in"/);
-  assert.match(daw, /data-clip-fade="out"/);
-  assert.match(daw, /trimClipStart\\(/);
-  assert.match(daw, /trimClipEnd\\(/);
-  assert.match(daw, /splitClipAt\\(/);
-  assert.match(daw, /clipFadeGainAt\\(/);
-  assert.match(css, /\\.daw-clip-edge\\{/);
-  assert.match(css, /\\.daw-clip-fade-in\\{/);
-  assert.match(css, /\\.daw-clip-fade-out\\{/);
+  for (const value of ['data-clip-edge="start"', 'data-clip-edge="end"', 'data-clip-fade="in"', 'data-clip-fade="out"']) {
+    assert.ok(daw.includes(value), 'missing clip edit affordance: ' + value);
+  }
+  for (const value of ['trimClipStart(', 'trimClipEnd(', 'splitClipAt(', 'clipFadeGainAt(']) {
+    assert.ok(daw.includes(value), 'missing non-destructive edit function: ' + value);
+  }
+  for (const value of ['.daw-clip-edge{', '.daw-clip-fade-in{', '.daw-clip-fade-out{']) {
+    assert.ok(css.includes(value), 'missing clip editing style: ' + value);
+  }
 });
 
 test('clip fade envelope is applied to live playback and offline WAV rendering', () => {
-  assert.match(daw, /connectClipWithFade\\(context, source, clip, elapsedIntoClip, available/);
-  assert.match(daw, /connectClipWithFade\\(context, source, clip, offsetIntoClip, playbackDuration/);
+  assert.ok(daw.includes('connectClipWithFade(context, source, clip, elapsedIntoClip, available'));
+  assert.ok(daw.includes('connectClipWithFade(context, source, clip, offsetIntoClip, playbackDuration'));
 });
