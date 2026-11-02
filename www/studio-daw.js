@@ -370,6 +370,7 @@ function renderMixer() {
     const vuSegments = Array.from({ length: 12 }, (_, segment) => '<i data-vu-segment="' + segment + '"></i>').join('');
     return '<div class="daw-mixer-strip" style="--track-color:' + track.color + '" aria-label="' + safeText(track.name) + ' channel">' +
       '<span class="daw-mixer-index" aria-label="' + safeText(track.name) + ' channel ' + (index + 1) + '">' + (index + 1) + '</span>' +
+      '<strong class="daw-mixer-track-name">' + safeText(track.name) + '</strong>' +
       '<div class="daw-mixer-pan-row"><span>L</span><div class="daw-pan-dial" style="--pan-angle:' + panAngle + 'deg"><i></i><input type="range" min="-100" max="100" step="1" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '" aria-label="' + safeText(track.name) + ' pan"></div><span>R</span></div>' +
       '<div class="daw-mixer-pan-readout" data-pan-readout="' + track.id + '">' + panLabel + '</div>' +
       '<div class="daw-mixer-control-row">' +
@@ -396,6 +397,7 @@ function renderInspector() {
       '<div><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
     : '<p class="daw-inspector-note">Select a clip to trim its edges, split it, or set individual fades.</p>';
   holder.innerHTML =
+    '<label class="daw-track-name-field">Track name<input type="text" maxlength="32" value="' + safeText(track.name) + '" data-track-name="' + track.id + '" aria-label="Rename ' + safeText(track.name) + '" autocomplete="off"></label>' +
     '<div class="daw-inspector-grid">' +
       '<label>Track level <strong data-gain-readout="' + track.id + '">' + Math.round(track.gain * 100) + '%</strong><input type="range" min="0" max="150" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '"></label>' +
       '<label>Pan <strong data-pan-readout="' + track.id + '">' + Math.round(track.pan * 100) + '</strong><input type="range" min="-100" max="100" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '"></label>' +
@@ -1302,6 +1304,38 @@ function updateProjectField(field, value) {
   scheduleProjectSave();
 }
 
+function syncStudioPinnedControls() {
+  const dock = $('dawStudioDock');
+  const studio = $('page-studio');
+  const appNav = document.querySelector('.nav');
+  const appHeader = document.querySelector('.top');
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+  if (dock && appNav && viewportHeight > 0) {
+    const navRect = appNav.getBoundingClientRect();
+    const navIsAtBottom = navRect.height > 0 && navRect.top > viewportHeight * 0.58 && navRect.top < viewportHeight;
+    const dockBottom = navIsAtBottom
+      ? Math.ceil(viewportHeight - navRect.top + 8)
+      : Math.max(96, Math.ceil((appNav.offsetHeight || 64) + 28));
+    dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px');
+
+    const appRect = $('page-studio')?.getBoundingClientRect();
+    if (appRect && appRect.width > 0) {
+      const dockWidth = Math.max(280, Math.min(1172, appRect.width - 24));
+      dock.style.setProperty('--studio-dock-width', dockWidth + 'px');
+      dock.style.setProperty('--studio-dock-left', (appRect.left + appRect.width / 2) + 'px');
+    }
+  }
+
+  if (studio && appHeader) {
+    const headerRect = appHeader.getBoundingClientRect();
+    const modeTabsTop = headerRect.height > 0
+      ? Math.max(0, Math.ceil(headerRect.bottom + 8))
+      : 8;
+    studio.style.setProperty('--studio-mode-tabs-top', modeTabsTop + 'px');
+  }
+}
+
 function setDawPage(page) {
   const selected = ['timeline', 'mixer', 'track-settings'].includes(page) ? page : 'timeline';
   selectedDawPage = selected;
@@ -1319,6 +1353,7 @@ function setDawPage(page) {
     button.tabIndex = active ? 0 : -1;
   });
   try { localStorage.setItem('mg30-studio-daw-page', selected); } catch (_) {}
+  syncStudioPinnedControls();
   if (selected === 'mixer') renderMixer();
   if (selected === 'track-settings') {
     renderInspector();
@@ -1343,6 +1378,7 @@ function setStudioMode(mode) {
     panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'flex' : 'block') : 'none', 'important');
   });
   try { localStorage.setItem('mg30-studio-last-mode', selected); } catch (_) {}
+  syncStudioPinnedControls();
   if (selected === 'daw') {
     renderPlayhead();
     refreshQuickTakes();
@@ -1353,6 +1389,8 @@ function setStudioMode(mode) {
 }
 
 function bindEvents() {
+  syncStudioPinnedControls();
+  window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
     button.addEventListener('click', () => setStudioMode(button.dataset.studioMode));
   });
@@ -1394,6 +1432,18 @@ function bindEvents() {
     if (gain) updateTrackMix(gain.dataset.trackGain, 'gain', gain.value);
     const pan = event.target.closest('[data-track-pan]');
     if (pan) updateTrackMix(pan.dataset.trackPan, 'pan', pan.value);
+  });
+  $('dawTrackInspector')?.addEventListener('change', (event) => {
+    const nameInput = event.target.closest('[data-track-name]');
+    if (!nameInput) return;
+    const track = getTrack(nameInput.dataset.trackName);
+    if (!track) return;
+    track.name = nameInput.value.trim().slice(0, 32) || track.name;
+    nameInput.value = track.name;
+    if ($('dawSelectedTrackLabel')) $('dawSelectedTrackLabel').textContent = track.name + ' selected';
+    renderTrackRows();
+    renderMixer();
+    scheduleProjectSave();
   });
   $('dawTrackInspector')?.addEventListener('click', (event) => {
     const action = event.target.closest('[data-clip-action]')?.dataset.clipAction;
