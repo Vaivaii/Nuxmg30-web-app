@@ -460,3 +460,31 @@ test('Build 316: channel track names are visible and remain separate from the fa
   assert.ok(css.includes('display:block!important'));
   assert.ok(css.includes('grid-template-rows:24px 18px 40px 12px minmax(150px,1fr) 31px!important'));
 });
+
+
+test('Build 321: imported clip waveform is a real SVG peak envelope, not a decorative fallback', () => {
+  assert.ok(daw.includes('analyzeWaveformPeaks'));
+  assert.ok(daw.includes('function waveformMarkup(waveform)'));
+  assert.ok(daw.includes('class="daw-waveform-peaks"'));
+  assert.ok(daw.includes('<rect x="'));
+  assert.ok(!daw.includes('18 + ((index * 19) % 62)'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-waveform-peaks'));
+});
+
+test('Build 321: previously saved clips rebuild missing or old waveform data from IndexedDB audio', () => {
+  assert.ok(daw.includes('const buffer = await decodeBlob(media.blob)'));
+  assert.ok(daw.includes('clip.waveform.length !== 128'));
+  assert.ok(daw.includes('clip.waveform = analyzeWaveform(buffer, 128)'));
+  assert.ok(daw.includes('if (waveformUpdated)'));
+  assert.ok(daw.includes('await saveProject(false)'));
+});
+
+test('Build 321: Mixer fader is centered independently of the right-side VU meter', () => {
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-control-row{'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-fader-wrap{'));
+  assert.ok(css.includes('left:50%!important'));
+  assert.ok(css.includes('transform:translateX(-50%)!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-vu{'));
+  assert.ok(css.includes('right:1px!important'));
+});
