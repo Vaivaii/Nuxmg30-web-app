@@ -274,7 +274,7 @@ function initPresetLibraryUI() {
     opsStatus.hidden = !message;
     opsStatus.classList.toggle("is-error", kind === "error");
     opsStatus.classList.toggle("is-success", kind === "success");
-    if (message) scanStatus.textContent = message;
+    if (message && scanStatus) scanStatus.textContent = message;
   }
 
   function storeSlotBackup(program, parts, operation, sourceProgram = null) {
@@ -347,8 +347,7 @@ function initPresetLibraryUI() {
     if (!bridge?.isConnected?.()) throw new Error("Hubungkan NUX MG-30 melalui USB-MIDI terlebih dahulu.");
     if (typeof window.readActiveProgramScene !== "function" ||
         typeof window.readPresetParts !== "function" ||
-        typeof window.writeHardwarePreset !== "function" ||
-        typeof window.setBitSlot !== "function") {
+        typeof window.writeHardwarePreset !== "function") {
       throw new Error("Jalur baca/tulis preset Gen2 yang ada tidak tersedia. Tidak ada data yang dikirim.");
     }
     if (activeDeviceOperation() || operationBusy) {
@@ -423,6 +422,7 @@ function initPresetLibraryUI() {
         showOperationStatus("Rename dibatalkan. Tidak ada perintah tulis yang dikirim.");
         return;
       }
+      await readActiveSourceProgram(program);
       storeSlotBackup(program, stored, "rename", program);
       const updated = renameMG30PresetParts(stored, name);
       const verified = await window.writeHardwarePreset(program, updated);
@@ -478,6 +478,7 @@ function initPresetLibraryUI() {
         showOperationStatus("Save As dibatalkan. Tidak ada perintah tulis yang dikirim.");
         return;
       }
+      await readActiveSourceProgram(sourceProgram);
       storeSlotBackup(destinationProgram, destinationParts, "save-as-overwrite", sourceProgram);
 
       const chainOrder = [...document.querySelectorAll("#chain > .block[data-i]")]
