@@ -39,20 +39,22 @@ test('mobile DAW toolbar wraps into a tidy two-row grid instead of clipping Snap
   assert.ok(css.includes('daw-session-toolbar label:nth-child(5)'));
 });
 
-test('track settings and project/export tools start collapsed to keep all four lanes in view', () => {
-  assert.match(html, /<details class="daw-collapse-panel"><summary>Track settings/);
-  assert.match(html, /<details class="daw-collapse-panel"><summary>Project &amp; export/);
+test('track settings and project/export tools are collapsed below the visible mixer', () => {
+  assert.match(html, /<details class="daw-bottom-disclosure daw-track-settings-disclosure">/);
+  assert.match(html, /<details class="daw-bottom-disclosure daw-project-disclosure">/);
   assert.match(html, /class="daw-quick-takes"/);
+  assert.match(html, /id="dawProjectName"/);
 });
 
 
 
-test('Studio title and mode tabs are compact with no redundant subtitle', () => {
-  assert.ok(html.includes('<h2>Studio</h2>'));
+test('Studio title and three mode tabs follow the approved mockup hierarchy', () => {
+  assert.ok(html.includes('<h2>Jamm &amp; Record</h2>'));
+  assert.ok(html.includes('Mini DAW – 4 Track'));
   assert.ok(!html.includes('Jam · Quick Record · Mini DAW'));
   assert.ok(css.includes('#page-studio .studio-daw-hero h2{'));
-  assert.ok(css.includes('font-size:19px!important'));
-  assert.ok(css.includes('min-height:29px!important'));
+  assert.ok(css.includes('grid-template-columns:repeat(3,minmax(0,1fr))'));
+  assert.ok(css.includes('min-height:42px!important'));
 });
 
 test('Studio transport sits below the timeline and mixer is inline/collapsible', () => {
@@ -64,12 +66,13 @@ test('Studio transport sits below the timeline and mixer is inline/collapsible',
   assert.ok(css.includes('#page-studio .daw-mixer-disclosure:not([open]) .daw-disclosure-chevron'));
 });
 
-test('four timeline lanes use one global playhead and consistent fixed-height track rows', () => {
+test('four timeline lanes share one global playhead and uniform lane heights', () => {
   assert.ok(daw.includes('dawGlobalPlayhead'));
   assert.ok(!daw.includes('<span class="daw-playhead"></span>'));
   assert.ok(css.includes('#page-studio .daw-track-row{'));
-  assert.ok(css.includes('height:82px!important'));
+  assert.ok(css.includes('height:76px!important'));
   assert.ok(css.includes('#page-studio .daw-global-playhead{'));
+  assert.ok(css.includes('width:var(--daw-timeline-width,736px)!important'));
 });
 
 test('track record control is represented by a circular indicator instead of ARM text', () => {
