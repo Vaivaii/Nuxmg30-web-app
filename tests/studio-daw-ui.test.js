@@ -254,3 +254,26 @@ test('fixed track rail starts exactly below the ruler without a vertical offset'
   assert.ok(css.includes('row-gap:0!important'));
   assert.ok(css.includes('grid-template-rows:repeat(4,38px)!important'));
 });
+
+
+test('playhead visual position is driven by the live playhead coordinate', () => {
+  assert.ok(daw.includes("playhead.style.setProperty('--daw-playhead-x', left + 'px')"));
+  assert.ok(css.includes('left:var(--daw-playhead-x,0px)!important'));
+  assert.ok(daw.includes('followPlayheadDuringPlayback();'));
+});
+
+test('playhead drag converts screen coordinates through the shared scroller offset', () => {
+  assert.ok(daw.includes("const scroller = $('dawTimelineScroll')"));
+  assert.ok(daw.includes('const contentX = viewportX + scroller.scrollLeft;'));
+  assert.ok(daw.includes("playheadDragPointerId = event.pointerId"));
+  assert.ok(css.includes('width:32px!important'));
+  assert.ok(css.includes('pointer-events:auto!important'));
+  assert.ok(css.includes('touch-action:none!important'));
+});
+
+test('Studio dock is fixed to the lower viewport and removed from normal timeline flow', () => {
+  assert.ok(css.includes('position:fixed!important'));
+  assert.ok(css.includes('left:50%!important'));
+  assert.ok(css.includes('bottom:calc(50px + env(safe-area-inset-bottom,0px))!important'));
+  assert.ok(css.includes('width:min(calc(100vw - 20px),1172px)!important'));
+});
