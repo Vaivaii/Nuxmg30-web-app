@@ -3221,3 +3221,20 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Build approval received: user replied **“Sekarang”** on 2026-11-02.
 - Added `feature/preset-rename-save-as` to the existing `.github/workflows/build-apk.yml` branch allowlist so the user's approved push can run the normal protocol tests, Capacitor Android generation, Gradle debug APK build and artifact upload. Workflow change commit: `34445a918ca07a71f6f89250dd026cdc3a2ce4a3`.
 - The workflow path filter includes `.github/workflows/build-apk.yml`; the push of the workflow change triggers the approved build. The build result and artifact will be recorded after the run is inspected.
+
+## Build verification — Preset Rename & Save As Build #249 (2026-11-02)
+
+- User approved **Build sekarang**.
+- GitHub Actions run: [#249 / 41387125375](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41387125375) — **success**.
+- Build source commit: `34445a918ca07a71f6f89250dd026cdc3a2ce4a3` on `feature/preset-rename-save-as`. The branch was subsequently advanced only by documentation/checklist commits; no application source changed after this build source commit.
+- Repository test output: **29 tests, 29 passed, 0 failed**.
+- Vite production build: completed as part of Capacitor generation.
+- Capacitor Android generation: success.
+- Gradle debug APK: `BUILD SUCCESSFUL`, 183 actionable tasks executed.
+- Artifact ID: `13116156136`; artifact ZIP size **4,066,594 bytes**; ZIP SHA-256 `038742c4a92fa5234436cefe7745dcbb39414352c7ba2025e883538a5de1e7e3`.
+- Extracted APK: `MG30_Studio_Build249.apk`, size **4,444,032 bytes**; APK SHA-256 `ebcef8e69ea9c4d2c1daab886b76b86c7ece13b266e4e0ae4f0a56348b6b464d`.
+- Artifact inspection: ZIP and APK integrity tests passed. Compiled APK assets contain the Rename dialog, Save As action, raw slot-backup key, verified success status and name-changed event strings. These checks confirm code packaging, not physical pedal transfer.
+- Direct APK was extracted and copied to `/mnt/data/MG30_Studio_Build249.apk` for delivery.
+- Workflow update commit `34445a918ca07a71f6f89250dd026cdc3a2ce4a3` added the feature branch to the build workflow allowlist. Checklist update commit `a5dba263b3332213e2baae6dad2bbde67fefd98c` was added while build was running and contains documentation only.
+- Physical device/hardware tests are still pending. On original MG-30 Gen2 FW 6.0.x, test Rename on a disposable preset; test Save As to a disposable/empty slot; cancel overwrite and confirm no write frames; then perform overwrite on a disposable slot and inspect readback. Confirm Editor, USB-MIDI, NAM, IR User/Third Party, Collection and MIDI mappings remain functional.
+- Build does **not** mean physical hardware validation. Do not claim Rename/Save As has been verified on the pedal until the user confirms those tests.
