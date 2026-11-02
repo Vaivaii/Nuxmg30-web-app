@@ -152,3 +152,11 @@ Build #251 is the first successful Android debug package after the Preset Librar
 - CI Build #260: `npm test` passed; Capacitor Android generation passed; Gradle `assembleDebug` passed; artifact upload passed. Run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41393237044
 - Artifact ID `13117969550`, ZIP SHA-256 `4dab62e9a67b8364006a2d2a058c9995f6d5bd8640d1baf49b408a70b3be55d2`; extracted APK SHA-256 `21e641c7b733aa2676eff04bbf28ca6c97bc83ad01d9869181219b2e0f6f9f8d`. ZIP and APK integrity checks passed. Packaged JS/CSS inspected for title, English status strings, and hidden status/notice CSS.
 - Temporary branch push trigger removed after the build; workflow returned to its original restricted branch allowlist. Physical phone/pedal validation remains pending; CI success is not a substitute for testing the IR sync toast, CTRL footer, NAM, USB-MIDI, and existing MIDI mappings on hardware.
+
+
+## Screenshot-driven English UI correction — Build #261 candidate (2 November 2026)
+
+- User screenshots after Build #260 exposed four untranslated items: the Android USB-MIDI no-device error toast, the YouTube search placeholder, the signal-chain chip count (“12 blok”), and the drag handle (“GESER”). The signal-chain reorder helper also remained Indonesian when toggling reorder mode.
+- Corrected the source strings directly: OTG failure prefix and native bridge errors are English; YouTube placeholder reads “Search for a song or artist…”; signal-chain count reads “12 blocks”; drag handle reads “MOVE”; initial/reorder helper and accessibility labels are English.
+- Changes are presentation/error wording only. The signal-chain order algorithm, gesture handling, USB-MIDI device selection, SysEx framing, connection bridge behavior, NAM, USER IR / Third Party, IR Collection, and MIDI mappings are unchanged.
+- Added a focused regression test for the exact screenshot strings. CI/APK verification is pending.

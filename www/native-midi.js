@@ -111,7 +111,7 @@ if (Capacitor.isNativePlatform()) {
     state: 'disconnected',
     type: 'output',
     send(data) {
-      if (!connected) return Promise.reject(new Error('USB-MIDI belum tersambung.'));
+      if (!connected) return Promise.reject(new Error('USB-MIDI is not connected.'));
       const bytes = Array.from(data || [], value => Number(value) & 0xFF);
       if (!bytes.length) return Promise.resolve();
       return NativeMidi.send({ data: bytes });
@@ -152,8 +152,8 @@ if (Capacitor.isNativePlatform()) {
       if (!selected) {
         const labels = candidates.map(device => String(device.name || device.product || 'MIDI device') + ' (ID ' + device.id + ')');
         throw new Error(labels.length
-          ? 'Perangkat USB-MIDI cocok tidak terpilih. Terlihat: ' + labels.join(', ')
-          : 'Android belum melihat perangkat USB-MIDI. Periksa kabel data dan adaptor OTG.');
+          ? 'No matching USB-MIDI device is selected. Detected: ' + labels.join(', ')
+          : 'Android cannot detect the USB-MIDI device. Check the data cable and OTG adapter.');
       }
       const opened = await NativeMidi.connect({ deviceId: Number(selected.id) });
       notifyConnection(true, opened?.name || selected.name || selected.product || 'NUX MG-30');
