@@ -138,6 +138,6 @@ Build #251 is the first successful Android debug package after the Preset Librar
 - CTRL/EXP: hid the redundant unknown-parameter warning without unlocking the unsupported parameter selector; added CSS `[hidden]` enforcement to keep the panel footer buttons visible.
 - Studio title: **Jamm & Record**. Document language is `en`; existing English UI translation observer continues handling dynamically generated text.
 - No NAM, IR transfer protocol, USB-MIDI, MIDI mapping, preset transfer, or signal-chain behavior was changed.
-- CI: 29 tests not inferred from this run summary; the workflow's `npm test` step completed successfully, followed by Vite, Capacitor, Gradle `assembleDebug`, and artifact upload.
+- CI: `npm test` **29/29 passed, 0 failed**; Vite production build passed (734 ms), Capacitor Android generation passed, Gradle `assembleDebug` passed (`BUILD SUCCESSFUL`), and artifact upload passed.
 - Artifact ID `13117558434`; ZIP SHA-256 `7a5b9421533aa2c64c5edd658e2d894cd3a2e99a8f708cde48bd176e60d57436`; extracted APK SHA-256 `7763322c219a25ea526343e7ad76a66789616bfd874023b7d093e3fef6e56d92`.
 - Physical device and pedal validation remains pending; CI success does not establish hardware behavior.
