@@ -3419,3 +3419,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 
 
 - Build #266: Studio sticky transport/control drawer and non-destructive clip editing. CI run 41414735083: 53/53 tests passed, Capacitor generation and Gradle APK build succeeded. APK SHA-256: 8c7bacfea829027edced2fe9bf9939560a964b8e246c2879a6cd06bb95272e4d. Device-level MG-30 USB/audio and phone UI verification remains pending.
+
+
+## Studio Timeline / Track Settings / English UI — Build #331 passed (2 November 2026)
+
+- User feedback from three Studio screenshots: remove the white playhead arrow artifact; retain readable bar numbers; remove the horizontal separator in the empty ruler spacer above the track-name rail; round the left rail/header corners to match the track-name column; increase vertical spacing between the track-name field and Track Level / Pan controls; remove the decorative Project Settings glyph.
+- Studio Jam, Record and DAW visible copy and the related recording/backing/YouTube runtime messages were translated to English. The recording rename dialog and remaining rename error message were also translated.
+- Build #330 was rejected because a new English-copy regression test correctly found one remaining Indonesian recording-rename message. That message was fixed before Build #331; do not use or distribute the failed Build #330.
+- Authoritative Build #331: run ID `41477391409`, source commit `7eed185216ca48a76f838c9bbe30a810fed3bbd6`, conclusion **success**. URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41477391409
+- `npm test`: **115/115 passed, 0 failed**. Capacitor Android generation/plugin registration passed. Gradle `assembleDebug` passed (`BUILD SUCCESSFUL`). APK artifact upload passed.
+- Artifact ID `13158296289`, name `MG30-Studio-debug-APK`, ZIP size **4,115,883 bytes**. Downloaded ZIP SHA-256: `1bf1f9df82226e2d3c55048a405ff93cf877ce04b0446ff295058e4cd7151fac`.
+- Extracted `app-debug.apk` size **4,493,348 bytes**, SHA-256: `87f47c1d60475f2a3fde1165e63f534607f15e71fce21aadee7d4320c90675c2`. ZIP integrity test passed; packaged HTML inspection confirms the Studio English labels and removal of the Project Settings glyph.
+- **Language scope note:** Build #331 makes the Studio Jam / Record / DAW UI English. Other app areas (Editor, NAM / IR, Presets, Device and Backup) still contain Indonesian UI text; the app-wide English-only requirement is not yet complete and should be handled as a separate localization pass without changing protocol behavior.
+- **Validation boundary:** Build #331 is a successful debug APK and CI/package validation. Visual alignment, touch targets, MG-30 USB audio behavior and device-specific rendering still need verification on the user's Android phone with the original MG-30 Gen 2 firmware 6.0.x.
+- Protected features remain out of scope: NAM import/transfer, IR User / Third Party, IR Collection, MIDI mapping, preset transfer, Signal Chain and native USB audio recording logic were not modified in this UI pass.
