@@ -59,7 +59,6 @@
     "Sinkronisasi gagal":"Sync failed",
     "Sinkronisasi dua putaran selesai: ":"Two-pass sync complete: ",
     "slot stabil":"stable slots",
-    "kosong":"empty",
     "gagal/tidak stabil":"failed/unstable",
     "Sinkronisasi Collection gagal: ":"Collection sync failed: ",
     "Import dibatalkan. Tidak ada data IR dikirim.":"Import canceled. No IR data was sent.",
@@ -102,7 +101,7 @@
     "Data byte WAV tidak valid.":"Invalid WAV byte data.",
     "Nama IR kosong.":"IR name is empty.",
     "Clock & Recording":"Jamm & Record",
-    "Jam & Record":"Jamm & Record",
+    "Jam & Record":"Jamm & Record"
     "Putar":"Play",
     "Ganti nama":"Rename",
     "Ekspor":"Export",
@@ -122,8 +121,6 @@
     "Tidak cocok":"Does not match",
     "tidak berhasil":"did not succeed",
     "Tidak berhasil":"Did not succeed",
-    "gagal":"failed",
-    "Gagal":"Failed",
     "Membaca…":"Reading…",
     "mengirim":"sending",
     "Mengirim":"Sending",
@@ -137,15 +134,8 @@
     "Dihapus":"Deleted",
     "dibatalkan":"canceled",
     "Dibatalkan":"Canceled",
-    "berhasil":"successful",
-    "Berhasil":"Successful",
     "kosong":"empty",
-    "Kosong":"Empty",
-    "pilih":"select",
-    "Pilih":"Select",
     "File dipilih":"File selected",
-    "Nama":"Name",
-    "Status":"Status"
   });"Belum sinkron":"Not synced","belum sinkron":"not synced","Belum terhubung":"Not connected","belum terhubung":"not connected","Belum tersambung":"Not connected","belum tersambung":"not connected","Belum dibaca":"Not read","belum dibaca":"not read","Belum tersedia":"Not available","belum tersedia":"not available","tidak tersedia":"not available","Tidak tersedia":"Not available","tidak didukung":"not supported","Tidak didukung":"Not supported","tidak valid":"invalid","Tidak valid":"Invalid","tidak ditemukan":"not found","Tidak ditemukan":"Not found","tidak cocok":"does not match","Tidak cocok":"Does not match","tidak dapat":"cannot","Tidak dapat":"Cannot","tidak bisa":"cannot","Tidak bisa":"Cannot","gagal membaca":"failed to read","Gagal membaca":"Failed to read","gagal menyimpan":"failed to save","Gagal menyimpan":"Failed to save","gagal mengirim":"failed to send","Gagal mengirim":"Failed to send","gagal menyinkronkan":"failed to sync","Gagal menyinkronkan":"Failed to sync","Hubungkan MG-30":"Connect the MG-30","hubungkan MG-30":"connect the MG-30","Slot tujuan":"Target slot","slot tujuan":"target slot","terlebih dahulu":"first","secara lokal":"locally","Kesalahan tidak diketahui":"Unknown error"," tidak ada data yang dikirim.":" no data was sent."," tidak ada penulisan yang dimulai.":" no write operation was started.","Belum terverifikasi":"Not verified","belum terverifikasi":"not verified","tidak ada balasan":"no response","Tidak ada balasan":"No response","tidak ada data":"no data","Tidak ada data":"No data","tidak ada file":"no file","Tidak ada file":"No file","tidak ada slot":"no slot","Tidak ada slot":"No slot","gagal dipasang":"failed to install","belum siap":"not ready","belum aktif":"not active","belum disimpan":"not saved","belum terkirim":"not sent","belum diterima":"not received","tidak terkirim":"not sent","tidak merespons":"did not respond","tidak merespon":"did not respond","tidak dibaca":"not read","tidak dipilih":"not selected","tidak lengkap":"incomplete","putaran ":"pass ","Putaran ":"Pass ","di MG-30":"on the MG-30","ke MG-30":"to the MG-30","ke Third Party / User":"to Third Party / User","ke preset ":"to preset ","periksa perangkat":"check the device","Periksa perangkat":"Check the device","pastikan ":"make sure ","Pastikan ":"Make sure ","tidak ada penulisan":"no write operation","tidak ada data yang dikirim":"no data was sent","dikirim ke Third Party / User":"sent to Third Party / User","melalui jalur User yang sudah teruji":"via the verified User path","Nama cabinet disinkronkan ke ":"Cabinet name synced to ","Transfer selesai: ":"Transfer complete: ","frame tulis mendapat ACK dan nama slot cocok pada dua putaran readback. ":"write frames received ACKs and the slot name matched across two readback passes. ","jika proses sudah mulai menulis":"if writing has already started","periksa perangkat sebelum mengulang":"check the device before retrying","nama/metadata NAM slot ":"NAM slot name/metadata ","nama slot berhasil diverifikasi":"slot name was verified successfully","Nama slot berhasil diverifikasi":"Slot name was verified successfully","sebelum melanjutkan":"before continuing","sebelum transfer":"before transferring","setelah memilih tone":"after selecting a tone","IR Collection gagal dimuat: ":"Failed to load IR Collection: ","Pembuat: ":"Creator: ","Arsitektur: ":"Architecture: ","Ukuran: ":"Size: ","tidak ada data yang ditulis":"no data was written","tidak ada penulisan yang dimulai":"no write operation was started","jangan tutup aplikasi":"do not close the app","Jangan cabut USB OTG":"Do not disconnect USB OTG","belum ada file":"no file","Impor ":"Import "," disimpan lokal.":" saved locally.","setelah konfirmasi":"after confirmation"," dari MG-30 dan simpan sebagai file .mg30patch?":" from the MG-30 and save it as a .mg30patch file?","QuickTone-compatible export akan membaca tiga scene, nama resource User IR, 2.048 sampel waveform, dan 600 nilai kurva. Operasi ini hanya membaca; tidak ada data yang ditulis ke pedal.":"QuickTone-compatible export reads three scenes, the User IR resource name, 2,048 waveform samples, and 600 curve values. This operation is read-only; no data is written to the pedal.","Cadangkan dahulu atau gunakan slot uji.":"Back it up first or use a test slot.","File ":"File ","import melalui MG30 Studio":"imports through MG30 Studio"," /24 slot stabil · membaca…":" /24 slots stable · reading…"," IR di perangkat · 24/24 slot stabil":" IRs on device · 24/24 slots stable","/24 slot dibaca":"/24 slots read","slot stabil":"slots stable","Slot ini memiliki salinan WAV yang dikelola aplikasi.":"This slot has a WAV copy managed by the app.","Mengimpor akan mengganti isi slot tersebut pada perangkat.":"Importing will replace this slot's contents on the device."," Periksa slot Third Party/User pada perangkat.":" Check the Third Party/User slot on the device."," dikirim ke Third Party / User. Nama cabinet disinkronkan. Periksa suara IR pada perangkat.":" sent to Third Party / User. The cabinet name was synced. Check the IR sound on the device."}).sort((a,b)=>b[0].length-a[0].length);
   const attributes = ['aria-label','title','placeholder','alt'];
   function translate(value) {
