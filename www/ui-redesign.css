@@ -2455,7 +2455,7 @@ dialog[open]{animation:mg30-dialog-enter .19s cubic-bezier(.2,.75,.25,1) both}
 dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
 
 /* Menus, popovers and disclosure contents. No height/layout interpolation. */
-.app .scene-copy-menu:not([hidden]),
+.scene-copy-menu:not([hidden]),
 .app .preset-jump-menu:not(.hidden),
 .app [role="menu"]:not([hidden]),
 .app details[open]>.daw-history-tools,

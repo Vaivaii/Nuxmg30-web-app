@@ -28,7 +28,7 @@ test('all native popup dialogs get a lightweight entrance and backdrop fade', ()
 
 test('menus, controls, cards and toast have bounded micro-interactions', () => {
   assert.ok(css.includes('@keyframes mg30-popup-enter'));
-  assert.ok(css.includes('.app .scene-copy-menu:not([hidden])'));
+  assert.ok(css.includes('.scene-copy-menu:not([hidden])'));
   assert.ok(css.includes('.app .preset-jump-menu:not(.hidden)'));
   assert.ok(css.includes('.app button:not(:disabled):not(.daw-playhead-hit):active'));
   assert.ok(css.includes('.app input:not([type="range"])'));
