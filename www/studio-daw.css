@@ -2201,3 +2201,262 @@
     font-size:8px!important;
   }
 }
+
+
+/* -------------------------------------------------------------------------
+   Build #316 correction: fixed dock aligned to app nav, Studio mode tabs pinned
+   to the Studio scroll region, and a six-row Mixer channel layout.
+   ------------------------------------------------------------------------- */
+
+/* Header above Studio is outside the page's scroll region. The Studio hero
+   scrolls normally; only the mode selector sticks to the top of page-studio. */
+#page-studio>.studio-page-hero.studio-daw-hero{
+  position:relative!important;
+  top:auto!important;
+  z-index:auto!important;
+  isolation:auto!important;
+}
+#page-studio>.studio-mode-tabs{
+  position:sticky!important;
+  top:0!important;
+  z-index:205!important;
+  margin:0 0 10px!important;
+  transform:none!important;
+  background:rgba(12,18,17,.985)!important;
+  box-shadow:0 7px 14px #0007!important;
+  isolation:isolate!important;
+}
+
+/* The dock uses viewport width, not a possibly clipped/scrolled page rectangle.
+   Its lower edge is aligned dynamically 8px above the fixed main nav. */
+#page-studio #dawStudioDock{
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  width:min(calc(100vw - 20px),1172px)!important;
+  max-width:1172px!important;
+  bottom:var(--studio-dock-bottom,calc(88px + env(safe-area-inset-bottom,0px)))!important;
+  margin:0!important;
+  padding:5px!important;
+  transform:translateX(-50%)!important;
+  box-sizing:border-box!important;
+  z-index:180!important;
+}
+#page-studio #dawStudioDock .daw-transport-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(112px,32%)!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:42px!important;
+  padding:2px!important;
+  gap:7px!important;
+  box-sizing:border-box!important;
+}
+#page-studio #dawStudioDock .daw-transport-buttons{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:5px!important;
+}
+#page-studio #dawStudioDock .daw-transport-buttons button{
+  width:100%!important;
+  min-width:0!important;
+  height:36px!important;
+  min-height:36px!important;
+  max-height:36px!important;
+}
+#page-studio #dawStudioDock .daw-master-meter{
+  width:100%!important;
+  min-width:0!important;
+}
+#page-studio #dawStudioDock .daw-subnav{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:4px!important;
+}
+
+/* Mixer markup has six direct children per channel: index, name, pan,
+   pan readout, fader+VU row, and M/S row. Give each an explicit grid row. */
+#page-studio #dawMixerPage{
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  width:100%!important;
+  height:clamp(360px,calc(100dvh - 410px),720px)!important;
+  min-height:360px!important;
+  max-height:calc(100dvh - 340px)!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+#page-studio #dawMixerPage #dawMixer{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  grid-auto-rows:minmax(0,1fr)!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  overflow:hidden!important;
+  gap:5px!important;
+  padding:5px 3px!important;
+  box-sizing:border-box!important;
+}
+#page-studio #dawMixerPage .daw-mixer-strip{
+  display:grid!important;
+  grid-template-rows:24px 18px 40px 12px minmax(150px,1fr) 31px!important;
+  grid-auto-rows:auto!important;
+  align-items:stretch!important;
+  justify-items:center!important;
+  align-content:stretch!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  gap:4px!important;
+  padding:6px 3px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+#page-studio #dawMixerPage .daw-mixer-index{
+  display:grid!important;
+  place-items:center!important;
+  align-self:center!important;
+  width:24px!important;
+  height:23px!important;
+  min-height:23px!important;
+}
+#page-studio #dawMixerPage .daw-mixer-track-name{
+  display:block!important;
+  align-self:center!important;
+  width:100%!important;
+  min-width:0!important;
+  height:18px!important;
+  line-height:18px!important;
+  overflow:hidden!important;
+  text-align:center!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#e8f1e4!important;
+  font-size:9px!important;
+  font-weight:750!important;
+}
+#page-studio #dawMixerPage .daw-mixer-pan-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  height:40px!important;
+  min-height:40px!important;
+}
+#page-studio #dawMixerPage .daw-mixer-pan-readout{
+  display:block!important;
+  width:100%!important;
+  height:12px!important;
+  min-height:12px!important;
+  max-height:12px!important;
+  line-height:12px!important;
+  text-align:center!important;
+}
+#page-studio #dawMixerPage .daw-mixer-control-row{
+  display:flex!important;
+  align-items:stretch!important;
+  justify-content:center!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:150px!important;
+  gap:7px!important;
+  overflow:hidden!important;
+}
+#page-studio #dawMixerPage .daw-mixer-fader-wrap{
+  display:flex!important;
+  flex:1 1 auto!important;
+  align-items:stretch!important;
+  justify-content:center!important;
+  width:auto!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:150px!important;
+  overflow:hidden!important;
+}
+#page-studio #dawMixerPage .daw-mixer-fader{
+  display:block!important;
+  width:20px!important;
+  min-width:20px!important;
+  max-width:20px!important;
+  height:100%!important;
+  min-height:150px!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  writing-mode:vertical-lr!important;
+  direction:rtl!important;
+  -webkit-appearance:slider-vertical!important;
+  appearance:auto!important;
+  accent-color:var(--track-color)!important;
+  touch-action:pan-x!important;
+}
+#page-studio #dawMixerPage .daw-mixer-vu{
+  display:flex!important;
+  flex:0 0 9px!important;
+  width:9px!important;
+  min-width:9px!important;
+  height:100%!important;
+  min-height:150px!important;
+}
+#page-studio #dawMixerPage .daw-mixer-buttons{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  height:31px!important;
+  min-height:31px!important;
+}
+@media(max-width:430px){
+  #page-studio #dawStudioDock{
+    width:calc(100vw - 20px)!important;
+    padding:4px!important;
+    gap:4px!important;
+  }
+  #page-studio #dawStudioDock .daw-transport-row{
+    grid-template-columns:minmax(0,1fr) minmax(90px,31%)!important;
+    gap:4px!important;
+  }
+  #page-studio #dawStudioDock .daw-transport-buttons{gap:3px!important}
+  #page-studio #dawStudioDock .daw-transport-buttons button{
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+  }
+  #page-studio #dawStudioDock .daw-subnav button{
+    height:33px!important;
+    min-height:33px!important;
+    padding:3px 2px!important;
+    font-size:9px!important;
+  }
+  #page-studio #dawMixerPage{
+    height:clamp(350px,calc(100dvh - 390px),650px)!important;
+    min-height:350px!important;
+  }
+  #page-studio #dawMixerPage .daw-mixer-strip{
+    grid-template-rows:23px 17px 34px 11px minmax(150px,1fr) 29px!important;
+    gap:3px!important;
+    padding:5px 2px!important;
+  }
+  #page-studio #dawMixerPage .daw-mixer-pan-row{height:34px!important;min-height:34px!important}
+  #page-studio #dawMixerPage .daw-pan-dial{
+    width:29px!important;height:29px!important;min-width:29px!important;min-height:29px!important;
+  }
+  #page-studio #dawMixerPage .daw-mixer-control-row{
+    min-height:150px!important;gap:4px!important;
+  }
+  #page-studio #dawMixerPage .daw-mixer-fader{
+    min-height:150px!important;width:18px!important;min-width:18px!important;
+  }
+}
