@@ -3389,3 +3389,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Temporary push trigger for this feature branch was removed immediately after Build #263 queued. Restoration commit: `ef79ffc6bcf336956c1b50713b7cdaad29e77a5b`. Current workflow retains its prior manual/allowlisted policy.
 - Scope comparison from the feature-branch starting checkpoint lists only Studio markup/style/logic, a small Quick Record take interface exposure in `www/main.js`, Android Studio export bridge/registration, focused DAW tests, and project notes. No NAM, IR USER/Third Party, IR Collection, MIDI mapping, Preset, Editor, signal-chain or other-tab feature module was changed.
 - **Validation boundary:** CI and packaged APK checks are green, but CI cannot emulate the physical NUX MG-30 USB interface or Android Storage Access Framework picker end-to-end. Do not claim those hardware/OS interactions are physically certified until tested on the user's Android phone with the original MG-30 Gen 2 firmware 6.0.x. This APK is a successful engineering build, not yet a device-verified release.
+
+
+## Studio Mini DAW — phone layout refinement (2 November 2026)
+
+- User reviewed Build #263 screenshots and asked for the DAW UI to match the approved portrait mockup more closely and be neater.
+- Reworked the top Project control from three oversized stacked rows into a compact project-name/action row plus a slim saved-project picker. New and Save remain visible and functional.
+- Reflowed Tempo/Meter/Click/Loop/Snap into a two-row mobile grid so Snap no longer clips off the right edge.
+- Tightened the timeline header, track rail/actions, lane and clip height, transport, mixer strips, inspector/export cards and status spacing.
+- Track Settings and Project & Export now start collapsed; Quick Record take import sits inside Project & Export, reducing scroll height so the four track lanes are visible sooner.
+- Added focused Studio markup/style tests; DAW engine, media/project storage, USB recorder path, WAV/ZIP renderers and export bridge are unchanged. Existing Jam and Record content remains in its own mode panels.
+- CI/APK rebuild pending. Do not distribute until Node tests, Capacitor generation and Gradle build pass.
