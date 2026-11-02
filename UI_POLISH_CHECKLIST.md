@@ -3273,3 +3273,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Workflow trigger was temporarily enabled for the approved build in commit `b452d51`, then restored to manual dispatch / original allowlist. Final workflow restoration commit: `670438cb5090f2ae3ba6453f0d3bb48f53a9c3ac`. Automatic push builds for `feature/preset-rename-save-as` remain disabled.
 - Comparing `b452d51` to current branch HEAD `670438c` shows only the single workflow allowlist restoration; application source and the corrected tests used in Build #251 remain unchanged.
 - **Hardware boundary:** Build #251 is a debug APK. This CI run does not test installation on the user's phone or a fresh physical-pedal Rename/Save As transaction. Recheck Editor, USB-MIDI, NAM import/library, IR User/Third Party, IR Collection, MIDI mapping and Signal Chain after installation; then re-test Rename/Save As on a disposable slot. Do not mark this build physically validated until the user reports it.
+
+## English UI / IR sync / CTRL panel follow-up — Build #258 (2 November 2026)
+
+- Target remains the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII).
+- Removed the persistent explanatory/status paragraph below the IR Collection grid. The collection sync status area is hidden; synchronization outcome is reported with a short global toast. Sync progress labels and count text are English.
+- Replaced Indonesian labels in the IR Collection manager's visible upload and slot-management UI with English. The sync result toast reports stable slots, empty slots, and failures without a persistent banner.
+- Removed the redundant CTRL/EXP parameter warning from the visible panel. The parameter selector remains locked for unknown model/parameter pairs; no guessed enum is enabled. Added an explicit `[hidden]` CSS rule so the warning cannot override the browser's hidden state or cover the footer buttons.
+- Standardized the Studio page title to **Jamm & Record** and set the document language to English. Existing `english-ui.js` exact/fragment translation and mutation observer remain in place for dynamically generated UI and device messages.
+- Preserved NAM transfer, IR User/Third Party and Collection transfer commands, MIDI mappings, preset transfer paths, and signal-chain logic. No changes were made to NAM or IR protocol bytes.
+- Build #258: [run 41392538778](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41392538778), source SHA `bee9c1452dc6bed3c4199ef035caa7f82bed3806`; `npm test`, Vite build, Capacitor Android generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact: `MG30-Studio-debug-APK`, ID `13117558434`, ZIP size 4,068,386 bytes, SHA-256 `7a5b9421533aa2c64c5edd658e2d894cd3a2e99a8f708cde48bd176e60d57436`.
+- Extracted APK: `MG30_Studio_Build258.apk`, size 4,446,588 bytes, SHA-256 `7763322c219a25ea526343e7ad76a66789616bfd874023b7d093e3fef6e56d92`. ZIP and APK integrity checks passed. The packaged JS bundle was inspected for Jamm & Record, Collection sync toast, English IR upload labels and progress text.
+- The temporary feature-branch push trigger was removed after the build. Subsequent APK builds on this branch remain manual-dispatch only.
+- Hardware boundary: this is a successful automated test/build and package inspection, not a physical MG-30/phone run. Confirm that the sync toast appears, the CTRL footer buttons are visible, and the IR/NAM/MIDI behavior remains intact on the actual device before release.
