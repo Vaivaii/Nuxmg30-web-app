@@ -1154,3 +1154,5 @@
   background:#111a16!important;box-shadow:0 8px 24px #0009!important
 }
 #page-studio .daw-history-tools button{width:100%!important;height:34px!important;padding:0 8px!important;font-size:10px!important}
+
+/* Keep this Studio-only stylesheet in sync with live playhead-extent regression coverage. */
