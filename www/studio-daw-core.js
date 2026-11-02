@@ -62,6 +62,7 @@ export function normalizeProject(input) {
         durationSeconds,
         sampleRate: Math.max(8000, Math.min(384000, Number(clip.sampleRate) || 48000)),
         channels: Math.max(1, Math.min(8, Math.round(Number(clip.channels) || 2))),
+        waveform: Array.isArray(clip.waveform) ? clip.waveform.slice(0, 128).map((value) => Math.max(0, Math.min(100, Number(value) || 0))) : [],
       };
     }).filter(Boolean) : [];
     return {
@@ -94,7 +95,7 @@ export function normalizeProject(input) {
     metronomeEnabled: Boolean(input.metronomeEnabled),
     snap: ['off', 'beat', 'bar', 'eighth'].includes(input.snap) ? input.snap : 'beat',
     zoom: Math.max(44, Math.min(180, Number(input.zoom) || defaults.zoom)),
-    masterGain: Math.max(0, Math.min(1.5, Number(input.masterGain) || defaults.masterGain)),
+    masterGain: Number.isFinite(Number(input.masterGain)) ? Math.max(0, Math.min(1.5, Number(input.masterGain))) : defaults.masterGain,
     tracks: normalizedTracks,
   };
 }
@@ -134,7 +135,11 @@ export function selectStemTracks(project, selectedIds) {
 }
 
 export function safeExportName(value, fallback = 'MG30-Studio-Export') {
-  const cleaned = String(value || '').normalize('NFKC').replace(/[\\/:*?"<>|\\u0000-\\u001f]/g, '-').replace(/\\s+/g, ' ').trim();
+  const cleaned = String(value || '').normalize('NFKC')
+    .replace(/[\/\\:*?"<>|]/g, '-')
+    .replace(/[\u0000-\u001f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return (cleaned || fallback).slice(0, 100);
 }
 

@@ -162,6 +162,7 @@ async function restoreTakes() {
     const result = await MG30Audio.listTakes();
     takes.splice(0, takes.length, ...(result.takes || []));
     renderTakes();
+    window.dispatchEvent(new Event('mg30-studio-takes-updated'));
     if (takes.length) {
       setStatus('recordStatus', takes.length + ' rekaman tersimpan di perangkat ini. Rekaman disimpan otomatis saat tombol Stop ditekan.', 'ok');
       $('guitarTrackMeta').textContent = 'USB siap diuji · ' + takes.length + (takes.length === 1 ? ' take tersimpan' : ' take tersimpan');
@@ -309,6 +310,7 @@ async function stopGuitarRecording() {
       takes.unshift(take);
       savedTake = take;
       renderTakes();
+      window.dispatchEvent(new Event('mg30-studio-takes-updated'));
       setCurrentPlayback(take, false);
       $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
       $('guitarFormatMeta').textContent = 'File tersimpan otomatis · WAV PCM ' + take.bitDepth + '-bit · ' + take.sampleRate + ' Hz';
