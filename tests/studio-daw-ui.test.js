@@ -215,3 +215,33 @@ test('playhead drag uses a wide full-height hit target and pointer capture', () 
   assert.ok(css.includes('width:28px!important'));
   assert.ok(css.includes('touch-action:none!important'));
 });
+
+
+test('transport and Mixer header share one sticky Studio dock', () => {
+  assert.match(html, /<div id="dawStudioDock" class="daw-studio-dock">[\s\S]*?class="daw-transport-row"[\s\S]*?id="dawMixerDetails"/);
+  assert.ok(css.includes('#page-studio .daw-studio-dock{'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('bottom:calc(60px + env(safe-area-inset-bottom,0px))'));
+});
+
+test('Mixer overlay has a fixed compact height and does not scroll internally', () => {
+  assert.ok(css.includes('grid-auto-rows:136px!important'));
+  assert.ok(css.includes('height:136px!important'));
+  assert.ok(css.includes('max-height:none!important'));
+  assert.ok(css.includes('overflow:visible!important'));
+  assert.ok(css.includes('height:46px!important'));
+  assert.ok(!css.includes('max-height:min(56dvh,460px)!important'));
+});
+
+test('transport stays in the dock instead of sticking over the track lanes', () => {
+  assert.ok(css.includes('#page-studio .daw-studio-dock .daw-transport-row'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(css.includes('bottom:auto!important'));
+});
+
+test('four track rows and their fixed rail stay at mockup compact height', () => {
+  assert.ok(css.includes('grid-template-rows:repeat(4,38px)!important'));
+  assert.ok(css.includes('height:38px!important'));
+  assert.ok(css.includes('max-height:38px!important'));
+  assert.ok(css.includes('height:30px!important'));
+});
