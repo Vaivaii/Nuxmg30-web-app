@@ -36,9 +36,109 @@ let mediaBuffers = new Map();
 let projectSaveTimer = null;
 let lastMetronomeBeat = -1;
 let dragClip = null;
+let playheadDragPointerId = null;
+let historyPast = [];
+let historyFuture = [];
+let historySnapshot = '';
+let historyTimer = 0;
 let destroyed = false;
 
 const storageKey = 'mg30-studio-last-mode';
+
+
+function historyState() {
+  const snapshot = JSON.parse(JSON.stringify(project));
+  delete snapshot.updatedAt;
+  return JSON.stringify(snapshot);
+}
+
+function updateHistoryButtons() {
+  const undo = $('dawUndo');
+  const redo = $('dawRedo');
+  if (undo) undo.disabled = historyPast.length === 0;
+  if (redo) redo.disabled = historyFuture.length === 0;
+}
+
+function resetHistory() {
+  clearTimeout(historyTimer);
+  historyPast = [];
+  historyFuture = [];
+  historySnapshot = historyState();
+  updateHistoryButtons();
+}
+
+function commitHistoryChange() {
+  clearTimeout(historyTimer);
+  const next = historyState();
+  if (next !== historySnapshot) {
+    historyPast.push(historySnapshot);
+    if (historyPast.length > 100) historyPast.shift();
+    historyFuture = [];
+    historySnapshot = next;
+  }
+  updateHistoryButtons();
+}
+
+function applyHistory(direction) {
+  if (recording) {
+    setStatus('Stop recording before using Undo or Redo.', 'warn');
+    return;
+  }
+  commitHistoryChange();
+  const source = direction === 'undo' ? historyPast : historyFuture;
+  const destination = direction === 'undo' ? historyFuture : historyPast;
+  if (!source.length) return;
+  if (playing) pausePlayback();
+  const current = historyState();
+  const target = source.pop();
+  destination.push(current);
+  const restored = normalizeProject(JSON.parse(target));
+  if (!restored) {
+    source.push(target);
+    destination.pop();
+    setStatus('History snapshot could not be restored safely.', 'warn');
+    updateHistoryButtons();
+    return;
+  }
+  project = restored;
+  selectedTrackId = getTrack(selectedTrackId) ? selectedTrackId : 'guitar';
+  selectedClipId = '';
+  historySnapshot = historyState();
+  renderProject();
+  scheduleProjectSave();
+  setStatus(direction === 'undo' ? 'Last Studio edit undone.' : 'Studio edit restored.', 'ok');
+  updateHistoryButtons();
+}
+
+function setPlayheadFromClientX(clientX) {
+  const canvas = $('dawTimelineCanvas');
+  if (!canvas) return;
+  const metrics = timelineMetrics();
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.max(0, Math.min(metrics.width, clientX - rect.left));
+  playheadSeconds = (x / project.zoom) * metrics.barSeconds;
+  renderPlayhead();
+}
+
+function startPlayheadDrag(event) {
+  if (event.button !== 0 || recording) return;
+  event.preventDefault();
+  if (playing) pausePlayback();
+  playheadDragPointerId = event.pointerId;
+  setPlayheadFromClientX(event.clientX);
+  try { event.currentTarget.setPointerCapture(event.pointerId); } catch (_) {}
+}
+
+function movePlayheadDrag(event) {
+  if (playheadDragPointerId === null || event.pointerId !== playheadDragPointerId) return;
+  event.preventDefault();
+  setPlayheadFromClientX(event.clientX);
+}
+
+function finishPlayheadDrag(event) {
+  if (playheadDragPointerId === null || event.pointerId !== playheadDragPointerId) return;
+  playheadDragPointerId = null;
+}
 
 function safeText(value) {
   return String(value ?? '').replace(/[&<>"']/g, (character) => ({
@@ -161,6 +261,8 @@ function updateToolbar() {
   if ($('dawLoop')) $('dawLoop').checked = project.loopEnabled;
   if ($('dawSnap')) $('dawSnap').value = project.snap;
   if ($('dawZoom')) $('dawZoom').value = String(project.zoom);
+  if ($('dawProjectSummary')) $('dawProjectSummary').textContent = project.name;
+  if ($('dawProjectMeta')) $('dawProjectMeta').textContent = project.tracks.length + ' Tracks · 48 kHz · 24-bit WAV';
 }
 
 function timelineMetrics() {
@@ -179,9 +281,13 @@ function waveformMarkup(waveform) {
 
 function renderRuler(metrics) {
   const ruler = $('dawRulerInner');
-  if (!ruler) return;
+  const canvas = $('dawTimelineCanvas');
+  if (!ruler || !canvas) return;
+  canvas.style.width = metrics.width + 'px';
+  canvas.style.setProperty('--daw-bar-width', project.zoom + 'px');
+  const beatCount = Number(String(project.timeSignature).split('/')[0]) || 4;
+  canvas.style.setProperty('--daw-beat-width', (project.zoom / beatCount) + 'px');
   ruler.style.width = metrics.width + 'px';
-  ruler.style.setProperty('--daw-bar-width', project.zoom + 'px');
   ruler.innerHTML = Array.from({ length: metrics.bars }, (_, index) =>
     '<span class="daw-ruler-mark" style="left:' + (index * project.zoom) + 'px">' + (index + 1) + '</span>'
   ).join('');
@@ -189,11 +295,32 @@ function renderRuler(metrics) {
 
 function renderTrackRows() {
   const holder = $('dawTrackList');
-  if (!holder) return;
+  const rail = $('dawTrackRail');
+  if (!holder || !rail) return;
   const metrics = timelineMetrics();
+  const canvas = $('dawTimelineCanvas');
+  if (canvas) canvas.style.width = metrics.width + 'px';
+  holder.style.width = metrics.width + 'px';
   holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
   holder.style.setProperty('--daw-bar-width', project.zoom + 'px');
-  const rows = project.tracks.map((track, index) => {
+
+  rail.innerHTML = project.tracks.map((track, index) => {
+    const isSelected = selectedTrackId === track.id;
+    const recordButton = track.id === 'backing'
+      ? '<span class="daw-track-action-spacer" aria-hidden="true"></span>'
+      : '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="daw-track-record ' + (track.armed ? 'arm-active' : '') + '" aria-label="' + (track.armed ? 'Disarm ' : 'Arm ') + safeText(track.name) + '" title="' + (track.armed ? 'Armed for USB overdub' : 'Arm for USB overdub') + '">●</button>';
+    return '<div class="daw-track-head' + (isSelected ? ' selected' : '') + '" data-track-select="' + track.id + '" style="--track-color:' + track.color + '">' +
+      '<div class="daw-track-title"><span class="daw-track-color"></span><strong>' + String(index + 1).padStart(1, '0') + ' ' + safeText(track.name) + '</strong><span class="daw-track-menu">•••</span></div>' +
+      '<div class="daw-track-input">' + safeText(track.input) + '</div>' +
+      '<div class="daw-track-actions">' + recordButton +
+        '<button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '" aria-label="Mute ' + safeText(track.name) + '">M</button>' +
+        '<button type="button" data-track-action="solo" data-track-id="' + track.id + '" class="' + (track.solo ? 'active' : '') + '" aria-label="Solo ' + safeText(track.name) + '">S</button>' +
+        '<button type="button" data-track-action="import" data-track-id="' + track.id + '" class="import" aria-label="Import audio to ' + safeText(track.name) + '">＋</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  holder.innerHTML = project.tracks.map((track) => {
     const isSelected = selectedTrackId === track.id;
     const clips = track.clips.map((clip) => {
       const left = clip.startSeconds / metrics.barSeconds * project.zoom;
@@ -206,53 +333,28 @@ function renderTrackRows() {
         '<span class="daw-clip-edge daw-clip-edge-end" data-clip-edge="end" aria-label="Trim clip end"></span>' +
         '<strong>' + safeText(clip.name) + '</strong><span class="daw-clip-fade daw-clip-fade-in"></span><span class="daw-clip-fade daw-clip-fade-out"></span>' + waveformMarkup(clip.waveform) + '</div>';
     }).join('');
-    const recordButton = track.id === 'backing'
-      ? '<span class="daw-track-action-spacer" aria-hidden="true"></span>'
-      : '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="daw-track-record ' + (track.armed ? 'arm-active' : '') + '" aria-label="' + (track.armed ? 'Disarm ' : 'Arm ') + safeText(track.name) + '" title="' + (track.armed ? 'Armed for USB overdub' : 'Arm for USB overdub') + '">●</button>';
     return '<div class="daw-track-row' + (isSelected ? ' selected' : '') + (track.mute ? ' is-muted' : '') + '" data-track-row="' + track.id + '">' +
-      '<div class="daw-track-head" style="--track-color:' + track.color + '">' +
-        '<div class="daw-track-title"><span class="daw-track-color"></span><strong>' + String(index + 1).padStart(2, '0') + ' ' + safeText(track.name) + '</strong></div>' +
-        '<div class="daw-track-input">' + safeText(track.input) + '</div>' +
-        '<div class="daw-track-actions">' + recordButton +
-          '<button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '" aria-label="Mute ' + safeText(track.name) + '">M</button>' +
-          '<button type="button" data-track-action="solo" data-track-id="' + track.id + '" class="' + (track.solo ? 'active' : '') + '" aria-label="Solo ' + safeText(track.name) + '">S</button>' +
-          '<button type="button" data-track-action="import" data-track-id="' + track.id + '" class="import" aria-label="Import audio to ' + safeText(track.name) + '">＋</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="daw-lane-scroll" data-lane-scroll="' + track.id + '"><div class="daw-track-lane" data-track-lane="' + track.id + '" style="--daw-timeline-width:' + metrics.width + 'px;--daw-bar-width:' + project.zoom + 'px">' + clips + '</div></div>' +
+      '<div class="daw-track-lane" data-track-lane="' + track.id + '" style="width:' + metrics.width + 'px">' + clips + '</div>' +
     '</div>';
   }).join('');
-  holder.innerHTML = rows + '<span id="dawGlobalPlayhead" class="daw-global-playhead" aria-hidden="true"></span>';
   renderPlayhead();
-
-  const syncScroll = (source) => {
-    const left = source.scrollLeft;
-    holder.style.setProperty('--daw-scroll-left', left + 'px');
-    holder.querySelectorAll('[data-lane-scroll]').forEach((other) => {
-      if (other !== source && other.scrollLeft !== left) other.scrollLeft = left;
-    });
-    const ruler = $('dawRulerScroll');
-    if (ruler && ruler !== source && ruler.scrollLeft !== left) ruler.scrollLeft = left;
-  };
-  holder.querySelectorAll('[data-lane-scroll]').forEach((scroller) => {
-    scroller.addEventListener('scroll', () => syncScroll(scroller), { passive: true });
-  });
-  const ruler = $('dawRulerScroll');
-  if (ruler) ruler.onscroll = () => syncScroll(ruler);
 }
 function renderMixer() {
   const mixer = $('dawMixer');
   if (!mixer) return;
-  mixer.innerHTML = project.tracks.map((track, index) =>
-    '<div class="daw-mixer-strip" style="--track-color:' + track.color + '">' +
+  mixer.innerHTML = project.tracks.map((track, index) => {
+    const panLabel = track.pan < -0.05 ? 'L ' + Math.round(Math.abs(track.pan) * 100) : track.pan > 0.05 ? 'R ' + Math.round(track.pan * 100) : 'CENTER';
+    const panAngle = Math.round(track.pan * 45);
+    return '<div class="daw-mixer-strip" style="--track-color:' + track.color + '">' +
+      '<span class="daw-mixer-index">' + (index + 1) + '</span>' +
       '<strong>' + safeText(track.name) + '</strong>' +
       '<div class="daw-mixer-meter"><span data-meter-track="' + track.id + '"></span></div>' +
-      '<input type="range" min="0" max="150" step="1" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '" aria-label="' + safeText(track.name) + ' level">' +
-      '<div class="daw-mixer-pan">' + (track.pan < -0.05 ? 'L ' + Math.round(Math.abs(track.pan) * 100) : track.pan > 0.05 ? 'R ' + Math.round(track.pan * 100) : 'CENTER') + '</div>' +
-      '<input type="range" min="-100" max="100" step="1" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '" aria-label="' + safeText(track.name) + ' pan">' +
+      '<div class="daw-mixer-pan-row"><span>L</span><div class="daw-pan-dial" style="--pan-angle:' + panAngle + 'deg"><i></i><input type="range" min="-100" max="100" step="1" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '" aria-label="' + safeText(track.name) + ' pan"></div><span>R</span></div>' +
+      '<div class="daw-mixer-fader-wrap"><input class="daw-mixer-fader" type="range" min="0" max="150" step="1" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '" aria-label="' + safeText(track.name) + ' level"></div>' +
+      '<div class="daw-mixer-pan-readout" data-pan-readout="' + track.id + '">' + panLabel + '</div>' +
       '<div class="daw-mixer-buttons"><button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '">M</button><button type="button" data-track-action="solo" data-track-id="' + track.id + '" class="' + (track.solo ? 'active' : '') + '">S</button></div>' +
-    '</div>'
-  ).join('');
+    '</div>';
+  }).join('');
 }
 
 function renderInspector() {
@@ -307,9 +409,9 @@ function updatePlayheadReadout() {
 
 function renderPlayhead() {
   const metrics = timelineMetrics();
-  const left = (playheadSeconds / metrics.barSeconds) * project.zoom;
-  const holder = $('dawTrackList');
-  if (holder) holder.style.setProperty('--daw-playhead', left + 'px');
+  const left = Math.max(0, (playheadSeconds / metrics.barSeconds) * project.zoom);
+  const playhead = $('dawGlobalPlayhead');
+  if (playhead) playhead.style.left = left + 'px';
   updatePlayheadReadout();
 }
 
@@ -328,6 +430,8 @@ function updateTransport() {
 
 function scheduleProjectSave() {
   clearTimeout(projectSaveTimer);
+  clearTimeout(historyTimer);
+  historyTimer = setTimeout(commitHistoryChange, 220);
   projectSaveTimer = setTimeout(() => { void saveProject(false); }, 650);
 }
 
@@ -370,6 +474,7 @@ async function loadProject(projectId) {
     const normalized = normalizeProject(saved);
     if (!normalized) throw new Error('The selected project file is not valid.');
     project = normalized;
+    resetHistory();
     mediaBuffers.clear();
     let missing = 0;
     for (const track of project.tracks) {
@@ -402,6 +507,7 @@ async function createNewProject() {
   if (name === null) return;
   stopPlayback(true);
   project = createDefaultProject(name || 'New Song');
+  resetHistory();
   selectedTrackId = 'guitar';
   selectedClipId = '';
   mediaBuffers.clear();
@@ -499,7 +605,11 @@ function updateTrackMix(trackId, kind, value) {
     if (document.activeElement !== input) input.value = String(Math.round(track.pan * 100));
   });
   document.querySelectorAll('[data-gain-readout="' + trackId + '"]').forEach((node) => { node.textContent = Math.round(track.gain * 100) + '%'; });
-  document.querySelectorAll('[data-pan-readout="' + trackId + '"]').forEach((node) => { node.textContent = String(Math.round(track.pan * 100)); });
+  document.querySelectorAll('[data-pan-readout="' + trackId + '"]').forEach((node) => {
+    node.textContent = track.pan < -0.05 ? 'L ' + Math.round(Math.abs(track.pan) * 100) : track.pan > 0.05 ? 'R ' + Math.round(track.pan * 100) : 'CENTER';
+  });
+  const dial = document.querySelector('[data-track-pan="' + trackId + '"]')?.closest('.daw-pan-dial');
+  if (dial) dial.style.setProperty('--pan-angle', Math.round(track.pan * 45) + 'deg');
   scheduleProjectSave();
 }
 
@@ -576,6 +686,13 @@ function handleTrackClick(event) {
     }
     return;
   }
+  const trackHeader = event.target.closest('[data-track-select]');
+  if (trackHeader) {
+    selectedTrackId = trackHeader.dataset.trackSelect;
+    selectedClipId = '';
+    renderProject();
+    return;
+  }
   const clipButton = event.target.closest('[data-clip-id]');
   if (clipButton) {
     selectedTrackId = clipButton.dataset.trackId;
@@ -588,7 +705,7 @@ function handleTrackClick(event) {
     const rect = lane.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const metrics = timelineMetrics();
-    playheadSeconds = snapTime(Math.max(0, x / project.zoom * metrics.barSeconds), project);
+    playheadSeconds = Math.max(0, x / project.zoom * metrics.barSeconds);
     selectedTrackId = lane.dataset.trackLane;
     selectedClipId = '';
     renderProject();
@@ -1145,6 +1262,7 @@ function bindEvents() {
     event.target.value = '';
     if (file) await addAudioFile(file, target);
   });
+  $('dawTrackRail')?.addEventListener('click', handleTrackClick);
   $('dawTrackList')?.addEventListener('click', handleTrackClick);
   $('dawTrackList')?.addEventListener('pointerdown', startClipDrag);
   $('dawTrackList')?.addEventListener('pointermove', moveClipDrag);
@@ -1184,13 +1302,33 @@ function bindEvents() {
     });
     scheduleProjectSave();
   });
-  $('dawOpenControl')?.addEventListener('click', () => {
-    const dialog = $('dawControlDialog');
-    if (dialog?.showModal) dialog.showModal();
+  $('dawPlayheadHit')?.addEventListener('pointerdown', startPlayheadDrag);
+  document.addEventListener('pointermove', movePlayheadDrag, { passive: false });
+  document.addEventListener('pointerup', finishPlayheadDrag);
+  document.addEventListener('pointercancel', finishPlayheadDrag);
+  $('dawRulerInner')?.addEventListener('click', (event) => {
+    if (event.target.closest('.daw-ruler-mark')) setPlayheadFromClientX(event.clientX);
+    else setPlayheadFromClientX(event.clientX);
   });
-  $('dawCloseControl')?.addEventListener('click', () => $('dawControlDialog')?.close());
-  $('dawControlDialog')?.addEventListener('click', (event) => {
-    if (event.target === $('dawControlDialog')) $('dawControlDialog').close();
+  $('dawUndo')?.addEventListener('click', () => applyHistory('undo'));
+  $('dawRedo')?.addEventListener('click', () => applyHistory('redo'));
+  document.addEventListener('keydown', (event) => {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const target = event.target;
+    if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+    if (event.key.toLowerCase() === 'z') {
+      event.preventDefault();
+      applyHistory(event.shiftKey ? 'redo' : 'undo');
+    } else if (event.key.toLowerCase() === 'y') {
+      event.preventDefault();
+      applyHistory('redo');
+    }
+  });
+  $('dawForward')?.addEventListener('click', () => {
+    const metrics = timelineMetrics();
+    playheadSeconds = Math.min(metrics.bars * metrics.barSeconds, playheadSeconds + metrics.barSeconds);
+    if (playing) void restartPlaybackAt(playheadSeconds);
+    else renderPlayhead();
   });
   $('dawPlay')?.addEventListener('click', () => { void togglePlayback(); });
   $('dawStop')?.addEventListener('click', async () => {
@@ -1222,6 +1360,7 @@ function bindEvents() {
 
 async function initDaw() {
   bindEvents();
+  resetHistory();
   renderProject();
   let mode = 'daw';
   try {
