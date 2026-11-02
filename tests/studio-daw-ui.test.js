@@ -438,7 +438,7 @@ test('Build 316: dock width is proportional to viewport and bottom is aligned ab
   assert.ok(css.includes('width:min(calc(100vw - 20px),1172px)!important'));
   assert.ok(css.includes('bottom:var(--studio-dock-bottom,calc(88px + env(safe-area-inset-bottom,0px)))!important'));
   assert.ok(daw.includes('const navRect = appNav.getBoundingClientRect()'));
-  assert.ok(daw.includes('window.innerHeight - navRect.top + 8'));
+  assert.ok(daw.includes('viewportHeight - navRect.top + 8'));
   assert.ok(!daw.includes('--studio-dock-width'));
   assert.ok(!daw.includes('--studio-dock-left'));
 });
