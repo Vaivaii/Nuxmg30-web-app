@@ -247,3 +247,10 @@ test('four track rows and their fixed rail stay at mockup compact height', () =>
   assert.ok(css.includes('max-height:38px!important'));
   assert.ok(css.includes('height:30px!important'));
 });
+
+
+test('fixed track rail starts exactly below the ruler without a vertical offset', () => {
+  assert.ok(css.includes('grid-template-rows:31px auto!important'));
+  assert.ok(css.includes('row-gap:0!important'));
+  assert.ok(css.includes('grid-template-rows:repeat(4,38px)!important'));
+});
