@@ -100,7 +100,7 @@
     "Data byte WAV tidak valid.":"Invalid WAV byte data.",
     "Nama IR kosong.":"IR name is empty.",
     "Clock & Recording":"Jamm & Record",
-    "Jam & Record":"Jamm & Record"
+    "Jam & Record":"Jamm & Record",
     "Putar":"Play",
     "Ganti nama":"Rename",
     "Ekspor":"Export",
