@@ -3252,3 +3252,24 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Removed `feature/preset-rename-save-as` from automatic push-build branches. APK builds remain available via manual workflow dispatch after the user explicitly requests a build.
 - Build/test status: no APK build was started for this UI-only follow-up. Repository tests and Android packaging have not been rerun yet; Build #249 remains the last delivered APK and does not include this cleanup.
 - Hardware evidence boundary: the success/read-back results above are user-reported from the supplied device screenshots. No additional restart/reconnect test was reported in this update.
+
+
+## Latest verification — Build #251 from latest Preset Rename / Save As work (2 November 2026)
+
+- Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
+- Working branch: `feature/preset-rename-save-as`.
+- Last application-source checkpoint before the build: `c1f58382cb8411855ffb7ef86a9685da69d43832` (Preset Library validation-toast/dialog-close follow-up).
+- Build trigger commit: `b452d51d099464837b31861591c41c6bcde63287`. Compared with app checkpoint `c1f5838`, the build-trigger tree changed only `.github/workflows/build-apk.yml` (temporary allowlist line) and `tests/preset-library-operations.test.js` (assertion wording); no application module changed after the application-source checkpoint.
+- A first attempt, Build #250 / run `41390473586`, failed at `npm test`: 26/29 passed. Three test cases stopped at stale assertion regexes because the application validation messages had already been translated to English. No Capacitor or Gradle step ran and no APK artifact was produced by #250.
+- Test-only correction commit: `6ef22c1bfbd59838a0fbb2ce2b617638f6c1422f`. Updated six assertion patterns in `tests/preset-library-operations.test.js` to match the current English validation text. No application logic or device transfer code was modified by this correction.
+- Successful run: [Build #251 / 41390573757](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41390573757), source trigger SHA `b452d51d099464837b31861591c41c6bcde63287`.
+- `npm test`: **29/29 passed, 0 failed**.
+- Vite production build: Vite 7.3.7, successful (`built in 609ms`).
+- Capacitor Android generation: successful.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**, 183 actionable tasks executed.
+- Actions artifact: `MG30-Studio-debug-APK`, ID `13117006565`, ZIP size **4,066,352 bytes**, SHA-256 `51ed77df4f796a58763b77d0c817c51d5c51895b6d0540e8cd30c6f19fdeb2b5`.
+- Extracted APK: `MG30_Studio_Build251.apk`, size **4,443,588 bytes**, SHA-256 `7b513140228d7dd249848c1fcefdc5ed8ff7194fa907f723cba1218f113a8b53`.
+- ZIP integrity and APK ZIP integrity passed. The packaged production JS was inspected and includes Rename, Save As, success/error feedback, local raw-slot-backup key, and the English validation messages.
+- Workflow trigger was temporarily enabled for the approved build in commit `b452d51`, then restored to manual dispatch / original allowlist. Final workflow restoration commit: `670438cb5090f2ae3ba6453f0d3bb48f53a9c3ac`. Automatic push builds for `feature/preset-rename-save-as` remain disabled.
+- Comparing `b452d51` to current branch HEAD `670438c` shows only the single workflow allowlist restoration; application source and the corrected tests used in Build #251 remain unchanged.
+- **Hardware boundary:** Build #251 is a debug APK. This CI run does not test installation on the user's phone or a fresh physical-pedal Rename/Save As transaction. Recheck Editor, USB-MIDI, NAM import/library, IR User/Third Party, IR Collection, MIDI mapping and Signal Chain after installation; then re-test Rename/Save As on a disposable slot. Do not mark this build physically validated until the user reports it.
