@@ -385,17 +385,19 @@ test('Transport and DAW page dock aligns to the measured top edge of the app nav
   assert.ok(css.includes('width:var(--studio-dock-width,min(calc(100vw - 28px),1172px))!important'));
 });
 
-test('Jam / Record / DAW tabs remain pinned below the application header while Studio content scrolls', () => {
-  assert.ok(daw.includes("const appHeader = document.querySelector('.top')"));
-  assert.ok(daw.includes('headerRect.bottom + 8'));
-  assert.ok(css.includes('top:var(--studio-mode-tabs-top,8px)!important'));
+test('Jam / Record / DAW tabs remain pinned to the Studio scroll region below the fixed app header', () => {
+  assert.ok(css.includes('#page-studio>.studio-page-hero.studio-daw-hero{'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(css.includes('#page-studio>.studio-mode-tabs{'));
+  assert.ok(css.includes('top:0!important'));
   assert.ok(css.includes('position:sticky!important'));
-  assert.ok(css.includes('z-index:225!important'));
+  assert.ok(css.includes('z-index:205!important'));
+  assert.ok(!daw.includes("const appHeader = document.querySelector('.top')"));
 });
 
 test('Mixer channel strips display the editable track name below the channel number', () => {
   assert.ok(daw.includes('class="daw-mixer-track-name"'));
-  assert.ok(daw.includes(`'<strong class="daw-mixer-track-name">' + safeText(track.name)`));
+  assert.ok(daw.includes(`'<span class="daw-mixer-track-name">' + safeText(track.name)`));
   assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-track-name'));
   assert.ok(css.includes('display:block!important'));
 });
