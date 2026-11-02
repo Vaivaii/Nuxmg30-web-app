@@ -3,7 +3,7 @@ import {
   DAW_TRACKS, createDefaultProject, normalizeProject, makeId, projectDurationSeconds,
   barDurationSeconds, snapTime, selectStemTracks, safeExportName, floatStereoToPcm24,
   makeWavBlob, createStoredZip, trimClipStart, trimClipEnd, splitClipAt,
-  normalizeClipFades, clipFadeGainAt,
+  normalizeClipFades, clipFadeGainAt, analyzeWaveformPeaks,
 } from './studio-daw-core.js';
 
 const NativeDawFiles = registerPlugin('MG30DawFiles');
@@ -240,20 +240,11 @@ async function decodeBlob(blob) {
   return context.decodeAudioData(bytes.slice(0));
 }
 
-function analyzeWaveform(buffer, count = 72) {
-  const result = [];
+function analyzeWaveform(buffer, count = 128) {
+  if (!buffer?.numberOfChannels || !buffer.length) return [];
   const first = buffer.getChannelData(0);
   const second = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : first;
-  for (let index = 0; index < count; index++) {
-    const start = Math.floor(index * first.length / count);
-    const end = Math.max(start + 1, Math.floor((index + 1) * first.length / count));
-    let peak = 0;
-    for (let sample = start; sample < Math.min(end, first.length); sample += 1) {
-      peak = Math.max(peak, Math.abs(first[sample]), Math.abs(second[sample]));
-    }
-    result.push(Math.max(5, Math.round(peak * 100)));
-  }
-  return result;
+  return analyzeWaveformPeaks(first, second, count);
 }
 
 function connectClipWithFade(context, source, clip, elapsedIntoClip, playbackDuration, when, trackGain) {
@@ -296,10 +287,22 @@ function timelineMetrics() {
 }
 
 function waveformMarkup(waveform) {
-  const levels = Array.isArray(waveform) && waveform.length ? waveform : Array.from({ length: 32 }, (_, index) => 18 + ((index * 19) % 62));
-  return '<span class="daw-waveform" aria-hidden="true">' + levels.map((level) =>
-    '<i style="--wave-height:' + Math.max(5, Math.min(100, Number(level) || 5)) + '%"></i>'
-  ).join('') + '</span>';
+  const levels = Array.isArray(waveform) ? waveform.slice(0, 256) : [];
+  if (!levels.length) {
+    return '<svg class="daw-waveform" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="daw-waveform-center" d="M0 50H100"></path></svg>';
+  }
+  const count = levels.length;
+  const step = 100 / count;
+  const bars = levels.map((value, index) => {
+    const level = Math.max(3, Math.min(100, Number(value) || 3));
+    const amplitude = Math.max(2, Math.min(47, level * 0.46));
+    const x = ((index + 0.5) * step).toFixed(3);
+    const y = (50 - amplitude).toFixed(2);
+    const height = (amplitude * 2).toFixed(2);
+    const width = (step * 0.68).toFixed(3);
+    return '<rect x="' + (Number(x) - Number(width) / 2).toFixed(3) + '" y="' + y + '" width="' + width + '" height="' + height + '" rx="0.18"></rect>';
+  }).join('');
+  return '<svg class="daw-waveform" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="daw-waveform-center" d="M0 50H100"></path><g class="daw-waveform-peaks">' + bars + '</g></svg>';
 }
 
 function renderRuler(metrics) {
@@ -533,14 +536,24 @@ async function loadProject(projectId) {
     resetHistory();
     mediaBuffers.clear();
     let missing = 0;
+    let waveformUpdated = false;
     for (const track of project.tracks) {
       for (const clip of track.clips) {
         try {
           const media = await databaseRequest('media', 'readonly', 'get', clip.mediaId);
           if (!media?.blob) { missing += 1; continue; }
-          mediaBuffers.set(clip.mediaId, await decodeBlob(media.blob));
+          const buffer = await decodeBlob(media.blob);
+          mediaBuffers.set(clip.mediaId, buffer);
+          if (!Array.isArray(clip.waveform) || clip.waveform.length !== 128) {
+            clip.waveform = analyzeWaveform(buffer, 128);
+            waveformUpdated = true;
+          }
         } catch (_) { missing += 1; }
       }
+    }
+    if (waveformUpdated) {
+      resetHistory();
+      await saveProject(false);
     }
     selectedTrackId = 'guitar';
     selectedClipId = '';
