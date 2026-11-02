@@ -343,3 +343,441 @@
   #page-studio .daw-ruler-row,
   #page-studio .daw-track-row{grid-template-columns:100px minmax(0,1fr)}
 }
+
+
+/* DAW control-room layout: compact studio header, sticky transport and drawer-based controls. */
+#page-studio .studio-page-hero.studio-daw-hero{
+  position:sticky!important;
+  top:0!important;
+  z-index:42!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  width:100%!important;
+  min-height:0!important;
+  margin:0 0 8px!important;
+  padding:6px 3px 8px!important;
+  text-align:left!important;
+  background:#0b1012!important;
+  border:0!important;
+  border-bottom:1px solid #1c2725!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+#page-studio .studio-page-hero.studio-daw-hero>div:first-child{
+  display:block!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+}
+#page-studio .studio-daw-hero .eyebrow{
+  font-size:7px!important;
+  letter-spacing:1.5px!important;
+  line-height:1.2!important;
+  margin:0 0 2px!important;
+  color:#bde96b!important;
+}
+#page-studio .studio-daw-hero h2{
+  margin:0!important;
+  font-size:19px!important;
+  line-height:1.04!important;
+  letter-spacing:-.55px!important;
+  font-weight:850!important;
+}
+#page-studio .studio-daw-hero p{display:none!important}
+#page-studio .studio-mode-tabs{
+  display:flex!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  gap:3px!important;
+  margin:0!important;
+  padding:3px!important;
+  border-radius:10px!important;
+  background:#111810!important;
+  border:1px solid #2e392c!important;
+}
+#page-studio .studio-mode-tabs button{
+  min-width:48px!important;
+  width:48px!important;
+  min-height:29px!important;
+  padding:5px 4px!important;
+  border-radius:7px!important;
+  font-size:9px!important;
+  line-height:1!important;
+  font-weight:800!important;
+}
+#page-studio .studio-mode-tabs button.active{box-shadow:none!important}
+#page-studio .studio-daw-workspace{gap:7px!important;padding-bottom:0!important}
+#page-studio .daw-project-bar{padding:7px 8px!important;gap:5px!important;border-radius:11px!important}
+#page-studio .daw-project-main{gap:6px!important}
+#page-studio .daw-project-name-wrap label{font-size:7px!important}
+#page-studio .daw-project-name-wrap input{height:30px!important;font-size:10px!important}
+#page-studio .daw-project-actions .daw-tool-btn{min-height:30px!important;padding:5px 7px!important;font-size:8px!important}
+#page-studio #dawSavedProjects{height:25px!important;min-height:25px!important;font-size:8px!important}
+#page-studio .daw-timeline-panel{
+  border-radius:12px!important;
+  border-color:#28342a!important;
+  background:#0e140f!important;
+}
+#page-studio .daw-timeline-heading{
+  padding:7px 8px!important;
+  min-height:31px!important;
+}
+#page-studio .daw-timeline-heading strong{font-size:9px!important;letter-spacing:1px!important}
+#page-studio .daw-timeline-heading>span{font-size:7px!important}
+#page-studio .daw-timeline-heading label{font-size:7px!important}
+#page-studio .daw-timeline-heading input{width:45px!important;height:12px!important}
+#page-studio .daw-ruler-row,
+#page-studio .daw-track-row{
+  grid-template-columns:88px minmax(0,1fr)!important;
+  min-height:82px!important;
+  height:82px!important;
+  max-height:82px!important;
+  align-items:stretch!important;
+}
+#page-studio .daw-ruler-row{min-height:28px!important;height:28px!important;max-height:28px!important}
+#page-studio .daw-track-rail-label{padding:0 6px!important;font-size:7px!important}
+#page-studio .daw-track-list{
+  position:relative!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+  --daw-rail-width:88px;
+}
+#page-studio .daw-track-row{
+  display:grid!important;
+  grid-template-columns:88px minmax(0,1fr)!important;
+  min-height:82px!important;
+  height:82px!important;
+  max-height:82px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+#page-studio .daw-track-head{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:stretch!important;
+  gap:4px!important;
+  width:88px!important;
+  min-width:88px!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  padding:5px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+#page-studio .daw-track-title{gap:4px!important;min-width:0!important}
+#page-studio .daw-track-color{width:7px!important;height:7px!important;flex:0 0 7px!important}
+#page-studio .daw-track-title strong{font-size:8px!important;line-height:1.15!important}
+#page-studio .daw-track-input{font-size:7px!important;line-height:1.1!important}
+#page-studio .daw-track-actions{
+  display:grid!important;
+  grid-template-columns:repeat(4,16px)!important;
+  grid-auto-flow:column!important;
+  align-items:center!important;
+  justify-content:start!important;
+  gap:3px!important;
+  width:100%!important;
+  min-height:19px!important;
+  flex-wrap:nowrap!important;
+  overflow:hidden!important;
+}
+#page-studio .daw-track-actions button,
+#page-studio .daw-track-action-spacer{
+  display:grid!important;
+  place-items:center!important;
+  width:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+  height:19px!important;
+  min-height:19px!important;
+  max-height:19px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:5px!important;
+  font-size:7px!important;
+  line-height:1!important;
+  font-weight:850!important;
+}
+#page-studio .daw-track-actions .daw-track-record{
+  border-radius:50%!important;
+  color:#b9c5b1!important;
+  font-size:9px!important;
+  background:#20291f!important;
+}
+#page-studio .daw-track-actions .daw-track-record.arm-active{
+  color:#fff!important;
+  border-color:#e3515c!important;
+  background:#e3515c!important;
+  box-shadow:0 0 0 2px #e3515c21!important;
+}
+#page-studio .daw-track-actions button.import{font-size:11px!important}
+#page-studio .daw-lane-scroll{
+  width:100%!important;
+  min-width:0!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+#page-studio .daw-track-lane{
+  position:relative!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  box-sizing:border-box!important;
+}
+#page-studio .daw-track-row.selected .daw-track-lane{box-shadow:inset 0 0 0 1px #9fca60!important}
+#page-studio .daw-track-row.selected .daw-track-head{background:#192318!important}
+#page-studio .daw-clip{
+  position:absolute!important;
+  top:8px!important;
+  height:65px!important;
+  min-height:65px!important;
+  border-radius:7px!important;
+  padding:5px 8px!important;
+  border:1px solid color-mix(in srgb,var(--track-color) 88%,#fff)!important;
+  overflow:hidden!important;
+  touch-action:pan-y!important;
+  cursor:grab!important;
+  isolation:isolate;
+}
+#page-studio .daw-clip:active{cursor:grabbing!important}
+#page-studio .daw-clip strong{
+  position:relative!important;
+  z-index:2!important;
+  display:block!important;
+  width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:8px!important;
+}
+#page-studio .daw-clip-edge{
+  position:absolute!important;
+  z-index:5!important;
+  top:0!important;
+  bottom:0!important;
+  display:block!important;
+  width:11px!important;
+  background:linear-gradient(90deg,#fff3,transparent)!important;
+  opacity:.45!important;
+  cursor:ew-resize!important;
+  touch-action:none!important;
+}
+#page-studio .daw-clip-edge-start{left:0!important}
+#page-studio .daw-clip-edge-end{right:0!important;transform:scaleX(-1)}
+#page-studio .daw-clip.selected .daw-clip-edge{opacity:.9!important}
+#page-studio .daw-clip-fade{
+  position:absolute!important;
+  z-index:1!important;
+  top:0!important;
+  bottom:0!important;
+  pointer-events:none!important;
+}
+#page-studio .daw-clip-fade-in{
+  left:0!important;
+  width:var(--clip-fade-in,0%)!important;
+  background:linear-gradient(110deg,#101910dd,transparent)!important;
+  clip-path:polygon(0 0,100% 0,100% 100%)!important;
+}
+#page-studio .daw-clip-fade-out{
+  right:0!important;
+  width:var(--clip-fade-out,0%)!important;
+  background:linear-gradient(110deg,transparent,#101910dd)!important;
+  clip-path:polygon(0 0,100% 0,0 100%)!important;
+}
+#page-studio .daw-waveform{z-index:0!important;inset:22px 7px 5px!important}
+#page-studio .daw-global-playhead{
+  position:absolute!important;
+  z-index:8!important;
+  pointer-events:none!important;
+  top:0!important;
+  bottom:0!important;
+  left:calc(var(--daw-rail-width,88px) + var(--daw-playhead,0px) - var(--daw-scroll-left,0px))!important;
+  width:2px!important;
+  background:#f5f7eb!important;
+  box-shadow:0 0 6px #f5f7ebc9!important;
+}
+#page-studio .daw-global-playhead:before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  left:-4px!important;
+  border-left:5px solid transparent!important;
+  border-right:5px solid transparent!important;
+  border-top:7px solid #f5f7eb!important;
+}
+#page-studio .daw-sticky-transport{
+  position:sticky!important;
+  bottom:calc(66px + env(safe-area-inset-bottom,0px))!important;
+  z-index:48!important;
+  display:grid!important;
+  grid-template-columns:58px minmax(0,1fr) 39px!important;
+  align-items:center!important;
+  gap:6px!important;
+  width:100%!important;
+  margin:9px 0 6px!important;
+  padding:7px 8px!important;
+  border:1px solid #4b5b3d!important;
+  border-radius:14px!important;
+  background:linear-gradient(145deg,#202d1d,#101711 90%)!important;
+  box-shadow:0 7px 22px #0008!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  backdrop-filter:blur(16px)!important;
+}
+#page-studio .daw-sticky-time strong{
+  display:block!important;
+  color:#f0f5e8!important;
+  font:800 10px/1.2 ui-monospace,monospace!important;
+  white-space:nowrap!important;
+}
+#page-studio .daw-sticky-time small{
+  display:block!important;
+  margin-top:3px!important;
+  color:#8b9a83!important;
+  font:8px/1.1 ui-monospace,monospace!important;
+}
+#page-studio .daw-sticky-buttons{display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important}
+#page-studio .daw-sticky-buttons button,
+#page-studio .daw-open-control{
+  display:grid!important;
+  place-items:center!important;
+  width:30px!important;
+  min-width:30px!important;
+  height:32px!important;
+  min-height:32px!important;
+  padding:0!important;
+  border:1px solid #3b4936!important;
+  border-radius:9px!important;
+  background:#19241a!important;
+  color:#dce8d4!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+#page-studio .daw-sticky-buttons .daw-play-button{
+  width:36px!important;
+  min-width:36px!important;
+  height:36px!important;
+  background:#c5f36b!important;
+  border-color:#c5f36b!important;
+  color:#11170b!important;
+}
+#page-studio .daw-sticky-buttons .daw-record-button{color:#f36b72!important}
+#page-studio .daw-sticky-buttons .daw-record-button.is-recording{background:#7f272c!important;color:white!important}
+#page-studio .daw-open-control{
+  width:36px!important;
+  min-width:36px!important;
+  height:36px!important;
+  background:#26341f!important;
+  color:#c5f36b!important;
+  font-size:18px!important;
+}
+.daw-control-dialog{
+  position:fixed!important;
+  inset:auto 0 calc(63px + env(safe-area-inset-bottom,0px)) 0!important;
+  width:min(100vw,720px)!important;
+  max-width:none!important;
+  max-height:84dvh!important;
+  margin:0 auto!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid #526342!important;
+  border-bottom:0!important;
+  border-radius:18px 18px 0 0!important;
+  background:#0e140f!important;
+  color:#edf4e7!important;
+  box-shadow:0 -12px 42px #0009!important;
+}
+.daw-control-dialog::backdrop{background:#0009!important;backdrop-filter:blur(3px)!important}
+.daw-control-card{
+  display:grid!important;
+  gap:9px!important;
+  max-height:84dvh!important;
+  padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+}
+.daw-control-heading{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:2px 1px 8px!important;border-bottom:1px solid #273327!important}
+.daw-control-heading>div{display:grid!important;gap:3px!important}
+.daw-control-heading strong{font-size:15px!important;line-height:1.1!important}
+.daw-control-heading .eyebrow{font-size:8px!important;letter-spacing:1.5px!important}
+.daw-control-heading button{
+  width:32px!important;height:32px!important;border:1px solid #374532!important;border-radius:9px!important;
+  background:#1a2418!important;color:#dce8d4!important;font-size:20px!important;line-height:1!important
+}
+.daw-control-group{border:1px solid #2e3b2b!important;border-radius:11px!important;background:#121a12!important}
+.daw-control-group>summary{padding:10px 11px!important;font-size:10px!important;font-weight:800!important;color:#dbe8d2!important;cursor:pointer!important}
+.daw-control-group .daw-session-toolbar{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:7px!important;
+  padding:0 9px 9px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow:visible!important;
+}
+.daw-control-group .daw-session-toolbar label{display:flex!important;align-items:center!important;gap:4px!important;font-size:9px!important;white-space:nowrap!important}
+.daw-control-group .daw-session-toolbar label:nth-child(1),
+.daw-control-group .daw-session-toolbar label:nth-child(2){grid-column:span 3!important}
+.daw-control-group .daw-session-toolbar label:nth-child(3),
+.daw-control-group .daw-session-toolbar label:nth-child(4),
+.daw-control-group .daw-session-toolbar label:nth-child(5){grid-column:span 2!important}
+.daw-control-group .daw-session-toolbar input,
+.daw-control-group .daw-session-toolbar select{height:29px!important;min-width:0!important;max-width:100%!important;font-size:10px!important}
+.daw-control-dialog .daw-mixer-panel{margin:0!important;padding:10px!important}
+.daw-control-dialog .daw-mixer{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+.daw-control-dialog .daw-mixer-strip{padding:7px 4px!important}
+.daw-control-dialog .daw-mixer-strip strong{font-size:8px!important}
+.daw-control-dialog .daw-lower-panels{grid-template-columns:1fr 1fr!important;gap:7px!important}
+.daw-control-dialog .daw-collapse-panel>summary{padding:9px 8px!important;font-size:9px!important}
+.daw-control-dialog .daw-clip-tools{display:grid!important;gap:8px!important;padding:8px 0 2px!important}
+.daw-control-dialog .daw-clip-tools>small{font-size:9px!important;color:#e1ead8!important}
+.daw-control-dialog .daw-fade-control{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+.daw-control-dialog .daw-fade-control label{display:grid!important;gap:5px!important;color:#9eae96!important;font-size:8px!important}
+.daw-control-dialog .daw-fade-control strong{color:#dbe8d1!important;font-size:9px!important}
+.daw-control-dialog .daw-fade-control input{width:100%!important;accent-color:#c5f36b!important}
+.daw-control-dialog .daw-clip-tools>div{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+.daw-control-dialog .daw-clip-tools button{font-size:9px!important;padding:7px 9px!important}
+.daw-control-dialog .daw-export-actions{grid-template-columns:1fr 1fr!important}
+.daw-control-dialog .daw-quick-takes{margin:0 8px 8px!important}
+.daw-control-dialog .daw-status{font-size:8px!important;padding:8px!important}
+#page-studio .daw-dialog{z-index:100!important}
+@media(max-width:430px){
+  #page-studio .studio-page-hero.studio-daw-hero{gap:4px!important;padding:5px 2px 7px!important}
+  #page-studio .studio-daw-hero h2{font-size:18px!important}
+  #page-studio .studio-mode-tabs button{min-width:43px!important;width:43px!important;min-height:27px!important;font-size:8px!important}
+  #page-studio .daw-project-bar{padding:6px!important}
+  #page-studio .daw-project-name-wrap input{height:28px!important;font-size:9px!important}
+  #page-studio .daw-project-actions .daw-tool-btn{min-width:40px!important;min-height:28px!important;padding:4px 5px!important;font-size:7px!important}
+  #page-studio #dawSavedProjects{height:23px!important;min-height:23px!important}
+  #page-studio .daw-ruler-row,
+  #page-studio .daw-track-row{grid-template-columns:88px minmax(0,1fr)!important}
+  #page-studio .daw-track-head{width:88px!important;min-width:88px!important;padding:4px!important}
+  #page-studio .daw-track-title strong{font-size:7px!important}
+  #page-studio .daw-track-input{font-size:6px!important}
+  #page-studio .daw-track-actions{grid-template-columns:repeat(4,16px)!important;gap:2px!important}
+  #page-studio .daw-track-actions button,
+  #page-studio .daw-track-action-spacer{width:16px!important;min-width:16px!important;height:18px!important;min-height:18px!important}
+  #page-studio .daw-sticky-transport{grid-template-columns:55px minmax(0,1fr) 34px!important;padding:6px!important;gap:3px!important}
+  #page-studio .daw-sticky-buttons{gap:3px!important}
+  #page-studio .daw-sticky-buttons button{width:27px!important;min-width:27px!important;height:29px!important}
+  #page-studio .daw-sticky-buttons .daw-play-button{width:33px!important;min-width:33px!important;height:34px!important}
+  #page-studio .daw-open-control{width:32px!important;min-width:32px!important;height:33px!important}
+  .daw-control-dialog{max-height:88dvh!important}
+  .daw-control-card{max-height:88dvh!important;padding:10px 9px calc(10px + env(safe-area-inset-bottom,0px))!important}
+  .daw-control-dialog .daw-mixer{gap:3px!important}
+  .daw-control-dialog .daw-mixer-strip{padding:6px 2px!important}
+  .daw-control-dialog .daw-mixer-strip strong{font-size:7px!important}
+  .daw-control-dialog .daw-lower-panels{grid-template-columns:1fr!important}
+  .daw-control-dialog .daw-export-actions{grid-template-columns:1fr!important}
+}
