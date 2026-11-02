@@ -284,6 +284,7 @@ function renderRuler(metrics) {
   const canvas = $('dawTimelineCanvas');
   if (!ruler || !canvas) return;
   canvas.style.width = metrics.width + 'px';
+  canvas.style.setProperty('--daw-timeline-width', metrics.width + 'px');
   canvas.style.setProperty('--daw-bar-width', project.zoom + 'px');
   const beatCount = Number(String(project.timeSignature).split('/')[0]) || 4;
   canvas.style.setProperty('--daw-beat-width', (project.zoom / beatCount) + 'px');
@@ -301,6 +302,7 @@ function renderTrackRows() {
   const canvas = $('dawTimelineCanvas');
   if (canvas) canvas.style.width = metrics.width + 'px';
   holder.style.width = metrics.width + 'px';
+  holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
   holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
   holder.style.setProperty('--daw-bar-width', project.zoom + 'px');
 
