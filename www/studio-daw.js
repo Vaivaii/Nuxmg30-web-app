@@ -267,7 +267,9 @@ function updateToolbar() {
 
 function timelineMetrics() {
   const barSeconds = barDurationSeconds(project.tempo, project.timeSignature);
-  const bars = Math.max(4, Math.ceil(projectDurationSeconds(project) / barSeconds) + 1);
+  const contentBars = Math.ceil(projectDurationSeconds(project) / barSeconds) + 1;
+  const playheadBars = Math.ceil(Math.max(0, playheadSeconds) / barSeconds) + 2;
+  const bars = Math.max(4, contentBars, playheadBars);
   const width = bars * project.zoom;
   return { barSeconds, bars, width };
 }
@@ -410,6 +412,15 @@ function updatePlayheadReadout() {
 
 function renderPlayhead() {
   const metrics = timelineMetrics();
+  const ruler = $('dawRulerInner');
+  const holder = $('dawTrackList');
+  if (ruler && holder && ruler.children.length < metrics.bars) {
+    renderRuler(metrics);
+    holder.style.width = metrics.width + 'px';
+    holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
+    holder.querySelectorAll('.daw-track-lane').forEach((lane) => { lane.style.width = metrics.width + 'px'; });
+    if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = '4 tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
+  }
   const left = Math.max(0, (playheadSeconds / metrics.barSeconds) * project.zoom);
   const playhead = $('dawGlobalPlayhead');
   if (playhead) playhead.style.left = left + 'px';
