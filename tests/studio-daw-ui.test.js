@@ -104,27 +104,27 @@ test('ruler and all four track lanes use one shared horizontal timeline scroller
   for (const id of ['dawTimelineScroll', 'dawTimelineCanvas', 'dawTrackRail', 'dawTrackList', 'dawRulerInner', 'dawGlobalPlayhead']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing shared timeline element: ' + id);
   }
-  assert.ok(js.includes("const canvas = $('dawTimelineCanvas')"));
-  assert.ok(!js.includes('dawRulerScroll'));
-  assert.ok(!js.includes('data-lane-scroll'));
+  assert.ok(daw.includes("const canvas = $('dawTimelineCanvas')"));
+  assert.ok(!daw.includes('dawRulerScroll'));
+  assert.ok(!daw.includes('data-lane-scroll'));
   assert.ok(css.includes('#page-studio .daw-timeline-canvas'));
   assert.ok(css.includes('var(--daw-bar-width'));
 });
 
 test('playhead can be dragged freely and lane clicks seek without snap quantization', () => {
   assert.ok(html.includes('id="dawPlayheadHit"'));
-  assert.ok(js.includes('function startPlayheadDrag(event)'));
-  assert.ok(js.includes('function movePlayheadDrag(event)'));
-  assert.ok(js.includes('function setPlayheadFromClientX(clientX)'));
-  assert.ok(!/playheadSeconds = snapTime\(Math\.max\(0, x \/ project\.zoom \* metrics\.barSeconds\), project\)/.test(js));
+  assert.ok(daw.includes('function startPlayheadDrag(event)'));
+  assert.ok(daw.includes('function movePlayheadDrag(event)'));
+  assert.ok(daw.includes('function setPlayheadFromClientX(clientX)'));
+  assert.ok(!/playheadSeconds = snapTime\(Math\.max\(0, x \/ project\.zoom \* metrics\.barSeconds\), project\)/.test(daw));
 });
 
 test('Studio provides project-scoped undo and redo controls with keyboard shortcuts', () => {
   for (const value of ['function historyState()', 'function commitHistoryChange()', 'function applyHistory(direction)', 'function resetHistory()']) {
-    assert.ok(js.includes(value), 'missing undo/redo implementation: ' + value);
+    assert.ok(daw.includes(value), 'missing undo/redo implementation: ' + value);
   }
-  assert.ok(js.includes("event.key.toLowerCase() === 'z'"));
-  assert.ok(js.includes("event.key.toLowerCase() === 'y'"));
+  assert.ok(daw.includes("event.key.toLowerCase() === 'z'"));
+  assert.ok(daw.includes("event.key.toLowerCase() === 'y'"));
   assert.ok(css.includes('#page-studio .daw-history-tools button:disabled'));
 });
 
