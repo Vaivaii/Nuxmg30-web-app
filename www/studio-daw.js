@@ -666,11 +666,11 @@ function updateAudioMeters() {
 }
 
 function updatePlayheadFrame() {
-  if (!playing || !audioContext) return;
+  if ((!playing && !recording) || !audioContext) return;
   const elapsed = Math.max(0, audioContext.currentTime - playStartContextTime);
   playheadSeconds = playStartPosition + elapsed;
   const maxDuration = projectDurationSeconds(project);
-  if (playheadSeconds >= maxDuration) {
+  if (!recording && playheadSeconds >= maxDuration) {
     if (project.loopEnabled) {
       playheadSeconds = 0;
       void restartPlaybackAt(0);
@@ -815,15 +815,25 @@ async function startDawRecording() {
   try {
     const result = await recorder.start();
     if (!result?.recording) throw new Error('The MG-30 USB recorder did not confirm that recording started.');
+    const context = await getAudioContext();
     recording = true;
     recordingTrackId = track.id;
     recordingStartPosition = playheadSeconds;
-    if (!playing) await startPlayback(playheadSeconds);
+    if (!playing) {
+      playStartPosition = playheadSeconds;
+      playStartContextTime = context.currentTime;
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(updatePlayheadFrame);
+    }
     updateTransport();
     setStatus('Recording ' + track.name + ' from the verified MG-30 USB input. Record one overdub track at a time.', 'ok');
   } catch (error) {
+    if (recorder.isRecording()) {
+      try { await recorder.stop(); } catch (_) {}
+    }
     recording = false;
     recordingTrackId = '';
+    cancelAnimationFrame(animationFrame);
     updateTransport();
     setStatus('DAW recording failed: ' + (error?.message || 'USB recording error'), 'warn');
   }
@@ -833,8 +843,10 @@ async function stopDawRecording() {
   if (!recording) return;
   const trackId = recordingTrackId;
   const startAt = recordingStartPosition;
+  if (audioContext) playheadSeconds = playStartPosition + Math.max(0, audioContext.currentTime - playStartContextTime);
   recording = false;
   recordingTrackId = '';
+  cancelAnimationFrame(animationFrame);
   updateTransport();
   try {
     const recorder = window.NUXStudioRecorder;
