@@ -137,3 +137,17 @@ Validation caveats before release:
 - Physical MG-30 USB overdub/playback and Android phone visual checks remain separate device-validation tasks.
 - No changes are intended to NAM, IR User/Third Party, IR Collection, MIDI mapping, preset transfer, signal chain, or USB-MIDI protocol.
 - Temporary workflow push allowlist entry for this branch is being added solely to queue validation; remove it after the run is queued/completed, restoring the prior workflow policy.
+
+### Validation result — Build #266
+
+- GitHub Actions run **41414735083** completed successfully: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41414735083
+- Exact source commit built: 173a6a37d0b4eb116783e16235afd0567feb2cf5.
+- CI test simulation: **53/53 passed, 0 failed** (Node 22).
+- Capacitor Android generation and USB audio plugin registration: passed.
+- Android Gradle debug APK build: **BUILD SUCCESSFUL**.
+- Artifact ID: **13126987225**, ZIP size **4,099,288 bytes**, SHA-256 **196cbb9b51d2ecc0edaf1aae6c2b9e26df532d13b24c6cdb57c7899040fe9acc**.
+- Extracted APK: **MG30_Studio_DAW_ClipEdit.apk**, size **4,476,608 bytes**, SHA-256 **8c7bacfea829027edced2fe9bf9939560a964b8e246c2879a6cd06bb95272e4d**.
+- APK ZIP integrity check passed. Packaged asset inspection confirms the sticky transport, control dialog, global playhead, clip split/trim/fade logic and matching CSS are present.
+- Temporary workflow allowlist entry was removed after the validation run was queued; restoration commit **80d443ecfeb5a3ff3a04ee7c15557c759b803f2b**. Existing workflow branch policy is restored.
+- Important: CI and package checks do not substitute for installing/running the app on the user's phone. Physical MG-30 USB input/overdub, audio latency/dropouts, touch trim ergonomics, modal scrolling and phone-specific layout still need device verification.
+- Existing NAM, IR User/Third Party, IR Collection, MIDI mapping, preset transfer, signal chain, USB-MIDI and native audio capture sources were not intentionally changed by this DAW UI/editing pass.

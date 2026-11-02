@@ -3416,3 +3416,6 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 
 
 - 2026-11-02: Studio Mini DAW follow-up UI/clip-editing implementation and validation checkpoint are documented in docs/research/MG30_STUDIO_MINI_DAW_4_TRACK_MOCKUP_2026-11-02.md. Pending CI test/build before APK release.
+
+
+- Build #266: Studio sticky transport/control drawer and non-destructive clip editing. CI run 41414735083: 53/53 tests passed, Capacitor generation and Gradle APK build succeeded. APK SHA-256: 8c7bacfea829027edced2fe9bf9939560a964b8e246c2879a6cd06bb95272e4d. Device-level MG-30 USB/audio and phone UI verification remains pending.
