@@ -4,7 +4,7 @@ import {
   createDefaultProject, normalizeProject, barDurationSeconds, projectDurationSeconds,
   snapTime, selectStemTracks, safeExportName, encodeWavHeader, floatStereoToPcm24,
   makeWavBlob, createStoredZip, crc32, trimClipStart, trimClipEnd, splitClipAt,
-  normalizeClipFades, clipFadeGainAt,
+  normalizeClipFades, clipFadeGainAt, analyzeWaveformPeaks,
 } from '../www/studio-daw-core.js';
 
 test('new DAW projects start with four prepared lanes', () => {
