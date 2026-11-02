@@ -3520,3 +3520,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size **4,494,444 bytes**, SHA-256 `83a2287323b5a28bd293e12bc890395f4f3b06f7961e664f36ca2b77806fb5e6`. ZIP/APK integrity passed. Packaged CSS contains opacity-only rules for Studio ancestors and preserves fixed dock positioning.
 - Only `www/ui-redesign.css` and `tests/ui-motion.test.js` changed for this fix. NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset transfer, Signal Chain, Studio DAW CSS/JS, audio engine and Android plugins were untouched.
 - Physical device check remains required: install Build #343, confirm dock returns to the bottom above the nav and no longer obscures tracks, while all other animations still work.
+
+
+## Editor tab amplifier-head icon — Build #344 passed (3 November 2026)
+
+- User requested only replacing the Editor bottom-navigation sliders icon with a more relevant amp-head icon. Explicit scope: do not change functions or other icons.
+- Replaced only the inline SVG within the existing `button.active[data-page="editor"]` in `www/index.html`. New outline shows amp-head enclosure, top handle, four front knobs and lower grille. Existing SVG style, size and `currentColor` behavior remain.
+- Preserved the Editor button's active class, target, aria behavior, and visible label. NAM & IR, Presets, Studio and Device nav icons/labels remain unchanged.
+- Added `tests/editor-nav-icon.test.js` to assert the amp-head icon, unchanged Editor target/label, and existing other nav targets.
+- Authoritative Build #344: run ID `41503605052`, source commit `ce0b64513d11d2c1c8dcfb19e4a06d4bc8918ef4`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41503605052).
+- `npm test`: **130/130 passed, 0 failed**. Vite production build, Capacitor Android generation/USB audio plugin, Gradle `assembleDebug`, and APK upload all passed.
+- ZIP artifact ID `13170960214`, size **4,116,763 bytes**, SHA-256 `a57670c9d609b3686428d0b0d6865c72b1ef473d72d273fd0b949ea01d2b033b`.
+- Extracted APK size **4,494,548 bytes**, SHA-256 `8516638dee93993ca40125374842a6edb08d93c8fbc5f5ff3cf91bd6f9a3f8d3`. ZIP/APK integrity checks passed. Embedded APK HTML verified the new icon and unchanged Editor navigation target/label.
+- Only `www/index.html` and `tests/editor-nav-icon.test.js` changed in source/test. No application behavior, other icons, NAM, IR, MIDI, preset features, Signal Chain, Studio, audio, or Android device communication was changed.
+- Physical-device visual review remains optional for this icon-only change; install Build #344 to see the amp-head icon on the device.
