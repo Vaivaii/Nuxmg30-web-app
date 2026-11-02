@@ -1156,3 +1156,174 @@
 #page-studio .daw-history-tools button{width:100%!important;height:34px!important;padding:0 8px!important;font-size:10px!important}
 
 /* Keep this Studio-only stylesheet in sync with live playhead-extent regression coverage. */
+
+
+/* -------------------------------------------------------------------------
+   Studio phone feedback fixes (2026-11-02) — Studio-only overrides.
+   ------------------------------------------------------------------------- */
+
+/* Prevent the !important grid layout from leaking into Jam and Record modes. */
+#page-studio #studio-daw-workspace[hidden]{display:none!important}
+#page-studio .studio-mode-panel[hidden]{display:none!important}
+
+/* Keep the DAW transport dock visible above the app's bottom navigation. */
+#page-studio .daw-transport-row{
+  position:sticky!important;
+  bottom:calc(86px + env(safe-area-inset-bottom,0px))!important;
+  z-index:150!important;
+  isolation:isolate!important;
+}
+
+/* Mixer opens as an upward overlay from its header; it never extends page height. */
+#page-studio .daw-mixer-disclosure{
+  position:relative!important;
+  z-index:80!important;
+  overflow:visible!important;
+}
+#page-studio .daw-mixer-disclosure[open] #dawMixer{
+  position:absolute!important;
+  left:-1px!important;
+  right:-1px!important;
+  bottom:calc(100% + 8px)!important;
+  width:calc(100% + 2px)!important;
+  max-height:min(56dvh,460px)!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  border:1px solid #435347!important;
+  border-radius:15px!important;
+  padding:9px!important;
+  background:linear-gradient(150deg,#111b17,#0c1411)!important;
+  box-shadow:0 -12px 34px #000b!important;
+  z-index:130!important;
+}
+#page-studio .daw-mixer-disclosure[open]>summary{position:relative!important;z-index:131!important}
+
+/* Correct seven explicit mixer rows: index, name, meter, pan, fader, readout, M/S. */
+#page-studio .daw-mixer-strip{
+  grid-template-rows:22px 13px 8px 42px minmax(70px,1fr) 12px 26px!important;
+}
+#page-studio .daw-mixer-pan-readout{
+  width:100%!important;
+  min-height:12px!important;
+  line-height:12px!important;
+  margin:0!important;
+  padding:0!important;
+  color:#9eab9e!important;
+  font-size:8px!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+
+/* Make the track rail a full-width continuation of its matching timeline lane.
+   Strong width reset overrides the older 88px mobile rail setting. */
+#page-studio .daw-timeline-shell{
+  grid-template-columns:minmax(134px,35%) minmax(0,1fr)!important;
+}
+#page-studio .daw-track-rail-column{
+  width:100%!important;
+  min-width:0!important;
+  border-right:1px solid #344139!important;
+  background:#101816!important;
+}
+#page-studio .daw-track-rail{
+  width:100%!important;
+  min-width:0!important;
+  align-items:stretch!important;
+}
+#page-studio .daw-track-head{
+  display:flex!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  border-right:1px solid #344139!important;
+  border-radius:9px 0 0 9px!important;
+}
+#page-studio .daw-track-rail .daw-track-head.selected{
+  border-right-color:#8eaa62!important;
+}
+#page-studio .daw-track-actions{
+  display:flex!important;
+  width:100%!important;
+  min-width:0!important;
+  justify-content:flex-start!important;
+  gap:3px!important;
+  overflow:visible!important;
+}
+#page-studio .daw-track-actions button,
+#page-studio .daw-track-action-spacer{
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 22px!important;
+  width:22px!important;
+  min-width:22px!important;
+  max-width:22px!important;
+  height:25px!important;
+  min-height:25px!important;
+  max-height:25px!important;
+  padding:0!important;
+  border-radius:7px!important;
+  font-size:10px!important;
+}
+#page-studio .daw-track-actions .daw-track-record{
+  border-radius:50%!important;
+  font-size:12px!important;
+}
+#page-studio .daw-track-actions button.import{
+  font-size:14px!important;
+  color:#d9f2a7!important;
+}
+#page-studio .daw-track-head .daw-track-title strong{
+  font-size:10px!important;
+}
+
+/* Full-height transparent pointer target around the playhead; visible line remains 2px. */
+#page-studio .daw-global-playhead{
+  width:28px!important;
+  left:0!important;
+  transform:translateX(-14px)!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  pointer-events:auto!important;
+  touch-action:none!important;
+  cursor:ew-resize!important;
+  z-index:40!important;
+}
+#page-studio .daw-global-playhead:after{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  bottom:0!important;
+  left:13px!important;
+  width:2px!important;
+  background:#f5f7eb!important;
+  box-shadow:0 0 6px #f5f7ebc9!important;
+  pointer-events:none!important;
+}
+#page-studio .daw-global-playhead:before{
+  top:24px!important;
+  left:9px!important;
+  z-index:2!important;
+}
+#page-studio .daw-playhead-hit{
+  position:absolute!important;
+  z-index:3!important;
+  inset:0!important;
+  width:28px!important;
+  min-width:28px!important;
+  height:100%!important;
+  pointer-events:none!important;
+  touch-action:none!important;
+}
+
+/* The sticky dock must remain visible above the upward-opening mixer surface. */
+#page-studio .daw-transport-row{z-index:150!important}
+@media(max-width:430px){
+  #page-studio .daw-timeline-shell{grid-template-columns:minmax(128px,36%) minmax(0,1fr)!important}
+  #page-studio .daw-track-head{width:100%!important;min-width:0!important;padding:5px!important}
+  #page-studio .daw-track-actions{gap:2px!important}
+  #page-studio .daw-track-actions button{flex-basis:21px!important;width:21px!important;min-width:21px!important}
+  #page-studio .daw-mixer-disclosure[open] #dawMixer{max-height:min(58dvh,460px)!important}
+}
