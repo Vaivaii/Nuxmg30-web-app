@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   createDefaultProject, normalizeProject, barDurationSeconds, projectDurationSeconds,
   snapTime, selectStemTracks, safeExportName, encodeWavHeader, floatStereoToPcm24,
-  makeWavBlob, createStoredZip, crc32,
+  makeWavBlob, createStoredZip, crc32, trimClipStart, trimClipEnd, splitClipAt,
+  normalizeClipFades, clipFadeGainAt,
 } from '../www/studio-daw-core.js';
 
 test('new DAW projects start with four prepared lanes', () => {
@@ -98,4 +99,74 @@ test('stored ZIP contains separate selected stem files with CRC and central dire
   const expected = crc32(new TextEncoder().encode('backing-audio')) ^ 0xffffffff;
   assert.equal(view.getUint32(centralOffset + 16, true), expected >>> 0);
   await assert.rejects(() => createStoredZip([]), /Select at least one/);
+});
+
+
+test('clip start trimming is non-destructive and bounded by both source and timeline zero', () => {
+  const original = { id: 'clip-a', mediaId: 'media-a', startSeconds: 3, sourceOffsetSeconds: 2, durationSeconds: 5, fadeInSeconds: 0.5, fadeOutSeconds: 0.5 };
+  const trimmed = trimClipStart(original, 1, 12);
+  assert.equal(trimmed.startSeconds, 4);
+  assert.equal(trimmed.sourceOffsetSeconds, 3);
+  assert.equal(trimmed.durationSeconds, 4);
+  assert.equal(trimmed.mediaId, 'media-a');
+  assert.equal(original.startSeconds, 3);
+  assert.equal(original.sourceOffsetSeconds, 2);
+  assert.equal(original.durationSeconds, 5);
+
+  const nearZero = trimClipStart({ ...original, startSeconds: 0.25, sourceOffsetSeconds: 0.5 }, -4, 12);
+  assert.equal(nearZero.startSeconds, 0);
+  assert.equal(nearZero.sourceOffsetSeconds, 0.25);
+  assert.equal(nearZero.durationSeconds, 5.25);
+});
+
+test('clip end trimming changes only the visible source range and never exceeds source duration', () => {
+  const original = { id: 'clip-b', mediaId: 'media-b', startSeconds: 1, sourceOffsetSeconds: 2, durationSeconds: 5, fadeInSeconds: 0.5, fadeOutSeconds: 0.5 };
+  const longer = trimClipEnd(original, 2, 12);
+  assert.equal(longer.durationSeconds, 7);
+  assert.equal(longer.sourceOffsetSeconds, 2);
+  assert.equal(longer.mediaId, 'media-b');
+  const capped = trimClipEnd(original, 50, 12);
+  assert.equal(capped.durationSeconds, 10);
+  const shorter = trimClipEnd(original, -50, 12);
+  assert.equal(shorter.durationSeconds, 0.05);
+  assert.equal(original.durationSeconds, 5);
+});
+
+test('split creates two non-destructive clips sharing the same source and preserving timeline alignment', () => {
+  const original = { id: 'clip-c', mediaId: 'media-c', name: 'Verse', startSeconds: 2, sourceOffsetSeconds: 1, durationSeconds: 8, fadeInSeconds: 1, fadeOutSeconds: 1 };
+  const split = splitClipAt(original, 6);
+  assert.ok(split);
+  assert.equal(split.left.startSeconds, 2);
+  assert.equal(split.left.durationSeconds, 4);
+  assert.equal(split.left.fadeInSeconds, 1);
+  assert.equal(split.left.fadeOutSeconds, 0);
+  assert.equal(split.right.startSeconds, 6);
+  assert.equal(split.right.sourceOffsetSeconds, 5);
+  assert.equal(split.right.durationSeconds, 4);
+  assert.equal(split.right.fadeInSeconds, 0);
+  assert.equal(split.right.fadeOutSeconds, 1);
+  assert.equal(split.right.mediaId, original.mediaId);
+  assert.notEqual(split.right.id, split.left.id);
+  assert.equal(splitClipAt(original, 2.02), null);
+  assert.equal(splitClipAt(original, 9.98), null);
+  assert.equal(original.durationSeconds, 8);
+});
+
+test('fade envelope is normalized to the clip duration and has deterministic gain points', () => {
+  assert.deepEqual(normalizeClipFades(4, 3, 3), { fadeInSeconds: 2, fadeOutSeconds: 2 });
+  const clip = { durationSeconds: 4, fadeInSeconds: 1, fadeOutSeconds: 1 };
+  assert.equal(clipFadeGainAt(clip, 0), 0);
+  assert.equal(clipFadeGainAt(clip, 0.5), 0.5);
+  assert.equal(clipFadeGainAt(clip, 2), 1);
+  assert.equal(clipFadeGainAt(clip, 3.5), 0.5);
+  assert.equal(clipFadeGainAt(clip, 4), 0);
+});
+
+test('project normalization retains per-clip fade metadata safely', () => {
+  const project = normalizeProject({
+    tracks: [{ id: 'guitar', clips: [{ mediaId: 'm', startSeconds: 0, durationSeconds: 4, fadeInSeconds: 3, fadeOutSeconds: 3 }] }],
+  });
+  const clip = project.tracks.find((track) => track.id === 'guitar').clips[0];
+  assert.equal(clip.fadeInSeconds, 2);
+  assert.equal(clip.fadeOutSeconds, 2);
 });
