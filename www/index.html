@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title><link rel="stylesheet" href="./ctrl-editor.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="stylesheet" href="./studio-daw.css"><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title><link rel="stylesheet" href="./ctrl-editor.css">
 <style>
 :root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.signal-chain-panel .panel-head{align-items:flex-start}.signal-chain-copy{min-width:0;flex:1}.signal-chain-copy h3{font-size:16px;letter-spacing:-.25px}.signal-chain-copy p{max-width:440px;font-size:12px;line-height:1.45}.chain-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.chain-edit-toggle{min-width:82px;min-height:38px;padding:8px 10px;font-size:12px;font-weight:750;letter-spacing:0;white-space:nowrap}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;scrollbar-width:thin;scrollbar-color:#3b4930 transparent}.block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer;touch-action:pan-x;user-select:none;-webkit-user-select:none}.chain.reorder-mode .block{cursor:default;touch-action:pan-x;padding-top:40px;min-height:122px}.chain.reorder-mode .block:active{cursor:default}.block .drag-handle{position:absolute;right:6px;top:6px;display:flex;align-items:center;justify-content:center;height:25px;padding:0 6px;border:1px solid #3a4334;border-radius:7px;background:#20291b;color:var(--lime);font-size:10px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:grab;z-index:2;user-select:none;-webkit-user-select:none}.block .drag-handle:active{cursor:grabbing}.block.drop-target{border-color:var(--lime);box-shadow:0 0 0 2px #c5f36b55}.block.dragging{opacity:.22!important;transform:none!important;filter:saturate(.4);border-style:dashed;pointer-events:none}.block.drag-ghost{position:fixed!important;z-index:9999!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.03)!important;filter:none!important;box-shadow:0 18px 42px #0008,0 0 0 2px #c5f36b99!important;border-color:var(--lime)!important;transition:none!important;cursor:grabbing!important}.chain.reorder-mode .block.selected{border-color:var(--lime)}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.signal-chain-panel .panel-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.signal-chain-copy p{max-width:none;font-size:11px}.chain-head-actions{width:100%;justify-content:space-between}.chain-edit-toggle{min-width:88px;min-height:40px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}.chain-head-actions{gap:6px}.chain-edit-toggle{min-width:84px;padding:7px 9px}.signal-chain-panel .chip{font-size:10px;padding:6px 8px}}
 .slot-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.slot-picker label{font-size:10px;color:var(--muted);font-weight:800}.slot-picker select{min-width:80px;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.slot-buttons{display:flex;gap:7px}.slot-btn{width:42px;height:40px;border:1px solid var(--line);background:#1b2019;color:var(--muted);border-radius:10px;font-weight:800}.slot-btn.active{background:var(--lime);border-color:var(--lime);color:#11160b}.slot-note{margin:12px 0 0;color:var(--muted);font-size:10px}
@@ -414,8 +414,8 @@
  </div>
 </section>
 <section id="page-studio" class="hidden studio-page">
-  <div class="hero studio-page-hero"><div><div class="eyebrow">MG30 STUDIO</div><h2>Jam &amp; Record</h2></div></div>
-  <div class="panel studio-backing-panel">
+  <div class="hero studio-page-hero studio-daw-hero"><div><div class="eyebrow">MG30 STUDIO</div><h2>Studio</h2><p>Jam · Quick Record · Mini DAW</p></div><div class="studio-mode-tabs" role="tablist" aria-label="Studio mode"><button type="button" data-studio-mode="jam">Jam</button><button type="button" data-studio-mode="record">Record</button><button type="button" data-studio-mode="daw" class="active" aria-selected="true">DAW</button></div></div>
+  <div class="studio-mode-panel" data-studio-mode-panel="jam" hidden><div class="panel studio-backing-panel">
     <div class="panel-head studio-compact-panel-head">
       <div><h3>Track 01 · Backing</h3><p>MP3 / WAV atau cari referensi di YouTube.</p></div>
       <span class="track-number">01</span>
@@ -459,7 +459,7 @@
     <p class="studio-footnote">YouTube untuk referensi bermain. Audio track backing harus dari file audio yang kamu miliki atau berhak gunakan.</p>
   </div>
 
-  <div class="panel studio-recorder-panel studio-recorder-compact">
+  </div><div class="studio-mode-panel" data-studio-mode-panel="record" hidden><div class="panel studio-recorder-panel studio-recorder-compact">
     <div class="panel-head studio-compact-panel-head">
       <div><h3>Track 02 · Guitar</h3><p>Rekam langsung dari USB MG-30.</p></div>
       <span class="track-number track-number-lime">02</span>
@@ -481,6 +481,47 @@
     </details>
   </div>
 
+
+  </div>
+  <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw">
+    <div class="daw-project-bar">
+      <div class="daw-project-name-wrap"><label for="dawProjectName">PROJECT</label><input id="dawProjectName" type="text" maxlength="80" value="Untitled Project" autocomplete="off"></div>
+      <button class="daw-tool-btn" id="dawNewProject" type="button">＋ New</button>
+      <select id="dawSavedProjects" aria-label="Saved projects"><option value="">Saved projects</option></select>
+      <button class="daw-tool-btn daw-save-btn" id="dawSaveProject" type="button">Save</button>
+    </div>
+    <div class="daw-session-toolbar">
+      <label>Tempo <span class="daw-bpm-wrap"><input id="dawTempo" type="number" min="40" max="240" step="1" value="100"><small>BPM</small></span></label>
+      <label>Meter <select id="dawTimeSignature"><option>4/4</option><option>3/4</option><option>6/8</option></select></label>
+      <label class="daw-check-label"><input id="dawMetronome" type="checkbox"> Click</label>
+      <label class="daw-check-label"><input id="dawLoop" type="checkbox"> Loop</label>
+      <label>Snap <select id="dawSnap"><option value="beat">Beat</option><option value="bar">Bar</option><option value="eighth">1/8</option><option value="off">Off</option></select></label>
+    </div>
+    <div class="daw-timeline-panel">
+      <div class="daw-timeline-heading"><strong>TRACKS</strong><span id="dawTimelineInfo">4 tracks · 48 kHz / 24-bit export</span><label>Zoom <input id="dawZoom" type="range" min="44" max="180" value="92" aria-label="Timeline zoom"></label></div>
+      <div class="daw-ruler-row"><div class="daw-track-rail-label">TRACK</div><div class="daw-lane-scroll daw-ruler-scroll" id="dawRulerScroll"><div class="daw-ruler-inner" id="dawRulerInner"></div></div></div>
+      <div id="dawTrackList" class="daw-track-list"></div>
+    </div>
+    <input id="dawAudioFileInput" class="hidden" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac">
+    <div class="daw-transport-bar">
+      <div class="daw-transport-position"><strong id="dawPosition">1:1:000</strong><small id="dawClock">00:00.0</small></div>
+      <div class="daw-transport-buttons">
+        <button type="button" id="dawRewind" aria-label="Return to start">|◀</button>
+        <button type="button" id="dawStop" aria-label="Stop">■</button>
+        <button type="button" id="dawPlay" class="daw-play-button" aria-label="Play">▶</button>
+        <button type="button" id="dawRecord" class="daw-record-button" aria-label="Record">●</button>
+      </div>
+      <div class="daw-master-meter"><span>L</span><i><b id="dawMasterLeft"></b></i><span>R</span><i><b id="dawMasterRight"></b></i></div>
+    </div>
+    <div class="daw-mixer-panel"><div class="daw-section-heading"><strong>MIXER</strong><small>4 channel strips</small></div><div id="dawMixer" class="daw-mixer"></div></div>
+    <div class="daw-lower-panels">
+      <details class="daw-collapse-panel" open><summary>Track settings <span id="dawSelectedTrackLabel">Guitar selected</span></summary><div id="dawTrackInspector"></div></details>
+      <details class="daw-collapse-panel"><summary>Project &amp; export</summary><div class="daw-export-actions"><button type="button" class="btn" id="dawExportStems">Export Stems · ZIP</button><button type="button" class="btn primary" id="dawExportMix">Export Full Mix · WAV</button></div><p class="daw-export-note">Stems keep their original timeline position. Full Mix renders the audible stereo master.</p></details>
+    </div>
+    <div id="dawStatus" class="daw-status" role="status" aria-live="polite">New projects start with Backing and Guitar prepared. Import audio or arm Guitar to record from MG-30 USB.</div>
+    <details class="daw-quick-takes"><summary>Import a saved Quick Record take</summary><div class="daw-quick-take-row"><select id="dawQuickTakeSelect" aria-label="Saved Quick Record takes"><option value="">Select a saved take</option></select><button class="btn" id="dawImportQuickTake" type="button">Add to selected track</button></div></details>
+  </section>
+  <dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
   <dialog id="renameTakeDialog" class="studio-dialog">
     <form method="dialog" id="renameTakeForm">
       <div class="studio-dialog-title">Ganti nama rekaman</div>
@@ -2323,5 +2364,5 @@ window.MG30CtrlBridge=Object.freeze({
   }
 })();
 </script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./nam-model-library-ui.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script>
 </body></html>

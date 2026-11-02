@@ -285,15 +285,18 @@ async function startGuitarRecording() {
     $('guitarTrackMeter').classList.add('is-recording');
     $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit';
     setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format belum dilaporkan') + '.', 'ok');
+    return result;
   } catch (error) {
     setStatus('recordStatus', error?.message || 'Tidak dapat memulai rekaman USB.', 'warn');
     $('guitarTrackMeta').textContent = 'USB terdeteksi, tetapi rute rekaman belum berhasil';
+    return null;
   } finally {
     $('guitarRecordBtn').disabled = recording;
   }
 }
 async function stopGuitarRecording() {
-  if (!isNative() || !recording) return;
+  if (!isNative() || !recording) return null;
+  let savedTake = null;
   $('guitarStopBtn').disabled = true;
   setStatus('recordStatus', 'Menutup take dan menulis header WAV…');
   try {
@@ -304,6 +307,7 @@ async function stopGuitarRecording() {
     if (take && take.path) {
       takeNumber += 1;
       takes.unshift(take);
+      savedTake = take;
       renderTakes();
       setCurrentPlayback(take, false);
       $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
@@ -323,6 +327,7 @@ async function stopGuitarRecording() {
     $('guitarRecordBtn').classList.remove('is-recording');
     $('guitarPlayBtn').disabled = takes.length === 0;
   }
+  return savedTake;
 }
 function parseYoutubeId(value) {
   try {
@@ -338,6 +343,8 @@ function parseYoutubeId(value) {
   return null;
 }
 window.NUXStudioInspectAudio = inspectAudio;
+window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor });
+window.dispatchEvent(new Event('nux-studio-recorder-ready'));
 window.addEventListener('mg30-midi-connected', () => { void inspectAudio(); });
 $('audioCheckBtn')?.addEventListener('click', inspectAudio);
 $('guitarRecordBtn')?.addEventListener('click', startGuitarRecording);
