@@ -27,27 +27,27 @@ function writeBitSlot(body, slot, value) {
 
 export function normalizeMG30PresetName(value) {
   const name = String(value ?? "").trim();
-  if (!name) throw new Error("Nama preset tidak boleh kosong.");
+  if (!name) throw new Error("Preset name cannot be empty.");
   if (name.length > NAME_LENGTH) {
-    throw new Error("Nama preset maksimal 16 karakter ASCII.");
+    throw new Error("Preset name must be 16 characters or fewer.");
   }
   for (const character of name) {
     const code = character.charCodeAt(0);
     if (code < 0x20 || code > 0x7e) {
-      throw new Error("Nama preset hanya boleh memakai karakter ASCII yang dapat dicetak.");
+      throw new Error("Use printable standard characters for the preset name.");
     }
   }
   return name;
 }
 
 export function readMG30PresetName(body) {
-  if (!body || body.length < 190) throw new Error("Data nama preset tidak lengkap.");
+  if (!body || body.length < 190) throw new Error("Preset name data is incomplete.");
   let name = "";
   for (let index = 0; index < NAME_LENGTH; index++) {
     const code = readBitSlot(body, NAME_FIRST_BIT + index);
     if (code === 0) break;
     if (code < 0x20 || code > 0x7e) {
-      throw new Error("Nama preset pada slot berisi karakter yang tidak valid.");
+      throw new Error("The preset name contains invalid characters.");
     }
     name += String.fromCharCode(code);
   }
@@ -56,10 +56,10 @@ export function readMG30PresetName(body) {
 
 export function validateMG30PresetReadParts(parts, command, program = null) {
   if (!Array.isArray(parts) || parts.length !== 3) {
-    throw new Error("Readback preset harus berisi tiga bagian scene.");
+    throw new Error("Preset read-back must contain all three scenes.");
   }
   if (command !== 0x0b && command !== 0x0c) {
-    throw new Error("Command readback preset tidak dikenal.");
+    throw new Error("Unknown preset read-back command.");
   }
   return parts.map((part, index) => {
     const body = part instanceof Uint8Array ? part : Uint8Array.from(part || []);
@@ -67,8 +67,8 @@ export function validateMG30PresetReadParts(parts, command, program = null) {
         body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
         body[3] !== command || body[4] !== 0x02 || body[6] !== index ||
         (command === 0x0b && Number(body[5]) !== Number(program))) {
-      throw new Error("Header readback preset bagian " + (index + 1) +
-        " tidak cocok dengan slot/scene yang diminta.");
+      throw new Error("Preset read-back header for scene " + (index + 1) +
+        " does not match the requested slot or scene.");
     }
     return body;
   });
@@ -77,11 +77,11 @@ export function validateMG30PresetReadParts(parts, command, program = null) {
 export function renameMG30PresetParts(parts, value) {
   const name = normalizeMG30PresetName(value);
   if (!Array.isArray(parts) || parts.length !== 3) {
-    throw new Error("Rename memerlukan tiga bagian preset hasil readback.");
+    throw new Error("Rename requires all three stored preset scenes.");
   }
   const copy = parts.map(part => Uint8Array.from(part || []));
   if (copy.some(part => part.length < 190)) {
-    throw new Error("Data preset terlalu pendek untuk memperbarui nama.");
+    throw new Error("Preset data is too short to update the name.");
   }
   for (let index = 0; index < NAME_LENGTH; index++) {
     writeBitSlot(copy[0], NAME_FIRST_BIT + index,
@@ -93,19 +93,19 @@ export function renameMG30PresetParts(parts, value) {
 export function prepareMG30SaveAsParts(parts, value, sceneIndex, chainOrder) {
   const name = normalizeMG30PresetName(value);
   if (!Array.isArray(parts) || parts.length !== 3) {
-    throw new Error("Save As memerlukan tiga bagian edit buffer.");
+    throw new Error("Save As requires all three edit-buffer scenes.");
   }
   if (!Number.isInteger(sceneIndex) || sceneIndex < 0 || sceneIndex > 2) {
-    throw new Error("Scene aktif tidak valid untuk Save As.");
+    throw new Error("The active scene is not valid for Save As.");
   }
   if (!Array.isArray(chainOrder) || chainOrder.length !== CHAIN_LENGTH ||
       new Set(chainOrder).size !== CHAIN_LENGTH ||
       chainOrder.some(id => !Number.isInteger(id) || id < 0 || id >= CHAIN_LENGTH)) {
-    throw new Error("Urutan signal chain tidak valid; Save As dibatalkan.");
+    throw new Error("The signal-chain order is invalid; Save As was cancelled.");
   }
   const copy = parts.map(part => Uint8Array.from(part || []));
   if (copy.some(part => part.length < 190)) {
-    throw new Error("Edit buffer preset tidak lengkap untuk Save As.");
+    throw new Error("The edit buffer is incomplete for Save As.");
   }
   for (let index = 0; index < NAME_LENGTH; index++) {
     writeBitSlot(copy[0], NAME_FIRST_BIT + index,
@@ -121,10 +121,10 @@ export function createMG30PresetSlotBackup({
   program, label, parts, operation, sourceProgram = null, createdAt = new Date().toISOString()
 }) {
   if (!Number.isInteger(program) || program < 0 || program > 127) {
-    throw new Error("Slot backup tidak valid.");
+    throw new Error("Backup slot is invalid.");
   }
   if (!Array.isArray(parts) || parts.length !== 3) {
-    throw new Error("Backup preset memerlukan tiga bagian scene.");
+    throw new Error("Preset backup requires all three scenes.");
   }
   return {
     schemaVersion: 1,
