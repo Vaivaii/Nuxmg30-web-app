@@ -10,7 +10,6 @@ on:
       - android/ir-import-test
       - android/ui-polish-pass-1
       - feature/preset-manager-redesign
-      - feature/studio-mini-daw-4-track-mockup
       - feature/dark-performance-ui-polish
     paths:
       - 'www/**'
