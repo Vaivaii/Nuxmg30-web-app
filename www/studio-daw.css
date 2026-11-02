@@ -947,7 +947,8 @@
   background-color:#0d1514!important;
   background-image:
     repeating-linear-gradient(to right,transparent 0,transparent calc(var(--daw-beat-width,23px) - 1px),rgba(153,174,155,.11) calc(var(--daw-beat-width,23px) - 1px),rgba(153,174,155,.11) var(--daw-beat-width,23px)),
-    repeating-linear-gradient(to right,transparent 0,transparent calc(var(--daw-bar-width,92px) - 1px),rgba(173,200,176,.3) calc(var(--daw-bar-width,92px) - 1px),rgba(173,200,176,.3) var(--daw-bar-width,92px))!important
+    repeating-linear-gradient(to right,transparent 0,transparent calc(var(--daw-bar-width,92px) - 1px),rgba(173,200,176,.3) calc(var(--daw-bar-width,92px) - 1px),rgba(173,200,176,.3) var(--daw-bar-width,92px))!important;
+  background-position:1px 0!important
 }
 #page-studio .daw-ruler-inner{
   position:relative!important;height:31px!important;min-height:31px!important;border-bottom:1px solid #405047!important;
