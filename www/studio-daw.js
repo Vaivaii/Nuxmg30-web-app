@@ -1284,6 +1284,7 @@ function bindEvents() {
   });
   $('dawTrackRail')?.addEventListener('click', handleTrackClick);
   $('dawTrackList')?.addEventListener('click', handleTrackClick);
+  $('dawMixer')?.addEventListener('click', handleTrackClick);
   $('dawTrackList')?.addEventListener('pointerdown', startClipDrag);
   $('dawTrackList')?.addEventListener('pointermove', moveClipDrag);
   $('dawTrackList')?.addEventListener('pointerup', finishClipDrag);
