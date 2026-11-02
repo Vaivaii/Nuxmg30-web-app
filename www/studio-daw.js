@@ -135,6 +135,24 @@ function analyzeWaveform(buffer, count = 72) {
   return result;
 }
 
+function connectClipWithFade(context, source, clip, elapsedIntoClip, playbackDuration, when, trackGain) {
+  const envelope = context.createGain();
+  const sampleCount = 33;
+  const curve = new Float32Array(sampleCount);
+  for (let index = 0; index < sampleCount; index += 1) {
+    const elapsed = elapsedIntoClip + (playbackDuration * index / (sampleCount - 1));
+    curve[index] = clipFadeGainAt(clip, elapsed);
+  }
+  source.connect(envelope);
+  envelope.connect(trackGain);
+  if (playbackDuration >= 0.02 && typeof envelope.gain.setValueCurveAtTime === 'function') {
+    envelope.gain.setValueCurveAtTime(curve, when, playbackDuration);
+  } else {
+    envelope.gain.setValueAtTime(clipFadeGainAt(clip, elapsedIntoClip), when);
+  }
+  return envelope;
+}
+
 function updateToolbar() {
   if ($('dawProjectName') && document.activeElement !== $('dawProjectName')) $('dawProjectName').value = project.name;
   if ($('dawTempo') && document.activeElement !== $('dawTempo')) $('dawTempo').value = String(project.tempo);
@@ -763,8 +781,8 @@ async function startPlayback(position = playheadSeconds) {
         if (available <= 0.01) continue;
         const source = context.createBufferSource();
         source.buffer = buffer;
-        source.connect(gain);
         const when = startAt + Math.max(0, clip.startSeconds - position);
+        connectClipWithFade(context, source, clip, elapsedIntoClip, available, when, gain);
         source.start(when, offset, available);
         liveSources.push(source);
       }
@@ -926,8 +944,9 @@ async function renderAudioChunk(trackIds, startSeconds, frameCount, mode) {
       if (playbackDuration <= 0) continue;
       const source = context.createBufferSource();
       source.buffer = buffer;
-      source.connect(gain);
-      source.start(overlapStart - startSeconds, sourceOffset, playbackDuration);
+      const sourceWhen = overlapStart - startSeconds;
+      connectClipWithFade(context, source, clip, offsetIntoClip, playbackDuration, sourceWhen, gain);
+      source.start(sourceWhen, sourceOffset, playbackDuration);
     }
   }
   return context.startRendering();
