@@ -335,7 +335,7 @@ function renderTrackRows() {
     const isSelected = selectedTrackId === track.id;
     const recordButton = '<button type="button" data-track-action="arm" data-track-id="' + track.id + '" class="daw-track-record ' + (track.armed ? 'arm-active' : '') + '" aria-label="' + (track.armed ? 'Disarm ' : 'Arm ') + safeText(track.name) + '" title="' + (track.armed ? 'Armed for MG-30 USB overdub' : 'Arm for MG-30 USB overdub') + '">●</button>';
     return '<div class="daw-track-head' + (isSelected ? ' selected' : '') + '" data-track-select="' + track.id + '" style="--track-color:' + track.color + '">' +
-      '<div class="daw-track-title"><span class="daw-track-color"></span><strong>' + String(index + 1).padStart(1, '0') + ' ' + safeText(track.name) + '</strong><span class="daw-track-menu">•••</span></div>' +
+      '<div class="daw-track-title"><span class="daw-track-color"></span><strong>' + String(index + 1).padStart(1, '0') + ' ' + safeText(track.name) + '</strong></div>' +
       '<div class="daw-track-input">' + safeText(track.input) + '</div>' +
       '<div class="daw-track-actions">' + recordButton +
         '<button type="button" data-track-action="mute" data-track-id="' + track.id + '" class="' + (track.mute ? 'active' : '') + '" aria-label="Mute ' + safeText(track.name) + '">M</button>' +

@@ -589,3 +589,30 @@ test('Build 330: Record, backing playback and YouTube failure messages use Engli
     assert.ok(main.includes(phrase), 'Missing English Studio runtime text: ' + phrase);
   }
 });
+
+
+test('Build 332: no white playhead arrow pseudo-element remains on the ruler', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage #dawGlobalPlayhead::before'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage #dawPlayheadHit::before'));
+  assert.ok(css.includes('content:none!important'));
+  assert.ok(css.includes('display:none!important'));
+  assert.ok(css.includes('#page-studio .daw-global-playhead:after'));
+});
+
+test('Build 332: decorative ellipsis is removed from every track header', () => {
+  assert.ok(!daw.includes('class="daw-track-menu">•••</span>'));
+  assert.ok(!daw.includes('daw-track-menu">'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-menu'));
+  assert.ok(css.includes('display:none!important'));
+});
+
+test('Build 332: left track rail uses rounded cards and matching gaps without horizontal separator borders', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-rail-column'));
+  assert.ok(css.includes('border-right:0!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-rail,'));
+  assert.ok(css.includes('gap:6px!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-head'));
+  assert.ok(css.includes('border:1px solid #344139!important'));
+  assert.ok(css.includes('border-radius:11px!important'));
+  assert.ok(css.includes('border-left:5px solid var(--track-color)!important'));
+});
