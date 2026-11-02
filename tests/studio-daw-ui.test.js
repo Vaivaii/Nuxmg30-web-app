@@ -607,7 +607,9 @@ test('Build 332: decorative ellipsis is removed from every track header', () => 
 });
 
 test('Build 333: track-head columns keep square corners at every viewport size', () => {
-  const build333Styles = css.slice(css.lastIndexOf('Build #332 track-rail alignment retained'));
+  const build333Start = css.lastIndexOf('Build #332 track-rail alignment retained');
+  const build334Start = css.indexOf('/* Build #334:');
+  const build333Styles = css.slice(build333Start, build334Start >= 0 ? build334Start : undefined);
   assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-head'));
   assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-head.selected'));
   assert.equal((build333Styles.match(/border-radius:0!important/g) || []).length, 3);
@@ -616,7 +618,9 @@ test('Build 333: track-head columns keep square corners at every viewport size',
 });
 
 test('Build 333: square track rail retains aligned gaps and colored left accents', () => {
-  const build333Styles = css.slice(css.lastIndexOf('Build #332 track-rail alignment retained'));
+  const build333Start = css.lastIndexOf('Build #332 track-rail alignment retained');
+  const build334Start = css.indexOf('/* Build #334:');
+  const build333Styles = css.slice(build333Start, build334Start >= 0 ? build334Start : undefined);
   assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-rail-column'));
   assert.ok(build333Styles.includes('border-right:0!important'));
   assert.ok(build333Styles.includes('#page-studio #dawTimelinePage .daw-track-rail,'));
