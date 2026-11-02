@@ -2403,3 +2403,82 @@ html,body{background:#0b1012}
     font-size: 10px !important;
   }
 }
+
+
+/* -------------------------------------------------------------------------
+   MG30 app-wide micro-interactions.
+   Presentation only: short opacity/transform animations, no JS timers,
+   no layout animation, no continuous effects except existing activity meters.
+   ------------------------------------------------------------------------- */
+@keyframes mg30-page-enter{from{opacity:0}to{opacity:1}}
+@keyframes mg30-content-enter{from{opacity:0;transform:translate3d(0,5px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes mg30-dialog-enter{from{opacity:0;transform:translate3d(0,9px,0) scale(.985)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes mg30-backdrop-enter{from{opacity:0}to{opacity:1}}
+@keyframes mg30-popup-enter{from{opacity:0;transform:translate3d(0,4px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes mg30-toast-enter{from{opacity:0;transform:translate(-50%,9px) scale(.985)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+
+/* Main app tabs: fade only, so sticky/fixed descendants keep their geometry. */
+body>.app>section[id^="page-"]:not(.hidden){animation:mg30-page-enter .18s ease-out both}
+
+/* Internal page changes: small opacity/vertical reveal for newly selected panels. */
+#page-studio [data-studio-mode-panel]:not(.hidden),
+#page-studio [data-daw-page-panel]:not(.hidden),
+#page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-content-enter .16s ease-out both}
+
+/* Small, consistent response on controls throughout every app tab. */
+.app button:not(.daw-playhead-hit){
+  transition-property:transform,background-color,border-color,box-shadow,color,opacity;
+  transition-duration:.14s;
+  transition-timing-function:cubic-bezier(.2,.7,.25,1);
+}
+.app button:not(:disabled):not(.daw-playhead-hit):active{transform:scale(.975)}
+.app input:not([type="range"]),.app select,.app textarea{
+  transition:border-color .14s ease,box-shadow .14s ease,background-color .14s ease;
+}
+.app .stat,.app .panel,.app .block-card,.app .control,.app .ir-manager-card,
+.app .studio-track-card,.app .audio-device-card,.app .preset-library-card{
+  transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease;
+}
+@media(hover:hover) and (pointer:fine){
+  .app .panel,.app .control,.app .stat,.app .block-card,.app .ir-manager-card,
+  .app .studio-track-card,.app .audio-device-card,.app .preset-library-card{
+    transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background-color .16s ease;
+  }
+  .app .panel:hover,.app .control:hover,.app .block-card:hover,.app .ir-manager-card:hover,
+  .app .studio-track-card:hover,.app .audio-device-card:hover,.app .preset-library-card:hover{
+    border-color:#40513b;
+  }
+}
+
+/* All native HTML dialogs share one lightweight entrance and backdrop fade. */
+dialog[open]{animation:mg30-dialog-enter .19s cubic-bezier(.2,.75,.25,1) both}
+dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
+
+/* Menus, popovers and disclosure contents. No height/layout interpolation. */
+.app .scene-copy-menu:not([hidden]),
+.app .preset-jump-menu:not(.hidden),
+.app [role="menu"]:not([hidden]),
+.app details[open]>.daw-history-tools,
+.app details[open]>.nam-reader-content,
+.app details[open]>.studio-device-content,
+.app details[open]>.studio-take-content,
+.app details[open]>.studio-youtube-search-content{
+  animation:mg30-popup-enter .15s ease-out both;
+}
+
+/* Preserve the toast's existing show/hide lifecycle; animate only its entrance. */
+.app .toast{transition:opacity .16s ease,transform .18s cubic-bezier(.2,.75,.25,1)}
+.app .toast.show{animation:mg30-toast-enter .18s ease-out both}
+
+/* Respect the OS reduced-motion preference across all tabs and components. */
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    transition-delay:0ms!important;
+  }
+}
