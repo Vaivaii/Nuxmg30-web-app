@@ -170,3 +170,29 @@ test('project normalization retains per-clip fade metadata safely', () => {
   assert.equal(clip.fadeInSeconds, 2);
   assert.equal(clip.fadeOutSeconds, 2);
 });
+
+
+test('waveform peak analysis creates a bounded symmetrical envelope from real mono samples', () => {
+  const samples = new Float32Array(4096);
+  for (let i = 0; i < samples.length; i += 1) {
+    const envelope = i < 1024 ? 0.12 : i < 2048 ? 0.85 : i < 3072 ? 0.42 : 0.04;
+    samples[i] = Math.sin(i * 0.19) * envelope;
+  }
+  const peaks = analyzeWaveformPeaks(samples, samples, 64);
+  assert.equal(peaks.length, 64);
+  assert.ok(peaks.every((value) => Number.isFinite(value) && value >= 3 && value <= 100));
+  const average = (start, end) => peaks.slice(start, end).reduce((sum, value) => sum + value, 0) / (end - start);
+  assert.ok(average(16, 32) > average(0, 16) * 2);
+  assert.ok(average(16, 32) > average(48, 64) * 2);
+});
+
+test('waveform peak analysis combines stereo channels and handles silence/empty input', () => {
+  const left = new Float32Array(2048);
+  const right = new Float32Array(2048);
+  for (let i = 0; i < right.length; i += 1) right[i] = Math.sin(i * 0.12) * (i < 1024 ? 0.05 : 0.95);
+  const peaks = analyzeWaveformPeaks(left, right, 32);
+  assert.equal(peaks.length, 32);
+  assert.ok(peaks.slice(16).reduce((a, b) => a + b, 0) > peaks.slice(0, 16).reduce((a, b) => a + b, 0) * 3);
+  assert.ok(analyzeWaveformPeaks(new Float32Array(1024), undefined, 24).every((value) => value === 3));
+  assert.deepEqual(analyzeWaveformPeaks([], [], 64), []);
+});
