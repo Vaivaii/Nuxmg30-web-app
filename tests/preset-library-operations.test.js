@@ -46,10 +46,10 @@ function setName(body, name) {
 test("preset names accept printable ASCII up to 16 characters", () => {
   assert.equal(normalizeMG30PresetName("  Clean  "), "Clean");
   assert.equal(normalizeMG30PresetName("ABCDEFGHIJKLMNOP"), "ABCDEFGHIJKLMNOP");
-  assert.throws(() => normalizeMG30PresetName(""), /tidak boleh kosong/);
-  assert.throws(() => normalizeMG30PresetName("12345678901234567"), /maksimal 16/);
-  assert.throws(() => normalizeMG30PresetName("Crème"), /ASCII/);
-  assert.throws(() => normalizeMG30PresetName("Line\nBreak"), /ASCII/);
+  assert.throws(() => normalizeMG30PresetName(""), /cannot be empty/);
+  assert.throws(() => normalizeMG30PresetName("12345678901234567"), /16 characters or fewer/);
+  assert.throws(() => normalizeMG30PresetName("Crème"), /printable standard characters/);
+  assert.throws(() => normalizeMG30PresetName("Line\nBreak"), /printable standard characters/);
 });
 
 test("stored name is decoded from the Gen2 packed preset name bits", () => {
@@ -61,10 +61,10 @@ test("stored name is decoded from the Gen2 packed preset name bits", () => {
 test("stored readback requires three matching slot/scene headers", () => {
   const parts = makeParts(0x0b, 7);
   assert.equal(validateMG30PresetReadParts(parts, 0x0b, 7).length, 3);
-  assert.throws(() => validateMG30PresetReadParts(parts, 0x0b, 8), /Header readback/);
+  assert.throws(() => validateMG30PresetReadParts(parts, 0x0b, 8), /does not match the requested slot or scene/);
   const invalid = parts.map(part => part.slice());
   invalid[2][6] = 1;
-  assert.throws(() => validateMG30PresetReadParts(invalid, 0x0b, 7), /Header readback/);
+  assert.throws(() => validateMG30PresetReadParts(invalid, 0x0b, 7), /does not match the requested slot or scene/);
 });
 
 test("Rename changes only the packed name in scene 1 and keeps source readback intact", () => {
@@ -94,8 +94,8 @@ test("Save As applies the new name and selected scene chain order without mutati
 
 test("Save As rejects invalid scene and incomplete/duplicate chain order", () => {
   const source = makeParts(0x0c, 0);
-  assert.throws(() => prepareMG30SaveAsParts(source, "COPY", 3, Array.from({length:12}, (_,i)=>i)), /Scene aktif/);
-  assert.throws(() => prepareMG30SaveAsParts(source, "COPY", 0, Array(12).fill(1)), /signal chain/);
+  assert.throws(() => prepareMG30SaveAsParts(source, "COPY", 3, Array.from({length:12}, (_,i)=>i)), /active scene is not valid/);
+  assert.throws(() => prepareMG30SaveAsParts(source, "COPY", 0, Array(12).fill(1)), /signal-chain order is invalid/);
 });
 
 test("raw destination backup remains JSON serializable and records its limitation", () => {
