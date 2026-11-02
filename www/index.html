@@ -630,7 +630,7 @@ const AMP_NAM_SLOT_PROFILES=(()=>{
  let saved={};try{saved=JSON.parse(localStorage.getItem('mg30-nam-slot-names')||'{}')||{}}catch{}
  return Array.from({length:10},(_,i)=>{
   const slot=i+1,id=53+slot,number=String(slot).padStart(2,'0');
-  const defaultName=slot===7?'AATR SX3 Clean BAL3 CAB · NAM 07':('NAM Slot '+number+' · ID '+id);
+  const defaultName=slot===8?'AATR SX3 Clean BAL3 CAB · ID 61':('NAM Slot '+number+' · ID '+id);
   const stored=saved[String(id)];
   return {slot,id,defaultName,name:typeof stored==='string'&&stored.trim()?stored.trim():defaultName};
  });
