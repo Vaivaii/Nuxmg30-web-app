@@ -422,3 +422,39 @@ test('Studio dock geometry is recalculated after selecting Studio from the main 
   assert.ok(daw.includes('button[data-page="studio"]'));
   assert.ok(daw.includes('window.requestAnimationFrame(syncStudioPinnedControls)'));
 });
+
+
+test('Build 316: Studio mode tabs stick to the Studio scroll region, not the app header offset', () => {
+  assert.ok(css.includes('#page-studio>.studio-mode-tabs{'));
+  assert.ok(css.includes('top:0!important'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('#page-studio>.studio-page-hero.studio-daw-hero{'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(!daw.includes("const appHeader = document.querySelector('.top')"));
+  assert.ok(!daw.includes('studio-mode-tabs-top'));
+});
+
+test('Build 316: dock width is proportional to viewport and bottom is aligned above measured nav', () => {
+  assert.ok(css.includes('width:min(calc(100vw - 20px),1172px)!important'));
+  assert.ok(css.includes('bottom:var(--studio-dock-bottom,calc(88px + env(safe-area-inset-bottom,0px)))!important'));
+  assert.ok(daw.includes('const navRect = appNav.getBoundingClientRect()'));
+  assert.ok(daw.includes('window.innerHeight - navRect.top + 8'));
+  assert.ok(!daw.includes('--studio-dock-width'));
+  assert.ok(!daw.includes('--studio-dock-left'));
+});
+
+test('Build 316: mixer channel has six explicit rows so the fader control cannot collapse into an implicit row', () => {
+  assert.ok(css.includes('grid-template-rows:24px 18px 40px 12px minmax(150px,1fr) 31px!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-control-row'));
+  assert.ok(css.includes('min-height:150px!important'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-fader'));
+  assert.ok(css.includes('height:100%!important'));
+  assert.ok(css.includes('min-height:150px!important'));
+});
+
+test('Build 316: channel track names are visible and remain separate from the fader grid rows', () => {
+  assert.ok(daw.includes('<span class="daw-mixer-track-name">'));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-track-name'));
+  assert.ok(css.includes('display:block!important'));
+  assert.ok(css.includes('grid-template-rows:24px 18px 40px 12px minmax(150px,1fr) 31px!important'));
+});
