@@ -130,3 +130,14 @@ Build #251 is the first successful Android debug package after the Preset Librar
 - Build #250 failed before Android packaging because three preset unit tests expected old Indonesian validation strings. Six assertion patterns were aligned to the current English messages in test-only commit `6ef22c1`; no production logic was changed. The corrected run #251 passed all 29 tests.
 - The push-build branch allowlist was restored after run creation; final workflow restoration commit `670438cb5090f2ae3ba6453f0d3bb48f53a9c3ac`. This feature branch remains manual-build-only.
 - Physical phone and pedal verification of this particular APK is still pending. Do not treat successful CI or ZIP inspection as proof of hardware behavior.
+
+## Build #258 — English UI and IR/CTRL layout follow-up (2 November 2026)
+
+- Build: [#258 / 41392538778](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41392538778), success; source SHA `bee9c1452dc6bed3c4199ef035caa7f82bed3806`.
+- IR Collection: removed the persistent explanatory/status text beneath the grid; sync outcomes now use a short toast. Visible Collection labels and progress text are English.
+- CTRL/EXP: hid the redundant unknown-parameter warning without unlocking the unsupported parameter selector; added CSS `[hidden]` enforcement to keep the panel footer buttons visible.
+- Studio title: **Jamm & Record**. Document language is `en`; existing English UI translation observer continues handling dynamically generated text.
+- No NAM, IR transfer protocol, USB-MIDI, MIDI mapping, preset transfer, or signal-chain behavior was changed.
+- CI: 29 tests not inferred from this run summary; the workflow's `npm test` step completed successfully, followed by Vite, Capacitor, Gradle `assembleDebug`, and artifact upload.
+- Artifact ID `13117558434`; ZIP SHA-256 `7a5b9421533aa2c64c5edd658e2d894cd3a2e99a8f708cde48bd176e60d57436`; extracted APK SHA-256 `7763322c219a25ea526343e7ad76a66789616bfd874023b7d093e3fef6e56d92`.
+- Physical device and pedal validation remains pending; CI success does not establish hardware behavior.
