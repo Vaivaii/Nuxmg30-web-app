@@ -417,67 +417,67 @@
   <div class="studio-fixed-header"><div class="hero studio-page-hero studio-daw-hero"><div><div class="eyebrow">STUDIO</div><h2>Jamm &amp; Record</h2></div><span class="studio-daw-version">Mini DAW – 4 Track</span></div><div class="studio-mode-tabs" role="tablist" aria-label="Studio mode"><button type="button" data-studio-mode="jam">♫&nbsp; Jam</button><button type="button" data-studio-mode="record">♩&nbsp; Record</button><button type="button" data-studio-mode="daw" class="active" aria-selected="true">∿&nbsp; DAW</button></div></div>
   <div class="studio-mode-panel" data-studio-mode-panel="jam" hidden><div class="panel studio-backing-panel">
     <div class="panel-head studio-compact-panel-head">
-      <div><h3>Track 01 · Backing</h3><p>MP3 / WAV atau cari referensi di YouTube.</p></div>
+      <div><h3>Track 01 · Backing</h3><p>MP3 / WAV, or find a reference on YouTube.</p></div>
       <span class="track-number">01</span>
     </div>
     <div class="studio-backing-actions">
-      <label class="btn studio-pick-file" for="backingFileInput">＋ Pilih file</label>
+      <label class="btn studio-pick-file" for="backingFileInput">＋ Choose File</label>
       <input class="hidden" type="file" id="backingFileInput" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg">
       <span id="backingFileName" class="studio-file-name hidden"></span>
     </div>
     <audio id="backingAudio" class="studio-audio-player hidden" preload="metadata"></audio>
     <div id="backingPlaybackControls" class="studio-backing-player hidden">
-      <button class="studio-backing-transport" id="backingPlayBtn" type="button" aria-label="Putar backing track" title="Putar">▶</button>
+      <button class="studio-backing-transport" id="backingPlayBtn" type="button" aria-label="Putar backing track" title="Play">▶</button>
       <div class="studio-backing-timeline">
-        <input id="backingSeek" type="range" min="0" max="1000" value="0" aria-label="Posisi backing track">
+        <input id="backingSeek" type="range" min="0" max="1000" value="0" aria-label="Backing track position">
         <div><span id="backingElapsed">00:00</span><span id="backingDuration">--:--</span></div>
       </div>
-      <button class="studio-backing-transport studio-backing-stop" id="backingStopBtn" type="button" aria-label="Hentikan backing track" title="Stop">■</button>
+      <button class="studio-backing-transport studio-backing-stop" id="backingStopBtn" type="button" aria-label="Stop backing track" title="Stop">■</button>
     </div>
     <div id="backingPlaybackStatus" class="studio-playback-status hidden" role="status" aria-live="polite"></div>
     <div id="backingVolumeRow" class="studio-backing-volume hidden">
       <div><label for="backingVolume">Volume backing</label><strong id="backingVolumeValue">80%</strong></div>
-      <input id="backingVolume" type="range" min="0" max="100" value="80" aria-label="Volume backing track">
+      <input id="backingVolume" type="range" min="0" max="100" value="80" aria-label="Backing track volume">
     </div>
 
     <div id="youtubeSearchDetails" class="studio-youtube-inline">
-      <div class="studio-youtube-tools"><strong>⌕ Cari lagu di YouTube</strong><span id="youtubeSearchHint" class="studio-youtube-key-status">API key diatur dari Device</span></div>
+      <div class="studio-youtube-tools"><strong>⌕ Search YouTube</strong><span id="youtubeSearchHint" class="studio-youtube-key-status">API key is configured in Device</span></div>
       <div class="studio-search-row">
-        <input id="youtubeSearchInput" type="search" placeholder="Search for a song or artist…" autocomplete="off" aria-label="Cari lagu di YouTube">
-        <button class="btn primary" id="youtubeSearchBtn" type="button">Cari</button>
+        <input id="youtubeSearchInput" type="search" placeholder="Search for a song or artist…" autocomplete="off" aria-label="Search YouTube">
+        <button class="btn primary" id="youtubeSearchBtn" type="button">Search</button>
       </div>
       <div id="youtubeResults" class="youtube-results hidden" aria-live="polite"></div>
       <details id="youtubeUrlDetails" class="studio-youtube-url-details">
-        <summary>Atau tempel tautan YouTube</summary>
+        <summary>Or paste a YouTube link</summary>
         <div class="studio-search-row studio-url-row">
-          <input id="youtubeUrlInput" type="url" placeholder="https://youtu.be/…" autocomplete="url" aria-label="Link video YouTube">
-          <button class="btn" id="youtubeLoadBtn" type="button">Putar</button>
+          <input id="youtubeUrlInput" type="url" placeholder="https://youtu.be/…" autocomplete="url" aria-label="YouTube video link">
+          <button class="btn" id="youtubeLoadBtn" type="button">Play</button>
         </div>
       </details>
     </div>
-    <div id="studioVideoWrap" class="studio-video-wrap hidden"><iframe id="youtubePlayer" title="Pemutar YouTube resmi" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
-    <p class="studio-footnote">YouTube untuk referensi bermain. Audio track backing harus dari file audio yang kamu miliki atau berhak gunakan.</p>
+    <div id="studioVideoWrap" class="studio-video-wrap hidden"><iframe id="youtubePlayer" title="YouTube player" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <p class="studio-footnote">Use YouTube as a play-along reference. Backing tracks must come from audio files you own or are authorized to use.</p>
   </div>
 
   </div><div class="studio-mode-panel" data-studio-mode-panel="record" hidden><div class="panel studio-recorder-panel studio-recorder-compact">
     <div class="panel-head studio-compact-panel-head">
-      <div><h3>Track 02 · Guitar</h3><p>Rekam langsung dari USB MG-30.</p></div>
+      <div><h3>Track 02 · Guitar</h3><p>Record directly from the MG-30 USB connection.</p></div>
       <span class="track-number track-number-lime">02</span>
     </div>
     <div class="studio-track-card">
-      <div class="studio-track-top"><span class="studio-track-dot"></span><div><strong>GUITAR USB IN</strong><small id="guitarFormatMeta">Target file: WAV PCM 24-bit · 48 kHz</small></div><span class="studio-track-tag">WAV</span></div>
+      <div class="studio-track-top"><span class="studio-track-dot"></span><div><strong>GUITAR USB IN</strong><small id="guitarFormatMeta">File format: WAV PCM 24-bit · 48 kHz</small></div><span class="studio-track-tag">WAV</span></div>
       <div class="studio-guitar-meter" id="guitarTrackMeter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
     </div>
     <div class="studio-transport studio-transport-icons">
-      <button class="studio-transport-btn studio-record-icon" id="guitarRecordBtn" type="button" disabled aria-label="Mulai rekaman" title="Rekam"><span class="transport-glyph">●</span><small>REC</small></button>
-      <button class="studio-transport-btn studio-play-icon" id="guitarPlayBtn" type="button" disabled aria-label="Putar rekaman" title="Putar"><span class="transport-glyph" id="guitarPlayGlyph">▶</span><small id="guitarPlayLabel">PLAY</small></button>
-      <button class="studio-transport-btn studio-stop-icon" id="guitarStopBtn" type="button" disabled aria-label="Stop dan simpan rekaman" title="Stop / Simpan"><span class="transport-glyph">■</span><small>STOP</small></button>
+      <button class="studio-transport-btn studio-record-icon" id="guitarRecordBtn" type="button" disabled aria-label="Start recording" title="Record"><span class="transport-glyph">●</span><small>REC</small></button>
+      <button class="studio-transport-btn studio-play-icon" id="guitarPlayBtn" type="button" disabled aria-label="Play recording" title="Putar"><span class="transport-glyph" id="guitarPlayGlyph">▶</span><small id="guitarPlayLabel">PLAY</small></button>
+      <button class="studio-transport-btn studio-stop-icon" id="guitarStopBtn" type="button" disabled aria-label="Stop dan simpan rekaman" title="Stop / Save"><span class="transport-glyph">■</span><small>STOP</small></button>
     </div>
-    <div id="recordStatus" class="studio-inline-status" role="status" aria-live="polite">Tes input USB terlebih dahulu.</div>
+    <div id="recordStatus" class="studio-inline-status" role="status" aria-live="polite">Test the USB input first.</div>
     <audio id="guitarPlayback" class="hidden" preload="metadata"></audio>
     <details class="studio-take-details" open>
-      <summary><span>Rekaman tersimpan</span><span id="takeCount">0 take</span></summary>
-      <div id="takeList" class="studio-take-list"><div class="studio-empty">Rekaman akan muncul di sini dan tetap ada saat aplikasi dibuka lagi.</div></div>
+      <summary><span>Saved Recordings</span><span id="takeCount">0 take</span></summary>
+      <div id="takeList" class="studio-take-list"><div class="studio-empty">Recordings will appear here and remain available after restarting the app.</div></div>
     </details>
   </div>
 
@@ -538,8 +538,8 @@
     </div>
     <section class="daw-project-settings">
       <div class="daw-project-settings-heading">
-        <div><h4>Project Settings</h4><p>Project: <strong id="dawProjectSummary">Untitled Project</strong></p><small id="dawProjectMeta">4 Tracks · 48 kHz · 24-bit WAV</small><p>Nama, penyimpanan, format, dan ekspor proyek.</p></div>
-        <span class="daw-project-settings-icon">▱</span>
+        <div><h4>Project Settings</h4><p>Project: <strong id="dawProjectSummary">Untitled Project</strong></p><small id="dawProjectMeta">4 Tracks · 48 kHz · 24-bit WAV</small><p>Project name, storage, format and export.</p></div>
+        
       </div>
       <div class="daw-project-tools">
         <div class="daw-project-main">
@@ -578,14 +578,14 @@
 <dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
   <dialog id="renameTakeDialog" class="studio-dialog">
     <form method="dialog" id="renameTakeForm">
-      <div class="studio-dialog-title">Ganti nama rekaman</div>
-      <p>Nama file akan diperbarui di penyimpanan aplikasi.</p>
-      <label for="renameTakeInput">Nama take</label>
+      <div class="studio-dialog-title">Rename Recording</div>
+      <p>The file name will be updated in app storage.</p>
+      <label for="renameTakeInput">Recording name</label>
       <input id="renameTakeInput" type="text" maxlength="90" autocomplete="off" placeholder="Contoh: Solo chorus take 1">
       <div id="renameTakeError" class="studio-dialog-error" role="status"></div>
       <div class="studio-dialog-actions">
-        <button class="btn" type="button" id="renameTakeCancel">Batal</button>
-        <button class="btn primary" type="button" id="renameTakeSave">Simpan</button>
+        <button class="btn" type="button" id="renameTakeCancel">Cancel</button>
+        <button class="btn primary" type="button" id="renameTakeSave">Save</button>
       </div>
     </form>
   </dialog>

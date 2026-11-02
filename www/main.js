@@ -105,13 +105,13 @@ function setCurrentPlayback(take, autoplay = false) {
   $('guitarStopBtn').disabled = false;
   $('guitarPlayGlyph').textContent = audio.paused ? '▶' : 'Ⅱ';
   $('guitarPlayLabel').textContent = audio.paused ? 'PLAY' : 'PAUSE';
-  if (autoplay) audio.play().catch((error) => setStatus('recordStatus', 'Tidak dapat memutar take: ' + (error?.message || 'audio playback gagal'), 'warn'));
+  if (autoplay) audio.play().catch((error) => setStatus('recordStatus', 'Could not play recording: ' + (error?.message || 'audio playback failed'), 'warn'));
 }
 function renderTakes() {
   $('takeCount').textContent = takes.length + (takes.length === 1 ? ' take' : ' take');
   $('guitarStopBtn').disabled = !recording && takes.length === 0;
   if (!takes.length) {
-    $('takeList').innerHTML = '<div class="studio-empty">Belum ada rekaman tersimpan. Setelah Stop, file akan otomatis disimpan.</div>';
+    $('takeList').innerHTML = '<div class="studio-empty">No recordings saved yet. Files are saved automatically when you press Stop.</div>';
     $('guitarPlayBtn').disabled = true;
     activePlaybackPath = "";
     return;
@@ -122,9 +122,9 @@ function renderTakes() {
     safeText((take.sampleRate || 48000) + ' Hz · ' + (take.bitDepth || 24) + '-bit · ' + (take.channels || 2) + ' ch · ' + bytesLabel(take.dataBytes || 0)) +
     '<br>' + safeText(take.routeName || 'USB-Audio · NUX MG-30') + '</small></div>' +
     '<div class="studio-take-actions">' +
-    '<button class="studio-take-action" type="button" data-play-take="' + index + '" aria-label="Putar ' + safeText(take.fileName) + '" title="Putar">▶</button>' +
+    '<button class="studio-take-action" type="button" data-play-take="' + index + '" aria-label="Play ' + safeText(take.fileName) + '" title="Play">▶</button>' +
     '<button class="studio-take-action" type="button" data-rename-take="' + index + '" aria-label="Ganti nama ' + safeText(take.fileName) + '" title="Ganti nama">✎</button>' +
-    '<button class="studio-take-action" type="button" data-export-take="' + index + '" aria-label="Ekspor ' + safeText(take.fileName) + '" title="Simpan salinan ke perangkat">⇩</button>' +
+    '<button class="studio-take-action" type="button" data-export-take="' + index + '" aria-label="Export ' + safeText(take.fileName) + '" title="Save a copy to device">⇩</button>' +
     '</div></div>'
   ).join('');
   $('takeList').querySelectorAll('[data-play-take]').forEach((button) => {
@@ -141,15 +141,15 @@ function renderTakes() {
     button.addEventListener('click', async () => {
       const take = takes[Number(button.dataset.exportTake)];
       if (!take || !isNative()) {
-        setStatus('recordStatus', 'Ekspor file tersedia di APK Android.', 'warn');
+        setStatus('recordStatus', 'File export is available in the Android APK.', 'warn');
         return;
       }
       button.disabled = true;
       try {
         const result = await MG30Audio.exportTake({ path: take.path });
-        setStatus('recordStatus', 'Salinan tersimpan di lokasi pilihanmu: ' + (result.fileName || take.fileName), 'ok');
+        setStatus('recordStatus', 'Copy saved to selected location: ' + (result.fileName || take.fileName), 'ok');
       } catch (error) {
-        setStatus('recordStatus', error?.message || 'Ekspor dibatalkan atau gagal.', 'warn');
+        setStatus('recordStatus', error?.message || 'Export was canceled or failed.', 'warn');
       } finally {
         button.disabled = false;
       }
@@ -164,11 +164,11 @@ async function restoreTakes() {
     renderTakes();
     window.dispatchEvent(new Event('mg30-studio-takes-updated'));
     if (takes.length) {
-      setStatus('recordStatus', takes.length + ' rekaman tersimpan di perangkat ini. Rekaman disimpan otomatis saat tombol Stop ditekan.', 'ok');
-      $('guitarTrackMeta').textContent = 'USB siap diuji · ' + takes.length + (takes.length === 1 ? ' take tersimpan' : ' take tersimpan');
+      setStatus('recordStatus', takes.length + ' recordings saved on this device. Recordings are saved automatically when you press Stop.', 'ok');
+      $('guitarTrackMeta').textContent = 'USB ready to test · ' + takes.length + (takes.length === 1 ? ' take(s) saved' : ' take(s) saved');
     }
   } catch (error) {
-    setStatus('recordStatus', 'Belum dapat membaca daftar take: ' + (error?.message || 'kesalahan penyimpanan'), 'warn');
+    setStatus('recordStatus', 'Could not read the recording list: ' + (error?.message || 'storage error'), 'warn');
   }
 }
 function openRenameDialog(index) {
@@ -179,7 +179,7 @@ function openRenameDialog(index) {
   $('renameTakeError').textContent = '';
   if (typeof $('renameTakeDialog').showModal === 'function') $('renameTakeDialog').showModal();
   else {
-    const name = window.prompt('Nama rekaman', $('renameTakeInput').value);
+    const name = window.prompt('Recording name', $('renameTakeInput').value);
     if (name !== null) saveRenamedTake(index, name);
   }
   $('renameTakeInput').focus();
@@ -188,7 +188,7 @@ async function saveRenamedTake(index, rawName) {
   const take = takes[index];
   const name = String(rawName || '').trim();
   if (!take || !name) {
-    $('renameTakeError').textContent = 'Nama tidak boleh kosong.';
+    $('renameTakeError').textContent = 'Name cannot be empty.';
     return;
   }
   if (!isNative()) {
@@ -207,9 +207,9 @@ async function saveRenamedTake(index, rawName) {
     }
     renderTakes();
     $('renameTakeDialog').close();
-    setStatus('recordStatus', 'Nama rekaman diubah menjadi ' + result.fileName, 'ok');
+    setStatus('recordStatus', 'Recording name diubah menjadi ' + result.fileName, 'ok');
   } catch (error) {
-    $('renameTakeError').textContent = error?.message || 'Nama file gagal diubah.';
+    $('renameTakeError').textContent = error?.message || 'Could not rename the file.';
   } finally {
     $('renameTakeSave').disabled = false;
   }
@@ -236,7 +236,7 @@ async function toggleGuitarPlayback() {
   const audio = $('guitarPlayback');
   if (!activePlaybackPath && takes.length) setCurrentPlayback(takes[0], false);
   if (!activePlaybackPath) {
-    setStatus('recordStatus', 'Belum ada take untuk diputar. Rekam gitar terlebih dahulu.', 'warn');
+    setStatus('recordStatus', 'No recording is available to play. Record the guitar first.', 'warn');
     return;
   }
   if (!audio.paused) {
@@ -251,7 +251,7 @@ async function toggleGuitarPlayback() {
       $('guitarPlayGlyph').textContent = 'Ⅱ';
       $('guitarPlayLabel').textContent = 'PAUSE';
     } catch (error) {
-      setStatus('recordStatus', 'Gagal memutar rekaman: ' + (error?.message || 'audio playback gagal'), 'warn');
+      setStatus('recordStatus', 'Could not play recording: ' + (error?.message || 'audio playback failed'), 'warn');
     }
   }
 }
@@ -262,7 +262,7 @@ $('guitarStopBtn')?.addEventListener('click', async () => {
     return;
   }
   stopPlayback(true);
-  setStatus('recordStatus', 'Pemutaran dihentikan.', '');
+  setStatus('recordStatus', 'Playback stopped.', '');
 });
 $('guitarPlayback')?.addEventListener('ended', () => {
   $('guitarPlayGlyph').textContent = '▶';
@@ -270,12 +270,12 @@ $('guitarPlayback')?.addEventListener('ended', () => {
 });
 async function startGuitarRecording() {
   if (!isNative()) {
-    setStatus('recordStatus', 'Rekaman USB langsung hanya tersedia di APK native. Jalankan APK untuk menguji MG-30.', 'warn');
+    setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
     return;
   }
   if (recording) return;
   $('guitarRecordBtn').disabled = true;
-  setStatus('recordStatus', 'Menyiapkan AudioRecord dan memverifikasi routing USB…');
+  setStatus('recordStatus', 'Preparing AudioRecord and verifying USB routing…');
   try {
     const result = await MG30Audio.startRecording({ prefer24Bit: true });
     recording = true;
@@ -285,11 +285,11 @@ async function startGuitarRecording() {
     $('guitarRecordBtn').classList.add('is-recording');
     $('guitarTrackMeter').classList.add('is-recording');
     $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit';
-    setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format belum dilaporkan') + '.', 'ok');
+    setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format not reported') + '.', 'ok');
     return result;
   } catch (error) {
-    setStatus('recordStatus', error?.message || 'Tidak dapat memulai rekaman USB.', 'warn');
-    $('guitarTrackMeta').textContent = 'USB terdeteksi, tetapi rute rekaman belum berhasil';
+    setStatus('recordStatus', error?.message || 'Could not start USB recording.', 'warn');
+    $('guitarTrackMeta').textContent = 'USB detected, but the recording route is not ready.';
     return null;
   } finally {
     $('guitarRecordBtn').disabled = recording;
@@ -299,7 +299,7 @@ async function stopGuitarRecording() {
   if (!isNative() || !recording) return null;
   let savedTake = null;
   $('guitarStopBtn').disabled = true;
-  setStatus('recordStatus', 'Menutup take dan menulis header WAV…');
+  setStatus('recordStatus', 'Finalizing recording and writing the WAV header…');
   try {
     const take = await MG30Audio.stopRecording();
     recording = false;
@@ -313,16 +313,16 @@ async function stopGuitarRecording() {
       window.dispatchEvent(new Event('mg30-studio-takes-updated'));
       setCurrentPlayback(take, false);
       $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
-      $('guitarFormatMeta').textContent = 'File tersimpan otomatis · WAV PCM ' + take.bitDepth + '-bit · ' + take.sampleRate + ' Hz';
-      setStatus('recordStatus', 'Take tersimpan otomatis: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Gunakan ikon Ekspor untuk menyimpan salinan ke folder pilihanmu.', 'ok');
+      $('guitarFormatMeta').textContent = 'File saved automatically · WAV PCM ' + take.bitDepth + '-bit · ' + take.sampleRate + ' Hz';
+      setStatus('recordStatus', 'Recording saved automatically: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Use the Export icon to save a copy to your chosen folder.', 'ok');
     } else {
-      setStatus('recordStatus', 'Rekaman berhenti tetapi file take tidak dikembalikan oleh audio engine.', 'warn');
+      setStatus('recordStatus', 'Recording stopped, but the audio engine did not return a file.', 'warn');
     }
   } catch (error) {
     recording = false;
     $('guitarTrackMeter').classList.remove('is-recording');
     $('guitarRecordBtn').classList.remove('is-recording');
-    setStatus('recordStatus', error?.message || 'Gagal menyimpan take WAV.', 'warn');
+    setStatus('recordStatus', error?.message || 'Could not save the WAV recording.', 'warn');
   } finally {
     $('guitarRecordBtn').disabled = false;
     $('guitarStopBtn').disabled = takes.length === 0;
@@ -366,8 +366,8 @@ function refreshBackingControls() {
   $('backingDuration').textContent = duration ? formatAudioTime(duration) : '--:--';
   $('backingSeek').value = duration ? String(Math.round((audio.currentTime / duration) * 1000)) : '0';
   $('backingPlayBtn').textContent = audio.paused ? '▶' : 'Ⅱ';
-  $('backingPlayBtn').setAttribute('aria-label', audio.paused ? 'Putar backing track' : 'Jeda backing track');
-  $('backingPlayBtn').title = audio.paused ? 'Putar' : 'Jeda';
+  $('backingPlayBtn').setAttribute('aria-label', audio.paused ? 'Play backing track' : 'Pause backing track');
+  $('backingPlayBtn').title = audio.paused ? 'Play' : 'Pause';
 }
 function setBackingStatus(message, kind = '') {
   const node = $('backingPlaybackStatus');
@@ -395,12 +395,12 @@ $('backingFileInput')?.addEventListener('change', (event) => {
   $('backingElapsed').textContent = '00:00';
   $('backingDuration').textContent = '--:--';
   $('backingPlayBtn').disabled = false;
-  setBackingStatus('Backing siap diputar. Tekan ▶ untuk mulai.', 'ok');
+  setBackingStatus('Backing track is ready. Press ▶ to start.', 'ok');
 });
 $('backingPlayBtn')?.addEventListener('click', async () => {
   const audio = $('backingAudio');
   if (!audio?.src) {
-    setBackingStatus('Pilih file audio terlebih dahulu.', 'warn');
+    setBackingStatus('Choose an audio file first.', 'warn');
     return;
   }
   if (audio.paused) {
@@ -408,7 +408,7 @@ $('backingPlayBtn')?.addEventListener('click', async () => {
       await audio.play();
       setBackingStatus('Backing sedang diputar.', 'ok');
     } catch (error) {
-      setBackingStatus('File dipilih, tetapi WebView tidak bisa memutarnya. Coba WAV PCM atau MP3; beberapa file FLAC tidak didukung perangkat ini.', 'warn');
+      setBackingStatus('File selected, but this WebView cannot play it. Try PCM WAV or MP3; some FLAC files are not supported on this device.', 'warn');
     }
   } else {
     audio.pause();
@@ -420,7 +420,7 @@ $('backingStopBtn')?.addEventListener('click', () => {
   audio.pause();
   try { audio.currentTime = 0; } catch (_) {}
   refreshBackingControls();
-  setBackingStatus('Backing dihentikan.');
+  setBackingStatus('Backing track stopped.');
 });
 $('backingSeek')?.addEventListener('input', (event) => {
   const audio = $('backingAudio');
@@ -439,7 +439,7 @@ $('backingAudio')?.addEventListener('ended', () => {
   setBackingStatus('Backing selesai diputar.');
 });
 $('backingAudio')?.addEventListener('error', () => {
-  setBackingStatus('Format audio ini tidak bisa diputar di Android WebView. Konversi ke MP3 atau WAV PCM lalu impor ulang.', 'warn');
+  setBackingStatus('This audio format cannot be played in Android WebView. Convert it to MP3 or PCM WAV, then import it again.', 'warn');
 });
 $('backingVolume')?.addEventListener('input', (event) => {
   const value = Number(event.target.value);
@@ -453,7 +453,7 @@ function savedYoutubeKey() {
 function setYoutubeKeyStatus(saved) {
   const node = $('youtubeKeyStatus');
   if (node) {
-    node.textContent = saved ? 'API key tersimpan di perangkat' : 'API key belum disetel';
+    node.textContent = saved ? 'API key saved on this device' : 'API key is not configured';
     node.classList.toggle('is-configured', !!saved);
   }
   const searchHint = $('youtubeSearchHint');
@@ -479,7 +479,7 @@ function renderYoutubeResults(items) {
   const holder = $('youtubeResults');
   if (!holder) return;
   if (!items.length) {
-    holder.innerHTML = '<div class="studio-empty">Tidak ada video yang cocok. Coba judul atau nama artis yang lebih spesifik.</div>';
+    holder.innerHTML = '<div class="studio-empty">No matching videos found. Try a more specific title or artist name.</div>';
     return;
   }
   holder.classList.remove('hidden');
@@ -492,7 +492,7 @@ function renderYoutubeResults(items) {
     return '<button class="youtube-result" type="button" data-youtube-id="' + safeText(id) + '">' +
       (thumbnail ? '<img loading="lazy" src="' + safeText(thumbnail) + '" alt="">' : '<span class="studio-file-icon">▶</span>') +
       '<span class="youtube-result-copy"><strong>' + safeText(snippet.title || 'Video YouTube') + '</strong>' +
-      '<small>' + safeText(snippet.channelTitle || 'YouTube') + '</small><small class="youtube-result-action">Ketuk untuk memutar ↗</small></span></button>';
+      '<small>' + safeText(snippet.channelTitle || 'YouTube') + '</small><small class="youtube-result-action">Tap to play ↗</small></span></button>';
   }).join('');
   holder.querySelectorAll('[data-youtube-id]').forEach((button) => {
     button.addEventListener('click', () => loadYoutubeVideo(button.dataset.youtubeId));
@@ -530,7 +530,7 @@ async function searchYoutubeInStudio() {
       const reason = data.error?.errors?.[0]?.reason || '';
       const message = data.error?.message || ('HTTP ' + response.status);
       $('youtubeResults').classList.remove('hidden');
-      $('youtubeResults').innerHTML = '<div class="studio-empty">Pencarian YouTube gagal: ' + safeText(message) +
+      $('youtubeResults').innerHTML = '<div class="studio-empty">YouTube search failed: ' + safeText(message) +
         (reason === 'keyInvalid' ? '<br>Periksa API key.' : '') +
         (reason === 'quotaExceeded' ? '<br>Kuota YouTube Data API hari ini habis.' : '') +
         '</div>';
@@ -540,7 +540,7 @@ async function searchYoutubeInStudio() {
   } catch (error) {
     if (error?.name !== 'AbortError') {
       $('youtubeResults').classList.remove('hidden');
-      $('youtubeResults').innerHTML = '<div class="studio-empty">Tidak bisa menghubungi YouTube Data API. Periksa koneksi, API key, dan aktivasi YouTube Data API v3.</div>';
+      $('youtubeResults').innerHTML = '<div class="studio-empty">Cannot reach the YouTube Data API. Check your connection, API key and YouTube Data API v3 activation.</div>';
     }
   } finally {
     button.disabled = false;
@@ -554,13 +554,13 @@ $('youtubeApiSaveBtn')?.addEventListener('click', () => {
   try { localStorage.setItem(YOUTUBE_API_KEY_STORAGE, key); } catch (_) {}
   setYoutubeKeyStatus(true);
   showYoutubeApiSettings(false);
-  $('youtubeResults').innerHTML = '<div class="studio-empty">API key tersimpan. Sekarang cari judul lagu atau artis lagi.</div>';
+  $('youtubeResults').innerHTML = '<div class="studio-empty">API key saved. Search for a song title or artist again.</div>';
 });
 $('youtubeApiClearBtn')?.addEventListener('click', () => {
   try { localStorage.removeItem(YOUTUBE_API_KEY_STORAGE); } catch (_) {}
   $('youtubeApiKeyInput').value = '';
   setYoutubeKeyStatus(false);
-  $('youtubeResults').innerHTML = '<div class="studio-empty">API key dihapus dari perangkat ini.</div>';
+  $('youtubeResults').innerHTML = '<div class="studio-empty">API key removed from this device.</div>';
 });
 $('youtubeApiConsoleBtn')?.addEventListener('click', () => openExternal('https://console.cloud.google.com/apis/credentials'));
 $('youtubeSearchBtn')?.addEventListener('click', searchYoutubeInStudio);
@@ -579,12 +579,12 @@ $('youtubeLoadBtn')?.addEventListener('click', () => {
   loadYoutubeVideo(id);
 });
 $('youtubeUrlInput')?.addEventListener('input', () => $('youtubeUrlInput').setCustomValidity(''));
-$('backingAudio')?.addEventListener('error', () => setStatus('backingFileName', 'Browser tidak bisa memutar format file ini. Coba WAV PCM atau MP3.', 'warn'));
+$('backingAudio')?.addEventListener('error', () => setStatus('backingFileName', 'The browser cannot play this file format. Try PCM WAV or MP3.', 'warn'));
 if (!isNative()) {
   $('audioEngineBadge').textContent = 'PERLU APK';
   $('guitarRecordBtn').disabled = true;
   $('guitarPlayBtn').disabled = true;
-  setStatus('recordStatus', 'UI ini bisa dipreview di web, tetapi USB audio dan perekaman native harus diuji dari APK Android.', 'warn');
+  setStatus('recordStatus', 'This UI can be previewed on the web, but USB audio and native recording must be tested in the Android APK.', 'warn');
 } else {
   restoreTakes();
 }

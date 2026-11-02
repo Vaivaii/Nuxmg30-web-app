@@ -1804,7 +1804,6 @@
 #page-studio .daw-settings-section h4,#page-studio .daw-project-settings-heading h4{margin:0!important;color:#eaf1e6!important;font-size:13px!important}
 #page-studio .daw-project-settings-heading{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:8px!important}
 #page-studio .daw-project-settings-heading p{margin:3px 0 0!important;color:#97a694!important;font-size:9px!important}
-#page-studio .daw-project-settings-icon{color:#c5f36b!important;font-size:19px!important}
 #page-studio #dawTrackInspector{padding:0!important}
 #page-studio #dawTrackInspector .daw-inspector-grid{gap:12px!important}
 #page-studio #dawTrackInspector .daw-inspector-grid label{font-size:11px!important;gap:6px!important}
@@ -2576,4 +2575,76 @@
     align-items:flex-end!important;
     flex-direction:row!important;
   }
+}
+
+
+/* Build #329: align the ruler/track-name rail, remove the playhead arrow glyph,
+   and give Track Settings controls consistent vertical breathing room. */
+#page-studio #dawTimelinePage .daw-global-playhead::before{
+  display:none!important;
+  content:none!important;
+}
+#page-studio #dawTimelinePage .daw-ruler-mark{
+  display:block!important;
+  top:0!important;
+  width:24px!important;
+  min-width:24px!important;
+  height:31px!important;
+  padding:0 0 0 7px!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#b7c8b5!important;
+  font-size:10px!important;
+  font-weight:750!important;
+  line-height:31px!important;
+  text-align:left!important;
+  text-indent:0!important;
+  transform:none!important;
+  pointer-events:none!important;
+}
+#page-studio #dawTimelinePage .daw-track-rail-column{
+  overflow:hidden!important;
+  border-right:1px solid #344139!important;
+  border-radius:13px 0 0 13px!important;
+  background:#101816!important;
+}
+#page-studio #dawTimelinePage .daw-ruler-spacer{
+  width:100%!important;
+  height:31px!important;
+  min-height:31px!important;
+  max-height:31px!important;
+  border:0!important;
+  border-radius:13px 0 0 0!important;
+  background:#0e1715!important;
+}
+#page-studio #dawTimelinePage .daw-track-rail{
+  border-radius:0 0 0 12px!important;
+}
+#page-studio #dawTimelinePage .daw-track-head{
+  border-radius:9px 0 0 9px!important;
+}
+#page-studio .daw-track-name-field{
+  margin-bottom:12px!important;
+}
+#page-studio #dawTrackInspector .daw-inspector-grid{
+  row-gap:18px!important;
+  column-gap:12px!important;
+}
+#page-studio #dawTrackInspector .daw-inspector-grid label{
+  gap:8px!important;
+  padding-top:2px!important;
+}
+#page-studio #dawTrackInspector .daw-inspector-grid label strong{
+  margin-top:1px!important;
+  line-height:1.3!important;
+}
+@media(max-width:430px){
+  #page-studio #dawTimelinePage .daw-ruler-mark{
+    width:22px!important;
+    min-width:22px!important;
+    padding-left:7px!important;
+    font-size:10px!important;
+  }
+  #page-studio .daw-track-name-field{margin-bottom:14px!important}
+  #page-studio #dawTrackInspector .daw-inspector-grid{row-gap:20px!important}
 }

@@ -6,6 +6,7 @@ const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8')
 const css = readFileSync(new URL('../www/studio-daw.css', import.meta.url), 'utf8');
 const core = readFileSync(new URL('../www/studio-daw-core.js', import.meta.url), 'utf8');
 const daw = readFileSync(new URL('../www/studio-daw.js', import.meta.url), 'utf8');
+const main = readFileSync(new URL('../www/main.js', import.meta.url), 'utf8');
 
 test('Studio keeps Jam, Record and DAW as separate mode panels', () => {
   assert.match(html, /data-studio-mode="jam"/);
@@ -511,4 +512,57 @@ test('Build 327: Studio mode panels remain after the pinned header and retain in
   assert.ok(html.includes('data-studio-mode-panel="record"'));
   assert.ok(html.includes('data-studio-mode-panel="daw"'));
   assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
+});
+
+
+test('Build 329: Timeline playhead has no stray white arrow and ruler bar numbers remain readable', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-global-playhead::before'));
+  assert.ok(css.includes('display:none!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-ruler-mark'));
+  assert.ok(css.includes('width:24px!important'));
+  assert.ok(css.includes('line-height:31px!important'));
+});
+
+test('Build 329: left track-name rail has no ruler-spacer separator line and keeps rounded corners', () => {
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-ruler-spacer{'));
+  assert.ok(css.includes('border:0!important'));
+  assert.ok(css.includes('border-radius:13px 0 0 0!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-rail-column'));
+  assert.ok(css.includes('border-radius:13px 0 0 13px!important'));
+  assert.ok(css.includes('#page-studio #dawTimelinePage .daw-track-head'));
+});
+
+test('Build 329: Track Settings separates the track name field from level and pan controls', () => {
+  assert.ok(css.includes('#page-studio .daw-track-name-field{'));
+  assert.ok(css.includes('margin-bottom:12px!important'));
+  assert.ok(css.includes('row-gap:18px!important'));
+  assert.ok(css.includes('column-gap:12px!important'));
+});
+
+test('Build 329: decorative Project Settings glyph is removed while the project controls remain', () => {
+  assert.ok(!html.includes('daw-project-settings-icon'));
+  assert.ok(html.includes('id="dawProjectName"'));
+  assert.ok(html.includes('id="dawSavedProjects"'));
+  assert.ok(html.includes('id="dawExportMix"'));
+});
+
+test('Build 329: all visible Jam and Record mode copy is English', () => {
+  const studioStart = html.indexOf('<section id="page-studio"');
+  const studioEnd = html.indexOf('</section>', html.indexOf('id="dawStudioDock"', studioStart)) + 10;
+  const studioMarkup = html.slice(studioStart, studioEnd);
+  for (const phrase of ['Pilih file', 'Cari lagu', 'API key diatur', 'Rekam langsung', 'Tes input USB', 'Rekaman tersimpan', 'Nama, penyimpanan', 'kamu miliki']) {
+    assert.ok(!studioMarkup.includes(phrase), 'Indonesian Studio text remains: ' + phrase);
+  }
+  assert.ok(studioMarkup.includes('Choose File'));
+  assert.ok(studioMarkup.includes('Saved Recordings'));
+  assert.ok(studioMarkup.includes('Project name, storage, format and export.'));
+});
+
+test('Build 329: Studio Record, backing and YouTube runtime messages are English', () => {
+  for (const phrase of ['Tidak dapat', 'Belum ada rekaman', 'Nama rekaman', 'Gagal memutar', 'Pemutaran dihentikan', 'Menyiapkan AudioRecord', 'Tidak dapat memulai', 'Backing siap diputar', 'Pilih file audio', 'Tidak ada video', 'Pencarian YouTube gagal', 'API key dihapus']) {
+    assert.ok(!main.includes(phrase), 'Indonesian Studio runtime text remains: ' + phrase);
+  }
+  assert.ok(main.includes('Could not start USB recording.'));
+  assert.ok(main.includes('Backing track is ready.'));
+  assert.ok(main.includes('YouTube search failed:'));
 });
