@@ -1,9 +1,9 @@
 // NUX MG-30 Gen 2 IR transfer. User 10/09/11 is hardware-tested; Collection 6A/6C/6B remains experimental.
 // The WAV payload generator is shared; Collection audio acceptance has not yet been verified on hardware.
 const PREFIX=[0xF0,0x43,0x58,0x70], N=2048, FFT=16384, W=600, H=305, SENT=-99999, f32=Math.fround;
-const bytesOf=x=>x instanceof Uint8Array?x:x instanceof ArrayBuffer?new Uint8Array(x):ArrayBuffer.isView(x)?new Uint8Array(x.buffer,x.byteOffset,x.byteLength):(()=>{throw Error('Data byte WAV tidak valid.')})();
-function enc16(v){if(!Number.isInteger(v)||v<0||v>65535)throw Error('Nilai uint16 tidak valid.');const w=((v&255)<<8)|(v>>>8);return[(w>>>14)&3,(w>>>7)&127,w&127]}
-function safeName(s){s=String(s||'Custom IR').replace(/\\/g,'/').split('/').pop().replace(/\.wav$/i,'').trim();if(s.normalize)s=s.normalize('NFKD').replace(/\p{M}/gu,'');s=Array.from(s,c=>{let n=c.charCodeAt(0);return n>=32&&n<=126?c:'_'}).join('').slice(0,20).trim();if(!s)throw Error('Nama IR kosong atau tidak valid.');return s}
+const bytesOf=x=>x instanceof Uint8Array?x:x instanceof ArrayBuffer?new Uint8Array(x):ArrayBuffer.isView(x)?new Uint8Array(x.buffer,x.byteOffset,x.byteLength):(()=>{throw Error('Data byte Invalid WAV file.')})();
+function enc16(v){if(!Number.isInteger(v)||v<0||v>65535)throw Error('Invalid uint16 value.');const w=((v&255)<<8)|(v>>>8);return[(w>>>14)&3,(w>>>7)&127,w&127]}
+function safeName(s){s=String(s||'Custom IR').replace(/\\/g,'/').split('/').pop().replace(/\.wav$/i,'').trim();if(s.normalize)s=s.normalize('NFKD').replace(/\p{M}/gu,'');s=Array.from(s,c=>{let n=c.charCodeAt(0);return n>=32&&n<=126?c:'_'}).join('').slice(0,20).trim();if(!s)throw Error('IR name is empty or invalid.');return s}
 function resampleMonoTo48k(input,sourceRate,targetCount){
  if(sourceRate===48000)return input.slice(0,targetCount);
  const output=new Float32Array(targetCount);
@@ -81,7 +81,7 @@ export function readMG30IRWav(input){
 }
 function fft(samples){const re=new Float32Array(FFT),im=new Float32Array(FFT);for(let i=0;i<N;i++)re[i]=f32(samples[i]);let j=0;for(let i=1;i<FFT;i++){let bit=FFT>>>1;while(j&bit){j^=bit;bit>>>=1}j^=bit;if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t}}
  for(let size=2;size<=FFT;size<<=1){const half=size>>>1,step=-2*Math.PI/size;for(let k=0;k<half;k++){const wr=f32(Math.cos(step*k)),wi=f32(Math.sin(step*k));for(let start=k;start<FFT;start+=size){const o=start+half,r=re[o],q=im[o],tr=f32(f32(r*wr)-f32(q*wi)),ti=f32(f32(r*wi)+f32(q*wr)),ur=re[start],ui=im[start];re[start]=f32(ur+tr);im[start]=f32(ui+ti);re[o]=f32(ur-tr);im[o]=f32(ui-ti)}}}return{re,im}}
-function gainFor(samples){const {re,im}=fft(samples);let min=Infinity,max=-Infinity;for(let i=136;i<1024;i++){const p=f32(f32(re[i]*re[i])+f32(im[i]*im[i]));if(p<min)min=p;if(p>max)max=p}if(!(min>0&&max>0&&Number.isFinite(min+max)))throw Error('Tidak dapat menghitung normalisasi WAV.');return Math.pow(10,-.5*(Math.log10(Math.sqrt(min))+Math.log10(Math.sqrt(max))))}
+function gainFor(samples){const {re,im}=fft(samples);let min=Infinity,max=-Infinity;for(let i=136;i<1024;i++){const p=f32(f32(re[i]*re[i])+f32(im[i]*im[i]));if(p<min)min=p;if(p>max)max=p}if(!(min>0&&max>0&&Number.isFinite(min+max)))throw Error('Could not calculate WAV normalization.');return Math.pow(10,-.5*(Math.log10(Math.sqrt(min))+Math.log10(Math.sqrt(max))))}
 function curveFor(samples){const{re,im}=fft(samples),logs=new Float32Array(FFT/2);for(let i=0;i<logs.length;i++){const mag=f32(Math.sqrt(Math.max(0,f32(f32(re[i]*re[i])+f32(im[i]*im[i])))));logs[i]=f32(f32(Math.log(Math.max(Number(mag),1e-300)))*f32(20))}
  const vals=new Float32Array(W),scale=f32(24000/8192),xmin=f32(20/scale),xmax=f32(22000/scale),logStep=f32(f32(f32(Math.log(Number(xmax))-f32(Math.log(Number(xmin)))))/f32(W)),step=f32(Math.exp(Number(logStep)));let idx=Math.trunc(xmin),th=xmin;
  for(let p=0;p<W;p++){let m=SENT;while(th>f32(idx)){if(idx<0||idx>=logs.length)throw Error('Bin FFT kurva di luar rentang.');if(logs[idx]>m)m=f32(logs[idx]);idx++}vals[p]=m;th=f32(th*step)}
@@ -113,7 +113,7 @@ function initUI(){
  '<section class="ir-manager-card">'+
   '<div class="ir-manager-card-head ir-collection-card-head"><div class="ir-collection-card-title"><span class="slot-note" id="irManagerCollectionCount">Not synced</span></div><button class="btn primary" id="irManagerSyncCollection" type="button">Sync</button></div>'+
   
-  '<p class="ir-current-preset-ir-note">The red slot marker identifies the IR Collection item used by the selected preset.</p>'+
+  ''+
   '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
   ''+
   '<div class="ir-manager-status hidden" id="irManagerCollectionStatus" role="status" aria-live="polite" hidden></div>'+
@@ -354,12 +354,12 @@ function initUI(){
    status.textContent='Dari MG-30';file.textContent=local?.blob?'WAV lokal tersedia · CRC '+device.crcHex:'IR tersimpan di perangkat'+(device.crcHex?' · CRC '+device.crcHex:'');
   }else if(device?.read&&!device.occupied){
    card.classList.toggle('is-filled',!!local?.blob);name.textContent=local?.blob?(local.name||local.fileName):('Slot Collection '+String(slot).padStart(2,'0'));
-   status.textContent=local?.blob?'Kosong di pedal':'Kosong di MG-30';file.textContent=local?.blob?'WAV lokal tersimpan':'Slot perangkat kosong';
+   status.textContent=local?.blob?'Empty on pedal':'Empty on MG-30';file.textContent=local?.blob?'WAV lokal tersimpan':'Device slot is empty';
   }else if(device&&!device.read){
-   if(local?.blob){card.classList.add('is-filled');name.textContent=local.name||local.fileName||('IR Slot '+slot);status.textContent='Sinkronisasi gagal';file.textContent=device.error||'Metadata perangkat tidak terbaca';}
-   else{card.classList.remove('is-filled');name.textContent='Slot Collection '+String(slot).padStart(2,'0');status.textContent='Gagal dibaca';file.textContent=device.error||'Perangkat tidak memberi balasan metadata';}
+   if(local?.blob){card.classList.add('is-filled');name.textContent=local.name||local.fileName||('IR Slot '+slot);status.textContent='Sync failed';file.textContent=device.error||'Metadata perangkat tidak terbaca';}
+   else{card.classList.remove('is-filled');name.textContent='Slot Collection '+String(slot).padStart(2,'0');status.textContent='Read failed';file.textContent=device.error||'Perangkat tidak memberi balasan metadata';}
   }else if(local){
-   card.classList.add('is-filled');name.textContent=local.name||local.fileName||('IR Slot '+slot);status.textContent='WAV lokal · belum sinkron';file.textContent=local.fileName||'WAV tersimpan';
+   card.classList.add('is-filled');name.textContent=local.name||local.fileName||('IR Slot '+slot);status.textContent='Local WAV · not synced';file.textContent=local.fileName||'WAV saved';
   }else{
    card.classList.remove('is-filled');name.textContent='Slot Collection '+String(slot).padStart(2,'0');status.textContent='Belum dibaca';file.textContent='Belum ada data perangkat';
   }
@@ -506,7 +506,7 @@ function initUI(){
   const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   const errors=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   syncBusy=true;setBusy(true);syncButton.textContent='Syncing…';syncButton.setAttribute('aria-busy','true');
-  setMessage(collectionStatus,'Menghubungkan ke MG-30 untuk membaca nama/CRC Collection dengan pola sinkronisasi NAM (2 putaran)…');
+  setMessage(collectionStatus,'Connecting to the MG-30 to read Collection names/CRC (2 passes)…');
   let conn=connection,success=0,empty=0;
   try{
    if(!conn)conn=await window.NUXNativeMidi.connect();
@@ -529,7 +529,7 @@ function initUI(){
     }
     for(const idx of indices)updateSlotCard(idx+1,slotCache.get(idx+1)||null);
     renderSlotCount();
-    if(typeof window.toast==='function')window.toast('Collection sync stopped: no valid slot responses. Check the USB connection and retry.',2600);
+    if(typeof window.toast==='function')window.toast('Collection sync stopped: no valid slot responses. Check USB and retry.',2600);
     return;
    }
    deviceSlots.clear();
@@ -553,10 +553,10 @@ function initUI(){
    lastSyncAt=Date.now();
    const failed=indices.length-success;
    const firstErrors=[...deviceSlots.values()].filter(row=>!row.stable).slice(0,3).map(row=>'slot '+String(row.slot).padStart(2,'0')+': '+row.error);
-   const detail='Sinkronisasi dua putaran selesai: '+success+'/'+indices.length+' slot stabil · '+empty+' kosong · '+failed+' gagal/tidak stabil.'+(firstErrors.length?' Rincian: '+firstErrors.join(' | '):'');
+   const detail='Two-pass sync complete: '+success+'/'+indices.length+' slot stabil · '+empty+' empty · '+failed+' failed/unstable.'+(firstErrors.length?' Rincian: '+firstErrors.join(' | '):'');
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
-    if(typeof window.toast==='function')window.toast(failed?'Collection sync completed with '+success+'/'+indices.length+' stable slots.':'Collection sync complete · '+success+'/'+indices.length+' stable slots · '+empty+' empty.',2600);
+    if(typeof window.toast==='function')window.toast(failed?'Collection sync: '+success+'/'+indices.length+' stable slots · '+failed+' failed.':'Collection synced · '+success+'/'+indices.length+' stable slots · '+empty+' empty.',2600);
   }catch(error){if(typeof window.toast==='function')window.toast('Collection sync failed: '+(error?.message||String(error)),2800)}
   finally{syncBusy=false;setBusy(false);syncButton.textContent='Sync';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
@@ -592,28 +592,28 @@ function initUI(){
    if(target.type==='collection'){
     const existing=slotCache.get(slot);
     const warning='Import "'+name+'" ke Collection slot '+slotLabel+'?'+(existing?'\n\nSlot ini memiliki salinan WAV yang dikelola aplikasi. Mengimpor akan mengganti isi slot tersebut pada perangkat.':'')+'\n\nWAV valid. Transfer akan dimulai setelah konfirmasi.';
-    if(!confirm(warning)){setMessage(statusNode,'Import dibatalkan. Tidak ada data IR dikirim.');return}
+    if(!confirm(warning)){setMessage(statusNode,'Import canceled. No IR data was sent.');return}
    }else{
     const warning='Import "'+name+'" ke Third Party / User pada MG-30 Gen 2?\n\nWAV valid. Setelah konfirmasi, aplikasi langsung mengirim IR melalui jalur User yang sudah teruji.';
-    if(!confirm(warning)){setMessage(statusNode,'Import dibatalkan. Tidak ada data IR dikirim.');return}
+    if(!confirm(warning)){setMessage(statusNode,'Import canceled. No IR data was sent.');return}
    }
-   setMessage(statusNode,'WAV valid. Menghubungkan dan mengirim IR…');
+   setMessage(statusNode,'WAV validated. Connecting and transferring IR…');
    const conn=await window.NUXNativeMidi.connect();
-   const result=await sendMG30IRTransfer(conn,plan,info=>{setMessage(statusNode,'Mengirim '+info.completed+'/75 paket…')});
+   const result=await sendMG30IRTransfer(conn,plan,info=>{setMessage(statusNode,'Sending packet '+info.completed+'/75…')});
    if(!result?.success||result.completedFrames!==75)throw Error('Transfer belum lengkap. Jangan anggap IR berhasil.');
    if(target.type==='collection'){
     const record={slot,name,fileName,blob,updatedAt:new Date().toISOString(),source:'MG30 Studio'};
-    try{await writeSlot(record);slotCache.set(slot,record);updateSlotCard(slot,record);renderSlotCount();setMessage(statusNode,'Transfer selesai ke Collection slot '+slotLabel+'. Membaca ulang nama/CRC dari perangkat…');try{const deviceRecord=await readCollectionSlotStable(conn,slot-1);deviceSlots.set(slot,deviceRecord);updateSlotCard(slot);renderSlotCount();setMessage(statusNode,'Collection slot '+slotLabel+' tersinkron dari perangkat: '+(deviceRecord.occupied?(deviceRecord.name||name):'slot dinyatakan kosong')+'. WAV sumber tersimpan lokal.','ok')}catch(readError){setMessage(statusNode,'Transfer masuk ke Collection slot '+slotLabel+', tetapi readback stabil nama/CRC gagal: '+(readError.message||'kesalahan')+'. WAV lokal tetap disimpan.','warn')}}
+    try{await writeSlot(record);slotCache.set(slot,record);updateSlotCard(slot,record);renderSlotCount();setMessage(statusNode,'Transfer complete to Collection slot '+slotLabel+'. Membaca ulang nama/CRC dari perangkat…');try{const deviceRecord=await readCollectionSlotStable(conn,slot-1);deviceSlots.set(slot,deviceRecord);updateSlotCard(slot);renderSlotCount();setMessage(statusNode,'Collection slot '+slotLabel+' tersinkron dari perangkat: '+(deviceRecord.occupied?(deviceRecord.name||name):'slot dinyatakan kosong')+'. WAV sumber tersimpan lokal.','ok')}catch(readError){setMessage(statusNode,'Transfer masuk ke Collection slot '+slotLabel+', tetapi readback stabil nama/CRC gagal: '+(readError.message||'kesalahan')+'. WAV lokal tetap disimpan.','warn')}}
     catch(e){setMessage(statusNode,'Transfer ke slot '+slotLabel+' mendapat respons, tetapi WAV sumber tidak tersimpan lokal. Tombol Gunakan tidak tersedia setelah sesi ini: '+(e.message||'kesalahan penyimpanan'),'warn')}
    }else{
     lastUserName=name;
     try{localStorage.setItem('mg30-user-ir-name',name)}catch{}
     window.dispatchEvent(new CustomEvent('mg30-user-ir-name-changed',{detail:{name,sourceSlot:target.sourceSlot||null,programSlot}}));
     if(target.sourceSlot)setMessage(userStatus,'WAV sumber Collection slot '+String(target.sourceSlot).padStart(2,'0')+' dikirim ke Third Party / User melalui jalur User yang sudah teruji. Nama cabinet disinkronkan ke '+name+'. Periksa suara IR pada perangkat.','ok');
-    else setMessage(userStatus,'Transfer selesai: "'+name+'" dikirim ke Third Party / User. Nama cabinet disinkronkan. Periksa suara IR pada perangkat.','ok');
+    else setMessage(userStatus,'Transfer complete: "'+name+'" dikirim ke Third Party / User. Nama cabinet disinkronkan. Periksa suara IR pada perangkat.','ok');
    }
-  }catch(error){const msg=error?.message||String(error||'Kesalahan tidak diketahui');setMessage(statusNode,'Import gagal: '+msg,'warn')}
-  finally{setBusy(false);userButton.querySelector('strong').textContent='Import IR WAV ke User'}
+  }catch(error){const msg=error?.message||String(error||'Kesalahan tidak diketahui');setMessage(statusNode,'Import failed: '+msg,'warn')}
+  finally{setBusy(false);userButton.querySelector('strong').textContent='Import IR WAV to User'}
  } fileInput.addEventListener('change',()=>{const blob=fileInput.files&&fileInput.files[0];const target=pendingTarget;pendingTarget=null;if(!blob||!target)return;const name=target.type==='user'?(target.name||safeDisplayName(blob.name)):safeDisplayName(blob.name);processImport(blob,{...target,name,fileName:blob.name})});
  userButton.addEventListener('click',()=>{if(busy)return;pendingTarget={type:'user',programSlot:currentPresetProgramSlot()};fileInput.value='';fileInput.click()});
  async function restoreLocalSlots(){for(let slot=1;slot<=24;slot++){try{const record=await readSlot(slot);if(record)slotCache.set(slot,record)}catch(e){setMessage(collectionStatus,'Penyimpanan lokal tidak dapat dibaca: '+(e.message||'kesalahan'),'warn');break}updateSlotCard(slot,slotCache.get(slot)||null)}renderSlotCount()}
