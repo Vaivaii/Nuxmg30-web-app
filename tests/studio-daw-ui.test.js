@@ -374,3 +374,44 @@ test('Ruler and track lanes use one common beat/bar grid origin and dimensions',
   assert.ok(css.includes('var(--daw-bar-width,92px) 100%'));
   assert.ok(css.includes('background-position:1px 0,1px 0!important'));
 });
+
+
+test('Transport and DAW page dock aligns to the measured top edge of the app navigation', () => {
+  assert.ok(daw.includes('function syncStudioPinnedControls()'));
+  assert.ok(daw.includes('const navRect = appNav.getBoundingClientRect()'));
+  assert.ok(daw.includes('viewportHeight - navRect.top + 8'));
+  assert.ok(daw.includes("dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px')"));
+  assert.ok(css.includes('bottom:var(--studio-dock-bottom,calc(96px + env(safe-area-inset-bottom,0px)))!important'));
+  assert.ok(css.includes('width:var(--studio-dock-width,min(calc(100vw - 28px),1172px))!important'));
+});
+
+test('Jam / Record / DAW tabs remain pinned below the application header while Studio content scrolls', () => {
+  assert.ok(daw.includes("const appHeader = document.querySelector('.top')"));
+  assert.ok(daw.includes('headerRect.bottom + 8'));
+  assert.ok(css.includes('top:var(--studio-mode-tabs-top,8px)!important'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('z-index:225!important'));
+});
+
+test('Mixer channel strips display the editable track name below the channel number', () => {
+  assert.ok(daw.includes('class="daw-mixer-track-name"'));
+  assert.ok(daw.includes("'<strong class="daw-mixer-track-name">' + safeText(track.name)"));
+  assert.ok(css.includes('#page-studio #dawMixerPage .daw-mixer-track-name'));
+  assert.ok(css.includes('display:block!important'));
+});
+
+test('Selected Track settings exposes a persistent editable track name field', () => {
+  assert.ok(daw.includes('class="daw-track-name-field"'));
+  assert.ok(daw.includes('data-track-name="' + track.id + '"'));
+  assert.ok(daw.includes("addEventListener('change', (event) => {"));
+  assert.ok(daw.includes('nameInput.dataset.trackName'));
+  assert.ok(daw.includes('track.name = nameInput.value.trim().slice(0, 32) || track.name'));
+  assert.ok(daw.includes('scheduleProjectSave()'));
+  assert.ok(css.includes('#page-studio .daw-track-name-field input'));
+});
+
+test('Track Settings removes redundant page and selected-track subheadings', () => {
+  assert.ok(!html.includes('DAW · CONFIGURATION'));
+  assert.ok(!html.includes('<h4>Selected Track</h4>'));
+  assert.ok(html.includes('class="daw-project-settings"'));
+});
