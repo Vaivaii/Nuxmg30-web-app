@@ -416,6 +416,22 @@ function renderPlayhead() {
   updatePlayheadReadout();
 }
 
+function followPlayheadDuringPlayback() {
+  if (!playing && !recording) return;
+  const scroller = $('dawTimelineScroll');
+  if (!scroller || !scroller.clientWidth) return;
+  const metrics = timelineMetrics();
+  const x = Math.max(0, (playheadSeconds / metrics.barSeconds) * project.zoom);
+  const left = scroller.scrollLeft;
+  const right = left + scroller.clientWidth;
+  const preferred = left + scroller.clientWidth * 0.72;
+  if (x > preferred) {
+    scroller.scrollLeft = Math.min(x - scroller.clientWidth * 0.62, scroller.scrollWidth - scroller.clientWidth);
+  } else if (x < left + 12 && left > 0) {
+    scroller.scrollLeft = Math.max(0, x - 12);
+  }
+}
+
 function updateTransport() {
   const play = $('dawPlay');
   const record = $('dawRecord');
@@ -551,6 +567,7 @@ async function addAudioBlobToTrack(blob, trackId, fileName, startAt = playheadSe
   selectedClipId = track.clips[track.clips.length - 1].id;
   track.input = track.id === 'guitar' ? 'MG-30 USB / imported audio' : 'Audio file · imported';
   renderProject();
+  commitHistoryChange();
   await saveProject(false);
   setStatus('Audio added to ' + track.name + '. Project saved locally.', 'ok');
 }
@@ -842,6 +859,7 @@ function updatePlayheadFrame() {
     return;
   }
   renderPlayhead();
+  followPlayheadDuringPlayback();
   updateAudioMeters();
   if (project.metronomeEnabled) {
     const beatDuration = 60 / project.tempo;
