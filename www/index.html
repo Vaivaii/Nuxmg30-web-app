@@ -1490,7 +1490,7 @@ function initSceneCopyUI(){
  window.addEventListener('scroll',()=>{if(!menu.hidden){cancelAnimationFrame(repositionFrame);repositionFrame=requestAnimationFrame(place)}},true);
 }
 /* Local illustrations + researched model references. No remote photos are loaded. */
-const MODEL_BASED_ON={"AMP":{"Jazz Clean":"Roland JC-120","Deluxe Rvb":"Fender Deluxe Reverb","F Princeton":"Fender Princeton Reverb","Bass Mate":"Fender Bassman","Tweedy":"Fender Tweed Deluxe","Twin Rvb":"Fender Twin Reverb","Hiwire":"Hiwatt DR103","Cali Crunch":"Mesa/Boogie Mark I","Class A15":"Vox AC15","Class A30":"Vox AC30","Plexi 100":"Marshall Plexi 100W / JTM45-100 family","Plexi 45":"Marshall JTM45 / Plexi 45W family","Brit 100":"Marshall 1959 Super Lead 100W (Plexi family)","Brit 800":"Marshall JCM800","1987 X 50":"Marshall 1987X 50W","Slo 100":"Soldano SLO-100","Fireman HBE":"Friedman HBE-100","Dual Rect":"Mesa/Boogie Dual Rectifier","Die VH4":"Diezel VH4","Vibro King":"Fender Vibro-King","Budda":"Budda Superdrive","Mr Z 38":"Dr. Z MAZ 38 Senior","Super Rvb":"Fender Super-Sonic","Brit Blues":"Marshall Bluesbreaker","Match":"Matchless DC-30","Brit 2000":"Marshall JCM2000","Uber":"Bogner Uberschall","Agl":"Aguilar Tone Hammer 500","Bassguy":"Fender Bassman 100","Mld":"NUX MLD (Melvin Lee Davis) Bass Preamp + DI","Dglass":"Darkglass Microtubes B7K Ultra","Starlift":"Rocket Surgeon Starlifter","Vivo":"Peavey 5150","Optima Air":"NUX Optima Air","Stageman":"NUX Stageman AC-50","L Star":"Mesa/Boogie Lone Star Special","PV 5150":"Peavey 5150 family","MB T-Rect Modern":"Mesa/Boogie Triple Rectifier Modern","ORA Rock Lead":"Orange Rock Lead / Rockerverb family","RIV Knuckle":"Rivera Knucklehead family","XTC Blue":"Bogner Ecstasy Blue channel","XTC Red":"Bogner Ecstasy Red channel"},"WAH":{"Clyde":"Fulltone Clyde Wah","Cry BB":"Dunlop Cry Baby","V847":"VOX V847","Horse Wah":"Morley Bad Horsie Wah","Octave-Shift":"DigiTech Whammy"},"VOL":{"Volume":"NUX volume pedal"},"CMP":{"Rose Comp":"Ross Compressor","K Comp":"Keeley 4-knob Compressor (C4 family)","Studio Comp":"Studio compressor style (no single confirmed product)"},"EFX":{"Distortion+":"MXR Distortion+","RC Boost":"Xotic RC Booster","AC Boost":"Xotic AC Booster","Dist One":"BOSS DS-1","T Scream":"Ibanez TS808 Tube Screamer","Blues Drv":"BOSS BD-2 Blues Driver","Morning Drv":"JHS Morning Glory","Eat Dist":"Pro Co RAT","Red Dirt":"Keeley Red Dirt","Crunch":"JHS Angry Charlie","Muff Fuzz":"Electro-Harmonix Big Muff Pi","Katana":"Keeley Katana Clean Boost","ST Singer":"NUX Steel Singer Drive","Red Fuzz":"Arbiter Fuzz Face","Touch Wah":"Musitronics Mu-Tron III","Full-OD HP":"NUX FULL-OD HP image-based EFX","Horseman OD":"NUX HORSEMAN overdrive image-based EFX","NOB ODR":"NUX NOB ODR image-based EFX","RIV BLUEFLOG":"NUX RIV BLUEFLOG image-based EFX","TURBO OD":"NUX TURBO OD image-based EFX"},"EQ":{"6-Band EQ":"BOSS GE-6 graphic EQ","Align EQ":"LR Baggs Align Series EQ","10-Band EQ":"MXR 10-Band EQ","Para EQ":"Generic 3-band parametric EQ (no single confirmed product)"},"GATE":{"Noise Gate":"BOSS NF-1 Noise Gate"},"MOD":{"CE-1":"BOSS CE-1 Chorus Ensemble","CE-2":"BOSS CE-2 Chorus","St Chorus":"MXR M134 Stereo Chorus","Vibrator":"BOSS VB-2 Vibrato","Detune":"NUX original detune algorithm","Flanger":"BOSS BF-3","Phase 90":"MXR Phase 90","Phase 100":"MXR Phase 100","SCF":"TC Electronic SCF","U-Vibe":"Dunlop UV-1 Uni-Vibe family","Tremolo":"BOSS TR-2","Rotary":"Strymon Lex Rotary","Harmonist":"DigiTech HarmonyMan","SCH-1":"Arion SCH-1","Mono Octave":"NUX Mono Octave (GEN2)"},"DLY":{"Analog Delay":"BOSS DM-2","Digital Delay":"BOSS DD-7","Modulation":"Ibanez DML10","Tape Echo":"Roland RE-101 Space Echo","Reverse":"TC Electronic Alter Ego reverse-delay style","Pan Delay":"Ibanez DPL-10","Duotime":"NUX DuoTime (NUX original)","Phi Delay":"NUX Phi Delay (NUX original)"},"RVB":{"Room":"MXR M300","Hall":"Lexicon 480L","Plate":"EMT 140","Spring":"BOSS FRV-1","Shimmer":"Neunaber Seraphim","Damp":"Neunaber Wet family"},"S/R":{"Send/Return":"NUX serial FX loop"},"IR":{"1960":"Marshall 1960 4×12 cabinet","JZ120":"Roland JC-120 2×12 cabinet","DR112":"Fender Deluxe Reverb / Blackface 1×12 cabinet family","BS410":"Fender Bassman 4×10 cabinet","A212":"Vox AC30 2×12 cabinet","TR212":"Fender Twin Reverb 2×12 cabinet","GB412":"Marshall 4×12 cabinet with Greenback speakers","V412":"Marshall Basketweave 4×12 cabinet with Vintage 30 speakers","AGL DB810":"Aguilar DB 8×10 bass cabinet","AMP SV810":"Ampeg SVT 8×10 bass cabinet","AMP SV410":"Ampeg SVT 4×10 bass cabinet","AMP SV212":"Ampeg SVT 2×12 bass cabinet","MKB 410":"Markbass 104HF 4×10 bass cabinet","TRC 410":"Trace Elliot 1048 4×10 bass cabinet","EDEN 410":"Eden D410XST 4×10 bass cabinet","Bassguy 410":"Fender Bassman 4×10 cabinet family","M-D45":"Martin D-45 acoustic guitar body/cabinet reference","G-HBird":"Gibson Hummingbird acoustic guitar body/cabinet reference","G-J15":"Gibson J-15 acoustic guitar body/cabinet reference","Third-party":"User-loaded IR; no fixed manufacturer reference","Swamp Thang":"Eminence Swamp Thang speaker","Cannabis Rex 12":"Eminence Cannabis Rex 12-inch speaker","Legend 1058":"Eminence Legend 1058 speaker","CV-75":"Eminence CV-75 speaker"}};
+const MODEL_BASED_ON={"AMP":{"Jazz Clean":"Roland JC-120","Deluxe Rvb":"Fender Deluxe Reverb","F Princeton":"Fender Princeton Reverb","Bass Mate":"Fender Bassman","Tweedy":"Fender Tweed Deluxe","Twin Rvb":"Fender Twin Reverb","Hiwire":"Hiwatt DR103","Cali Crunch":"Mesa/Boogie Mark I","Class A15":"Vox AC15","Class A30":"Vox AC30","Plexi 100":"Marshall Plexi 100W / JTM45-100 family","Plexi 45":"Marshall JTM45 / Plexi 45W family","Brit 100":"Marshall 1959 Super Lead 100W (Plexi family)","Brit 800":"Marshall JCM800","1987 X 50":"Marshall 1987X 50W","Slo 100":"Soldano SLO-100","Fireman HBE":"Friedman HBE-100","Dual Rect":"Mesa/Boogie Dual Rectifier","Die VH4":"Diezel VH4","Vibro King":"Fender Vibro-King","Budda":"Budda Superdrive","Mr Z 38":"Dr. Z MAZ 38 Senior","Super Rvb":"Fender Super Reverb","Brit Blues":"Marshall Bluesbreaker","Match":"Matchless DC-30","Brit 2000":"Marshall JCM2000","Uber":"Bogner Uberschall","Agl":"Aguilar Tone Hammer 500","Bassguy":"Fender Bassman 100","Mld":"NUX MLD (Melvin Lee Davis) Bass Preamp + DI","Dglass":"Darkglass Microtubes B7K Ultra","Starlift":"Rocket Surgeon Starlifter","Vivo":"Peavey 5150","Optima Air":"NUX Optima Air","Stageman":"NUX Stageman AC-50","L Star":"Mesa/Boogie Lone Star Special","PV 5150":"Peavey 5150 family","MB T-Rect Modern":"Mesa/Boogie Triple Rectifier Modern","ORA Rock Lead":"Orange Rock Lead / Rockerverb family","RIV Knuckle":"Rivera Knucklehead family","XTC Blue":"Bogner Ecstasy Blue channel","XTC Red":"Bogner Ecstasy Red channel"},"WAH":{"Clyde":"Fulltone Clyde Wah","Cry BB":"Dunlop Cry Baby","V847":"VOX V847","Horse Wah":"Morley Bad Horsie Wah","Octave-Shift":"DigiTech Whammy"},"VOL":{"Volume":"NUX volume pedal"},"CMP":{"Rose Comp":"Ross Compressor","K Comp":"Keeley 4-knob Compressor (C4 family)","Studio Comp":"Studio compressor style (no single confirmed product)"},"EFX":{"Distortion+":"MXR Distortion+","RC Boost":"Xotic RC Booster","AC Boost":"Xotic AC Booster","Dist One":"BOSS DS-1","T Scream":"Ibanez TS808 Tube Screamer","Blues Drv":"BOSS BD-2 Blues Driver","Morning Drv":"JHS Morning Glory","Eat Dist":"Pro Co RAT","Red Dirt":"Keeley Red Dirt","Crunch":"JHS Angry Charlie","Muff Fuzz":"Electro-Harmonix Big Muff Pi","Katana":"Keeley Katana Clean Boost","ST Singer":"NUX Steel Singer Drive","Red Fuzz":"Arbiter Fuzz Face","Touch Wah":"Musitronics Mu-Tron III","Full-OD HP":"NUX FULL-OD HP image-based EFX","Horseman OD":"NUX HORSEMAN overdrive image-based EFX","NOB ODR":"NUX NOB ODR image-based EFX","RIV BLUEFLOG":"NUX RIV BLUEFLOG image-based EFX","TURBO OD":"NUX TURBO OD image-based EFX"},"EQ":{"6-Band EQ":"BOSS GE-6 graphic EQ","Align EQ":"LR Baggs Align Series EQ","10-Band EQ":"MXR 10-Band EQ","Para EQ":"Generic 3-band parametric EQ (no single confirmed product)"},"GATE":{"Noise Gate":"BOSS NF-1 Noise Gate"},"MOD":{"CE-1":"BOSS CE-1 Chorus Ensemble","CE-2":"BOSS CE-2 Chorus","St Chorus":"MXR M134 Stereo Chorus","Vibrator":"BOSS VB-2 Vibrato","Detune":"NUX original detune algorithm","Flanger":"BOSS BF-3","Phase 90":"MXR Phase 90","Phase 100":"MXR Phase 100","SCF":"TC Electronic SCF","U-Vibe":"Dunlop UV-1 Uni-Vibe family","Tremolo":"BOSS TR-2","Rotary":"Strymon Lex Rotary","Harmonist":"DigiTech HarmonyMan","SCH-1":"Arion SCH-1","Mono Octave":"NUX Mono Octave (GEN2)"},"DLY":{"Analog Delay":"BOSS DM-2","Digital Delay":"BOSS DD-7","Modulation":"Ibanez DML10","Tape Echo":"Roland RE-101 Space Echo","Reverse":"TC Electronic Alter Ego reverse-delay style","Pan Delay":"Ibanez DPL-10","Duotime":"NUX DuoTime (NUX original)","Phi Delay":"NUX Phi Delay (NUX original)"},"RVB":{"Room":"MXR M300","Hall":"Lexicon 480L","Plate":"EMT 140","Spring":"BOSS FRV-1","Shimmer":"Neunaber Seraphim","Damp":"Neunaber Wet family"},"S/R":{"Send/Return":"NUX serial FX loop"},"IR":{"1960":"Marshall 1960 4×12 cabinet","JZ120":"Roland JC-120 2×12 cabinet","DR112":"Fender Deluxe Reverb / Blackface 1×12 cabinet family","BS410":"Fender Bassman 4×10 cabinet","A212":"Vox AC30 2×12 cabinet","TR212":"Fender Twin Reverb 2×12 cabinet","GB412":"Marshall 4×12 cabinet with Greenback speakers","V412":"Marshall Basketweave 4×12 cabinet with Vintage 30 speakers","AGL DB810":"Aguilar DB 8×10 bass cabinet","AMP SV810":"Ampeg SVT 8×10 bass cabinet","AMP SV410":"Ampeg SVT 4×10 bass cabinet","AMP SV212":"Ampeg SVT 2×12 bass cabinet","MKB 410":"Markbass 104HF 4×10 bass cabinet","TRC 410":"Trace Elliot 1048 4×10 bass cabinet","EDEN 410":"Eden D410XST 4×10 bass cabinet","Bassguy 410":"Fender Bassman 4×10 cabinet family","M-D45":"Martin D-45 acoustic guitar body/cabinet reference","G-HBird":"Gibson Hummingbird acoustic guitar body/cabinet reference","G-J15":"Gibson J-15 acoustic guitar body/cabinet reference","Third-party":"User-loaded IR; no fixed manufacturer reference","Swamp Thang":"Eminence Swamp Thang speaker","Cannabis Rex 12":"Eminence Cannabis Rex 12-inch speaker","Legend 1058":"Eminence Legend 1058 speaker","CV-75":"Eminence CV-75 speaker"}};
 function getModelBaseName(modelName){return String(modelName||"").replace(/\s*·\s*(?:IMAGE|GEN2)$/i,"").trim()}
 function modelOriginLabel(blockId,modelName){
  const name=String(modelName||"");
@@ -1653,15 +1653,751 @@ function gearBadge(blockId,modelName){
   };
   return labels[blockId+"|"+modelName] || (blockId==="IR" ? "CABINET / IR" : blockId);
 }
+const MG30_AMP_ART_PALETTES={
+roland:{body:'#202529',panel:'#c7c9c3',grille:'#343b3d',edge:'#d3d5ce',ink:'#1b2224',accent:'#bdc5c2'},
+blackface:{body:'#171a1d',panel:'#c8c8bd',grille:'#333a39',edge:'#e1ded0',ink:'#1a1d1d',accent:'#d9d7cb'},
+tweed:{body:'#927047',panel:'#c0a16d',grille:'#8e7959',edge:'#dfc99a',ink:'#2a2116',accent:'#e4cf9f'},
+vox:{body:'#28211b',panel:'#ba884e',grille:'#40342b',edge:'#d3ad70',ink:'#211912',accent:'#e5d3ab'},
+marshall:{body:'#16191a',panel:'#c4a15d',grille:'#a68648',edge:'#edd69b',ink:'#211b11',accent:'#f1d891'},
+marshallCombo:{body:'#17191a',panel:'#b68f50',grille:'#7d6439',edge:'#e0c98c',ink:'#211b11',accent:'#e5c778'},
+hiwatt:{body:'#d0d0c6',panel:'#eeeeDF',grille:'#292d2e',edge:'#f5f3e8',ink:'#202525',accent:'#aeb2a9'},
+mesa:{body:'#171a1c',panel:'#a7a7a1',grille:'#2b2e2f',edge:'#d1c9ac',ink:'#1e2020',accent:'#d5bd83'},
+soldano:{body:'#12171d',panel:'#29343d',grille:'#25303a',edge:'#b9c4c4',ink:'#e7e5db',accent:'#d48779'},
+friedman:{body:'#211a18',panel:'#322725',grille:'#613d31',edge:'#d5a276',ink:'#f4e9d8',accent:'#e4ae73'},
+diezel:{body:'#12171b',panel:'#2d353a',grille:'#3d474c',edge:'#bcc6cb',ink:'#edf0eb',accent:'#b9c7d1'},
+budda:{body:'#26251d',panel:'#41402e',grille:'#625a3d',edge:'#d4c18c',ink:'#f1ead7',accent:'#cbb978'},
+drz:{body:'#2b251f',panel:'#d0c3a8',grille:'#806e54',edge:'#e6d8bd',ink:'#28231d',accent:'#dfceb0'},
+blackCombo:{body:'#171a1d',panel:'#c5c4b9',grille:'#444b4a',edge:'#e5e1d3',ink:'#1b1e1d',accent:'#c6cdd0'},
+matchless:{body:'#183027',panel:'#30453a',grille:'#5b755d',edge:'#d6d6bc',ink:'#f2ead9',accent:'#c8d6b0'},
+bogner:{body:'#171a1e',panel:'#33383b',grille:'#424648',edge:'#d6d2c8',ink:'#f0ece4',accent:'#d1bb8d'},
+aguilar:{body:'#182a36',panel:'#243f50',grille:'#34566b',edge:'#b2cfe0',ink:'#edf5f3',accent:'#a8d1e4'},
+nuxBass:{body:'#162729',panel:'#243d40',grille:'#345659',edge:'#c4d9d3',ink:'#f1f3e8',accent:'#9ed6c9'},
+nuxAcoustic:{body:'#30271e',panel:'#564533',grille:'#a98d6b',edge:'#e0d1b8',ink:'#f7efdd',accent:'#e8d4b1'},
+darkglass:{body:'#111c1d',panel:'#243c3b',grille:'#315251',edge:'#c0e38a',ink:'#f3f6e9',accent:'#c2e47f'},
+peavey:{body:'#171c24',panel:'#303b49',grille:'#42576b',edge:'#b7c8df',ink:'#eef1f2',accent:'#afc5e2'},
+orange:{body:'#261d19',panel:'#c25a24',grille:'#9b4d28',edge:'#f0b384',ink:'#f7eee4',accent:'#e6a16d'},
+rivera:{body:'#18242c',panel:'#2c3c46',grille:'#465b65',edge:'#d0c8af',ink:'#f1eee5',accent:'#c8b98f'},
+nam:{body:'#171b1d',panel:'#2b3335',grille:'#343e3e',edge:'#a4b5ac',ink:'#edf2e8',accent:'#c1dd8c'}
+};
+function renderAmpHeadArtwork(m){
+ const p=MG30_AMP_ART_PALETTES[m.skin]||MG30_AMP_ART_PALETTES.nam;
+ const raw=m.name.replace(/ · IMAGE/,'');
+ const nm=raw.toUpperCase();
+ const ref=m.ref.toLowerCase();
+ const isBass=/bass|aguilar|darkglass|mld|starlift/i.test(ref+' '+raw);
+ const defs='<defs>'+
+ '<linearGradient id="headTolex" x2=".15" y2="1"><stop stop-color="#484b49"/><stop offset=".08" stop-color="'+p.body+'"/><stop offset=".86" stop-color="'+p.body+'"/><stop offset="1" stop-color="#050707"/></linearGradient>'+
+ '<linearGradient id="headGold" x2="0" y2="1"><stop stop-color="#f7e1a6"/><stop offset=".19" stop-color="#d8b970"/><stop offset=".82" stop-color="#b48d4c"/><stop offset="1" stop-color="#76532d"/></linearGradient>'+
+ '<linearGradient id="headSilver" x2="0" y2="1"><stop stop-color="#f7f6ed"/><stop offset=".24" stop-color="#d3d7d0"/><stop offset=".75" stop-color="#929b96"/><stop offset="1" stop-color="#535c59"/></linearGradient>'+
+ '<linearGradient id="headBlackPanel" x2="0" y2="1"><stop stop-color="#323838"/><stop offset=".45" stop-color="#151a1b"/><stop offset="1" stop-color="#050808"/></linearGradient>'+
+ '<radialGradient id="headKnob" cx=".31" cy=".2"><stop stop-color="#a2a69d"/><stop offset=".18" stop-color="#555d58"/><stop offset=".62" stop-color="#202725"/><stop offset="1" stop-color="#050707"/></radialGradient>'+
+ '<radialGradient id="headChromeKnob" cx=".31" cy=".2"><stop stop-color="#fffef0"/><stop offset=".28" stop-color="#c5cbc4"/><stop offset=".73" stop-color="#636d68"/><stop offset="1" stop-color="#141a19"/></radialGradient>'+
+ '<pattern id="headTweed" width="9" height="9" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="'+p.body+'"/><path d="M0 1H9M0 5H9M2 0V9M6 0V9" stroke="'+p.edge+'" stroke-opacity=".42" stroke-width="1"/></pattern>'+
+ '<pattern id="headDiamond" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M8 0L16 8L8 16L0 8Z" fill="none" stroke="'+p.edge+'" stroke-opacity=".72" stroke-width="1.4"/></pattern>'+
+ '<pattern id="headMesh" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 0L7 7M7 0L0 7" stroke="#d9ddd4" stroke-opacity=".28" stroke-width=".8"/><circle cx="3.5" cy="3.5" r="1.1" fill="#080b0c"/></pattern>'+
+ '<pattern id="headPerforated" width="12" height="10" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.2" fill="#c4cbc5" fill-opacity=".58"/><circle cx="9" cy="8" r="1.2" fill="#c4cbc5" fill-opacity=".46"/></pattern>'+
+ '<filter id="headShadow" x="-20%" y="-20%" width="140%" height="155%"><feGaussianBlur stdDeviation="10"/></filter>'+
+ '</defs>';
+ const shadow='<ellipse cx="380" cy="386" rx="265" ry="16" fill="#000" opacity=".58" filter="url(#headShadow)"/>';
+ const shell=(fill='url(#headTolex)',stroke='#5c625e')=>'<rect x="63" y="94" width="634" height="268" rx="15" fill="'+fill+'" stroke="'+stroke+'" stroke-width="4"/><path d="M78 109H682V346H78Z" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="2"/><path d="M82 114H678" stroke="#000" stroke-opacity=".3" stroke-width="2"/>';
+ const handle='<path d="M322 93q0 -16 16 -16h84q16 0 16 16v5h-12v-5h-92v5h-12z" fill="#090b0c" stroke="#79817a" stroke-width="2"/><path d="M338 88h84" stroke="#bbc0b8" stroke-opacity=".35" stroke-width="2"/>';
+ const feet='<rect x="113" y="358" width="50" height="16" rx="6" fill="#070909"/><rect x="597" y="358" width="50" height="16" rx="6" fill="#070909"/>';
+ const screw=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="4" fill="url(#headSilver)" stroke="#2c3431"/><path d="M'+(x-2)+' '+y+'h4" stroke="#59615b" stroke-width="1"/>';
+ const k=(x,y,r,label,chrome=false)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#080b0b" stroke="#b5b9b0" stroke-opacity=".45" stroke-width="1.2"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(chrome?'url(#headChromeKnob)':'url(#headKnob)')+'" stroke="#f1ebdc" stroke-opacity=".48" stroke-width=".8"/><path d="M'+x+' '+(y-r+4)+'v-'+Math.max(5,r*.42)+'" stroke="'+(chrome?'#343c39':'#f6e5bd')+'" stroke-width="2.4" stroke-linecap="round"/><circle cx="'+x+'" cy="'+y+'" r="1.8" fill="#cbd0c6"/></g>';
+ const led=(x,y,color='#b9433d')=>'<circle cx="'+x+'" cy="'+y+'" r="8" fill="'+color+'" opacity=".12"/><circle cx="'+x+'" cy="'+y+'" r="4" fill="'+color+'" stroke="#f2e6c8" stroke-width="1"/>';
+ const jack=(x,y,r=5)=>'<circle cx="'+x+'" cy="'+y+'" r="'+(r+2)+'" fill="#080b0b" stroke="#bfc4b9" stroke-width="1.3"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#171d1b" stroke="#6c756e"/><circle cx="'+x+'" cy="'+y+'" r="1.7" fill="#090c0c"/>';
+ const toggle=(x,y)=>'<path d="M'+x+' '+(y+9)+'v-12" stroke="#d6d8ce" stroke-width="3" stroke-linecap="round"/><circle cx="'+x+'" cy="'+(y-4)+'" r="4" fill="url(#headSilver)" stroke="#4c5550"/>';
+ const label=(x,y,t,size=8,color='#dfe4da',weight=700,spacing=1)=>'<text x="'+x+'" y="'+y+'" text-anchor="middle" font-size="'+size+'" font-weight="'+weight+'" letter-spacing="'+spacing+'" fill="'+color+'">'+t+'</text>';
+ const word=(x,y,t,size,font,color,anchor='middle',extra='')=>'<text x="'+x+'" y="'+y+'" text-anchor="'+anchor+'" font-size="'+size+'" font-family="'+font+'" fill="'+color+'" '+extra+'>'+t+'</text>';
+ const row=(items,y,start=180,step=55,r=9,chrome=false)=>items.map((v,i)=>k(start+i*step,y,r,v,chrome)).join('');
+ const logoPlate=(x,y,w,h,t,font,size,color='#2a2419')=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2" fill="url(#headGold)" stroke="#f5dda2" stroke-width="1.8"/><rect x="'+(x+4)+'" y="'+(y+4)+'" width="'+(w-8)+'" height="'+(h-8)+'" fill="none" stroke="#604722" stroke-opacity=".5"/>'+word(x+w/2,y+h*.68,t,size,font,color);
+ let s=defs+shadow;
+
+ // ZIP REFERENCE OVERRIDES — only models explicitly represented in Amp.zip.
+ // Each renderer below follows the supplied product photograph; unmatched models retain the previous artwork.
+ const zipHead=(body,edge='#777',face='#111719')=>'<rect x="63" y="94" width="634" height="268" rx="13" fill="'+body+'" stroke="'+edge+'" stroke-width="4"/><path d="M322 94q0-16 16-16h84q16 0 16 16" fill="none" stroke="#161a1a" stroke-width="10" stroke-linecap="round"/><rect x="82" y="116" width="596" height="221" rx="2" fill="'+face+'" stroke="'+edge+'" stroke-width="1.8"/>';
+ const zipMesh=(x=89,y=190,w=582,h=140)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="url(#headMesh)"/>';
+ const zipFender=(model,kind)=>{s+=zipHead('#171b1c','#777d79','#111719');s+='<rect x="82" y="116" width="596" height="54" fill="#111719" stroke="#8f9690" stroke-width="1.4"/>';s+=jack(105,143,5)+jack(124,143,5)+toggle(146,143);const xs=kind==='princeton'?[177,220,263,306,349,392]:kind==='deluxe'?[176,213,250,287,324,361,398,435,472,509]:[180,225,270,315,360,405,450,495,540];xs.forEach((x,i)=>s+=k(x,143,8.2,'',true));s+=led(647,143,'#c84b3d');s+='<rect x="82" y="178" width="596" height="159" fill="#252c2d" stroke="#aab1aa" stroke-width="1.7"/>'+zipMesh(90,186,580,143);s+=word(194,258,'Fender',47,'Brush Script MT,Segoe Script,cursive','#f2eee5','middle','font-style="italic" font-weight="bold" stroke="#353a37" stroke-width=".7"');s+='<rect x="507" y="214" width="147" height="49" fill="#111719" stroke="#c4c7bd" stroke-width="1.2"/>'+label(580,234,model,12,'#f0eee5',900,1.1)+label(580,250,'REVERB AMP',7,'#c9cec6',700,1.2);return s+feet+screw(72,103)+screw(688,103);};
+
+
+ const zipPattern=(id,w,h,inner)=>'<pattern id="'+id+'" width="'+w+'" height="'+h+'" patternUnits="userSpaceOnUse">'+inner+'</pattern>';
+
+
+ // Rivera Knucklehead: black pebble-grain chassis, upper grouped control rail,
+ // script Knucklehead brand at upper-right, white piping and perforated grey grille,
+ // centred geometric RIVERA badge. No individual knob captions.
+ if(raw==='RIV Knuckle'){
+  s+='<defs>'+zipPattern('riveraPerf',8,8,'<rect width="8" height="8" fill="#4b5052"/><circle cx="2" cy="2" r="1.05" fill="#171c1e"/><circle cx="6" cy="6" r="1.05" fill="#171c1e"/><path d="M0 4H8" stroke="#737879" stroke-opacity=".35" stroke-width=".5"/>')+'</defs>';
+  s+=zipHead('#121518','#282d30','#0b0f11');
+  s+='<rect x="82" y="116" width="596" height="76" fill="#0c1012" stroke="#343b3e" stroke-width="1.5"/>';
+  s+=jack(104,146,5)+jack(130,146,5);
+  const row1=[185,218,251,284,317],row2=[357,390,423,456,489],row3=[529,562];
+  [...row1,...row2,...row3].forEach(x=>s+=k(x,151,7.5,'',true));
+  s+=led(151,178,'#58a66b')+led(336,178,'#58a66b')+led(500,178,'#b6c28d');
+  s+=word(605,143,'Knuckle',20,'Brush Script MT,Segoe Script,cursive','#e9e8df','middle','font-style="italic" font-weight="bold"')+word(605,164,'Head',19,'Brush Script MT,Segoe Script,cursive','#e9e8df','middle','font-style="italic" font-weight="bold"');
+  s+='<rect x="652" y="132" width="20" height="44" rx="2" fill="#131718" stroke="#555c5c" stroke-width="1"/><rect x="655" y="136" width="14" height="16" rx="1" fill="#090d0f" stroke="#858b86" stroke-width=".7"/><rect x="655" y="156" width="14" height="16" rx="1" fill="#171d1e" stroke="#858b86" stroke-width=".7"/><circle cx="662" cy="164" r="3" fill="#9d2e31"/>';
+  s+='<rect x="82" y="200" width="596" height="137" rx="9" fill="#33383a" stroke="#e2e1d8" stroke-width="2.7"/><rect x="90" y="208" width="580" height="121" rx="5" fill="url(#riveraPerf)"/>';
+  s+='<rect x="256" y="244" width="248" height="58" rx="2" fill="#303639" fill-opacity=".92" stroke="#4c5356" stroke-width="1.2"/>';
+  s+='<g transform="translate(270 258)" fill="none" stroke="#a4aaad" stroke-width="4.1" stroke-linecap="square" stroke-linejoin="round">'+
+   '<path d="M0 0H24Q30 0 30 6V10Q30 16 24 16H0M19 16L30 32"/>'+
+   '<path d="M45 0V32"/>'+
+   '<path d="M62 0L78 32L94 0"/>'+
+   '<path d="M109 0H136M109 0V32H136M109 16H131"/>'+
+   '<path d="M151 0H175Q181 0 181 6V10Q181 16 175 16H151M170 16L181 32"/>'+
+   '<path d="M198 32L214 0L230 32M204 20H224"/>'+
+   '</g>';
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+
+ // Latest user reference set: Fender Super Reverb and Matchless.
+ // These are individual model layouts; all remain head-format renders.
+ if(raw==='Super Rvb'){
+  s+='<defs>'+zipPattern('superRvbCloth',8,8,'<rect width="8" height="8" fill="#9ca09b"/><path d="M0 1H8M0 5H8" stroke="#e0e1da" stroke-width="1.2"/><path d="M1 0V8M5 0V8" stroke="#555b58" stroke-width="1"/><path d="M0 3H8" stroke="#747975" stroke-width=".6"/>')+'</defs>';
+  s+=zipHead('#171a1d','#25292b','#0d1012');
+  s+='<rect x="82" y="116" width="596" height="75" fill="#101416" stroke="#d0d1ca" stroke-width="2"/>';
+  s+='<rect x="89" y="123" width="184" height="61" fill="#151a1b" stroke="#a9aaa3" stroke-width="1"/><rect x="278" y="123" width="394" height="61" fill="#151a1b" stroke="#a9aaa3" stroke-width="1"/>';
+  // NORMAL channel: two inputs, three chrome knobs.
+  s+=jack(105,147,5)+jack(129,147,5);
+  [185,225,265].forEach(x=>s+=k(x,151,8.2,'',true));
+  // VIBRATO channel: two inputs, six chrome knobs.
+  s+=jack(296,147,5)+jack(320,147,5);
+  [371,405,439,473,507,541].forEach(x=>s+=k(x,151,7.6,'',true));
+  s+=word(600,146,'Super',20,'Brush Script MT,Segoe Script,cursive','#e7e3d7','middle','font-style="italic" font-weight="bold"')+word(600,166,'Reverb Amp',18,'Brush Script MT,Segoe Script,cursive','#e7e3d7','middle','font-style="italic" font-weight="bold"');
+  s+='<circle cx="656" cy="151" r="8" fill="#7e1e20" stroke="#c6a39b" stroke-width="1.5"/><circle cx="656" cy="151" r="4" fill="#e23a36"/>';
+  s+='<rect x="82" y="198" width="596" height="139" fill="#9ca09b" stroke="#d0d1ca" stroke-width="2"/><rect x="90" y="206" width="580" height="123" fill="url(#superRvbCloth)"/>';
+  s+=word(198,271,'Fender',57,'Brush Script MT,Segoe Script,cursive','#e4e5df','middle','font-style="italic" font-weight="bold" stroke="#25292a" stroke-width="2" paint-order="stroke fill"');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ if(raw==='Match'){
+  s+=zipHead('#171819','#282b2c','#101314');
+  // Black pebble-grain leather and the continuous white stitched border.
+  s+='<rect x="82" y="116" width="596" height="221" rx="2" fill="#181a1b" stroke="#a7a49a" stroke-width="1.6"/>';
+  s+='<rect x="95" y="128" width="570" height="190" rx="8" fill="none" stroke="#d9d6c9" stroke-width="1.3" stroke-dasharray="4 3" opacity=".9"/>';
+  s+='<rect x="111" y="132" width="538" height="80" rx="4" fill="#090c0d" stroke="#777b76" stroke-width="1.2"/>';
+  // Two input sections and cream chicken-head controls, with the compact switch group at right.
+  s+=jack(137,158,5)+jack(137,190,5);
+  const ivory=(x,y)=>'<g><circle cx="'+x+'" cy="'+y+'" r="10.5" fill="#090b0c" stroke="#77766d" stroke-width="1"/><path d="M'+(x-6)+' '+(y+8)+'L'+(x-5)+' '+(y-7)+'Q'+x+' '+(y-13)+' '+(x+5)+' '+(y-7)+'L'+(x+6)+' '+(y+8)+'Q'+x+' '+(y+12)+' '+(x-6)+' '+(y+8)+'Z" fill="#eee2bd" stroke="#c8b995" stroke-width=".8"/><path d="M'+x+' '+(y-7)+'v7" stroke="#9a8d70" stroke-width="1.2"/></g>';
+  [185,239,293,378,432,486,540].forEach(x=>s+=ivory(x,170));
+  s+=jack(347,158,5)+jack(347,190,5);
+  s+='<circle cx="568" cy="170" r="8" fill="#181d20" stroke="#b6b6a8" stroke-width="1.3"/><circle cx="568" cy="170" r="3.3" fill="#3f688e"/><path d="M592 180v-20M620 180v-20" stroke="#d3d0c2" stroke-width="2.5" stroke-linecap="round"/><circle cx="592" cy="157" r="5" fill="#c9c9be" stroke="#4b514e"/><circle cx="620" cy="157" r="5" fill="#c9c9be" stroke="#4b514e"/>';
+  // The maker plate is centred on the lower face, matching the reference photograph.
+  s+='<rect x="235" y="239" width="290" height="58" rx="1" fill="#080a0b" stroke="#4c4f4e" stroke-width="1.5"/><rect x="244" y="247" width="272" height="42" fill="none" stroke="#777870" stroke-opacity=".45"/>';
+  s+=word(380,281,'MATCHLESS',33,'Georgia,Times New Roman,serif','#e1ded3','middle','font-weight="500" letter-spacing="1.1"');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Bass and NUX amp families reuse the exact same Fender-style head chassis/control geometry.
+ // Only palette and true maker wordmark vary by model; no new hardware silhouettes are invented.
+ const isNuxAmp=/\bnux\b/i.test(m.ref);
+ if(isBass||isNuxAmp){
+  const maker=/aguilar/i.test(m.ref)?'AGUILAR':/bassman/i.test(m.ref)?'Fender':/darkglass/i.test(m.ref)?'DARKGLASS':/starlifter/i.test(m.ref)?'NORDSTRAND':isNuxAmp?'NUX':'BASS';
+  const grilleFill=p.grille||'#343b3d';
+  const panelFill=p.panel||'#20272a';
+  const edgeFill=p.edge||'#bfc8c3';
+  s+='<rect x="63" y="94" width="634" height="268" rx="14" fill="'+p.body+'" stroke="'+edgeFill+'" stroke-width="4"/><path d="M322 94q0-16 16-16h84q16 0 16 16" fill="none" stroke="#111516" stroke-width="10" stroke-linecap="round"/>';
+  s+='<rect x="82" y="116" width="596" height="73" fill="'+panelFill+'" stroke="'+edgeFill+'" stroke-width="1.7"/>';
+  s+=jack(105,148,5)+jack(127,148,5);
+  [187,231,275,319,363,407,451,495].forEach(x=>s+=k(x,151,8.5,'',true));
+  s+=toggle(639,151)+led(663,151,p.accent||'#c0dd8b');
+  s+='<rect x="82" y="197" width="596" height="140" fill="'+grilleFill+'" stroke="'+edgeFill+'" stroke-width="1.8"/>';
+  s+='<defs>'+zipPattern('sharedBassCloth',8,8,'<rect width="8" height="8" fill="'+grilleFill+'"/><path d="M0 1H8M0 5H8" stroke="'+edgeFill+'" stroke-opacity=".45" stroke-width="1"/><path d="M1 0V8M5 0V8" stroke="#101718" stroke-opacity=".6" stroke-width=".9"/>')+'</defs><rect x="90" y="205" width="580" height="124" fill="url(#sharedBassCloth)"/>';
+  const makerColor=p.ink||'#edf2ed';
+  s+=word(380,278,maker,maker.length>8?30:37,'Arial,Helvetica,sans-serif',makerColor,'middle','font-weight="850" letter-spacing="'+(maker.length>8?1.2:2.1)+'"');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // User NAM slots: identical high-gain head chassis, no manufacturer or model names.
+ // The only visible lettering is NAM; knob labels and other branding are intentionally absent.
+ if(m.skin==='nam'){
+  s+=zipHead('#101416','#343a3a','#090d0f');
+  s+='<rect x="82" y="116" width="596" height="139" fill="#090d0f" stroke="#414949" stroke-width="1.8"/>';
+  s+='<rect x="90" y="124" width="580" height="123" fill="url(#headPerforated)"/>';
+  s+='<rect x="276" y="150" width="208" height="66" rx="2" fill="#111719" stroke="#a5b7ac" stroke-width="1.8"/>';
+  s+=word(380,197,'NAM',51,'Arial Black,Impact,sans-serif','#e4ebe1','middle','font-weight="900" letter-spacing="5"');
+  s+='<rect x="82" y="261" width="596" height="76" fill="#101517" stroke="#485150" stroke-width="1.4"/>';
+  s+=jack(106,300,5)+jack(128,300,5);
+  [190,246,302,358,414,470,526,582].forEach(x=>s+=k(x,300,8.5,'',true));
+  s+=toggle(645,300)+led(670,300,'#a4d17d');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Additional seven-model reference batch (XTC Red/Blue share the photographed Ecstasy chassis,
+ // but have independent channel-specific renderer branches and distinct indicator colors).
+ // XTC chassis from supplied photo: patterned silver/cream grille, centred Bogner script,
+ // long black control rail and white chicken-head knobs.
+ const bognerXtc=(channelColor,channelName)=>{
+  s+='<defs>'+zipPattern('xtcCloth',9,9,'<rect width="9" height="9" fill="#a9a69b"/><path d="M0 1H9M0 5H9M2 0V9M7 0V9" stroke="#e5e0cf" stroke-width="1"/><path d="M0 3H9M4 0V9" stroke="#56544e" stroke-width=".8"/>')+'</defs>';
+  s+=zipHead('#222326','#343538','#101214');
+  s+='<rect x="82" y="116" width="596" height="143" fill="#a9a69b" stroke="#d6d0bc" stroke-width="2"/><rect x="90" y="124" width="580" height="127" fill="url(#xtcCloth)"/>';
+  s+=word(380,210,'Bogner',76,'Brush Script MT,Segoe Script,cursive','#f3e7c7','middle','font-style="italic" font-weight="bold" stroke="#d7c9a6" stroke-width="1.2" paint-order="stroke fill"');
+  s+='<rect x="82" y="265" width="596" height="72" fill="#101315" stroke="#62605a" stroke-width="1.2"/>';
+  s+=jack(102,294,6)+led(128,294,channelColor)+toggle(153,294);
+  s+=label(102,322,'INPUT',5.4,'#c9c8bd',700,.2)+label(153,322,channelName,5.2,'#c9c8bd',700,.2);
+  const chicken=(x,y,color='#e8e6dd')=>'<g><circle cx="'+x+'" cy="'+y+'" r="11.5" fill="#0a0d0e" stroke="#4d5451" stroke-width="1.2"/><path d="M'+(x-7)+' '+(y+7)+'L'+(x-5)+' '+(y-8)+'Q'+x+' '+(y-14)+' '+(x+5)+' '+(y-8)+'L'+(x+7)+' '+(y+7)+'Q'+x+' '+(y+12)+' '+(x-7)+' '+(y+7)+'Z" fill="'+color+'" stroke="#fffdf1" stroke-opacity=".68" stroke-width=".8"/><path d="M'+x+' '+(y-7)+'v7" stroke="#696b63" stroke-width="1.4"/></g>';
+  const xs=[210,248,286,324,362,400,458,496,534,572,610,648];
+  xs.forEach((x,i)=>{s+=chicken(x,302);if(i===5||i===6)s+=led(x,326,channelColor);});
+  return s+feet+screw(72,103)+screw(688,103);
+ };
+ if(raw==='XTC Red'){return bognerXtc('#c63e34','RED CHANNEL');}
+ if(raw==='XTC Blue'){return bognerXtc('#3b79c7','BLUE CHANNEL');}
+ // Bogner Uberschall / Uber Ultra: deep black open slotted fascia, large cream Bogner logo,
+ // horizontal vent rails and dense lower control strip.
+ if(raw==='Uber'){
+  s+=zipHead('#1a1b1d','#36383a','#090c0e');
+  s+='<rect x="82" y="116" width="596" height="143" fill="#090c0e" stroke="#3e4141" stroke-width="1.6"/>';
+  for(let r=0;r<3;r++){const y=127+r*37;s+='<rect x="92" y="'+y+'" width="576" height="26" fill="#0b0e10" stroke="#292e30" stroke-width="1"/>';for(let i=0;i<14;i++){const x=102+i*42;s+='<path d="M'+x+' '+(y+5)+'l15 0 10 14 -15 0z" fill="#343b3d"/><path d="M'+(x+1)+' '+(y+5)+'h14" stroke="#707676" stroke-width="1"/>';}}
+  s+=word(380,212,'Bogner',70,'Brush Script MT,Segoe Script,cursive','#f3e8ca','middle','font-style="italic" font-weight="bold" stroke="#cfc2a1" stroke-width="1.1" paint-order="stroke fill"');
+  s+='<rect x="82" y="265" width="596" height="72" fill="#121719" stroke="#404749" stroke-width="1.3"/>';
+  s+=label(119,285,'ÜBER-ULTRA',8,'#d9dcd5',850,.6)+toggle(106,311)+toggle(137,311);
+  const ux=[190,230,270,310,350,390,450,490,530,570,610,650];
+  ux.forEach((x,i)=>{s+=k(x,309,8.5,'',true);});
+  s+=jack(668,309,5)+led(171,286,'#b63a32');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Mesa Triple Rectifier Modern (MB T-Rect): black textured shell, dark diamond plate,
+ // central vented MESA badge, white Rectifier script and two-row chrome control banks.
+ if(raw==='MB T-Rect Modern'){
+  s+='<defs>'+zipPattern('trRectDiamond',18,18,'<rect width="18" height="18" fill="#353a3b"/><path d="M-3 12L6 3L10 7L19-2M-2 20L8 10L12 14L22 4" stroke="#697071" stroke-width="2.4" fill="none"/><path d="M-3 14L6 5" stroke="#171b1c" stroke-width="1"/>')+'</defs>';
+  s+=zipHead('#111416','#303637','#0b0e10');
+  s+='<rect x="82" y="116" width="596" height="139" fill="#34393a" stroke="#555d5f" stroke-width="1.5"/><rect x="90" y="124" width="580" height="123" fill="url(#trRectDiamond)"/>';
+  s+='<rect x="213" y="151" width="355" height="49" rx="3" fill="#9ba2a3" stroke="#d4d7d4" stroke-width="1.5"/>';
+  for(let i=0;i<12;i++){const x=225+i*28;s+='<rect x="'+x+'" y="158" width="7" height="34" rx="2" fill="#111719"/>';}
+  s+='<rect x="349" y="144" width="91" height="62" rx="4" fill="#171c1e" stroke="#b3b9b8" stroke-width="1.6"/>'+word(394,174,'MESA',27,'Georgia,serif','#e1e2dc','middle','font-weight="900"')+label(394,190,'ENGINEERING',5.5,'#d4d7d1',800,1);
+  s+='<rect x="82" y="261" width="596" height="76" fill="#111517" stroke="#535b5d" stroke-width="1.4"/>';
+  s+=toggle(103,300)+toggle(129,300)+led(154,300,'#bf352f')+word(244,300,'Rectifier',30,'Brush Script MT,Segoe Script,cursive','#e9e5da','middle','font-style="italic" font-weight="bold"')+label(244,322,'TRIPLE RECTIFIER',6.4,'#cdd1ca',850,1);
+  s+=led(346,278,'#83b64c')+led(346,325,'#d3a52d')+toggle(373,300);
+  [414,460,506,552,598,644].forEach(x=>{s+=k(x,286,7.7,'',true)+k(x,318,7.7,'',true);});
+  s+=jack(669,300,5);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Dual Rectifier photo: bright silver diamond plate, long MESA vent badge,
+ // prominent Dual Rectifier script with 100W head legend and grouped dual-row controls.
+ if(raw==='Dual Rect'){
+  s+='<defs>'+zipPattern('dualRectSilver',18,18,'<rect width="18" height="18" fill="#c6cbca"/><path d="M-3 12L6 3L10 7L19-2M-2 20L8 10L12 14L22 4" stroke="#f4f5f1" stroke-width="2.8" fill="none"/><path d="M-3 14L6 5" stroke="#858c8d" stroke-width="1"/>')+'</defs>';
+  s+=zipHead('#111416','#15191b','#0c1012');
+  s+='<rect x="82" y="116" width="596" height="139" fill="#c5cac9" stroke="#e2e4e1" stroke-width="2"/><rect x="90" y="124" width="580" height="123" fill="url(#dualRectSilver)"/>';
+  s+='<rect x="213" y="150" width="355" height="50" rx="4" fill="#e2e5e2" stroke="#8a9293" stroke-width="1.5"/>';
+  for(let i=0;i<12;i++){const x=225+i*28;s+='<rect x="'+x+'" y="157" width="7" height="35" rx="2" fill="#13191b"/>';}
+  s+='<rect x="349" y="143" width="91" height="64" rx="5" fill="#141a1c" stroke="#f0f1ed" stroke-width="1.7"/>'+word(394,173,'MESA',27,'Georgia,serif','#e3e5de','middle','font-weight="900"')+label(394,190,'ENGINEERING',5.5,'#d1d6d1',800,1);
+  s+='<rect x="82" y="261" width="596" height="76" fill="#090d0f" stroke="#363c3d" stroke-width="1.4"/>';
+  s+=toggle(101,299)+toggle(128,299)+led(155,299,'#c3322b')+word(244,301,'Dual Rectifier',29,'Brush Script MT,Segoe Script,cursive','#ece6d7','middle','font-style="italic" font-weight="bold"')+label(244,322,'100 WATT HEAD',6.5,'#d4d5ce',850,1);
+  s+=led(346,279,'#86b64b')+led(346,325,'#b6a33a')+toggle(372,299)+toggle(397,299);
+  [438,480,522,564,606,648].forEach(x=>{s+=k(x,286,7.7,'',true)+k(x,318,7.7,'',true);});
+  s+=jack(670,299,5);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Orange Rockerverb 50 MKIII: vivid orange tolex surround, silver maker plate,
+ // ORANGE wordmark and model title, three amber/orange control groups and black switch blocks.
+ if(raw==='ORA Rock Lead'){
+  s+='<defs>'+zipPattern('orangeTolex',12,12,'<rect width="12" height="12" fill="#d98225"/><path d="M0 2H12M0 8H12M3 0V12M9 0V12" stroke="#f2ad55" stroke-width="1.2"/><path d="M0 5H12" stroke="#9a4c14" stroke-width=".7"/>')+'</defs>';
+  s+='<rect x="63" y="94" width="634" height="268" rx="14" fill="url(#orangeTolex)" stroke="#a95718" stroke-width="4"/><path d="M322 94q0-16 16-16h84q16 0 16 16" fill="none" stroke="#17191a" stroke-width="10" stroke-linecap="round"/>';
+  s+='<rect x="82" y="116" width="596" height="221" rx="5" fill="#d9d8d1" stroke="#f4f1e9" stroke-width="3"/><rect x="96" y="128" width="568" height="91" fill="#f1eee5" stroke="#222626" stroke-width="2"/>';
+  s+=word(258,190,'ORANGE',54,'Georgia,serif','#15191b','middle','font-weight="900" stroke="#15191b" stroke-width=".7"');
+  s+=label(485,172,'ROCKERVERB 50',16,'#202424',900,.4)+label(485,194,'MKIII',16,'#202424',900,.6);
+  s+='<rect x="610" y="141" width="39" height="57" fill="#e6e2d7" stroke="#525651" stroke-width="1.5"/><path d="M619 150l20 0-2 36-17 0z" fill="#a8b08f" stroke="#61665c"/>';
+  s+='<rect x="96" y="227" width="140" height="98" rx="4" fill="#101516" stroke="#4c5250" stroke-width="2"/><rect x="241" y="227" width="158" height="98" rx="4" fill="#df7920" stroke="#1b2020" stroke-width="2"/><rect x="404" y="227" width="158" height="98" rx="4" fill="#df7920" stroke="#1b2020" stroke-width="2"/><rect x="567" y="227" width="97" height="98" rx="4" fill="#101516" stroke="#4c5250" stroke-width="2"/>';
+  s+=toggle(119,271)+toggle(151,271)+toggle(184,271)+toggle(217,271);
+  const orangeKnob=(x,y,r=9)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#101414" stroke="#8f5728" stroke-width="1"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#headKnob)" stroke="#d7c9ab" stroke-width=".9"/><path d="M'+x+' '+(y-r+3)+'v-5" stroke="#e9a34a" stroke-width="2.5" stroke-linecap="round"/></g>';
+  [270,323].forEach(x=>s+=orangeKnob(x,279,11));[420,458,496,534].forEach(x=>s+=orangeKnob(x,279,8.5));[583,618,650].forEach(x=>s+=orangeKnob(x,279,8));
+  s+='<path d="M255 245h129M418 245h129" stroke="#2b2f2d" stroke-width="1.5"/>';
+  s+=label(319,313,'CLEAN',6,'#171c1b',800,.5)+label(484,313,'DIRTY / LEAD',6,'#171c1b',800,.5);
+  s+=jack(644,309,5);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Peavey 5150 IMAGE slot: black woven upper panel, dotted 5150 logo, PEAVEY mark at right,
+ // silver lower strip with inputs, eight dark knobs and EVH/switch group.
+ if(raw==='PV 5150'){
+  s+='<defs>'+zipPattern('peaveyMesh',10,10,'<rect width="10" height="10" fill="#0a0e10"/><circle cx="2" cy="2" r="1.4" fill="#485052"/><circle cx="7" cy="7" r="1.4" fill="#252d2f"/><path d="M0 5H10" stroke="#172022" stroke-width=".8"/>')+'</defs>';
+  s+=zipHead('#111416','#25292b','#090d0f');
+  s+='<rect x="82" y="116" width="596" height="139" fill="#080c0e" stroke="#333a3c" stroke-width="1.6"/><rect x="90" y="124" width="580" height="123" fill="url(#peaveyMesh)"/>';
+  s+=word(371,207,'5150',71,'Arial Black,Impact,sans-serif','#c9cdca','middle','font-weight="900" letter-spacing="-3"');
+  s+=word(585,233,'PEAVEY',18,'Arial Black,Arial,sans-serif','#d5d9d5','middle','font-weight="900" italic');
+  s+='<rect x="82" y="261" width="596" height="76" fill="#c9cbc5" stroke="#f0f0e9" stroke-width="2"/>';
+  s+=jack(105,294,6)+jack(130,294,6)+label(118,279,'INPUTS',5.5,'#333a37',800,.4);
+  [205,252,299,346,393,440,487,534].forEach(x=>s+=k(x,300,8.5,'',true));
+  s+=label(620,282,'EVH',15,'#1b2020',900,.3)+toggle(625,310)+toggle(656,310)+toggle(679,310);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+
+ // Exact visual pass from the six additional photographs supplied in chat.
+ // All six are drawn as amp heads, retaining the reference panel, wordmark, materials and layout.
+ // Fender Vibro-King — tan tweed shell; black upper control strip split into three functional groups;
+ // script model mark at upper-right and raised Fender script badge on the dark grille.
+ if(raw==='Vibro King'){
+  s+='<defs>'+zipPattern('vibroTanWeave',10,10,'<rect width="10" height="10" fill="#c69b70"/><path d="M0 1H10M0 6H10M2 0V10M7 0V10" stroke="#e4c69d" stroke-opacity=".5" stroke-width=".8"/><path d="M0 3H10M4 0V10" stroke="#8c633f" stroke-opacity=".35" stroke-width=".7"/>')+zipPattern('vibroDarkCloth',8,8,'<rect width="8" height="8" fill="#211816"/><path d="M0 0L8 8M8 0L0 8" stroke="#755d52" stroke-opacity=".32" stroke-width=".8"/><circle cx="4" cy="4" r="1" fill="#0b0a09"/>')+'</defs>';
+  s+='<rect x="63" y="94" width="634" height="268" rx="14" fill="url(#vibroTanWeave)" stroke="#98704b" stroke-width="4"/><path d="M322 94q0-16 16-16h84q16 0 16 16" fill="none" stroke="#4d392a" stroke-width="10" stroke-linecap="round"/>';
+  s+='<rect x="82" y="116" width="596" height="70" rx="2" fill="#211a19" stroke="#d2b58d" stroke-width="2"/>';
+  s+='<rect x="88" y="122" width="268" height="58" fill="#271f1e" stroke="#8d7d6d" stroke-width="1"/><rect x="360" y="122" width="185" height="58" fill="#271f1e" stroke="#8d7d6d" stroke-width="1"/><rect x="549" y="122" width="123" height="58" fill="#271f1e" stroke="#8d7d6d" stroke-width="1"/>';
+  s+=jack(105,145,5)+jack(128,145,5)+k(180,148,9,'',true)+k(222,148,9,'',true)+k(264,148,9,'',true);
+  s+=label(105,169,'INPUTS',7,'#e7ddcf',800,1)+label(180,169,'DWELL',6,'#e2d4c0',750,0)+label(222,169,'MIX',6,'#e2d4c0',750,0)+label(264,169,'TONE',6,'#e2d4c0',750,0);
+  s+=toggle(378,148)+label(378,169,'FAT',6,'#e2d4c0',750,0)+k(417,148,9,'',true)+k(456,148,9,'',true)+k(495,148,9,'',true)+k(534,148,9,'',true);
+  s+=label(417,169,'VOLUME',6,'#e2d4c0',750,0)+label(456,169,'TREBLE',6,'#e2d4c0',750,0)+label(495,169,'BASS',6,'#e2d4c0',750,0)+label(534,169,'MID',6,'#e2d4c0',750,0);
+  s+=k(563,148,8.3,'',true)+k(586,148,8.3,'',true)+label(563,169,'SPEED',5.2,'#e2d4c0',750,0)+label(586,169,'INTENSITY',4.9,'#e2d4c0',750,0);
+  s+=word(630,143,'Vibro',19,'Brush Script MT,Segoe Script,cursive','#eee2d0','middle','font-style="italic" font-weight="bold"')+word(630,163,'King',19,'Brush Script MT,Segoe Script,cursive','#eee2d0','middle','font-style="italic" font-weight="bold"')+label(630,178,'FENDER MUSICAL INSTRUMENTS',3.7,'#d8cbbb',700,.1);
+  s+='<circle cx="662" cy="145" r="6" fill="#151a20" stroke="#a0a8a4" stroke-width="1.3"/><circle cx="662" cy="145" r="3" fill="#325b91"/><rect x="82" y="192" width="596" height="145" fill="#211816" stroke="#c5a47a" stroke-width="2"/><rect x="90" y="200" width="580" height="129" fill="url(#vibroDarkCloth)"/>';
+  s+='<path d="M130 210H650M130 326H650" stroke="#7c6559" stroke-opacity=".25" stroke-width="1"/>';
+  s+=word(205,270,'Fender',58,'Brush Script MT,Segoe Script,cursive','#b8b7b2','middle','font-style="italic" font-weight="bold" stroke="#5d5c59" stroke-width="1.8" paint-order="stroke fill"');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Fender Twin Reverb — charcoal tolex, narrow long black control rail, silver-woven grille,
+ // Fender script badge at left and small Twin Reverb II script model name at right.
+ if(raw==='Twin Rvb'){
+  s+='<defs>'+zipPattern('twinSilverCloth',8,8,'<rect width="8" height="8" fill="#888b80"/><path d="M0 1H8M0 5H8" stroke="#c7c8b9" stroke-width="1"/><path d="M1 0V8M5 0V8" stroke="#444941" stroke-width=".9"/>')+'</defs>';
+  s+=zipHead('#171a1d','#33383a','#111517');
+  s+='<rect x="82" y="116" width="596" height="76" fill="#111517" stroke="#b6b9b0" stroke-width="1.6"/>';
+  s+=jack(105,143,5)+jack(126,143,5);
+  const twinXs=[178,208,238,268,309,339,369,399,429,459,489,519];
+  twinXs.forEach((x,i)=>s+=k(x,145,7.1,'',true));
+  s+=label(178,173,'VOL',4.6,'#e7e7dc',700,0)+label(208,173,'TREB',4.6,'#e7e7dc',700,0)+label(238,173,'MID',4.6,'#e7e7dc',700,0)+label(268,173,'BASS',4.6,'#e7e7dc',700,0);
+  s+=label(309,173,'VOL',4.6,'#e7e7dc',700,0)+label(339,173,'GAIN',4.6,'#e7e7dc',700,0)+label(369,173,'MASTER',4.6,'#e7e7dc',700,0)+label(399,173,'TREB',4.6,'#e7e7dc',700,0)+label(429,173,'MID',4.6,'#e7e7dc',700,0)+label(459,173,'BASS',4.6,'#e7e7dc',700,0)+label(489,173,'REVERB',4.6,'#e7e7dc',700,0)+label(519,173,'PRES',4.6,'#e7e7dc',700,0);
+  s+='<rect x="82" y="198" width="596" height="139" fill="#898b82" stroke="#b7b9ae" stroke-width="2"/><rect x="90" y="206" width="580" height="123" fill="url(#twinSilverCloth)"/>';
+  s+=word(204,274,'Fender',54,'Brush Script MT,Segoe Script,cursive','#171b1d','middle','font-style="italic" font-weight="bold" stroke="#d2d0c5" stroke-width="1.3" paint-order="stroke fill"');
+  s+=word(584,160,'Twin',16,'Brush Script MT,Segoe Script,cursive','#f0ede1','middle','font-style="italic" font-weight="bold"')+word(584,179,'Reverb II',16,'Brush Script MT,Segoe Script,cursive','#f0ede1','middle','font-style="italic" font-weight="bold"');
+  s+=toggle(638,143)+toggle(660,143)+led(676,174,'#a8322f');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Mesa Rectifier — raised silver diamond plate, long central vent with MESA badge,
+ // two horizontal rows of chrome controls and the Rectifier Solo 50 script on the lower-left rail.
+ if(raw==='Dual Rect'){
+  s+='<defs>'+zipPattern('rectDiamond',18,18,'<rect width="18" height="18" fill="#aeb4b5"/><path d="M-3 12L6 3L10 7L19-2M-2 20L8 10L12 14L22 4" stroke="#e1e4e2" stroke-width="3" fill="none"/><path d="M-3 14L6 5" stroke="#777e80" stroke-width="1.2"/>')+'</defs>';
+  s+=zipHead('#101416','#272e31','#101416');
+  s+='<rect x="82" y="116" width="596" height="139" fill="#aeb4b5" stroke="#e2e5e3" stroke-width="2"/><rect x="90" y="124" width="580" height="123" fill="url(#rectDiamond)"/>';
+  s+='<rect x="213" y="150" width="355" height="48" rx="4" fill="#e0e2df" stroke="#707779" stroke-width="2"/>';
+  for(let i=0;i<12;i++){const x=225+i*28;s+='<rect x="'+x+'" y="157" width="7" height="34" rx="2" fill="#171d1f"/>';}
+  s+='<rect x="352" y="143" width="92" height="60" rx="5" fill="#111719" stroke="#d0d4d1" stroke-width="2"/>'+word(398,171,'MESA',26,'Georgia,serif','#e3e4dc','middle','font-weight="900"')+label(398,187,'ENGINEERING',6,'#d8dbd6',800,1);
+  s+='<rect x="82" y="261" width="596" height="76" fill="#0b1012" stroke="#58605f" stroke-width="1.5"/>';
+  s+=toggle(107,299)+toggle(133,299)+led(161,299,'#bd342c')+word(240,301,'Rectifier',29,'Brush Script MT,Segoe Script,cursive','#e9e2cf','middle','font-style="italic" font-weight="bold"')+label(240,322,'SINGLE RECTIFIER SOLO 50',6.8,'#d9d3c3',850,1);
+  s+=led(341,279,'#8db64b')+led(341,324,'#b7332f');
+  const rx=[372,420,468,516,564,612];rx.forEach(x=>{s+=k(x,286,8.2,'',true)+k(x,319,8.2,'',true);});
+  s+=toggle(645,299)+jack(670,299,5);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Budda Superdrive — black pebbled tolex, recessed purple control bay with triangular knobs,
+ // fine white pinstripe sweeping into a purple oval Budda badge.
+ if(raw==='Budda'){
+  s+=zipHead('#171719','#252629','#151618');
+  s+='<rect x="205" y="116" width="424" height="78" rx="8" fill="#793b72" stroke="#b88bb1" stroke-width="2"/>';
+  s+=label(230,133,'SUPER',6,'#e9d4e7',800,.6)+label(230,144,'DRIVE II',7,'#f1dff0',850,.4);
+  s+='<rect x="251" y="130" width="30" height="38" rx="2" fill="#e87522" stroke="#f8c88a" stroke-width="2"/><path d="M266 136v11" stroke="#ffe2b1" stroke-width="2"/><rect x="290" y="130" width="29" height="38" rx="2" fill="#101416" stroke="#9e9e9b" stroke-width="1.5"/>';
+  const tri=(x,y)=>'<path d="M'+(x-10)+' '+(y+13)+'L'+(x-7)+' '+(y-7)+'Q'+x+' '+(y-16)+' '+(x+7)+' '+(y-7)+'L'+(x+10)+' '+(y+13)+'Z" fill="#101316" stroke="#373c3b" stroke-width="1.2"/><path d="M'+x+' '+(y-8)+'v8" stroke="#858a83" stroke-width="1.2"/>';
+  [354,405,456,507,558,601].forEach((x,i)=>{s+=tri(x,150);});
+  s+=label(354,181,'MASTER',5.3,'#f0e2ec',750,0)+label(405,181,'BASS',5.3,'#f0e2ec',750,0)+label(456,181,'MID',5.3,'#f0e2ec',750,0)+label(507,181,'TREBLE',5.3,'#f0e2ec',750,0)+label(558,181,'DRIVE',5.3,'#f0e2ec',750,0)+label(601,181,'PRESENCE',5.3,'#f0e2ec',750,0);
+  s+=jack(646,142,5)+jack(646,174,5)+label(646,133,'DEPTH',5.2,'#f0e2ec',700,0)+label(646,187,'FOOTSWITCH',4.7,'#f0e2ec',700,0);
+  s+='<path d="M83 225L220 269Q241 276 264 276H340M677 225L540 269Q519 276 496 276H420" fill="none" stroke="#d6d6cb" stroke-width="3"/>';
+  s+='<ellipse cx="380" cy="274" rx="112" ry="38" fill="#7f3d7b" stroke="#d2acd0" stroke-width="2.5"/><ellipse cx="380" cy="274" rx="103" ry="30" fill="none" stroke="#e9cfe5" stroke-opacity=".7" stroke-width="1"/>';
+  s+=word(380,289,'BUDDA',43,'Brush Script MT,Segoe Script,cursive','#f0d8eb','middle','font-style="italic" font-weight="bold"');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Mesa/Boogie Mark-family (Cali Crunch) — black frame, cane grille, top-mounted controls,
+ // grouped graphic-EQ sliders and Boogie grille badge as in the photograph.
+ if(raw==='Cali Crunch'){
+  s+='<defs>'+zipPattern('boogieCane',12,12,'<rect width="12" height="12" fill="#d7c49b"/><path d="M-3 3L3-3M-3 9L9-3M3 15L15 3M9 15L15 9M-3 3L3 9M3-3L15 9M9-3L15 3" stroke="#f4e5c4" stroke-width="3"/><path d="M-3 3L3 9M3-3L15 9" stroke="#9b865f" stroke-width=".8"/>')+'</defs>';
+  s+=zipHead('#171a1d','#0b0d0f','#111517');
+  s+='<rect x="82" y="116" width="596" height="82" fill="#111517" stroke="#e0e2db" stroke-width="1.5"/>';
+  s+=jack(101,144,5)+jack(101,174,5)+label(101,132,'INPUT',5.4,'#edece5',700,0);
+  const bx=[151,199,247,295,343,391,439];bx.forEach(x=>s+=k(x,151,9,'',true));
+  ['VOLUME 1','TREBLE','BASS','MIDDLE','MASTER 1','LEAD DRIVE','LEAD MASTER'].forEach((v,i)=>s+=label(bx[i],181,v,5.3,'#ecece4',750,.1));
+  s+='<rect x="478" y="125" width="132" height="58" rx="3" fill="#dce0de" stroke="#f5f6f2" stroke-width="2"/>';
+  const sliderXs=[494,518,542,566,590];sliderXs.forEach((x,i)=>{s+='<path d="M'+x+' 134V174" stroke="#596260" stroke-width="4"/><path d="M'+(x-7)+' '+[141,156,166,148,137][i]+'h14v7h-14z" fill="#252c2c" stroke="#737b77" stroke-width="1"/>';});
+  s+=label(542,192,'80   240   750   2200   6600',5.1,'#f0f1eb',750,.2);
+  s+=toggle(628,149)+toggle(653,149)+toggle(676,149)+led(676,179,'#d34a31');
+  s+='<rect x="82" y="205" width="596" height="132" fill="#d7c49b" stroke="#f3e6c9" stroke-width="2"/><rect x="90" y="213" width="580" height="116" fill="url(#boogieCane)"/>';
+  s+='<rect x="125" y="230" width="151" height="59" rx="3" fill="#121719" stroke="#b7b8ae" stroke-width="2"/>'+word(201,271,'Boogie',39,'Georgia,serif','#e5e2d7','middle','font-weight="bold"')+label(201,282,'MESA ENGINEERING',5.2,'#d9d7cc',750,1);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Dr. Z — black tolex, cream outlined grouped controls, EZG 50 shield, cream/brown houndstooth cloth and central Z emblem.
+ if(raw==='Mr Z 38'){
+  s+='<defs>'+zipPattern('drzCloth',10,10,'<rect width="10" height="10" fill="#b6a17c"/><path d="M0 0H5V5H0ZM5 5H10V10H5Z" fill="#282725"/><path d="M0 5H5V10H0ZM5 0H10V5H5Z" fill="#ddd0b0"/><path d="M0 0L10 10M10 0L0 10" stroke="#77684e" stroke-width=".5"/>')+'</defs>';
+  s+=zipHead('#151719','#42494a','#101416');
+  s+='<rect x="82" y="116" width="596" height="94" fill="#0d1112" stroke="#9b9d94" stroke-width="1.4"/>';
+  s+=jack(110,153,6)+label(110,137,'INPUT',6,'#efeee5',750,.6);
+  s+='<rect x="174" y="127" width="105" height="63" rx="18" fill="none" stroke="#e2e3d9" stroke-width="1.5"/><rect x="282" y="127" width="164" height="63" rx="18" fill="none" stroke="#e2e3d9" stroke-width="1.5"/><rect x="449" y="127" width="111" height="63" rx="18" fill="none" stroke="#e2e3d9" stroke-width="1.5"/>';
+  [195,251,305,359,413,474,530].forEach(x=>s+=k(x,157,9,'',true));
+  s+=label(223,139,'VOLUME',6,'#eeeade',800,.7)+label(363,139,'E Q',6,'#eeeade',800,.7)+label(504,139,'REVERB',6,'#eeeade',800,.7);
+  s+=label(195,182,'PRE',5.8,'#eeeade',750,.3)+label(251,182,'POST',5.8,'#eeeade',750,.3)+label(305,182,'TREBLE',5.8,'#eeeade',750,.3)+label(359,182,'MID',5.8,'#eeeade',750,.3)+label(413,182,'BASS',5.8,'#eeeade',750,.3)+label(474,182,'DWELL',5.8,'#eeeade',750,.3)+label(530,182,'MIX',5.8,'#eeeade',750,.3);
+  s+='<path d="M577 137l31 0 0 37-31 0z" fill="#e4e3da" stroke="#fcfcf4" stroke-width="1.5"/>'+word(592,153,'EZG',13,'Arial Black,Arial,sans-serif','#141819','middle','font-weight="900"')+word(592,169,'50',15,'Arial Black,Arial,sans-serif','#141819','middle','font-weight="900"');
+  s+=toggle(628,156)+toggle(654,156)+led(672,156,'#34618c')+label(628,184,'STBY',5,'#eeeade',700,.1)+label(654,184,'POWER',5,'#eeeade',700,.1);
+  s+='<rect x="82" y="217" width="596" height="120" fill="#b7a27e" stroke="#e1d2b1" stroke-width="2"/><rect x="90" y="225" width="580" height="104" fill="url(#drzCloth)"/>';
+  s+=word(380,307,'Z',84,'Georgia,serif','#ede1c2','middle','font-weight="900" italic');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+
+ // Princeton Reverb reference: black control strip, Fender script on grille, compact right-side model badge.
+ if(raw==='F Princeton'){return zipFender('PRINCETON','princeton');}
+ // Deluxe Reverb reference: dense upper control row, silver-grey woven grille and Fender script at left.
+ if(raw==='Deluxe Rvb'){return zipFender('DELUXE','deluxe');}
+ // Fender tweed family: warm woven tweed cabinet, dark top control strip and large script badge.
+ if(raw==='Tweedy'||raw==='Bass Mate'||raw==='Bassguy'){
+  s+=zipHead('url(#headTweed)','#8d6b45','#171a18');s+='<rect x="82" y="116" width="596" height="65" fill="#171a18" stroke="#c2a071" stroke-width="1.5"/>';s+=jack(105,148,5)+jack(124,148,5);const count=raw==='Tweedy'?4:6;for(let i=0;i<count;i++)s+=k(190+i*(raw==='Tweedy'?95:72),148,9,'',true);s+=toggle(620,148)+led(646,148,'#b83b35');s+='<rect x="82" y="190" width="596" height="147" fill="#a8794d" stroke="#d4b58a" stroke-width="2"/><rect x="89" y="197" width="582" height="133" fill="url(#headTweed)" opacity=".9"/>';s+=word(191,270,'Fender',47,'Brush Script MT,Segoe Script,cursive','#f0dfbf','middle','font-style="italic" font-weight="bold"');s+=label(548,291,raw==='Tweedy'?'TWEED DELUXE':'BASSMAN',12,'#f0dfbf',900,1.2);return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Peavey 5150 reference: black perforated upper fascia, large dotted 5150, white/silver lower control rail.
+ if(raw==='Vivo'){
+  s+=zipHead('#111416','#4f5655','#0a0d0e');s+='<rect x="82" y="116" width="596" height="139" fill="#090c0e" stroke="#343b3b" stroke-width="2"/><rect x="89" y="123" width="582" height="125" fill="url(#headPerforated)"/>';s+=word(380,209,'5150',66,'Arial Black,Impact,sans-serif','#d0d0c9','middle','font-weight="900" letter-spacing="-2"');s+=word(581,241,'PEAVEY',14,'Arial Black,Arial,sans-serif','#d9ddd6','middle','font-weight="900" italic');s+='<rect x="82" y="261" width="596" height="76" fill="#c8cbc4" stroke="#eef0e9" stroke-width="2"/>';s+=jack(106,299,6)+jack(128,299,6);['PRE','LOW','MID','HIGH','POST','RES','PRES','LEAD','RHY'].forEach((v,i)=>s+=k(190+i*51,302,8.5,'',true));s+=label(614,279,'EVH',11,'#222a28',900,1.5)+toggle(655,301)+toggle(675,301);return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Soldano SLO-100: black grille, prominent white Soldano script, continuous silver control strip.
+ if(raw==='Slo 100'){
+  s+=zipHead('#111416','#777e79','#111516');s+='<rect x="82" y="116" width="596" height="139" fill="#090d0e" stroke="#7b827c" stroke-width="1.6"/><rect x="89" y="123" width="582" height="125" fill="url(#headMesh)"/>';s+=word(380,207,'Soldano',57,'Brush Script MT,Segoe Script,cursive','#f1f1e9','middle','font-style="italic" font-weight="bold"');s+='<rect x="82" y="261" width="596" height="76" fill="#c9ceca" stroke="#eef0e9" stroke-width="2"/>';s+=jack(106,300,6)+jack(127,300,6);['PRES','MASTER','GAIN','BASS','MID','TREB','PRES','MASTER'].forEach((v,i)=>s+=k(190+i*59,301,8.5,'',true));s+=toggle(650,300)+led(672,300,'#c83d35');return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Diezel VH4: sculpted black upper fascia with cut-out motif and white Diezel wordmark, silver multi-channel strip.
+ if(raw==='Die VH4'){
+  s+=zipHead('#171b1c','#aab0aa','#171b1c');s+='<rect x="82" y="116" width="596" height="139" fill="#101415" stroke="#aeb4ae" stroke-width="1.5"/>';for(let i=0;i<10;i++){const x=98+i*58;s+='<path d="M'+x+' 130l20 16-20 16 20 16-20 16 20 16" fill="none" stroke="#303838" stroke-width="8"/>';}s+=word(380,207,'Diezel',48,'Brush Script MT,Segoe Script,cursive','#e5e9e3','middle','font-style="italic" font-weight="bold"');s+='<rect x="82" y="261" width="596" height="76" fill="#c7cbc7" stroke="#f0f1ea" stroke-width="2"/>';s+=jack(103,300,5);for(let i=0;i<16;i++)s+=k(145+i*30,301,7.2,'',true);s+=toggle(640,300)+toggle(663,300)+led(680,300,'#c83d35');return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Budda Superdrive: charcoal tolex, unmistakable purple centre control panel and oval Budda logo.
+ if(raw==='Budda'){
+  s+=zipHead('#171a1d','#555c60','#15191b');s+='<rect x="82" y="116" width="596" height="139" fill="#111516" stroke="#5c6263" stroke-width="1.5"/>';s+='<rect x="194" y="130" width="392" height="69" rx="8" fill="#713b73" stroke="#b78ab5" stroke-width="2"/>';for(let i=0;i<8;i++)s+=k(220+i*47,164,8,'',true);s+=word(380,236,'BUDDA',31,'Arial Black,Arial,sans-serif','#d9a7d7','middle','font-weight="900" letter-spacing="2"');s+='<path d="M105 278Q380 252 655 278" fill="none" stroke="#b78ab5" stroke-width="2"/>';s+=jack(112,307,5)+jack(133,307,5)+toggle(160,307);['DRIVE','BASS','MID','TREBLE','MASTER'].forEach((v,i)=>s+=k(250+i*73,307,9,'',true));return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Mesa Lone Star: natural brown leather/tolex, cream face, central Mesa badge, tan woven lower grille.
+ if(raw==='L Star'){
+  s+='<rect x="63" y="94" width="634" height="268" rx="13" fill="#8b5a34" stroke="#c28a55" stroke-width="5"/><path d="M322 94q0-16 16-16h84q16 0 16 16" fill="none" stroke="#6c442b" stroke-width="10"/>';s+='<rect x="82" y="116" width="596" height="76" fill="#e5d4b2" stroke="#f5e8cd" stroke-width="2"/>';s+='<rect x="302" y="124" width="156" height="35" rx="2" fill="#252a28" stroke="#c2b48d" stroke-width="1.5"/>'+word(380,148,'MESA',25,'Georgia,serif','#e2d6bd','middle','font-weight="900"')+label(380,157,'ENGINEERING',5,'#e2d6bd',800,1.2);s+=jack(106,174,5)+jack(125,174,5);for(let i=0;i<9;i++)s+=k(174+i*54,174,7.8,'',true);s+=led(660,174,'#be4338');s+='<rect x="82" y="201" width="596" height="136" fill="#c9a878" stroke="#e2c99d" stroke-width="2"/><rect x="89" y="208" width="582" height="122" fill="url(#headTweed)" opacity=".6"/>';s+=label(380,294,'LONE STAR',18,'#3a2b20',900,2);return s+feet+screw(72,103)+screw(688,103);
+ }
+ // Mesa Mark-family: silver diamond plate, horizontal ventilation, centre Boogie/Mesa badge, top-positioned controls.
+ if(raw==='Cali Crunch'){
+  s+=zipHead('#111619','#69716e','#121719');s+='<rect x="82" y="116" width="596" height="139" fill="#aeb6b4" stroke="#e0e3dd" stroke-width="2"/><rect x="90" y="124" width="580" height="123" fill="url(#headDiamond)"/>';s+='<rect x="276" y="135" width="208" height="50" rx="2" fill="#d5d8d3" stroke="#6d7470" stroke-width="2"/>'+word(380,168,'Boogie',37,'Georgia,serif','#252b29','middle','font-weight="bold"');s+='<rect x="82" y="261" width="596" height="76" fill="#151a1c" stroke="#818985" stroke-width="1.5"/>';s+=jack(105,300,5);for(let i=0;i<9;i++)s+=k(155+i*52,300,8.2,'',true);s+=toggle(640,300)+led(666,300,'#c83d35');return s+feet+screw(72,103)+screw(688,103);
+ }
+
+
+ // VOX AC family: black upper face with cream perimeter piping and gold VOX badge;
+ // diamond cloth occupies the lower face, controls remain on a narrow upper ledge.
+ if(raw==='Class A15'||raw==='Class A30'){
+  s+=zipHead('#17191a','#5c6260','#101415');
+  s+='<rect x="82" y="116" width="596" height="91" fill="#111617" stroke="#d6c69d" stroke-width="2"/>';
+  s+='<rect x="91" y="124" width="578" height="75" fill="#171c1d" stroke="#858b83" stroke-width="1"/>';
+  s+='<rect x="105" y="139" width="93" height="45" rx="2" fill="#d5c39a" stroke="#f3e4c2" stroke-width="1.5"/>'+word(151,170,'VOX',29,'Georgia,serif','#29241c','middle','font-weight="bold"');
+  const voxCount=raw==='Class A30'?8:6;
+  for(let i=0;i<voxCount;i++)s+=k(235+i*(raw==='Class A30'?48:61),162,7.8,'',true);
+  s+='<rect x="82" y="216" width="596" height="121" fill="#3b2922" stroke="#d2c098" stroke-width="2"/><rect x="90" y="224" width="580" height="105" fill="url(#headDiamond)"/>';
+  s+=label(598,322,raw==='Class A30'?'AC30':'AC15',8,'#e6d5b4',800,1.2);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+
+ // ROLAND JC-120: head-format visual, with the original two-channel control grouping and Roland badge.
+ if(m.skin==='roland'){
+  s+=shell('#14191b','#79817e')+handle;
+  s+='<rect x="82" y="116" width="596" height="112" rx="3" fill="#0b1011" stroke="#8c9692" stroke-width="1.7"/>';
+  s+='<rect x="91" y="124" width="164" height="95" rx="3" fill="#171d1e" stroke="#929b96" stroke-width="1.2"/>';
+  s+='<rect x="263" y="124" width="279" height="95" rx="3" fill="#171d1e" stroke="#929b96" stroke-width="1.2"/>';
+  s+='<rect x="550" y="124" width="119" height="95" rx="3" fill="#171d1e" stroke="#929b96" stroke-width="1.2"/>';
+  // Channel 1: two inputs, bright switch, four controls.
+  s+=jack(107,153,5)+jack(126,153,5)+toggle(146,153);
+  [166,187,208,229].forEach(x=>s+=k(x,174,7.8,'',true));
+  // Channel 2: two inputs, bright switch, six controls.
+  s+=jack(278,153,5)+jack(297,153,5)+toggle(317,153);
+  [342,378,414,450,486,522].forEach(x=>s+=k(x,174,7.5,'',true));
+  // Vibrato section: speed, depth, chorus/vibrato switch and power lamp.
+  s+=k(574,174,8,'',true)+k(606,174,8,'',true)+toggle(637,174)+led(657,143,'#d9d9c8');
+  s+='<rect x="82" y="236" width="596" height="101" rx="2" fill="#202729" stroke="#929c98" stroke-width="1.7"/><rect x="89" y="243" width="582" height="87" fill="url(#headMesh)"/>';
+  word(176,300,'Roland',40,'Arial,Helvetica,sans-serif','#f0f2eb','middle','font-weight="500" letter-spacing="-1"');
+  s+='<rect x="520" y="264" width="132" height="43" rx="2" fill="#101617" stroke="#bfc7c1" stroke-width="1.4"/>';
+  s+=label(586,282,'JAZZ',12,'#f1f2eb',800,2)+label(586,298,'CHORUS-120',9,'#e0e6df',800,1.3);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // FRIEDMAN: reference layout preserved -- logo badge upper-left, expansive black face, lower gold control rail.
+ if(m.skin==='friedman'){
+  s+=shell() + handle;
+  s+='<rect x="83" y="115" width="594" height="139" rx="3" fill="#121515" stroke="#b49a66" stroke-width="1.4"/><path d="M88 249H672" stroke="#d4b47b" stroke-width="2" opacity=".8"/>';
+  s+=logoPlate(111,127,169,52,'FRIEDMAN','Arial Black,Impact,sans-serif',26);
+  s+='<rect x="83" y="261" width="594" height="76" rx="2" fill="url(#headGold)" stroke="#f3dba7" stroke-width="2"/>';
+  s+=toggle(112,302)+led(139,301,'#a82d30');
+  const labs=raw.includes('HBE')?['PRES','BASS','MID','TREB','MASTER','GAIN','CLEAN','VOL','TREB','BASS','THUMP','LEVEL','SAT','FAT']:['PRES','BASS','MID','TREB','MASTER','GAIN','CLEAN','VOL','TREB','BASS','THUMP','LEVEL'];
+  const x0=189,step=labs.length>12?32:36;
+  labs.forEach((v,i)=>{const x=x0+i*step;s+=k(x,299,labs.length>12?7.7:8.5,v,true);});
+  s+=jack(654,300,6)+label(380,352,'BE / HBE · THREE CHANNEL AMPLIFIER',8,'#d9c18f',750,1.4);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // MARSHALL: large script wordmark centered on black fascia, gold trim and lower gold control strip.
+ if(m.skin==='marshall'||m.skin==='marshallCombo'){
+  s+=shell()+handle;
+  s+='<rect x="82" y="116" width="596" height="132" rx="2" fill="#111515" stroke="#b79a61" stroke-width="1.5"/><path d="M91 123H669M91 241H669" stroke="#c6a86e" stroke-opacity=".76" stroke-width="2"/>';
+  s+=word(380,207,'Marshall',61,'Brush Script MT,Segoe Script,cursive','#e8dfc8','middle','font-style="italic" font-weight="bold"');
+  s+='<rect x="82" y="255" width="596" height="82" fill="url(#headGold)" stroke="#ecd49d" stroke-width="2"/>';
+  if(raw.includes('Plexi'))s+=label(140,276,'JMP',11,'#32291c',900,1.8);
+  else if(raw.includes('Brit 800'))s+=label(140,276,'JCM 800',10,'#32291c',900,1.4);
+  else if(raw.includes('Brit 2000'))s+=label(140,276,'JCM 2000',10,'#32291c',900,1.2);
+  else s+=label(140,276,raw.includes('Blues')?'1962':'MARSHALL',9,'#32291c',900,1.2);
+  const labs=raw.includes('Plexi 100')?['PRES','BASS','MID','TREB','VOL I','VOL II','MASTER','LEVEL']:['PRES','BASS','MID','TREB','GAIN','MASTER','VOLUME','LEVEL'];
+  labs.forEach((v,i)=>s+=k(205+i*57,306,10,v,true));
+  s+=toggle(164,309)+jack(659,308,6)+jack(641,308,5);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // VOX: head format with brown diamond grille, cream-gold VOX badge on left, small upper control ledge.
+ if(m.skin==='vox'){
+  s+=shell('#171b1c','#7f8078')+handle;
+  s+='<rect x="82" y="116" width="596" height="222" rx="3" fill="#392a22" stroke="#d5c092" stroke-width="2"/><rect x="90" y="124" width="580" height="206" fill="url(#headDiamond)"/>';
+  s+='<rect x="106" y="145" width="104" height="58" rx="3" fill="url(#headGold)" stroke="#f2dba5" stroke-width="2"/>'+word(158,185,'VOX',35,'Georgia,serif','#302719','middle','font-weight="bold"');
+  s+='<rect x="82" y="255" width="596" height="82" fill="#231d19" stroke="#d4b47b" stroke-width="1.5"/>';
+  s+=row(['VOLUME','BASS','TREBLE','CUT','MASTER','TOP BOOST','REVERB'],303,185,69,9,true);
+  s+=label(590,278,raw.toUpperCase(),8,'#ebd9b5',800,1.2)+jack(113,301,5)+jack(132,301,5);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // FENDER BLACKFACE: visible Fender script badge plus a blackface-style control strip.
+ if(m.skin==='blackface'){
+  s+=shell('#15191b','#8c938d')+handle;
+  s+='<rect x="82" y="116" width="596" height="100" fill="#101516" stroke="#bbc1ba" stroke-width="1.6"/>';
+  const twin=raw.includes('Twin'),isSuper=raw.includes('Super'),vibro=raw.includes('Vibro');
+  const knobCount=twin?8:isSuper?8:vibro?7:6;
+  const inputs=twin?4:2;
+  for(let i=0;i<inputs;i++)s+=jack(105+i*19,153,5);
+  s+=toggle(twin?183:149,153);
+  for(let i=0;i<knobCount;i++)s+=k((twin?218:205)+i*(twin?51:61),164,twin?8.2:9,'',true);
+  s+='<rect x="82" y="224" width="596" height="113" fill="#252c2b" stroke="#afb6af" stroke-width="2"/><rect x="89" y="231" width="582" height="99" fill="url(#headMesh)"/>';
+  word(190,301,'Fender',50,'Brush Script MT,Segoe Script,cursive','#f5f1e8','middle','font-style="italic" font-weight="bold" stroke="#333b38" stroke-width=".6"');
+  const modelBadge=twin?'TWIN REVERB':isSuper?'SUPER-SONIC':vibro?'VIBRO-KING':raw.includes('Princeton')?'PRINCETON REVERB':'DELUXE REVERB';
+  s+=label(548,292,modelBadge,10,'#e7eae2',850,1.4);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // FENDER TWEED/BASSMAN: script maker mark on the left face and vintage control arrangement.
+ if(m.skin==='tweed'){
+  s+='<rect x="63" y="94" width="634" height="268" rx="15" fill="url(#headTweed)" stroke="#6c5134" stroke-width="4"/>'+handle;
+  s+='<rect x="82" y="116" width="596" height="100" fill="#121819" stroke="#d8c08d" stroke-width="1.7"/>';
+  const bassman=ref.includes('bassman')||raw.includes('Bass Mate')||raw.includes('Bassguy');
+  const count=bassman?6:4;
+  s+=jack(108,153,5)+jack(128,153,5);
+  for(let i=0;i<count;i++)s+=k(218+i*(bassman?72:96),164,9,'',true);
+  s+='<rect x="82" y="224" width="596" height="113" fill="#765638" stroke="#d7bd91" stroke-width="2"/><rect x="89" y="231" width="582" height="99" fill="url(#headTweed)" opacity=".78"/>';
+  word(190,301,bassman?'Bassman':'Fender',42,'Brush Script MT,Segoe Script,cursive','#f0e4c8','middle','font-style="italic" font-weight="bold"');
+  s+=label(552,294,bassman?'AMP':'TWEED DELUXE',10,'#f0dfbf',850,1.4);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // HIWATT: framed white badge in the upper panel, black lower control rail with inputs at the left.
+ if(m.skin==='hiwatt'){
+  s+=shell('#14191b','#a5aaa4')+handle;
+  s+='<rect x="82" y="116" width="596" height="132" fill="#0d1112" stroke="#858b84" stroke-width="1.5"/>';
+  s+='<rect x="265" y="143" width="230" height="58" fill="#101516" stroke="#e1e4dc" stroke-width="3"/>'+word(380,181,'HIWATT',35,'Arial,Helvetica,sans-serif','#f3f3e9','middle','font-weight="500" letter-spacing="4"');
+  s+='<rect x="82" y="256" width="596" height="81" fill="#0b1011" stroke="#c5cbc2" stroke-width="1.5"/>';
+  s+=jack(108,294,6)+jack(131,294,6)+toggle(159,294);
+  label(185,273,'CUSTOM HIWATT 100',8,'#eff0e7',800,1.4);
+  ['NORM VOL','BRIGHT VOL','BASS','TREBLE','MIDDLE','PRESENCE','MASTER'].forEach((v,i)=>s+=k(222+i*61,306,8.5,v));
+  s+=led(657,293,'#c84035')+toggle(675,293);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // MESA: diamond-plate upper fascia, MESA badge upper-right, lower black panel with Rectifier identity on left.
+ if(m.skin==='mesa'){
+  s+=shell('#171a1b','#a1aaa7')+handle;
+  const recto=/Dual Rect|T-Rect/i.test(raw+' '+m.ref);
+  s+='<rect x="82" y="116" width="596" height="138" rx="3" fill="#b6bdbb" stroke="#f0f0e9" stroke-width="2"/><rect x="89" y="123" width="582" height="124" fill="url(#headDiamond)"/>';
+  s+='<rect x="466" y="135" width="189" height="52" rx="2" fill="url(#headSilver)" stroke="#6c7471" stroke-width="2"/>'+word(560,169,'MESA',31,'Georgia,serif','#28302e','middle','font-weight="900"')+label(560,181,'ENGINEERING',7,'#28302e',800,2);
+  s+='<rect x="82" y="261" width="596" height="76" fill="#101515" stroke="#8d9793" stroke-width="1.5"/>';
+  if(recto){
+   word(185,295,'Dual',26,'Brush Script MT,Segoe Script,cursive','#e7e5d9','middle','font-style="italic" font-weight="bold"');
+   word(185,319,'RECTIFIER',17,'Georgia,serif','#e7e5d9','middle','font-weight="bold"');
+   label(185,331,'100 WATT HEAD',6,'#b7c0b9',800,1.2);
+   ['PRES','MASTER','GAIN','BASS','MID','TREB'].forEach((v,i)=>s+=k(355+i*48,299,8.5,v,true));
+   toggle(108,299)+toggle(130,299)+led(156,300,'#bb3934');
+  }else{
+   label(183,279,raw.toUpperCase(),9,'#e6e7df',900,1.2);
+   ['VOL','MASTER','TREB','MID','BASS','PRES','GAIN'].forEach((v,i)=>s+=k(310+i*47,305,8.5,v,true));
+  }
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // DIEZEL: angular grille logo, broad white control deck and channel-organized knobs.
+ if(m.skin==='diezel'){
+  s+=shell('#121719','#7c8584')+handle;
+  s+='<rect x="82" y="116" width="596" height="139" fill="#090d0e" stroke="#515b5c" stroke-width="2"/><rect x="89" y="123" width="582" height="125" fill="url(#headPerforated)"/>';
+  word(380,211,'DIEZEL',60,'Arial Black,Impact,sans-serif','#edf0e9','middle','font-style="italic" font-weight="900" letter-spacing="-2"');
+  s+='<rect x="82" y="262" width="596" height="75" fill="url(#headSilver)" stroke="#e5e6dd" stroke-width="2"/>';
+  const labs=['GAIN','VOL','TREB','MID','BASS','GAIN','VOL','TREB','MID','BASS','GAIN','VOL'];
+  labs.forEach((v,i)=>{const x=113+i*48;s+=k(x,299,8.2,v,true);});
+  [130,267,404,541].forEach((x,i)=>{s+=label(x,276,'CH '+(i+1),7,'#242a29',900,1.4);});
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // HIWATT: squared white framed badge and a dark, tightly laid out British control strip.
+ if(m.skin==='hiwatt'){
+  s+=shell('#171b1d','#b8bcb5')+handle;
+  s+='<rect x="82" y="116" width="596" height="133" fill="#101414" stroke="#7d8580" stroke-width="1.5"/>';
+  s+='<rect x="262" y="142" width="236" height="60" fill="#111617" stroke="#d5d9d0" stroke-width="3"/>'+word(380,181,'HIWATT',35,'Arial,Helvetica,sans-serif','#f1f2e9','middle','font-weight="500" letter-spacing="4"');
+  s+='<rect x="82" y="256" width="596" height="81" fill="#101515" stroke="#d9dcd4" stroke-width="1.5"/>';
+  s+=jack(111,292,6)+jack(133,292,6)+toggle(164,292);
+  ['NORM VOL','BRIGHT VOL','BASS','TREBLE','MIDDLE','PRESENCE','MASTER'].forEach((v,i)=>s+=k(210+i*63,302,9,v));
+  s+=led(645,294,'#c93f35')+toggle(667,294);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // SOLDANO: black perforated cloth with lower-case white wordmark, compact lower control row.
+ if(m.skin==='soldano'){
+  s+=shell('#10171f','#738392')+handle;
+  s+='<rect x="82" y="116" width="596" height="139" fill="#10161d" stroke="#798995" stroke-width="1.5"/><rect x="89" y="123" width="582" height="125" fill="url(#headMesh)"/>';
+  word(380,207,'soldano',60,'Arial,Helvetica,sans-serif','#e3e9ef','middle','font-weight="300" letter-spacing="-2"');
+  s+='<rect x="82" y="262" width="596" height="75" fill="#101519" stroke="#65727d" stroke-width="1.5"/>';
+  const labs=['BRIGHT','NORMAL','OVERDRIVE','BASS','MIDDLE','TREBLE','NORMAL','OVERDRIVE','PRESENCE','DEPTH'];
+  jack(106,302,5);labs.forEach((v,i)=>s+=k(145+i*51,302,8.5,v));
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // BOGNER: large cream script wordmark on black basket mesh; two banks of channel controls below.
+ if(m.skin==='bogner'){
+  s+=shell('#111516','#8f9690')+handle;
+  s+='<rect x="82" y="116" width="596" height="139" fill="#0c1112" stroke="#69716c" stroke-width="1.4"/><rect x="89" y="123" width="582" height="125" fill="url(#headMesh)"/>';
+  word(380,207,'Bogner',59,'Brush Script MT,Segoe Script,cursive','#efe4c8','middle','font-style="italic" font-weight="bold"');
+  s+='<rect x="82" y="262" width="596" height="75" fill="#151b1c" stroke="#89908a" stroke-width="1.5"/>';
+  const labs=['PRES','BASS','MID','TREB','GAIN','VOL','PRES','BASS','MID','TREB','GAIN','VOL'];
+  labs.forEach((v,i)=>s+=k(111+i*47.7,300,8,v));
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // PEAVEY / 5150: bold 5150 marking over a black grille, silver parameter strip below.
+ if(m.skin==='peavey'){
+  s+=shell('#101416','#929a9b')+handle;
+  s+='<rect x="82" y="116" width="596" height="139" fill="#080b0c" stroke="#7c8587" stroke-width="1.5"/><rect x="89" y="123" width="582" height="125" fill="url(#headMesh)"/>';
+  word(380,213,'5150',76,'Arial Black,Impact,sans-serif','#d5d9d9','middle','font-style="italic" font-weight="900" letter-spacing="-3"');
+  s+='<rect x="82" y="262" width="596" height="75" fill="url(#headSilver)" stroke="#e2e5dc" stroke-width="2"/>'+label(130,280,'PEAVEY',10,'#222a2b',900,1.4);
+  ['PRES','RES','POST','LOW','MID','HIGH','PRE','GAIN','VOL','LEAD'].forEach((v,i)=>s+=k(180+i*49,304,8,v,true));
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // MATCHLESS: control deck at the upper edge and centered metal maker plaque on leather face.
+ if(m.skin==='matchless'){
+  s+=shell('#161b19','#777e75')+handle;
+  s+='<rect x="82" y="116" width="596" height="83" fill="#0c1010" stroke="#8e968b" stroke-width="1.5"/>';
+  s+=jack(105,151,5)+jack(124,151,5);
+  ['VOL','BASS','TREB','CUT','MASTER','REVERB','PRES'].forEach((v,i)=>s+=k(191+i*62,155,8.5,v,true));
+  toggle(641,151)+toggle(663,151);
+  s+='<rect x="82" y="207" width="596" height="130" fill="#1d2520" stroke="#7e887b" stroke-width="1.5"/><rect x="224" y="238" width="312" height="62" rx="3" fill="url(#headBlackPanel)" stroke="#92998e" stroke-width="2"/>'+word(380,280,'MATCHLESS',31,'Georgia,serif','#f1eee1','middle','font-weight="bold" letter-spacing="1.8"')+label(380,322,raw.toUpperCase(),7,'#ccd3c8',700,1.7);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // ORANGE: orange tolex frame and distinctive white enamel name panel above lower orange controls.
+ if(m.skin==='orange'){
+  s+=shell('#d66a28','#f3b176')+handle;
+  s+='<rect x="82" y="116" width="596" height="136" fill="#e17832" stroke="#f1b47e" stroke-width="2"/><rect x="97" y="130" width="566" height="100" fill="#f1eadc" stroke="#3d2b20" stroke-width="3"/>';
+  word(380,201,'ORANGE',64,'Georgia,serif','#151515','middle','font-weight="900" letter-spacing="-2" stroke="#151515" stroke-width=".8"');
+  s+='<rect x="82" y="260" width="596" height="77" fill="#d86e2e" stroke="#f1b47e" stroke-width="2"/><rect x="93" y="269" width="574" height="59" fill="#e58a43" opacity=".62"/>';
+  toggle(119,297)+led(145,297,'#c53d31');
+  ['VOL','BASS','MID','TREB','GAIN','MASTER','REVERB','ATTEN'].forEach((v,i)=>s+=k(199+i*58,302,9,v));
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // MESA/BOOGIE: Rectifier, Mark-family and Lone Star use separate positions and panel details.
+ if(m.skin==='mesa'){
+  s+=shell('#171a1b','#a5adab')+handle;
+  const isRectifier=/Dual Rect|T-Rect/i.test(raw+' '+m.ref);
+  const isLoneStar=/L Star|Lone Star/i.test(raw+' '+m.ref);
+  s+='<rect x="82" y="116" width="596" height="139" rx="2" fill="#b9bfbd" stroke="#f3f2eb" stroke-width="2"/><rect x="89" y="123" width="582" height="124" fill="url(#headDiamond)"/>';
+  if(isRectifier){
+   // Dual/Triple Rectifier: vent banks flank the centered Mesa Engineering badge.
+   s+='<rect x="124" y="151" width="145" height="35" rx="2" fill="#111718" stroke="#737e7a" stroke-width="2"/><rect x="491" y="151" width="145" height="35" rx="2" fill="#111718" stroke="#737e7a" stroke-width="2"/>';
+   for(let i=0;i<10;i++){
+    const xl=134+i*13,xr=501+i*13;
+    s+='<rect x="'+xl+'" y="157" width="5" height="23" rx="2" fill="#d0d5d0"/>';
+    s+='<rect x="'+xr+'" y="157" width="5" height="23" rx="2" fill="#d0d5d0"/>';
+   }
+   s+='<rect x="287" y="143" width="186" height="49" rx="3" fill="#202829" stroke="#dfe2da" stroke-width="3"/><rect x="295" y="150" width="170" height="35" fill="none" stroke="#97a19a" stroke-width="1"/>';
+   s+=word(380,174,'MESA',31,'Georgia,serif','#f0f1e9','middle','font-weight="900" letter-spacing="1"');
+   s+=label(380,185,'ENGINEERING',6.5,'#e8ece4',900,1.8);
+   s+='<rect x="82" y="262" width="596" height="75" fill="#111718" stroke="#929b95" stroke-width="1.7"/>';
+   // Rectifier badge on the left; channel controls spread across the center/right.
+   s+=word(176,299,'Dual',27,'Brush Script MT,Segoe Script,cursive','#ece9df','middle','font-style="italic" font-weight="bold"');
+   s+=label(176,319,'RECTIFIER',13,'#ece9df',900,1.4);
+   toggle(273,299);led(294,299,'#bd3835');
+   for(let i=0;i<8;i++)s+=k(300+i*43,299,8.2,'',true);
+   jack(665,299,5);
+   return s+feet+screw(72,103)+screw(688,103);
+  }
+  if(isLoneStar){
+   // Lone Star branding belongs on the right-hand side; Mesa Engineering badge is separate.
+   s+='<rect x="82" y="116" width="596" height="108" fill="#e6e1d0" stroke="#c1b69d" stroke-width="2"/>';
+   for(let i=0;i<9;i++)s+=k(119+i*47,169,8.5,'',true);
+   s+=logoPlate(527,131,128,51,'LONE STAR','Georgia,serif',14,'#29251d');
+   s+='<rect x="82" y="232" width="596" height="105" fill="#b79b72" stroke="#e0d0ae" stroke-width="2"/><rect x="89" y="239" width="582" height="91" fill="url(#headTweed)"/>';
+   s+=logoPlate(287,256,186,52,'MESA','Georgia,serif',30,'#25221a');
+   return s+feet+screw(72,103)+screw(688,103);
+  }
+  // Mark-family treatment: logo badge intentionally offset to the right, separate from Rectifier.
+  s+='<rect x="82" y="262" width="596" height="75" fill="#111718" stroke="#929b95" stroke-width="1.7"/>';
+  for(let i=0;i<8;i++)s+=k(132+i*50,302,8.4,'',true);
+  s+=logoPlate(525,273,130,51,'MESA','Georgia,serif',28,'#25221a');
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // HIWATT is a separate family, built with the badge on the upper face and input/channel labels on the control rail.
+ // The remaining families follow below.
+ if(m.skin==='aguilar'){
+  s+='<rect x="76" y="139" width="608" height="202" rx="10" fill="#222a2d" stroke="#a2aaa7" stroke-width="4"/><rect x="88" y="151" width="584" height="178" rx="6" fill="url(#headSilver)" stroke="#eef0e9" stroke-width="2"/>';
+  word(130,190,'aguilar',27,'Brush Script MT,Segoe Script,cursive','#283033','start','font-style="italic" font-weight="bold"');
+  word(532,190,'TONE HAMMER 500',24,'Arial Narrow,Arial,sans-serif','#242b2d','end','font-weight="900" letter-spacing="1"');
+  s+=jack(115,250,7)+label(115,270,'INPUT',7,'#242b2d',800,1);
+  ['GAIN','MID LEVEL','BASS','VOLUME','DRIVE','MID FREQ','TREBLE'].forEach((v,i)=>{const coords=[[226,222],[311,222],[396,222],[481,222],[226,287],[311,287],[396,287]];s+=k(coords[i][0],coords[i][1],10,v,true);});
+  s+=label(578,257,'D.I. / MUTE / STATUS',7,'#242b2d',800,1)+led(564,282,'#9bc26b')+toggle(600,282);
+  return s+feet;
+ }
+ // RIVERA: blue-black head with centered maker logo and two banks of independent channel controls.
+ if(m.skin==='rivera'){
+  s+=shell('#17232c','#9aa8ae')+handle;
+  s+='<rect x="82" y="116" width="596" height="138" fill="#10181d" stroke="#768a95" stroke-width="1.5"/><rect x="89" y="123" width="582" height="124" fill="url(#headMesh)"/>';
+  word(380,205,'RIVERA',45,'Arial,Helvetica,sans-serif','#e5e9e4','middle','font-weight="900" letter-spacing="4"');
+  s+='<rect x="82" y="262" width="596" height="75" fill="url(#headSilver)" stroke="#d5dedb" stroke-width="1.5"/>';
+  const labs=['PRES','BASS','MID','TREB','GAIN','MASTER','LEVEL','BOOST'];
+  labs.forEach((v,i)=>s+=k(149+i*65,302,8.7,v,true));
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // NUX / Darkglass compact bass and acoustic amp/preamp hardware: compact head chassis, screen and precise control spacing.
+ if(['darkglass','nuxBass','nuxAcoustic'].includes(m.skin)){
+  s+=shell('#101718',p.edge)+handle;
+  const isStarlift=raw==='Starlift';
+  const brand=m.skin==='darkglass'?(isStarlift?'NORDSTRAND':'DARKGLASS'):'NUX';
+  const product=m.skin==='darkglass'?(isStarlift?'STARLIFTER BASS PREAMP':'MICROTUBES B7K ULTRA'):m.skin==='nuxBass'?'MELVIN LEE DAVIS BASS PREAMP + DI':m.ref.toUpperCase();
+  s+='<rect x="82" y="116" width="596" height="139" fill="url(#headBlackPanel)" stroke="'+p.edge+'" stroke-width="1.5"/>'+word(380,155,brand,28,'Arial Black,Impact,sans-serif',p.edge,'middle','font-weight="900" letter-spacing="2"')+label(380,176,product,9,p.edge,800,1.2);
+  s+='<rect x="82" y="262" width="596" height="75" fill="url(#headBlackPanel)" stroke="'+p.edge+'" stroke-width="1.5"/>';
+  const labs=m.skin==='darkglass'?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:m.skin==='nuxBass'?['GAIN','DRIVE','BLEND','BASS','MID','TREBLE','LEVEL']:['REVERB','IR LEVEL','SELECT','GAIN','BASS','MIDDLE','TREBLE'];
+  labs.forEach((v,i)=>s+=k(125+i*(510/(labs.length-1)),298,8.7,v,true));
+  s+=led(648,295,'#bfe078')+toggle(666,295);
+  return s+feet;
+ }
+ // Remaining boutique British/American/high-gain families have distinct plates and wordmark treatments.
+ if(m.skin==='budda'||m.skin==='drz'){
+  s+=shell('#191d1a',p.edge)+handle;
+  s+='<rect x="82" y="116" width="596" height="78" fill="#101515" stroke="'+p.edge+'" stroke-width="1.5"/>';
+  ['VOL','BASS','MID','TREB','MASTER','PRES'].forEach((v,i)=>s+=k(190+i*70,157,9,v,true));
+  s+='<rect x="82" y="202" width="596" height="135" fill="#1e2520" stroke="'+p.edge+'" stroke-width="1.5"/>';
+  if(m.skin==='drz'){logoPlate(250,228,260,57,'DR. Z','Georgia,serif',31,'#25221c');}
+  else{word(380,278,'BUDDA',39,'Georgia,serif','#d7c28f','middle','font-weight="bold" letter-spacing="3"');}
+  label(380,319,raw.toUpperCase(),8,'#d8dfd4',800,1.4);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ if(m.skin==='matchless'){
+  // Matchless is intentionally handled above; guard retained for model-data fallbacks.
+ }
+ if(m.skin==='bogner'){
+  // Bogner wordmark and dual channel rail are handled above.
+ }
+ // Generic IMAGE/NAM and remaining high-gain models: still an amp head, with per-family trim and a reserved brand plaque.
+ s+=shell()+handle;
+ const brandMap={
+  hiwatt:'HIWATT',mesa:'MESA',soldano:'SOLDANO',friedman:'FRIEDMAN',diezel:'DIEZEL',bogner:'BOGNER',
+  peavey:'PEAVEY',orange:'ORANGE',rivera:'RIVERA',nuxAcoustic:'NUX',nam:'MG30 NAM'
+ };
+ const brand=brandMap[m.skin]||raw.toUpperCase();
+ s+='<rect x="82" y="116" width="596" height="139" fill="#101516" stroke="'+p.edge+'" stroke-opacity=".55" stroke-width="1.5"/>';
+ s+='<rect x="82" y="262" width="596" height="75" fill="url(#headBlackPanel)" stroke="'+p.edge+'" stroke-opacity=".65" stroke-width="1.5"/>';
+ s+=logoPlate(110,134,190,55,brand,'Arial Black,Impact,sans-serif',brand.length>9?16:22,'#252117');
+ const labels=isBass?['GAIN','BASS','MID','TREB','MASTER','LEVEL']:['PRES','BASS','MID','TREB','GAIN','MASTER','LEVEL','PRES'];
+ labels.forEach((v,i)=>s+=k(180+i*58,301,9,v,true));
+ s+=label(380,351,raw.toUpperCase(),8,'#d7dedb',750,1.4)+feet;
+ return s+screw(72,103)+screw(688,103);
+}
+
+
+
+const MG30_AMP_ART_SKIN_BY_MODEL=Object.freeze({
+ "Jazz Clean":"roland",
+ "Deluxe Rvb":"blackface","Bass Mate":"tweed","Tweedy":"tweed","Twin Rvb":"blackface",
+ "Hiwire":"hiwatt","Cali Crunch":"mesa","Class A15":"vox","Class A30":"vox",
+ "Plexi 100":"marshall","Plexi 45":"marshall","Brit 800":"marshall","1987 X 50":"marshall",
+ "Slo 100":"soldano","Fireman HBE":"friedman","Dual Rect":"mesa","Die VH4":"diezel",
+ "Vibro King":"blackface","Budda":"budda","Mr Z 38":"drz","Super Rvb":"blackface",
+ "Brit Blues":"marshallCombo","Match":"matchless","Brit 2000":"marshall","Uber":"bogner",
+ "Agl":"aguilar","Bassguy":"tweed","Mld":"nuxBass","Optima Air":"nuxAcoustic",
+ "Stageman":"nuxAcoustic","Dglass":"darkglass","Starlift":"darkglass","Vivo":"peavey",
+ "F Princeton":"blackface","L Star":"mesa",
+ "Deluxe Rvb · IMAGE":"blackface","Class A30 · IMAGE":"vox",
+ "Fireman HBE · IMAGE":"friedman","PV 5150 · IMAGE":"peavey",
+ "MB T-Rect Modern · IMAGE":"mesa","ORA Rock Lead · IMAGE":"orange",
+ "RIV Knuckle · IMAGE":"rivera","XTC Blue · IMAGE":"bogner","XTC Red · IMAGE":"bogner"
+});
+function renderAmpArtworkForApp(modelName,basis){
+ const isNam=AMP_NAM_SLOT_PROFILES.some(profile=>profile.name===modelName)
+  ||/\\bNAM\\s*\\d+\\b/i.test(modelName)
+  ||/·\\s*NAM profile$/i.test(modelName);
+ const skin=isNam?"nam":(MG30_AMP_ART_SKIN_BY_MODEL[modelName]||MG30_AMP_ART_SKIN_BY_MODEL[modelName.replace(/ · IMAGE$/,"")]||"nam");
+ const model={name:modelName,ref:basis||modelName,skin};
+ const artwork=renderAmpHeadArtwork(model);
+ const aria="Ilustrasi amplifier head "+modelName+" berdasarkan "+(basis||"model MG-30");
+ return '<svg class="gear-svg amp-svg" viewBox="20 65 720 310" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+svgEscape(aria)+'">'+artwork+'</svg>';
+}
+
 function renderGearSvg(blockId,modelName){
   const style=gearPalette(blockId,modelName),name=svgEscape(modelName),basis=svgEscape(getModelBasis(blockId,modelName));
   if(blockId==="AMP"){
-    const accent=style.accent,body=style.body,face=style.face,grille=style.grille;
-    const label=name.toUpperCase();
-    const sixKnobs=[94,140,186,232,278,324].map(x=>knobSvg(x,103,8,accent)).join('');
-    const isBass=style.kind==="bass"||/bass|darkglass|aguilar|mld|dglass|starlift/i.test(style.name+" "+basis+" "+modelName);
-    const panelLabel=isBass?"BASS PREAMP":(/marshall|plexi|jtm|jcm|bluesbreaker/i.test(basis+" "+modelName)?"BRITISH AMP":(/mesa|soldano|diezel|friedman|bogner|5150/i.test(basis)?"HIGH GAIN AMP":(/hiwatt/i.test(basis)?"BRITISH CLEAN AMP":(/vox|matchless|dr\. z|budda/i.test(basis)?"CLASS A AMP":"GUITAR AMP"))));
-    return '<svg class="gear-svg amp-svg" viewBox="0 0 420 180" role="img" aria-label="Ilustrasi head ampli vektor lokal '+name+' berdasarkan '+basis+'"><defs><linearGradient id="ampHeadBody" x2="0" y2="1"><stop stop-color="'+face+'"/><stop offset="1" stop-color="'+body+'"/></linearGradient><linearGradient id="ampHeadFace" x2="0" y2="1"><stop stop-color="'+face+'"/><stop offset="1" stop-color="'+face+'"/></linearGradient></defs><ellipse cx="210" cy="153" rx="166" ry="7" fill="#000" opacity=".28"/><rect x="36" y="22" width="348" height="121" rx="8" fill="url(#ampHeadBody)" stroke="'+accent+'" stroke-width="2.5"/><rect x="44" y="30" width="332" height="105" rx="4" fill="url(#ampHeadFace)" stroke="#ffffff" stroke-opacity=".12"/><path d="M50 38 H370" stroke="'+accent+'" stroke-opacity=".35" stroke-width="1"/><circle cx="63" cy="52" r="4" fill="#111516" stroke="'+accent+'" stroke-width="1.3"/><circle cx="63" cy="52" r="1.7" fill="'+accent+'"/><text x="210" y="57" text-anchor="middle" fill="'+accent+'" font-size="10" font-weight="800" letter-spacing="1.5">'+label+'</text><path d="M58 68 H362" stroke="'+accent+'" stroke-opacity=".28" stroke-width="1"/><rect x="54" y="75" width="312" height="45" rx="4" fill="'+grille+'" stroke="'+accent+'" stroke-opacity=".34" stroke-width="1"/>'+sixKnobs+'<rect x="53" y="122" width="314" height="4" rx="2" fill="'+accent+'" opacity=".55"/><circle cx="54" cy="82" r="2" fill="'+accent+'" opacity=".8"/><circle cx="366" cy="82" r="2" fill="'+accent+'" opacity=".8"/><rect x="57" y="146" width="34" height="5" rx="2" fill="#090c0d" opacity=".8"/><rect x="329" y="146" width="34" height="5" rx="2" fill="#090c0d" opacity=".8"/><text x="210" y="169" text-anchor="middle" fill="#d7dedb" font-size="8" letter-spacing="1.7">'+svgEscape(panelLabel)+'</text></svg>';
+    return renderAmpArtworkForApp(modelName,basis);
   }
   if(blockId==="IR"){
     let cones='';for(let i=0;i<4;i++){const x=135+(i%2)*150,y=70+Math.floor(i/2)*75;cones+='<circle cx="'+x+'" cy="'+y+'" r="25" fill="#111516" stroke="'+style.accent+'" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="17" fill="#424a4b" stroke="#828b8b"/><circle cx="'+x+'" cy="'+y+'" r="5" fill="#c0c7c4"/>'}
