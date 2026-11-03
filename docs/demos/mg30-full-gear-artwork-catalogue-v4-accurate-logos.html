@@ -253,10 +253,10 @@ function ampSvg(m){
   s+='<rect x="263" y="124" width="279" height="95" rx="3" fill="#171d1e" stroke="#929b96" stroke-width="1.2"/>';
   s+='<rect x="550" y="124" width="119" height="95" rx="3" fill="#171d1e" stroke="#929b96" stroke-width="1.2"/>';
   // Channel 1: two inputs, bright switch, four controls.
-  jack(107,153,5);jack(126,153,5);toggle(146,153);
+  s+=jack(107,153,5)+jack(126,153,5)+toggle(146,153);
   [166,187,208,229].forEach(x=>s+=k(x,174,7.8,'',true));
   // Channel 2: two inputs, bright switch, six controls.
-  jack(278,153,5);jack(297,153,5);toggle(317,153);
+  s+=jack(278,153,5)+jack(297,153,5)+toggle(317,153);
   [342,378,414,450,486,522].forEach(x=>s+=k(x,174,7.5,'',true));
   // Vibrato section: speed, depth, chorus/vibrato switch and power lamp.
   s+=k(574,174,8,'',true)+k(606,174,8,'',true)+toggle(637,174)+led(657,143,'#d9d9c8');
@@ -272,7 +272,7 @@ function ampSvg(m){
   s+='<rect x="83" y="115" width="594" height="139" rx="3" fill="#121515" stroke="#b49a66" stroke-width="1.4"/><path d="M88 249H672" stroke="#d4b47b" stroke-width="2" opacity=".8"/>';
   s+=logoPlate(111,127,169,52,'FRIEDMAN','Arial Black,Impact,sans-serif',26);
   s+='<rect x="83" y="261" width="594" height="76" rx="2" fill="url(#headGold)" stroke="#f3dba7" stroke-width="2"/>';
-  toggle(112,302)+led(139,301,'#a82d30');
+  s+=toggle(112,302)+led(139,301,'#a82d30');
   const labs=raw.includes('HBE')?['PRES','BASS','MID','TREB','MASTER','GAIN','CLEAN','VOL','TREB','BASS','THUMP','LEVEL','SAT','FAT']:['PRES','BASS','MID','TREB','MASTER','GAIN','CLEAN','VOL','TREB','BASS','THUMP','LEVEL'];
   const x0=189,step=labs.length>12?32:36;
   labs.forEach((v,i)=>{const x=x0+i*step;s+=k(x,299,labs.length>12?7.7:8.5,v,true);});
@@ -291,7 +291,7 @@ function ampSvg(m){
   else s+=label(140,276,raw.includes('Blues')?'1962':'MARSHALL',9,'#32291c',900,1.2);
   const labs=raw.includes('Plexi 100')?['PRES','BASS','MID','TREB','VOL I','VOL II','MASTER','LEVEL']:['PRES','BASS','MID','TREB','GAIN','MASTER','VOLUME','LEVEL'];
   labs.forEach((v,i)=>s+=k(205+i*57,306,10,v,true));
-  toggle(164,309)+jack(659,308,6)+jack(641,308,5);
+  s+=toggle(164,309)+jack(659,308,6)+jack(641,308,5);
   return s+feet+screw(72,103)+screw(688,103);
  }
  // VOX: head format with brown diamond grille, cream-gold VOX badge on left, small upper control ledge.
@@ -311,8 +311,8 @@ function ampSvg(m){
   const twin=raw.includes('Twin'),super=raw.includes('Super'),vibro=raw.includes('Vibro');
   const knobCount=twin?8:super?8:vibro?7:6;
   const inputs=twin?4:2;
-  for(let i=0;i<inputs;i++)jack(105+i*19,153,5);
-  toggle(twin?183:149,153);
+  for(let i=0;i<inputs;i++)s+=jack(105+i*19,153,5);
+  s+=toggle(twin?183:149,153);
   for(let i=0;i<knobCount;i++)s+=k((twin?218:205)+i*(twin?51:61),164,twin?8.2:9,'',true);
   s+='<rect x="82" y="224" width="596" height="113" fill="#252c2b" stroke="#afb6af" stroke-width="2"/><rect x="89" y="231" width="582" height="99" fill="url(#headMesh)"/>';
   word(190,301,'Fender',50,'Brush Script MT,Segoe Script,cursive','#f5f1e8','middle','font-style="italic" font-weight="bold" stroke="#333b38" stroke-width=".6"');
@@ -326,7 +326,7 @@ function ampSvg(m){
   s+='<rect x="82" y="116" width="596" height="100" fill="#121819" stroke="#d8c08d" stroke-width="1.7"/>';
   const bassman=ref.includes('bassman')||raw.includes('Bass Mate')||raw.includes('Bassguy');
   const count=bassman?6:4;
-  jack(108,153,5);jack(128,153,5);
+  s+=jack(108,153,5)+jack(128,153,5);
   for(let i=0;i<count;i++)s+=k(218+i*(bassman?72:96),164,9,'',true);
   s+='<rect x="82" y="224" width="596" height="113" fill="#765638" stroke="#d7bd91" stroke-width="2"/><rect x="89" y="231" width="582" height="99" fill="url(#headTweed)" opacity=".78"/>';
   word(190,301,bassman?'Bassman':'Fender',42,'Brush Script MT,Segoe Script,cursive','#f0e4c8','middle','font-style="italic" font-weight="bold"');
@@ -339,7 +339,7 @@ function ampSvg(m){
   s+='<rect x="82" y="116" width="596" height="132" fill="#0d1112" stroke="#858b84" stroke-width="1.5"/>';
   s+='<rect x="265" y="143" width="230" height="58" fill="#101516" stroke="#e1e4dc" stroke-width="3"/>'+word(380,181,'HIWATT',35,'Arial,Helvetica,sans-serif','#f3f3e9','middle','font-weight="500" letter-spacing="4"');
   s+='<rect x="82" y="256" width="596" height="81" fill="#0b1011" stroke="#c5cbc2" stroke-width="1.5"/>';
-  jack(108,294,6)+jack(131,294,6)+toggle(159,294);
+  s+=jack(108,294,6)+jack(131,294,6)+toggle(159,294);
   label(185,273,'CUSTOM HIWATT 100',8,'#eff0e7',800,1.4);
   ['NORM VOL','BRIGHT VOL','BASS','TREBLE','MIDDLE','PRESENCE','MASTER'].forEach((v,i)=>s+=k(222+i*61,306,8.5,v));
   s+=led(657,293,'#c84035')+toggle(675,293);
@@ -381,7 +381,7 @@ function ampSvg(m){
   s+='<rect x="82" y="116" width="596" height="133" fill="#101414" stroke="#7d8580" stroke-width="1.5"/>';
   s+='<rect x="262" y="142" width="236" height="60" fill="#111617" stroke="#d5d9d0" stroke-width="3"/>'+word(380,181,'HIWATT',35,'Arial,Helvetica,sans-serif','#f1f2e9','middle','font-weight="500" letter-spacing="4"');
   s+='<rect x="82" y="256" width="596" height="81" fill="#101515" stroke="#d9dcd4" stroke-width="1.5"/>';
-  jack(111,292,6)+jack(133,292,6)+toggle(164,292);
+  s+=jack(111,292,6)+jack(133,292,6)+toggle(164,292);
   ['NORM VOL','BRIGHT VOL','BASS','TREBLE','MIDDLE','PRESENCE','MASTER'].forEach((v,i)=>s+=k(210+i*63,302,9,v));
   s+=led(645,294,'#c93f35')+toggle(667,294);
   return s+feet+screw(72,103)+screw(688,103);
@@ -419,7 +419,7 @@ function ampSvg(m){
  if(m.skin==='matchless'){
   s+=shell('#161b19','#777e75')+handle;
   s+='<rect x="82" y="116" width="596" height="83" fill="#0c1010" stroke="#8e968b" stroke-width="1.5"/>';
-  jack(105,151,5)+jack(124,151,5);
+  s+=jack(105,151,5)+jack(124,151,5);
   ['VOL','BASS','TREB','CUT','MASTER','REVERB','PRES'].forEach((v,i)=>s+=k(191+i*62,155,8.5,v,true));
   toggle(641,151)+toggle(663,151);
   s+='<rect x="82" y="207" width="596" height="130" fill="#1d2520" stroke="#7e887b" stroke-width="1.5"/><rect x="224" y="238" width="312" height="62" rx="3" fill="url(#headBlackPanel)" stroke="#92998e" stroke-width="2"/>'+word(380,280,'MATCHLESS',31,'Georgia,serif','#f1eee1','middle','font-weight="bold" letter-spacing="1.8"')+label(380,322,raw.toUpperCase(),7,'#ccd3c8',700,1.7);
@@ -482,7 +482,7 @@ function ampSvg(m){
   s+='<rect x="76" y="139" width="608" height="202" rx="10" fill="#222a2d" stroke="#a2aaa7" stroke-width="4"/><rect x="88" y="151" width="584" height="178" rx="6" fill="url(#headSilver)" stroke="#eef0e9" stroke-width="2"/>';
   word(130,190,'aguilar',27,'Brush Script MT,Segoe Script,cursive','#283033','start','font-style="italic" font-weight="bold"');
   word(532,190,'TONE HAMMER 500',24,'Arial Narrow,Arial,sans-serif','#242b2d','end','font-weight="900" letter-spacing="1"');
-  jack(115,250,7)+label(115,270,'INPUT',7,'#242b2d',800,1);
+  s+=jack(115,250,7)+label(115,270,'INPUT',7,'#242b2d',800,1);
   ['GAIN','MID LEVEL','BASS','VOLUME','DRIVE','MID FREQ','TREBLE'].forEach((v,i)=>{const coords=[[226,222],[311,222],[396,222],[481,222],[226,287],[311,287],[396,287]];s+=k(coords[i][0],coords[i][1],10,v,true);});
   s+=label(578,257,'D.I. / MUTE / STATUS',7,'#242b2d',800,1)+led(564,282,'#9bc26b')+toggle(600,282);
   return s+feet;
