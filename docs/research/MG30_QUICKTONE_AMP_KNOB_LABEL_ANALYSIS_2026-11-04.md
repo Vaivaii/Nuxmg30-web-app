@@ -104,3 +104,46 @@ This should let the later UI correction update labels automatically from data. I
 ## Change boundary
 - No app source, UI, amp mapping, MIDI/CC code, firmware, NAM, or IR paths were changed for this analysis.
 - When implementation is requested later, modify only the amp knob label metadata; preserve the existing working parameter mapping and target original MG-30 Gen 2 FW 6.0.x.
+
+
+## Follow-up: non-knob amp controls (DGLASS / STARLIFT) — 4 Nov 2026
+
+The first extraction intentionally filtered to `elementType = 2` rotary knobs. A second inspection of the full `array` entries shows that switch elements were present in QuickTone and had been omitted from the first knob-only summary.
+
+### DGLASS — two switch elements are present
+The original MG-30 amp panel definition at file offset `0x68DCC4B` (duplicate panel block at `0x694C41B`) contains these ordered controls:
+
+| Order | UI element | `elementType` | `languageKey` | `midiCC` | Art assets | Position |
+|---:|---|---:|---|---:|---|---|
+| 1 | MASTER knob | 2 | `AMP_MASTER` | 0 | `Knob_18_png` | x=116, y=14 |
+| 2 | BASS knob | 2 | `AMP_BASS` | 1 | `Knob_18_png` | x=193, y=14 |
+| 3 | Switch | 5 | empty | 2 | `_Plist_Button_1_Frame_1/2/3_png` | x=272, y=29 |
+| 4 | LO MIDS knob | 2 | `AMP_LO MIDS` | 3 | `Knob_18_png` | x=326, y=14 |
+| 5 | HI MIDS knob | 2 | `AMP_HI MIDS` | 4 | `Knob_18_png` | x=403, y=14 |
+| 6 | Switch | 5 | empty | 5 | `_Plist_Button_1_Frame_1/2/3_png` | x=483, y=29 |
+| 7 | TREB knob | 2 | `AMP_TREB` | 6 | `Knob_18_png` | x=536, y=14 |
+| 8 | LEVEL knob | 2 | `AMP_LEVEL` | 7 | `Knob_38_png` | x=88, y=211 |
+
+Both switches have `parameter1=0`, `parameter2=100`, `parameter3=-1`. Their `languageKey` is empty, so QuickTone's panel JSON does **not** provide a textual semantic caption for either switch. The first switch is positioned between BASS and LO MIDS; the second between HI MIDS and TREB. This position suggests that they are the Low-Mid and High-Mid frequency selectors respectively, consistent with the user's physical-device description, but that semantic association is a layout-based inference—not an explicit label field in the JSON. Their MIDI CC indexes (2 and 5) are explicit.
+
+### STARLIFT — Contour switch is explicitly labelled
+The original MG-30 amp panel definition at file offset `0x68DE2F2` (duplicate panel block at `0x694DAC2`) contains:
+
+| Order | UI element | `elementType` | `languageKey` | `midiCC` | Art assets | Position |
+|---:|---|---:|---|---:|---|---|
+| 1 | BASS knob | 2 | `AMP_BASS` | 0 | `Knob_51_png` | x=70, y=13 |
+| 2 | MID knob | 2 | `AMP_MID` | 1 | `Knob_51_png` | x=158, y=13 |
+| 3 | MID FREQ knob | 2 | `AMP_MID FREQ` | 2 | `Knob_51_png` | x=247, y=13 |
+| 4 | TREB knob | 2 | `AMP_TREB` | 3 | `Knob_51_png` | x=336, y=13 |
+| 5 | CONTOUR switch | 5 | `AMP_CONTOUR` | 4 | `_Plist_Button_2_Frame_1/2/3_png` | x=435, y=26 |
+| 6 | VOLUME knob | 2 | `AMP_VOLUME` | 5 | `Knob_51_png` | x=512, y=13 |
+| 7 | LEVEL knob | 2 | `AMP_LEVEL` | 6 | `Knob_38_png` | x=88, y=211 |
+
+STARLIFT's switch is not missing from the semantic map: QuickTone explicitly associates it with `AMP_CONTOUR` at CC 4. As with DGLASS, its button control uses three frame assets; the JSON does not by itself explain the sonic meaning of each visual frame/state.
+
+### Revised conclusion
+- QuickTone contains more than rotary-knob labels. Panel arrays include switches, faders, indicators, lights and other control elements distinguished by `elementType`.
+- STARLIFT Contour is explicitly labelled in QuickTone metadata.
+- DGLASS has two real switch elements and explicit CC assignments, but no `languageKey`/text label for those switches. The likely Low-Mid / High-Mid frequency association can be inferred from their order and screen coordinates and should be verified against the physical panel or a QuickTone screenshot before it is entered in an implementation table.
+- A complete automated amp UI extraction must retain **all** elements and filter by type only for presentation; it must not discard non-knob controls.
+- No application source, amp control mapping, or MIDI/CC behavior was changed during this analysis.
