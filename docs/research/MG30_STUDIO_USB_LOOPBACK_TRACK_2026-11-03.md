@@ -262,3 +262,56 @@ Next diagnostic UI should expose, per take: selected endpoint, AudioRecord route
 ## Uploaded test WAV identity needs confirmation (3 November 2026)
 
 The uploaded file `Tes- ush-Fu---Mix.wav` is 9.6 s, 48 kHz, stereo, 24-bit PCM. Both channels contain only zero-valued samples (peak 0, RMS 0, nonzero samples 0). Its filename is not the native Quick Take prefix `MG30_USB_Input_Take_...`, so do not assume this file is the MG-30 capture; it may instead be the source song supplied for playback. Ask whether it is the source song or a recording/export. If source, retry with a known audible WAV. If capture, request the raw native Quick Take export to diagnose the USB input channels.
+
+
+## Critical routing correction from original QuickTone 2.6.7.16 and original USB descriptors (3 November 2026)
+
+This corrects the earlier assumption that the user's "USB ROUTING MODE = LOOPBACK" is equivalent to selecting USB input channels 3–4. These are not established as the same thing.
+
+### QuickTone original — distinct Loopback concepts
+
+The supplied QuickTone Windows 2.6.7.16 executable was partially recovered from the uploaded ZIP. The archive itself is truncated (its ZIP central directory and final ~36 MB of the declared compressed entry are missing), but the complete PE .text section and the relevant early .rdata strings were recovered. The original resource strings include:
+- UI controls: "Recording Level", "Playback Level", "Routing Mode".
+- Routing values: "Normal", "Reamp", "Dry Out".
+- Separate option/label: "Loopback".
+- Other USB routing labels: "Wet Sync in Input 3/4", "Input 1/2 - Output 1/2", and "Input 1/2 - Output 3/4".
+
+A QuickTone/MG-30 technical guide from Monk Custom (27 June 2021, firmware v2.3) explicitly distinguishes the two relevant operations:
+1. In **Normal mode**, enable the **Loopback** option to include audio playback from the computer/host in the recording.
+2. In **Loopback mode**, the MG-30's built-in drum machine and phrase looper can be recorded.
+3. In **Dry Out** mode, Input 1/2 carries the dry guitar signal; the separate "Wet Sync in Input 3/4" option can send the processed/wet guitar signal to Input 3/4.
+4. "Input 1/2 - Output 3/4" is a distinct Re-Amp route: a dry track can be sent from the host on USB output 3/4 while backing continues on USB output 1/2.
+
+NUX's product page independently lists NORMAL, USB Loopback, REAMP and DRY OUT as USB audio routing choices. The app must preserve the distinction between the Normal-mode Loopback enable option and the separate Loopback pedal routing mode. Do not call input mask 0xC "Loopback" merely because it is channels 3–4.
+
+### USB descriptor topology from the supplied original QuickTone PCAPs
+
+The USBPcap descriptors in `ir user import.pcapng`, `nam import.pcapng`, and the longer collection captures identify the MG-30 USB device descriptor as VID:PID `1FC9:8260` (the other enumerated device, VID:PID `30C9:000E`, is a separate video-class device and is not the audio interface).
+
+The MG-30 configuration describes:
+- USB Audio Class 2.0 interfaces.
+- USB Audio IN stream: AudioStreaming interface 1, alternate setting 1, isochronous endpoint `0x83` IN, 4 channels, 24-bit PCM.
+- USB Audio OUT stream: AudioStreaming interface 2, alternate setting 1, isochronous endpoint `0x01` OUT, 4 channels, 24-bit PCM, with feedback endpoint `0x81`.
+- Separate USB-MIDI interface 4: bulk endpoint `0x02` OUT and `0x82` IN.
+
+The MIDI import PCAPs carry the SysEx transfers on bulk endpoints 0x02/0x82. They contain device/configuration descriptors but do not contain isochronous audio payloads on 0x01/0x83. Thus they prove the four-channel full-duplex USB Audio topology and the separate MIDI path, but they do **not** prove which capture channel numbers contain host-playback Loopback audio.
+
+### Why the previous app build records silence
+
+The app's four-track routing currently labels channel-index mask `0xC` (USB IN channels 3/4) as "MG-30 USB · Loopback 3–4" and captures that pair. That semantic mapping was an assumption based on a prior user description, not something established by QuickTone descriptors or audio traffic. The device's separate Loopback mode can capture internal drum/phrase audio; using that mode to record phone/host playback is inconsistent with the documented Normal-mode Loopback behavior. This is now the leading explanation for the all-zero user take, but the exact host-loopback return channel pair remains unverified.
+
+### Corrected next implementation/test plan
+
+1. Do not ask the user to reselect the same input or imply their prior selection was wrong.
+2. For host/phone playback Loopback, distinguish **Normal mode + Loopback enabled** from the separate **Loopback mode** used for internal drum/phrase looper capture. The user should not need to enable Re-Amp or Dry Out.
+3. Do not assume host-playback Loopback is USB IN 3/4. The "Wet Sync in Input 3/4" label is tied to Dry Out wet capture in the technical guide; it is not proof that host Loopback appears there.
+4. Add a raw four-channel (mask 0xF) diagnostic capture and per-channel peak/RMS report before any extraction. Use it with Normal + Loopback enabled; identify the channel pair that contains host playback. Preserve the original raw multichannel WAV for inspection.
+5. Only after the host-loopback pair is measured, expose it as a selectable source for any of the four visible DAW tracks. Keep ordinary Input 1/2 and Wet Sync Input 3/4 labels separate.
+6. Verify Android's host playback routing to USB Audio OUT endpoint 0x01, and capture USB Audio IN endpoint 0x83. Do not confuse USB-MIDI connection/status or MIDI endpoints 0x02/0x82 with the audio route.
+
+Evidence references:
+- Original QuickTone 2.6.7.16 executable uploaded by the user; recovered file strings and USB descriptor packets from their supplied PCAPs.
+- QuickTone/MG-30 guide (firmware v2.3, 27 June 2021): https://monkcustom.blogspot.com/2021/06/NUXMG-30SecretTips.html
+- NUX MG-30 product page describing USB audio modes: https://www.nuxaudio.id/products/mg-30
+- USB descriptor evidence is from the user's supplied `ir user import.pcapng` and `nam import.pcapng`; no audio streaming data is present in these captures.
+
