@@ -251,13 +251,16 @@ public class MG30AudioPlugin extends Plugin {
                 break;
             }
         }
-        if (usb == null) {
+        if (usb == null && !loopbackCapture) {
+            // Preserve the pre-existing generic USB fallback for normal Guitar capture.
             for (AudioDeviceInfo device : manager.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
                 if (isUsbInput(device)) { usb = device; break; }
             }
         }
         if (usb == null) {
-            call.reject("Input USB Audio belum terdeteksi. Pastikan MG-30 terhubung dengan kabel data dan OTG.");
+            call.reject(loopbackCapture
+                ? "Input USB NUX MG-30 tidak terdeteksi untuk Loopback. Periksa sambungan dan endpoint MG-30."
+                : "Input USB Audio belum terdeteksi. Pastikan MG-30 terhubung dengan kabel data dan OTG.");
             return;
         }
 
@@ -413,10 +416,12 @@ public class MG30AudioPlugin extends Plugin {
                             long routeDeadline = SystemClock.elapsedRealtime() + 850;
                             while (SystemClock.elapsedRealtime() < routeDeadline) {
                                 routed = Build.VERSION.SDK_INT >= 24 ? candidate.getRoutedDevice() : null;
-                                if (routed != null && isUsbInput(routed)) break;
+                                if (routed != null && isUsbInput(routed) &&
+                                    (!loopbackCapture || isMg30UsbDevice(routed))) break;
                                 SystemClock.sleep(50);
                             }
-                            if (routed != null && isUsbInput(routed)) {
+                            if (routed != null && isUsbInput(routed) &&
+                                (!loopbackCapture || isMg30UsbDevice(routed))) {
                                 selectedRecord = candidate;
                                 selectedRoute = routed;
                                 selectedRate = rate;
@@ -742,6 +747,11 @@ public class MG30AudioPlugin extends Plugin {
         return type == AudioDeviceInfo.TYPE_USB_DEVICE ||
             type == AudioDeviceInfo.TYPE_USB_HEADSET ||
             (Build.VERSION.SDK_INT >= 26 && type == AudioDeviceInfo.TYPE_USB_ACCESSORY);
+    }
+
+    private static boolean isMg30UsbDevice(AudioDeviceInfo device) {
+        String name = device.getProductName() == null ? "" : device.getProductName().toString().toLowerCase(Locale.ROOT);
+        return name.contains("mg-30") || name.contains("nux");
     }
 
     private static String typeName(int type) {
