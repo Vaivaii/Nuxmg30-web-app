@@ -318,6 +318,11 @@ public class MG30AudioPlugin extends Plugin {
             if (countOptions.length == 0 || contains(countOptions, 2)) channelOptions.add(2);
             if (countOptions.length == 0 || contains(countOptions, 1)) channelOptions.add(1);
         }
+        if (loopbackCapture && Build.VERSION.SDK_INT >= 23 &&
+            advertisedIndexMasks.length > 0 && channelOptions.isEmpty()) {
+            call.reject("MG-30 mengiklankan channel-index mask USB, tetapi tidak ada mask yang cocok dengan jumlah kanal input. Capture Loopback dihentikan tanpa menebak pemetaan kanal.");
+            return;
+        }
         if (channelOptions.isEmpty()) {
             channelOptions.add(2);
             channelOptions.add(1);
@@ -367,9 +372,14 @@ public class MG30AudioPlugin extends Plugin {
                         ? channelIndexMask
                         : (channels == 2 ? AudioFormat.CHANNEL_IN_STEREO : AudioFormat.CHANNEL_IN_MONO);
                     for (int rate : rates) {
-                        int min = AudioRecord.getMinBufferSize(rate, channelConfig, encoding);
-                        if (min <= 0) continue;
                         int bytesPerCaptureSample = encoding == AudioFormat.ENCODING_PCM_16BIT ? 2 : 4;
+                        // getMinBufferSize accepts channel-position masks, not arbitrary
+                        // endpoint index masks. For index-mask Loopback, size the stream
+                        // directly from its channel count and sample format instead.
+                        int min = useChannelIndexMask
+                            ? rate * channels * bytesPerCaptureSample / 10
+                            : AudioRecord.getMinBufferSize(rate, channelConfig, encoding);
+                        if (min <= 0) continue;
                         int bufferSize = Math.max(min * 2, rate * channels * bytesPerCaptureSample / 4);
                         AudioRecord candidate = null;
                         try {
