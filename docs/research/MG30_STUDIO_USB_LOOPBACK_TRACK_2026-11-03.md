@@ -60,6 +60,7 @@ Loopback mode is separate:
 - In Loopback mode, requires the selected USB input product name to match NUX/MG-30; unlike normal Guitar capture, it does not fall back to a generic USB input.
 - Verifies the actual AudioRecord route still matches a USB NUX/MG-30 input before accepting the stream.
 - Writes all selected interleaved input samples to the WAV, retaining the actual channel count.
+- Aligns each capture read block to a complete interleaved frame, including 3- and 4-channel formats.
 - Returns the channel count, channel-index mask and capture mode to the DAW; the DAW persists those values with the clip.
 
 A four-channel endpoint is therefore captured as four channels where that configuration initializes and routes successfully; it is not silently collapsed to stereo by this Loopback-specific selection path.
@@ -129,3 +130,13 @@ Do not infer physical Loopback success from CI alone.
 - If the endpoint advertises an index-mask list but none is compatible with its channel-count list, Loopback fails explicitly rather than inventing a mask.
 - The Loopback branch does not pass channel-index masks to `AudioRecord.getMinBufferSize`, because that API parameter is a channel-position mask. The Loopback buffer request is calculated from sample rate, channel count, and sample width.
 - A Loopback recording is rejected if no NUX/MG-30-named USB input is present or the active route changes to another USB device. The normal Guitar capture's prior generic USB fallback remains unchanged.
+
+
+## Reference links
+
+- NUX MG-30 Global product page (USB routing and firmware update notes): https://nuxaudio.com/product/mg30/
+- NUX MG-30 / QuickTone USB routing modes: https://www.nux.us/products/mg-30
+- Android `AudioFormat.Builder.setChannelIndexMask` API reference: https://developer.android.com/reference/android/media/AudioFormat.Builder#setChannelIndexMask(int)
+- Android `AudioRecord` API reference: https://developer.android.com/reference/android/media/AudioRecord
+
+The official Android API explains that input channel-index masks map endpoint channel indexes to the samples returned by AudioRecord. For example, `0xC` selects endpoint channels 3 and 4, and `0xF` selects channels 1 through 4. This is channel-index documentation, not MG-30-specific routing documentation.
