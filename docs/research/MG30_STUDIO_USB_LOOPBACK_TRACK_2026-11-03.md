@@ -57,7 +57,8 @@ Loopback mode is separate:
 - Uses `AudioFormat.Builder.setChannelIndexMask` when Loopback capture mode is requested and the Android API supports it.
 - Does not pass an endpoint index mask to `AudioRecord.getMinBufferSize`, which expects a channel-position mask; Loopback buffer sizing is derived from sample rate, channel count, and sample format.
 - Stops with an explicit error instead of guessing when Android advertises channel-index masks but none is compatible with the exposed channel counts.
-- Verifies the AudioRecord route is still the USB NUX/MG-30 input before accepting the stream.
+- In Loopback mode, requires the selected USB input product name to match NUX/MG-30; unlike normal Guitar capture, it does not fall back to a generic USB input.
+- Verifies the actual AudioRecord route still matches a USB NUX/MG-30 input before accepting the stream.
 - Writes all selected interleaved input samples to the WAV, retaining the actual channel count.
 - Returns the channel count, channel-index mask and capture mode to the DAW; the DAW persists those values with the clip.
 
@@ -93,7 +94,7 @@ It does not modify:
 - USB-MIDI framing or MIDI mappings.
 - Preset import/export.
 - Signal Chain, CTRL/EXP or device parameter editors.
-- The normal Guitar recorder's stereo/mono channel selection logic.
+- The normal Guitar recorder's stereo/mono channel selection logic and its pre-existing generic USB fallback.
 
 ## Validation plan and evidence
 
@@ -120,3 +121,11 @@ Physical confirmation still required:
 - confirm playback and capture run simultaneously without dropouts.
 
 Do not infer physical Loopback success from CI alone.
+
+
+## Android channel-index and input-device safeguards
+
+- The Loopback path uses the endpoint's exact advertised channel-index masks. Non-contiguous masks are retained as advertised (for example `0xC` for endpoint indexes 3 and 4); masks are ordered by channel count, widest first.
+- If the endpoint advertises an index-mask list but none is compatible with its channel-count list, Loopback fails explicitly rather than inventing a mask.
+- The Loopback branch does not pass channel-index masks to `AudioRecord.getMinBufferSize`, because that API parameter is a channel-position mask. The Loopback buffer request is calculated from sample rate, channel count, and sample width.
+- A Loopback recording is rejected if no NUX/MG-30-named USB input is present or the active route changes to another USB device. The normal Guitar capture's prior generic USB fallback remains unchanged.
