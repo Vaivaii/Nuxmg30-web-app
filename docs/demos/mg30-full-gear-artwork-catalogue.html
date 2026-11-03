@@ -212,89 +212,331 @@ VOL:['Volume']
 function knob(x,y,r,accent,angle){return '<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+4)+'" fill="#090c0d" stroke="#9ba39e" stroke-opacity=".55" stroke-width="1.5"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#dial)" stroke="'+accent+'" stroke-opacity=".45" stroke-width="1.2"/><path d="M'+x+' '+(y-r+4)+'v-7" stroke="#f5e6bf" stroke-width="3" stroke-linecap="round" transform="rotate('+angle+' '+x+' '+y+')"/><circle cx="'+x+'" cy="'+y+'" r="2.5" fill="#b9c0b7"/></g>'}
 function screw(x,y){return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="url(#metal)" stroke="#343b3a"/><path d="M'+(x-2)+' '+y+'h4" stroke="#4c5552"/>'}
 function ampSvg(m){
- const p=ampPalettes[m.skin]||ampPalettes.nam,shape=m.shape;
- const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
- const screw=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="4" fill="url(#metal)" stroke="#303332"/><path d="M'+(x-2)+' '+y+'h4" stroke="#4c5552"/>';
- const dial=(x,y,r=10)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+4)+'" fill="#090b0b" stroke="#5b605b" stroke-width="1.5"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#dial)" stroke="#aeb1a4" stroke-opacity=".6"/><path d="M'+x+' '+(y-r+3)+'v-5" stroke="#f3dfb5" stroke-width="2.6" stroke-linecap="round"/><circle cx="'+x+'" cy="'+y+'" r="2" fill="#aeb6ae"/></g>';
- const defs='<defs><linearGradient id="tolex" x2="0" y2="1"><stop stop-color="#424343"/><stop offset=".18" stop-color="'+p.body+'"/><stop offset=".85" stop-color="'+p.body+'"/><stop offset="1" stop-color="#070808"/></linearGradient><linearGradient id="goldPanel" x2="0" y2="1"><stop stop-color="#f1d68b"/><stop offset=".18" stop-color="#c9a85f"/><stop offset=".82" stop-color="#b18c48"/><stop offset="1" stop-color="#6c512b"/></linearGradient><linearGradient id="blackFace" x2="0" y2="1"><stop stop-color="#303130"/><stop offset=".3" stop-color="#111212"/><stop offset="1" stop-color="#050606"/></linearGradient><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#f6f2df"/><stop offset=".45" stop-color="#9da39d"/><stop offset="1" stop-color="#3b4140"/></linearGradient><radialGradient id="dial" cx=".28" cy=".2"><stop stop-color="#777b73"/><stop offset=".28" stop-color="#303432"/><stop offset="1" stop-color="#080a0a"/></radialGradient><pattern id="tolexTexture" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 1H5M0 4H5" stroke="#fff" stroke-opacity=".045"/></pattern><pattern id="speakerCloth" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 0L5 5M5 0L0 5" stroke="#d6c6a1" stroke-opacity=".18" stroke-width=".7"/></pattern><pattern id="voxDiamond" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M14 0L28 14L14 28L0 14Z" fill="none" stroke="#b99a83" stroke-width="2" stroke-opacity=".7"/><path d="M14 5L23 14L14 23L5 14Z" fill="none" stroke="#d6c0a6" stroke-width=".8" stroke-opacity=".35"/></pattern><filter id="cabShadow" x="-20%" y="-30%" width="140%" height="170%"><feGaussianBlur stdDeviation="9"/></filter></defs>';
- let s=defs+'<ellipse cx="380" cy="405" rx="270" ry="15" fill="#000" opacity=".62" filter="url(#cabShadow)"/>';
- // Friedman HBE-style amp head: black textured upper fascia, gold lower control strip, dense knob row.
- if(m.skin==='friedman'){
-  s+='<rect x="55" y="94" width="650" height="258" rx="16" fill="#050606" opacity=".85"/><rect x="53" y="76" width="654" height="275" rx="17" fill="url(#tolex)" stroke="#080909" stroke-width="7"/><rect x="63" y="86" width="634" height="255" rx="10" fill="url(#tolex)" stroke="#5c5a4e" stroke-width="1.5"/><rect x="67" y="90" width="626" height="247" rx="8" fill="url(#tolexTexture)"/><path d="M70 91H690" stroke="#77746a" stroke-opacity=".35"/><rect x="91" y="112" width="145" height="48" rx="2" fill="#c5a75d" stroke="#e0c77f" stroke-width="1.5"/><text x="163" y="145" text-anchor="middle" font-family="Georgia,serif" font-size="30" font-weight="bold" letter-spacing="-1.5" fill="#1b1914">FRIEDMAN</text><circle cx="99" cy="136" r="2.5" fill="#312719"/><circle cx="228" cy="136" r="2.5" fill="#312719"/><path d="M69 174H691" stroke="#b9a56e" stroke-opacity=".5" stroke-width="2"/><rect x="69" y="248" width="622" height="79" rx="2" fill="url(#goldPanel)" stroke="#28251e" stroke-width="2"/><rect x="70" y="249" width="620" height="77" fill="url(#tolexTexture)" opacity=".4"/>';
-  // toggle, jewel lamp, input jack, and fifteen evenly spaced control knobs
-  s+='<circle cx="99" cy="288" r="7" fill="url(#metal)" stroke="#39372f"/><path d="M99 282l4-10" stroke="#20211d" stroke-width="3" stroke-linecap="round"/><circle cx="126" cy="288" r="8" fill="#641d22" stroke="#e0b0a0" stroke-width="1.5"/><circle cx="126" cy="288" r="3" fill="#c24b4d"/>';
-  const labels=['PRES','MASTER','GAIN 1','GAIN 2','BASS','MIDDLE','TREBLE','SAT','TIGHT','DEPTH','PRESENCE','VOLUME','MASTER','LEVEL','OUTPUT'];
-  labels.forEach((lab,i)=>{const x=164+i*34.2;s+=dial(x,290,9)+'<text x="'+x+'" y="268" text-anchor="middle" font-size="6.4" font-weight="700" letter-spacing=".25" fill="#332919">'+lab+'</text>'});
-  s+='<circle cx="680" cy="288" r="7" fill="#151918" stroke="#d7d2bd" stroke-width="2"/><circle cx="680" cy="288" r="3" fill="#8d9994"/><path d="M90 351v22q0 8 9 8h27q9 0 9-8v-22M625 351v22q0 8 9 8h27q9 0 9-8v-22" fill="#090a0a" stroke="#050606" stroke-width="5"/><path d="M280 76q0-17 18-17h164q18 0 18 17" fill="none" stroke="#090a0a" stroke-width="10" stroke-linecap="round"/><path d="M286 70q12-12 28-12h152q16 0 28 12" fill="none" stroke="#65635c" stroke-width="3" stroke-linecap="round"/>';
-  return s;
+ const p=ampPalettes[m.skin]||ampPalettes.nam;
+ const nm=m.name.replace(/ · IMAGE/,'').toUpperCase();
+ const bass=/bass|aguilar|darkglass|nux mld|starlift/i.test(m.ref+' '+m.name);
+ const labels=bass?['GAIN','BASS','MID','TREBLE','MASTER','LEVEL']:['PRESENCE','BASS','MIDDLE','TREBLE','GAIN','MASTER','REVERB','LEVEL'];
+ const defs='<defs>'+
+ '<linearGradient id="tolex" x2=".15" y2="1"><stop stop-color="#505251"/><stop offset=".12" stop-color="'+p.body+'"/><stop offset=".88" stop-color="'+p.body+'"/><stop offset="1" stop-color="#070909"/></linearGradient>'+
+ '<linearGradient id="panel" x2="0" y2="1"><stop stop-color="'+p.edge+'"/><stop offset=".22" stop-color="'+p.panel+'"/><stop offset=".78" stop-color="'+p.panel+'"/><stop offset="1" stop-color="'+p.body+'"/></linearGradient>'+
+ '<linearGradient id="goldPanel" x2="0" y2="1"><stop stop-color="#f4d996"/><stop offset=".2" stop-color="#d6b66e"/><stop offset=".78" stop-color="#b28c49"/><stop offset="1" stop-color="#72532c"/></linearGradient>'+
+ '<linearGradient id="silverPanel" x2="0" y2="1"><stop stop-color="#f4f3ec"/><stop offset=".35" stop-color="#c2c6c2"/><stop offset=".8" stop-color="#8b9390"/><stop offset="1" stop-color="#4e5855"/></linearGradient>'+
+ '<radialGradient id="ampKnob" cx=".31" cy=".22"><stop stop-color="#a0a49c"/><stop offset=".2" stop-color="#555b57"/><stop offset=".62" stop-color="#202524"/><stop offset="1" stop-color="#060808"/></radialGradient>'+
+ '<radialGradient id="ampSilverKnob" cx=".3" cy=".22"><stop stop-color="#fffdf1"/><stop offset=".28" stop-color="#d2d0c4"/><stop offset=".8" stop-color="#555d59"/><stop offset="1" stop-color="#111515"/></radialGradient>'+
+ '<pattern id="ampCloth" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 0L7 7M7 0L0 7" stroke="'+p.edge+'" stroke-opacity=".32" stroke-width=".8"/><path d="M0 3.5H7" stroke="'+p.ink+'" stroke-opacity=".5" stroke-width=".7"/></pattern>'+
+ '<pattern id="ampTweed" width="9" height="9" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="'+p.body+'"/><path d="M0 1H9M0 5H9M2 0V9M6 0V9" stroke="'+p.edge+'" stroke-opacity=".42" stroke-width="1"/></pattern>'+
+ '<pattern id="ampDiamond" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M7.5 0L15 7.5L7.5 15L0 7.5Z" fill="none" stroke="'+p.edge+'" stroke-opacity=".72" stroke-width="1.4"/></pattern>'+
+ '<pattern id="ampMesh" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0L8 8M8 0L0 8" stroke="#c5c9c2" stroke-opacity=".28"/><circle cx="4" cy="4" r="1.2" fill="#050708"/></pattern>'+
+ '<filter id="ampShadow" x="-20%" y="-20%" width="140%" height="155%"><feGaussianBlur stdDeviation="9"/></filter>'+
+ '</defs>';
+ const screw=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="4.2" fill="url(#silverPanel)" stroke="#262d2b" stroke-width="1"/><path d="M'+(x-2.2)+' '+y+'h4.4" stroke="#515957" stroke-width="1"/>';
+ const k=(x,y,r,label,light=false)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#080a0b" stroke="#a9aea6" stroke-opacity=".56" stroke-width="1.4"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(light?'url(#ampSilverKnob)':'url(#ampKnob)')+'" stroke="#e2e2d8" stroke-opacity=".42"/><path d="M'+x+' '+(y-r+4)+'v-'+Math.max(5,r*.42)+'" stroke="'+(light?'#242a28':'#f1e1bd')+'" stroke-width="2.6" stroke-linecap="round"/><circle cx="'+x+'" cy="'+y+'" r="1.8" fill="#c6cbc2"/><text x="'+x+'" y="'+(y+r+13)+'" text-anchor="middle" font-size="7.5" letter-spacing=".3" fill="'+(light?'#f1eee3':p.ink)+'">'+label+'</text></g>';
+ const handle=(x=334,y=67,w=92)=>'<path d="M'+x+' '+(y+3)+'q0 -13 13 -13h'+(w-26)+'q13 0 13 13v5h-10v-5h-'+(w-26)+'v5h-10z" fill="#090b0c" stroke="#737a75" stroke-width="2"/>';
+ const feet=(x1=180,x2=580,y=374)=>'<rect x="'+x1+'" y="'+y+'" width="46" height="17" rx="6" fill="#080a0b"/><rect x="'+x2+'" y="'+y+'" width="46" height="17" rx="6" fill="#080a0b"/>';
+ const speaker=(x,y,r)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#0a0d0d" stroke="#a4a69d" stroke-width="3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.78)+'" fill="none" stroke="#b7b7ad" stroke-opacity=".28" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.58)+'" fill="#202625" stroke="#6d746c" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.23)+'" fill="#080a0b" stroke="#73796f" stroke-width="3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.1)+'" fill="#343a36"/></g>';
+ const shadow='<ellipse cx="380" cy="407" rx="242" ry="15" fill="#000" opacity=".62" filter="url(#ampShadow)"/>';
+ const ampLabel=(x,y,text,size=10,color=p.ink)=>'<text x="'+x+'" y="'+y+'" text-anchor="middle" font-size="'+size+'" font-weight="800" letter-spacing="1.2" fill="'+color+'">'+text+'</text>';
+ const rowKnobs=(y,items,start=168,step=60,r=10,light=false)=>items.map((v,i)=>k(start+i*step,y,r,v,light)).join('');
+ let s=defs+shadow;
+ // BLACKFACE / SILVERFACE FENDER COMBOS: horizontal top control strip, silver cloth, Fender badge.
+ if(m.skin==='blackface'||(m.skin==='blackCombo'&&m.ref.includes('Fender'))){
+  const n=m.ref.includes('Twin')?8:m.ref.includes('Super-Sonic')?9:7;
+  const row=Array.from({length:n},(_,i)=>['VOL','TREB','BASS','REVERB','SPEED','INTENSITY','MASTER','PRES','GAIN'][i]);
+  s+='<rect x="116" y="73" width="528" height="318" rx="15" fill="url(#tolex)" stroke="#6d716b" stroke-width="4"/><rect x="128" y="85" width="504" height="294" rx="9" fill="none" stroke="#c4c3b8" stroke-opacity=".3" stroke-width="2"/>'+handle(334,68,92);
+  s+='<rect x="136" y="91" width="488" height="58" rx="3" fill="#111617" stroke="#aeb5af" stroke-width="1.4"/><path d="M142 96H618" stroke="#d8d6c9" stroke-opacity=".18"/>';
+  s+='<circle cx="153" cy="119" r="4" fill="#0a0c0c" stroke="#d8d4c6"/><circle cx="169" cy="119" r="4" fill="#0a0c0c" stroke="#d8d4c6"/>';
+  s+=rowKnobs(119,row,211,n>7?45:56,8,true);
+  s+=ampLabel(580,107,m.name.includes('Twin')?'TWIN REVERB':m.name.includes('Princeton')?'PRINCETON REVERB':m.name.includes('Vibro')?'VIBRO-KING':m.name.includes('Super')?'SUPER-SONIC':'DELUXE REVERB',8,'#f3eee0');
+  s+='<rect x="136" y="156" width="488" height="210" rx="2" fill="#242b29" stroke="#b5b7ac" stroke-width="2"/><rect x="143" y="163" width="474" height="196" fill="url(#ampCloth)"/>';
+  if(m.ref.includes('Twin')||m.ref.includes('JC-120')){s+=speaker(279,260,66)+speaker(481,260,66);}
+  else{s+='<text x="202" y="253" font-family="Georgia,serif" font-size="31" font-style="italic" font-weight="bold" fill="#e4e3d8" stroke="#4c5653" stroke-width=".6">Fender</text>';}
+  s+=ampLabel(380,351,m.name.toUpperCase().replace(' · IMAGE',''),9,'#dedfd5')+feet(157,557,379)+screw(126,83)+screw(634,83)+screw(126,382)+screw(634,382);
+  return s+'</svg>';
  }
- // Marshall JCM-style head: broad black logo field, gold control panel, switches and grouped controls.
- if(m.skin==='marshall'){
-  s+='<rect x="54" y="77" width="652" height="282" rx="16" fill="#050606" opacity=".9"/><rect x="52" y="72" width="656" height="286" rx="16" fill="url(#tolex)" stroke="#080909" stroke-width="7"/><rect x="65" y="84" width="630" height="260" rx="9" fill="url(#blackFace)" stroke="#c7c2b1" stroke-width="2.5"/><rect x="68" y="87" width="624" height="254" rx="7" fill="url(#tolexTexture)"/><text x="380" y="197" text-anchor="middle" font-family="cursive,Georgia,serif" font-style="italic" font-size="67" font-weight="bold" fill="#f3f0e7" stroke="#e5e1d8" stroke-width=".6">Marshall</text><path d="M68 239H692" stroke="#e6dfc8" stroke-width="2"/><rect x="68" y="240" width="624" height="92" rx="2" fill="url(#goldPanel)" stroke="#25231d" stroke-width="2"/><rect x="69" y="241" width="622" height="90" fill="url(#tolexTexture)" opacity=".35"/>';
-  // input and power section
-  s+='<rect x="92" y="267" width="22" height="30" rx="3" fill="#151817" stroke="#d0c8b0" stroke-width="2"/><rect x="96" y="271" width="14" height="22" rx="2" fill="#553b22"/><rect x="126" y="267" width="22" height="30" rx="3" fill="#171a19" stroke="#c7b991" stroke-width="2"/><rect x="130" y="271" width="14" height="22" rx="2" fill="#090b0b"/><circle cx="169" cy="282" r="5" fill="#111514" stroke="#ded4b9" stroke-width="1.5"/><circle cx="169" cy="282" r="2" fill="#c5b38a"/>';
-  const labels=['PRESENCE','MASTER','VOLUME','TREBLE','MIDDLE','BASS','GAIN','REVERB','LEVEL'];
-  labels.forEach((lab,i)=>{const x=208+i*52;s+=dial(x,283,10)+'<text x="'+x+'" y="311" text-anchor="middle" font-size="7" font-weight="700" fill="#342b1d">'+lab+'</text>'});
-  s+='<circle cx="688" cy="282" r="7" fill="#151918" stroke="#e0d7c0" stroke-width="2"/><path d="M85 358v16q0 8 8 8h31q8 0 8-8v-16M627 358v16q0 8 8 8h31q8 0 8-8v-16" fill="#080909" stroke="#050606" stroke-width="4"/><path d="M292 72q0-16 17-16h142q17 0 17 16" fill="none" stroke="#090a0a" stroke-width="10" stroke-linecap="round"/><path d="M300 65h160" stroke="#6d706b" stroke-width="2"/>';
-  return s;
+ // FENDER TWEED: woven tweed cabinet, brown grille, small vintage top control panel.
+ if(m.skin==='tweed'){
+  s+='<rect x="126" y="66" width="508" height="326" rx="13" fill="url(#ampTweed)" stroke="#d4b783" stroke-width="4"/><rect x="137" y="77" width="486" height="304" rx="8" fill="none" stroke="#5d452c" stroke-width="3"/>'+handle(334,60,92);
+  s+='<rect x="145" y="91" width="470" height="49" rx="3" fill="url(#silverPanel)" stroke="#e0c58e" stroke-width="1"/>';
+  const tw=m.ref.includes('Bassman');
+  s+=rowKnobs(113,tw?['VOL','TONE','BASS','VOL','TONE','BASS']:['MIC','INST','TONE','PRES'],tw?195:245,tw?72:90,9,true);
+  s+='<rect x="145" y="147" width="470" height="221" fill="#6c5036" stroke="#d9bc8d" stroke-width="3"/><rect x="151" y="153" width="458" height="209" fill="#63462f"/><rect x="151" y="153" width="458" height="209" fill="url(#ampDiamond)" opacity=".48"/>';
+  s+='<rect x="159" y="171" width="112" height="37" rx="3" fill="url(#goldPanel)" stroke="#4b3420" stroke-width="2"/>'+ampLabel(215,195,tw?'BASSMAN':'DELUXE',15,'#2e2115')+ampLabel(380,336,m.name.toUpperCase(),9,'#ead9b6')+feet(165,554,379)+screw(137,78)+screw(623,78);
+  return s+'</svg>';
  }
- // Vox AC-style combo: dark upper control fascia and a woven diamond speaker grille.
+ // VOX AC15 / AC30: black woven top, gold piping, diamond grille, VOX badge.
  if(m.skin==='vox'){
-  s+='<rect x="111" y="52" width="538" height="344" rx="18" fill="#050606" opacity=".75"/><rect x="108" y="47" width="544" height="348" rx="18" fill="url(#tolex)" stroke="#090a0a" stroke-width="7"/><rect x="122" y="60" width="516" height="319" rx="10" fill="url(#blackFace)" stroke="#d1c6ad" stroke-width="2.5"/><rect x="129" y="67" width="502" height="300" rx="5" fill="url(#tolexTexture)"/><text x="192" y="123" font-family="Georgia,serif" font-size="43" font-weight="bold" letter-spacing="-2" fill="#d9c7a0">VOX</text><path d="M128 146H632" stroke="#d5c6a6" stroke-width="3"/><rect x="129" y="150" width="502" height="216" fill="#3b2925"/><rect x="129" y="150" width="502" height="216" fill="url(#voxDiamond)"/><rect x="129" y="150" width="502" height="216" fill="url(#speakerCloth)" opacity=".6"/><rect x="128" y="149" width="504" height="218" fill="none" stroke="#d2c2a4" stroke-width="5"/><rect x="565" y="327" width="53" height="24" rx="2" fill="#b49a70" stroke="#e1cfaa"/><text x="591" y="343" text-anchor="middle" font-size="7" font-weight="bold" fill="#282018">AC SERIES</text><path d="M280 48q0-13 14-13h174q14 0 14 13" fill="none" stroke="#090a0a" stroke-width="9" stroke-linecap="round"/><path d="M287 42h188" stroke="#74736a" stroke-width="2"/><path d="M145 395v8q0 8 9 8h25q9 0 9-8v-8M570 395v8q0 8 9 8h25q9 0 9-8v-8" fill="#080909"/>';
-  return s;
+  s+='<rect x="124" y="57" width="512" height="337" rx="13" fill="url(#tolex)" stroke="#85817a" stroke-width="4"/>'+handle(334,52,92);
+  s+='<rect x="141" y="75" width="478" height="82" rx="3" fill="#1b1b1a" stroke="#d4ad6e" stroke-width="2"/>'+rowKnobs(119,['VOL','TREB','BASS','CUT','MASTER','TOP BOOST','REVERB','TREM'],180,59,9,true);
+  s+=ampLabel(213,108,'VOX',24,'#dfc58c')+ampLabel(509,148,m.name.toUpperCase(),8,'#ead6b0');
+  s+='<path d="M142 164H618" stroke="#d5b579" stroke-width="4"/><rect x="142" y="169" width="476" height="196" fill="#2b2421" stroke="#d2b17d" stroke-width="2"/><rect x="148" y="175" width="464" height="184" fill="url(#ampDiamond)"/>';
+  s+=ampLabel(380,345,m.ref.includes('AC30')?'2 × 12 CLASS A':'1 × 12 CLASS A',9,'#ead6b0')+feet(164,555,379)+screw(132,66)+screw(628,66);
+  return s+'</svg>';
  }
- // General amp families retain a bespoke head/combo silhouette and model palette.
- const labels=(/bass/i.test(m.ref)||['aguilar','darkglass','nuxBass'].includes(m.skin))?['GAIN','BASS','MID','TREBLE','MASTER']:['PRES','BASS','MID','TREBLE','GAIN','MASTER','REVERB','LEVEL'];
- if(shape==='head'||shape==='preamp'||shape==='basshead'){
-  s+='<rect x="102" y="116" width="556" height="230" rx="15" fill="url(#tolex)" stroke="'+p.edge+'" stroke-width="4"/><rect x="120" y="145" width="520" height="150" rx="5" fill="url(#blackFace)" stroke="'+p.edge+'" stroke-opacity=".55" stroke-width="2"/><text x="380" y="179" text-anchor="middle" font-size="24" font-weight="850" letter-spacing="2.5" fill="'+p.accent+'">'+esc(m.name.toUpperCase())+'</text>';
-  labels.slice(0,8).forEach((l,i)=>{const x=165+i*61;s+=dial(x,231,12)+'<text x="'+x+'" y="258" font-size="8" fill="'+p.edge+'" text-anchor="middle">'+l+'</text>'});
-  s+='<rect x="139" y="276" width="482" height="7" rx="3" fill="#080b0c"/>';
- }else{
-  s+='<rect x="126" y="60" width="508" height="330" rx="15" fill="url(#tolex)" stroke="'+p.edge+'" stroke-width="4"/><rect x="145" y="78" width="470" height="66" rx="4" fill="url(#blackFace)" stroke="'+p.edge+'" stroke-opacity=".8"/>';
-  labels.slice(0,8).forEach((l,i)=>{const x=176+i*56;s+=dial(x,112,9)+'<text x="'+x+'" y="134" text-anchor="middle" font-size="7" fill="'+p.edge+'">'+l+'</text>'});
-  s+='<rect x="145" y="153" width="470" height="220" rx="3" fill="#1d2322" stroke="'+p.edge+'" stroke-width="2"/><rect x="151" y="159" width="458" height="208" fill="url(#speakerCloth)"/><circle cx="380" cy="260" r="75" fill="#111615" stroke="#8d9288" stroke-width="3"/><circle cx="380" cy="260" r="60" fill="none" stroke="#d5d1c1" stroke-opacity=".22" stroke-width="2"/><circle cx="380" cy="260" r="18" fill="#090c0c" stroke="#686f68" stroke-width="3"/><text x="380" y="356" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="17" letter-spacing="3" fill="'+p.edge+'">'+esc(m.name.toUpperCase())+'</text>';
+ // MARSHALL HEAD / BLUESBREAKER: signature black tolex + script logo + gold control strip.
+ if(m.skin==='marshall'||m.skin==='marshallCombo'){
+  const combo=m.skin==='marshallCombo';
+  s+='<rect x="'+(combo?120:100)+'" y="'+(combo?65:99)+'" width="'+(combo?520:560)+'" height="'+(combo?330:246)+'" rx="14" fill="url(#tolex)" stroke="#656b68" stroke-width="4"/>';
+  if(!combo)s+=handle(334,94,92);
+  if(combo)s+=handle(334,59,92);
+  if(!combo){
+   s+='<rect x="118" y="119" width="524" height="135" rx="3" fill="#101313" stroke="#b48f54" stroke-width="1.5"/><path d="M126 129H634M126 247H634" stroke="#a98a58" stroke-opacity=".75" stroke-width="2"/>';
+   s+='<text x="380" y="199" text-anchor="middle" font-family="Georgia,serif" font-size="54" font-style="italic" font-weight="bold" fill="#eee9db">Marshall</text>';
+   s+='<rect x="117" y="260" width="526" height="65" rx="2" fill="url(#goldPanel)" stroke="#ead7a3" stroke-width="1.6"/>';
+   s+='<rect x="129" y="269" width="502" height="46" fill="#c8a96e" opacity=".25"/>';
+   s+='<rect x="135" y="278" width="12" height="23" rx="2" fill="#302719" stroke="#f0d69b"/><rect x="153" y="278" width="12" height="23" rx="2" fill="#171b19" stroke="#d7c08d"/>';
+   const num=m.name.includes('JCM2000')||m.name.includes('Brit 2000')?10:8;
+   for(let i=0;i<num;i++)s+=k(208+i*(390/(num-1)),282,10,['PRES','BASS','MID','TREB','GAIN','MASTER','VOL','REVERB','EQ','LEVEL'][i],true);
+   s+='<circle cx="618" cy="290" r="6" fill="#171c1b" stroke="#ead6a5" stroke-width="2"/>'+ampLabel(380,341,m.ref.toUpperCase(),8,'#cbb27e');
+  }else{
+   s+='<rect x="138" y="88" width="484" height="55" fill="#121515" stroke="#b38a59" stroke-width="2"/>'+ampLabel(380,126,'Marshall',30,'#e8dfcc')+'<rect x="138" y="150" width="484" height="218" fill="url(#ampCloth)" stroke="#d3d0c6" stroke-width="2"/>'+speaker(380,257,72)+ampLabel(380,353,'BLUESBREAKER 1962',10,'#e6dbc7');
+  }
+  s+=feet(161,560,combo?376:332)+screw(106,112)+screw(654,112);
+  return s+'</svg>';
  }
- return s;
+ // FRIEDMAN: black head with gold maker plate in upper left and long lower gold control strip.
+ if(m.skin==='friedman'){
+  s+='<rect x="98" y="102" width="564" height="253" rx="17" fill="url(#tolex)" stroke="#5b5d59" stroke-width="4"/>'+handle(334,96,92);
+  s+='<rect x="115" y="119" width="530" height="140" rx="4" fill="#131515" stroke="#9c8353" stroke-width="1.3"/><path d="M119 247H641" stroke="#b89960" stroke-width="2" opacity=".8"/>';
+  s+='<rect x="143" y="133" width="172" height="43" rx="2" fill="url(#goldPanel)" stroke="#f0d89c" stroke-width="2"/>'+ampLabel(229,162,'FRIEDMAN',22,'#302415');
+  s+='<rect x="115" y="266" width="530" height="68" rx="2" fill="url(#goldPanel)" stroke="#f0dba7" stroke-width="2"/>';
+  s+='<circle cx="144" cy="298" r="7" fill="#171a18" stroke="#f0dfa9" stroke-width="2"/><circle cx="171" cy="298" r="8" fill="#661c20" stroke="#dcae8c" stroke-width="2"/><path d="M144 290v-8M171 290v-8" stroke="#171b19" stroke-width="3"/>';
+  const labels=m.name.includes('HBE')?['PRES','BASS','MID','TREB','MASTER','GAIN','CLEAN','VOL','TREB','BASS','THUMP','LEVEL','SAT','FAT']:['PRES','BASS','MID','TREB','MASTER','GAIN','CLEAN','VOL','TREB','BASS','THUMP','LEVEL'];
+  const start=214,step=labels.length>12?30:34;
+  labels.forEach((l,i)=>{const x=start+i*step;s+=k(x,298,8,l,true);});
+  s+='<circle cx="624" cy="298" r="8" fill="#111817" stroke="#eee0b7" stroke-width="2"/><circle cx="624" cy="298" r="3" fill="#222a27"/>'+ampLabel(380,348,'BE · HBE · CLEAN CHANNELS',8,'#e5d0a0')+feet(145,570,355)+screw(106,111)+screw(654,111);
+  return s+'</svg>';
+ }
+ // MESA/BOOGIE: Dual Rectifier diamond plate head; Mark/Lone Star family uses wicker combo.
+ if(m.skin==='mesa'){
+  const rectifier=/Dual Rect|T-Rect/i.test(m.name+' '+m.ref);
+  if(rectifier){
+   s+='<rect x="100" y="112" width="560" height="234" rx="14" fill="url(#tolex)" stroke="#a2a8a6" stroke-width="4"/>'+handle(334,106,92);
+   s+='<rect x="116" y="132" width="528" height="101" rx="3" fill="#bac0bf" stroke="#f0f0e8" stroke-width="2"/><path d="M121 137L637 228M180 134L642 216M116 181L402 232M315 132L643 192" stroke="#8c9594" stroke-opacity=".35" stroke-width="4"/>';
+   s+='<rect x="267" y="143" width="226" height="34" rx="3" fill="#737c7c" stroke="#e4e4db" stroke-width="2"/>'+ampLabel(380,166,'MESA ENGINEERING',18,'#1c2425');
+   s+='<rect x="117" y="239" width="526" height="85" fill="#111718" stroke="#959d9b" stroke-width="2"/>';
+   s+=ampLabel(174,256,'DUAL RECTIFIER',9,'#eee8d7');
+   for(let i=0;i<12;i++)s+=k(160+i*42,287,8,['P','M','G','B','M','T','P','M','G','B','M','T'][i],true);
+   s+='<circle cx="132" cy="286" r="5" fill="#a52c26"/><circle cx="625" cy="286" r="5" fill="#a7c66c"/>'+feet(158,565,347);
+  }else{
+   s+='<rect x="122" y="65" width="516" height="327" rx="13" fill="#211a14" stroke="#b58b5b" stroke-width="5"/><rect x="137" y="79" width="486" height="300" rx="7" fill="#b4773e" stroke="#e3bc80" stroke-width="2"/>'+handle(334,60,92);
+   s+='<rect x="148" y="91" width="464" height="57" fill="#141919" stroke="#d7bd8b" stroke-width="2"/>'+rowKnobs(118,['VOL1','VOL2','MASTER','TREB','BASS','MID'],193,72,9,true);
+   s+='<rect x="148" y="155" width="464" height="209" fill="#b77c43"/><path d="M150 156H610V362H150Z" fill="url(#ampDiamond)" opacity=".9"/><rect x="158" y="176" width="114" height="43" fill="#242321" stroke="#d5bc8b" stroke-width="2"/>'+ampLabel(215,204,'BOOGIE',17,'#eee7d4')+speaker(380,265,71)+ampLabel(380,357,m.name.toUpperCase(),9,'#efe0be')+feet(164,556,379);
+  }
+  s+=screw(108,121)+screw(652,121);
+  return s+'</svg>';
+ }
+ // DIEZEL VH4: black perforated upper section with silver four-channel control fascia.
+ if(m.skin==='diezel'){
+  s+='<rect x="99" y="119" width="562" height="227" rx="14" fill="#15191c" stroke="#9aa3a5" stroke-width="4"/>'+handle(334,113,92);
+  s+='<rect x="114" y="132" width="532" height="108" rx="3" fill="#101415" stroke="#515b5e" stroke-width="2"/><rect x="120" y="137" width="520" height="95" fill="url(#ampMesh)"/>';
+  s+='<text x="380" y="198" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="bold" font-size="37" fill="#e5e9e5">Diezel</text>';
+  s+='<rect x="114" y="245" width="532" height="79" fill="url(#silverPanel)" stroke="#d7dcd6" stroke-width="2"/>';
+  const lbl=['GAIN','VOL','TREB','MID','BASS','PRES','DEEP','MASTER','GAIN','VOL','TREB','MID','BASS','PRES'];
+  lbl.forEach((l,i)=>s+=k(143+i*36.5,279,7.7,l,true));
+  s+='<circle cx="124" cy="299" r="5" fill="#bd3d33"/><circle cx="630" cy="299" r="5" fill="#9fc46c"/>'+ampLabel(380,338,'VH4 · FOUR CHANNEL TUBE AMPLIFIER',8,'#e8e8df')+feet(154,568,347)+screw(106,127)+screw(654,127);
+  return s+'</svg>';
+ }
+ // HIWATT: light faceplate, large rectangular head and white/cream knob row.
+ if(m.skin==='hiwatt'){
+  s+='<rect x="104" y="111" width="552" height="240" rx="13" fill="#d8d8cb" stroke="#777d78" stroke-width="4"/>'+handle(334,105,92);
+  s+='<rect x="120" y="131" width="520" height="193" rx="5" fill="#f0eee2" stroke="#acb1a7" stroke-width="2"/><rect x="120" y="131" width="520" height="50" fill="#e8e7db"/>'+ampLabel(380,164,'HIWATT',24,'#151a1b');
+  const hi=['INPUT','BRIGHT','BASS','MID','TREB','PRES','MASTER','LEVEL'];hi.forEach((l,i)=>s+=k(157+i*66,220,11,l,true));
+  s+='<rect x="142" y="264" width="475" height="42" rx="2" fill="#262c2d"/>'+ampLabel(380,291,'CUSTOM 100 · DR103',12,'#e9e6d9')+feet(158,561,352)+screw(111,120)+screw(649,120);
+  return s+'</svg>';
+ }
+ // SOLDANO: blue/black high gain head, gold/white faceplate and two banks of controls.
+ if(m.skin==='soldano'){
+  s+='<rect x="100" y="110" width="560" height="240" rx="14" fill="#111925" stroke="#9aa6b6" stroke-width="4"/>'+handle(334,104,92);
+  s+='<rect x="116" y="126" width="528" height="75" fill="#182433" stroke="#61738a" stroke-width="2"/>'+ampLabel(380,176,'SOLDANO',30,'#e4eaf0')+'<rect x="116" y="207" width="528" height="113" fill="#bfc2bb" stroke="#e1dfd5" stroke-width="2"/>'+ampLabel(380,226,'SUPER LEAD OVERDRIVE · SLO-100',8,'#18202b');
+  const sl=['PRES','MASTER','GAIN','BASS','MID','TREB','LEVEL','DEPTH'];sl.forEach((l,i)=>s+=k(161+i*61,265,10,l,true));
+  s+='<circle cx="132" cy="294" r="5" fill="#a83931"/><circle cx="625" cy="294" r="5" fill="#9ec86f"/>'+feet(155,566,352);
+  return s+'</svg>';
+ }
+ // BOGNER: black woven chassis with script-style badge and dual channel control rows.
+ if(m.skin==='bogner'){
+  s+='<rect x="100" y="112" width="560" height="238" rx="15" fill="#111515" stroke="#747c78" stroke-width="4"/>'+handle(334,106,92);
+  s+='<rect x="116" y="130" width="528" height="104" rx="3" fill="#111515" stroke="#4b5250" stroke-width="2"/><rect x="122" y="136" width="516" height="92" fill="url(#ampMesh)"/><text x="380" y="193" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="bold" font-size="36" fill="#e6dfcb">Bogner</text>';
+  s+='<rect x="116" y="241" width="528" height="79" fill="#1b2121" stroke="#aab0a5" stroke-width="1.5"/>';
+  ['PRES','BASS','MID','TREB','GAIN','MASTER','PRES','BASS','MID','TREB','GAIN','MASTER'].forEach((l,i)=>s+=k(147+i*43,272,8,l,true));
+  s+=ampLabel(380,310,'UBERSCHALL · CHANNEL 1 / 2',8,'#e9e5d8')+feet(155,566,351);
+  return s+'</svg>';
+ }
+ // PEAVEY 5150: black hex mesh with large 5150 logo and brushed silver bottom panel.
+ if(m.skin==='peavey'){
+  s+='<rect x="97" y="111" width="566" height="242" rx="13" fill="#111517" stroke="#8b9493" stroke-width="4"/>'+handle(334,105,92);
+  s+='<rect x="113" y="126" width="534" height="111" fill="#090c0d" stroke="#707977" stroke-width="2"/><rect x="119" y="132" width="522" height="99" fill="url(#ampMesh)"/>'+ampLabel(380,199,'5150',56,'#d1d5d1');
+  s+='<rect x="113" y="245" width="534" height="78" fill="url(#silverPanel)" stroke="#d9ddd5" stroke-width="2"/>'+ampLabel(180,263,'PEAVEY',10,'#252a29');
+  ['PRES','RES','POST','LOW','MID','HIGH','PRE','GAIN','VOL','LEAD','CRUNCH'].forEach((l,i)=>s+=k(162+i*43,291,7.7,l,true));
+  s+='<circle cx="127" cy="300" r="5" fill="#a33c34"/><circle cx="633" cy="300" r="5" fill="#9dbe74"/>'+feet(152,570,354);
+  return s+'</svg>';
+ }
+ // MATCHLESS / DR Z / BUDDA: boutique combo with distinctive badge and woven grille.
+ if(['matchless','drz','budda'].includes(m.skin)){
+  s+='<rect x="117" y="59" width="526" height="335" rx="14" fill="url(#tolex)" stroke="'+p.edge+'" stroke-width="4"/>'+handle(334,54,92);
+  s+='<rect x="136" y="77" width="488" height="65" fill="#171b19" stroke="'+p.edge+'" stroke-opacity=".5"/>'+rowKnobs(112,m.skin==='drz'?['VOL','TREB','MID','BASS','CUT','MASTER']:['VOL','BASS','MID','TREB','MASTER','PRES'],192,73,9,true);
+  s+='<rect x="136" y="149" width="488" height="225" fill="'+p.grille+'" stroke="'+p.edge+'" stroke-width="2"/><rect x="142" y="155" width="476" height="213" fill="url(#ampCloth)"/>';
+  const brand=m.skin==='matchless'?'MATCHLESS':m.skin==='drz'?'DR. Z':'BUDDA';
+  s+='<rect x="290" y="184" width="180" height="39" rx="3" fill="url(#goldPanel)" stroke="#f0dcab" stroke-width="2"/>'+ampLabel(380,210,brand,18,'#2a241b')+speaker(380,286,61)+ampLabel(380,358,m.name.toUpperCase(),9,'#f0e5cf')+feet(155,562,380)+screw(125,72)+screw(635,72);
+  return s+'</svg>';
+ }
+ // AGUILAR slim silver bass head; NUX / Darkglass compact preamps.
+ if(m.skin==='aguilar'){
+  s+='<rect x="89" y="169" width="582" height="126" rx="9" fill="#242b2e" stroke="#8d999c" stroke-width="4"/><rect x="99" y="178" width="562" height="105" rx="5" fill="url(#silverPanel)" stroke="#e4e7e2" stroke-width="2"/>';
+  s+='<text x="128" y="206" font-size="19" font-family="Georgia,serif" font-style="italic" fill="#20282a">aguilar</text>'+ampLabel(511,204,'TONE HAMMER 500',15,'#1f282a');
+  ['GAIN','DRIVE','MID','BASS','TREBLE','VOLUME'].forEach((l,i)=>s+=k(220+(i%3)*76,223+Math.floor(i/3)*38,8,l,true));
+  s+='<circle cx="122" cy="245" r="7" fill="#151a1c" stroke="#5a6260"/><circle cx="635" cy="246" r="7" fill="#141a1b" stroke="#626a67"/><rect x="115" y="296" width="50" height="9" rx="3" fill="#080a0b"/><rect x="595" y="296" width="50" height="9" rx="3" fill="#080a0b"/>';
+  return s+'</svg>';
+ }
+ if(m.skin==='darkglass'||m.skin==='nuxBass'||m.skin==='nuxAcoustic'){
+  const dark=m.skin==='darkglass';
+  s+='<rect x="116" y="86" width="528" height="287" rx="17" fill="#121819" stroke="'+p.edge+'" stroke-width="4"/><rect x="128" y="98" width="504" height="263" rx="12" fill="url(#panel)" stroke="'+p.edge+'" stroke-opacity=".6" stroke-width="2"/>'+ampLabel(380,133,dark?'DARKGLASS':m.skin==='nuxBass'?'NUX MLD':'NUX OPTIMA AIR',20,p.ink);
+  const pp=dark?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:['REVERB','IR LEVEL','SELECT','GAIN','BASS','MIDDLE','TREBLE'];
+  pp.forEach((l,i)=>{const cols=dark?5:4,xx=170+(i%cols)*(dark?105:118),yy=dark?191+Math.floor(i/cols)*82:200+Math.floor(i/cols)*85;s+=k(xx,yy,13,l,false)});
+  s+='<rect x="310" y="153" width="140" height="29" rx="3" fill="#101719" stroke="#8e9c98"/>'+ampLabel(380,172,dark?'B7K ULTRA':'PRESET / IR',9,'#d8e1d6')+'<circle cx="290" cy="328" r="7" fill="#bfe078"/><circle cx="470" cy="328" r="7" fill="#db5a4f"/>'+feet(180,550,373);
+  return s+'</svg>';
+ }
+ // ORANGE and RIVERA / general high gain amp heads.
+ if(m.skin==='orange'){
+  s+='<rect x="100" y="112" width="560" height="240" rx="13" fill="#252321" stroke="#d26a2b" stroke-width="4"/>'+handle(334,106,92);
+  s+='<rect x="116" y="130" width="528" height="106" fill="#bd5422" stroke="#f0b078" stroke-width="2"/>'+ampLabel(380,197,'ORANGE',42,'#241914')+'<rect x="116" y="243" width="528" height="78" fill="#171b1c" stroke="#7f8986"/>'+rowKnobs(278,['PRES','BASS','MID','TREB','GAIN','MASTER','VOL','LEVEL'],169,60,9,true)+feet(155,566,353);
+  return s+'</svg>';
+ }
+ if(m.skin==='rivera'){
+  s+='<rect x="100" y="112" width="560" height="240" rx="13" fill="#15212a" stroke="#8fa2aa" stroke-width="4"/>'+handle(334,106,92);
+  s+='<rect x="116" y="130" width="528" height="100" fill="#253641" stroke="#9aa8aa"/>'+ampLabel(380,190,'RIVERA',31,'#efe9d8')+'<rect x="116" y="238" width="528" height="84" fill="url(#silverPanel)" stroke="#e1e3db"/>'+rowKnobs(275,['PRES','BASS','MID','TREB','GAIN','MASTER','LEVEL','BOOST'],163,62,9,true)+feet(155,566,353);
+  return s+'</svg>';
+ }
+ // Generic NAM and remaining NUX/standard heads: hardware-inspired neutral skin, never a photo.
+ s+='<rect x="100" y="112" width="560" height="240" rx="14" fill="url(#tolex)" stroke="'+p.edge+'" stroke-width="4"/>'+handle(334,106,92)+'<rect x="116" y="130" width="528" height="104" fill="#121718" stroke="'+p.edge+'" stroke-opacity=".55"/>'+ampLabel(380,194,nm,24,'#e5e8df')+'<rect x="116" y="242" width="528" height="80" fill="url(#panel)" stroke="'+p.edge+'"/>'+rowKnobs(278,labels,163,62,9,true)+feet(155,566,353);
+ return s+'</svg>';
 }
 function pedalSvg(m){
- const p=palettes[m.skin]||palettes.silver,cat=m.cat;
- let s='<defs><linearGradient id="body" x2=".2" y2="1"><stop stop-color="'+p.edge+'"/><stop offset=".15" stop-color="'+p.face+'"/><stop offset="1" stop-color="'+p.body+'"/></linearGradient><linearGradient id="side" x2="0" y2="1"><stop stop-color="'+p.body+'"/><stop offset="1" stop-color="#070a0b"/></linearGradient><radialGradient id="dial" cx=".3" cy=".2"><stop stop-color="#8c918b"/><stop offset=".22" stop-color="#454b48"/><stop offset="1" stop-color="'+p.knob+'"/></radialGradient><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#f3f1e7"/><stop offset=".5" stop-color="#a4aaa5"/><stop offset="1" stop-color="#4a5350"/></linearGradient><pattern id="brush" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 1H5M0 4H5" stroke="'+p.edge+'" stroke-opacity=".18"/></pattern></defs>';
- s+='<ellipse cx="320" cy="365" rx="168" ry="14" fill="#000" opacity=".6"/>';
- if(m.shape==='wah'||m.shape==='whammy'||m.shape==='tape'||m.shape==='rack'){
-  if(m.shape==='tape'||m.shape==='rack'){
-   s+='<rect x="67" y="95" width="506" height="220" rx="14" fill="url(#side)" stroke="'+p.edge+'" stroke-width="4"/><rect x="80" y="108" width="480" height="194" rx="8" fill="url(#body)" stroke="'+p.edge+'" stroke-opacity=".5"/><text x="320" y="133" text-anchor="middle" font-size="18" font-weight="900" letter-spacing="3" fill="'+p.ink+'">'+m.name.toUpperCase()+'</text>';
-   s+='<circle cx="202" cy="208" r="62" fill="#141919" stroke="url(#metal)" stroke-width="5"/><circle cx="202" cy="208" r="38" fill="#747b77" stroke="#222928" stroke-width="8"/><circle cx="202" cy="208" r="8" fill="#151919"/><circle cx="438" cy="208" r="62" fill="#141919" stroke="url(#metal)" stroke-width="5"/><circle cx="438" cy="208" r="38" fill="#747b77" stroke="#222928" stroke-width="8"/><circle cx="438" cy="208" r="8" fill="#151919"/><path d="M202 208L320 260L438 208" fill="none" stroke="#171d1d" stroke-width="9"/>';
-   [260,320,380].forEach((x,i)=>{s+='<circle cx="'+x+'" cy="278" r="10" fill="url(#dial)" stroke="#b5bcb6"/>'});
-  }else{
-   s+='<path d="M160 65L486 78L520 320Q520 339 499 344L130 344Q109 340 111 321L140 84Q142 65 160 65Z" fill="url(#side)" stroke="'+p.edge+'" stroke-width="4"/><path d="M164 78L473 90L499 306L135 306Z" fill="url(#body)" stroke="'+p.edge+'" stroke-opacity=".7" stroke-width="2"/><path d="M158 99L480 112L465 274L150 262Z" fill="url(#brush)" stroke="'+p.ink+'" stroke-opacity=".35"/><path d="M168 115L468 127" stroke="'+p.edge+'" stroke-opacity=".5" stroke-width="3"/><path d="M160 142L477 154M155 168L473 180M151 194L470 206M147 220L467 232" stroke="'+p.ink+'" stroke-opacity=".2" stroke-width="6"/><text x="317" y="100" text-anchor="middle" font-size="15" font-weight="900" letter-spacing="2" fill="'+p.ink+'">'+m.ref.split(' ')[0].toUpperCase()+'</text><text x="317" y="298" text-anchor="middle" font-size="11" letter-spacing="2" fill="'+p.ink+'">'+m.name.toUpperCase()+'</text><circle cx="318" cy="324" r="21" fill="url(#metal)" stroke="#333a37" stroke-width="4"/><circle cx="318" cy="324" r="12" fill="#848b85"/>';
-  }
- }else if(m.shape==='round'){
-  s+='<circle cx="320" cy="218" r="141" fill="url(#side)" stroke="'+p.edge+'" stroke-width="5"/><circle cx="320" cy="218" r="127" fill="url(#body)" stroke="'+p.edge+'" stroke-opacity=".7" stroke-width="2"/><circle cx="320" cy="218" r="87" fill="none" stroke="'+p.ink+'" stroke-opacity=".2" stroke-width="5"/><text x="320" y="148" text-anchor="middle" font-size="22" font-weight="950" fill="'+p.ink+'">FUZZ</text><text x="320" y="173" text-anchor="middle" font-size="10" letter-spacing="3" fill="'+p.ink+'">FACE</text>';
-  s+='<circle cx="255" cy="226" r="20" fill="url(#dial)" stroke="'+p.edge+'"/><circle cx="385" cy="226" r="20" fill="url(#dial)" stroke="'+p.edge+'"/><circle cx="320" cy="321" r="24" fill="url(#metal)" stroke="#333"/>';
- }else{
-  const boss=m.shape==='boss'||m.shape==='largeBoss';
-  const large=m.shape==='largeBoss';
-  const w=large?435:330,h=large?285:322,x=(640-w)/2,y=large?56:39;
-  s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(large?17:21)+'" fill="url(#side)" stroke="'+p.edge+'" stroke-width="4"/><rect x="'+(x+10)+'" y="'+(y+10)+'" width="'+(w-20)+'" height="'+(h-20)+'" rx="'+(large?12:16)+'" fill="url(#body)" stroke="'+p.edge+'" stroke-opacity=".65" stroke-width="2"/>';
-  if(boss){
-   s+='<rect x="'+(x+22)+'" y="'+(y+20)+'" width="'+(w-44)+'" height="43" rx="5" fill="'+(m.skin==='orange'?'#e6e2d1':p.edge)+'" stroke="'+p.ink+'" stroke-opacity=".4"/><text x="320" y="'+(y+49)+'" text-anchor="middle" font-size="'+(large?25:24)+'" font-weight="950" letter-spacing="-1" fill="'+(m.skin==='orange'?'#28221b':p.ink)+'">BOSS</text>';
-  }else{
-   s+='<text x="320" y="'+(y+42)+'" text-anchor="middle" font-size="16" font-weight="900" letter-spacing="2" fill="'+p.ink+'">'+m.ref.split(' ')[0].toUpperCase()+'</text>';
-  }
-  let count=(m.cat==='DLY'||m.cat==='MOD')?3:3;
-  if(m.cat==='CMP')count=4;
-  if(m.cat==='EFX'&&/Katana|ST Singer/.test(m.name))count=2;
-  if(m.name==='Touch Wah')count=4;
-  for(let i=0;i<count;i++){
-   const nx=large?190+i*65:220+(i-(count-1)/2)*75;
-   const ny=large?165:135;
-   s+='<circle cx="'+nx+'" cy="'+ny+'" r="23" fill="#090c0d" stroke="#a6ada7" stroke-width="2"/><circle cx="'+nx+'" cy="'+ny+'" r="18" fill="url(#dial)" stroke="'+p.edge+'" stroke-opacity=".4"/><path d="M'+nx+' '+(ny-15)+'v-7" stroke="#f3e3bd" stroke-width="3" transform="rotate('+(-120+i*48)+' '+nx+' '+ny+')"/>';
-   s+='<text x="'+nx+'" y="'+(ny+37)+'" text-anchor="middle" font-size="8" fill="'+p.ink+'">'+(['DRIVE','TONE','LEVEL','SUSTAIN'][i]||'CTRL')+'</text>';
-  }
-  s+='<circle cx="320" cy="'+(large?226:220)+'" r="7" fill="#b6ee75" stroke="#e0ffc1" stroke-width="2"/><circle cx="320" cy="'+(large?260:267)+'" r="'+(large?32:29)+'" fill="url(#metal)" stroke="#2a302e" stroke-width="5"/><circle cx="320" cy="'+(large?260:267)+'" r="'+(large?20:18)+'" fill="#858e89" stroke="#e5e6df" stroke-width="2"/><path d="M'+(large?300:302)+' '+(large?260:267)+'h40" stroke="#4b5350" stroke-width="3"/>';
-  for(let i=0;i<4;i++)s+='<circle cx="'+(x+17+(i%2)*(w-34))+'" cy="'+(y+17+Math.floor(i/2)*(h-34))+'" r="4" fill="url(#metal)"/>';
+ const p=palettes[m.skin]||palettes.silver, name=m.name.replace(/ · IMAGE/,'');
+ const ref=m.ref.toLowerCase();
+ const isBoss=m.shape==='boss'||m.shape==='largeBoss'||/boss (ds|bd|ce|vb|tr|dm|dd|nf|ge|frv)/i.test(m.ref);
+ const isMXR=/mxr|distortion\+|phase 90|phase 100/i.test(m.ref+' '+m.name);
+ const isIbanez=/ibanez|tube screamer/i.test(m.ref+' '+m.name);
+ const isXotic=/xotic/i.test(m.ref);
+ const isKeeley=/keeley/i.test(m.ref);
+ const defs='<defs>'+
+ '<linearGradient id="pedalBody" x2=".18" y2="1"><stop stop-color="'+p.edge+'"/><stop offset=".18" stop-color="'+p.face+'"/><stop offset=".78" stop-color="'+p.body+'"/><stop offset="1" stop-color="#080b0b"/></linearGradient>'+
+ '<linearGradient id="pedalSide" x2="0" y2="1"><stop stop-color="#414846"/><stop offset=".3" stop-color="'+p.body+'"/><stop offset="1" stop-color="#080b0b"/></linearGradient>'+
+ '<linearGradient id="pedalMetal" x2="0" y2="1"><stop stop-color="#fffef5"/><stop offset=".3" stop-color="#cbd0c9"/><stop offset=".65" stop-color="#79817c"/><stop offset="1" stop-color="#343c39"/></linearGradient>'+
+ '<radialGradient id="pedalKnob" cx=".3" cy=".2"><stop stop-color="#9da29a"/><stop offset=".2" stop-color="#555d59"/><stop offset=".7" stop-color="'+p.knob+'"/><stop offset="1" stop-color="#070a0a"/></radialGradient>'+
+ '<pattern id="pedalGrain" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 1H6M0 4H6" stroke="'+p.edge+'" stroke-opacity=".18"/></pattern>'+
+ '</defs>';
+ const screw=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="4" fill="url(#pedalMetal)" stroke="#252b29"/><path d="M'+(x-2)+' '+y+'h4" stroke="#545d58"/>';
+ const knob=(x,y,r,label,angle=-135)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#07090a" stroke="#9ea59f" stroke-width="1.5"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#pedalKnob)" stroke="#d4d9d1" stroke-opacity=".42"/><path d="M'+x+' '+(y-r+4)+'v-'+Math.max(5,r*.44)+'" stroke="#fff0ce" stroke-width="2.8" stroke-linecap="round" transform="rotate('+angle+' '+x+' '+y+')"/><circle cx="'+x+'" cy="'+y+'" r="2" fill="#aeb8b0"/><text x="'+x+'" y="'+(y+r+14)+'" text-anchor="middle" font-size="9" letter-spacing=".4" fill="'+p.ink+'">'+label+'</text></g>';
+ const led=(x,y,color='#c84d45')=>'<circle cx="'+x+'" cy="'+y+'" r="8" fill="'+color+'" opacity=".12"/><circle cx="'+x+'" cy="'+y+'" r="4.5" fill="'+color+'" stroke="#f8e7c6" stroke-width="1"/>';
+ const foot=(x,y,r=22)=>'<circle cx="'+x+'" cy="'+y+'" r="'+(r+4)+'" fill="#141a1a" stroke="#454f4b" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#pedalMetal)" stroke="#f0f0e7" stroke-width="1.3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.64)+'" fill="#8b9490" stroke="#535c57" stroke-width="2"/><path d="M'+(x-r*.62)+' '+y+'h'+(r*1.24)+'" stroke="#4e5752" stroke-width="2"/>';
+ const title=(txt,y=65,size=18)=>'<text x="320" y="'+y+'" text-anchor="middle" font-size="'+size+'" font-weight="900" letter-spacing="1.4" fill="'+p.ink+'">'+txt+'</text>';
+ let s=defs+'<ellipse cx="320" cy="372" rx="130" ry="13" fill="#000" opacity=".48"/>';
+ // Large expression pedals: recognisable long sloped treadle with hinge and rubber ribs.
+ if(m.shape==='wah'||m.cat==='VOL'){
+  const brand=ref.includes('fulltone')?'FULLTONE':ref.includes('cry baby')||ref.includes('dunlop')?'CRY BABY':ref.includes('vox')?'VOX':ref.includes('morley')?'MORLEY':'VOLUME';
+  s+='<path d="M164 55Q170 42 189 48L478 82Q495 85 490 107L447 333Q443 352 423 350L159 314Q139 311 144 291Z" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><path d="M177 68L465 99L425 298L157 271Z" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-width="2"/><path d="M182 89L457 117M177 116L451 144M172 143L445 171M167 170L439 198M162 197L434 225M158 224L429 252" stroke="'+p.ink+'" stroke-opacity=".34" stroke-width="9" stroke-linecap="round"/><path d="M190 90L453 119" stroke="#fff" stroke-opacity=".22" stroke-width="3"/>';
+  s+=title(brand,91,15)+title(name.toUpperCase(),292,12);
+  s+='<rect x="459" y="123" width="16" height="33" rx="4" fill="#181d1d" stroke="'+p.edge+'"/><circle cx="467" cy="139" r="4" fill="#c6d5a6"/><path d="M155 315Q320 340 443 342" fill="none" stroke="#070909" stroke-width="7"/>'+screw(162,66)+screw(473,92);
+  return s+'</svg>';
  }
- return s;
+ // DigiTech Whammy: broad red expression base plus treadle and selector bank.
+ if(m.shape==='whammy'){
+  s+='<rect x="95" y="30" width="450" height="328" rx="16" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="109" y="43" width="422" height="300" rx="11" fill="url(#pedalBody)" stroke="#f0b1a4" stroke-opacity=".6" stroke-width="2"/><rect x="130" y="60" width="170" height="240" rx="11" fill="#131819" stroke="#e9a99b" stroke-width="3"/><path d="M153 83H278V277H153Z" fill="#1e2526"/><text x="215" y="190" text-anchor="middle" font-size="38" font-weight="900" letter-spacing="3" fill="#f4e9e2" transform="rotate(-90 215 190)">WHAMMY</text><rect x="319" y="64" width="194" height="186" rx="8" fill="#891f22" stroke="#efc3b5" stroke-width="2"/>'+title('HARMONY',92,13);
+  const opts=['OCT','5TH','4TH','3RD','2ND','DIVE','BOMB','DETUNE'];opts.forEach((v,i)=>{s+='<rect x="337" y="'+(104+i*16)+'" width="158" height="13" rx="3" fill="#4d181c" stroke="#e6a8a0" stroke-opacity=".35"/><text x="345" y="'+(114+i*16)+'" font-size="8" fill="#f3ddd2">'+v+'</text><circle cx="485" cy="'+(110+i*16)+'" r="3" fill="#d4473d"/>';});
+  s+='<circle cx="415" cy="277" r="17" fill="url(#pedalKnob)" stroke="'+p.edge+'"/>'+foot(415,323,21)+screw(111,47)+screw(529,47);
+  return s+'</svg>';
+ }
+ // Roland Space Echo is a wide tape unit with transport reels and a mode selector.
+ if(m.shape==='tape'){
+  s+='<rect x="55" y="78" width="530" height="256" rx="13" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="69" y="91" width="502" height="228" rx="7" fill="url(#pedalBody)" stroke="#abb2a9" stroke-opacity=".45" stroke-width="2"/>'+title('SPACE ECHO · RE-101',120,19);
+  s+='<rect x="82" y="137" width="80" height="80" rx="5" fill="#111718" stroke="'+p.edge+'"/><path d="M92 198L151 151" stroke="#d8d2be" stroke-width="2"/><text x="122" y="231" text-anchor="middle" font-size="8" fill="'+p.ink+'">MODE</text>';
+  s+='<circle cx="229" cy="181" r="42" fill="#101515" stroke="url(#pedalMetal)" stroke-width="5"/><circle cx="229" cy="181" r="25" fill="#8a928d" stroke="#222b28" stroke-width="7"/><circle cx="229" cy="181" r="6" fill="#141a19"/><circle cx="422" cy="181" r="42" fill="#101515" stroke="url(#pedalMetal)" stroke-width="5"/><circle cx="422" cy="181" r="25" fill="#8a928d" stroke="#222b28" stroke-width="7"/><circle cx="422" cy="181" r="6" fill="#141a19"/>';
+  ['MIC','INST','REPEAT','INTENSITY','ECHO'].forEach((v,i)=>s+=knob(183+i*69,269,9,v));
+  s+='<rect x="80" y="293" width="480" height="16" fill="#0d1212" opacity=".65"/>'+screw(63,88)+screw(577,88);
+  return s+'</svg>';
+ }
+ // BOSS CE-1: wide, grey/olive enclosure, four controls, mode selector and dual footswitches.
+ if(m.shape==='largeBoss'||m.name==='CE-1'){
+  s+='<rect x="92" y="72" width="456" height="284" rx="16" fill="#737568" stroke="#c4c8b7" stroke-width="4"/><rect x="106" y="86" width="428" height="112" rx="5" fill="#bdc0af" stroke="#545b51" stroke-width="2"/>'+title('CHORUS ENSEMBLE',116,17);
+  ['LEVEL','CHORUS','DEPTH','RATE'].forEach((v,i)=>s+=knob(165+i*95,155,14,v,-120+i*35));
+  s+='<rect x="115" y="210" width="418" height="23" fill="#4a514a" opacity=".7"/><text x="320" y="226" text-anchor="middle" font-size="10" letter-spacing="2" fill="#ecddcf">BOSS CE-1</text>';
+  s+=foot(220,294,25)+foot(420,294,25)+'<text x="220" y="337" text-anchor="middle" font-size="9" fill="#30352e">CHORUS</text><text x="420" y="337" text-anchor="middle" font-size="9" fill="#30352e">VIBRATO</text>';
+  s+='<rect x="502" y="115" width="13" height="47" rx="3" fill="#292f29" stroke="#d2d4c8"/>'+screw(106,86)+screw(534,86)+screw(106,342)+screw(534,342);
+  return s+'</svg>';
+ }
+ // Wide multi-knob control pedals: Darkglass, TC SCF, Xotic AC/RC, MXR M134 and dual delay.
+ const wide=/darkglass|B7K|Duotime|Stereo Chorus|SCF|AC Booster|RC Booster|Tone Hammer|M108|10-Band|M300|Lex|Lexicon/i.test(m.ref+' '+m.name)||m.name==='Duotime';
+ if(wide){
+  const w=480,x=80,y=82,h=262;
+  s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="17" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="'+(x+10)+'" y="'+(y+10)+'" width="'+(w-20)+'" height="'+(h-20)+'" rx="12" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-opacity=".48" stroke-width="2"/>';
+  s+=title(name.toUpperCase(),119,17);
+  let labs=m.name==='Duotime'?['LEVEL','ANALOG','PARAM','TIME 1','REPEAT 1','TIME 2','REPEAT 2']:m.name.includes('Stereo Chorus')?['BASS','TREBLE','INTENSITY','WIDTH','RATE']:m.ref.includes('Darkglass')?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:m.ref.includes('Lex')?['FAST','MIC DIST','DRIVE','HORN']:m.ref.includes('Xotic')?['GAIN','TREBLE','VOLUME','BASS']:['LEVEL','GAIN','BASS','MID','TREBLE','MIX'];
+  const cols=labs.length>6?5:labs.length>4?5:labs.length===4?2:3;
+  labs.forEach((v,i)=>{const xx=labs.length===4?220+(i%2)*180:120+(i%cols)*(360/(cols-1)),yy=labs.length===4?190+Math.floor(i/2)*75:174+Math.floor(i/cols)*81;s+=knob(xx,yy,12,v);});
+  if(m.name==='Duotime'){s+='<rect x="279" y="140" width="108" height="37" rx="3" fill="#101719" stroke="#6d8a89"/><text x="333" y="163" text-anchor="middle" font-size="10" fill="#98d5d1">T1:181 T2:181</text>'+foot(234,306,23)+foot(426,306,23);}
+  else if(m.ref.includes('Lex')){s+=led(197,288)+led(443,288)+foot(197,318,22)+foot(443,318,22);}
+  else{s+=led(320,292)+foot(320,322,23);}
+  return s+'</svg>';
+ }
+ // Parametric and graphic EQ have real slider/control banks.
+ if(m.shape==='eq'||m.shape==='eqKnob'){
+  s+='<rect x="92" y="65" width="456" height="291" rx="15" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="105" y="78" width="430" height="265" rx="10" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-opacity=".55"/>'+title(name.toUpperCase(),112,17);
+  const count=m.name.includes('10-Band')?10:m.name.includes('6-Band')?6:0;
+  if(count){for(let i=0;i<count;i++){const xx=142+i*(356/(count-1)),top=157+(i%3)*9;s+='<rect x="'+(xx-5)+'" y="150" width="10" height="136" rx="4" fill="#101617" stroke="'+p.edge+'" stroke-opacity=".45"/><rect x="'+(xx-8)+'" y="'+top+'" width="16" height="20" rx="3" fill="url(#pedalMetal)" stroke="#3a4240"/><text x="'+xx+'" y="307" text-anchor="middle" font-size="8" fill="'+p.ink+'">'+['100','220','500','1.2K','2.6K','6.4K','8K','10K','12K','16K'][i]+'</text>';}}
+  else{['FREQ','GAIN','Q'].forEach((v,i)=>s+=knob(200+i*120,218,17,v));}
+  s+=led(320,324)+foot(320,325,19);
+  return s+'</svg>';
+ }
+ // Mu-Tron III is a wider envelope filter with upper control row and switches.
+ if(/mu-tron|touch wah/i.test(m.ref+' '+m.name)){
+  s+='<rect x="99" y="66" width="442" height="287" rx="15" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="113" y="80" width="414" height="259" rx="10" fill="url(#pedalBody)"/>'+title('MU-TRON III',117,21);
+  ['DRIVE','PEAK','MODE','GAIN'].forEach((v,i)=>s+=knob(171+i*94,180,14,v));
+  for(let i=0;i<4;i++)s+='<rect x="'+(145+i*93)+'" y="228" width="20" height="52" rx="3" fill="#13191a" stroke="'+p.edge+'"/><rect x="'+(147+i*93)+'" y="'+(248+(i%2)*10)+'" width="16" height="12" rx="2" fill="url(#pedalMetal)"/>';
+  s+=led(320,297)+foot(320,322,20)+screw(111,78)+screw(529,78);
+  return s+'</svg>';
+ }
+ // Fuzz Face circular body.
+ if(m.shape==='round'){
+  s+='<circle cx="320" cy="210" r="144" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="5"/><circle cx="320" cy="210" r="130" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-width="2"/>'+title('FUZZ',137,22)+title('FACE',160,14)+knob(245,214,18,'FUZZ')+knob(395,214,18,'VOLUME')+foot(320,322,23)+'<path d="M193 184Q320 99 447 184" fill="none" stroke="'+p.edge+'" stroke-opacity=".35" stroke-width="4"/>';
+  return s+'</svg>';
+ }
+ // Standard compact stompbox: model family determines proportions, knob layout and label placement.
+ const boss=isBoss, ibanez=isIbanez, mxr=isMXR, xotic=isXotic, keeley=isKeeley;
+ const width= boss?330:mxr?292:ibanez?310: xotic?300:310;
+ const height=boss?326:310, x=(640-width)/2, y=34;
+ s+='<rect x="'+x+'" y="'+y+'" width="'+width+'" height="'+height+'" rx="'+(boss?19:14)+'" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="'+(x+9)+'" y="'+(y+9)+'" width="'+(width-18)+'" height="'+(height-18)+'" rx="'+(boss?14:10)+'" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-opacity=".6" stroke-width="1.8"/>';
+ if(boss){
+  s+='<rect x="'+(x+21)+'" y="'+(y+18)+'" width="'+(width-42)+'" height="43" rx="4" fill="#e4e4d7" stroke="#313937" stroke-width="2"/><text x="320" y="63" text-anchor="middle" font-size="25" font-weight="950" letter-spacing="-1" fill="#171d1c">BOSS</text>';
+  const labs=m.name==='DS-1'?['LEVEL','TONE','DIST']:m.name==='BD-2'?['LEVEL','TONE','GAIN']:m.name==='DD-7'?['E.LEVEL','F.BACK','D.TIME','MODE']:m.name==='TR-2'?['RATE','WAVE','DEPTH']:m.name==='DM-2'?['REPEAT RATE','ECHO','INTENSITY']:m.name==='CE-2'?['RATE','DEPTH']:m.name==='NF-1'?['THRESHOLD','DECAY']:['LEVEL','TONE','SUSTAIN'];
+  if(labs.length===4)labs.forEach((v,i)=>s+=knob(185+i*90,139,13,v,-135+i*24));
+  else if(labs.length===3){s+=knob(235,136,18,labs[0])+knob(405,136,18,labs[1])+knob(320,189,14,labs[2]);}
+  else labs.forEach((v,i)=>s+=knob(230+i*90,150,16,v));
+  const product=m.name.replace(' · IMAGE','').toUpperCase();
+  s+='<circle cx="320" cy="219" r="5" fill="#d84a42" stroke="#f3b7a9"/>'+led(320,219);
+  s+='<text x="320" y="250" text-anchor="middle" font-size="17" font-weight="850" fill="'+p.ink+'">'+product+'</text><text x="320" y="270" text-anchor="middle" font-size="9" letter-spacing="1.5" fill="'+p.ink+'">'+(m.name==='DS-1'?'DISTORTION':m.name==='BD-2'?'BLUES DRIVER':m.name==='DD-7'?'DIGITAL DELAY':m.name==='TR-2'?'TREMOLO':m.name==='DM-2'?'ANALOG DELAY':'EFFECT PEDAL')+'</text>';
+  s+='<rect x="'+(x+19)+'" y="292" width="'+(width-38)+'" height="55" rx="7" fill="#0e1313" stroke="#505957" stroke-width="2"/><rect x="'+(x+27)+'" y="300" width="'+(width-54)+'" height="39" rx="4" fill="#191f1f" stroke="#353e3c"/><text x="320" y="325" text-anchor="middle" font-size="16" font-weight="950" letter-spacing="-1" fill="#080a0a">BOSS</text>'+foot(320,360,17);
+ }else if(ibanez){
+  s+='<rect x="'+(x+16)+'" y="52" width="'+(width-32)+'" height="37" rx="2" fill="none" stroke="'+p.edge+'" stroke-width="2"/>'+title('Ibanez',78,22);
+  s+=knob(230,144,17,'OVERDRIVE')+knob(410,144,17,'LEVEL')+knob(320,203,16,'TONE')+led(320,105);
+  s+='<path d="M'+(x+22)+' 239H'+(x+width-22)+'" stroke="'+p.edge+'" stroke-width="2"/><text x="320" y="266" text-anchor="middle" font-size="16" font-weight="800" letter-spacing="2" fill="'+p.ink+'">TUBE SCREAMER</text><text x="320" y="284" text-anchor="middle" font-size="10" fill="'+p.ink+'">TS808 · OVERDRIVE PRO</text>'+foot(320,348,20);
+ }else if(mxr){
+  const labs=m.name.includes('Phase 90')?['SPEED']:m.name.includes('Phase 100')?['INTENSITY','SPEED']:['OUTPUT','DISTORTION'];
+  labs.forEach((v,i)=>s+=knob(labs.length===1?320:230+i*180,122,20,v));
+  s+=title('MXR',207,28)+led(320,249)+foot(320,302,21)+title(m.name.toLowerCase().includes('phase')?m.name.toLowerCase():'distortion +',350,17);
+ }else if(xotic){
+  ['GAIN','TREBLE','VOLUME','BASS'].forEach((v,i)=>s+=knob(235+(i%2)*170,117+Math.floor(i/2)*96,17,v));
+  s+=title(m.name.toUpperCase(),274,17)+foot(320,330,21)+led(320,286);
+ }else if(keeley){
+  const labs=m.cat==='CMP'?['SUSTAIN','LEVEL','BLEND','TONE']:['DRIVE','TONE','LEVEL'];
+  labs.forEach((v,i)=>s+=knob(labs.length===4?220+(i%2)*200:235+i*85,119+Math.floor(i/2)*95,17,v));
+  s+=title('KEELEY',275,16)+led(320,294)+foot(320,332,21);
+ }else{
+  const labs=m.cat==='CMP'?['SUSTAIN','LEVEL','ATTACK']:m.cat==='MOD'?['RATE','DEPTH','MIX']:m.cat==='DLY'?['TIME','REPEAT','MIX']:m.cat==='RVB'?['DECAY','TONE','MIX']:['DRIVE','TONE','LEVEL'];
+  labs.forEach((v,i)=>s+=knob(225+i*95,130,17,v));
+  s+=title(m.name.replace(' · IMAGE','').toUpperCase(),220,16)+led(320,254)+foot(320,315,21);
+ }
+ s+=screw(x+13,y+13)+screw(x+width-13,y+13)+screw(x+13,y+height-13)+screw(x+width-13,y+height-13);
+ return s+'</svg>';
 }
 function eqSvg(m){
  const p=palettes[m.skin]||palettes.silver;let s='<defs><linearGradient id="body" x2="0" y2="1"><stop stop-color="'+p.edge+'"/><stop offset="1" stop-color="'+p.body+'"/></linearGradient><radialGradient id="dial" cx=".3" cy=".2"><stop stop-color="#8c918b"/><stop offset=".22" stop-color="#454b48"/><stop offset="1" stop-color="'+p.knob+'"/></radialGradient><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#f3f1e7"/><stop offset=".5" stop-color="#a4aaa5"/><stop offset="1" stop-color="#4a5350"/></linearGradient></defs><rect x="48" y="100" width="544" height="235" rx="16" fill="url(#body)" stroke="'+p.edge+'" stroke-width="4"/><rect x="63" y="114" width="514" height="205" rx="8" fill="'+p.face+'" stroke="'+p.edge+'" stroke-opacity=".55"/><text x="320" y="144" text-anchor="middle" font-size="19" font-weight="900" letter-spacing="3" fill="'+p.ink+'">'+m.name.toUpperCase()+'</text>';
