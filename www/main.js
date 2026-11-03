@@ -313,7 +313,7 @@ async function startGuitarRecording(options = {}) {
 async function stopGuitarRecording() {
   if (!isNative() || !recording) return null;
   const captureMode = recordingCaptureMode;
-  const isDawCapture = captureMode === 'loopback';
+  const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel';
   let savedTake = null;
   if (!isDawCapture) {
     $('guitarStopBtn').disabled = true;
