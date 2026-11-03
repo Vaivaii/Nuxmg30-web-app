@@ -10,6 +10,7 @@ const init = read('../scripts/init-android.mjs');
 const index = read('../www/index.html');
 const ui = read('../www/studio-usb-output.js');
 const recorder = read('../native-android/MG30AudioPlugin.java');
+const dawSource = read('../www/studio-daw.js');
 
 test('Android initializer is valid JavaScript before platform generation', () => {
   const initializerPath = fileURLToPath(new URL('../scripts/init-android.mjs', import.meta.url));
@@ -108,27 +109,27 @@ test('DAW output selector supports phone output and explicit MG-30 USB playback'
 
 
 test('native MG-30 DAW playback renders a timeline-synced metronome into the USB PCM stream', () => {
-  assert.ok(daw.includes('function addNativeMetronomeClick(rendered, startSeconds)'));
-  assert.ok(daw.includes('if (!project.metronomeEnabled || !rendered'));
-  assert.ok(daw.includes('const beatDuration = 60 / Math.max(1, project.tempo)'));
-  assert.ok(daw.includes('beatIndex % beatsPerBar === 0 ? 1500 : 900'));
-  assert.ok(daw.includes('addNativeMetronomeClick(rendered, cursor)'));
+  assert.ok(dawSource.includes('function addNativeMetronomeClick(rendered, startSeconds)'));
+  assert.ok(dawSource.includes('if (!project.metronomeEnabled || !rendered'));
+  assert.ok(dawSource.includes('const beatDuration = 60 / Math.max(1, project.tempo)'));
+  assert.ok(dawSource.includes('beatIndex % beatsPerBar === 0 ? 1500 : 900'));
+  assert.ok(dawSource.includes('addNativeMetronomeClick(rendered, cursor)'));
 });
 
 test('native MG-30 loop wraps within the active AudioTrack stream', () => {
-  assert.ok(daw.includes('while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration)'));
-  assert.ok(daw.includes('if (project.loopEnabled) {\n          // Wrap inside the same AudioTrack stream.'));
-  assert.ok(daw.includes('cursor = 0;'));
-  assert.ok(daw.includes('rawPlayheadSeconds % maxDuration'));
-  assert.ok(daw.includes('wasNativeOutput && project.loopEnabled && duration > 0 ? rawPosition % duration'));
+  assert.ok(dawSource.includes('while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration)'));
+  assert.ok(dawSource.includes('if (project.loopEnabled) {\n          // Wrap inside the same AudioTrack stream.'));
+  assert.ok(dawSource.includes('cursor = 0;'));
+  assert.ok(dawSource.includes('rawPlayheadSeconds % maxDuration'));
+  assert.ok(dawSource.includes('wasNativeOutput && project.loopEnabled && duration > 0 ? rawPosition % duration'));
 });
 
 test('native MG-30 output meters include independent master stereo and per-track taps', () => {
-  assert.ok(daw.includes('includeTrackMeters = false'));
-  assert.ok(daw.includes('const outputChannels = includeTrackMeters ? 2 + (project.tracks.length * 2) : 2'));
-  assert.ok(daw.includes('context.createChannelMerger(outputChannels)'));
-  assert.ok(daw.includes('trackSplit.connect(meterOutput, 0, 2 + trackIndex * 2)'));
-  assert.ok(daw.includes('function updateNativeAudioMeters(rendered)'));
-  assert.ok(daw.includes('function resetNativeAudioMeters()'));
-  assert.ok(daw.includes('updateNativeAudioMeters(rendered)'));
+  assert.ok(dawSource.includes('includeTrackMeters = false'));
+  assert.ok(dawSource.includes('const outputChannels = includeTrackMeters ? 2 + (project.tracks.length * 2) : 2'));
+  assert.ok(dawSource.includes('context.createChannelMerger(outputChannels)'));
+  assert.ok(dawSource.includes('trackSplit.connect(meterOutput, 0, 2 + trackIndex * 2)'));
+  assert.ok(dawSource.includes('function updateNativeAudioMeters(rendered)'));
+  assert.ok(dawSource.includes('function resetNativeAudioMeters()'));
+  assert.ok(dawSource.includes('updateNativeAudioMeters(rendered)'));
 });
