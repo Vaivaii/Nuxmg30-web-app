@@ -31,8 +31,8 @@ const mainActivityLines = [
   'public class MainActivity extends BridgeActivity {',
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',
-  '        registerPlugin(MG30AudioPlugin.class);
-        registerPlugin(MG30AudioOutputPlugin.class);',
+  '        registerPlugin(MG30AudioPlugin.class);',
+  '        registerPlugin(MG30AudioOutputPlugin.class);',
   '        registerPlugin(MG30MidiPlugin.class);',
   '        registerPlugin(MG30DawFilesPlugin.class);',
   '        super.onCreate(savedInstanceState);',
