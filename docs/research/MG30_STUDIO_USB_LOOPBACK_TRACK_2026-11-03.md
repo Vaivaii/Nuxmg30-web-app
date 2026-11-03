@@ -569,3 +569,25 @@ The user has confirmed installation of Build #418 only. **Build #419 is built an
 3. After Stop, the final imported clip remains visually consistent with the live preview and the recorded audio is intact.
 
 Do not claim the visual defect is physically fixed until this Build #419 re-test is confirmed on the user's phone.
+
+
+### Install-safety check — Build #419 must not overwrite installed Build #418 yet
+
+The two APKs were checked at the Android APK Signature Scheme v2 certificate level, not inferred from their filenames or CI artifact IDs:
+
+| Version | APK SHA-256 | Signing certificate SHA-256 |
+|---|---|---|
+| Build #418 | `0f7a9bda2f008916ff2d175ac8fefcc817de9b95e1c7dc24266e2881fcd90a59` | `fbe3fe1307d297da4c57ebe878e515fd3926510254c797efdebefd80eaf19ddc` |
+| Build #419 | `53ba1137e2144b60e0201e72ff53ac55700e45b1fe6bace4e848e2d3f4dca974` | `e25def25c36c66c6ecff7096506789ba6c16dca710482a259998a43521d56b08` |
+
+The signing certificates differ. The current workflow runs `assembleDebug` on a fresh GitHub-hosted `ubuntu-latest` runner and does not configure a persistent signing keystore. Each run is therefore using a different generated Android Debug certificate in this CI setup.
+
+**Safety consequence:** since the user confirmed Build #418 is installed, Android will not accept Build #419 as an in-place update over #418. Do not instruct the user to uninstall #418 to work around the signature mismatch: uninstalling the app can erase its private local storage, including IndexedDB-backed DAW projects/media and any other app-local data. No destructive reinstall has been attempted.
+
+Before the next user installation, establish a signing-continuity and data-preservation plan:
+1. Inspect and document the app's available project/media/data export and import paths.
+2. Configure a stable private signing keystore for future CI builds, stored as protected GitHub Actions secrets (never commit the keystore or passwords into this public repository).
+3. Decide and test a safe one-time transition from the currently installed #418 signing identity, with a verified backup/restore path before any uninstall.
+4. Keep Build #419 available as a verified visual-fix artifact, but explicitly warn that it is not currently installable over #418 without resolving the signature mismatch.
+
+The code/test Build #419 remains valid: 159 tests passed and the APK includes the visual fix. This is a packaging/signing continuity issue, separate from the waveform display correction.
