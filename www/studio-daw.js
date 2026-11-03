@@ -1017,6 +1017,81 @@ function updateAudioMeters() {
   });
 }
 
+function updateNativeAudioMeters(rendered) {
+  if (!rendered || rendered.numberOfChannels < 2) return;
+  const measure = (channelIndex) => {
+    const samples = rendered.getChannelData(channelIndex);
+    let sum = 0;
+    let peak = 0;
+    for (const sample of samples) {
+      sum += sample * sample;
+      peak = Math.max(peak, Math.abs(sample));
+    }
+    return { rms: samples.length ? Math.sqrt(sum / samples.length) : 0, peak };
+  };
+
+  const left = measure(0);
+  const right = measure(1);
+  if ($('dawMasterLeft')) $('dawMasterLeft').style.width = Math.round(Math.min(1, left.rms * 2.2) * 100) + '%';
+  if ($('dawMasterRight')) $('dawMasterRight').style.width = Math.round(Math.min(1, right.rms * 2.2) * 100) + '%';
+
+  project.tracks.forEach((track, index) => {
+    const vu = document.querySelector('[data-vu-track="' + track.id + '"]');
+    if (!vu) return;
+    const leftChannel = 2 + index * 2;
+    const rightChannel = leftChannel + 1;
+    if (rendered.numberOfChannels <= rightChannel) return;
+    const channelLeft = measure(leftChannel);
+    const channelRight = measure(rightChannel);
+    const rms = Math.max(channelLeft.rms, channelRight.rms);
+    const peak = Math.max(channelLeft.peak, channelRight.peak);
+    const normalized = Math.min(1, Math.max(rms * 4.6, peak * 0.62));
+    const activeSegments = Math.max(0, Math.min(12, Math.round(normalized * 12)));
+    vu.setAttribute('aria-valuenow', String(activeSegments));
+    vu.querySelectorAll('[data-vu-segment]').forEach((led) => {
+      led.classList.toggle('active', Number(led.dataset.vuSegment) < activeSegments);
+    });
+  });
+}
+
+function resetNativeAudioMeters() {
+  ['dawMasterLeft', 'dawMasterRight'].forEach((id) => {
+    const meter = $(id);
+    if (meter) meter.style.width = '0%';
+  });
+  project.tracks.forEach((track) => {
+    const vu = document.querySelector('[data-vu-track="' + track.id + '"]');
+    if (!vu) return;
+    vu.setAttribute('aria-valuenow', '0');
+    vu.querySelectorAll('[data-vu-segment]').forEach((led) => led.classList.remove('active'));
+  });
+}
+
+function addNativeMetronomeClick(rendered, startSeconds) {
+  if (!project.metronomeEnabled || !rendered || rendered.numberOfChannels < 2) return;
+  const left = rendered.getChannelData(0);
+  const right = rendered.getChannelData(1);
+  const beatDuration = 60 / Math.max(1, project.tempo);
+  const beatsPerBar = project.timeSignature === '6/8' ? 6 : Number(project.timeSignature.split('/')[0]) || 4;
+  const endSeconds = startSeconds + left.length / SAMPLE_RATE;
+  const firstBeat = Math.max(0, Math.ceil((startSeconds - 1e-9) / beatDuration));
+  for (let beatIndex = firstBeat; beatIndex * beatDuration < endSeconds; beatIndex += 1) {
+    const beatTime = beatIndex * beatDuration;
+    const frequency = beatIndex % beatsPerBar === 0 ? 1500 : 900;
+    const firstFrame = Math.max(0, Math.ceil((beatTime - startSeconds) * SAMPLE_RATE));
+    for (let frame = firstFrame; frame < left.length; frame += 1) {
+      const elapsed = startSeconds + frame / SAMPLE_RATE - beatTime;
+      if (elapsed >= 0.045) break;
+      const envelope = elapsed < 0.002
+        ? 0.0001 * Math.pow(0.16 / 0.0001, elapsed / 0.002)
+        : 0.16 * Math.pow(0.0001 / 0.16, (elapsed - 0.002) / 0.043);
+      const click = Math.sin(2 * Math.PI * frequency * elapsed) * envelope;
+      left[frame] += click;
+      right[frame] += click;
+    }
+  }
+}
+
 function updatePlayheadFrame() {
   if (!playing && !recording) return;
   const elapsed = playing && nativeOutputPlayback
@@ -1026,8 +1101,11 @@ function updatePlayheadFrame() {
       : recording
         ? Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000)
         : 0;
-  playheadSeconds = playStartPosition + elapsed;
+  const rawPlayheadSeconds = playStartPosition + elapsed;
   const maxDuration = projectDurationSeconds(project);
+  playheadSeconds = !recording && nativeOutputPlayback && project.loopEnabled && maxDuration > 0
+    ? rawPlayheadSeconds % maxDuration
+    : rawPlayheadSeconds;
   if (!recording && playheadSeconds >= maxDuration) {
     if (project.loopEnabled) {
       playheadSeconds = 0;
@@ -1101,12 +1179,23 @@ async function pumpNativeDawPlayback(position, generation, trackIds) {
   const chunkFrames = 24000; // 500 ms at 48 kHz; bounds stop/seek latency.
   let cursor = position;
   const end = projectDurationSeconds(project);
+  if (!Number.isFinite(end) || end <= 0) throw new Error('The DAW project has no playable timeline.');
   try {
-    while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration && cursor < end) {
-      const count = Math.min(chunkFrames, Math.ceil((end - cursor) * SAMPLE_RATE));
-      if (count <= 0) break;
-      const rendered = await renderAudioChunk(trackIds, cursor, count, 'mix');
+    while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration) {
+      if (cursor >= end) {
+        if (project.loopEnabled) {
+          // Wrap inside the same AudioTrack stream. Do not close/reopen USB
+          // playback at the loop boundary.
+          cursor = 0;
+        } else {
+          break;
+        }
+      }
+      const count = Math.min(chunkFrames, Math.max(1, Math.ceil((end - cursor) * SAMPLE_RATE)));
+      const rendered = await renderAudioChunk(trackIds, cursor, count, 'mix', true);
       if (!playing || generation !== nativePlaybackGeneration) break;
+      addNativeMetronomeClick(rendered, cursor);
+      updateNativeAudioMeters(rendered);
       const payload = encodeFloatStereoPcm16Base64(rendered.getChannelData(0), rendered.getChannelData(1));
       await NativeAudioOutput.writeDawPlaybackChunk({ dataBase64: payload });
       cursor += count / SAMPLE_RATE;
@@ -1116,6 +1205,7 @@ async function pumpNativeDawPlayback(position, generation, trackIds) {
       nativeOutputPlayback = false;
       cancelAnimationFrame(animationFrame);
       try { await NativeAudioOutput.stopDawPlayback(); } catch (_) {}
+      resetNativeAudioMeters();
       updateTransport();
       renderPlayhead();
     }
@@ -1125,6 +1215,7 @@ async function pumpNativeDawPlayback(position, generation, trackIds) {
       nativeOutputPlayback = false;
       cancelAnimationFrame(animationFrame);
       try { await NativeAudioOutput.stopDawPlayback(); } catch (_) {}
+      resetNativeAudioMeters();
       updateTransport();
       setStatus('MG-30 USB playback stopped: ' + (error?.message || 'audio stream error'), 'warn');
     }
@@ -1221,15 +1312,19 @@ async function startPlayback(position = playheadSeconds) {
 
 function pausePlayback() {
   if (!playing) return;
-  playheadSeconds = playStartPosition + Math.max(0, nativeOutputPlayback
+  const wasNativeOutput = nativeOutputPlayback;
+  const rawPosition = playStartPosition + Math.max(0, wasNativeOutput
     ? (performance.now() - nativePlaybackStartedAt) / 1000
     : (audioContext ? audioContext.currentTime - playStartContextTime : 0));
+  const duration = projectDurationSeconds(project);
+  playheadSeconds = wasNativeOutput && project.loopEnabled && duration > 0 ? rawPosition % duration : rawPosition;
   playing = false;
   cancelAnimationFrame(animationFrame);
-  if (nativeOutputPlayback) {
+  if (wasNativeOutput) {
     nativeOutputPlayback = false;
     nativePlaybackGeneration += 1;
     void NativeAudioOutput.stopDawPlayback().catch(() => {});
+    resetNativeAudioMeters();
   } else {
     stopScheduledAudio();
   }
@@ -1238,12 +1333,14 @@ function pausePlayback() {
 }
 
 function stopPlayback(reset = true) {
+  const wasNativeOutput = nativeOutputPlayback;
   playing = false;
   cancelAnimationFrame(animationFrame);
-  if (nativeOutputPlayback) {
+  if (wasNativeOutput) {
     nativeOutputPlayback = false;
     nativePlaybackGeneration += 1;
     void NativeAudioOutput.stopDawPlayback().catch(() => {});
+    resetNativeAudioMeters();
   } else {
     stopScheduledAudio();
   }
@@ -1475,13 +1572,25 @@ async function handleDawRecordClick() {
   else await startDawRecording();
 }
 
-async function renderAudioChunk(trackIds, startSeconds, frameCount, mode) {
+async function renderAudioChunk(trackIds, startSeconds, frameCount, mode, includeTrackMeters = false) {
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   if (!OfflineContext) throw new Error('Offline Audio rendering is not supported by this WebView.');
-  const context = new OfflineContext(2, frameCount, SAMPLE_RATE);
+  // The first stereo pair is the audible mix. Four additional stereo pairs
+  // carry post-fader/post-pan track taps for the MG-30 USB mixer meters.
+  const outputChannels = includeTrackMeters ? 2 + (project.tracks.length * 2) : 2;
+  const context = new OfflineContext(outputChannels, frameCount, SAMPLE_RATE);
+  const meterOutput = includeTrackMeters ? context.createChannelMerger(outputChannels) : null;
+  if (meterOutput) meterOutput.connect(context.destination);
   const master = context.createGain();
   master.gain.value = mode === 'mix' ? project.masterGain : 1;
-  master.connect(context.destination);
+  if (meterOutput) {
+    const masterSplit = context.createChannelSplitter(2);
+    master.connect(masterSplit);
+    masterSplit.connect(meterOutput, 0, 0);
+    masterSplit.connect(meterOutput, 1, 1);
+  } else {
+    master.connect(context.destination);
+  }
   const selected = new Set(trackIds);
   const soloActive = mode === 'mix' && project.tracks.some((track) => track.solo && !track.mute);
   const chunkEnd = startSeconds + frameCount / SAMPLE_RATE;
@@ -1495,6 +1604,13 @@ async function renderAudioChunk(trackIds, startSeconds, frameCount, mode) {
     if ('pan' in pan) pan.pan.value = track.pan;
     gain.connect(pan);
     pan.connect(master);
+    if (meterOutput) {
+      const trackIndex = project.tracks.indexOf(track);
+      const trackSplit = context.createChannelSplitter(2);
+      pan.connect(trackSplit);
+      trackSplit.connect(meterOutput, 0, 2 + trackIndex * 2);
+      trackSplit.connect(meterOutput, 1, 3 + trackIndex * 2);
+    }
     for (const clip of track.clips) {
       const buffer = mediaBuffers.get(clip.mediaId);
       if (!buffer) throw new Error('Missing audio media for clip "' + clip.name + '". Load or re-import this clip before exporting.');
