@@ -279,3 +279,44 @@ Jangan mengubah komunikasi perangkat yang sudah bekerja untuk mencapai tampilan 
 - Total hasil: **189 test lulus, 0 gagal**.
 - Generate Capacitor Android project and install USB audio plugin = success.
 - Pada pemeriksaan terakhir, langkah **Build debug APK masih in progress**; artifact APK belum tersedia untuk dinyatakan berhasil.
+
+
+## Implementasi switch tiga posisi + bahasa IR Collection — 4 Nov 2026
+
+### Bukti dari foto layar MG-30 yang dikirim pengguna
+
+- DGLASS memiliki dua switch tiga posisi:
+  - Low Mids frequency: 250 Hz (atas), 500 Hz (tengah), 1 kHz (bawah).
+  - High Mids frequency: 750 Hz (atas), 1.5 kHz (tengah), 3 kHz (bawah).
+- STARLIFT memiliki switch CONTOUR tiga posisi:
+  - VINTAGE (atas), OFF (tengah), MODERN (bawah).
+- Foto juga memperlihatkan bahwa knob dan switch adalah elemen UI berbeda; switch tidak boleh ditampilkan sebagai rotary knob.
+- Pada layar IR Collection, beberapa status dinamis masih memunculkan teks Indonesia ketika diikuti metadata CRC. Exact-string translation tidak mencocokkan keseluruhan text node yang berisi suffix tersebut.
+
+### Implementasi yang masuk ke branch
+
+- `AMP_THREE_POSITION_SWITCHES` menambahkan dua switch DGLASS di indeks CC parameter 2 dan 5, serta switch STARLIFT CONTOUR pada indeks 4.
+- Pilihan diurutkan sesuai posisi fisik atas/tengah/bawah dan ditampilkan sebagai tiga tombol pilihan berlabel.
+- Nilai wire dipetakan ke tiga titik rentang QuickTone 0..100: 0 / 50 / 100. Ini adalah pemetaan tiga titik yang berjarak sama berdasarkan rentang konfigurasi QuickTone; **belum divalidasi pada perangkat fisik**. Wajib cek readback/writeback MG-30 sebelum menyatakan mapping final.
+- Switch menggunakan `parameterControls`, `sendBlockParam`, `syncIncomingParameterCC`, dan `KNOB_SLOTS` yang sudah ada. CC list, parameter payload layout, dan SysEx transfer tidak diubah.
+- Switch tidak mengambil nilai fallback dari generic rotary draft lama karena tidak ada knob ekuivalen di slot tersebut.
+- Incoming CC memperbarui posisi tombol aktif. Tombol yang dipilih mengirim nilai melalui CC yang sudah terpetakan.
+- `english-ui.js` menambah terjemahan prefix `IR tersimpan di perangkat · CRC ` agar status Collection tetap berbahasa Inggris meski diikuti CRC, dan memastikan deskripsi Import WAV Collection diterjemahkan.
+- Test baru mencakup DGLASS frequencies, STARLIFT contour positions, CC indices, jalur read/write/sync, fallback draft, dan terjemahan status IR.
+
+### Commits implementasi
+
+- Switch UI catalogue, renderer, write handler, readback sync: `93ddbd4fe07ac7f7d693a8b81ae74bd852a5cb2f`
+- Terjemahan prefix IR Collection: `d8036470c601f9d9ebfaf7ea01f515466d54f031`
+- Styling tiga posisi: `6a8da8877e32a100cb6127a652de720a3b67b4f0`
+- Hindari fallback generic knob draft untuk switch: `0133da33aebc356a29580619a4aa4aae8cb9465b`
+- Tes switch dan terjemahan: `7f50ee7c1fa6ee92aa70c0c8d9357e6693cfee23`
+
+### Validasi tahap ini
+
+- GitHub Actions run `41701473159` berjalan pada commit `7f50ee7c1fa6ee92aa70c0c8d9357e6693cfee23`.
+- Tahap Validate Android initializer syntax: success.
+- Tahap Run protocol regression tests: success.
+- Generate Capacitor Android project and install USB audio plugin: success.
+- Tahap Build debug APK masih berjalan saat catatan ini dibuat; belum menyatakan build sukses sampai artifact tersedia.
+- Belum ada pengujian hardware untuk switch tiga posisi. User harus memastikan setiap posisi mengubah frekuensi/Contour yang sesuai dan readback kembali ke tombol yang tepat.
