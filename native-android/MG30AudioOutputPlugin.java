@@ -358,6 +358,18 @@ public class MG30AudioOutputPlugin extends Plugin {
             call.reject("Endpoint USB MG-30 tidak tersedia. Periksa ulang USB OUT.");
             return;
         }
+        if (!contains(target.getSampleRates(), REAMP_SAMPLE_RATE) ||
+            !contains(target.getChannelCounts(), REAMP_CHANNELS)) {
+            call.reject("Endpoint MG-30 tidak melaporkan stereo 48 kHz untuk Reamp.");
+            return;
+        }
+        int[] advertisedEncodings = Build.VERSION.SDK_INT >= 31
+            ? target.getEncodings() : new int[0];
+        if (advertisedEncodings.length > 0 &&
+            !contains(advertisedEncodings, AudioFormat.ENCODING_PCM_FLOAT)) {
+            call.reject("Endpoint MG-30 tidak melaporkan dukungan PCM_FLOAT untuk Reamp.");
+            return;
+        }
         try {
             File directory = new File(getContext().getCacheDir(), "mg30-reamp-playback");
             if (!directory.exists() && !directory.mkdirs()) {
@@ -454,12 +466,12 @@ public class MG30AudioOutputPlugin extends Plugin {
                 AudioFormat.ENCODING_PCM_FLOAT
             );
             if (minBuffer <= 0) {
-                throw new IllegalStateException("Android menolak buffer PCM16 stereo 48 kHz (" + minBuffer + ").");
+                throw new IllegalStateException("Android menolak buffer PCM_FLOAT stereo 48 kHz (" + minBuffer + ").");
             }
             AudioFormat format = new AudioFormat.Builder()
                 .setSampleRate(REAMP_SAMPLE_RATE)
                 .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
-                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
                 .build();
             AudioAttributes attributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -472,7 +484,7 @@ public class MG30AudioOutputPlugin extends Plugin {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build();
             if (track.getState() != AudioTrack.STATE_INITIALIZED) {
-                throw new IllegalStateException("AudioTrack PCM16 Reamp gagal diinisialisasi.");
+                throw new IllegalStateException("AudioTrack PCM_FLOAT Reamp gagal diinisialisasi.");
             }
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !track.setPreferredDevice(target)) {
                 throw new IllegalStateException("Android menolak rute langsung ke USB MG-30.");
