@@ -68,7 +68,8 @@ test('section loop in/out is saved, displayed and applied to speaker and native 
 });
 
 test('editing controls do not alter the media source or native recorder implementation', () => {
-  assert.ok(daw.includes('mediaId:'));
+  assert.ok(daw.includes('...selected.clip'));
+  assert.ok(daw.includes('clipClipboard.mediaId'));
   assert.ok(core.includes('loopStartSeconds:'));
   assert.ok(core.includes('loopEndSeconds:'));
 });
