@@ -28,6 +28,7 @@ let playStartContextTime = 0;
 let playStartPosition = 0;
 let animationFrame = 0;
 let recording = false;
+let usbDiagnosticRecording = false;
 let recordingTrackId = '';
 let recordingStartPosition = 0;
 let recordingStartPerformanceTime = 0;
@@ -1403,6 +1404,11 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-input-route-row{display:grid;gap:6px;padding:9px;border:1px solid rgba(148,163,184,.18);border-radius:9px;background:rgba(7,14,16,.35);font-size:10px;font-weight:750}
     #page-studio .daw-input-route-row select{width:100%;min-width:0;min-height:38px;padding:7px;border:1px solid rgba(148,163,184,.25);border-radius:7px;background:#101a1d;color:#e3f3f1;font-size:10px}
     #page-studio .daw-input-routing-note{display:block;margin-top:10px;color:var(--muted,#9aa9b5);font-size:9px;line-height:1.5}
+    #page-studio .daw-usb-diagnostic{display:grid;gap:8px;margin-top:12px;padding:11px;border:1px solid rgba(83,212,199,.22);border-radius:10px;background:rgba(5,15,17,.42)}
+    #page-studio .daw-usb-diagnostic strong{font-size:11px}
+    #page-studio .daw-usb-diagnostic p{font-size:9px}
+    #page-studio .daw-usb-diagnostic button{justify-self:start;min-height:38px}
+    #page-studio .daw-usb-diagnostic-result{font-size:10px;line-height:1.65;white-space:pre-wrap;color:#b9d8d4}
     @media(max-width:420px){#page-studio .daw-input-routing-list{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
@@ -1420,6 +1426,74 @@ function syncTrackInputRoutingPanel() {
   }).join('');
 }
 
+function renderUsbDiagnosticButton() {
+  const button = $('dawUsbDiagnosticButton');
+  if (!button) return;
+  button.textContent = usbDiagnosticRecording ? 'STOP RAW USB 1–4 TEST' : 'START RAW USB 1–4 TEST';
+  button.classList.toggle('is-recording', usbDiagnosticRecording);
+  button.disabled = !usbDiagnosticRecording && Boolean(window.NUXStudioRecorder?.isRecording?.());
+}
+
+function formatDiagnosticDb(value) {
+  const db = Number(value);
+  return Number.isFinite(db) ? (db <= -239 ? '-∞' : db.toFixed(1)) + ' dBFS' : 'n/a';
+}
+
+async function toggleRawUsbDiagnostic() {
+  const recorder = window.NUXStudioRecorder;
+  if (usbDiagnosticRecording) {
+    try {
+      const take = await recorder.stop();
+      usbDiagnosticRecording = false;
+      const rows = Array.isArray(take?.channelStats) ? take.channelStats : [];
+      const report = rows.map((item) =>
+        'USB IN ' + item.channel + '  Peak ' + formatDiagnosticDb(item.peakDbfs) +
+        '  RMS ' + formatDiagnosticDb(item.rmsDbfs)
+      );
+      const header = 'Take: ' + (take?.fileName || 'not returned') +
+        '\nEndpoint: ' + (take?.routeName || 'MG-30 USB') +
+        '\nActual channels: ' + (take?.channels || 0) +
+        ' · requested mask: 0x' + Number(take?.requestedChannelIndexMask || 0).toString(16).toUpperCase() +
+        ' · actual mask: 0x' + Number(take?.channelIndexMask || 0).toString(16).toUpperCase() +
+        '\nBytes: ' + (take?.bytesWritten || take?.dataBytes || 0) +
+        '\n' + (report.length ? report.join('\n') : 'Per-channel statistics were not returned.');
+      const result = $('dawUsbDiagnosticResult');
+      if (result) result.textContent = header;
+      setStatus('Raw USB diagnostic saved. Export the raw 4-channel take from Quick Takes if deeper analysis is needed.', 'ok');
+      refreshQuickTakes();
+    } catch (error) {
+      usbDiagnosticRecording = false;
+      setStatus('USB diagnostic could not be finalized: ' + (error?.message || 'capture error'), 'warn');
+    } finally {
+      renderUsbDiagnosticButton();
+    }
+    return;
+  }
+  if (!recorder?.isNative?.()) {
+    setStatus('Raw USB diagnostics require the Android APK.', 'warn');
+    return;
+  }
+  if (recording || recorder.isRecording()) {
+    setStatus('Stop the current DAW/Quick Record capture before starting the raw USB diagnostic.', 'warn');
+    return;
+  }
+  try {
+    if (!playing && audioContext?.state === 'running') await audioContext.suspend();
+    const result = await recorder.start({ captureMode: 'diagnostic', channelIndexMask: 0xF });
+    if (!result?.recording) throw new Error('MG-30 did not confirm a four-channel USB capture.');
+    usbDiagnosticRecording = true;
+    const report = $('dawUsbDiagnosticResult');
+    if (report) report.textContent = 'Capturing USB IN mask 0xF · ' + (result.channels || 0) +
+      ' channels · ' + (result.sampleRate || 0) + ' Hz. Play the phone/host audio that should be included by Loopback, then stop this test.';
+    setStatus('Raw four-channel USB diagnostic is recording. This does not change any DAW track or preset.', 'ok');
+  } catch (error) {
+    usbDiagnosticRecording = false;
+    setStatus('Could not start raw USB diagnostic: ' + (error?.message || 'capture error'), 'warn');
+  } finally {
+    renderUsbDiagnosticButton();
+  }
+}
+
 function mountTrackInputRoutingPanel() {
   const host = $('dawTrackSettingsPage');
   const projectSettings = host?.querySelector('.daw-project-settings');
@@ -1432,13 +1506,23 @@ function mountTrackInputRoutingPanel() {
     <div class="daw-input-routing-head">
       <span class="daw-input-routing-eyebrow">USB AUDIO · PER-TRACK INPUT</span>
       <h4>Track Input Routing</h4>
-      <p>Empat track tetap. Pilih sumber input masing-masing track; arm track tersebut lalu tekan Record. Loopback USB kanal 3–4 dapat diarahkan ke Backing, Guitar, Bass, atau Vocals.</p>
+      <p>Empat track tetap. Input USB 1/2 dan Wet Sync 3/4 adalah jalur yang berbeda. Input 3/4 bukan otomatis Loopback playback dari HP.</p>
     </div>
     <div class="daw-input-routing-list" id="dawTrackInputRoutingList"></div>
-    <small class="daw-input-routing-note">Input 1 = mono · Input 1–2 = stereo · Loopback 3–4 = stereo. Capture USB multikanal disimpan sebagai take asli, kemudian kanal yang dipilih saja dirender ke track tujuan. Pastikan USB ROUTING MODE pedal = LOOPBACK saat memakai sumber Loopback.</small>
+    <div class="daw-usb-diagnostic">
+      <strong>Raw USB input diagnostic · 4 channels</strong>
+      <p>Rekam semua kanal USB mentah sekaligus untuk mengetahui kanal mana yang benar-benar membawa audio. Hasil diagnostik tidak dimasukkan ke track; file asli tersedia di Quick Takes untuk diekspor.</p>
+      <button type="button" id="dawUsbDiagnosticButton" class="daw-tool-btn">START RAW USB 1–4 TEST</button>
+      <div id="dawUsbDiagnosticResult" class="daw-usb-diagnostic-result" aria-live="polite">Belum ada hasil pengukuran.</div>
+    </div>
+    <small class="daw-input-routing-note">Input 1 = mono · Input 1–2 = stereo · Input 3–4 = Wet Sync (Dry Out mode). Untuk playback HP/host, QuickTone asli membedakan Normal + Loopback option dari mode Loopback pedal yang merekam drum machine/phrase looper internal. Pemetaan kanal host-playback belum dipastikan; uji mentah 4 kanal akan mengukurnya.</small>
   `;
   host.insertBefore(panel, projectSettings);
   syncTrackInputRoutingPanel();
+  renderUsbDiagnosticButton();
+  host.addEventListener('click', (event) => {
+    if (event.target.closest('#dawUsbDiagnosticButton')) void toggleRawUsbDiagnostic();
+  });
   host.addEventListener('change', (event) => {
     const select = event.target.closest('[data-track-input-route]');
     if (!select) return;
@@ -1669,6 +1753,7 @@ function bindEvents() {
   window.addEventListener('nux-studio-recorder-ready', refreshQuickTakes);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && recording) void stopDawRecording();
+    else if (document.hidden && usbDiagnosticRecording) void toggleRawUsbDiagnostic();
     else if (document.hidden && playing) pausePlayback();
   });
 }
