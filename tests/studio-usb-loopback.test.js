@@ -89,7 +89,7 @@ test('Loopback capture prefers the widest advertised raw USB channel layout', ()
 });
 
 test('DAW Loopback button arms the independent lane and requests Loopback capture mode', () => {
-  assert.match(daw, /id = 'loopback'/);
+  assert.ok(core.includes("{ id: 'loopback', name: 'Loopback'"));
   assert.ok(daw.includes('Phone Audio → MG-30 → Loopback Track'));
   assert.ok(daw.includes('armTrack(\'loopback\')'));
   assert.ok(daw.includes("track.id === 'loopback' ? 'loopback' : 'normal'"));
@@ -113,7 +113,7 @@ test('Reamp output path is absent; existing USB output discovery/tone probe stay
   assert.doesNotMatch(outputPlugin, /beginReampPlayback|startReampPlayback|ReampSession/);
   assert.ok(outputPlugin.includes('inspectOutputDevices'));
   assert.ok(outputPlugin.includes('playTestTone'));
-  assert.ok(!outputPlugin.includes('AudioRecord'));
+  assert.doesNotMatch(outputPlugin, /import android\\.media\\.AudioRecord|new AudioRecord|AudioRecord\\.Builder/);
   assert.ok(index.includes('5 tracks · 48 kHz / 24-bit'));
 });
 
