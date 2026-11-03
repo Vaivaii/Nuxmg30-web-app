@@ -96,7 +96,7 @@ export function normalizeProject(input) {
         fadeOutSeconds: fades.fadeOutSeconds,
         sampleRate: Math.max(8000, Math.min(384000, Number(clip.sampleRate) || 48000)),
         channels: Math.max(1, Math.min(8, Math.round(Number(clip.channels) || 2))),
-        captureMode: ['normal', 'loopback', 'file'].includes(clip.captureMode) ? clip.captureMode : 'file',
+        captureMode: ['normal', 'loopback', 'multichannel', 'file'].includes(clip.captureMode) ? clip.captureMode : 'file',
         channelIndexMask: Math.max(0, Math.min(255, Math.round(Number(clip.channelIndexMask) || 0))),
         inputChannelMask: Math.max(0, Math.min(255, Math.round(Number(clip.inputChannelMask) || 0))),
         inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === clip.inputRoute) ? clip.inputRoute : 'file',
