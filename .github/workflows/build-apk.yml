@@ -12,6 +12,7 @@ on:
       - feature/preset-manager-redesign
       - feature/dark-performance-ui-polish
       - feature/studio-mockup-alignment-undo
+      - feature/studio-usb-reamp-loopback
     paths:
       - 'www/**'
       - 'tests/**'
@@ -45,6 +46,8 @@ jobs:
           java-version: '21'
       - name: Install JavaScript dependencies
         run: npm install
+      - name: Validate Android initializer syntax
+        run: node --check scripts/init-android.mjs
       - name: Run protocol regression tests
         run: npm test
       - name: Generate Capacitor Android project and install USB audio plugin
