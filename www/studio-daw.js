@@ -1128,7 +1128,7 @@ async function startDawRecording() {
       return;
     }
     const captureMode = 'multichannel';
-    const result = await recorder.start({ captureMode });
+    const result = await recorder.start({ captureMode, channelIndexMask: inputRoute.channelIndexMask });
     if (!result?.recording) throw new Error('The MG-30 USB recorder did not confirm that recording started.');
     // USB capture is independent of the Web Audio output path. Keep an idle
     // context suspended so it cannot take audio focus from the phone's player.
