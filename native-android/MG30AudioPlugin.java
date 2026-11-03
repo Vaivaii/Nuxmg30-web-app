@@ -236,6 +236,7 @@ public class MG30AudioPlugin extends Plugin {
     private void startRecordingWithPermission(PluginCall call) {
         String captureMode = call.getString("captureMode", "normal");
         boolean loopbackCapture = "loopback".equalsIgnoreCase(captureMode);
+        boolean multichannelCapture = loopbackCapture || "multichannel".equalsIgnoreCase(captureMode);
         AudioManager manager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         if (manager == null) {
             call.reject("AudioManager Android tidak tersedia.");
@@ -251,14 +252,14 @@ public class MG30AudioPlugin extends Plugin {
                 break;
             }
         }
-        if (usb == null && !loopbackCapture) {
+        if (usb == null && !multichannelCapture) {
             // Preserve the pre-existing generic USB fallback for normal Guitar capture.
             for (AudioDeviceInfo device : manager.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
                 if (isUsbInput(device)) { usb = device; break; }
             }
         }
         if (usb == null) {
-            call.reject(loopbackCapture
+            call.reject(multichannelCapture
                 ? "Input USB NUX MG-30 tidak terdeteksi untuk Loopback. Periksa sambungan dan endpoint MG-30."
                 : "Input USB Audio belum terdeteksi. Pastikan MG-30 terhubung dengan kabel data dan OTG.");
             return;
@@ -278,7 +279,7 @@ public class MG30AudioPlugin extends Plugin {
         int[] advertisedIndexMasks = Build.VERSION.SDK_INT >= 23 ? usb.getChannelIndexMasks() : new int[0];
         ArrayList<Integer> channelOptions = new ArrayList<>();
         ArrayList<Integer> loopbackIndexMasks = new ArrayList<>();
-        if (loopbackCapture && Build.VERSION.SDK_INT >= 23) {
+        if (multichannelCapture && Build.VERSION.SDK_INT >= 23) {
             // Preserve the exact index masks advertised by Android. They need not be
             // contiguous: for example 0xC selects index channels 3 and 4, while 0xF
             // selects all four. Prefer the widest layout without assigning semantics.
@@ -321,7 +322,7 @@ public class MG30AudioPlugin extends Plugin {
             if (countOptions.length == 0 || contains(countOptions, 2)) channelOptions.add(2);
             if (countOptions.length == 0 || contains(countOptions, 1)) channelOptions.add(1);
         }
-        if (loopbackCapture && Build.VERSION.SDK_INT >= 23 &&
+        if (multichannelCapture && Build.VERSION.SDK_INT >= 23 &&
             advertisedIndexMasks.length > 0 && channelOptions.isEmpty()) {
             call.reject("MG-30 mengiklankan channel-index mask USB, tetapi tidak ada mask yang cocok dengan jumlah kanal input. Capture Loopback dihentikan tanpa menebak pemetaan kanal.");
             return;
@@ -367,7 +368,7 @@ public class MG30AudioPlugin extends Plugin {
                 if (encoding == AudioFormat.ENCODING_PCM_32BIT && Build.VERSION.SDK_INT < 31) continue;
                 for (int channelOptionIndex = 0; channelOptionIndex < channelOptions.size(); channelOptionIndex++) {
                     int channels = channelOptions.get(channelOptionIndex);
-                    boolean useChannelIndexMask = loopbackCapture && Build.VERSION.SDK_INT >= 23;
+                    boolean useChannelIndexMask = multichannelCapture && Build.VERSION.SDK_INT >= 23;
                     int channelIndexMask = useChannelIndexMask
                         ? (loopbackIndexMasks.isEmpty() ? (1 << channels) - 1 : loopbackIndexMasks.get(channelOptionIndex))
                         : 0;
@@ -417,11 +418,11 @@ public class MG30AudioPlugin extends Plugin {
                             while (SystemClock.elapsedRealtime() < routeDeadline) {
                                 routed = Build.VERSION.SDK_INT >= 24 ? candidate.getRoutedDevice() : null;
                                 if (routed != null && isUsbInput(routed) &&
-                                    (!loopbackCapture || isMg30UsbDevice(routed))) break;
+                                    (!multichannelCapture || isMg30UsbDevice(routed))) break;
                                 SystemClock.sleep(50);
                             }
                             if (routed != null && isUsbInput(routed) &&
-                                (!loopbackCapture || isMg30UsbDevice(routed))) {
+                                (!multichannelCapture || isMg30UsbDevice(routed))) {
                                 selectedRecord = candidate;
                                 selectedRoute = routed;
                                 selectedRate = rate;
@@ -463,11 +464,11 @@ public class MG30AudioPlugin extends Plugin {
                 return;
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            activeFile = new File(dir, (loopbackCapture ? "MG30_Loopback_Take_" : "MG30_Take_") + timestamp + ".wav");
+            activeFile = new File(dir, (loopbackCapture ? "MG30_Loopback_Take_" : (multichannelCapture ? "MG30_USB_Input_Take_" : "MG30_Take_")) + timestamp + ".wav");
             activeSampleRate = selectedRate;
             activeChannels = selectedChannels;
             activeChannelIndexMask = selectedChannelIndexMask;
-            activeCaptureMode = loopbackCapture ? "loopback" : "normal";
+            activeCaptureMode = multichannelCapture ? (loopbackCapture ? "loopback" : "multichannel") : "normal";
             activeEncoding = selectedEncoding;
             activeBits = 24; // User-facing file is always integer PCM 24-bit WAV.
             activeWavFormatCode = 1;
