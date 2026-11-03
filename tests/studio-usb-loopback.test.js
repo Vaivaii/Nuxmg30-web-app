@@ -76,6 +76,7 @@ test('native recorder exposes USB input channel counts, position masks, and inde
   assert.ok(recorder.includes('if (usb == null && !loopbackCapture)'));
   assert.ok(recorder.includes('!loopbackCapture || isMg30UsbDevice(routed)'));
   assert.ok(recorder.includes('private static boolean isMg30UsbDevice(AudioDeviceInfo device)'));
+  assert.ok(recorder.includes('sampleCount -= sampleCount % captureChannels'));
 });
 
 test('Loopback capture prefers the widest advertised raw USB channel layout', () => {
