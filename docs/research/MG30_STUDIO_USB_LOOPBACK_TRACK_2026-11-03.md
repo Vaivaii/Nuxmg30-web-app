@@ -413,3 +413,10 @@ The largest samples in channels 1/2 reach 0.995 full scale (about -0.044 dBFS), 
 
 Ask the user only to confirm two test conditions: (a) whether the audio played during this 13.9-second take was phone/host music (rather than guitar, MG-30 drums/phrase looper, or another source), and (b) whether the pedal was in Routing Mode = Normal with the separate Loopback option enabled. If both are yes, mark host playback return on USB IN 1–2 as physically verified for this device/firmware/handset setup. If not, repeat the test with phone/host music only and the stated routing.
 
+
+
+### User clarification — diagnostic stimulus was phone playback (3 November 2026)
+
+The user confirmed that the audio source during the 17:00 raw four-channel diagnostic was music/audio played from the phone (HP), not guitar or the MG-30's internal drum/phrase looper. Therefore the measured fact is now stronger: phone-originated audio was present on USB IN 1–2, while USB IN 3–4 were exactly silent, during that test.
+
+The user has not yet explicitly confirmed the pedal's USB settings for that take. The host-playback channel mapping is therefore confirmed for the tested phone/device state (USB IN 1–2), but the specific pedal configuration (Normal + separate Loopback enabled) remains unconfirmed. Ask only for that setting confirmation; do not repeat the source question.
