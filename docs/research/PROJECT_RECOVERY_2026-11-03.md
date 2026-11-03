@@ -149,3 +149,14 @@ The Android initializer syntax defect was fixed, a `node --check` regression gua
 Build #351 remains a successful historical APK from `feature/studio-mockup-alignment-undo`; it did not include the USB output discovery module. Build #248 is a historical checkpoint only. Always compare the source commit, Actions run and APK identity separately.
 
 For every future change, preserve NAM, User/Third Party IR, Collection IR, MIDI mapping, USB-MIDI, presets, Signal Chain and the existing USB AudioRecord input route. Run the full test/production/Android build and inspect the packaged APK before distribution. Physical MG-30 testing remains a separate gate.
+
+
+## Project status correction — NAM / IR complete; All Presets remains (4 Nov 2026)
+
+The user clarified the current reverse-engineering completion status:
+- **NAM import: complete** (completed yesterday, per user confirmation).
+- **IR import: complete**, including the existing User / Third Party and Collection workflows (completed yesterday, per user confirmation).
+- The only remaining import/export workflow is **Import All Presets and Export All Presets**.
+- Do not describe NAM or IR import as unfinished, pending, or part of the remaining 10%.
+- Focus the next reverse-engineering work on the All Presets bulk import/export transaction and file format/protocol. Existing preset single-slot operations and the preset metadata/resource handling already researched are supporting context, not proof that bulk All Presets is complete.
+- Preserve the working NAM and IR paths while developing and validating All Presets. Continue targeting original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
