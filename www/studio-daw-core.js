@@ -1,7 +1,7 @@
 export const DAW_INPUT_ROUTES = Object.freeze([
   { id: 'file', label: 'Audio file / Import', channelIndexMask: 0, captureMode: 'file' },
   { id: 'usb-ch1-mono', label: 'MG-30 USB · Input 1 (Mono)', channelIndexMask: 1, captureMode: 'multichannel' },
-  { id: 'usb-ch1-2-stereo', label: 'MG-30 USB · Input 1–2 (Stereo / Host Loopback)', channelIndexMask: 3, captureMode: 'multichannel' },
+  { id: 'usb-ch1-2-stereo', label: 'MG-30 USB · Input 1–2 (Stereo + Host Loopback Mix)', channelIndexMask: 3, captureMode: 'multichannel' },
   { id: 'usb-wet-sync-3-4-stereo', label: 'MG-30 USB · Input 3–4 (Wet Sync / Dry Out)', channelIndexMask: 12, captureMode: 'multichannel' },
 ]);
 
