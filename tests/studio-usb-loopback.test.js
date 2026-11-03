@@ -104,6 +104,10 @@ test('native recorder exposes and captures the MG-30 multichannel USB endpoint',
   assert.match(recorder, /setChannelIndexMask\(channelIndexMask\)/);
   assert.match(recorder, /activeCaptureMode = multichannelCapture \? \(loopbackCapture \? "loopback" : "multichannel"\) : "normal"/);
   assert.ok(recorder.includes('MG30_USB_Input_Take_'));
+  assert.ok(recorder.includes('call.getInt("channelIndexMask", 0)'));
+  assert.ok(recorder.includes('(indexMask & requestedChannelIndexMask) != requestedChannelIndexMask'));
+  assert.ok(recorder.includes('(fallbackMask & requestedChannelIndexMask) != requestedChannelIndexMask'));
+  assert.ok(recorder.includes('MG-30 tidak mengekspos kanal USB yang dibutuhkan oleh input track ini'));
 });
 
 test('four-track DAW exposes per-track routes and only imports selected USB channels', () => {
@@ -124,7 +128,7 @@ test('Quick Record remains separate and passes multichannel mode without alterin
   assert.match(main, /async function startGuitarRecording\(options = \{\}\)/);
   assert.ok(main.includes("['loopback', 'multichannel'].includes(options?.captureMode)"));
   assert.ok(main.includes("const isDawCapture = captureMode !== 'normal'"));
-  assert.ok(main.includes("MG30Audio.startRecording({ prefer24Bit: true, captureMode })"));
+  assert.ok(main.includes("MG30Audio.startRecording({ prefer24Bit: true, captureMode, channelIndexMask })"));
   assert.ok(main.includes("const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel'"));
   assert.ok(main.includes('device.channelIndexMasks'));
   assert.ok(main.includes('Channel index masks:'));
