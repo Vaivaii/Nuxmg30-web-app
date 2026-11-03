@@ -151,7 +151,8 @@ test('Undo and Redo are tucked inside the mockup three-dot options control', () 
 test('imported audio and Quick Record takes are undoable Studio edits', () => {
   assert.match(daw, /commitHistoryChange\(\);\s*await saveProject\(false\);/);
   assert.ok(daw.includes('async function importQuickTake('));
-  assert.ok(daw.includes('await addAudioBlobToTrack(blob, trackId, take.fileName, startAt, take);'));
+  assert.ok(daw.includes('inputRoute: track?.inputRoute || \'file\''));
+  assert.ok(daw.includes('await addAudioBlobToTrack(blob, trackId, take.fileName, startAt, {'));
 });
 
 test('playhead auto-follows during playback while the left track rail remains separate', () => {
