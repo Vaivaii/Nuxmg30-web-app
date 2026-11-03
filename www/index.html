@@ -790,6 +790,52 @@ for(const [blockId,models] of Object.entries(MODEL_PARAMETER_OVERRIDES)){
     if(target)target[1]=parameters;
   }
 }
+const ampLayout = items => items.map(([param,label,ccIndex])=>({param,label,ccIndex}));
+/*
+ * QuickTone 2.6.7.16 original MG-30 amp-panel order.
+ * ccIndex is the panel's midiCC index (0..7), not a compressed display index.
+ * Empty indices are intentional; DGLASS/STARLIFT switches are not rotary knobs.
+ */
+const AMP_QUICKTONE_LAYOUTS = [
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['bias','BIAS',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['tone','TONE',1],['master','MASTER',2],['level','LEVEL',3]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['cut','CUT',2],['bass','BASS',3],['treble','TREB',4],['level','LEVEL',5]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['cut','CUT',2],['bass','BASS',3],['treble','TREB',4],['level','LEVEL',5]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['cut','CUT',2],['bass','BASS',3],['middle','MIDDLE',4],['treble','TREB',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['cut','CUT',2],['bass','BASS',3],['middle','MIDDLE',4],['treble','TREB',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['cut','CUT',2],['bass','BASS',3],['treble','TREB',4],['level','LEVEL',5]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['mid freq','M.FREQ',4],['treble','TREB',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['mid freq','M.FREQ',4],['treble','TREB',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['level','LEVEL',5]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['level','LEVEL',5]]),
+ ampLayout([['master','MASTER',0],['bass','BASS',1],['lo mids','LO MIDS',3],['hi mids','HI MIDS',4],['treble','TREB',6],['level','LEVEL',7]]),
+ ampLayout([['bass','BASS',0],['mid','MID',1],['mid freq','MID FREQ',2],['treble','TREB',3],['volume','VOLUME',5],['level','LEVEL',6]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]]),
+ ampLayout([['volume','VOLUME',0],['treble','TREB',1],['bass','BASS',2],['bias','BIAS',3],['level','LEVEL',4]]),
+ ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]])
+];
+const MIC_OPTIONS = ['1. DYN421','2. S57','3. U87','4. R122','5. R121','6. C414','7. C3000','8. B52'];
+const MIC_POSITION_OPTIONS = ['CENTER','MIDDLE','EDGE'];
+
 const $=id=>document.getElementById(id);
 
 let midiAccess=null, midiInput=null, midiOutput=null, midiConnected=false, midiConnectPending=false, lastMidiSend=0, midiChain=Promise.resolve(), pendingCC=new Map(), flushingCC=false, suppressProgramChangeUntil=0;
@@ -830,6 +876,22 @@ function quantizeParameterValue(param,value){
   if(max>=100)return Math.round(v);
   return normalizeParameterValue(param,Math.round(v*max/100));
 }
+function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
+ const block=BLOCKS[blockIndex];
+ if(!block||!block.models[modelIndex])return [];
+ if(blockIndex===3&&AMP_QUICKTONE_LAYOUTS[modelIndex])return AMP_QUICKTONE_LAYOUTS[modelIndex];
+ return block.models[modelIndex][1].split(',').map((raw,ccIndex)=>{
+  const param=raw.trim();
+  return {param,label:param.toUpperCase(),ccIndex};
+ });
+}
+function parameterValueForControl(blockIndex,state,modelIndex,control){
+ if(Object.prototype.hasOwnProperty.call(state.values,control.param))return state.values[control.param];
+ // Migrate old local amp drafts by their original parameter slot, not by label.
+ const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.ccIndex];
+ if(legacy&&Object.prototype.hasOwnProperty.call(state.values,legacy))return state.values[legacy];
+ return undefined;
+}
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function updateUsbConnectButton(){const button=$('connectMidi');if(!button)return;button.classList.toggle('is-connected',!!midiConnected);button.classList.toggle('is-connecting',!!midiConnectPending);button.setAttribute('aria-pressed',String(!!midiConnected));button.setAttribute('aria-label',midiConnected?'USB-MIDI MG-30 terhubung':(midiConnectPending?'Menghubungkan USB-MIDI MG-30':'Hubungkan NUX MG-30 melalui USB-MIDI'));button.title=midiConnected?'MG-30 terhubung · USB-MIDI':(midiConnectPending?'Menghubungkan ke MG-30…':'MG-30 belum terhubung · ketuk untuk menyambungkan');const label=$('usbHeaderStatus');if(label){label.textContent=midiConnected?'Terhubung':(midiConnectPending?'Menghubungkan…':'Terputus');label.classList.toggle('is-connected',!!midiConnected);label.classList.toggle('is-connecting',!!midiConnectPending)}}
 function setDeviceStatus(message){const el=$('deviceStatus');if(el)el.textContent=message;const op=$('operationStatus');if(op)op.textContent=message;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(message&&message.length<58?message:'Belum terhubung · ketuk ikon USB untuk menghubungkan');const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);updateUsbConnectButton()}
@@ -842,10 +904,9 @@ function sendBlockSwitch(index){const cc=MIDI_SW[index];if(cc==null)return;const
 function sendBlockParam(index,param,value){
   const block=BLOCKS[index],state=states[index],ccs=MIDI_PARAM_CC[index];
   if(!block||!state||!ccs||!midiConnected)return;
-  const labels=block.models[state.model][1].split(',').map(s=>s.trim());
-  const pi=labels.indexOf(param);
-  if(pi<0||pi>=ccs.length)return;
-  const cc=ccs[pi];
+  const control=parameterControls(index,state.model).find(item=>item.param===param);
+  if(!control||control.ccIndex<0||control.ccIndex>=ccs.length)return;
+  const cc=ccs[control.ccIndex];
   if(!Number.isInteger(cc))return;
   sendCC(cc,encodeParameterValue(param,value));
 }
@@ -868,18 +929,23 @@ function syncIncomingParameterCC(cc,rawValue){
   const pi=MIDI_PARAM_CC[index].indexOf(cc);
   const state=states[index],block=BLOCKS[index];
   if(!state||!block)return;
-  const labels=block.models[state.model][1].split(',').map(x=>x.trim());
-  if(pi<0||pi>=labels.length)return;
-  const param=labels[pi],next=normalizeParameterValue(param,rawValue);
+  const control=parameterControls(index,state.model).find(item=>item.ccIndex===pi);
+  if(!control)return;
+  const param=control.param,next=normalizeParameterValue(param,rawValue);
   if(state.values[param]===next)return;
   state.values[param]=next;
   if(index===selected){
-    const el=[...document.querySelectorAll('#knobs .dial-control')].find(x=>x.dataset.p===param);
-    if(el){
-      const dial=el.querySelector('.dial'),readout=el.querySelector('.knob-value');
-      if(dial){dial.style.setProperty('--fill',(next/100)*270+'deg');dial.style.setProperty('--angle',(-135+(next/100)*270)+'deg')}
-      if(readout)readout.textContent=String(next);
-      el.setAttribute('aria-valuenow',String(next));
+    const selector=[...document.querySelectorAll('#knobs .parameter-select')].find(x=>x.dataset.p===param);
+    if(selector){
+      selector.value=String(encodeParameterValue(param,next));
+    }else{
+      const el=[...document.querySelectorAll('#knobs .dial-control')].find(x=>x.dataset.p===param);
+      if(el){
+        const dial=el.querySelector('.dial'),readout=el.querySelector('.knob-value');
+        if(dial){dial.style.setProperty('--fill',(next/100)*270+'deg');dial.style.setProperty('--angle',(-135+(next/100)*270)+'deg')}
+        if(readout)readout.textContent=String(next);
+        el.setAttribute('aria-valuenow',String(next));
+      }
     }
   }
   persist();
@@ -963,10 +1029,11 @@ async function readActiveBuffer(options={}){
    throw new Error('Edit buffer diterima, tetapi hanya '+validModels+'/11 model dikenali. State lama dipertahankan.');
   }
   for(let i=0;i<11;i++){
-   const labels=BLOCKS[i].models[candidate[i].model][1].split(',').map(s=>s.trim()),slots=KNOB_SLOTS[i];
-   for(let k=0;k<Math.min(labels.length,slots.length);k++){
-    let value=bitSlot(body,slots[k]);if(selectorParam(labels[k]))value&=0x0F;
-    candidate[i].values[labels[k]]=normalizeParameterValue(labels[k],value);
+   const controls=parameterControls(i,candidate[i].model),slots=KNOB_SLOTS[i];
+   for(const control of controls){
+    if(control.ccIndex<0||control.ccIndex>=slots.length)continue;
+    let value=bitSlot(body,slots[control.ccIndex]);if(selectorParam(control.param))value&=0x0F;
+    candidate[i].values[control.param]=normalizeParameterValue(control.param,value);
    }
   }
   states=candidate;
@@ -1781,8 +1848,27 @@ function setChainEditMode(enabled){
  const holder=$('chain');if(holder)holder.classList.toggle('reorder-mode',chainEditMode);
  renderChain();
 }
-function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id;const namProfile=selected===3?ampNamProfileForModelIndex(s.model):null;$('editorSub').textContent=namProfile?('QuickTone Slot '+namProfile.slot+' · ID '+namProfile.id):('Model '+(s.model+1));$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();$('knobs').className='knobs '+(params().length>=6?'knobs-many':'knobs-few');$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');const blockQuick=$('blockQuickSelect');if(blockQuick){blockQuick.innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');blockQuick.value=String(s.model);blockQuick.setAttribute('aria-label','Pilih model '+b.id);}$('modelCurrentName').textContent=modelDisplayLabel(b.id,b.models[s.model]);$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
-const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=params().map((p,i)=>{let v=s.values[p]??50;return '<div class="knob"><label>'+p+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(p)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>'}).join('');
+function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id;const namProfile=selected===3?ampNamProfileForModelIndex(s.model):null;$('editorSub').textContent=namProfile?('QuickTone Slot '+namProfile.slot+' · ID '+namProfile.id):('Model '+(s.model+1));$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();const controls=parameterControls(selected,s.model);$('knobs').className='knobs '+(controls.length>=6?'knobs-many':'knobs-few');$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');const blockQuick=$('blockQuickSelect');if(blockQuick){blockQuick.innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');blockQuick.value=String(s.model);blockQuick.setAttribute('aria-label','Pilih model '+b.id);}$('modelCurrentName').textContent=modelDisplayLabel(b.id,b.models[s.model]);$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
+const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=controls.map(control=>{
+ const p=control.param,stored=parameterValueForControl(selected,s,s.model,control);
+ if(p==='mic'||p==='position'){
+  const options=p==='mic'?MIC_OPTIONS:MIC_POSITION_OPTIONS,raw=stored===undefined?'':String(encodeParameterValue(p,stored));
+  const label=p==='mic'?'MIC':'MIC POSITION',placeholder=p==='mic'?'Pilih mic':'Pilih posisi';
+  return '<div class="knob knob-selector"><label>'+label+'</label><select class="parameter-select" data-p="'+p+'" aria-label="'+label+'"><option value="" disabled '+(raw===''?'selected':'')+'>'+placeholder+'</option>'+options.map((name,index)=>'<option value="'+index+'" '+(raw===String(index)?'selected':'')+'>'+escapeHtml(name)+'</option>').join('')+'</select></div>';
+ }
+ const v=stored??50,label=control.label||p.toUpperCase();
+ return '<div class="knob"><label>'+escapeHtml(label)+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>';
+}).join('');
+$('knobs').querySelectorAll('.parameter-select').forEach(el=>{
+ el.onchange=()=>{
+  const raw=Number(el.value),param=el.dataset.p;
+  if(!Number.isInteger(raw)||!['mic','position'].includes(param))return;
+  const value=normalizeParameterValue(param,raw);
+  s.values[param]=value;changed.add(selected+':'+param);
+  $('statChanged').textContent=changed.size;persist();
+  sendBlockParam(selected,param,value);
+ };
+});
 $('knobs').querySelectorAll('.dial-control').forEach(el=>{
  const param=el.dataset.p;
  let current=Number(s.values[param]??50),dragStartY=0,dragStartValue=current,dragging=false,moved=false,dragIndex=selected;
