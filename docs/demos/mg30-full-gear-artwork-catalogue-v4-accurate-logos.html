@@ -457,7 +457,7 @@ function ampSvg(m){
    s+=word(176,299,'Dual',27,'Brush Script MT,Segoe Script,cursive','#ece9df','middle','font-style="italic" font-weight="bold"');
    s+=label(176,319,'RECTIFIER',13,'#ece9df',900,1.4);
    toggle(273,299);led(294,299,'#bd3835');
-   for(let i=0;i<8;i++)s+=k(329+i*42,299,8.2,'',true);
+   for(let i=0;i<8;i++)s+=k(300+i*43,299,8.2,'',true);
    jack(665,299,5);
    return s+feet+screw(72,103)+screw(688,103);
   }
@@ -500,8 +500,9 @@ function ampSvg(m){
  // NUX / Darkglass compact bass and acoustic amp/preamp hardware: compact head chassis, screen and precise control spacing.
  if(['darkglass','nuxBass','nuxAcoustic'].includes(m.skin)){
   s+=shell('#101718',p.edge)+handle;
-  const brand=m.skin==='darkglass'?'DARKGLASS':m.skin==='nuxBass'?'NUX':'NUX';
-  const product=m.skin==='darkglass'?'MICROTUBES B7K ULTRA':m.skin==='nuxBass'?'MELVIN LEE DAVIS BASS PREAMP + DI':m.ref.toUpperCase();
+  const isStarlift=raw==='Starlift';
+  const brand=m.skin==='darkglass'?(isStarlift?'NORDSTRAND':'DARKGLASS'):'NUX';
+  const product=m.skin==='darkglass'?(isStarlift?'STARLIFTER BASS PREAMP':'MICROTUBES B7K ULTRA'):m.skin==='nuxBass'?'MELVIN LEE DAVIS BASS PREAMP + DI':m.ref.toUpperCase();
   s+='<rect x="82" y="116" width="596" height="139" fill="url(#headBlackPanel)" stroke="'+p.edge+'" stroke-width="1.5"/>'+word(380,155,brand,28,'Arial Black,Impact,sans-serif',p.edge,'middle','font-weight="900" letter-spacing="2"')+label(380,176,product,9,p.edge,800,1.2);
   s+='<rect x="82" y="262" width="596" height="75" fill="url(#headBlackPanel)" stroke="'+p.edge+'" stroke-width="1.5"/>';
   const labs=m.skin==='darkglass'?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:m.skin==='nuxBass'?['GAIN','DRIVE','BLEND','BASS','MID','TREBLE','LEVEL']:['REVERB','IR LEVEL','SELECT','GAIN','BASS','MIDDLE','TREBLE'];
