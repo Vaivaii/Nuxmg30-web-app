@@ -507,3 +507,65 @@ The user reported that DAW clips showed a flat placeholder during recording and 
 CI confirms tests and APK packaging, not the visible behavior on the user's phone. Install this APK and record guitar through MG-30 USB: the waveform should start appearing during capture and extend as recording continues, before Stop is pressed. Confirm that the waveform does not lag badly, flicker, or affect capture audio. Stop should then replace the temporary live preview with the final decoded clip waveform.
 
 Protected paths: NAM features, custom IR User/Third Party, IR Collection and MIDI mappings were not modified by this live-waveform change.
+
+
+## Live waveform color rendering correction — physical test + Build #419 (3 November 2026, 21:23–21:32 WIB)
+
+### User's physical test on Build #418
+
+The user installed Build #418 and supplied two Studio DAW screenshots from the physical Android/MG-30 setup:
+- During recording (record elapsed display approximately 00:07.7), the live waveform already appeared and extended before Stop. This confirms the key live-waveform behavior is physically working.
+- The live waveform bars were nearly black/invisible against the dark timeline, and the temporary live clip did not have the blue-tinted clip fill visible on the final imported clip after Stop.
+- After Stop, the finalized clip displayed a blue-tinted fill matching the Backing track color and a light waveform. The take name was `MG30_USB_Input_Take_20261103_212320.wav`.
+
+### Root cause
+
+The temporary element created by `ensureLiveRecordingClipNode()` had the `daw-clip` class but did not receive the per-track CSS custom property `--track-color`.
+
+The normal persisted-clip renderer explicitly assigns `--track-color: track.color` in each clip's inline style. Existing DAW CSS relies on that variable for:
+- clip background tint (`color-mix(... var(--track-color) 22% ...)`);
+- clip border;
+- SVG waveform peak fill and stroke.
+
+Because the live preview omitted the variable, those CSS declarations could not resolve to the track palette; the SVG peak group fell back to its default dark fill and the expected color-tinted clip layer was absent.
+
+### Fix applied
+
+In `www/studio-daw.js`, `ensureLiveRecordingClipNode()` now obtains the recording track and assigns its color to the temporary node before appending it:
+
+```js
+const track = getTrack(recordingTrackId);
+if (track?.color) node.style.setProperty('--track-color', track.color);
+```
+
+This reuses the existing clip and waveform visual rules; no new color palette, CSS redesign, or audio-path change was needed. The Backing preview now receives the same blue track token used by the final Backing clip. Guitar, Bass and Vocals previews likewise receive their own respective track colors.
+
+Regression coverage was added to `tests/studio-usb-loopback.test.js` to assert that the live node gets the armed track's `--track-color` and that the existing CSS still defines the track-colored clip background, SVG fill and stroke.
+
+### Build #419 — verified
+
+- Workflow: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41654002918
+- Branch: `feature/studio-usb-loopback`
+- Source commit: `08282660a39259d9ad0bab049dc6dea5f8e1a97f`
+- Regression suite: **159 passed, 0 failed**.
+- Android initializer syntax: passed.
+- Capacitor Android generation / USB audio plugin registration: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 29s**.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `13238263678`.
+- Artifact ZIP size: 4,133,560 bytes.
+- Artifact ZIP SHA-256: `f6a56fa0bd1bcbe917251f82a6af63ecef419a8d92abefb8763edece8fd5a11b`.
+- Extracted APK: 4,511,668 bytes.
+- APK SHA-256: `53ba1137e2144b60e0201e72ff53ac55700e45b1fe6bace4e848e2d3f4dca974`.
+- APK package file type and compiled web bundle inspected; the bundle contains the live-preview `--track-color` assignment and the expected SVG waveform peak color rules.
+- Artifact download: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41654002918/artifacts/13238263678
+
+### Scope and physical re-test
+
+Only `www/studio-daw.js` and `tests/studio-usb-loopback.test.js` changed for this correction. No native USB capture code, WAV writing, track routing, persisted clip media, NAM transfer, custom IR User/Third Party, IR Collection, or MIDI mapping code was changed.
+
+The user has confirmed installation of Build #418 only. **Build #419 is built and inspected but is not yet confirmed installed or physically re-tested.** On the next hardware check, install Build #419 and verify:
+1. During recording, the waveform is light/high-contrast and clearly visible.
+2. The live clip's fill/border follows the armed track color (blue for Backing in the supplied example).
+3. After Stop, the final imported clip remains visually consistent with the live preview and the recorded audio is intact.
+
+Do not claim the visual defect is physically fixed until this Build #419 re-test is confirmed on the user's phone.
