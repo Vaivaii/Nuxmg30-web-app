@@ -11,6 +11,7 @@ const isNative = () => Capacitor.isNativePlatform();
 const safeText = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let backingObjectUrl = null;
 let recording = false;
+let recordingCaptureMode = 'normal';
 let takeNumber = 0;
 const takes = [];
 let selectedRenameIndex = -1;
@@ -270,71 +271,92 @@ $('guitarPlayback')?.addEventListener('ended', () => {
 });
 async function startGuitarRecording(options = {}) {
   const captureMode = options?.captureMode === 'loopback' ? 'loopback' : 'normal';
+  const isLoopback = captureMode === 'loopback';
   if (!isNative()) {
-    setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
-    return;
+    if (!isLoopback) setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
+    return null;
   }
-  if (recording) return;
-  $('guitarRecordBtn').disabled = true;
-  setStatus('recordStatus', 'Preparing AudioRecord and verifying USB routing…');
+  if (recording) return null;
+  if (!isLoopback) {
+    $('guitarRecordBtn').disabled = true;
+    setStatus('recordStatus', 'Preparing AudioRecord and verifying USB routing…');
+  }
   try {
     const result = await MG30Audio.startRecording({ prefer24Bit: true, captureMode });
+    if (!result?.recording) throw new Error('Android did not confirm that USB recording started.');
     recording = true;
-    $('guitarStopBtn').disabled = false;
-    $('guitarPlayBtn').disabled = true;
-    stopPlayback(true);
-    $('guitarRecordBtn').classList.add('is-recording');
-    $('guitarTrackMeter').classList.add('is-recording');
-    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit · ' + (result.channels || 2) + ' ch';
-    const loopbackNote = captureMode === 'loopback'
-      ? ' LOOPBACK CAPTURE · preserving ' + (result.channels || 2) + ' USB channel(s) · ' + (result.channelLayout || 'channel layout not reported') + '.'
-      : '';
-    setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format not reported') + '.' + loopbackNote, 'ok');
+    recordingCaptureMode = captureMode;
+    if (!isLoopback) {
+      $('guitarStopBtn').disabled = false;
+      $('guitarPlayBtn').disabled = true;
+      stopPlayback(true);
+      $('guitarRecordBtn').classList.add('is-recording');
+      $('guitarTrackMeter').classList.add('is-recording');
+      $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit · ' + (result.channels || 2) + ' ch';
+      setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format not reported') + '.', 'ok');
+    }
     return result;
   } catch (error) {
-    setStatus('recordStatus', error?.message || 'Could not start USB recording.', 'warn');
-    $('guitarTrackMeta').textContent = 'USB detected, but the recording route is not ready.';
+    if (!isLoopback) {
+      setStatus('recordStatus', error?.message || 'Could not start USB recording.', 'warn');
+      $('guitarTrackMeta').textContent = 'USB detected, but the recording route is not ready.';
+    }
     return null;
   } finally {
-    $('guitarRecordBtn').disabled = recording;
+    if (!isLoopback) $('guitarRecordBtn').disabled = recording;
   }
 }
 async function stopGuitarRecording() {
   if (!isNative() || !recording) return null;
+  const captureMode = recordingCaptureMode;
+  const isLoopback = captureMode === 'loopback';
   let savedTake = null;
-  $('guitarStopBtn').disabled = true;
-  setStatus('recordStatus', 'Finalizing recording and writing the WAV header…');
+  if (!isLoopback) {
+    $('guitarStopBtn').disabled = true;
+    setStatus('recordStatus', 'Finalizing recording and writing the WAV header…');
+  }
   try {
     const take = await MG30Audio.stopRecording();
     recording = false;
-    $('guitarTrackMeter').classList.remove('is-recording');
-    $('guitarRecordBtn').classList.remove('is-recording');
+    recordingCaptureMode = 'normal';
+    if (!isLoopback) {
+      $('guitarTrackMeter').classList.remove('is-recording');
+      $('guitarRecordBtn').classList.remove('is-recording');
+    }
     if (take && take.path) {
       takeNumber += 1;
       takes.unshift(take);
       savedTake = take;
       renderTakes();
       window.dispatchEvent(new Event('mg30-studio-takes-updated'));
-      setCurrentPlayback(take, false);
-      $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
-      $('guitarFormatMeta').textContent = 'File saved automatically · WAV PCM ' + take.bitDepth + '-bit · ' + take.sampleRate + ' Hz';
-      setStatus('recordStatus', 'Recording saved automatically: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Use the Export icon to save a copy to your chosen folder.', 'ok');
-    } else {
+      if (!isLoopback) {
+        setCurrentPlayback(take, false);
+        $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
+        $('guitarFormatMeta').textContent = 'File saved automatically · WAV PCM ' + take.bitDepth + '-bit · ' + take.sampleRate + ' Hz';
+        setStatus('recordStatus', 'Recording saved automatically: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Use the Export icon to save a copy to your chosen folder.', 'ok');
+      }
+    } else if (!isLoopback) {
       setStatus('recordStatus', 'Recording stopped, but the audio engine did not return a file.', 'warn');
     }
   } catch (error) {
     recording = false;
-    $('guitarTrackMeter').classList.remove('is-recording');
-    $('guitarRecordBtn').classList.remove('is-recording');
-    setStatus('recordStatus', error?.message || 'Could not save the WAV recording.', 'warn');
+    recordingCaptureMode = 'normal';
+    if (!isLoopback) {
+      $('guitarTrackMeter').classList.remove('is-recording');
+      $('guitarRecordBtn').classList.remove('is-recording');
+      setStatus('recordStatus', error?.message || 'Could not save the WAV recording.', 'warn');
+    }
   } finally {
-    $('guitarRecordBtn').disabled = false;
-    $('guitarStopBtn').disabled = takes.length === 0;
-    $('guitarRecordBtn').classList.remove('is-recording');
-    $('guitarPlayBtn').disabled = takes.length === 0;
+    if (!isLoopback) {
+      $('guitarRecordBtn').disabled = false;
+      $('guitarStopBtn').disabled = takes.length === 0;
+      $('guitarRecordBtn').classList.remove('is-recording');
+      $('guitarPlayBtn').disabled = takes.length === 0;
+    }
   }
   return savedTake;
 }
+
 function parseYoutubeId(value) {
   try {
     const url = new URL(value.trim());
