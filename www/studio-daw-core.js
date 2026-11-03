@@ -1,10 +1,39 @@
-export const DAW_TRACKS = Object.freeze([
-  { id: 'backing', name: 'Backing', shortName: 'BACKING', color: '#4daeff', input: 'Audio file' },
-  { id: 'guitar', name: 'Guitar', shortName: 'GUITAR', color: '#c5f36b', input: 'MG-30 USB' },
-  { id: 'bass', name: 'Bass', shortName: 'BASS', color: '#bd83f5', input: 'Import / MG-30 USB overdub' },
-  { id: 'vocals', name: 'Vocals', shortName: 'VOCALS', color: '#edc85b', input: 'Import / MG-30 USB overdub' },
-  { id: 'loopback', name: 'Loopback', shortName: 'LOOPBACK', color: '#53d4c7', input: 'MG-30 USB Loopback' },
+export const DAW_INPUT_ROUTES = Object.freeze([
+  { id: 'file', label: 'Audio file / Import', channelIndexMask: 0, captureMode: 'file' },
+  { id: 'usb-ch1-mono', label: 'MG-30 USB · Input 1 (Mono)', channelIndexMask: 1, captureMode: 'multichannel' },
+  { id: 'usb-ch1-2-stereo', label: 'MG-30 USB · Input 1–2 (Stereo)', channelIndexMask: 3, captureMode: 'multichannel' },
+  { id: 'usb-loopback-3-4-stereo', label: 'MG-30 USB · Loopback 3–4 (Stereo)', channelIndexMask: 12, captureMode: 'multichannel' },
 ]);
+
+export const DAW_TRACKS = Object.freeze([
+  { id: 'backing', name: 'Backing', shortName: 'BACKING', color: '#4daeff', input: 'Audio file', inputRoute: 'file' },
+  { id: 'guitar', name: 'Guitar', shortName: 'GUITAR', color: '#c5f36b', input: 'MG-30 USB', inputRoute: 'usb-ch1-2-stereo' },
+  { id: 'bass', name: 'Bass', shortName: 'BASS', color: '#bd83f5', input: 'MG-30 USB', inputRoute: 'usb-ch1-2-stereo' },
+  { id: 'vocals', name: 'Vocals', shortName: 'VOCALS', color: '#edc85b', input: 'MG-30 USB', inputRoute: 'usb-ch1-2-stereo' },
+]);
+
+export function selectUsbChannelPositions(capturedMask, requestedMask) {
+  const actualMask = Number(capturedMask) >>> 0;
+  const desiredMask = Number(requestedMask) >>> 0;
+  const requiredBits = [];
+  for (let bit = 0; bit < 8; bit += 1) {
+    if ((desiredMask & (1 << bit)) !== 0) requiredBits.push(1 << bit);
+  }
+  if (!requiredBits.length || requiredBits.length > 2) {
+    throw new RangeError('USB input route must select one mono channel or one stereo pair.');
+  }
+  const positions = [];
+  let sourcePosition = 0;
+  for (let bit = 0; bit < 8; bit += 1) {
+    if ((actualMask & (1 << bit)) === 0) continue;
+    if ((desiredMask & (1 << bit)) !== 0) positions.push(sourcePosition);
+    sourcePosition += 1;
+  }
+  if (positions.length !== requiredBits.length) {
+    throw new Error('The MG-30 USB capture does not contain the channel(s) selected for this track.');
+  }
+  return positions;
+}
 
 export function makeId(prefix = 'daw') {
   const random = globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10));
@@ -32,6 +61,7 @@ export function createDefaultProject(name = 'Untitled Project', now = new Date()
       name: track.name,
       color: track.color,
       input: track.input,
+      inputRoute: track.inputRoute,
       gain: 1,
       pan: 0,
       mute: false,
@@ -68,6 +98,8 @@ export function normalizeProject(input) {
         channels: Math.max(1, Math.min(8, Math.round(Number(clip.channels) || 2))),
         captureMode: ['normal', 'loopback', 'file'].includes(clip.captureMode) ? clip.captureMode : 'file',
         channelIndexMask: Math.max(0, Math.min(255, Math.round(Number(clip.channelIndexMask) || 0))),
+        inputChannelMask: Math.max(0, Math.min(255, Math.round(Number(clip.inputChannelMask) || 0))),
+        inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === clip.inputRoute) ? clip.inputRoute : 'file',
         waveform: Array.isArray(clip.waveform) ? clip.waveform.slice(0, 128).map((value) => Math.max(0, Math.min(100, Number(value) || 0))) : [],
       };
     }).filter(Boolean) : [];
@@ -76,6 +108,7 @@ export function normalizeProject(input) {
       name: String(source.name || definition.name).slice(0, 40),
       color: definition.color,
       input: String(source.input || definition.input).slice(0, 80),
+      inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === source.inputRoute) ? source.inputRoute : definition.inputRoute,
       gain: Math.max(0, Math.min(2, Number.isFinite(Number(source.gain)) ? Number(source.gain) : 1)),
       pan: Math.max(-1, Math.min(1, Number.isFinite(Number(source.pan)) ? Number(source.pan) : 0)),
       mute: Boolean(source.mute),
