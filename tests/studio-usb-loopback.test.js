@@ -127,7 +127,7 @@ test('four-track DAW exposes per-track routes and only imports selected USB chan
   assert.ok(daw.includes('inputChannelMask: route.channelIndexMask'));
   assert.ok(daw.includes('beginLiveRecordingWaveformPolling()'));
   assert.ok(daw.includes('waveformLevelsFromRecordingStats(stats, route)'));
-  assert.ok(daw.includes('data-live-recording-clip'));
+  assert.ok(daw.includes('dataset.liveRecordingClip'));
   assert.ok(daw.includes('window.setInterval(() => { void poll(); }, 200)'));
   assert.doesNotMatch(daw, /id: 'loopback', name: 'Loopback'/);
   assert.doesNotMatch(daw, /dawLoopbackRecord|mountLoopbackPanel|syncLoopbackPanel/);
