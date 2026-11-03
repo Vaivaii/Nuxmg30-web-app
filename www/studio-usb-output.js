@@ -45,7 +45,7 @@ function renderDevice(device) {
     escapeHtml(device.typeName || 'Audio output') + ' · ' +
     escapeHtml(rates) + ' · ' + escapeHtml(channels + encodings) +
     '</small></div><span class="daw-usb-output-tag">' +
-    (device.isUsb ? 'USB OUT' : 'OUTPUT') + '</span></div>';
+    (device.isMg30 ? 'MG-30' : (device.isUsb ? 'USB OUT' : 'OUTPUT')) + '</span></div>';
 }
 
 function mountUsbOutputPanel() {
@@ -92,11 +92,14 @@ function mountUsbOutputPanel() {
       const result = await MG30AudioOutput.inspectOutputDevices();
       const devices = Array.isArray(result.devices) ? result.devices : [];
       list.innerHTML = devices.map(renderDevice).join('');
-      if (result.usbOutputFound) {
-        const usbNames = devices.filter((device) => device.isUsb).map((device) => device.name);
-        status.textContent = 'USB output terdeteksi: ' + usbNames.join(', ') +
+      if (result.mg30OutputFound) {
+        const mg30Names = devices.filter((device) => device.isMg30).map((device) => device.name);
+        status.textContent = 'Endpoint output NUX / MG-30 terlihat: ' + mg30Names.join(', ') +
           '. Ini baru bukti endpoint terlihat, belum bukti audio berhasil dikirim.';
         status.classList.add('ok');
+      } else if (result.usbOutputFound) {
+        status.textContent = 'USB output terdeteksi, tetapi nama perangkat belum cocok dengan NUX / MG-30. Periksa daftar perangkat di bawah.';
+        status.classList.add('warn');
       } else {
         status.textContent = devices.length
           ? 'Android melihat output audio, tetapi belum ada endpoint USB yang dikenali.'
