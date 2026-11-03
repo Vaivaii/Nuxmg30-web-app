@@ -317,7 +317,7 @@ function ampSvg(m){
   jack(108,294,6)+jack(131,294,6)+toggle(159,294);
   label(185,273,'CUSTOM HIWATT 100',8,'#eff0e7',800,1.4);
   ['NORM VOL','BRIGHT VOL','BASS','TREBLE','MIDDLE','PRESENCE','MASTER'].forEach((v,i)=>s+=k(222+i*61,306,8.5,v));
-  led(657,293,'#c84035')+toggle(675,293);
+  s+=led(657,293,'#c84035')+toggle(675,293);
   return s+feet+screw(72,103)+screw(688,103);
  }
  // MESA: diamond-plate upper fascia, MESA badge upper-right, lower black panel with Rectifier identity on left.
@@ -431,6 +431,16 @@ function ampSvg(m){
   ['GAIN','MID LEVEL','BASS','VOLUME','DRIVE','MID FREQ','TREBLE'].forEach((v,i)=>{const coords=[[226,222],[311,222],[396,222],[481,222],[226,287],[311,287],[396,287]];s+=k(coords[i][0],coords[i][1],10,v,true);});
   s+=label(578,257,'D.I. / MUTE / STATUS',7,'#242b2d',800,1)+led(564,282,'#9bc26b')+toggle(600,282);
   return s+feet;
+ }
+ // RIVERA: blue-black head with centered maker logo and two banks of independent channel controls.
+ if(m.skin==='rivera'){
+  s+=shell('#17232c','#9aa8ae')+handle;
+  s+='<rect x="82" y="116" width="596" height="138" fill="#10181d" stroke="#768a95" stroke-width="1.5"/><rect x="89" y="123" width="582" height="124" fill="url(#headMesh)"/>';
+  word(380,205,'RIVERA',45,'Arial,Helvetica,sans-serif','#e5e9e4','middle','font-weight="900" letter-spacing="4"');
+  s+='<rect x="82" y="262" width="596" height="75" fill="url(#headSilver)" stroke="#d5dedb" stroke-width="1.5"/>';
+  const labs=['PRES','BASS','MID','TREB','GAIN','MASTER','LEVEL','BOOST'];
+  labs.forEach((v,i)=>s+=k(149+i*65,302,8.7,v,true));
+  return s+feet+screw(72,103)+screw(688,103);
  }
  // NUX / Darkglass compact bass and acoustic amp/preamp hardware: compact head chassis, screen and precise control spacing.
  if(['darkglass','nuxBass','nuxAcoustic'].includes(m.skin)){
