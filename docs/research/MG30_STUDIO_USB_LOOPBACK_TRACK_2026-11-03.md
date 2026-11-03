@@ -257,3 +257,8 @@ Obtain the original raw Quick Take WAV "MG30_USB_Input_Take_20261103_150952.wav"
 
 Next diagnostic UI should expose, per take: selected endpoint, AudioRecord routed endpoint, sample format, actual channel count, actual channel-index mask, bytes written, capture errors, and per-channel peak/RMS. It should separately indicate whether the MG-30 USB output endpoint is present; do not conflate USB MIDI connectivity with USB Audio output routing.
 
+
+
+## Uploaded test WAV identity needs confirmation (3 November 2026)
+
+The uploaded file `Tes- ush-Fu---Mix.wav` is 9.6 s, 48 kHz, stereo, 24-bit PCM. Both channels contain only zero-valued samples (peak 0, RMS 0, nonzero samples 0). Its filename is not the native Quick Take prefix `MG30_USB_Input_Take_...`, so do not assume this file is the MG-30 capture; it may instead be the source song supplied for playback. Ask whether it is the source song or a recording/export. If source, retry with a known audible WAV. If capture, request the raw native Quick Take export to diagnose the USB input channels.
