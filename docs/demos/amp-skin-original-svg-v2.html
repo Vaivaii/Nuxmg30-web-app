@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d0d">
+<title>MG30 Studio · Amp Skin Study V2 — Original SVG</title>
+<style>
+:root{color-scheme:dark;--bg:#090c0d;--panel:#14191b;--panel2:#1b2224;--line:#303a3d;--text:#f0f1ec;--muted:#8b999c;--gold:#d4b47a;--orange:#ef9b52;--lime:#bddc76}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#354044 0,transparent 45%),var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select{font:inherit}
+main{max-width:1280px;margin:auto;padding:18px 18px 36px}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+.brand{display:flex;gap:11px;align-items:center}.logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,#d9c08d,#98774c);color:#171512;font-weight:950;letter-spacing:-1px}
+.brand b{display:block;font-size:14px;letter-spacing:.1px}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;margin-top:2px}
+.header-tag{font-size:10px;color:#aab4b3;letter-spacing:1.4px;border:1px solid #394447;border-radius:99px;padding:8px 11px}
+.heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 2px 16px}
+.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:800}
+h1{font-size:clamp(25px,4vw,36px);letter-spacing:-1.3px;line-height:1.08;margin:5px 0 6px}
+.sub{margin:0;color:var(--muted);font-size:12px;max-width:670px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:13px;align-items:stretch}
+.card{background:linear-gradient(145deg,#171d1f,#101516);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 16px 45px #0003}
+.visual{padding:13px}
+.visual-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:1px 2px 12px}
+.visual-head .name{font-size:13px;font-weight:800;letter-spacing:.2px}
+.status{display:flex;align-items:center;gap:7px;color:#9ca9a9;font-size:9px;letter-spacing:1.4px}
+.status i{width:6px;height:6px;border-radius:50%;background:#8fbd65;box-shadow:0 0 10px #9ccf72}
+.amp-stage{position:relative;isolation:isolate;min-height:450px;border:1px solid #333e3f;border-radius:14px;overflow:hidden;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 52%,#4a5050 0,#252c2d 42%,#131819 78%,#0d1112 100%)}
+.amp-stage:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(115deg,transparent 28%,#ffffff0a 48%,transparent 70%),radial-gradient(ellipse at 50% 110%,#0009,transparent 55%)}
+.amp-stage:after{content:"";position:absolute;left:12%;right:12%;bottom:24px;height:18px;border-radius:50%;background:#000b;filter:blur(14px);z-index:-1}
+#ampArtwork{display:block;width:min(100%,760px);height:395px;overflow:visible;filter:drop-shadow(0 27px 22px #0009);transition:opacity .2s ease,transform .35s ease}.amp-stage.switching #ampArtwork{opacity:.3;transform:scale(.985)}.amp-svg text{font-family:Arial,Helvetica,sans-serif;user-select:none}@media(max-width:850px){#ampArtwork{height:315px}}@media(max-width:540px){#ampArtwork{height:245px}}
+.photo-fallback{display:none;text-align:center;max-width:390px;color:#d5d0c4;padding:28px}
+.photo-fallback strong{display:block;font-size:18px;margin-bottom:7px}
+.photo-fallback p{color:#aab1ac;font-size:12px}
+.visual-foot{display:flex;justify-content:space-between;gap:12px;padding:11px 3px 1px;color:#839092;font-size:9px;letter-spacing:1px}
+.controls{padding:16px}
+.control-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.control-head strong{font-size:12px}.power{display:flex;align-items:center;gap:7px;color:#a7b1ae;font-size:9px;letter-spacing:1px}
+.power button{width:32px;height:19px;padding:2px;border:1px solid #505b5c;border-radius:99px;background:#242c2d;cursor:pointer}
+.power button span{display:block;width:13px;height:13px;border-radius:50%;background:#8a9491;transition:transform .2s,background .2s}
+.power button.on{background:#4c603c;border-color:#779550}.power button.on span{transform:translateX(12px);background:#d3ed91}
+.divider{height:1px;background:#303a3b;margin:13px 0}
+.small-label{font-size:9px;color:#879496;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;margin-bottom:8px}
+select{width:100%;background:#0d1213;color:#e9ece5;border:1px solid #3b4748;border-radius:10px;padding:11px 10px;outline:none;font-size:12px}
+select:focus{border-color:var(--gold)}
+.ref-name{font-size:17px;font-weight:850;letter-spacing:-.5px;margin-top:15px}
+.ref-sub{font-size:11px;color:var(--gold);margin-top:2px}
+.params{display:grid;grid-template-columns:repeat(3,1fr);gap:13px 7px;padding:7px 0 2px}
+.param{min-width:0;text-align:center}
+.knob{--angle:0deg;width:53px;height:53px;margin:0 auto 6px;position:relative;border-radius:50%;background:radial-gradient(circle at 35% 27%,#747a78 0,#3b4140 18%,#1a1e1e 48%,#090b0b 72%);border:2px solid #727a77;box-shadow:inset 0 2px 3px #ffffff30,0 3px 8px #0009,0 0 0 3px #202626}
+.knob:before{content:"";position:absolute;left:calc(50% - 1px);top:5px;width:2px;height:10px;border-radius:3px;background:#f4dfb5;transform-origin:1px 20px;transform:rotate(var(--angle))}
+.knob:after{content:"";position:absolute;inset:6px;border-radius:50%;border:1px solid #ffffff17}
+.param label{display:block;font-size:8px;letter-spacing:1px;color:#bac2ba;font-weight:750}
+.param input{width:100%;height:14px;margin:2px 0 0;accent-color:var(--gold)}
+.readout{font-size:9px;color:#8d9a94;font-variant-numeric:tabular-nums}
+.info{border:1px solid #41433a;background:#d4b47a0a;border-radius:11px;padding:11px 12px;color:#aeb6aa;font-size:10px;line-height:1.6}
+.info b{color:#ddc28e}
+.footnote{margin-top:12px;color:#677477;font-size:9px;text-align:center}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.amp-stage{min-height:340px}#ampPhoto{height:315px}.controls{padding:15px}.params{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:540px){main{padding:13px 10px 25px}.header-tag{display:none}.heading{display:block}.sub{font-size:11px}.amp-stage{min-height:260px;padding:10px}#ampPhoto{height:245px}.params{grid-template-columns:repeat(3,1fr)}.visual{padding:9px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div class="brand"><div class="logo">MG</div><div><b>MG30 Studio · Visual Lab</b><small>Amplifier skin exploration</small></div></div>
+ <div class="header-tag">AMP VISUAL STUDY · SEPARATE DEMO</div>
+</header>
+<section class="heading">
+ <div><div class="eyebrow">Hardware-first amp design</div><h1>Let the amplifier be the interface.</h1><p class="sub">Arah visual mengambil inspirasi dari amp skin AmpliTube dan TONEX: hardware menjadi fokus utama, sementara kontrol digital disusun mengikuti karakter amplifier yang dipilih.</p></div>
+</section>
+<section class="layout">
+ <div class="card visual">
+  <div class="visual-head"><div class="name">AMPLIFIER MODEL · SVG V2</div><div class="status"><i></i> MODEL PREVIEW</div></div>
+  <div class="amp-stage" id="stage">
+   <svg id="ampArtwork" class="amp-svg" viewBox="0 0 760 440" role="img" aria-label="Original vector amplifier artwork"></svg>
+  </div>
+  <div class="visual-foot"><span id="visualCaption">PRODUCT SKIN / FRONT VIEW</span><span>ORIGINAL INLINE SVG ARTWORK · V2</span></div>
+ </div>
+ <aside class="card controls">
+  <div class="control-head"><strong>AMP CONTROLS</strong><div class="power">POWER <button class="on" id="power" type="button" aria-label="Toggle power"><span></span></button></div></div>
+  <div class="small-label">Choose amplifier</div>
+  <select id="model"></select>
+  <div class="ref-name" id="modelName"></div>
+  <div class="ref-sub" id="modelRef"></div>
+  <div class="divider"></div>
+  <div class="small-label">Tone controls · interactive mockup</div>
+  <div class="params" id="params"></div>
+  <div class="divider"></div>
+  <div class="info"><b>Design direction:</b> jangan membuat satu gambar amp generik untuk semua model. Setiap amplifier perlu skin sendiri berdasarkan foto atau render hardware yang sesuai—grille, chassis, panel, knob, logo, material, dan warna. Kontrol digital mengikuti nama serta karakter amp tersebut.</div>
+ </aside>
+</section>
+<div class="footnote">Standalone visual prototype · Tidak terhubung ke MG-30 dan tidak mengubah MIDI, preset, NAM, IR, atau transfer perangkat.</div>
+</main>
+<script>
+(function(){
+ const models={
+  'Deluxe Rvb':{ref:'Fender ’65 Deluxe Reverb',kind:'fender',twin:false,caption:'BLACKFACE 1×12 COMBO · SILVER GRILLE'},
+  'Plexi 100':{ref:'Marshall 1959 Super Lead',kind:'marshall',caption:'BLACK LEVANT · GOLD CONTROL PANEL'},
+  'Jazz Clean':{ref:'Roland JC-120 Jazz Chorus',kind:'roland',caption:'STEREO 2×12 · DUAL SPEAKER CABINET'},
+  'Dual Rect':{ref:'Mesa/Boogie Dual Rectifier',kind:'mesa',caption:'BLACK AMP HEAD · CHROME CONTROL DETAILS'},
+  'Twin Rvb':{ref:'Fender ’65 Twin Reverb',kind:'fender',twin:true,caption:'BLACKFACE 2×12 COMBO · SILVER GRILLE'},
+  'Class A15':{ref:'Vox AC15',kind:'vox',caption:'BASKETWEAVE CABINET · DIAMOND GRILLE'}
+ };
+ const select=document.getElementById('model'),art=document.getElementById('ampArtwork'),params=document.getElementById('params'),power=document.getElementById('power');
+ Object.keys(models).forEach(n=>{let o=document.createElement('option');o.value=n;o.textContent=n;select.appendChild(o)});
+ const controls={
+ 'Deluxe Rvb':['Volume','Treble','Bass','Reverb','Speed','Intensity'],
+ 'Plexi 100':['Presence','Bass','Middle','Treble','High Treble','Normal'],
+ 'Jazz Clean':['Volume','Treble','Middle','Bass','Distortion','Reverb','Speed','Depth'],
+ 'Dual Rect':['Presence','Master','Gain','Bass','Middle','Treble'],
+ 'Twin Rvb':['Volume','Treble','Middle','Bass','Reverb','Vibrato'],
+ 'Class A15':['Volume','Treble','Bass','Tone Cut','Master','Top Boost']};
+ const defs='<defs>'+
+ '<linearGradient id="cab" x2="0" y2="1"><stop stop-color="#444746"/><stop offset=".2" stop-color="#202323"/><stop offset=".8" stop-color="#090b0b"/><stop offset="1" stop-color="#303432"/></linearGradient>'+
+ '<linearGradient id="silver" x2="0" y2="1"><stop stop-color="#f1f0e9"/><stop offset=".4" stop-color="#aeb2ae"/><stop offset="1" stop-color="#606665"/></linearGradient>'+
+ '<linearGradient id="gold" x2="0" y2="1"><stop stop-color="#f2d99b"/><stop offset=".5" stop-color="#b99152"/><stop offset="1" stop-color="#72502d"/></linearGradient>'+
+ '<radialGradient id="knob" cx=".32" cy=".25"><stop stop-color="#737976"/><stop offset=".3" stop-color="#3a403e"/><stop offset="1" stop-color="#070909"/></radialGradient>'+
+ '<radialGradient id="cone"><stop stop-color="#55564f"/><stop offset=".18" stop-color="#151918"/><stop offset=".75" stop-color="#080a0a"/><stop offset="1" stop-color="#66675f"/></radialGradient>'+
+ '<pattern id="grille" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 0L7 7M7 0L0 7" stroke="#e1e0d6" stroke-opacity=".35"/><path d="M0 3.5H7" stroke="#151818" stroke-opacity=".4"/></pattern>'+
+ '<pattern id="diamond" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M7 0L14 7L7 14L0 7Z" fill="none" stroke="#cfc3a9" stroke-opacity=".5"/></pattern>'+
+ '<filter id="shadow"><feGaussianBlur stdDeviation="9"/></filter></defs>';
+ function k(x,y,r,label){return '<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#090a0a" stroke="#8e938e"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#knob)" stroke="#aeb2aa" stroke-opacity=".65"/><path d="M'+x+' '+(y-r+4)+'v-7" stroke="#f3e5c5" stroke-width="2.5" stroke-linecap="round"/><text x="'+x+'" y="'+(y+r+13)+'" text-anchor="middle" fill="#eee9dc" font-size="8">'+label+'</text></g>'}
+ function sp(x,y,r){return '<g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#cone)" stroke="#8d8e86" stroke-width="3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.75)+'" fill="none" stroke="#aaa99f" stroke-opacity=".25" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.2)+'" fill="#080a0a" stroke="#666960" stroke-width="3"/></g>'}
+ function handle(){return '<path d="M326 76q0 -12 13 -12h82q13 0 13 12v7h-12v-5h-84v5h-12z" fill="#080909" stroke="#777d78" stroke-width="2"/>'}
+ function fender(twin){
+  let labels=twin?['VOL','TREB','MID','BASS','REVERB','SPEED','INTENSITY']:['VOL','TREB','BASS','REVERB','SPEED','INTENSITY'],s='';
+  labels.forEach((l,i)=>s+=k(195+i*(twin?61:73),111,10,l));
+  return defs+'<ellipse cx="380" cy="394" rx="240" ry="16" fill="#000" opacity=".65" filter="url(#shadow)"/><rect x="126" y="75" width="508" height="302" rx="14" fill="url(#cab)" stroke="#646a66" stroke-width="4"/>'+handle()+'<rect x="145" y="88" width="470" height="43" fill="url(#silver)"/><rect x="151" y="94" width="458" height="31" fill="#171b1a"/>'+s+'<rect x="145" y="139" width="470" height="210" fill="#1a1e1d" stroke="#050606" stroke-width="5"/><rect x="151" y="145" width="458" height="198" fill="url(#grille)"/><text x="190" y="211" font-family="Georgia,serif" font-style="italic" font-size="28" fill="#eee9dc">Fender</text><text x="596" y="113" text-anchor="end" font-size="10" fill="#eee9dc"> '+(twin?'TWIN REVERB':'DELUXE REVERB')+'</text><text x="380" y="331" text-anchor="middle" font-size="9" letter-spacing="4" fill="#e7e4d9">'+(twin?'TWIN REVERB':'DELUXE')+'</text><circle cx="139" cy="91" r="4" fill="url(#silver)"/><circle cx="621" cy="91" r="4" fill="url(#silver)"/>';
+ }
+ function marshall(){
+  let s='';['PRES','BASS','MID','TREB','HIGH TREB','NORMAL'].forEach((l,i)=>s+=k(222+i*63,239,13,l));
+  return defs+'<ellipse cx="380" cy="355" rx="245" ry="17" fill="#000" opacity=".7" filter="url(#shadow)"/><rect x="115" y="115" width="530" height="230" rx="14" fill="url(#cab)" stroke="#727671" stroke-width="4"/>'+handle()+'<rect x="132" y="151" width="496" height="139" rx="4" fill="url(#gold)" stroke="#f0d9a0" stroke-width="2"/><text x="380" y="184" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="29" font-weight="bold" fill="#27231b">MARSHALL</text><text x="380" y="201" text-anchor="middle" font-size="8" letter-spacing="3" fill="#403522">1959 SUPER LEAD</text>'+s+'<text x="380" y="321" text-anchor="middle" font-size="10" letter-spacing="4" fill="#c5c9c0">100 WATT · ALL VALVE</text>';
+ }
+ function roland(){
+  let s='';['VOL','TREB','MID','BASS','DIST','REVERB','SPEED','DEPTH'].forEach((l,i)=>s+=k(169+i*60,112,9,l));
+  return defs+'<ellipse cx="380" cy="395" rx="250" ry="16" fill="#000" opacity=".65" filter="url(#shadow)"/><rect x="115" y="65" width="530" height="320" rx="13" fill="url(#cab)" stroke="#777d78" stroke-width="4"/><rect x="132" y="82" width="496" height="52" fill="url(#silver)"/><rect x="139" y="89" width="482" height="39" fill="#171b1a"/>'+s+'<rect x="135" y="145" width="490" height="224" fill="#171b1a" stroke="#9b9f96" stroke-width="3"/><rect x="142" y="152" width="476" height="210" fill="url(#grille)"/>'+sp(265,254,87)+sp(495,254,87)+'<text x="380" y="350" text-anchor="middle" font-size="16" letter-spacing="4" fill="#e7e7de">JAZZ CHORUS · JC-120</text>'+handle();
+ }
+ function mesa(){
+  let s='';['PRES','MASTER','GAIN','BASS','MID','TREB'].forEach((l,i)=>s+=k(220+i*64,239,13,l));
+  return defs+'<ellipse cx="380" cy="355" rx="245" ry="17" fill="#000" opacity=".7" filter="url(#shadow)"/><rect x="112" y="115" width="536" height="230" rx="13" fill="url(#cab)" stroke="#747a75" stroke-width="4"/>'+handle()+'<rect x="132" y="145" width="496" height="148" rx="5" fill="#171b1a" stroke="#898d84" stroke-width="2"/><text x="380" y="184" text-anchor="middle" font-family="Georgia,serif" font-size="25" fill="#e8e5d9">MESA</text><text x="380" y="202" text-anchor="middle" font-size="9" letter-spacing="4" fill="#c9c9be">DUAL RECTIFIER</text>'+s+'<circle cx="157" cy="267" r="5" fill="#d4bd84"/><circle cx="603" cy="267" r="5" fill="#d4bd84"/>';
+ }
+ function vox(){
+  let s='';['VOL','TREB','BASS','TONE CUT','MASTER','TOP BOOST'].forEach((l,i)=>s+=k(193+i*74,112,10,l));
+  return defs+'<ellipse cx="380" cy="394" rx="240" ry="16" fill="#000" opacity=".65" filter="url(#shadow)"/><rect x="126" y="75" width="508" height="302" rx="14" fill="#29241e" stroke="#9b8b6d" stroke-width="4"/>'+handle()+'<rect x="145" y="88" width="470" height="43" fill="url(#gold)"/>'+s+'<rect x="145" y="139" width="470" height="210" fill="#29231d" stroke="#080909" stroke-width="5"/><rect x="151" y="145" width="458" height="198" fill="url(#diamond)"/><text x="380" y="238" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="40" fill="#e5d8bb">VOX</text><text x="380" y="259" text-anchor="middle" font-size="10" letter-spacing="4" fill="#e5d8bb">AC15 CUSTOM</text>';
+ }
+ function render(){
+  let name=select.value,m=models[name],draw={fender:()=>fender(!!m.twin),marshall:marshall,roland:roland,mesa:mesa,vox:vox};
+  art.innerHTML=draw[m.kind]();
+  document.getElementById('modelName').textContent=name;
+  document.getElementById('modelRef').textContent=m.ref;
+  document.getElementById('visualCaption').textContent=m.caption+' · ORIGINAL VECTOR SKIN';
+  params.innerHTML='';
+  (controls[name]||[]).forEach((label,i)=>{
+   let box=document.createElement('div');box.className='param';
+   let knob=document.createElement('div');knob.className='knob';knob.style.setProperty('--angle',(-132+i*29)+'deg');
+   let lab=document.createElement('label');lab.textContent=label.toUpperCase();
+   let input=document.createElement('input');input.type='range';input.min='0';input.max='100';input.value=String([62,48,55,50,68,43,57,60][i%8]);
+   let read=document.createElement('div');read.className='readout';read.textContent=input.value;
+   input.addEventListener('input',()=>{knob.style.setProperty('--angle',(-135+Number(input.value)*2.7)+'deg');read.textContent=input.value});
+   box.append(knob,lab,input,read);params.appendChild(box);
+  });
+ }
+ select.addEventListener('change',render);power.addEventListener('click',()=>power.classList.toggle('on'));select.value='Twin Rvb';render();
+})();
+</script>
+</body>
+</html>
