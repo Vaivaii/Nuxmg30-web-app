@@ -1477,15 +1477,15 @@ async function refreshReampOutputDevices() {
   }
 }
 
-function floatStereoToPcm16(left, right) {
+function floatStereoToPcmFloat32(left, right) {
   const frameCount = Math.min(left?.length || 0, right?.length || 0);
-  const pcm = new Uint8Array(frameCount * 4);
+  const pcm = new Uint8Array(frameCount * 8);
   const view = new DataView(pcm.buffer);
   for (let index = 0; index < frameCount; index += 1) {
     const l = Math.max(-1, Math.min(1, Number(left[index]) || 0));
     const r = Math.max(-1, Math.min(1, Number(right[index]) || 0));
-    view.setInt16(index * 4, Math.round(l < 0 ? l * 32768 : l * 32767), true);
-    view.setInt16(index * 4 + 2, Math.round(r < 0 ? r * 32768 : r * 32767), true);
+    view.setFloat32(index * 8, l, true);
+    view.setFloat32(index * 8 + 4, r, true);
   }
   return pcm;
 }
@@ -1525,7 +1525,7 @@ async function prepareReampPlayback(sourceTrack, deviceId, startAt) {
       const rendered = await renderAudioChunk(
         [sourceTrack.id], startAt + startFrame / SAMPLE_RATE, frameCount, 'stem'
       );
-      const pcm = floatStereoToPcm16(rendered.getChannelData(0), rendered.getChannelData(1));
+      const pcm = floatStereoToPcmFloat32(rendered.getChannelData(0), rendered.getChannelData(1));
       for (let offset = 0; offset < pcm.length; offset += bridgeChunkBytes) {
         const chunk = pcm.subarray(offset, Math.min(pcm.length, offset + bridgeChunkBytes));
         await NativeMG30AudioOutput.appendReampPlaybackChunk({
@@ -1646,7 +1646,7 @@ async function runReampWorkflow(recordReturn) {
   if (recordButton) recordButton.disabled = true;
   if (stopButton) stopButton.disabled = true;
   try {
-    setReampPanelStatus('Merender track sumber sebagai PCM16 stereo 48 kHz…');
+    setReampPanelStatus('Merender track sumber sebagai PCM_FLOAT32 stereo 48 kHz…');
     const prepared = await prepareReampPlayback(sourceTrack, deviceId, startAt);
     reampSessionId = prepared.sessionId;
     reampStartPosition = startAt;
