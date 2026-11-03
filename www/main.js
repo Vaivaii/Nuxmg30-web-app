@@ -274,14 +274,14 @@ $('guitarPlayback')?.addEventListener('ended', () => {
   $('guitarPlayLabel').textContent = 'PLAY';
 });
 async function startGuitarRecording(options = {}) {
-  const captureMode = options?.captureMode === 'loopback' ? 'loopback' : 'normal';
-  const isLoopback = captureMode === 'loopback';
+  const captureMode = ['loopback', 'multichannel'].includes(options?.captureMode) ? options.captureMode : 'normal';
+  const isDawCapture = captureMode !== 'normal';
   if (!isNative()) {
-    if (!isLoopback) setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
+    if (!isDawCapture) setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
     return null;
   }
   if (recording) return null;
-  if (!isLoopback) {
+  if (!isDawCapture) {
     $('guitarRecordBtn').disabled = true;
     setStatus('recordStatus', 'Preparing AudioRecord and verifying USB routing…');
   }
@@ -290,7 +290,7 @@ async function startGuitarRecording(options = {}) {
     if (!result?.recording) throw new Error('Android did not confirm that USB recording started.');
     recording = true;
     recordingCaptureMode = captureMode;
-    if (!isLoopback) {
+    if (!isDawCapture) {
       $('guitarStopBtn').disabled = false;
       $('guitarPlayBtn').disabled = true;
       stopPlayback(true);
@@ -301,21 +301,21 @@ async function startGuitarRecording(options = {}) {
     }
     return result;
   } catch (error) {
-    if (!isLoopback) {
+    if (!isDawCapture) {
       setStatus('recordStatus', error?.message || 'Could not start USB recording.', 'warn');
       $('guitarTrackMeta').textContent = 'USB detected, but the recording route is not ready.';
     }
     return null;
   } finally {
-    if (!isLoopback) $('guitarRecordBtn').disabled = recording;
+    if (!isDawCapture) $('guitarRecordBtn').disabled = recording;
   }
 }
 async function stopGuitarRecording() {
   if (!isNative() || !recording) return null;
   const captureMode = recordingCaptureMode;
-  const isLoopback = captureMode === 'loopback';
+  const isDawCapture = captureMode === 'loopback';
   let savedTake = null;
-  if (!isLoopback) {
+  if (!isDawCapture) {
     $('guitarStopBtn').disabled = true;
     setStatus('recordStatus', 'Finalizing recording and writing the WAV header…');
   }
@@ -323,7 +323,7 @@ async function stopGuitarRecording() {
     const take = await MG30Audio.stopRecording();
     recording = false;
     recordingCaptureMode = 'normal';
-    if (!isLoopback) {
+    if (!isDawCapture) {
       $('guitarTrackMeter').classList.remove('is-recording');
       $('guitarRecordBtn').classList.remove('is-recording');
     }
@@ -333,25 +333,25 @@ async function stopGuitarRecording() {
       savedTake = take;
       renderTakes();
       window.dispatchEvent(new Event('mg30-studio-takes-updated'));
-      if (!isLoopback) {
+      if (!isDawCapture) {
         setCurrentPlayback(take, false);
         $('guitarTrackMeta').textContent = take.sampleRate + ' Hz · WAV PCM ' + take.bitDepth + '-bit · ' + take.channels + ' ch';
         $('guitarFormatMeta').textContent = 'File saved automatically · WAV PCM ' + take.bitDepth + '-bit · ' + take.sampleRate + ' Hz';
         setStatus('recordStatus', 'Recording saved automatically: ' + take.fileName + ' · ' + bytesLabel(take.dataBytes) + '. Use the Export icon to save a copy to your chosen folder.', 'ok');
       }
-    } else if (!isLoopback) {
+    } else if (!isDawCapture) {
       setStatus('recordStatus', 'Recording stopped, but the audio engine did not return a file.', 'warn');
     }
   } catch (error) {
     recording = false;
     recordingCaptureMode = 'normal';
-    if (!isLoopback) {
+    if (!isDawCapture) {
       $('guitarTrackMeter').classList.remove('is-recording');
       $('guitarRecordBtn').classList.remove('is-recording');
       setStatus('recordStatus', error?.message || 'Could not save the WAV recording.', 'warn');
     }
   } finally {
-    if (!isLoopback) {
+    if (!isDawCapture) {
       $('guitarRecordBtn').disabled = false;
       $('guitarStopBtn').disabled = takes.length === 0;
       $('guitarRecordBtn').classList.remove('is-recording');
