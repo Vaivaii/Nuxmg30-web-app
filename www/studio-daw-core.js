@@ -56,6 +56,7 @@ export function createDefaultProject(name = 'Untitled Project', now = new Date()
     snap: 'beat',
     zoom: 92,
     masterGain: 0.9,
+    outputRoute: 'speaker',
     tracks: DAW_TRACKS.map((track, index) => ({
       id: track.id,
       name: track.name,
@@ -137,6 +138,7 @@ export function normalizeProject(input) {
     snap: ['off', 'beat', 'bar', 'eighth'].includes(input.snap) ? input.snap : 'beat',
     zoom: Math.max(44, Math.min(180, Number(input.zoom) || defaults.zoom)),
     masterGain: Number.isFinite(Number(input.masterGain)) ? Math.max(0, Math.min(1.5, Number(input.masterGain))) : defaults.masterGain,
+    outputRoute: input.outputRoute === 'mg30' ? 'mg30' : 'speaker',
     legacyLoopbackClips: normalizeArchivedLoopbackClips(input, tracks),
     tracks: normalizedTracks,
   };
