@@ -2559,3 +2559,9 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
 #knobs .switch-position-button.is-active .switch-position{color:#c5f36b}
 #knobs .switch-position-button:focus-visible{outline:2px solid #c5f36b;outline-offset:2px}
 @media(max-width:720px){#knobs .three-way-switch{gap:3px}#knobs .switch-position-button{padding:5px 4px;min-height:31px}#knobs .switch-position-button .switch-position{font-size:7px}#knobs .switch-position-button strong{font-size:9px}}
+
+
+/* Safety state: switch frame labels are shown, but writes stay disabled until wire values are captured. */
+#knobs .switch-position-button:disabled{opacity:.8;cursor:not-allowed;filter:saturate(.55)}
+#knobs .switch-raw-value,#knobs .switch-safe-note{display:block;margin-top:5px;color:#9aa8a8;font-size:8px;line-height:1.25;text-align:center}
+#knobs .switch-safe-note{color:#d8bd87}
