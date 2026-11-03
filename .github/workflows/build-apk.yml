@@ -16,6 +16,7 @@ on:
       - feature/studio-usb-loopback
       - feature/studio-daw-output-routing
       - feature/studio-daw-editing-arrangement
+      - feature/amp-knob-label-correction
     paths:
       - 'www/**'
       - 'tests/**'
