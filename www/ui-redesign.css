@@ -2532,3 +2532,18 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
     box-sizing: border-box !important;
   }
 }
+
+
+/* Discrete cab microphone controls: readable names instead of rotary dials. */
+#knobs .knob-selector{display:flex;flex-direction:column;justify-content:flex-start;min-width:0}
+#knobs .knob-selector label{min-height:22px;line-height:1.3;margin-top:7px}
+#knobs .knob-selector .parameter-select{
+ display:block;width:100%;min-width:0;min-height:40px;margin:10px 0 0;padding:8px 9px;
+ border:1px solid #3b484c;border-radius:10px;background:#141c20;color:#edf3ef;
+ font:600 11px/1.25 inherit;text-align:center;outline:none;touch-action:pan-y;
+}
+#knobs .knob-selector .parameter-select:focus{border-color:#c5f36b;box-shadow:0 0 0 2px #c5f36b22}
+#knobs .knob-selector .parameter-select option{background:#141c20;color:#edf3ef}
+@media(max-width:720px){
+ #knobs .knob-selector .parameter-select{min-height:38px;padding:7px 4px;font-size:10px}
+}
