@@ -14,12 +14,12 @@ test('DAW JavaScript parses after the reamp workflow additions', () => {
   assert.doesNotThrow(() => execFileSync(process.execPath, ['--check', dawPath]));
 });
 
-test('native reamp session is explicitly limited to 48 kHz stereo PCM16', () => {
+test('native reamp session is explicitly limited to 48 kHz stereo PCM float32', () => {
   assert.match(plugin, /REAMP_SAMPLE_RATE = 48000/);
   assert.match(plugin, /REAMP_CHANNELS = 2/);
   assert.match(plugin, /REAMP_BYTES_PER_FRAME = 4/);
-  assert.match(plugin, /AudioFormat\.ENCODING_PCM_16BIT/);
-  assert.match(plugin, /PCM16 stereo 48 kHz/);
+  assert.match(plugin, /AudioFormat\.ENCODING_PCM_FLOAT/);
+  assert.match(plugin, /PCM float32 stereo 48 kHz/);
 });
 
 test('native dry playback resolves the chosen MG-30 endpoint and validates route before writing samples', () => {
@@ -49,15 +49,15 @@ test('native reamp stream has chunk upload, status, stop, and release lifecycle'
   assert.doesNotMatch(plugin, /AudioRecord\.Builder/);
 });
 
-test('DAW prepares a selected dry source into PCM16 chunks and routes it through the native output plugin', () => {
+test('DAW prepares a selected dry source into PCM float32 chunks and routes it through the native output plugin', () => {
   assert.ok(daw.includes("registerPlugin('MG30AudioOutput')"));
-  assert.ok(daw.includes('floatStereoToPcm16'));
+  assert.ok(daw.includes('floatStereoToPcmFloat32'));
   assert.ok(daw.includes('beginReampPlayback'));
   assert.ok(daw.includes('appendReampPlaybackChunk'));
   assert.ok(daw.includes('startReampPlayback'));
   assert.ok(daw.includes('getReampPlaybackStatus'));
   assert.ok(daw.includes('stopReampPlayback'));
-  assert.match(daw, /PCM16 stereo 48 kHz/);
+  assert.match(daw, /PCM float32 stereo 48 kHz/);
 });
 
 test('DAW requires separate source and return tracks and reuses the existing USB recorder for return capture', () => {
