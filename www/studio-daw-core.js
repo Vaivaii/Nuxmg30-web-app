@@ -52,6 +52,8 @@ export function createDefaultProject(name = 'Untitled Project', now = new Date()
     sampleRate: 48000,
     bitDepth: 24,
     loopEnabled: false,
+    loopStartSeconds: 0,
+    loopEndSeconds: 0,
     metronomeEnabled: false,
     snap: 'beat',
     zoom: 92,
