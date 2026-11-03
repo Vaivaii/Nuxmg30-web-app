@@ -7,7 +7,6 @@ import {
 } from './studio-daw-core.js';
 
 const NativeDawFiles = registerPlugin('MG30DawFiles');
-const NativeMG30AudioOutput = registerPlugin('MG30AudioOutput');
 const $ = (id) => document.getElementById(id);
 const DB_NAME = 'mg30-studio-daw';
 const DB_VERSION = 1;
@@ -44,12 +43,6 @@ let historyFuture = [];
 let historySnapshot = '';
 let historyTimer = 0;
 let destroyed = false;
-let reampSessionId = '';
-let reampPollTimer = 0;
-let reampPollBusy = false;
-let reampPlaybackActive = false;
-let reampRecordingActive = false;
-let reampStartPosition = 0;
 
 const storageKey = 'mg30-studio-last-mode';
 
@@ -423,7 +416,6 @@ function renderProject() {
   if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = '4 tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
   updatePlayheadReadout();
   updateTransport();
-  syncReampTrackOptions();
 }
 
 function formatClock(seconds) {
@@ -534,8 +526,7 @@ async function populateSavedProjects() {
 
 async function loadProject(projectId) {
   if (!projectId) return;
-  if (reampPlaybackActive || reampSessionId) await stopReampWorkflow(true);
-  else if (recording) await stopDawRecording();
+  if (recording) await stopDawRecording();
   stopPlayback(true);
   try {
     const saved = await databaseRequest('projects', 'readonly', 'get', projectId);
@@ -577,7 +568,6 @@ async function loadProject(projectId) {
 }
 
 async function createNewProject() {
-  if (reampPlaybackActive || reampSessionId) await stopReampWorkflow(true);
   if (recording) {
     setStatus('Stop the active recording before creating a new project.', 'warn');
     return;
@@ -1055,10 +1045,6 @@ function stopPlayback(reset = true) {
 }
 
 async function togglePlayback() {
-  if (reampPlaybackActive) {
-    setStatus('Stop USB Reamp before starting the normal DAW transport.', 'warn');
-    return;
-  }
   if (playing) pausePlayback();
   else await startPlayback(playheadSeconds);
 }
@@ -1135,10 +1121,6 @@ async function stopDawRecording() {
 }
 
 async function handleDawRecordClick() {
-  if (reampRecordingActive) {
-    await stopReampWorkflow(true);
-    return;
-  }
   if (recording) await stopDawRecording();
   else await startDawRecording();
 }
@@ -1335,395 +1317,6 @@ function updateProjectField(field, value) {
   scheduleProjectSave();
 }
 
-
-function addReampPanelStyles() {
-  if ($('dawReampPanelStyles')) return;
-  const style = document.createElement('style');
-  style.id = 'dawReampPanelStyles';
-  style.textContent = `
-    #page-studio .daw-reamp-panel{margin:14px 0;padding:14px;border:1px solid rgba(117,169,202,.25);border-radius:14px;background:linear-gradient(145deg,rgba(23,42,54,.72),rgba(14,20,25,.92));color:#e5edf4}
-    #page-studio .daw-reamp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    #page-studio .daw-reamp-eyebrow{font-size:9px;letter-spacing:.13em;font-weight:850;color:#91b9d5}
-    #page-studio .daw-reamp-panel h4{margin:4px 0 5px;font-size:15px;font-weight:800}
-    #page-studio .daw-reamp-panel p{margin:0;color:var(--muted,#9aa9b5);font-size:10px;line-height:1.5}
-    #page-studio .daw-reamp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
-    #page-studio .daw-reamp-field{display:grid;gap:5px;min-width:0}
-    #page-studio .daw-reamp-field label{font-size:8px;letter-spacing:.09em;font-weight:850;color:#a8bac8}
-    #page-studio .daw-reamp-field select{width:100%;min-width:0;border:1px solid rgba(148,163,184,.22);border-radius:8px;padding:9px 8px;background:#111a21;color:#e5edf4;font-size:11px}
-    #page-studio .daw-reamp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-    #page-studio .daw-reamp-btn{min-height:40px;padding:9px;border:1px solid rgba(105,167,208,.4);border-radius:9px;background:rgba(49,112,153,.2);color:#d8edfc;font-size:9px;font-weight:850;letter-spacing:.035em}
-    #page-studio .daw-reamp-btn.primary{background:rgba(142,190,78,.16);border-color:rgba(172,213,115,.45);color:#dcf2b7}
-    #page-studio .daw-reamp-btn.stop{grid-column:1/-1;background:rgba(163,64,64,.14);border-color:rgba(217,117,117,.3);color:#f0b9b9}
-    #page-studio .daw-reamp-btn:disabled{opacity:.4}
-    #page-studio .daw-reamp-status{margin-top:10px;padding:9px 10px;border-radius:8px;background:rgba(148,163,184,.08);font-size:10px;line-height:1.5;color:#c4d0d9}
-    #page-studio .daw-reamp-status.ok{background:rgba(59,140,83,.13);color:#a9e0b8}
-    #page-studio .daw-reamp-status.warn{background:rgba(174,119,42,.13);color:#efd09a}
-    #page-studio .daw-reamp-progress{height:4px;margin-top:8px;overflow:hidden;border-radius:9px;background:rgba(148,163,184,.16)}
-    #page-studio .daw-reamp-progress i{display:block;width:0;height:100%;background:#9fcf71;transition:width .14s linear}
-    #page-studio .daw-reamp-note{display:block;margin-top:9px;color:var(--muted,#9aa9b5);font-size:9px;line-height:1.5}
-    @media(max-width:420px){#page-studio .daw-reamp-grid{grid-template-columns:1fr}}
-  `;
-  document.head.appendChild(style);
-}
-
-function setReampPanelStatus(message, kind = '') {
-  const node = $('dawReampStatus');
-  if (!node) return;
-  node.textContent = String(message || '');
-  node.classList.remove('ok', 'warn');
-  if (kind) node.classList.add(kind);
-}
-
-function syncReampTrackOptions() {
-  const source = $('dawReampSource');
-  const target = $('dawReampReturn');
-  if (!source || !target) return;
-  const previousSource = source.value;
-  const previousTarget = target.value;
-  const tracks = project.tracks || [];
-  source.innerHTML = tracks.map((track) => {
-    const count = track.clips.filter((clip) => mediaBuffers.has(clip.mediaId)).length;
-    return '<option value="' + safeText(track.id) + '">' + safeText(track.name) + ' · ' + count + ' clip</option>';
-  }).join('');
-  target.innerHTML = tracks.map((track) =>
-    '<option value="' + safeText(track.id) + '">' + safeText(track.name) + '</option>'
-  ).join('');
-  const sourceTrack = tracks.find((track) => track.id === previousSource) ||
-    tracks.find((track) => track.id === 'guitar' && track.clips.length) ||
-    tracks.find((track) => track.clips.length) || tracks[0];
-  if (sourceTrack) source.value = sourceTrack.id;
-  const returnTrack = tracks.find((track) => track.id === previousTarget && track.id !== source.value) ||
-    tracks.find((track) => track.armed && track.id !== source.value) ||
-    tracks.find((track) => track.id !== source.value);
-  if (returnTrack) target.value = returnTrack.id;
-  if (sourceTrack) {
-    [...target.options].forEach((option) => { option.disabled = option.value === source.value; });
-  }
-}
-
-function mountReampPanel() {
-  const host = $('dawTrackSettingsPage');
-  if (!host || $('dawReampPanel')) return;
-  addReampPanelStyles();
-  const panel = document.createElement('section');
-  panel.id = 'dawReampPanel';
-  panel.className = 'daw-reamp-panel';
-  panel.innerHTML = `
-    <div class="daw-reamp-head">
-      <div><span class="daw-reamp-eyebrow">USB AUDIO · HARDWARE REAMP</span><h4>Dry Track → MG-30 → USB Return</h4>
-      <p>Put the MG-30 in REAMP mode and set PLAY LEVEL on the pedal. Send a DI/dry track over USB, then capture the USB input on a separate return track.</p></div>
-    </div>
-    <div class="daw-reamp-grid">
-      <div class="daw-reamp-field"><label for="dawReampDevice">MG-30 USB OUTPUT</label><select id="dawReampDevice"><option value="">Check USB output first…</option></select></div>
-      <div class="daw-reamp-field"><label for="dawReampSource">DRY SOURCE TRACK</label><select id="dawReampSource"></select></div>
-      <div class="daw-reamp-field"><label for="dawReampReturn">USB RETURN TRACK</label><select id="dawReampReturn"></select></div>
-    </div>
-    <div class="daw-reamp-actions">
-      <button type="button" class="daw-reamp-btn" id="dawReampPlayDry">▶ PLAY DRY TO MG-30</button>
-      <button type="button" class="daw-reamp-btn primary" id="dawReampRecordWet">● REAMP + RECORD RETURN</button>
-      <button type="button" class="daw-reamp-btn stop" id="dawReampStop" disabled>■ STOP REAMP</button>
-    </div>
-    <div class="daw-reamp-status" id="dawReampStatus" role="status" aria-live="polite">Siapkan endpoint MG-30, pilih track DI sumber, dan pilih track terpisah untuk USB return.</div>
-    <div class="daw-reamp-progress"><i id="dawReampProgress"></i></div>
-    <small class="daw-reamp-note">Playback native memakai PCM 16-bit stereo / 48 kHz dan baru dimulai setelah Android mengonfirmasi rute aktual ke endpoint MG-30. Return memakai USB AudioRecord yang sudah ada. Nomor channel dry/wet MG-30 belum dikunci oleh capture; hasil return harus diperiksa sebelum dianggap sebagai wet/processed take. Jangan pilih track sumber yang sama dengan track return.</small>
-    <div class="daw-reamp-actions" style="grid-template-columns:1fr;margin-top:9px">
-      <button type="button" class="daw-reamp-btn" id="dawReampRefresh">↻ REFRESH MG-30 USB OUT</button>
-    </div>
-  `;
-  host.appendChild(panel);
-  $('dawReampRefresh')?.addEventListener('click', () => { void refreshReampOutputDevices(); });
-  $('dawReampPlayDry')?.addEventListener('click', () => { void runReampWorkflow(false); });
-  $('dawReampRecordWet')?.addEventListener('click', () => { void runReampWorkflow(true); });
-  $('dawReampStop')?.addEventListener('click', () => { void stopReampWorkflow(true); });
-  $('dawReampSource')?.addEventListener('change', syncReampTrackOptions);
-  syncReampTrackOptions();
-  if (!Capacitor.isNativePlatform()) {
-    $('dawReampPlayDry').disabled = true;
-    $('dawReampRecordWet').disabled = true;
-    $('dawReampRefresh').disabled = true;
-    setReampPanelStatus('USB Reamp native hanya tersedia di APK Android.', 'warn');
-  }
-}
-
-async function refreshReampOutputDevices() {
-  const button = $('dawReampRefresh');
-  const select = $('dawReampDevice');
-  if (!Capacitor.isNativePlatform() || !select) {
-    setReampPanelStatus('Gunakan APK Android untuk memilih endpoint USB MG-30.', 'warn');
-    return;
-  }
-  if (button) button.disabled = true;
-  select.innerHTML = '<option value="">Checking Android USB outputs…</option>';
-  setReampPanelStatus('Memeriksa output USB yang terhubung…');
-  try {
-    const result = await NativeMG30AudioOutput.inspectOutputDevices();
-    const devices = (Array.isArray(result.devices) ? result.devices : [])
-      .filter((device) => device.isMg30 && Number.isInteger(Number(device.id)));
-    if (!devices.length) {
-      select.innerHTML = '<option value="">NUX MG-30 USB output not found</option>';
-      setReampPanelStatus('Android belum menemukan endpoint USB yang namanya cocok dengan MG-30 / NUX. Periksa kabel USB lalu refresh.', 'warn');
-      return;
-    }
-    select.innerHTML = devices.map((device) =>
-      '<option value="' + Number(device.id) + '">' + safeText(device.name || 'NUX MG-30') +
-      ' · ' + safeText(device.typeName || 'USB audio') + '</option>'
-    ).join('');
-    setReampPanelStatus('Endpoint output dikenali. Pastikan ROUTING MODE pedal = REAMP dan PLAY LEVEL cukup sebelum mengirim DI.', 'ok');
-  } catch (error) {
-    select.innerHTML = '<option value="">USB output check failed</option>';
-    setReampPanelStatus('Pemeriksaan output MG-30 gagal: ' + (error?.message || 'unknown error'), 'warn');
-  } finally {
-    if (button) button.disabled = false;
-  }
-}
-
-function floatStereoToPcmFloat32(left, right) {
-  const frameCount = Math.min(left?.length || 0, right?.length || 0);
-  const pcm = new Uint8Array(frameCount * 8);
-  const view = new DataView(pcm.buffer);
-  for (let index = 0; index < frameCount; index += 1) {
-    const l = Math.max(-1, Math.min(1, Number(left[index]) || 0));
-    const r = Math.max(-1, Math.min(1, Number(right[index]) || 0));
-    view.setFloat32(index * 8, l, true);
-    view.setFloat32(index * 8 + 4, r, true);
-  }
-  return pcm;
-}
-
-async function ensureTrackMediaLoaded(track) {
-  for (const clip of track.clips) {
-    if (mediaBuffers.has(clip.mediaId)) continue;
-    const media = await databaseRequest('media', 'readonly', 'get', clip.mediaId);
-    if (!media?.blob) throw new Error('Audio DI untuk clip "' + clip.name + '" tidak ditemukan di penyimpanan lokal.');
-    mediaBuffers.set(clip.mediaId, await decodeBlob(media.blob));
-  }
-}
-
-function getTrackEndSeconds(track) {
-  return Math.max(0, ...track.clips.map((clip) => clip.startSeconds + clip.durationSeconds));
-}
-
-async function prepareReampPlayback(sourceTrack, deviceId, startAt) {
-  if (!sourceTrack || !sourceTrack.clips.length) throw new Error('Track sumber belum berisi audio DI/dry.');
-  await ensureTrackMediaLoaded(sourceTrack);
-  const endAt = getTrackEndSeconds(sourceTrack);
-  const duration = endAt - startAt;
-  if (!(duration > 0.05)) throw new Error('Playhead berada setelah akhir track sumber. Kembalikan playhead ke awal DI.');
-  if (duration > MAX_PROJECT_SECONDS) throw new Error('Reamp playback dibatasi sampai 30 menit per proses.');
-  const totalFrames = Math.ceil(duration * SAMPLE_RATE);
-  let sessionId = '';
-  try {
-    const started = await NativeMG30AudioOutput.beginReampPlayback({
-      deviceId, sampleRate: SAMPLE_RATE, channelCount: 2,
-    });
-    sessionId = started.sessionId;
-    if (!sessionId) throw new Error('Sesi upload audio Reamp tidak dibuat oleh Android.');
-    const renderFrames = 4 * SAMPLE_RATE;
-    const bridgeChunkBytes = 96 * 1024;
-    for (let startFrame = 0; startFrame < totalFrames; startFrame += renderFrames) {
-      const frameCount = Math.min(renderFrames, totalFrames - startFrame);
-      const rendered = await renderAudioChunk(
-        [sourceTrack.id], startAt + startFrame / SAMPLE_RATE, frameCount, 'stem'
-      );
-      const pcm = floatStereoToPcmFloat32(rendered.getChannelData(0), rendered.getChannelData(1));
-      for (let offset = 0; offset < pcm.length; offset += bridgeChunkBytes) {
-        const chunk = pcm.subarray(offset, Math.min(pcm.length, offset + bridgeChunkBytes));
-        await NativeMG30AudioOutput.appendReampPlaybackChunk({
-          sessionId, dataBase64: blobToBase64(chunk),
-        });
-      }
-      const percent = Math.round(Math.min(1, (startFrame + frameCount) / totalFrames) * 100);
-      setReampPanelStatus('Menyiapkan PCM DI untuk MG-30… ' + percent + '%');
-    }
-    return { sessionId, totalFrames, durationSeconds: totalFrames / SAMPLE_RATE, startAt };
-  } catch (error) {
-    if (sessionId) {
-      try { await NativeMG30AudioOutput.releaseReampPlayback({ sessionId }); } catch (_) {}
-    }
-    throw error;
-  }
-}
-
-function clearReampPoll() {
-  if (reampPollTimer) clearInterval(reampPollTimer);
-  reampPollTimer = 0;
-  reampPollBusy = false;
-}
-
-async function releaseReampSession(sessionId) {
-  if (!sessionId) return;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      await NativeMG30AudioOutput.releaseReampPlayback({ sessionId });
-      return;
-    } catch (_) {
-      await new Promise((resolve) => setTimeout(resolve, 160));
-    }
-  }
-}
-
-function monitorReampSession(sessionId, startAt) {
-  clearReampPoll();
-  reampPollTimer = setInterval(async () => {
-    if (reampPollBusy || reampSessionId !== sessionId) return;
-    reampPollBusy = true;
-    try {
-      const status = await NativeMG30AudioOutput.getReampPlaybackStatus({ sessionId });
-      const playedSeconds = Number(status.framesPlayed || 0) / SAMPLE_RATE;
-      playheadSeconds = startAt + playedSeconds;
-      renderPlayhead();
-      const progress = Math.max(0, Math.min(1, Number(status.progress) || 0));
-      const bar = $('dawReampProgress');
-      if (bar) bar.style.width = (progress * 100).toFixed(1) + '%';
-      if (status.state === 'completed') {
-        clearReampPoll();
-        reampPlaybackActive = false;
-        const shouldStopRecord = reampRecordingActive && recording;
-        reampRecordingActive = false;
-        setReampPanelStatus('Playback DI selesai. ' + (shouldStopRecord ? 'Menyimpan USB return take…' : 'Sesi playback selesai.'), 'ok');
-        if (shouldStopRecord) await stopDawRecording();
-        await releaseReampSession(sessionId);
-        reampSessionId = '';
-        const stopButton = $('dawReampStop');
-        if (stopButton) stopButton.disabled = true;
-      } else if (status.state === 'error' || status.state === 'stopped') {
-        clearReampPoll();
-        reampPlaybackActive = false;
-        const shouldStopRecord = reampRecordingActive && recording;
-        reampRecordingActive = false;
-        if (shouldStopRecord) await stopDawRecording();
-        setReampPanelStatus(status.error || (status.state === 'stopped' ? 'Playback Reamp dihentikan.' : 'Playback Reamp gagal.'), 'warn');
-        await releaseReampSession(sessionId);
-        reampSessionId = '';
-        const stopButton = $('dawReampStop');
-        if (stopButton) stopButton.disabled = true;
-      }
-    } catch (error) {
-      clearReampPoll();
-      reampPlaybackActive = false;
-      if (reampRecordingActive && recording) {
-        reampRecordingActive = false;
-        await stopDawRecording();
-      }
-      setReampPanelStatus('Status playback USB gagal dibaca: ' + (error?.message || 'unknown error'), 'warn');
-      await releaseReampSession(sessionId);
-      reampSessionId = '';
-    } finally {
-      reampPollBusy = false;
-    }
-  }, 250);
-}
-
-async function runReampWorkflow(recordReturn) {
-  if (!Capacitor.isNativePlatform()) {
-    setReampPanelStatus('USB Reamp native hanya tersedia di APK Android.', 'warn');
-    return;
-  }
-  if (reampPlaybackActive || recording || playing) {
-    setReampPanelStatus('Hentikan playback / recording aktif sebelum memulai Reamp baru.', 'warn');
-    return;
-  }
-  const deviceId = Number($('dawReampDevice')?.value);
-  const sourceTrack = getTrack($('dawReampSource')?.value);
-  const returnTrack = getTrack($('dawReampReturn')?.value);
-  if (!Number.isInteger(deviceId) || deviceId < 0) {
-    setReampPanelStatus('Pilih endpoint USB MG-30 terlebih dahulu.', 'warn');
-    return;
-  }
-  if (!sourceTrack || !sourceTrack.clips.length) {
-    setReampPanelStatus('Pilih track sumber yang berisi rekaman DI/dry.', 'warn');
-    return;
-  }
-  if (recordReturn && (!returnTrack || returnTrack.id === sourceTrack.id)) {
-    setReampPanelStatus('Track USB return harus berbeda dari track sumber DI.', 'warn');
-    return;
-  }
-  const startAt = Math.max(0, playheadSeconds);
-  const playButton = $('dawReampPlayDry');
-  const recordButton = $('dawReampRecordWet');
-  const stopButton = $('dawReampStop');
-  if (playButton) playButton.disabled = true;
-  if (recordButton) recordButton.disabled = true;
-  if (stopButton) stopButton.disabled = true;
-  try {
-    setReampPanelStatus('Merender track sumber sebagai PCM_FLOAT32 stereo 48 kHz…');
-    const prepared = await prepareReampPlayback(sourceTrack, deviceId, startAt);
-    reampSessionId = prepared.sessionId;
-    reampStartPosition = startAt;
-    if (recordReturn) {
-      armTrack(returnTrack.id);
-      await startDawRecording();
-      if (!recording) throw new Error('USB return recorder tidak berhasil mulai.');
-      reampRecordingActive = true;
-    }
-    const audio = await getAudioContext();
-    const playback = await NativeMG30AudioOutput.startReampPlayback({ sessionId: reampSessionId });
-    if (!playback?.started || Number(playback.routedDeviceId) !== deviceId) {
-      throw new Error('AudioTrack tidak mengonfirmasi rute aktual ke USB MG-30.');
-    }
-    playheadSeconds = startAt;
-    playStartPosition = startAt;
-    playStartContextTime = audio.currentTime;
-    reampPlaybackActive = true;
-    if (recordReturn) {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = requestAnimationFrame(updatePlayheadFrame);
-    }
-    if (stopButton) stopButton.disabled = false;
-    if ($('dawReampProgress')) $('dawReampProgress').style.width = '0%';
-    setReampPanelStatus(
-      recordReturn
-        ? 'REAMP berjalan: track DI dikirim ke MG-30 dan USB return direkam ke "' + returnTrack.name + '". Periksa hasilnya setelah take selesai.'
-        : 'Track DI sedang diputar melalui output USB MG-30. Dengarkan hasil pemrosesan di perangkat.',
-      'ok'
-    );
-    monitorReampSession(reampSessionId, startAt);
-  } catch (error) {
-    reampPlaybackActive = false;
-    if (reampRecordingActive && recording) {
-      reampRecordingActive = false;
-      await stopDawRecording();
-    }
-    if (reampSessionId) {
-      try { await NativeMG30AudioOutput.stopReampPlayback({ sessionId: reampSessionId }); } catch (_) {}
-      await releaseReampSession(reampSessionId);
-      reampSessionId = '';
-    }
-    setReampPanelStatus('Reamp tidak dapat dimulai: ' + (error?.message || 'unknown error'), 'warn');
-  } finally {
-    if (playButton) playButton.disabled = false;
-    if (recordButton) recordButton.disabled = false;
-    if (stopButton && !reampPlaybackActive) stopButton.disabled = true;
-  }
-}
-
-async function stopReampWorkflow(stopReturnRecording = true) {
-  const sessionId = reampSessionId;
-  clearReampPoll();
-  if (sessionId) {
-    try { await NativeMG30AudioOutput.stopReampPlayback({ sessionId }); } catch (_) {}
-  }
-  reampPlaybackActive = false;
-  if (stopReturnRecording && reampRecordingActive && recording) {
-    reampRecordingActive = false;
-    await stopDawRecording();
-  }
-  if (sessionId) {
-    for (let attempt = 0; attempt < 10; attempt += 1) {
-      try {
-        const status = await NativeMG30AudioOutput.getReampPlaybackStatus({ sessionId });
-        if (['stopped', 'completed', 'error'].includes(status.state)) break;
-      } catch (_) { break; }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    await releaseReampSession(sessionId);
-  }
-  reampSessionId = '';
-  const stopButton = $('dawReampStop');
-  if (stopButton) stopButton.disabled = true;
-  setReampPanelStatus('Reamp dihentikan. Track sumber dan USB return tetap tersimpan terpisah.');
-}
-
 function syncStudioPinnedControls() {
   const dock = $('dawStudioDock');
   const appNav = document.querySelector('.nav');
@@ -1791,15 +1384,13 @@ function setStudioMode(mode) {
     renderPlayhead();
     refreshQuickTakes();
   } else {
-    if (reampPlaybackActive || reampSessionId) void stopReampWorkflow(true);
-    else if (recording) void stopDawRecording();
+    if (recording) void stopDawRecording();
     else if (playing) pausePlayback();
   }
 }
 
 function bindEvents() {
   syncStudioPinnedControls();
-  mountReampPanel();
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
   document.querySelector('.nav')?.addEventListener('click', (event) => {
     if (event.target.closest('button[data-page="studio"]')) {
@@ -1912,7 +1503,6 @@ function bindEvents() {
     }
   });
   $('dawForward')?.addEventListener('click', () => {
-    if (reampPlaybackActive || reampSessionId) { void stopReampWorkflow(true); return; }
     const metrics = timelineMetrics();
     playheadSeconds = Math.min(metrics.bars * metrics.barSeconds, playheadSeconds + metrics.barSeconds);
     if (playing) void restartPlaybackAt(playheadSeconds);
@@ -1920,12 +1510,10 @@ function bindEvents() {
   });
   $('dawPlay')?.addEventListener('click', () => { void togglePlayback(); });
   $('dawStop')?.addEventListener('click', async () => {
-    if (reampPlaybackActive || reampSessionId) await stopReampWorkflow(true);
-    else if (recording) await stopDawRecording();
+    if (recording) await stopDawRecording();
     stopPlayback(true);
   });
   $('dawRewind')?.addEventListener('click', () => {
-    if (reampPlaybackActive || reampSessionId) void stopReampWorkflow(true);
     if (playing) void restartPlaybackAt(0);
     else { playheadSeconds = 0; renderPlayhead(); }
   });
@@ -1943,8 +1531,7 @@ function bindEvents() {
   });
   window.addEventListener('nux-studio-recorder-ready', refreshQuickTakes);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && reampPlaybackActive) void stopReampWorkflow(true);
-    else if (document.hidden && recording) void stopDawRecording();
+    if (document.hidden && recording) void stopDawRecording();
     else if (document.hidden && playing) pausePlayback();
   });
 }
