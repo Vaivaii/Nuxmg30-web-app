@@ -78,6 +78,6 @@ test('readback, selector sync, and writes use existing discrete parameter encodi
 
 test('Mic selector styling is present without changing the existing rotary control styles', () => {
   assert.match(css, /#knobs \.knob-selector \.parameter-select/);
-  assert.match(css, /#knobs \.dial/);
+  assert.match(css, /\.dial\{/);
   assert.doesNotMatch(css, /font:600 11px\/1\.25 inherit/);
 });
