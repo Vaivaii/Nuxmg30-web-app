@@ -50,3 +50,13 @@ Endpoint enumeration is advisory. A USB output may be visible to Android while a
 - Source tests are added in this checkpoint.
 - Physical USB output enumeration has not yet been tested on the user's phone.
 - No APK is declared device-verified by this document.
+
+## MG-30-specific endpoint classification
+
+The native result separates any USB playback endpoint (`usbOutputFound`) from a USB endpoint whose product name contains `MG-30` or `NUX` (`mg30OutputFound`). A generic USB DAC is therefore not reported as a confirmed MG-30 endpoint. This name match is still only an identification hint; device behavior must be verified physically.
+
+## Source checkpoint
+
+- Branch comparison against the parent shows changes limited to this research note, the isolated output-discovery plugin, Android plugin bootstrap, the Studio discovery module, the index module reference and its focused test.
+- The existing `native-android/MG30AudioPlugin.java` recorder file retains its original blob SHA, so the AudioRecord capture implementation was not changed in this pass.
+- GitHub reported no combined status checks for the latest source commit at this checkpoint. The added Node test has **not yet been executed in CI**, and no APK has been built or approved from this branch.
