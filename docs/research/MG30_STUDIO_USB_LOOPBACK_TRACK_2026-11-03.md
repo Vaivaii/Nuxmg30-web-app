@@ -202,3 +202,21 @@ This later build supersedes the earlier artifact record above. It includes the f
 - Extracted APK size: **4,505,700 bytes**, SHA-256 `388672ffff2074c96a1089aa6e5f0fb4a44612941cb75d52658e482852260689`.
 - Final package inspection found the Loopback capture filename prefix, Android `setChannelIndexMask` path and channel-index diagnostics in the native/web bundle. No Reamp native session entry points were found in the APK.
 - Physical USB Loopback playback/return remains unverified until the user tests this APK with the original MG-30 and listens to the captured track.
+
+
+## Final four-track input-routing APK build (3 November 2026)
+
+This build supersedes the earlier five-lane Loopback APKs and represents the user-directed four-track design with independently selectable input routing.
+
+- Workflow: [Build four-track USB input-routing debug APK](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41595251345), run ID `41595251345`, conclusion **success**.
+- App source commit: `eefa28240b60045f8911ed4bcee23bc3d9d2b291`. The later documentation-only commit does not change the APK source.
+- Regression suite: **157 passed, 0 failed**.
+- Android initializer syntax: passed.
+- Capacitor Android project generation and native USB audio plugin registration: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 30s**.
+- Workflow artifact ID: `13212750040`, archive `MG30-Studio-4Track-InputRouting-debug.zip`, ZIP size **4,130,268 bytes**, SHA-256 `07884dbea2e8ebd86b3a804fa2a1e44200a6d6c93a18063ffe9232a7baf65db6`.
+- Extracted `app-debug.apk` size **4,506,848 bytes**, SHA-256 `cc8846caae38ab97452b77efa4b8d51716d6e4f3f85cf13fdba6e1fb8088f45e`.
+- APK bundle inspection found the Track Input Routing UI and labels for Input 1 mono, Input 1–2 stereo, and Loopback 3–4. DEX inspection found the native channel-index mask and multichannel-take strings; the Reamp output session entry points are absent.
+- The APK contains four DAW track model entries. The old fifth-lane clips are held in the project-level `legacyLoopbackClips` archive during migration; they are not rendered into a hidden lane.
+- These checks establish source/test/build/package integrity, not acoustic proof of the MG-30 channel meanings. Test with the original MG-30 Gen 2 and listen to the captured Loopback 3–4 result before treating that physical signal mapping as confirmed.
+
