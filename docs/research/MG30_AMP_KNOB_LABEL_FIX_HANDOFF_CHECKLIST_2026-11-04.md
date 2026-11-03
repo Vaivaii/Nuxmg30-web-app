@@ -229,3 +229,45 @@ Target pekerjaan cabang ini sekarang adalah **perbaikan layout dan label kontrol
 Jangan mengubah komunikasi perangkat yang sudah bekerja untuk mencapai tampilan ini. Bila analisis menunjukkan suatu kontrol sebenarnya memakai parameter kontinu, jangan memaksakan dropdown; dokumentasikan temuannya dan pilih representasi yang sesuai berdasarkan bukti.
 
 **Status permintaan Mic/Mic Position:** scope UI sudah diterima dan dicatat; daftar opsi, mapping nilai, dan perilaku protokol belum diverifikasi; belum ada perubahan kode aplikasi.
+
+
+## Implementasi awal UI — 4 November 2026
+
+### Perubahan yang sudah masuk ke branch
+
+- `www/index.html` sekarang memiliki `AMP_QUICKTONE_LAYOUTS` sebanyak 35 model, mengikuti urutan amp bawaan original MG-30 Gen 2 yang sudah benar di aplikasi.
+- Setiap kontrol rotary amp memiliki parameter key, caption QuickTone, dan `ccIndex` eksplisit.
+- Render knob amp hanya menggunakan daftar kontrol model aktif. Model seperti TWEEDY, CLASS A15/A30, AGL, MLD, DGLASS, STARLIFT dan PRINCETONE tidak lagi mendapat set knob generik yang sama.
+- Celah `ccIndex` dipertahankan; contoh Jazz Clean tetap memakai indeks 0,1,2,3,4,6 untuk GAIN/MASTER/BASS/MIDDLE/TREB/LEVEL.
+- DGLASS switch slot 2/5 dan STARLIFT CONTOUR switch slot 4 tidak dimasukkan sebagai rotary knob. Switch belum dibuat menjadi kontrol interaktif karena encoding/state switch belum diuji; jangan menebak aksi toggle.
+- Mic sekarang memakai select bernama dengan 8 opsi original MG-30: DYN421, S57, U87, R122, R121, C414, C3000, B52.
+- Mic Position sekarang memakai select bernama dengan opsi CENTER, MIDDLE, EDGE.
+- Kedua selector menggunakan parameter `mic` / `position` yang sudah ada dan jalur normalisasi/encoding yang sama. `PARAMETER_MAX`, `MIDI_PARAM_CC`, `KNOB_SLOTS`, protocol frame, dan MIDI payload tidak diubah.
+- `syncIncomingParameterCC` kini juga memperbarui pilihan select bila perangkat mengirim nilai Mic atau Mic Position.
+- `www/ui-redesign.css` mendapat styling selector; pernyataan font invalid pada versi pertama sudah dikoreksi.
+- Test baru: `tests/mg30-amp-controls-ui.test.js`, memeriksa 35 layouts, indeks CC yang berlubang, daftar Mic/Position, jalur sinkronisasi dan styling.
+- Workflow build branch ditambahkan untuk menjalankan npm test + build APK pada perubahan branch ini.
+
+### Riwayat implementasi
+
+- App amp/select UI: commit `dd3571346195e6d4bd5b636ecb59533887526372`
+- Styling awal selector: `1a2bd3e2abed3ce52062a1ea14663a943ed16379`
+- Koreksi CSS font: `116034424e9e071b6fcc60d87f3ea39b614406a1`
+- Test regresi: `b655f39104a219acb8a92e1a894027f9525df072`
+- Test regex diperbaiki: `2f1b831a7b91431e83a371009e58a8fadbb41bde`
+- Test selector CSS: `1395f657a49ac0890ab235b3129448fd9a2816c7`
+- Test sync assertion diperbaiki: `5314fda7a233c3bc489dac26a1610be3b88faec2`
+
+### Hasil validasi
+
+- Struktur sumber berhasil diperiksa: 35 layout terbaca dan celah indeks amp penting tetap ada.
+- GitHub Actions run pertama sempat gagal karena assertion test mencari nama variabel yang keliru (`control` padahal callback memakai `item`). Test diperbaiki pada commit `5314fda7a233c3bc489dac26a1610be3b88faec2`.
+- Run ulang pada commit tersebut sedang berjalan saat catatan ini diperbarui. **Jangan nyatakan test/build berhasil sebelum run tersebut selesai.**
+- Belum ada validasi hardware fisik oleh pengguna.
+
+### Batas yang masih tersisa
+
+- Switch DGLASS dan STARLIFT belum mempunyai UI aksi; saat ini hanya dicegah agar tidak tampil sebagai knob.
+- Belum dilakukan pengujian langsung pada MG-30 untuk memastikan pilihan Mic/Mic Position dapat ditulis dan dibaca kembali di perangkat.
+- Setelah CI lulus, tetap perlu uji perangkat dengan sedikitnya satu model amp generik, TWEEDY, DGLASS, STARLIFT, dan satu cab dengan pergantian Mic serta Mic Position.
+- Jangan menggabungkan branch ke branch utama sebelum hasil hardware user dilaporkan.
