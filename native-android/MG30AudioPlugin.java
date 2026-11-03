@@ -237,6 +237,16 @@ public class MG30AudioPlugin extends Plugin {
         String captureMode = call.getString("captureMode", "normal");
         boolean loopbackCapture = "loopback".equalsIgnoreCase(captureMode);
         boolean multichannelCapture = loopbackCapture || "multichannel".equalsIgnoreCase(captureMode);
+        int requestedChannelIndexMask = call.getInt("channelIndexMask", 0);
+        if (multichannelCapture && requestedChannelIndexMask != 0 &&
+            (Integer.bitCount(requestedChannelIndexMask) < 1 || Integer.bitCount(requestedChannelIndexMask) > 2)) {
+            call.reject("Pemetaan input track harus memilih satu kanal mono atau sepasang kanal stereo.");
+            return;
+        }
+        if (multichannelCapture && Build.VERSION.SDK_INT < 23 && (requestedChannelIndexMask & 0xC) != 0) {
+            call.reject("Pemilihan input USB kanal 3–4 memerlukan Android API 23 atau lebih baru.");
+            return;
+        }
         AudioManager manager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         if (manager == null) {
             call.reject("AudioManager Android tidak tersedia.");
@@ -287,6 +297,8 @@ public class MG30AudioPlugin extends Plugin {
                 for (int indexMask : advertisedIndexMasks) {
                     int channels = Integer.bitCount(indexMask);
                     if (indexMask == 0 || channels < 1 || channels > 8) continue;
+                    if (requestedChannelIndexMask != 0 &&
+                        (indexMask & requestedChannelIndexMask) != requestedChannelIndexMask) continue;
                     if (countOptions.length > 0 && !contains(countOptions, channels)) continue;
                     if (!loopbackIndexMasks.contains(indexMask)) {
                         loopbackIndexMasks.add(indexMask);
@@ -313,8 +325,11 @@ public class MG30AudioPlugin extends Plugin {
                 int[] preferredLoopbackCounts = new int[] { 4, 3, 2, 1 };
                 for (int channels : preferredLoopbackCounts) {
                     if (countOptions.length == 0 || contains(countOptions, channels)) {
+                        int fallbackMask = (1 << channels) - 1;
+                        if (requestedChannelIndexMask != 0 &&
+                            (fallbackMask & requestedChannelIndexMask) != requestedChannelIndexMask) continue;
                         channelOptions.add(channels);
-                        loopbackIndexMasks.add((1 << channels) - 1);
+                        loopbackIndexMasks.add(fallbackMask);
                     }
                 }
             }
@@ -322,9 +337,13 @@ public class MG30AudioPlugin extends Plugin {
             if (countOptions.length == 0 || contains(countOptions, 2)) channelOptions.add(2);
             if (countOptions.length == 0 || contains(countOptions, 1)) channelOptions.add(1);
         }
-        if (multichannelCapture && Build.VERSION.SDK_INT >= 23 &&
-            advertisedIndexMasks.length > 0 && channelOptions.isEmpty()) {
-            call.reject("MG-30 mengiklankan channel-index mask USB, tetapi tidak ada mask yang cocok dengan jumlah kanal input. Capture Loopback dihentikan tanpa menebak pemetaan kanal.");
+        if (multichannelCapture && requestedChannelIndexMask != 0 && channelOptions.isEmpty()) {
+            call.reject("MG-30 tidak mengekspos kanal USB yang dibutuhkan oleh input track ini. Pilih sumber input lain atau periksa format kanal USB yang dilaporkan Android.");
+            return;
+        }
+        if (multichannelCapture && requestedChannelIndexMask == 0 &&
+            Build.VERSION.SDK_INT >= 23 && advertisedIndexMasks.length > 0 && channelOptions.isEmpty()) {
+            call.reject("MG-30 mengiklankan channel-index mask USB, tetapi tidak ada mask yang cocok dengan jumlah kanal input. Capture dihentikan tanpa menebak pemetaan kanal.");
             return;
         }
         if (channelOptions.isEmpty()) {
