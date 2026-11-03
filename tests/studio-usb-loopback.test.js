@@ -79,7 +79,12 @@ test('Loopback capture prefers the widest advertised raw USB channel layout', ()
   assert.match(recorder, /call\.getString\("captureMode", "normal"\)/);
   assert.match(recorder, /boolean loopbackCapture = "loopback"\.equalsIgnoreCase\(captureMode\)/);
   assert.match(recorder, /preferredLoopbackCounts = new int\[\] \{ 4, 3, 2, 1 \}/);
+  assert.match(recorder, /Integer\.bitCount\(indexMask\)/);
+  assert.match(recorder, /loopbackIndexMasks\.add\(indexMask\)/);
+  assert.match(recorder, /0xC/);
   assert.match(recorder, /setChannelIndexMask\(channelIndexMask\)/);
+  assert.match(recorder, /useChannelIndexMask[\s\S]*?rate \* channels \* bytesPerCaptureSample \/ 10/);
+  assert.match(recorder, /advertisedIndexMasks\.length > 0 && channelOptions\.isEmpty\(\)/);
   assert.match(recorder, /selectedChannelIndexMask = channelIndexMask/);
   assert.match(recorder, /MG30_Loopback_Take_/);
   assert.match(recorder, /activeCaptureMode = loopbackCapture \? "loopback" : "normal"/);
