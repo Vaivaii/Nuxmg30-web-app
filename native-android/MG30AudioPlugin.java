@@ -730,7 +730,11 @@ public class MG30AudioPlugin extends Plugin {
                         }
                         peak = Math.max(peak, value);
                     }
-                    peaks.put(peak);
+                    try {
+                        peaks.put(peak);
+                    } catch (JSONException ignored) {
+                        // A single malformed preview value must not interrupt USB capture.
+                    }
                 }
                 JSObject channel = new JSObject();
                 channel.put("channel", channelIndex + 1);
