@@ -23,11 +23,11 @@ test('DAW stays at four visible tracks and every track has an independent input 
   const { DAW_TRACKS, DAW_INPUT_ROUTES, createDefaultProject, normalizeProject } = await import('../www/studio-daw-core.js');
   assert.deepEqual(DAW_TRACKS.map((track) => track.id), ['backing', 'guitar', 'bass', 'vocals']);
   assert.deepEqual(DAW_INPUT_ROUTES.map((route) => route.id), [
-    'file', 'usb-ch1-mono', 'usb-ch1-2-stereo', 'usb-loopback-3-4-stereo',
+    'file', 'usb-ch1-mono', 'usb-ch1-2-stereo', 'usb-wet-sync-3-4-stereo',
   ]);
   assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-ch1-mono').channelIndexMask, 0x1);
   assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-ch1-2-stereo').channelIndexMask, 0x3);
-  assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-loopback-3-4-stereo').channelIndexMask, 0xC);
+  assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-wet-sync-3-4-stereo').channelIndexMask, 0xC);
 
   const project = createDefaultProject('Four-track routing session');
   assert.equal(project.tracks.length, 4);
@@ -67,7 +67,7 @@ test('per-track route and original capture-channel metadata persist with clips',
   const project = normalizeProject({
     tracks: [{
       id: 'bass',
-      inputRoute: 'usb-loopback-3-4-stereo',
+      inputRoute: 'usb-wet-sync-3-4-stereo',
       clips: [{
         mediaId: 'loopback-capture',
         durationSeconds: 5,
@@ -76,16 +76,16 @@ test('per-track route and original capture-channel metadata persist with clips',
         captureMode: 'multichannel',
         channelIndexMask: 15,
         inputChannelMask: 12,
-        inputRoute: 'usb-loopback-3-4-stereo',
+        inputRoute: 'usb-wet-sync-3-4-stereo',
       }],
     }],
   });
   const bass = project.tracks.find((track) => track.id === 'bass');
-  assert.equal(bass.inputRoute, 'usb-loopback-3-4-stereo');
+  assert.equal(bass.inputRoute, 'usb-wet-sync-3-4-stereo');
   assert.equal(bass.clips[0].captureMode, 'multichannel');
   assert.equal(bass.clips[0].channelIndexMask, 15);
   assert.equal(bass.clips[0].inputChannelMask, 12);
-  assert.equal(bass.clips[0].inputRoute, 'usb-loopback-3-4-stereo');
+  assert.equal(bass.clips[0].inputRoute, 'usb-wet-sync-3-4-stereo');
 });
 
 test('native recorder exposes and captures the MG-30 multichannel USB endpoint', () => {
@@ -127,15 +127,26 @@ test('four-track DAW exposes per-track routes and only imports selected USB chan
 
 test('Quick Record remains separate and passes multichannel mode without altering Guitar UI', () => {
   assert.match(main, /async function startGuitarRecording\(options = \{\}\)/);
-  assert.ok(main.includes("['loopback', 'multichannel'].includes(options?.captureMode)"));
+  assert.ok(main.includes("['loopback', 'multichannel', 'diagnostic'].includes(options?.captureMode)"));
   assert.ok(main.includes("const isDawCapture = captureMode !== 'normal'"));
   assert.ok(main.includes("MG30Audio.startRecording({ prefer24Bit: true, captureMode, channelIndexMask })"));
-  assert.ok(main.includes("const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel'"));
+  assert.ok(main.includes("const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel' || captureMode === 'diagnostic'"));
   assert.ok(main.includes('device.channelIndexMasks'));
   assert.ok(main.includes('Channel index masks:'));
   assert.ok(main.includes("let recordingCaptureMode = 'normal'"));
   assert.match(main, /if \(!isDawCapture\) \{[\s\S]*?guitarStopBtn/);
   assert.ok(main.includes('start: startGuitarRecording'));
+});
+
+test('Loopback is not mislabeled as USB Input 3/4; 3/4 is Wet Sync / Dry Out', () => {
+  assert.ok(core.includes("id: 'usb-wet-sync-3-4-stereo'"));
+  assert.ok(core.includes("label: 'MG-30 USB · Input 3–4 (Wet Sync / Dry Out)'"));
+  assert.doesNotMatch(core, /Loopback 3–4/);
+  assert.ok(daw.includes('Input 3/4 bukan otomatis Loopback playback dari HP.'));
+  assert.ok(daw.includes('Normal + Loopback option'));
+  assert.ok(daw.includes('captureMode: \'diagnostic\''));
+  assert.ok(daw.includes('channelStats'));
+  assert.ok(daw.includes('USB IN '));
 });
 
 test('Reamp output path remains absent and four-track labels are shipped', () => {
