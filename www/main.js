@@ -275,6 +275,7 @@ $('guitarPlayback')?.addEventListener('ended', () => {
 });
 async function startGuitarRecording(options = {}) {
   const captureMode = ['loopback', 'multichannel'].includes(options?.captureMode) ? options.captureMode : 'normal';
+  const channelIndexMask = Math.max(0, Math.min(255, Math.round(Number(options?.channelIndexMask) || 0)));
   const isDawCapture = captureMode !== 'normal';
   if (!isNative()) {
     if (!isDawCapture) setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
@@ -286,7 +287,7 @@ async function startGuitarRecording(options = {}) {
     setStatus('recordStatus', 'Preparing AudioRecord and verifying USB routing…');
   }
   try {
-    const result = await MG30Audio.startRecording({ prefer24Bit: true, captureMode });
+    const result = await MG30Audio.startRecording({ prefer24Bit: true, captureMode, channelIndexMask });
     if (!result?.recording) throw new Error('Android did not confirm that USB recording started.');
     recording = true;
     recordingCaptureMode = captureMode;
