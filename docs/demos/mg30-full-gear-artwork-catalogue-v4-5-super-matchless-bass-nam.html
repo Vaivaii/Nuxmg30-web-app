@@ -295,7 +295,7 @@ function ampSvg(m){
  // Only palette and true maker wordmark vary by model; no new hardware silhouettes are invented.
  const isNuxAmp=/\bnux\b/i.test(m.ref);
  if(isBass||isNuxAmp){
-  const maker=/aguilar/i.test(m.ref)?'AGUILAR':/bassman/i.test(m.ref)?'Fender':/darkglass/i.test(m.ref)?'DARKGLASS':/starlifter/i.test(m.ref)?'STARLIFTER':isNuxAmp?'NUX':'BASS';
+  const maker=/aguilar/i.test(m.ref)?'AGUILAR':/bassman/i.test(m.ref)?'Fender':/darkglass/i.test(m.ref)?'DARKGLASS':/starlifter/i.test(m.ref)?'NORDSTRAND':isNuxAmp?'NUX':'BASS';
   const grilleFill=p.grille||'#343b3d';
   const panelFill=p.panel||'#20272a';
   const edgeFill=p.edge||'#bfc8c3';
