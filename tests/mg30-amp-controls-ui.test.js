@@ -83,36 +83,38 @@ test('Mic selector styling is present without changing the existing rotary contr
 });
 
 
-test('DGLASS exposes two independent three-position frequency switches at original CC indices', () => {
+test('DGLASS switch captions match physical top-middle-bottom positions and retain CC indices', () => {
   const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
   assert.ok(block, 'Three-position switch catalogue must exist');
-  assert.match(block[1], /30:\s*\[/);
   assert.match(block[1], /param:'lo mids freq',label:'LO MIDS FREQ',ccIndex:2/);
   assert.match(block[1], /param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5/);
-  for (const value of [0,50,100]) assert.ok(block[1].includes('value:'+value));
-  for (const label of ['250 Hz','500 Hz','1 kHz','750 Hz','1.5 kHz','3 kHz']) {
-    assert.ok(block[1].includes("label:'"+label+"'"), 'Missing DGLASS frequency: '+label);
-  }
+  assert.match(block[1], /label:'500 Hz',position:'TOP'[\s\S]*?label:'1 kHz',position:'MIDDLE'[\s\S]*?label:'250 Hz',position:'BOTTOM'/);
+  assert.match(block[1], /label:'1.5 kHz',position:'TOP'[\s\S]*?label:'3 kHz',position:'MIDDLE'[\s\S]*?label:'750 Hz',position:'BOTTOM'/);
+  assert.doesNotMatch(block[1], /value:\s*\d/);
 });
 
-test('STARLIFT Contour has Vintage / Off / Modern top-middle-bottom positions on CC index 4', () => {
+test('STARLIFT Contour labels match the physical top-middle-bottom positions on CC index 4', () => {
   const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
   assert.ok(block);
-  assert.match(block[1], /31:\s*\[/);
   assert.match(block[1], /param:'contour',label:'CONTOUR',ccIndex:4/);
-  for (const label of ['VINTAGE','OFF','MODERN']) assert.ok(block[1].includes("label:'"+label+"'"));
-  assert.match(block[1], /position:'TOP',value:0/);
-  assert.match(block[1], /position:'MIDDLE',value:50/);
-  assert.match(block[1], /position:'BOTTOM',value:100/);
+  assert.match(block[1], /label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
+  assert.doesNotMatch(block[1], /value:\s*\d/);
 });
 
-test('three-position switch controls use existing CC read/write path and do not borrow old generic knob values', () => {
+test('unverified three-position switches remain visible and read-only, with raw state retained', () => {
   assert.match(html, /AMP_THREE_POSITION_SWITCHES\[modelIndex\][\s\S]*?sort\(\(a,b\)=>a\.ccIndex-b\.ccIndex\)/);
   assert.match(html, /control\.type==='three-way-switch'\)return undefined/);
-  assert.match(html, /querySelectorAll\('\.switch-position-button'\)/);
-  assert.match(html, /sendBlockParam\(selected,param,value\)/);
-  assert.match(html, /switchButtons\.forEach\(button/);
-  assert.match(html, /control\.ccIndex\]\);if\(selectorParam/);
+  const start = html.indexOf("if(control.type==='three-way-switch')");
+  const end = html.indexOf("\n }", start);
+  assert.ok(start>=0&&end>start);
+  const renderer = html.slice(start,end+3);
+  assert.match(renderer,/disabled aria-disabled="true"/);
+  assert.match(renderer,/Hardware raw value:/);
+  assert.match(renderer,/mapping not verified/);
+  assert.doesNotMatch(renderer,/data-value|onclick|sendBlockParam/);
+  assert.match(html,/const switchControl=AMP_THREE_POSITION_SWITCHES\[state\.model\]/);
+  assert.match(html,/Hardware raw value: '\+String\(Math\.round\(next\)\)/);
+  assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
 });
 
 test('IR Collection status prefixes are translated when CRC/device text is appended', () => {
@@ -142,7 +144,7 @@ test('unverified switch mapping cannot send MIDI values and controls remain read
   const renderer = html.slice(start,end+3);
   assert.match(renderer,/disabled aria-disabled="true"/);
   assert.doesNotMatch(renderer,/data-value|onclick|sendBlockParam/);
-  assert.doesNotMatch(html,/querySelectorAll\\('\\.switch-position-button'\\)\\.forEach\\(el=>\\{/);
+  assert.equal(html.includes("querySelectorAll('.switch-position-button').forEach(el=>{"), false);
   assert.match(html,/Hardware raw value:/);
   assert.match(html,/mapping not verified/);
   assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
