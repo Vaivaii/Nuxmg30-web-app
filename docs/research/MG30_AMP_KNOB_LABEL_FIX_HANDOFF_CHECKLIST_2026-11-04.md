@@ -159,3 +159,36 @@ Jangan klaim validasi hardware selesai kecuali pengguna sudah mengujinya dan mel
 5. Selesaikan profile/slot binding ke original MG-30 Gen 2 terlebih dahulu, lalu implementasikan label-only dan regression test.
 
 Status penutup saat dokumen ini dibuat: **data label 38 entri kandidat telah diekstrak; switch tambahan DGLASS/STARLIFT telah dicatat; kode aplikasi belum diubah; koreksi label UI belum diimplementasikan.**
+
+
+## Klarifikasi penting dari pengguna — scope final UI amp (4 Nov 2026)
+
+Pengguna mengonfirmasi bahwa **urutan mapping knob dan slot amp di aplikasi sebenarnya sudah sama dengan perangkat**. Masalah utamanya bukan urutan slot/model yang salah. Masalahnya adalah:
+1. Sebagian caption/nama knob yang ditampilkan aplikasi tidak sesuai dengan nama kontrol pada amp yang dipilih.
+2. Aplikasi menampilkan knob generik yang sebenarnya tidak ada pada amp fisik tertentu.
+3. Knob yang tidak mempunyai data CC pada model amp tersebut memang tidak tersedia/tidak berfungsi pada perangkat; karena itu kontrol UI generik tersebut tidak berguna dan harus dihilangkan dari tampilan untuk amp terkait.
+
+### Implikasi terhadap rencana kerja
+
+- **Jangan melakukan remapping urutan slot amp.** Urutan slot aplikasi sudah dikonfirmasi pengguna cocok dengan perangkat.
+- **Jangan mengubah mapping CC yang sudah benar.** Data CC dipakai untuk menentukan kontrol mana yang memang ada pada setiap model, bukan untuk mengganti nomor CC.
+- Pekerjaan UI sekarang mencakup dua hal: (a) mengganti label setiap knob sesuai metadata QuickTone untuk amp/slot yang sama, dan (b) hanya merender knob yang benar-benar tersedia pada model itu.
+- Knob yang tidak memiliki entri CC untuk model amp tersebut harus disembunyikan/dihilangkan dari UI model itu, bukan diberi label generik atau dibiarkan sebagai knob mati.
+- Jangan menghapus dukungan parameter dari model lain. Visibilitas harus spesifik per amp/slot sehingga knob yang valid pada amp lain tetap tampil.
+- Gunakan urutan slot amp aplikasi yang sudah ada sebagai indeks penghubung ke tabel QuickTone, lalu validasi daftar CC per slot terhadap data SysEx/aplikasi yang sudah dianalisis.
+- Tetap bedakan CC knob dari switch. DGLASS CC2 dan CC5 adalah switch element, bukan knob rotary; STARLIFT CC4 adalah CONTOUR switch. Jangan menampilkannya sebagai knob.
+- Jika satu elemen tidak memiliki CC di konfigurasi panel atau data perangkat, jangan menebak CC dari posisi knob. Tandai untuk pemeriksaan daripada mengubah mapping.
+
+### Checklist revisi sebelum implementasi
+
+- [ ] Pertahankan urutan amp/slot yang saat ini sudah benar di aplikasi.
+- [ ] Buat metadata per slot amp berisi hanya rotary knob yang memang tersedia, masing-masing dengan label dan CC QuickTone.
+- [ ] Pisahkan metadata button/switch dari metadata rotary knob.
+- [ ] Render knob berdasarkan daftar kontrol amp aktif; hilangkan knob UI yang tidak mempunyai kontrol fisik/CC pada model tersebut.
+- [ ] Pastikan tidak ada knob mati atau knob generik ekstra pada TWEEDY dan model-model dengan jumlah kontrol lebih sedikit.
+- [ ] Pastikan knob valid pada amp lain tidak ikut hilang karena perubahan global.
+- [ ] Pastikan nilai CC, ID parameter, callback, dan payload MIDI untuk knob yang tetap tampil identik dengan implementasi saat ini.
+- [ ] Uji perpindahan antar amp dengan jumlah knob berbeda agar UI menambah/mengurangi kontrol secara benar.
+
+**Pembaruan status verifikasi:** tidak perlu lagi memperlakukan pencocokan urutan slot sebagai pekerjaan reverse engineering yang belum diketahui. Pengguna telah mengonfirmasi urutan slot aplikasi dan perangkat sudah sama. Fokus verifikasi berikutnya adalah mencocokkan daftar kontrol/CC per slot dengan hasil QuickTone dan SysEx, lalu memperbaiki label serta visibilitas knob.
+
