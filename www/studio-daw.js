@@ -30,6 +30,7 @@ let animationFrame = 0;
 let recording = false;
 let recordingTrackId = '';
 let recordingStartPosition = 0;
+let recordingStartPerformanceTime = 0;
 let pendingImportTrackId = '';
 let databasePromise = null;
 let mediaBuffers = new Map();
@@ -936,8 +937,12 @@ function updateAudioMeters() {
 }
 
 function updatePlayheadFrame() {
-  if ((!playing && !recording) || !audioContext) return;
-  const elapsed = Math.max(0, audioContext.currentTime - playStartContextTime);
+  if (!playing && !recording) return;
+  const elapsed = playing && audioContext
+    ? Math.max(0, audioContext.currentTime - playStartContextTime)
+    : recording
+      ? Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000)
+      : 0;
   playheadSeconds = playStartPosition + elapsed;
   const maxDuration = projectDurationSeconds(project);
   if (!recording && playheadSeconds >= maxDuration) {
@@ -955,7 +960,7 @@ function updatePlayheadFrame() {
   renderPlayhead();
   followPlayheadDuringPlayback();
   updateAudioMeters();
-  if (project.metronomeEnabled) {
+  if (project.metronomeEnabled && audioContext) {
     const beatDuration = 60 / project.tempo;
     const beat = Math.floor(playheadSeconds / beatDuration + 0.015);
     if (beat !== lastMetronomeBeat) {
@@ -1086,13 +1091,17 @@ async function startDawRecording() {
     const captureMode = track.id === 'loopback' ? 'loopback' : 'normal';
     const result = await recorder.start({ captureMode });
     if (!result?.recording) throw new Error('The MG-30 USB recorder did not confirm that recording started.');
-    const context = await getAudioContext();
+    // A Loopback-only capture must not create/resume Web Audio output: doing so
+    // can take audio focus away from a separate phone music player. Use a wall
+    // clock for the DAW cursor when no DAW playback is running.
+    const context = playing ? audioContext : (track.id === 'loopback' ? null : await getAudioContext());
     recording = true;
     recordingTrackId = track.id;
     recordingStartPosition = playheadSeconds;
     if (!playing) {
       playStartPosition = playheadSeconds;
-      playStartContextTime = context.currentTime;
+      playStartContextTime = context ? context.currentTime : 0;
+      recordingStartPerformanceTime = performance.now();
       cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(updatePlayheadFrame);
     }
@@ -1121,7 +1130,11 @@ async function stopDawRecording() {
   if (!recording) return;
   const trackId = recordingTrackId;
   const startAt = recordingStartPosition;
-  if (audioContext) playheadSeconds = playStartPosition + Math.max(0, audioContext.currentTime - playStartContextTime);
+  if (playing && audioContext) {
+    playheadSeconds = playStartPosition + Math.max(0, audioContext.currentTime - playStartContextTime);
+  } else {
+    playheadSeconds = playStartPosition + Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000);
+  }
   recording = false;
   recordingTrackId = '';
   cancelAnimationFrame(animationFrame);
