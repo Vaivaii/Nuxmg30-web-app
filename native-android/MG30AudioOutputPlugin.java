@@ -73,8 +73,8 @@ public class MG30AudioOutputPlugin extends Plugin {
     private static boolean isUsbOutput(AudioDeviceInfo device) {
         int type = device.getType();
         return type == AudioDeviceInfo.TYPE_USB_DEVICE
-            || type == AudioDeviceInfo.TYPE_USB_HEADSET
-            || (Build.VERSION.SDK_INT >= 26 && type == AudioDeviceInfo.TYPE_USB_ACCESSORY);
+            || type == AudioDeviceInfo.TYPE_USB_ACCESSORY
+            || (Build.VERSION.SDK_INT >= 26 && type == AudioDeviceInfo.TYPE_USB_HEADSET);
     }
 
     private static boolean isMg30ProductName(String productName) {
