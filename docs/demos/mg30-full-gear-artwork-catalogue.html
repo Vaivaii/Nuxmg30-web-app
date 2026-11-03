@@ -564,7 +564,7 @@ function eqSvg(m){
  const count=m.name.includes('10-Band')?10:m.name.includes('6-Band')?6:0;
  if(count){for(let i=0;i<count;i++){const x=115+i*(410/(count-1));s+='<rect x="'+(x-8)+'" y="169" width="16" height="124" rx="6" fill="#1a2020" stroke="'+p.edge+'" stroke-opacity=".4"/><rect x="'+(x-6)+'" y="'+(217+(i%3)*7)+'" width="12" height="18" rx="3" fill="url(#metal)"/><text x="'+x+'" y="305" text-anchor="middle" font-size="8" fill="'+p.ink+'">'+['100','220','500','1.2k','2.6k','6.4k','8k','10k','12k','16k'][i]+'</text>'}}
  else{for(let i=0;i<3;i++){const x=220+i*100;s+='<circle cx="'+x+'" cy="220" r="25" fill="url(#dial)" stroke="'+p.edge+'"/><path d="M'+x+' 200v-8" stroke="#f2dfb7" stroke-width="3"/><text x="'+x+'" y="271" text-anchor="middle" font-size="9" fill="'+p.ink+'">BAND '+(i+1)+'</text>'}}
- return s;
+ return s+'</svg>';
 }
 function makeArt(m){
  if(m.cat==='AMP'){
