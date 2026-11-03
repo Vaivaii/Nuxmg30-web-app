@@ -256,6 +256,140 @@ public class MG30AudioOutputPlugin extends Plugin {
         call.resolve(result);
     }
 
+    private AudioTrack dawPlaybackTrack;
+    private int dawPlaybackDeviceId = -1;
+
+    @PluginMethod
+    public synchronized void startDawPlayback(PluginCall call) {
+        Integer requestedId = call.getInt("deviceId");
+        if (requestedId == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            call.reject("Endpoint MG-30 tidak valid atau Android terlalu lama.");
+            return;
+        }
+        stopDawPlaybackInternal();
+        AudioManager manager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        AudioDeviceInfo target = null;
+        if (manager != null) {
+            for (AudioDeviceInfo device : manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
+                if (device.getId() == requestedId && isUsbOutput(device)
+                    && isMg30ProductName(device.getProductName() == null ? "" : device.getProductName().toString())) {
+                    target = device;
+                    break;
+                }
+            }
+        }
+        if (target == null || !contains(target.getSampleRates(), 48000)
+            || !contains(target.getChannelCounts(), 2)) {
+            call.reject("Output NUX MG-30 48 kHz stereo tidak tersedia. Tidak ada audio yang dikirim.");
+            return;
+        }
+        AudioTrack track = null;
+        try {
+            AudioFormat format = new AudioFormat.Builder()
+                .setSampleRate(48000)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .build();
+            AudioAttributes attributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+            int minBuffer = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO,
+                AudioFormat.ENCODING_PCM_16BIT);
+            if (minBuffer <= 0) throw new IllegalStateException("Android menolak buffer PCM 48 kHz stereo.");
+            track = new AudioTrack.Builder()
+                .setAudioAttributes(attributes)
+                .setAudioFormat(format)
+                .setBufferSizeInBytes(Math.max(minBuffer, 48000 * 2 * 2))
+                .setTransferMode(AudioTrack.MODE_STREAM)
+                .build();
+            if (track.getState() != AudioTrack.STATE_INITIALIZED || !track.setPreferredDevice(target)) {
+                throw new IllegalStateException("AudioTrack gagal dibuat atau diarahkan ke MG-30.");
+            }
+            track.play();
+            AudioDeviceInfo routed = null;
+            long deadline = SystemClock.elapsedRealtime() + 1000;
+            while (SystemClock.elapsedRealtime() < deadline) {
+                routed = track.getRoutedDevice();
+                if (routed != null) break;
+                SystemClock.sleep(30);
+            }
+            if (routed == null || routed.getId() != requestedId) {
+                throw new IllegalStateException("Rute aktual Android tidak cocok dengan USB MG-30; playback dibatalkan.");
+            }
+            dawPlaybackTrack = track;
+            dawPlaybackDeviceId = requestedId;
+            JSObject result = new JSObject();
+            result.put("started", true);
+            result.put("requestedDeviceId", requestedId);
+            result.put("routedDeviceId", routed.getId());
+            result.put("routedDeviceName", routed.getProductName() == null ? "NUX MG-30" : routed.getProductName().toString());
+            result.put("sampleRate", 48000);
+            result.put("channels", 2);
+            result.put("encoding", "PCM_16BIT");
+            call.resolve(result);
+        } catch (Exception error) {
+            if (track != null) {
+                try { track.release(); } catch (Exception ignored) {}
+            }
+            call.reject(error.getMessage() == null ? "USB MG-30 playback gagal dimulai." : error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public synchronized void writeDawPlaybackChunk(PluginCall call) {
+        if (dawPlaybackTrack == null || dawPlaybackTrack.getState() != AudioTrack.STATE_INITIALIZED) {
+            call.reject("USB MG-30 playback belum dimulai.");
+            return;
+        }
+        String encoded = call.getString("dataBase64");
+        if (encoded == null || encoded.isEmpty()) {
+            call.reject("Blok audio kosong.");
+            return;
+        }
+        try {
+            AudioDeviceInfo routed = dawPlaybackTrack.getRoutedDevice();
+            if (routed == null || routed.getId() != dawPlaybackDeviceId) {
+                stopDawPlaybackInternal();
+                throw new IllegalStateException("Rute USB MG-30 berubah atau terputus; playback dihentikan.");
+            }
+            byte[] pcm = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT);
+            if ((pcm.length & 3) != 0) throw new IllegalArgumentException("Blok PCM stereo 16-bit tidak sejajar per frame.");
+            int offset = 0;
+            while (offset < pcm.length) {
+                int written = dawPlaybackTrack.write(pcm, offset, pcm.length - offset, AudioTrack.WRITE_BLOCKING);
+                if (written < 0) throw new IllegalStateException("AudioTrack.write gagal: " + written);
+                if (written == 0) throw new IllegalStateException("AudioTrack tidak menerima blok audio.");
+                offset += written;
+            }
+            JSObject result = new JSObject();
+            result.put("bytesWritten", offset);
+            result.put("framesWritten", offset / 4);
+            result.put("routedDeviceId", routed.getId());
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject(error.getMessage() == null ? "Blok audio USB gagal dikirim." : error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public synchronized void stopDawPlayback(PluginCall call) {
+        stopDawPlaybackInternal();
+        JSObject result = new JSObject();
+        result.put("stopped", true);
+        call.resolve(result);
+    }
+
+    private void stopDawPlaybackInternal() {
+        AudioTrack current = dawPlaybackTrack;
+        dawPlaybackTrack = null;
+        dawPlaybackDeviceId = -1;
+        if (current != null) {
+            try { if (current.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) current.stop(); } catch (Exception ignored) {}
+            try { current.release(); } catch (Exception ignored) {}
+        }
+    }
+
     private static boolean isUsbOutput(AudioDeviceInfo device) {
         int type = device.getType();
         return type == AudioDeviceInfo.TYPE_USB_DEVICE
