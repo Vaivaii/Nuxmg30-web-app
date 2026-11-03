@@ -103,7 +103,7 @@ test('native recorder exposes and captures the MG-30 multichannel USB endpoint',
   assert.match(recorder, /preferredLoopbackCounts = new int\[\] \{ 4, 3, 2, 1 \}/);
   assert.match(recorder, /Integer\.bitCount\(indexMask\)/);
   assert.match(recorder, /setChannelIndexMask\(channelIndexMask\)/);
-  assert.match(recorder, /activeCaptureMode = multichannelCapture \? \(loopbackCapture \? "loopback" : "multichannel"\) : "normal"/);
+  assert.match(recorder, /activeCaptureMode = diagnosticCapture \? "diagnostic"\s*:\s*\(multichannelCapture \? \(loopbackCapture \? "loopback" : "multichannel"\) : "normal"\)/);
   assert.ok(recorder.includes('MG30_USB_Input_Take_'));
   assert.ok(recorder.includes('call.getInt("channelIndexMask", 0)'));
   assert.ok(recorder.includes('(indexMask & requestedChannelIndexMask) != requestedChannelIndexMask'));
