@@ -14,6 +14,7 @@ on:
       - feature/studio-mockup-alignment-undo
       - feature/studio-usb-reamp-loopback
       - feature/studio-usb-loopback
+      - feature/studio-daw-output-routing
     paths:
       - 'www/**'
       - 'tests/**'
