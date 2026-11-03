@@ -155,3 +155,19 @@ The official Android API explains that input channel-index masks map endpoint ch
 - Package inspection verified `MG30AudioPlugin`, `MG30_Loopback_Take_`, `setChannelIndexMask`, `channelIndexMasks`, the Loopback DAW panel and Loopback start/stop controls in the APK bundle.
 - Package inspection did not find `beginReampPlayback` or `startReampPlayback` native methods. The active application package contains the Loopback path, not the Reamp session engine.
 - These are CI and package checks, not physical signal-flow verification. Test the actual MG-30 / handset combination before declaring the USB Loopback capture path acoustically confirmed.
+
+
+## Final Loopback APK refresh (3 November 2026)
+
+This later build supersedes the earlier artifact record above. It includes the final app source plus the final Loopback regression assertions.
+
+- Workflow run: [Build USB Loopback debug APK — final refresh](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41590802171), run ID `41590802171`, conclusion **success**.
+- Source commit: `9f10f2cd6ceb95a8262370c7fd975b392e3a2aaf`.
+- Regression suite: **157 passed, 0 failed**.
+- Android initializer syntax: passed.
+- Capacitor Android generation/plugin registration: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 31s**.
+- Workflow artifact ID: `13210027536`, ZIP size 4,129,160 bytes, SHA-256 `1ba02e30bf94c0fd2fb5ef61cdaffe491a8d2b9a74810fb4e4af09549d5c0169`.
+- Extracted APK size: **4,505,700 bytes**, SHA-256 `388672ffff2074c96a1089aa6e5f0fb4a44612941cb75d52658e482852260689`.
+- Final package inspection found the Loopback capture filename prefix, Android `setChannelIndexMask` path and channel-index diagnostics in the native/web bundle. No Reamp native session entry points were found in the APK.
+- Physical USB Loopback playback/return remains unverified until the user tests this APK with the original MG-30 and listens to the captured track.
