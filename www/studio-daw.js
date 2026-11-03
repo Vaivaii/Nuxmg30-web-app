@@ -1515,7 +1515,7 @@ function mountTrackInputRoutingPanel() {
       <button type="button" id="dawUsbDiagnosticButton" class="daw-tool-btn">START RAW USB 1–4 TEST</button>
       <div id="dawUsbDiagnosticResult" class="daw-usb-diagnostic-result" aria-live="polite">Belum ada hasil pengukuran.</div>
     </div>
-    <small class="daw-input-routing-note">Input 1 = mono · Input 1–2 = stereo · Input 3–4 = Wet Sync (Dry Out mode). Untuk playback HP/host, QuickTone asli membedakan Normal + Loopback option dari mode Loopback pedal yang merekam drum machine/phrase looper internal. Pemetaan kanal host-playback belum dipastikan; uji mentah 4 kanal akan mengukurnya.</small>
+    <small class="daw-input-routing-note">Input 1 = mono · Input 1–2 = stereo · Input 3–4 = Wet Sync (Dry Out mode). Untuk playback HP/host, QuickTone asli membedakan Normal + Loopback option dari mode Loopback pedal yang merekam drum machine/phrase looper internal. Tes fisik MG-30 Gen 2 mengonfirmasi audio HP masuk melalui Input 1–2 saat Routing Mode = Normal dan opsi Loopback = ON.</small>
   `;
   host.insertBefore(panel, projectSettings);
   syncTrackInputRoutingPanel();
