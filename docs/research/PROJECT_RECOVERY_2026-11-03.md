@@ -130,6 +130,22 @@ Not implemented or verified:
 6. After any code change, regress NAM, IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset read/write, and Signal Chain as applicable.
 7. Keep this document and `UI_POLISH_CHECKLIST.md` updated with source commit, CI run, APK hash, physical install/test status, and unresolved items.
 
-## 7. Recovery rule
+## 7. Build #352 result and recovery rule
 
-Build #351 is a successful historical APK from the parent UI branch, not a build of the latest source branch. The latest source branch contains a new USB-output discovery experiment that has not yet been CI-built or physically tested. Treat these as separate states in every future handoff.
+Build #352 is now the latest successful APK produced from the isolated source branch `feature/studio-usb-reamp-loopback`; it supersedes Build #351 as the CI/package baseline for this USB-output discovery work.
+
+- Build #352 run: `41579657826`, success: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41579657826
+- Tested source commit: `093bad9b8ceec9a583ba3b9ff02f19a10b107354`.
+- Tests: 148/148 pass, 0 fail, 0 skipped.
+- Vite production build, Capacitor Android generation/plugin registration, Gradle `assembleDebug`, and artifact upload all succeeded.
+- Artifact ID `13204194446`, ZIP size 4,119,222 bytes, ZIP SHA-256 `7ebac3877b96e34a5f4e8754bb28410ddcbbc30318e6dc96b2ddaa209aa3467c`.
+- Extracted APK size 4,497,820 bytes, APK SHA-256 `7e55987f01eab8b40ca6387a2692d6a242f5de4903bd0022901cea7b64fbfef8`.
+- ZIP/APK integrity passed. DEX includes the new `MG30AudioOutputPlugin` and existing `MG30AudioPlugin` / `startRecording`. Web assets include the USB output discovery UI/method markers.
+- Build #352 has not been confirmed installed or exercised on the user's physical phone. Do not claim USB endpoint discovery on hardware until the user reports the result.
+- The branch still implements output endpoint discovery only. No DI playback, simultaneous processed capture, full-duplex validation or Reamp/Loopback routing modes are implemented.
+
+The Android initializer syntax defect was fixed, a `node --check` regression guard was added, and the APK workflow now includes this feature branch. Project documentation commits after Build #352 recorded the result; they do not change the already-built application source. The current branch HEAD may therefore be newer than the tested source commit while containing only documentation changes.
+
+Build #351 remains a successful historical APK from `feature/studio-mockup-alignment-undo`; it did not include the USB output discovery module. Build #248 is a historical checkpoint only. Always compare the source commit, Actions run and APK identity separately.
+
+For every future change, preserve NAM, User/Third Party IR, Collection IR, MIDI mapping, USB-MIDI, presets, Signal Chain and the existing USB AudioRecord input route. Run the full test/production/Android build and inspect the packaged APK before distribution. Physical MG-30 testing remains a separate gate.
