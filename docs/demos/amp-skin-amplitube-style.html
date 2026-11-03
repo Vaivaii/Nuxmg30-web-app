@@ -29,8 +29,7 @@ h1{font-size:clamp(25px,4vw,36px);letter-spacing:-1.3px;line-height:1.08;margin:
 .amp-stage{position:relative;isolation:isolate;min-height:450px;border:1px solid #333e3f;border-radius:14px;overflow:hidden;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 52%,#4a5050 0,#252c2d 42%,#131819 78%,#0d1112 100%)}
 .amp-stage:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(115deg,transparent 28%,#ffffff0a 48%,transparent 70%),radial-gradient(ellipse at 50% 110%,#0009,transparent 55%)}
 .amp-stage:after{content:"";position:absolute;left:12%;right:12%;bottom:24px;height:18px;border-radius:50%;background:#000b;filter:blur(14px);z-index:-1}
-#ampPhoto{display:block;max-width:100%;width:100%;height:395px;object-fit:contain;filter:drop-shadow(0 27px 22px #0009);transition:opacity .2s ease,transform .35s ease}
-.amp-stage.switching #ampPhoto{opacity:.25;transform:scale(.985)}
+#ampArtwork{display:block;width:min(100%,760px);height:395px;overflow:visible;filter:drop-shadow(0 27px 22px #0009);transition:opacity .2s ease,transform .35s ease}.amp-stage.switching #ampArtwork{opacity:.3;transform:scale(.985)}.amp-svg text{font-family:Arial,Helvetica,sans-serif;user-select:none}@media(max-width:850px){#ampArtwork{height:315px}}@media(max-width:540px){#ampArtwork{height:245px}}
 .photo-fallback{display:none;text-align:center;max-width:390px;color:#d5d0c4;padding:28px}
 .photo-fallback strong{display:block;font-size:18px;margin-bottom:7px}
 .photo-fallback p{color:#aab1ac;font-size:12px}
@@ -75,10 +74,9 @@ select:focus{border-color:var(--gold)}
  <div class="card visual">
   <div class="visual-head"><div class="name">AMPLIFIER MODEL</div><div class="status"><i></i> MODEL PREVIEW</div></div>
   <div class="amp-stage" id="stage">
-   <img id="ampPhoto" alt="Selected amplifier product reference">
-   <div class="photo-fallback" id="fallback"><strong id="fallbackName"></strong><p>Gambar referensi tidak dapat dimuat. Coba model lain atau periksa koneksi internet.</p></div>
+   <svg id="ampArtwork" class="amp-svg" viewBox="0 0 760 440" role="img" aria-label="Original vector amplifier artwork"></svg>
   </div>
-  <div class="visual-foot"><span id="visualCaption">PRODUCT SKIN / FRONT VIEW</span><span>REFERENCE-BASED HARDWARE ART</span></div>
+  <div class="visual-foot"><span id="visualCaption">PRODUCT SKIN / FRONT VIEW</span><span>ORIGINAL INLINE SVG ARTWORK</span></div>
  </div>
  <aside class="card controls">
   <div class="control-head"><strong>AMP CONTROLS</strong><div class="power">POWER <button class="on" id="power" type="button" aria-label="Toggle power"><span></span></button></div></div>
@@ -97,60 +95,74 @@ select:focus{border-color:var(--gold)}
 </main>
 <script>
 (function(){
- // Keep demo data self-contained: this page may be opened directly from Android content://
- const data = {
-  'Deluxe Rvb': {image:'https://r2.gear4music.com/media/117/1172017/1200/preview.jpg',reference:'Fender ’65 Deluxe Reverb'},
-  'Plexi 100': {image:'https://r2.gear4music.com/media/133/1332394/600/preview.jpg',reference:'Marshall 1959 Super Lead'},
-  'Jazz Clean': {image:'https://media.sweetwater.com/m/products/image/b4fcb60da1oBU6UZaRoldXqU3cOe4TD7IePj9xVe.jpg?ha=b4fcb60da128ffad&quality=82',reference:'Roland JC-120 Jazz Chorus'},
-  'Dual Rect': {image:'https://images.musicstore.de/images/1280/mesa-boogie-dual-rectifier-cabezal-de-amplificador-_1_GIT0018626-000.jpg',reference:'Mesa/Boogie Dual Rectifier'},
-  'Twin Rvb': {image:'https://spicersmusic.com/cdn/shop/products/fender-65-twin-1_1024x.jpg?v=1712855342',reference:'Fender ’65 Twin Reverb'},
-  'Class A15': {image:'https://rainbowmusicshop.com/cdn/shop/files/ac15_SP.jpg?v=1705698066',reference:'Vox AC15'}
+ const models={
+  'Deluxe Rvb':{ref:'Fender ’65 Deluxe Reverb',kind:'fender',twin:false,caption:'BLACKFACE 1×12 COMBO · SILVER GRILLE'},
+  'Plexi 100':{ref:'Marshall 1959 Super Lead',kind:'marshall',caption:'BLACK LEVANT · GOLD CONTROL PANEL'},
+  'Jazz Clean':{ref:'Roland JC-120 Jazz Chorus',kind:'roland',caption:'STEREO 2×12 · DUAL SPEAKER CABINET'},
+  'Dual Rect':{ref:'Mesa/Boogie Dual Rectifier',kind:'mesa',caption:'BLACK AMP HEAD · CHROME CONTROL DETAILS'},
+  'Twin Rvb':{ref:'Fender ’65 Twin Reverb',kind:'fender',twin:true,caption:'BLACKFACE 2×12 COMBO · SILVER GRILLE'},
+  'Class A15':{ref:'Vox AC15',kind:'vox',caption:'BASKETWEAVE CABINET · DIAMOND GRILLE'}
  };
- const select = document.getElementById('model');
- const photo = document.getElementById('ampPhoto');
- const stage = document.getElementById('stage');
- const fallback = document.getElementById('fallback');
- const params = document.getElementById('params');
- const power = document.getElementById('power');
- const candidates = ['Deluxe Rvb','Plexi 100','Jazz Clean','Dual Rect','Twin Rvb','Class A15'];
- const names = candidates.filter(n => data[n] && data[n].image);
- function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
- names.forEach(function(n){const o=document.createElement('option');o.value=n;o.textContent=n;select.appendChild(o);});
- const controlSets = {
-  'Deluxe Rvb':['Volume','Treble','Bass','Reverb','Speed','Intensity'],
-  'Plexi 100':['Presence','Bass','Middle','Treble','High Treble','Normal'],
-  'Jazz Clean':['Volume','Treble','Middle','Bass','Distortion','Reverb','Speed','Depth'],
-  'Dual Rect':['Presence','Master','Gain','Bass','Middle','Treble'],
-  'Twin Rvb':['Volume','Treble','Middle','Bass','Reverb','Vibrato'],
-  'Class A15':['Volume','Treble','Bass','Tone Cut','Master','Top Boost']
- };
- function makeControls(model){
+ const select=document.getElementById('model'),art=document.getElementById('ampArtwork'),params=document.getElementById('params'),power=document.getElementById('power');
+ Object.keys(models).forEach(n=>{let o=document.createElement('option');o.value=n;o.textContent=n;select.appendChild(o)});
+ const controls={
+ 'Deluxe Rvb':['Volume','Treble','Bass','Reverb','Speed','Intensity'],
+ 'Plexi 100':['Presence','Bass','Middle','Treble','High Treble','Normal'],
+ 'Jazz Clean':['Volume','Treble','Middle','Bass','Distortion','Reverb','Speed','Depth'],
+ 'Dual Rect':['Presence','Master','Gain','Bass','Middle','Treble'],
+ 'Twin Rvb':['Volume','Treble','Middle','Bass','Reverb','Vibrato'],
+ 'Class A15':['Volume','Treble','Bass','Tone Cut','Master','Top Boost']};
+ const defs='<defs>'+
+ '<linearGradient id="cab" x2="0" y2="1"><stop stop-color="#444746"/><stop offset=".2" stop-color="#202323"/><stop offset=".8" stop-color="#090b0b"/><stop offset="1" stop-color="#303432"/></linearGradient>'+
+ '<linearGradient id="silver" x2="0" y2="1"><stop stop-color="#f1f0e9"/><stop offset=".4" stop-color="#aeb2ae"/><stop offset="1" stop-color="#606665"/></linearGradient>'+
+ '<linearGradient id="gold" x2="0" y2="1"><stop stop-color="#f2d99b"/><stop offset=".5" stop-color="#b99152"/><stop offset="1" stop-color="#72502d"/></linearGradient>'+
+ '<radialGradient id="knob" cx=".32" cy=".25"><stop stop-color="#737976"/><stop offset=".3" stop-color="#3a403e"/><stop offset="1" stop-color="#070909"/></radialGradient>'+
+ '<radialGradient id="cone"><stop stop-color="#55564f"/><stop offset=".18" stop-color="#151918"/><stop offset=".75" stop-color="#080a0a"/><stop offset="1" stop-color="#66675f"/></radialGradient>'+
+ '<pattern id="grille" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 0L7 7M7 0L0 7" stroke="#e1e0d6" stroke-opacity=".35"/><path d="M0 3.5H7" stroke="#151818" stroke-opacity=".4"/></pattern>'+
+ '<pattern id="diamond" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M7 0L14 7L7 14L0 7Z" fill="none" stroke="#cfc3a9" stroke-opacity=".5"/></pattern>'+
+ '<filter id="shadow"><feGaussianBlur stdDeviation="9"/></filter></defs>';
+ function k(x,y,r,label){return '<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#090a0a" stroke="#8e938e"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#knob)" stroke="#aeb2aa" stroke-opacity=".65"/><path d="M'+x+' '+(y-r+4)+'v-7" stroke="#f3e5c5" stroke-width="2.5" stroke-linecap="round"/><text x="'+x+'" y="'+(y+r+13)+'" text-anchor="middle" fill="#eee9dc" font-size="8">'+label+'</text></g>'}
+ function sp(x,y,r){return '<g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#cone)" stroke="#8d8e86" stroke-width="3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.75)+'" fill="none" stroke="#aaa99f" stroke-opacity=".25" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.2)+'" fill="#080a0a" stroke="#666960" stroke-width="3"/></g>'}
+ function handle(){return '<path d="M326 76q0 -12 13 -12h82q13 0 13 12v7h-12v-5h-84v5h-12z" fill="#080909" stroke="#777d78" stroke-width="2"/>'}
+ function fender(twin){
+  let labels=twin?['VOL','TREB','MID','BASS','REVERB','SPEED','INTENSITY']:['VOL','TREB','BASS','REVERB','SPEED','INTENSITY'],s='';
+  labels.forEach((l,i)=>s+=k(195+i*(twin?61:73),111,10,l));
+  return defs+'<ellipse cx="380" cy="394" rx="240" ry="16" fill="#000" opacity=".65" filter="url(#shadow)"/><rect x="126" y="75" width="508" height="302" rx="14" fill="url(#cab)" stroke="#646a66" stroke-width="4"/>'+handle()+'<rect x="145" y="88" width="470" height="43" fill="url(#silver)"/><rect x="151" y="94" width="458" height="31" fill="#171b1a"/>'+s+'<rect x="145" y="139" width="470" height="210" fill="#1a1e1d" stroke="#050606" stroke-width="5"/><rect x="151" y="145" width="458" height="198" fill="url(#grille)"/><text x="190" y="211" font-family="Georgia,serif" font-style="italic" font-size="28" fill="#eee9dc">Fender</text><text x="596" y="113" text-anchor="end" font-size="10" fill="#eee9dc"> '+(twin?'TWIN REVERB':'DELUXE REVERB')+'</text><text x="380" y="331" text-anchor="middle" font-size="9" letter-spacing="4" fill="#e7e4d9">'+(twin?'TWIN REVERB':'DELUXE')+'</text><circle cx="139" cy="91" r="4" fill="url(#silver)"/><circle cx="621" cy="91" r="4" fill="url(#silver)"/>';
+ }
+ function marshall(){
+  let s='';['PRES','BASS','MID','TREB','HIGH TREB','NORMAL'].forEach((l,i)=>s+=k(222+i*63,239,13,l));
+  return defs+'<ellipse cx="380" cy="355" rx="245" ry="17" fill="#000" opacity=".7" filter="url(#shadow)"/><rect x="115" y="115" width="530" height="230" rx="14" fill="url(#cab)" stroke="#727671" stroke-width="4"/>'+handle()+'<rect x="132" y="151" width="496" height="139" rx="4" fill="url(#gold)" stroke="#f0d9a0" stroke-width="2"/><text x="380" y="184" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="29" font-weight="bold" fill="#27231b">MARSHALL</text><text x="380" y="201" text-anchor="middle" font-size="8" letter-spacing="3" fill="#403522">1959 SUPER LEAD</text>'+s+'<text x="380" y="321" text-anchor="middle" font-size="10" letter-spacing="4" fill="#c5c9c0">100 WATT · ALL VALVE</text>';
+ }
+ function roland(){
+  let s='';['VOL','TREB','MID','BASS','DIST','REVERB','SPEED','DEPTH'].forEach((l,i)=>s+=k(169+i*60,112,9,l));
+  return defs+'<ellipse cx="380" cy="395" rx="250" ry="16" fill="#000" opacity=".65" filter="url(#shadow)"/><rect x="115" y="65" width="530" height="320" rx="13" fill="url(#cab)" stroke="#777d78" stroke-width="4"/><rect x="132" y="82" width="496" height="52" fill="url(#silver)"/><rect x="139" y="89" width="482" height="39" fill="#171b1a"/>'+s+'<rect x="135" y="145" width="490" height="224" fill="#171b1a" stroke="#9b9f96" stroke-width="3"/><rect x="142" y="152" width="476" height="210" fill="url(#grille)"/>'+sp(265,254,87)+sp(495,254,87)+'<text x="380" y="350" text-anchor="middle" font-size="16" letter-spacing="4" fill="#e7e7de">JAZZ CHORUS · JC-120</text>'+handle();
+ }
+ function mesa(){
+  let s='';['PRES','MASTER','GAIN','BASS','MID','TREB'].forEach((l,i)=>s+=k(220+i*64,239,13,l));
+  return defs+'<ellipse cx="380" cy="355" rx="245" ry="17" fill="#000" opacity=".7" filter="url(#shadow)"/><rect x="112" y="115" width="536" height="230" rx="13" fill="url(#cab)" stroke="#747a75" stroke-width="4"/>'+handle()+'<rect x="132" y="145" width="496" height="148" rx="5" fill="#171b1a" stroke="#898d84" stroke-width="2"/><text x="380" y="184" text-anchor="middle" font-family="Georgia,serif" font-size="25" fill="#e8e5d9">MESA</text><text x="380" y="202" text-anchor="middle" font-size="9" letter-spacing="4" fill="#c9c9be">DUAL RECTIFIER</text>'+s+'<circle cx="157" cy="267" r="5" fill="#d4bd84"/><circle cx="603" cy="267" r="5" fill="#d4bd84"/>';
+ }
+ function vox(){
+  let s='';['VOL','TREB','BASS','TONE CUT','MASTER','TOP BOOST'].forEach((l,i)=>s+=k(193+i*74,112,10,l));
+  return defs+'<ellipse cx="380" cy="394" rx="240" ry="16" fill="#000" opacity=".65" filter="url(#shadow)"/><rect x="126" y="75" width="508" height="302" rx="14" fill="#29241e" stroke="#9b8b6d" stroke-width="4"/>'+handle()+'<rect x="145" y="88" width="470" height="43" fill="url(#gold)"/>'+s+'<rect x="145" y="139" width="470" height="210" fill="#29231d" stroke="#080909" stroke-width="5"/><rect x="151" y="145" width="458" height="198" fill="url(#diamond)"/><text x="380" y="238" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="40" fill="#e5d8bb">VOX</text><text x="380" y="259" text-anchor="middle" font-size="10" letter-spacing="4" fill="#e5d8bb">AC15 CUSTOM</text>';
+ }
+ function render(){
+  let name=select.value,m=models[name],draw={fender:()=>fender(!!m.twin),marshall:marshall,roland:roland,mesa:mesa,vox:vox};
+  art.innerHTML=draw[m.kind]();
+  document.getElementById('modelName').textContent=name;
+  document.getElementById('modelRef').textContent=m.ref;
+  document.getElementById('visualCaption').textContent=m.caption+' · ORIGINAL VECTOR SKIN';
   params.innerHTML='';
-  (controlSets[model]||['Gain','Bass','Middle','Treble','Volume']).forEach(function(label,i){
-   const box=document.createElement('div');box.className='param';
-   const knob=document.createElement('div');knob.className='knob';knob.style.setProperty('--angle',(-132+i*29)+'deg');
-   const lab=document.createElement('label');lab.textContent=label.toUpperCase();
-   const input=document.createElement('input');input.type='range';input.min='0';input.max='100';input.value=String([62,48,55,50,68,43,57,60][i%8]);input.setAttribute('aria-label',label);
-   const read=document.createElement('div');read.className='readout';read.textContent=input.value;
-   input.addEventListener('input',function(){const angle=-135+(Number(input.value)/100)*270;knob.style.setProperty('--angle',angle+'deg');read.textContent=input.value;});
+  (controls[name]||[]).forEach((label,i)=>{
+   let box=document.createElement('div');box.className='param';
+   let knob=document.createElement('div');knob.className='knob';knob.style.setProperty('--angle',(-132+i*29)+'deg');
+   let lab=document.createElement('label');lab.textContent=label.toUpperCase();
+   let input=document.createElement('input');input.type='range';input.min='0';input.max='100';input.value=String([62,48,55,50,68,43,57,60][i%8]);
+   let read=document.createElement('div');read.className='readout';read.textContent=input.value;
+   input.addEventListener('input',()=>{knob.style.setProperty('--angle',(-135+Number(input.value)*2.7)+'deg');read.textContent=input.value});
    box.append(knob,lab,input,read);params.appendChild(box);
   });
  }
- function render(){
-  const model=select.value;const item=data[model];if(!item)return;
-  stage.classList.add('switching');
-  photo.onload=function(){photo.style.display='block';fallback.style.display='none';stage.classList.remove('switching');};
-  photo.onerror=function(){photo.style.display='none';fallback.style.display='block';document.getElementById('fallbackName').textContent=model;stage.classList.remove('switching');};
-  photo.src=item.image;
-  document.getElementById('modelName').textContent=model;
-  document.getElementById('modelRef').textContent=item.reference||'Amp reference';
-  document.getElementById('visualCaption').textContent=(item.reference||model).toUpperCase()+' / PRODUCT REFERENCE';
-  makeControls(model);
- }
- select.addEventListener('change',render);
- power.addEventListener('click',function(){power.classList.toggle('on');});
- if(names.length){select.value=names[0];render();}
- else{document.getElementById('fallbackName').textContent='AMP REFERENCES';fallback.style.display='block';photo.style.display='none';}
+ select.addEventListener('change',render);power.addEventListener('click',()=>power.classList.toggle('on'));select.value='Twin Rvb';render();
 })();
 </script>
 </body>
