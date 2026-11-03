@@ -134,6 +134,8 @@ export function normalizeProject(input) {
     sampleRate: 48000,
     bitDepth: 24,
     loopEnabled: Boolean(input.loopEnabled),
+    loopStartSeconds: Math.max(0, Number(input.loopStartSeconds) || 0),
+    loopEndSeconds: Math.max(0, Number(input.loopEndSeconds) || 0),
     metronomeEnabled: Boolean(input.metronomeEnabled),
     snap: ['off', 'beat', 'bar', 'eighth'].includes(input.snap) ? input.snap : 'beat',
     zoom: Math.max(44, Math.min(180, Number(input.zoom) || defaults.zoom)),
