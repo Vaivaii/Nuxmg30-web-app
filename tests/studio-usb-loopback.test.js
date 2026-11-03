@@ -49,6 +49,7 @@ test('DAW stays at four visible tracks and every track has an independent input 
   assert.equal(legacy.tracks.find((track) => track.id === 'backing').clips.length, 1);
   assert.equal(legacy.tracks.find((track) => track.id === 'guitar').clips.length, 1);
   assert.equal(legacy.tracks.some((track) => track.id === 'loopback'), false);
+  assert.equal(legacy.legacyLoopbackClips.length, 0);
 });
 
 test('channel selection maps mono input 1, stereo inputs 1-2, and Loopback inputs 3-4', async () => {
@@ -115,7 +116,7 @@ test('four-track DAW exposes per-track routes and only imports selected USB chan
   assert.ok(daw.includes('data-track-input-route'));
   assert.ok(daw.includes('track.inputRoute = route.id'));
   assert.ok(daw.includes('const captureMode = \'multichannel\''));
-  assert.ok(daw.includes('recorder.start({ captureMode })'));
+  assert.ok(daw.includes('recorder.start({ captureMode, channelIndexMask: inputRoute.channelIndexMask })'));
   assert.ok(daw.includes('selectUsbChannelPositions(capturedMask, route.channelIndexMask)'));
   assert.ok(daw.includes('encodeWavHeader(pcm.byteLength, buffer.sampleRate, 2, 24)'));
   assert.ok(daw.includes('storedBlob = new Blob'));
