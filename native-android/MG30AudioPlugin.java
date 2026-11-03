@@ -71,6 +71,16 @@ public class MG30AudioPlugin extends Plugin {
     private double[] channelSquareSums = new double[0];
     private double[] channelPeakAbs = new double[0];
     private String captureError = "";
+    private static final int LIVE_WAVEFORM_BUCKET_MS = 100;
+    private static final int MAX_LIVE_WAVEFORM_BUCKETS = 8192;
+    private final Object liveWaveformLock = new Object();
+    private double[][] liveWaveformRing = new double[0][];
+    private double[] liveBucketPeakAbs = new double[0];
+    private int liveWaveformWriteIndex = 0;
+    private int liveWaveformCount = 0;
+    private int liveBucketTargetFrames = 4800;
+    private long liveFramesInBucket = 0;
+    private long liveTotalFrames = 0;
 
     @PluginMethod
     public void inspectDevices(PluginCall call) {
@@ -511,6 +521,7 @@ public class MG30AudioPlugin extends Plugin {
             channelSampleCounts = new long[selectedChannels];
             channelSquareSums = new double[selectedChannels];
             channelPeakAbs = new double[selectedChannels];
+            resetLiveWaveform(selectedChannels, selectedRate);
             captureError = "";
 
             RandomAccessFile output = new RandomAccessFile(activeFile, "rw");
@@ -630,34 +641,126 @@ public class MG30AudioPlugin extends Plugin {
         return "AudioSource " + source;
     }
 
+    private void resetLiveWaveform(int channels, int sampleRate) {
+        synchronized (liveWaveformLock) {
+            liveWaveformRing = new double[channels][MAX_LIVE_WAVEFORM_BUCKETS];
+            liveBucketPeakAbs = new double[channels];
+            liveWaveformWriteIndex = 0;
+            liveWaveformCount = 0;
+            liveBucketTargetFrames = Math.max(1, sampleRate * LIVE_WAVEFORM_BUCKET_MS / 1000);
+            liveFramesInBucket = 0;
+            liveTotalFrames = 0;
+        }
+    }
+
+    // Called for interleaved samples while liveWaveformLock is held by the
+    // corresponding accumulate method. One peak bucket represents 100 ms.
+    private void updateSampleStats(int channel, double sample, int channels) {
+        if (channel < 0 || channel >= channelSampleCounts.length || !Double.isFinite(sample)) return;
+        channelSampleCounts[channel]++;
+        channelSquareSums[channel] += sample * sample;
+        double absolute = Math.abs(sample);
+        channelPeakAbs[channel] = Math.max(channelPeakAbs[channel], absolute);
+        liveBucketPeakAbs[channel] = Math.max(liveBucketPeakAbs[channel], absolute);
+        if (channel == channels - 1) {
+            liveFramesInBucket++;
+            liveTotalFrames++;
+            if (liveFramesInBucket >= liveBucketTargetFrames) {
+                for (int index = 0; index < channels; index++) {
+                    liveWaveformRing[index][liveWaveformWriteIndex] = liveBucketPeakAbs[index];
+                    liveBucketPeakAbs[index] = 0.0;
+                }
+                liveWaveformWriteIndex = (liveWaveformWriteIndex + 1) % MAX_LIVE_WAVEFORM_BUCKETS;
+                liveWaveformCount = Math.min(MAX_LIVE_WAVEFORM_BUCKETS, liveWaveformCount + 1);
+                liveFramesInBucket = 0;
+            }
+        }
+    }
+
     private void accumulatePcm32Stats(byte[] data, int sampleCount, int channels) {
-        for (int i = 0; i < sampleCount; i++) {
-            int offset = i * 4;
-            int raw = (data[offset] & 0xff)
-                | ((data[offset + 1] & 0xff) << 8)
-                | ((data[offset + 2] & 0xff) << 16)
-                | (data[offset + 3] << 24);
-            updateChannelStats(i % channels, raw / 2147483648.0);
+        synchronized (liveWaveformLock) {
+            for (int i = 0; i < sampleCount; i++) {
+                int offset = i * 4;
+                int raw = (data[offset] & 0xff)
+                    | ((data[offset + 1] & 0xff) << 8)
+                    | ((data[offset + 2] & 0xff) << 16)
+                    | (data[offset + 3] << 24);
+                updateSampleStats(i % channels, raw / 2147483648.0, channels);
+            }
         }
     }
 
     private void accumulatePcm16Stats(short[] data, int sampleCount, int channels) {
-        for (int i = 0; i < sampleCount; i++) {
-            updateChannelStats(i % channels, data[i] / 32768.0);
+        synchronized (liveWaveformLock) {
+            for (int i = 0; i < sampleCount; i++) {
+                updateSampleStats(i % channels, data[i] / 32768.0, channels);
+            }
         }
     }
 
     private void accumulateFloatStats(float[] data, int sampleCount, int channels) {
-        for (int i = 0; i < sampleCount; i++) {
-            updateChannelStats(i % channels, data[i]);
+        synchronized (liveWaveformLock) {
+            for (int i = 0; i < sampleCount; i++) {
+                updateSampleStats(i % channels, data[i], channels);
+            }
         }
     }
 
-    private void updateChannelStats(int channel, double sample) {
-        if (channel < 0 || channel >= channelSampleCounts.length || !Double.isFinite(sample)) return;
-        channelSampleCounts[channel]++;
-        channelSquareSums[channel] += sample * sample;
-        channelPeakAbs[channel] = Math.max(channelPeakAbs[channel], Math.abs(sample));
+    private JSArray buildLiveChannelWaveforms() {
+        JSArray result = new JSArray();
+        synchronized (liveWaveformLock) {
+            int totalBuckets = liveWaveformCount + (liveFramesInBucket > 0 ? 1 : 0);
+            int displayBuckets = Math.min(256, totalBuckets);
+            int oldestIndex = (liveWaveformWriteIndex - liveWaveformCount + MAX_LIVE_WAVEFORM_BUCKETS)
+                % MAX_LIVE_WAVEFORM_BUCKETS;
+            for (int channelIndex = 0; channelIndex < liveWaveformRing.length; channelIndex++) {
+                JSArray peaks = new JSArray();
+                for (int displayIndex = 0; displayIndex < displayBuckets; displayIndex++) {
+                    int first = (int) ((long) displayIndex * totalBuckets / displayBuckets);
+                    int limit = (int) ((long) (displayIndex + 1) * totalBuckets / displayBuckets);
+                    limit = Math.max(first + 1, limit);
+                    double peak = 0.0;
+                    for (int bucket = first; bucket < limit; bucket++) {
+                        double value;
+                        if (bucket < liveWaveformCount) {
+                            int ringIndex = (oldestIndex + bucket) % MAX_LIVE_WAVEFORM_BUCKETS;
+                            value = liveWaveformRing[channelIndex][ringIndex];
+                        } else {
+                            value = liveBucketPeakAbs[channelIndex];
+                        }
+                        peak = Math.max(peak, value);
+                    }
+                    peaks.put(peak);
+                }
+                JSObject channel = new JSObject();
+                channel.put("channel", channelIndex + 1);
+                channel.put("peaks", peaks);
+                result.put(channel);
+            }
+        }
+        return result;
+    }
+
+    @PluginMethod
+    public void getRecordingStats(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean active = recording;
+        result.put("recording", active);
+        if (active) {
+            result.put("sampleRate", activeSampleRate);
+            result.put("channels", activeChannels);
+            result.put("channelIndexMask", activeChannelIndexMask);
+            result.put("requestedChannelIndexMask", activeRequestedChannelIndexMask);
+            result.put("durationSeconds", getLiveRecordingDurationSeconds());
+            result.put("channelWaveforms", buildLiveChannelWaveforms());
+        }
+        call.resolve(result);
+    }
+
+    private double getLiveRecordingDurationSeconds() {
+        synchronized (liveWaveformLock) {
+            return (liveTotalFrames + liveFramesInBucket) / (double) Math.max(1, activeSampleRate);
+        }
     }
 
     private JSArray buildChannelStats() {
