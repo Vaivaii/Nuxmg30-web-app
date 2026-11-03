@@ -62,6 +62,8 @@ public class MG30AudioPlugin extends Plugin {
     private boolean activeFloatCapture = false;
     private String activeInputEncodingName = "PCM 32-bit integer (24-bit left-justified in 32-bit container)";
     private String activeRouteName = "USB audio";
+    private String activeCaptureMode = "normal";
+    private int activeChannelIndexMask = 0;
     private String captureError = "";
 
     @PluginMethod
@@ -81,6 +83,8 @@ public class MG30AudioPlugin extends Plugin {
                 item.put("isUsb", isUsb);
                 item.put("sampleRates", toJsArray(device.getSampleRates()));
                 item.put("channelCounts", toJsArray(device.getChannelCounts()));
+                item.put("channelMasks", Build.VERSION.SDK_INT >= 23 ? toJsArray(device.getChannelMasks()) : new JSArray());
+                item.put("channelIndexMasks", Build.VERSION.SDK_INT >= 23 ? toJsArray(device.getChannelIndexMasks()) : new JSArray());
                 JSArray encodings = new JSArray();
                 if (Build.VERSION.SDK_INT >= 31) {
                     for (int encoding : device.getEncodings()) encodings.put(encoding);
@@ -229,6 +233,8 @@ public class MG30AudioPlugin extends Plugin {
     }
 
     private void startRecordingWithPermission(PluginCall call) {
+        String captureMode = call.getString("captureMode", "normal");
+        boolean loopbackCapture = "loopback".equalsIgnoreCase(captureMode);
         AudioManager manager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         if (manager == null) {
             call.reject("AudioManager Android tidak tersedia.");
@@ -265,9 +271,23 @@ public class MG30AudioPlugin extends Plugin {
         if (rates.isEmpty()) rates.add(48000);
 
         int[] countOptions = usb.getChannelCounts();
+        int[] advertisedIndexMasks = Build.VERSION.SDK_INT >= 23 ? usb.getChannelIndexMasks() : new int[0];
         ArrayList<Integer> channelOptions = new ArrayList<>();
-        if (countOptions.length == 0 || contains(countOptions, 2)) channelOptions.add(2);
-        if (countOptions.length == 0 || contains(countOptions, 1)) channelOptions.add(1);
+        if (loopbackCapture && Build.VERSION.SDK_INT >= 23) {
+            // USB interfaces may expose the loopback stream on channels beyond L/R.
+            // Capture the widest advertised index layout first, without assigning
+            // channel meanings. The full frame is preserved in the Loopback track.
+            int[] preferredLoopbackCounts = new int[] { 4, 3, 2, 1 };
+            for (int channels : preferredLoopbackCounts) {
+                int indexMask = (1 << channels) - 1;
+                boolean countSupported = countOptions.length == 0 || contains(countOptions, channels);
+                boolean maskSupported = advertisedIndexMasks.length == 0 || contains(advertisedIndexMasks, indexMask);
+                if (countSupported && maskSupported) channelOptions.add(channels);
+            }
+        } else {
+            if (countOptions.length == 0 || contains(countOptions, 2)) channelOptions.add(2);
+            if (countOptions.length == 0 || contains(countOptions, 1)) channelOptions.add(1);
+        }
         if (channelOptions.isEmpty()) {
             channelOptions.add(2);
             channelOptions.add(1);
@@ -297,6 +317,7 @@ public class MG30AudioPlugin extends Plugin {
         AudioRecord selectedRecord = null;
         int selectedRate = 48000;
         int selectedChannels = 2;
+        int selectedChannelIndexMask = 0;
         int selectedEncoding = AudioFormat.ENCODING_PCM_16BIT;
         int selectedBuffer = 0;
         AudioDeviceInfo selectedRoute = null;
@@ -307,19 +328,27 @@ public class MG30AudioPlugin extends Plugin {
             for (int encoding : encodings) {
                 if (encoding == AudioFormat.ENCODING_PCM_32BIT && Build.VERSION.SDK_INT < 31) continue;
                 for (int channels : channelOptions) {
-                    int channelMask = channels == 2 ? AudioFormat.CHANNEL_IN_STEREO : AudioFormat.CHANNEL_IN_MONO;
+                    boolean useChannelIndexMask = loopbackCapture && Build.VERSION.SDK_INT >= 23;
+                    int channelIndexMask = useChannelIndexMask ? (1 << channels) - 1 : 0;
+                    int channelConfig = useChannelIndexMask
+                        ? channelIndexMask
+                        : (channels == 2 ? AudioFormat.CHANNEL_IN_STEREO : AudioFormat.CHANNEL_IN_MONO);
                     for (int rate : rates) {
-                        int min = AudioRecord.getMinBufferSize(rate, channelMask, encoding);
+                        int min = AudioRecord.getMinBufferSize(rate, channelConfig, encoding);
                         if (min <= 0) continue;
                         int bytesPerCaptureSample = encoding == AudioFormat.ENCODING_PCM_16BIT ? 2 : 4;
                         int bufferSize = Math.max(min * 2, rate * channels * bytesPerCaptureSample / 4);
                         AudioRecord candidate = null;
                         try {
-                            AudioFormat format = new AudioFormat.Builder()
+                            AudioFormat.Builder formatBuilder = new AudioFormat.Builder()
                                 .setSampleRate(rate)
-                                .setChannelMask(channelMask)
-                                .setEncoding(encoding)
-                                .build();
+                                .setEncoding(encoding);
+                            if (useChannelIndexMask) {
+                                formatBuilder.setChannelIndexMask(channelIndexMask);
+                            } else {
+                                formatBuilder.setChannelMask(channelConfig);
+                            }
+                            AudioFormat format = formatBuilder.build();
                             candidate = new AudioRecord.Builder()
                                 .setAudioSource(source)
                                 .setAudioFormat(format)
@@ -349,6 +378,7 @@ public class MG30AudioPlugin extends Plugin {
                                 selectedRoute = routed;
                                 selectedRate = rate;
                                 selectedChannels = channels;
+                                selectedChannelIndexMask = channelIndexMask;
                                 selectedEncoding = encoding;
                                 selectedBuffer = bufferSize;
                                 selectedSourceName = sourceName(source);
@@ -385,9 +415,11 @@ public class MG30AudioPlugin extends Plugin {
                 return;
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            activeFile = new File(dir, "MG30_Take_" + timestamp + ".wav");
+            activeFile = new File(dir, (loopbackCapture ? "MG30_Loopback_Take_" : "MG30_Take_") + timestamp + ".wav");
             activeSampleRate = selectedRate;
             activeChannels = selectedChannels;
+            activeChannelIndexMask = selectedChannelIndexMask;
+            activeCaptureMode = loopbackCapture ? "loopback" : "normal";
             activeEncoding = selectedEncoding;
             activeBits = 24; // User-facing file is always integer PCM 24-bit WAV.
             activeWavFormatCode = 1;
@@ -476,13 +508,19 @@ public class MG30AudioPlugin extends Plugin {
             result.put("recording", true);
             result.put("sampleRate", activeSampleRate);
             result.put("channels", activeChannels);
+            result.put("captureMode", activeCaptureMode);
+            result.put("channelIndexMask", activeChannelIndexMask);
+            result.put("channelLayout", activeChannelIndexMask != 0
+                ? "USB channel-index mask 0x" + Integer.toHexString(activeChannelIndexMask).toUpperCase(Locale.ROOT)
+                : (activeChannels == 2 ? "USB stereo position mask" : "USB mono position mask"));
             result.put("bitDepth", activeBits);
             result.put("encodingName", "WAV PCM 24-bit / " + activeSampleRate + " Hz");
             result.put("captureSource", activeInputEncodingName);
             result.put("routeName", activeRouteName);
             result.put("inputSource", selectedSourceName);
             result.put("fileName", activeFile.getName());
-            result.put("note", "WAV output is 24-bit integer PCM. Source format was " + activeInputEncodingName + "; Android may convert the source stream before the app receives it.");
+            result.put("note", "WAV output is 24-bit integer PCM. Source format was " + activeInputEncodingName +
+                "; capture mode " + activeCaptureMode + "; Android may convert the source stream before the app receives it.");
             call.resolve(result);
         } catch (Exception e) {
             recording = false;
@@ -565,6 +603,11 @@ public class MG30AudioPlugin extends Plugin {
             result.put("fileName", activeFile.getName());
             result.put("sampleRate", activeSampleRate);
             result.put("channels", activeChannels);
+            result.put("captureMode", activeCaptureMode);
+            result.put("channelIndexMask", activeChannelIndexMask);
+            result.put("channelLayout", activeChannelIndexMask != 0
+                ? "USB channel-index mask 0x" + Integer.toHexString(activeChannelIndexMask).toUpperCase(Locale.ROOT)
+                : (activeChannels == 2 ? "USB stereo position mask" : "USB mono position mask"));
             result.put("bitDepth", activeBits);
             result.put("encodingName", "WAV PCM 24-bit / " + activeSampleRate + " Hz");
             result.put("captureSource", activeInputEncodingName);
