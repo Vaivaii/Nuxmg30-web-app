@@ -82,3 +82,11 @@ No source changes are intended in:
 - Build #423 source commit: `7852e117fdc3951c10494b35f676e735987c3d44`.
 - Current branch HEAD at this documentation update: `7852e117fdc3951c10494b35f676e735987c3d44` (documentation-only commit may follow).
 - No APK from this branch is approved for installation until Gradle, artifact upload and package inspection complete.
+
+
+## User-confirmed Stage 2 scope correction (3 November 2026)
+- The user clarified that Stage 2 is **Editing & Arrangement**: copy, paste, duplicate, move clips, loop section and easier positioning.
+- Do not treat metronome/output meters as the Stage 2 deliverable.
+- Correct Stage 2 implementation branch: `feature/studio-daw-editing-arrangement`, based directly on this successful Stage 1 output-routing branch.
+- Details and validation checklist: `docs/research/MG30_STUDIO_DAW_STAGE2_EDITING_ARRANGEMENT_2026-11-03.md`.
+- A separate exploratory branch named `feature/studio-daw-native-loop-metronome-meters` was created due to an earlier misunderstanding. It is not the correct Stage 2 branch and must not be merged or treated as the requested work.
