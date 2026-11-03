@@ -483,3 +483,29 @@ export function analyzeWaveformPeaks(firstChannel, secondChannel = firstChannel,
   }
   return result;
 }
+
+
+/** Convert a two-finger pinch distance ratio to a bounded DAW timeline zoom. */
+export function pinchZoomFromDistance(initialZoom, initialDistance, currentDistance, minZoom = 44, maxZoom = 180) {
+  const zoom = Number(initialZoom);
+  const start = Number(initialDistance);
+  const current = Number(currentDistance);
+  const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 92;
+  const safeStart = Number.isFinite(start) && start > 0 ? start : 1;
+  const safeCurrent = Number.isFinite(current) && current > 0 ? current : safeStart;
+  const minimum = Math.max(1, Number(minZoom) || 44);
+  const maximum = Math.max(minimum, Number(maxZoom) || 180);
+  return Math.round(Math.max(minimum, Math.min(maximum, safeZoom * safeCurrent / safeStart)));
+}
+
+/** Keep the timeline position under the pinch midpoint anchored while zoom changes. */
+export function pinchScrollLeftForAnchor(anchorBars, zoom, midpointOffsetPx, maxScrollLeft = Number.POSITIVE_INFINITY) {
+  const anchor = Number(anchorBars);
+  const scale = Number(zoom);
+  const midpoint = Number(midpointOffsetPx);
+  const limit = Number(maxScrollLeft);
+  const raw = (Number.isFinite(anchor) ? anchor : 0) * (Number.isFinite(scale) ? scale : 92)
+    - (Number.isFinite(midpoint) ? midpoint : 0);
+  const nonNegative = Math.max(0, raw);
+  return Number.isFinite(limit) ? Math.min(Math.max(0, limit), nonNegative) : nonNegative;
+}

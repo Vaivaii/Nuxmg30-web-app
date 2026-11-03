@@ -4,6 +4,7 @@ import {
   barDurationSeconds, snapTime, selectStemTracks, safeExportName, floatStereoToPcm24, encodeWavHeader,
   makeWavBlob, createStoredZip, trimClipStart, trimClipEnd, splitClipAt, selectUsbChannelPositions,
   normalizeClipFades, clipFadeGainAt, analyzeWaveformPeaks,
+  pinchZoomFromDistance, pinchScrollLeftForAnchor,
 } from './studio-daw-core.js';
 
 const NativeDawFiles = registerPlugin('MG30DawFiles');
@@ -47,6 +48,9 @@ let mediaBuffers = new Map();
 let projectSaveTimer = null;
 let lastMetronomeBeat = -1;
 let dragClip = null;
+const timelineTouchPointers = new Map();
+let activeTimelinePinch = null;
+let suppressTimelineClickUntil = 0;
 let clipClipboard = null;
 let playheadDragPointerId = null;
 let selectedDawPage = 'timeline';
@@ -1029,7 +1033,109 @@ function splitSelectedClip() {
   setStatus('Clip split at the playhead.', 'ok');
 }
 
+function timelineTouchDistance(first, second) {
+  return Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+}
+
+function beginTimelinePinch(event) {
+  if (event.pointerType !== 'touch') return;
+  const scroller = $('dawTimelineScroll');
+  if (!scroller || !scroller.contains(event.target)) return;
+  timelineTouchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (timelineTouchPointers.size < 2) return;
+
+  const points = Array.from(timelineTouchPointers.values()).slice(0, 2);
+  const distance = timelineTouchDistance(points[0], points[1]);
+  const rect = scroller.getBoundingClientRect();
+  const midpoint = (points[0].x + points[1].x) / 2;
+  const midpointOffset = midpoint - rect.left;
+  const initialZoom = project.zoom;
+  const canvas = $('dawTimelineCanvas');
+  if (!canvas) return;
+
+  // A second finger cancels any one-finger clip/playhead drag.
+  dragClip = null;
+  if (playheadDragPointerId !== null) {
+    finishPlayheadDrag({ pointerId: playheadDragPointerId });
+  }
+  const metrics = timelineMetrics();
+  activeTimelinePinch = {
+    initialDistance: distance,
+    initialZoom,
+    initialWidth: metrics.width,
+    anchorBars: (scroller.scrollLeft + midpointOffset) / initialZoom,
+    midpointOffset,
+    latestZoom: initialZoom,
+  };
+  scroller.classList.add('daw-pinch-active');
+  event.preventDefault();
+}
+
+function updateTimelinePinch(event) {
+  if (event.pointerType !== 'touch' || !timelineTouchPointers.has(event.pointerId)) return;
+  timelineTouchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (!activeTimelinePinch || timelineTouchPointers.size < 2) return;
+
+  const points = Array.from(timelineTouchPointers.values()).slice(0, 2);
+  const distance = timelineTouchDistance(points[0], points[1]);
+  const midpoint = (points[0].x + points[1].x) / 2;
+  const scroller = $('dawTimelineScroll');
+  const canvas = $('dawTimelineCanvas');
+  if (!scroller || !canvas) return;
+
+  const pinch = activeTimelinePinch;
+  const nextZoom = pinchZoomFromDistance(pinch.initialZoom, pinch.initialDistance, distance);
+  const scale = nextZoom / pinch.initialZoom;
+  project.zoom = nextZoom;
+  pinch.latestZoom = nextZoom;
+  pinch.midpointOffset = midpoint - scroller.getBoundingClientRect().left;
+
+  // Scale the complete timeline as one layer; defer DOM rebuild until the gesture ends.
+  canvas.style.transformOrigin = 'left top';
+  canvas.style.transform = 'scaleX(' + scale + ')';
+  const virtualWidth = pinch.initialWidth * scale;
+  const maxScroll = Math.max(0, virtualWidth - scroller.clientWidth);
+  scroller.scrollLeft = pinchScrollLeftForAnchor(
+    pinch.anchorBars, nextZoom, pinch.midpointOffset, maxScroll,
+  );
+  updateToolbar();
+  event.preventDefault();
+}
+
+function endTimelinePinch(event) {
+  if (event.pointerType !== 'touch') return;
+  timelineTouchPointers.delete(event.pointerId);
+  if (!activeTimelinePinch || timelineTouchPointers.size >= 2) return;
+
+  const pinch = activeTimelinePinch;
+  activeTimelinePinch = null;
+  const scroller = $('dawTimelineScroll');
+  const canvas = $('dawTimelineCanvas');
+  if (scroller) scroller.classList.remove('daw-pinch-active');
+  if (canvas) {
+    canvas.style.transform = '';
+    canvas.style.transformOrigin = '';
+  }
+
+  // Commit once, then restore the exact timeline bar beneath the fingers' midpoint.
+  renderProject();
+  if (scroller) {
+    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    scroller.scrollLeft = pinchScrollLeftForAnchor(
+      pinch.anchorBars, project.zoom, pinch.midpointOffset, maxScroll,
+    );
+  }
+  scheduleProjectSave();
+  suppressTimelineClickUntil = performance.now() + 500;
+  event.preventDefault();
+}
+
 function handleTrackClick(event) {
+  if (performance.now() < suppressTimelineClickUntil) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
   const actionButton = event.target.closest('[data-track-action]');
   if (actionButton) {
     const trackId = actionButton.dataset.trackId;
@@ -1957,6 +2063,13 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-usb-diagnostic button{justify-self:start;min-height:38px}
     #page-studio .daw-usb-diagnostic-result{font-size:10px;line-height:1.65;white-space:pre-wrap;color:#b9d8d4}
     @media(max-width:420px){#page-studio .daw-input-routing-list{grid-template-columns:1fr}}
+    #page-studio .daw-quick-toolbar{position:relative!important;z-index:32!important;overflow:visible!important;isolation:isolate!important}
+    #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:34!important}
+    #page-studio .daw-more-menu{position:relative!important;z-index:100!important}
+    #page-studio .daw-more-menu-panel{z-index:1000!important}
+    #page-studio .daw-timeline-panel{position:relative!important;z-index:1!important}
+    #page-studio .daw-clock-action-btn.daw-cursor-action-btn{min-width:30px!important;padding:0 4px!important;font-size:11px!important;letter-spacing:-1px!important}
+
   `;
   document.head.appendChild(style);
 }
@@ -2219,6 +2332,10 @@ function bindEvents() {
   $('dawTrackRail')?.addEventListener('click', handleTrackClick);
   $('dawTrackList')?.addEventListener('click', handleTrackClick);
   $('dawMixer')?.addEventListener('click', handleTrackClick);
+  $('dawTimelineScroll')?.addEventListener('pointerdown', beginTimelinePinch);
+  $('dawTimelineScroll')?.addEventListener('pointermove', updateTimelinePinch, { passive: false });
+  $('dawTimelineScroll')?.addEventListener('pointerup', endTimelinePinch);
+  $('dawTimelineScroll')?.addEventListener('pointercancel', endTimelinePinch);
   $('dawTrackList')?.addEventListener('pointerdown', startClipDrag);
   $('dawTrackList')?.addEventListener('pointermove', moveClipDrag);
   $('dawTrackList')?.addEventListener('pointerup', finishClipDrag);

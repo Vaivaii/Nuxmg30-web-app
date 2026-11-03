@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createDefaultProject, normalizeProject, trimClipStart, trimClipEnd } from '../www/studio-daw-core.js';
+import { createDefaultProject, normalizeProject, trimClipStart, trimClipEnd, pinchZoomFromDistance, pinchScrollLeftForAnchor } from '../www/studio-daw-core.js';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const daw = read('../www/studio-daw.js');
@@ -146,4 +146,29 @@ test('Undo/Redo flank the timer and Copy/Paste/Duplicate use the other side', ()
   assert.ok(positionRow.indexOf('id="dawCopyClip"') > positionRow.indexOf('id="dawClock"'));
   assert.ok(positionRow.indexOf('id="dawPasteClip"') > positionRow.indexOf('id="dawClock"'));
   assert.ok(positionRow.indexOf('id="dawDuplicateClip"') > positionRow.indexOf('id="dawClock"'));
+});
+
+
+test('pinch distance changes zoom proportionally within the DAW zoom limits', () => {
+  assert.equal(pinchZoomFromDistance(92, 100, 150), 138);
+  assert.equal(pinchZoomFromDistance(92, 100, 250), 180);
+  assert.equal(pinchZoomFromDistance(92, 100, 20), 44);
+  assert.equal(pinchZoomFromDistance(92, 0, 100), 92);
+});
+
+test('pinch zoom keeps the timeline bar under the midpoint anchored', () => {
+  assert.equal(pinchScrollLeftForAnchor(5, 120, 100, 1000), 500);
+  assert.equal(pinchScrollLeftForAnchor(1, 60, 100, 1000), 0);
+  assert.equal(pinchScrollLeftForAnchor(10, 180, 100, 500), 500);
+});
+
+test('timeline pinch handlers cancel clip dragging and commit zoom without rebuilding during touch move', () => {
+  assert.ok(daw.includes('function beginTimelinePinch(event)'));
+  assert.ok(daw.includes('function updateTimelinePinch(event)'));
+  assert.ok(daw.includes('function endTimelinePinch(event)'));
+  assert.ok(daw.includes('dragClip = null;'));
+  assert.ok(daw.includes("addEventListener('pointermove', updateTimelinePinch, { passive: false })"));
+  assert.ok(daw.includes("canvas.style.transform = 'scaleX(' + scale + ')'"));
+  assert.ok(daw.includes('pinchZoomFromDistance('));
+  assert.ok(daw.includes('pinchScrollLeftForAnchor('));
 });

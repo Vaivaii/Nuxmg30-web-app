@@ -663,3 +663,30 @@ test('Build 338: ruler labels retain their per-bar horizontal positions', () => 
   assert.ok(!css.includes('left:calc(var(--ruler-mark-x,0px))!important'));
   assert.ok(css.includes('#page-studio #dawTimelinePage .daw-ruler-mark'));
 });
+
+
+test('DAW overflow menu stacks above the timeline playhead and stays unclipped', () => {
+  assert.ok(daw.includes('z-index:32!important;overflow:visible!important;isolation:isolate!important'));
+  assert.ok(daw.includes('z-index:1000!important'));
+  assert.ok(daw.includes('z-index:1!important'));
+});
+
+test('cursor start and end actions flank the right side of the DAW clock instead of the dropdown', () => {
+  const start = html.indexOf('<div class="daw-quick-toolbar-position">');
+  const end = html.indexOf('<div class="daw-section-toolbar"', start);
+  const position = html.slice(start, end);
+  assert.ok(position.includes('id="dawCursorStart"'));
+  assert.ok(position.includes('id="dawCursorEnd"'));
+  const menuStart = html.indexOf('id="dawMoreMenuPanel"');
+  const menuEnd = html.indexOf('</details>', menuStart);
+  const menu = html.slice(menuStart, menuEnd);
+  assert.equal(menu.includes('id="dawCursorStart"'), false);
+  assert.equal(menu.includes('id="dawCursorEnd"'), false);
+});
+
+test('timeline grid supports two-finger pinch pointer gestures', () => {
+  assert.ok(daw.includes("addEventListener('pointerdown', beginTimelinePinch)"));
+  assert.ok(daw.includes("addEventListener('pointerup', endTimelinePinch)"));
+  assert.ok(daw.includes("addEventListener('pointercancel', endTimelinePinch)"));
+  assert.ok(css.includes('touch-action:pan-x pan-y!important'));
+});

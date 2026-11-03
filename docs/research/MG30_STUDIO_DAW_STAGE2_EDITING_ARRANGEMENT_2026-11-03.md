@@ -100,3 +100,11 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - The implementation tests for trim helpers passed. Two unrelated/stale assertions still expected the previous exact menu class and fade sliders inside the Track Inspector.
 - The tests were updated to assert the new menu class and fade sliders inside the three-dot overflow menu; the runtime code keeps fade control state in the main DAW card dropdown.
 - No production logic was changed as part of that test-only correction.
+
+
+## Mobile DAW polish — pinch zoom and overlay fix (3 November 2026)
+- The metronome/tempo card now establishes a higher stacking context than the timeline panel. Its three-dot popover is raised above the playhead, preventing the white cursor line from painting through the dropdown.
+- Cursor-to-start and cursor-to-end controls are moved out of the three-dot menu and placed at the right side of the timer row, next to Copy/Paste/Duplicate.
+- Two-finger pinch on the timeline grid scales the complete timeline canvas live. The bar position beneath the fingers' midpoint remains anchored; zoom is bounded to the existing 44–180 range.
+- During pinch, a one-finger clip drag is cancelled and DOM rebuilding is deferred until pointer-up. The chosen zoom is committed once at the end of the gesture; tap/click after pinch is suppressed to avoid an accidental seek.
+- Added core tests for proportional pinch scaling and midpoint anchor math, plus UI assertions for overlay stacking, cursor button placement, and pointer gesture registration.
