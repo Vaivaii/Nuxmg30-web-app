@@ -93,3 +93,10 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - CI/APK status must be checked separately; do not distribute APK until tests, Gradle build and artifact inspection pass.
 - No physical hardware validation of Stage 2 has been claimed yet.
 - The user explicitly corrected the Stage 2 scope; native metronome and native output meter work is not part of this stage.
+
+
+## CI test maintenance — 3 November 2026
+- The first run for contextual controls (#431, commit `b1a6697`) stopped in regression tests, before Android generation/APK build.
+- The implementation tests for trim helpers passed. Two unrelated/stale assertions still expected the previous exact menu class and fade sliders inside the Track Inspector.
+- The tests were updated to assert the new menu class and fade sliders inside the three-dot overflow menu; the runtime code keeps fade control state in the main DAW card dropdown.
+- No production logic was changed as part of that test-only correction.

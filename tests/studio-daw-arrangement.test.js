@@ -86,10 +86,10 @@ test('mobile DAW controls are consolidated into the metronome card and overflow 
   for (const id of ['dawUndo', 'dawRedo', 'dawCopyClip', 'dawPasteClip', 'dawDuplicateClip', 'dawNudgeLeft', 'dawNudgeRight', 'dawCursorStart', 'dawCursorEnd']) {
     assert.ok(toolbar.includes(`id="${id}"`), `${id} is available in the compact overflow menu`);
   }
-  assert.ok(toolbar.includes('class="daw-more-menu-panel"'));
+  assert.ok(toolbar.includes('class="daw-more-menu-panel daw-menu-panel"'));
   assert.ok(toolbar.includes('class="daw-section-toolbar"'));
   assert.equal(index.includes('class="daw-arrangement-tools"'), false);
-  assert.ok(daw.includes("document.querySelectorAll('#page-studio .daw-more-menu-panel button')"));
+  assert.ok(daw.includes("document.querySelectorAll('#page-studio .daw-menu-panel button')"));
   assert.ok(daw.includes('menu.open = false'));
 });
 

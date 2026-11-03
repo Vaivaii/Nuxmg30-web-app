@@ -83,10 +83,14 @@ test('track record control is represented by a circular indicator instead of ARM
   assert.ok(!daw.includes('>ARM</button>'));
 });
 
-test('clip edges expose non-destructive trim handles and individual fade controls', () => {
-  for (const value of ['data-clip-edge="start"', 'data-clip-edge="end"', 'data-clip-fade="in"', 'data-clip-fade="out"']) {
-    assert.ok(daw.includes(value), 'missing clip edit affordance: ' + value);
+test('clip edges expose non-destructive trim handles and fade sliders live in the overflow menu', () => {
+  for (const value of ['data-clip-edge="start"', 'data-clip-edge="end"']) {
+    assert.ok(daw.includes(value), 'missing clip trim affordance: ' + value);
   }
+  for (const value of ['data-toolbar-fade="in"', 'data-toolbar-fade="out"']) {
+    assert.ok(html.includes(value), 'missing overflow fade control: ' + value);
+  }
+  assert.ok(daw.includes("$('dawMoreMenuPanel')?.addEventListener('input'"));
   for (const value of ['trimClipStart(', 'trimClipEnd(', 'splitClipAt(', 'clipFadeGainAt(']) {
     assert.ok(daw.includes(value), 'missing non-destructive edit function: ' + value);
   }
