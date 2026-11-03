@@ -14,6 +14,8 @@ test('USB output discovery uses Android output endpoints and labels USB types', 
   assert.ok(outputPlugin.includes('AudioDeviceInfo.TYPE_USB_DEVICE'));
   assert.ok(outputPlugin.includes('AudioDeviceInfo.TYPE_USB_HEADSET'));
   assert.ok(outputPlugin.includes('usbOutputFound'));
+  assert.ok(outputPlugin.includes('mg30OutputFound'));
+  assert.ok(outputPlugin.includes('isMg30ProductName'));
   assert.ok(outputPlugin.includes('inspectOutputDevices'));
 });
 
@@ -33,6 +35,7 @@ test('Studio exposes a native-only USB output discovery check', () => {
   assert.ok(index.includes('./studio-usb-output.js'));
   assert.ok(ui.includes("registerPlugin('MG30AudioOutput')"));
   assert.ok(ui.includes('inspectOutputDevices()'));
+  assert.ok(ui.includes('result.mg30OutputFound'));
   assert.ok(ui.includes('PERIKSA USB OUT'));
   assert.match(ui, /belum membuktikan jalur Reamp \/ Loopback/i);
 });
