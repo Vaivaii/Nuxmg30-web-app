@@ -1150,6 +1150,8 @@ function ensureLiveRecordingClipNode() {
   node.className = 'daw-clip daw-clip-live-recording';
   node.dataset.liveRecordingClip = 'true';
   node.setAttribute('aria-label', 'Live USB recording waveform');
+  const track = getTrack(recordingTrackId);
+  if (track?.color) node.style.setProperty('--track-color', track.color);
   node.style.pointerEvents = 'none';
   node.style.zIndex = '4';
   lane.appendChild(node);
