@@ -14,6 +14,7 @@ if (!existsSync(androidDir)) {
 const javaDir = resolve(androidDir, 'app/src/main/java/com/vaivaii/mg30studio');
 mkdirSync(javaDir, { recursive: true });
 copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaDir, 'MG30AudioPlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30AudioOutputPlugin.java'), resolve(javaDir, 'MG30AudioOutputPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30MidiPlugin.java'), resolve(javaDir, 'MG30MidiPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30DawFilesPlugin.java'), resolve(javaDir, 'MG30DawFilesPlugin.java'));
 
@@ -30,7 +31,8 @@ const mainActivityLines = [
   'public class MainActivity extends BridgeActivity {',
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',
-  '        registerPlugin(MG30AudioPlugin.class);',
+  '        registerPlugin(MG30AudioPlugin.class);
+        registerPlugin(MG30AudioOutputPlugin.class);',
   '        registerPlugin(MG30MidiPlugin.class);',
   '        registerPlugin(MG30DawFilesPlugin.class);',
   '        super.onCreate(savedInstanceState);',
@@ -150,4 +152,4 @@ const launcherIcon = `<?xml version="1.0" encoding="utf-8"?>
 writeFileSync(resolve(drawableDir, 'ic_launcher.xml'), launcherIcon, 'utf8');
 
 run(['cap', 'sync', 'android']);
-console.log('MG30 Studio Android platform ready. USB audio plugin installed; hardware audio compatibility still needs a real-device test.');
+console.log('MG30 Studio Android platform ready. USB input recorder and USB output discovery plugins installed; playback routing still needs a real-device test.');
