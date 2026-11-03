@@ -192,3 +192,40 @@ Pengguna mengonfirmasi bahwa **urutan mapping knob dan slot amp di aplikasi sebe
 
 **Pembaruan status verifikasi:** tidak perlu lagi memperlakukan pencocokan urutan slot sebagai pekerjaan reverse engineering yang belum diketahui. Pengguna telah mengonfirmasi urutan slot aplikasi dan perangkat sudah sama. Fokus verifikasi berikutnya adalah mencocokkan daftar kontrol/CC per slot dengan hasil QuickTone dan SysEx, lalu memperbaiki label serta visibilitas knob.
 
+
+
+## Permintaan lanjutan pengguna — Mic dan Mic Position (4 Nov 2026)
+
+Pengguna menambahkan bahwa pada UI aplikasi saat ini, pilihan **Mic** dan **Mic Position** juga direpresentasikan sebagai knob. Karena knob tidak memperlihatkan nama opsi yang sedang dipilih, pengguna sulit mengetahui mic mana yang aktif dan posisi mic mana yang aktif.
+
+### Target UI yang diminta
+
+- **Mic** harus ditampilkan sebagai kontrol pilihan bernama (misalnya dropdown/select), bukan rotary knob anonim. Nilai aktif harus terbaca sebagai nama mic.
+- **Mic Position** juga harus ditampilkan sebagai kontrol pilihan bernama; dropdown/select atau pilihan visual berlabel dapat digunakan setelah bentuk dan jumlah opsinya diketahui.
+- Kontrol harus menampilkan nilai yang sedang aktif dari perangkat/aplikasi, dan perubahan pilihan harus tetap bekerja melalui jalur komunikasi yang sudah ada.
+- Pertahankan parameter ID, CC/index, nilai wire/protocol, urutan payload, callback, dan perilaku transfer yang sekarang. Perubahan ini adalah perbaikan representasi UI, bukan kesempatan untuk menebak atau mengganti protokol.
+- Jangan mengasumsikan Mic dan Mic Position memiliki daftar opsi global yang sama untuk semua cab/amp. Cakupan pilihan harus ditentukan dari konfigurasi perangkat/QuickTone dan data aplikasi.
+- Jangan mengarang nama mikrofon, nama posisi, jumlah opsi, nilai enum, CC, atau default. Ekstrak dan validasi nilai/label yang benar terlebih dahulu untuk **NUX MG-30 original Gen 2 firmware 6.0.x**, bukan MKII.
+
+### Analisis yang harus dilakukan sebelum implementasi
+
+- [ ] Temukan komponen UI Mic dan Mic Position yang saat ini dibuat sebagai knob.
+- [ ] Identifikasi sumber state/nilai aktif dan parameter ID/CC/index yang dipakai masing-masing kontrol.
+- [ ] Periksa konfigurasi panel/cab QuickTone dan language table untuk label opsi Mic dan Mic Position.
+- [ ] Cocokkan setiap pilihan dengan nilai wire/protocol yang benar dari source aplikasi/capture yang relevan; jangan menyimpulkan urutan enum hanya dari urutan teks UI.
+- [ ] Pastikan apakah pilihan Mic dan Mic Position bergantung pada cab, amp, atau blok tertentu; dokumentasikan batasannya.
+- [ ] Tentukan komponen UI pilihan yang paling tepat setelah diketahui apakah nilainya enum diskret atau range kontinu. Untuk pilihan diskret, gunakan dropdown/select atau segmented choices berlabel, bukan knob.
+- [ ] Uji baca nilai aktif dari perangkat, ubah pilihan, kirim perubahan, lalu baca kembali untuk memastikan pilihan tampil konsisten.
+- [ ] Pastikan perubahan Mic/Mic Position tidak menyentuh NAM import, IR User/Third Party, IR Collection, preset transfer, mapping MIDI yang sudah benar, Signal Chain, atau DAW/USB audio.
+
+### Batas implementasi yang diperbarui
+
+Target pekerjaan cabang ini sekarang adalah **perbaikan layout dan label kontrol amp/cab**, meliputi:
+1. Rotary knob amp: hanya kontrol yang benar-benar tersedia untuk amp aktif, dengan label per amp yang akurat.
+2. Switch/button amp: ditampilkan sebagai switch/button, tidak disamarkan sebagai knob.
+3. Mic: pilihan bernama yang menunjukkan mic aktif.
+4. Mic Position: pilihan bernama yang menunjukkan posisi aktif.
+
+Jangan mengubah komunikasi perangkat yang sudah bekerja untuk mencapai tampilan ini. Bila analisis menunjukkan suatu kontrol sebenarnya memakai parameter kontinu, jangan memaksakan dropdown; dokumentasikan temuannya dan pilih representasi yang sesuai berdasarkan bukti.
+
+**Status permintaan Mic/Mic Position:** scope UI sudah diterima dan dicatat; daftar opsi, mapping nilai, dan perilaku protokol belum diverifikasi; belum ada perubahan kode aplikasi.
