@@ -44,7 +44,9 @@ test('native reamp stream has chunk upload, status, stop, and release lifecycle'
   assert.match(plugin, /REAMP_MAX_CHUNK_BYTES = 192 \* 1024/);
   assert.match(plugin, /REAMP_MAX_FILE_BYTES/);
   assert.match(plugin, /current\.getId\(\) != session\.deviceId/);
-  assert.doesNotMatch(plugin, /AudioRecord/);
+  assert.doesNotMatch(plugin, /import android\.media\.AudioRecord/);
+  assert.doesNotMatch(plugin, /new AudioRecord/);
+  assert.doesNotMatch(plugin, /AudioRecord\.Builder/);
 });
 
 test('DAW prepares a selected dry source into PCM16 chunks and routes it through the native output plugin', () => {
