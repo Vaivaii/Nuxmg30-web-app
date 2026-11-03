@@ -1,5 +1,34 @@
 # MG-30 Studio — Separate USB Loopback Track
 
+## User-directed correction — keep four tracks, route Loopback per track (3 November 2026)
+
+The user rejected the dedicated fifth Loopback lane because the DAW's Timeline layout only presents four complete track rows; the fifth strip wraps below the mixer and the fifth timeline lane is not a good visible workflow. This decision supersedes the earlier five-lane design described in the historical sections below.
+
+**Current product decision: the DAW always has four visible tracks: Backing, Guitar, Bass and Vocals. There is no dedicated Loopback track.** Each track has its own persisted input route in Track Settings:
+
+- Audio file / Import.
+- MG-30 USB input 1 as mono.
+- MG-30 USB inputs 1–2 as stereo.
+- MG-30 USB Loopback inputs 3–4 as stereo.
+
+The Loopback 3–4 source can be selected on any of the four tracks. The user arms the destination track and records; the resulting clip is inserted into that same track. Existing clips are not rerouted when a user changes the track's input setting; the selection applies to the next recording.
+
+### Capture and channel isolation
+
+The Android recorder is requested in multichannel mode with the selected track's channel-index mask. It selects an MG-30 USB endpoint layout that contains the requested mask; a larger advertised endpoint mask may be used when it includes the requested channel(s). It rejects an unavailable selection instead of silently recording unrelated channels. The raw multichannel take is retained in the Quick Takes list.
+
+Before a take becomes a DAW clip, the app maps the requested channel(s) from the actual captured channel-index mask, duplicates mono to left/right where needed, and writes a two-channel WAV source containing only the selected mono/stereo material. The clip and project persist both the actual capture mask and the selected per-track input route/mask. This keeps Loopback 3–4 out of tracks that did not select it and allows the Loopback pair to be assigned to Backing, Guitar, Bass or Vocals.
+
+Input channel names are the user's requested routing convention for this app. Android channel-index masks describe positions in the USB stream; they do not independently prove the MG-30's semantic signal labels. Physical capture/audio verification on the original MG-30 Gen 2 is still required.
+
+### Protected paths and boundaries
+
+The dedicated fifth lane and its single-purpose Loopback button have been removed from the active DAW UI/model. Normal Guitar Quick Record retains its previous stereo/mono logic and generic USB fallback; the new multichannel mode is requested only by a DAW track using a USB route. Reamp remains canceled. NAM, custom IR User/Third Party, IR Collection and MIDI mapping implementations are outside this change.
+
+Regression tests now assert exactly four DAW tracks, the four input-route choices, per-track USB channel assignment, mask-compatible endpoint selection, mono/stereo channel extraction and isolation from Guitar Quick Record.
+
+---
+
 Date: 3 November 2026  
 Active branch: `feature/studio-usb-loopback`  
 Target: original NUX MG-30 Gen 2 firmware 6.0.x (not MKII).
