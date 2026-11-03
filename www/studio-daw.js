@@ -1826,13 +1826,22 @@ function addTrackInputRoutingStyles() {
   const style = document.createElement('style');
   style.id = 'dawTrackInputRoutingStyles';
   style.textContent = `
-    #page-studio .daw-arrangement-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;margin:0 0 8px;border:1px solid rgba(148,163,184,.16);border-radius:10px;background:rgba(9,17,22,.72)}
-    #page-studio .daw-arrangement-tools .daw-tool-btn{min-height:32px;padding:5px 9px;font-size:10px}
-    #page-studio .daw-arrangement-divider{width:1px;height:22px;background:rgba(148,163,184,.24);margin:0 3px}
-    #page-studio .daw-loop-range-readout{font-size:9px;color:#8fd7cf;white-space:nowrap;padding:0 4px}
+    #page-studio .daw-section-toolbar{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:nowrap;padding-top:7px;border-top:1px solid rgba(148,163,184,.16)}
+    #page-studio .daw-section-toolbar .daw-tool-btn{flex:0 0 auto;min-height:30px;padding:4px 7px;font-size:9px}
+    #page-studio .daw-section-loop-toggle{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-height:30px;padding:0 7px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#e7eee5;font-size:10px;font-weight:750;white-space:nowrap}
+    #page-studio .daw-section-loop-toggle input{width:14px;height:14px;margin:0;accent-color:#c5f36b}
+    #page-studio .daw-section-loop-toggle:has(input:checked){border-color:#c5f36b;color:#c5f36b;background:#c5f36b12}
+    #page-studio .daw-loop-range-readout{flex:1 1 auto;min-width:48px;overflow:hidden;text-overflow:ellipsis;font-size:9px;color:#8fd7cf;white-space:nowrap;padding:0 3px}
     #page-studio .daw-loop-range{position:absolute;top:0;bottom:0;background:rgba(83,212,199,.18);border-left:2px solid #53d4c7;border-right:2px solid #53d4c7;pointer-events:none;z-index:1}
     #page-studio .daw-ruler-inner{position:relative}
-    @media(max-width:520px){#page-studio .daw-arrangement-tools{gap:5px}#page-studio .daw-arrangement-tools .daw-tool-btn{min-height:30px;padding:4px 7px;font-size:9px}#page-studio .daw-loop-range-readout{width:100%}}
+    #page-studio .daw-more-menu{position:relative!important;z-index:50!important}
+    #page-studio .daw-more-menu-panel{position:absolute!important;z-index:60!important;right:0!important;top:42px!important;width:min(270px,calc(100vw - 40px))!important;display:grid!important;gap:7px!important;padding:10px!important;border:1px solid #3d4a3e!important;border-radius:11px!important;background:#111a16!important;box-shadow:0 8px 24px #0009!important}
+    #page-studio .daw-menu-section-label{font-size:9px;color:#91a08b;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 1px}
+    #page-studio .daw-more-menu .daw-history-tools{position:static!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:auto!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+    #page-studio .daw-more-menu .daw-history-tools button{width:100%!important;height:34px!important;min-width:0!important;padding:0 8px!important;font-size:10px!important}
+    #page-studio .daw-edit-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+    #page-studio .daw-edit-menu-grid .daw-tool-btn{width:100%;min-width:0;min-height:36px;padding:6px 8px;font-size:10px;text-align:left;white-space:nowrap}
+    @media(max-width:520px){#page-studio .daw-section-toolbar{gap:4px}#page-studio .daw-section-loop-toggle{padding:0 6px;font-size:9px}#page-studio .daw-section-toolbar .daw-tool-btn{padding:4px 6px;font-size:9px}#page-studio .daw-loop-range-readout{font-size:8px}}
     #page-studio .daw-input-routing-panel{margin:14px 0;padding:14px;border:1px solid rgba(83,212,199,.28);border-radius:13px;background:linear-gradient(145deg,rgba(20,54,54,.72),rgba(13,22,25,.92));color:#e3f3f1}
     #page-studio .daw-input-routing-head{margin-bottom:12px}
     #page-studio .daw-input-routing-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#78d7cf}
@@ -2087,6 +2096,12 @@ function bindEvents() {
   $('dawCursorEnd')?.addEventListener('click', () => { playheadSeconds = projectDurationSeconds(project); renderPlayhead(); });
   $('dawNudgeLeft')?.addEventListener('click', () => nudgeSelectedClip(-1));
   $('dawNudgeRight')?.addEventListener('click', () => nudgeSelectedClip(1));
+  document.querySelectorAll('#page-studio .daw-more-menu-panel button').forEach((button) => {
+    button.addEventListener('click', () => {
+      const menu = button.closest('.daw-more-menu');
+      if (menu) menu.open = false;
+    });
+  });
   $('dawSnap')?.addEventListener('change', (event) => updateProjectField('snap', event.target.value));
   $('dawZoom')?.addEventListener('input', (event) => updateProjectField('zoom', event.target.value));
   $('dawAudioFileInput')?.addEventListener('change', async (event) => {

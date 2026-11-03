@@ -44,6 +44,12 @@ Tahap kedua yang benar adalah **Editing dan arrangement**, bukan native metronom
 - Nudge kiri/kanan dan shortcut keyboard menyediakan penggeseran presisi.
 - Cursor to start/end membantu navigasi timeline.
 
+### Compact touch UI
+- The section loop toggle, Set In, Set Out, Clear and loop-range readout now live inside the tempo/time-signature/metronome card; the separate full-width arrangement toolbar has been removed.
+- Undo/Redo, Copy/Paste/Duplicate, clip nudging, and cursor-to-start/end are grouped under the three-dot overflow menu so the timeline is not pushed down by editing controls.
+- The overflow menu closes after a command is selected. Existing button IDs, keyboard shortcuts, loop state, and action handlers are retained.
+- Automated layout regression coverage checks that loop controls remain in the metronome card and editing/history controls remain available in the overflow menu.
+
 ## Regression guardrails
 - Stage 1 speaker/MG-30 output routing dan native AudioTrack code diwarisi apa adanya.
 - Tidak mengubah USB AudioRecord plugin `native-android/MG30AudioPlugin.java`.
@@ -71,7 +77,7 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 4. Uji snap Off, Beat, 1/8 dan Bar.
 5. Set Loop In/Out, aktifkan Section, dengarkan speaker dan MG-30; periksa transisi dan posisi playhead.
 6. Clear Loop dan pastikan playback kembali normal.
-7. Uji Undo/Redo, save, tutup/buka project dan pastikan arrangement tersimpan.
+7. Uji Undo/Redo melalui menu tiga titik, save, tutup/buka project dan pastikan arrangement tersimpan.
 8. Pastikan NAM, IR collection/user, MIDI dan USB recording masih bekerja.
 
 ## Status

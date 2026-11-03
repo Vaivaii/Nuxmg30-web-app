@@ -73,3 +73,22 @@ test('editing controls do not alter the media source or native recorder implemen
   assert.ok(core.includes('loopStartSeconds:'));
   assert.ok(core.includes('loopEndSeconds:'));
 });
+
+
+test('mobile DAW controls are consolidated into the metronome card and overflow menu', () => {
+  const quickStart = index.indexOf('<div class="daw-quick-toolbar">');
+  const timelineStart = index.indexOf('<div class="daw-timeline-panel">', quickStart);
+  assert.ok(quickStart >= 0 && timelineStart > quickStart);
+  const toolbar = index.slice(quickStart, timelineStart);
+  for (const id of ['dawLoop', 'dawLoopIn', 'dawLoopOut', 'dawClearLoop', 'dawLoopRangeReadout']) {
+    assert.ok(toolbar.includes(`id="${id}"`), `${id} stays inside the metronome card`);
+  }
+  for (const id of ['dawUndo', 'dawRedo', 'dawCopyClip', 'dawPasteClip', 'dawDuplicateClip', 'dawNudgeLeft', 'dawNudgeRight', 'dawCursorStart', 'dawCursorEnd']) {
+    assert.ok(toolbar.includes(`id="${id}"`), `${id} is available in the compact overflow menu`);
+  }
+  assert.ok(toolbar.includes('class="daw-more-menu-panel"'));
+  assert.ok(toolbar.includes('class="daw-section-toolbar"'));
+  assert.equal(index.includes('class="daw-arrangement-tools"'), false);
+  assert.ok(daw.includes("document.querySelectorAll('#page-studio .daw-more-menu-panel button')"));
+  assert.ok(daw.includes('menu.open = false'));
+});

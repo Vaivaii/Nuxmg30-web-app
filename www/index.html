@@ -492,9 +492,22 @@
         <label class="daw-icon-toggle" title="Metronome"><input id="dawMetronome" type="checkbox"><span>♩</span></label>
         <details class="daw-more-menu">
           <summary aria-label="More Studio options" title="More options">•••</summary>
-          <div class="daw-history-tools">
-            <button type="button" id="dawUndo" aria-label="Undo" title="Undo" disabled>↶ Undo</button>
-            <button type="button" id="dawRedo" aria-label="Redo" title="Redo" disabled>↷ Redo</button>
+          <div class="daw-more-menu-panel">
+            <div class="daw-menu-section-label">History</div>
+            <div class="daw-history-tools">
+              <button type="button" id="dawUndo" aria-label="Undo" title="Undo" disabled>↶ Undo</button>
+              <button type="button" id="dawRedo" aria-label="Redo" title="Redo" disabled>↷ Redo</button>
+            </div>
+            <div class="daw-menu-section-label">Clip &amp; cursor</div>
+            <div class="daw-edit-menu-grid">
+              <button type="button" id="dawCopyClip" class="daw-tool-btn" title="Copy selected clip (Ctrl+C)">Copy clip</button>
+              <button type="button" id="dawPasteClip" class="daw-tool-btn" title="Paste clip at playhead (Ctrl+V)">Paste</button>
+              <button type="button" id="dawDuplicateClip" class="daw-tool-btn" title="Duplicate selected clip (Ctrl+D)">Duplicate</button>
+              <button type="button" id="dawNudgeLeft" class="daw-tool-btn" title="Move selected clip one snap step left">Nudge ←</button>
+              <button type="button" id="dawNudgeRight" class="daw-tool-btn" title="Move selected clip one snap step right">Nudge →</button>
+              <button type="button" id="dawCursorStart" class="daw-tool-btn" title="Move cursor to timeline start">Cursor start</button>
+              <button type="button" id="dawCursorEnd" class="daw-tool-btn" title="Move cursor to timeline end">Cursor end</button>
+            </div>
           </div>
         </details>
       </div>
@@ -503,21 +516,13 @@
         <label class="daw-snap-control" title="Grid snap"><span>▦</span><select id="dawSnap" aria-label="Snap"><option value="beat">Beat</option><option value="bar">Bar</option><option value="eighth">1/8</option><option value="off">Off</option></select></label>
         <label class="daw-zoom-control" title="Timeline zoom"><span>⌕</span><input id="dawZoom" type="range" min="44" max="180" value="92" aria-label="Timeline zoom"></label>
       </div>
-    </div>
-    <div class="daw-arrangement-tools" role="toolbar" aria-label="Clip editing and arrangement">
-      <button type="button" id="dawCopyClip" class="daw-tool-btn" title="Copy selected clip (Ctrl+C)">Copy</button>
-      <button type="button" id="dawPasteClip" class="daw-tool-btn" title="Paste clip at playhead (Ctrl+V)">Paste</button>
-      <button type="button" id="dawDuplicateClip" class="daw-tool-btn" title="Duplicate selected clip (Ctrl+D)">Duplicate</button>
-      <button type="button" id="dawNudgeLeft" class="daw-tool-btn" title="Move selected clip one snap step left">←</button>
-      <button type="button" id="dawNudgeRight" class="daw-tool-btn" title="Move selected clip one snap step right">→</button>
-      <span class="daw-arrangement-divider"></span>
-      <button type="button" id="dawLoopIn" class="daw-tool-btn" title="Set loop start at playhead">Set In</button>
-      <button type="button" id="dawLoopOut" class="daw-tool-btn" title="Set loop end at playhead">Set Out</button>
-      <button type="button" id="dawClearLoop" class="daw-tool-btn" title="Clear loop section">Clear Loop</button>
-      <label class="daw-loop-control" title="Repeat selected section"><input id="dawLoop" type="checkbox"><span>⟲ Section</span></label>
-      <span id="dawLoopRangeReadout" class="daw-loop-range-readout">Loop: full timeline</span>
-      <button type="button" id="dawCursorStart" class="daw-tool-btn" title="Move cursor to timeline start">|←</button>
-      <button type="button" id="dawCursorEnd" class="daw-tool-btn" title="Move cursor to timeline end">→|</button>
+      <div class="daw-section-toolbar" role="group" aria-label="Section loop controls">
+        <label class="daw-section-loop-toggle" title="Repeat selected section"><input id="dawLoop" type="checkbox"><span>⟲ Section</span></label>
+        <button type="button" id="dawLoopIn" class="daw-tool-btn" title="Set loop start at playhead" aria-label="Set loop In">In</button>
+        <button type="button" id="dawLoopOut" class="daw-tool-btn" title="Set loop end at playhead" aria-label="Set loop Out">Out</button>
+        <button type="button" id="dawClearLoop" class="daw-tool-btn" title="Clear loop section">Clear</button>
+        <span id="dawLoopRangeReadout" class="daw-loop-range-readout">Loop: full timeline</span>
+      </div>
     </div>
 
     <div class="daw-timeline-panel">
