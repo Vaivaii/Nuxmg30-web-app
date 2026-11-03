@@ -2540,7 +2540,7 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
 #knobs .knob-selector .parameter-select{
  display:block;width:100%;min-width:0;min-height:40px;margin:10px 0 0;padding:8px 9px;
  border:1px solid #3b484c;border-radius:10px;background:#141c20;color:#edf3ef;
- font:600 11px/1.25 inherit;text-align:center;outline:none;touch-action:pan-y;
+ font:inherit;font-size:11px;font-weight:600;line-height:1.25;text-align:center;outline:none;touch-action:pan-y;
 }
 #knobs .knob-selector .parameter-select:focus{border-color:#c5f36b;box-shadow:0 0 0 2px #c5f36b22}
 #knobs .knob-selector .parameter-select option{background:#141c20;color:#edf3ef}
