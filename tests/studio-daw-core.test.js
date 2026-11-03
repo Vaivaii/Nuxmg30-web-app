@@ -7,24 +7,24 @@ import {
   normalizeClipFades, clipFadeGainAt, analyzeWaveformPeaks,
 } from '../www/studio-daw-core.js';
 
-test('new DAW projects start with five independent lanes including Loopback', () => {
+test('new DAW projects start with four lanes and independent input routing', () => {
   const project = createDefaultProject('First Song', '2026-11-02T00:00:00.000Z');
-  assert.deepEqual(project.tracks.map((track) => track.id), ['backing', 'guitar', 'bass', 'vocals', 'loopback']);
+  assert.deepEqual(project.tracks.map((track) => track.id), ['backing', 'guitar', 'bass', 'vocals']);
   assert.equal(project.tracks[0].input, 'Audio file');
   assert.equal(project.tracks[1].input, 'MG-30 USB');
   assert.equal(project.tracks[0].clips.length, 0);
   assert.equal(project.tracks[2].clips.length, 0);
   assert.equal(project.tracks[3].clips.length, 0);
-  assert.equal(project.tracks[4].name, 'Loopback');
-  assert.equal(project.tracks[4].input, 'MG-30 USB Loopback');
-  assert.equal(project.tracks[4].armed, false);
+  assert.equal(project.tracks[1].inputRoute, 'usb-ch1-2-stereo');
+  assert.equal(project.tracks[2].inputRoute, 'usb-ch1-2-stereo');
+  assert.equal(project.tracks[3].inputRoute, 'usb-ch1-2-stereo');
   assert.equal(project.tracks[1].armed, true);
   assert.equal(project.tempo, 100);
   assert.equal(project.sampleRate, 48000);
   assert.equal(project.bitDepth, 24);
 });
 
-test('project normalization clamps unsafe values and adds the dedicated Loopback lane', () => {
+test('project normalization clamps unsafe values and keeps exactly four lanes', () => {
   const project = normalizeProject({
     name: '  Demo  ', tempo: 999, masterGain: 8,
     tracks: [
@@ -36,12 +36,13 @@ test('project normalization clamps unsafe values and adds the dedicated Loopback
   assert.equal(project.name, 'Demo');
   assert.equal(project.tempo, 240);
   assert.equal(project.masterGain, 1.5);
-  assert.equal(project.tracks.length, 5);
+  assert.equal(project.tracks.length, 4);
   assert.equal(project.tracks[1].gain, 2);
   assert.equal(project.tracks[1].pan, -1);
   assert.equal(project.tracks[1].clips[0].startSeconds, 2);
   assert.equal(project.tracks[0].clips.length, 0);
   assert.equal(project.tracks.filter((track) => track.armed).length, 1);
+  assert.deepEqual(project.legacyLoopbackClips, []);
   assert.equal(normalizeProject(null), null);
 });
 
