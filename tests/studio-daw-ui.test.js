@@ -750,3 +750,36 @@ test('three-dot dropdown row stacks above the entire Loop/Clip/Track row', () =>
   assert.ok(toolbar.indexOf('z-index:80!important') < toolbar.indexOf('z-index:20!important'));
   assert.ok(toolbar.includes('isolation:isolate!important'));
 });
+
+
+test('simulated CSS stacking paths place the main popover above Clip and Track menus', () => {
+  const cssStart = daw.indexOf('function addTrackInputRoutingStyles()');
+  const cssEnd = daw.indexOf('function syncTrackInputRoutingPanel()', cssStart);
+  const css = daw.slice(cssStart, cssEnd);
+  const z = (selector, property = 'z-index') => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = css.match(new RegExp(escaped + '\\{[^}]*' + property + ':([0-9]+)'));
+    assert.ok(match, 'missing stacking rule for ' + selector);
+    return Number(match[1]);
+  };
+  const compareStackPath = (left, right) => {
+    for (let i = 0; i < Math.min(left.length, right.length); i++) {
+      if (left[i] !== right[i]) return Math.sign(left[i] - right[i]);
+    }
+    return Math.sign(left.length - right.length);
+  };
+  const dropdownStack = [
+    z('#page-studio .daw-quick-toolbar-primary'),
+    z('#page-studio .daw-more-menu'),
+    z('#page-studio .daw-more-menu-panel'),
+  ];
+  const clipTrackStack = [
+    z('#page-studio .daw-section-toolbar'),
+    z('#page-studio .daw-action-menu'),
+    z('#page-studio .daw-action-menu-panel'),
+  ];
+  assert.deepEqual(dropdownStack, [80, 100, 1000]);
+  assert.deepEqual(clipTrackStack, [20, 40, 60]);
+  assert.equal(compareStackPath(dropdownStack, clipTrackStack), 1,
+    'the ancestor stacking context decides paint order before descendant z-index');
+});

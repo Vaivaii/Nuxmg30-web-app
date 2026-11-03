@@ -138,3 +138,5 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - The three-dot popup remains at `z-index:1000` inside the elevated top row. This corrects the ancestor stacking order; raising the popup alone was not enough because the Clip/Track controls occupied a competing sibling stacking level.
 - Added an automated regression assertion for the parent-row stacking hierarchy.
 - Verification plan: repository regression suite plus a Chromium headless hit-test where the dropdown overlaps the Clip/Track controls; the hit-test must resolve to the dropdown panel, never the underlying action-menu buttons.
+
+- Added a simulated CSS stacking-context test that compares the full ancestry path of the three-dot popover `[80, 100, 1000]` against the Clip/Track menu path `[20, 40, 60]`. The parent row is compared before child z-index values, matching CSS stacking-context behavior.
