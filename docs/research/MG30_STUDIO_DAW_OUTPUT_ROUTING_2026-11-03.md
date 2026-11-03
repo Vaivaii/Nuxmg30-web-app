@@ -82,3 +82,11 @@ No source changes are intended in:
 - Build #423 source commit: `7852e117fdc3951c10494b35f676e735987c3d44`.
 - Current branch HEAD at this documentation update: `7852e117fdc3951c10494b35f676e735987c3d44` (documentation-only commit may follow).
 - No APK from this branch is approved for installation until Gradle, artifact upload and package inspection complete.
+
+
+## Hardware playback confirmation and Stage 2 handoff (3 November 2026)
+- The user has now confirmed that Stage 1 DAW playback works on the device.
+- Stage 2 work is isolated in `feature/studio-daw-native-loop-metronome-meters`, branched from `feature/studio-daw-output-routing`.
+- Stage 2 scope: native MG-30 metronome PCM synthesis, same-AudioTrack loop wrap, and master/per-track output meters.
+- Detailed implementation, limitations and hardware validation checklist: `docs/research/MG30_STUDIO_DAW_STAGE2_NATIVE_METRONOME_LOOP_METERS_2026-11-03.md`.
+- Do not treat the new Stage 2 metronome/loop/meter behavior as hardware-validated until the user reports the device test results.
