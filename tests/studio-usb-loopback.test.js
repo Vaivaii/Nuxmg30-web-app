@@ -99,6 +99,9 @@ test('DAW Loopback button arms the independent lane and requests Loopback captur
   assert.ok(daw.includes('armTrack(\'loopback\')'));
   assert.ok(daw.includes("track.id === 'loopback' ? 'loopback' : 'normal'"));
   assert.ok(daw.includes('recorder.start({ captureMode })'));
+  assert.ok(daw.includes('Loopback-only capture must not create/resume Web Audio output'));
+  assert.ok(daw.includes("audioContext.suspend()"));
+  assert.ok(daw.includes('(performance.now() - recordingStartPerformanceTime) / 1000'));
   assert.ok(daw.includes('importQuickTake(take, trackId, startAt)'));
   assert.ok(daw.includes('syncLoopbackPanel'));
   assert.ok(daw.includes('START USB LOOPBACK CAPTURE'));
