@@ -140,3 +140,5 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - Verification plan: repository regression suite plus a Chromium headless hit-test where the dropdown overlaps the Clip/Track controls; the hit-test must resolve to the dropdown panel, never the underlying action-menu buttons.
 
 - Added a simulated CSS stacking-context test that compares the full ancestry path of the three-dot popover `[80, 100, 1000]` against the Clip/Track menu path `[20, 40, 60]`. The parent row is compared before child z-index values, matching CSS stacking-context behavior.
+
+- The first simulation run (#439) revealed that the test helper read the first declaration for selectors that are intentionally overridden later. Updated the helper to use the last matching declaration (the effective runtime override), rather than weakening the expected stack levels.

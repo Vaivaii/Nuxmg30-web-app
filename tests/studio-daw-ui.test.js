@@ -758,9 +758,10 @@ test('simulated CSS stacking paths place the main popover above Clip and Track m
   const css = daw.slice(cssStart, cssEnd);
   const z = (selector, property = 'z-index') => {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const match = css.match(new RegExp(escaped + '\\{[^}]*' + property + ':([0-9]+)'));
-    assert.ok(match, 'missing stacking rule for ' + selector);
-    return Number(match[1]);
+    const matches = [...css.matchAll(new RegExp(escaped + '\\{[^}]*' + property + ':([0-9]+)', 'g'))];
+    assert.ok(matches.length, 'missing stacking rule for ' + selector);
+    // The runtime style block contains earlier defaults and a later cascade override.
+    return Number(matches[matches.length - 1][1]);
   };
   const compareStackPath = (left, right) => {
     for (let i = 0; i < Math.min(left.length, right.length); i++) {
