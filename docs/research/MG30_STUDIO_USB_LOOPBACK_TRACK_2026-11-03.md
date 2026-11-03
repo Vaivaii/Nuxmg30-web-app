@@ -420,3 +420,23 @@ Ask the user only to confirm two test conditions: (a) whether the audio played d
 The user confirmed that the audio source during the 17:00 raw four-channel diagnostic was music/audio played from the phone (HP), not guitar or the MG-30's internal drum/phrase looper. Therefore the measured fact is now stronger: phone-originated audio was present on USB IN 1–2, while USB IN 3–4 were exactly silent, during that test.
 
 The user has not yet explicitly confirmed the pedal's USB settings for that take. The host-playback channel mapping is therefore confirmed for the tested phone/device state (USB IN 1–2), but the specific pedal configuration (Normal + separate Loopback enabled) remains unconfirmed. Ask only for that setting confirmation; do not repeat the source question.
+
+
+### User confirmation — Normal + separate Loopback ON (3 November 2026)
+
+The user explicitly confirmed that during the raw 4-channel diagnostic:
+- MG-30 Routing Mode was **Normal**.
+- The separate **Loopback** option was **ON**.
+- The stimulus was audio/music played from the Android phone.
+
+Combined with the WAV analysis, this is now physical verification on the user's original MG-30 Gen 2 / handset setup that host/phone playback is returned on USB Audio IN channels 1–2 (stereo). USB IN channels 3–4 were exactly zero throughout the 13.9-second capture.
+
+**Authoritative routing conclusion for this tested setup:** phone/host Loopback capture source = `MG-30 USB · Input 1–2 (Stereo)`. USB IN 3–4 must not be labelled as host Loopback; retain its distinct Wet Sync (Dry Out) meaning. The four-channel diagnostic has completed its purpose and should remain available as a regression/diagnostic utility, not as a mandatory step for ordinary DAW recording.
+
+Implementation follow-up:
+1. Correct the DAW input-route model/UI so the host-loopback source is clearly identified as Input 1–2 Stereo (or annotate the existing Input 1–2 option as supporting Normal + Loopback host return).
+2. Remove or migrate any misleading `Loopback 3–4` semantic route label/ID without deleting user clips or changing their audio media. Preserve the existing four visible DAW tracks and per-track routing.
+3. Keep a distinct Wet Sync (Dry Out) route for Input 3–4 only if it is intentionally supported and tested; otherwise label it accurately as Wet Sync and avoid claiming it is Loopback.
+4. Add regression coverage for the verified mapping and migration of old persisted route IDs.
+5. Do not change NAM, IR User/Third Party, IR Collection, or MIDI mapping code.
+6. Record this physical verification as specific to the user's tested original MG-30 Gen 2, firmware 6.0.x, Android handset and USB setup; do not generalize to MKII or other devices without tests.
