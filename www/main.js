@@ -311,6 +311,11 @@ async function startGuitarRecording(options = {}) {
     if (!isDawCapture) $('guitarRecordBtn').disabled = recording;
   }
 }
+async function getRecordingStats() {
+  if (!isNative() || !recording || typeof MG30Audio.getRecordingStats !== 'function') return null;
+  return MG30Audio.getRecordingStats();
+}
+
 async function stopGuitarRecording() {
   if (!isNative() || !recording) return null;
   const captureMode = recordingCaptureMode;
@@ -376,7 +381,7 @@ function parseYoutubeId(value) {
   return null;
 }
 window.NUXStudioInspectAudio = inspectAudio;
-window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor });
+window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, getRecordingStats, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor });
 window.dispatchEvent(new Event('nux-studio-recorder-ready'));
 window.addEventListener('mg30-midi-connected', () => { void inspectAudio(); });
 $('audioCheckBtn')?.addEventListener('click', inspectAudio);
