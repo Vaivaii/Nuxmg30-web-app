@@ -834,13 +834,9 @@ const AMP_QUICKTONE_LAYOUTS = [
  ampLayout([['gain','GAIN',0],['master','MASTER',1],['bass','BASS',2],['middle','MIDDLE',3],['treble','TREB',4],['presence','PRES',5],['bias','BIAS',6],['level','LEVEL',7]])
 ];
 /*
- * User-confirmed three-position controls from original MG-30 panel photos.
- * QuickTone switch range is 0..100; three positions are represented at 0/50/100.
- */
-/*
- * Labels and physical positions are transcribed from the user's MG-30 display photos.
- * Raw CC values for each frame are NOT yet validated. Keep these controls read-only
- * until a QuickTone capture maps each physical position to its exact wire value.
+ * Labels and physical positions are transcribed from the user's original MG-30 display photos.
+ * Exact raw CC values for TOP / MIDDLE / BOTTOM have not been captured. Never infer
+ * enum values from the generic 0..100 range; keep these controls read-only until verified.
  */
 const AMP_THREE_POSITION_SWITCHES = {
   30: [
@@ -934,6 +930,8 @@ function sendBlockParam(index,param,value){
   if(!block||!state||!ccs||!midiConnected)return;
   const control=parameterControls(index,state.model).find(item=>item.param===param);
   if(!control||control.ccIndex<0||control.ccIndex>=ccs.length)return;
+  // Switch enums are not validated yet; block every generic write path defensively.
+  if(control.type==='three-way-switch')return;
   const cc=ccs[control.ccIndex];
   if(!Number.isInteger(cc))return;
   sendCC(cc,encodeParameterValue(param,value));
