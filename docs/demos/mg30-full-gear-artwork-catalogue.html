@@ -235,6 +235,7 @@ function ampSvg(m){
  const handle=(x=334,y=67,w=92)=>'<path d="M'+x+' '+(y+3)+'q0 -13 13 -13h'+(w-26)+'q13 0 13 13v5h-10v-5h-'+(w-26)+'v5h-10z" fill="#090b0c" stroke="#737a75" stroke-width="2"/>';
  const feet=(x1=180,x2=580,y=374)=>'<rect x="'+x1+'" y="'+y+'" width="46" height="17" rx="6" fill="#080a0b"/><rect x="'+x2+'" y="'+y+'" width="46" height="17" rx="6" fill="#080a0b"/>';
  const speaker=(x,y,r)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#0a0d0d" stroke="#a4a69d" stroke-width="3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.78)+'" fill="none" stroke="#b7b7ad" stroke-opacity=".28" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.58)+'" fill="#202625" stroke="#6d746c" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.23)+'" fill="#080a0b" stroke="#73796f" stroke-width="3"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.1)+'" fill="#343a36"/></g>';
+ const led=(x,y,color='#bfe078')=>'<circle cx="'+x+'" cy="'+y+'" r="9" fill="'+color+'" opacity=".13"/><circle cx="'+x+'" cy="'+y+'" r="4.5" fill="'+color+'" stroke="#fff3d4" stroke-width="1"/>';
  const shadow='<ellipse cx="380" cy="407" rx="242" ry="15" fill="#000" opacity=".62" filter="url(#ampShadow)"/>';
  const ampLabel=(x,y,text,size=10,color=p.ink)=>'<text x="'+x+'" y="'+y+'" text-anchor="middle" font-size="'+size+'" font-weight="800" letter-spacing="1.2" fill="'+color+'">'+text+'</text>';
  const rowKnobs=(y,items,start=168,step=60,r=10,light=false)=>items.map((v,i)=>k(start+i*step,y,r,v,light)).join('');
