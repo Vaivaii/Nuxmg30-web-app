@@ -283,6 +283,43 @@ function ampSvg(m){
   s+=label(590,278,raw.toUpperCase(),8,'#ebd9b5',800,1.2)+jack(113,301,5)+jack(132,301,5);
   return s+feet+screw(72,103)+screw(688,103);
  }
+ // FENDER BLACKFACE: silver top control rail, black grille cloth face and small script badge on the left.
+ if(m.skin==='blackface'){
+  s+=shell('#15191b','#8c938d')+handle;
+  s+='<rect x="82" y="116" width="596" height="87" fill="url(#headSilver)" stroke="#f1f0e8" stroke-width="1.6"/><rect x="89" y="123" width="582" height="72" fill="#c6c8c1" opacity=".75"/>';
+  jack(108,160,6)+jack(129,160,6)+jack(150,160,6);
+  const labs=raw.includes('Twin')?['VOL','TREB','MID','BASS','REVERB','SPEED','INTENSITY']:raw.includes('Princeton')?['VOL','TREB','BASS','REVERB','SPEED']:['VOL','TREB','BASS','REVERB','SPEED','INTENSITY'];
+  labs.forEach((v,i)=>s+=k(210+i*(440/(labs.length-1)),160,10,v,true));
+  s+='<rect x="82" y="211" width="596" height="126" fill="#202725" stroke="#b7b9ae" stroke-width="2"/><rect x="89" y="218" width="582" height="112" fill="url(#headMesh)"/>';
+  word(185,286,'Fender',42,'"Brush Script MT","Segoe Script",cursive','#e6e2d7','middle','font-style="italic" font-weight="bold"');
+  label(515,301,raw.toUpperCase(),9,'#d8ded5',800,1.4);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // FENDER TWEED / BASSMAN: tweed head with vintage face cloth and chrome top controls.
+ if(m.skin==='tweed'){
+  s+='<rect x="63" y="94" width="634" height="268" rx="15" fill="url(#headTweed)" stroke="#6c5134" stroke-width="4"/>'+handle;
+  s+='<rect x="82" y="116" width="596" height="88" fill="url(#headSilver)" stroke="#dfc697" stroke-width="2"/>';
+  const bassman=ref.includes('bassman')||raw.includes('Bass Mate')||raw.includes('Bassguy');
+  jack(110,158,6)+jack(132,158,6);
+  const labs=bassman?['VOL','TONE','BASS','VOL','TONE','BASS']:['MIC','INST','TONE','PRES'];
+  labs.forEach((v,i)=>s+=k(220+i*(bassman?75:105),158,10,v,true));
+  s+='<rect x="82" y="212" width="596" height="125" fill="#6f4e32" stroke="#dec49a" stroke-width="2"/><rect x="89" y="219" width="582" height="111" fill="url(#headTweed)" opacity=".8"/>';
+  logoPlate(109,239,162,54,'FENDER','Georgia,serif',21,'#292117');
+  label(509,301,raw.toUpperCase(),10,'#eddbb9',850,1.4);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+ // HIWATT: framed white badge in the upper panel, black lower control rail with inputs at the left.
+ if(m.skin==='hiwatt'){
+  s+=shell('#14191b','#a5aaa4')+handle;
+  s+='<rect x="82" y="116" width="596" height="132" fill="#0d1112" stroke="#858b84" stroke-width="1.5"/>';
+  s+='<rect x="265" y="143" width="230" height="58" fill="#101516" stroke="#e1e4dc" stroke-width="3"/>'+word(380,181,'HIWATT',35,'Arial,Helvetica,sans-serif','#f3f3e9','middle','font-weight="500" letter-spacing="4"');
+  s+='<rect x="82" y="256" width="596" height="81" fill="#0b1011" stroke="#c5cbc2" stroke-width="1.5"/>';
+  jack(108,294,6)+jack(131,294,6)+toggle(159,294);
+  label(185,273,'CUSTOM HIWATT 100',8,'#eff0e7',800,1.4);
+  ['NORM VOL','BRIGHT VOL','BASS','TREBLE','MIDDLE','PRESENCE','MASTER'].forEach((v,i)=>s+=k(222+i*61,306,8.5,v));
+  led(657,293,'#c84035')+toggle(675,293);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
  // MESA: diamond-plate upper fascia, MESA badge upper-right, lower black panel with Rectifier identity on left.
  if(m.skin==='mesa'){
   s+=shell('#171a1b','#a1aaa7')+handle;
@@ -404,7 +441,7 @@ function ampSvg(m){
   s+='<rect x="82" y="262" width="596" height="75" fill="url(#headBlackPanel)" stroke="'+p.edge+'" stroke-width="1.5"/>';
   const labs=m.skin==='darkglass'?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:m.skin==='nuxBass'?['GAIN','DRIVE','BLEND','BASS','MID','TREBLE','LEVEL']:['REVERB','IR LEVEL','SELECT','GAIN','BASS','MIDDLE','TREBLE'];
   labs.forEach((v,i)=>s+=k(125+i*(510/(labs.length-1)),298,8.7,v,true));
-  led(648,295,'#bfe078')+toggle(666,295);
+  s+=led(648,295,'#bfe078')+toggle(666,295);
   return s+feet;
  }
  // Remaining boutique British/American/high-gain families have distinct plates and wordmark treatments.
