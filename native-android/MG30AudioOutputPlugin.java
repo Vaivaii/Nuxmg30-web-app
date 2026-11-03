@@ -6,6 +6,8 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.os.Build;
 
+import java.util.Locale;
+
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -27,20 +29,23 @@ public class MG30AudioOutputPlugin extends Plugin {
         AudioManager manager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         JSArray devices = new JSArray();
         boolean usbOutputFound = false;
+        boolean mg30OutputFound = false;
 
         if (manager != null) {
             for (AudioDeviceInfo device : manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
                 boolean isUsb = isUsbOutput(device);
+                String productName = device.getProductName() == null ? "" : device.getProductName().toString();
+                boolean isMg30 = isUsb && isMg30ProductName(productName);
                 usbOutputFound = usbOutputFound || isUsb;
+                mg30OutputFound = mg30OutputFound || isMg30;
 
                 JSObject item = new JSObject();
                 item.put("id", device.getId());
-                item.put("name", device.getProductName() == null
-                    ? "Audio output " + device.getId()
-                    : device.getProductName().toString());
+                item.put("name", productName.isEmpty() ? "Audio output " + device.getId() : productName);
                 item.put("type", device.getType());
                 item.put("typeName", typeName(device.getType()));
                 item.put("isUsb", isUsb);
+                item.put("isMg30", isMg30);
                 item.put("sampleRates", toJsArray(device.getSampleRates()));
                 item.put("channelCounts", toJsArray(device.getChannelCounts()));
 
@@ -59,6 +64,7 @@ public class MG30AudioOutputPlugin extends Plugin {
         result.put("native", true);
         result.put("androidApi", Build.VERSION.SDK_INT);
         result.put("usbOutputFound", usbOutputFound);
+        result.put("mg30OutputFound", mg30OutputFound);
         result.put("devices", devices);
         result.put("note", "Read-only output endpoint discovery. No audio is played; endpoint visibility does not prove that a stream reaches the MG-30. Reamp still requires a verified USB playback and full-duplex device test.");
         call.resolve(result);
@@ -69,6 +75,11 @@ public class MG30AudioOutputPlugin extends Plugin {
         return type == AudioDeviceInfo.TYPE_USB_DEVICE
             || type == AudioDeviceInfo.TYPE_USB_HEADSET
             || (Build.VERSION.SDK_INT >= 26 && type == AudioDeviceInfo.TYPE_USB_ACCESSORY);
+    }
+
+    private static boolean isMg30ProductName(String productName) {
+        String normalized = productName == null ? "" : productName.toLowerCase(Locale.ROOT);
+        return normalized.contains("mg-30") || normalized.contains("nux");
     }
 
     private static String typeName(int type) {
