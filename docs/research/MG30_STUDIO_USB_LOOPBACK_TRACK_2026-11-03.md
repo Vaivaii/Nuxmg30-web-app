@@ -440,3 +440,24 @@ Implementation follow-up:
 4. Add regression coverage for the verified mapping and migration of old persisted route IDs.
 5. Do not change NAM, IR User/Third Party, IR Collection, or MIDI mapping code.
 6. Record this physical verification as specific to the user's tested original MG-30 Gen 2, firmware 6.0.x, Android handset and USB setup; do not generalize to MKII or other devices without tests.
+
+
+### User clarification — Open Camera recordings are a combined mix (3 November 2026)
+
+The user clarified that their practical recording experience with Open Camera is that the MG-30 guitar signal and phone playback are heard together as a mixed recording. This is user-reported workflow evidence that the desired host audio and guitar are not being presented to the phone camera as two independent tracks.
+
+Distinguish this observation from the raw WAV diagnostic:
+- The raw WAV diagnostic used phone playback as its stimulus and proves phone audio is present on USB IN 1–2, while USB IN 3–4 are silent, in Normal + separate Loopback ON.
+- It did not simultaneously isolate/measure guitar and phone playback in separate channels.
+- The Open Camera experience reports the resulting recording is mixed. Do not claim the current USB Input 1–2 path exposes an independently selectable host Loopback bus.
+
+### DAW product implication
+
+- Treat USB IN 1–2 under Normal + Loopback ON as a shared stereo capture/mix path, not a separate Loopback-only channel.
+- Do not promise to split guitar and phone playback into independent DAW tracks merely by selecting different input routes.
+- Keep Backing as a file/import/playback track when the user needs it separate. A possible clean overdub workflow is to play the backing file from the DAW while recording MG-30 guitar with the separate Loopback option OFF; this is a candidate workflow that still needs a physical test, including confirmation that playback remains audible at the MG-30 while the USB capture excludes the host return.
+- If Loopback is ON and the MG-30/host return is mixed with guitar before USB IN 1–2, preserve that mixed take as one stereo recording. Do not fabricate source separation by duplicating or splitting the same samples.
+- Keep the raw four-channel diagnostic available for future routing checks. Do not reassign Input 3–4 as host Loopback; its documented QuickTone role remains Wet Sync in Dry Out mode.
+- Protect NAM, IR User/Third Party, IR Collection and MIDI mapping paths.
+
+This is a user-reported practical behavior, not an independently measured simultaneous guitar+phone multichannel test. Any future claim about exact internal summing point or alternate isolated route needs a dedicated capture test.
