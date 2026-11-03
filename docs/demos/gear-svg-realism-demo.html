@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d0b">
+<title>MG-30 · Gear SVG Realism Demo</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d0b;--panel:#151914;--panel2:#1b2119;--line:#30382d;--text:#eef2e8;--muted:#98a18f;--lime:#c5f36b;--gold:#c6a56a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 70% -10%,#293722 0,transparent 40%),var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1120px;margin:auto;padding:22px 16px 42px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:var(--lime);color:#10150a;font-weight:950;letter-spacing:-1px}
+.brand strong{display:block;font-size:15px;letter-spacing:-.3px}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:1.6px;text-transform:uppercase}
+.tag{border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:var(--muted);font-size:10px;letter-spacing:1px}
+.intro{margin-bottom:20px}.eyebrow{color:var(--lime);font-weight:800;font-size:10px;letter-spacing:2px;text-transform:uppercase}
+h1{font-size:clamp(25px,5vw,38px);letter-spacing:-1.4px;line-height:1.1;margin:7px 0 8px}.intro p{margin:0;color:var(--muted);max-width:650px;font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.8fr);gap:14px;align-items:stretch}
+.panel{background:linear-gradient(150deg,#171c16,#111510);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.stage-panel{padding:14px}
+.stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 2px 13px}
+.stage-head strong{font-size:13px}.stage-head span{font-size:10px;color:var(--muted)}
+.stage{position:relative;min-height:375px;border:1px solid #293126;border-radius:15px;overflow:hidden;background:radial-gradient(ellipse at 50% 42%,#293126 0,#171e17 42%,#10140f 78%);display:grid;place-items:center}
+.stage:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(to bottom,#0008,transparent 88%);pointer-events:none}
+#gearSvg{position:relative;z-index:1;width:min(100%,650px);height:auto;max-height:380px;overflow:visible;filter:drop-shadow(0 22px 24px #0009);padding:12px}
+.stage-foot{display:flex;justify-content:space-between;gap:10px;padding:11px 3px 0;color:var(--muted);font-size:10px}
+.controls{padding:17px}
+.control-label{display:block;color:var(--muted);font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:1.4px;margin:2px 0 8px}
+.switch{display:flex;gap:6px;padding:5px;background:#0d110d;border:1px solid #293126;border-radius:12px;margin-bottom:18px}
+.switch button{flex:1;border:0;border-radius:8px;background:transparent;color:var(--muted);padding:9px 10px;font-weight:750;font-size:12px;cursor:pointer}
+.switch button.active{background:#c5f36b1b;color:var(--lime);box-shadow:inset 0 0 0 1px #c5f36b45}
+select{width:100%;background:#0f130f;color:var(--text);border:1px solid #394332;border-radius:11px;padding:12px;font-size:13px;outline:none}
+select:focus{border-color:var(--lime)}
+.model-name{font-size:22px;font-weight:850;letter-spacing:-.8px;margin:18px 0 2px}
+.model-ref{color:var(--gold);font-size:12px;font-weight:650}
+.description{color:var(--muted);font-size:12px;line-height:1.6;margin:11px 0 16px}
+.reference{border-top:1px solid var(--line);padding-top:14px}
+.reference-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.reference-top strong{font-size:11px}.reference-top a{color:var(--lime);font-size:10px;text-decoration:none}
+.photo{height:150px;border-radius:12px;background:#0c100c;border:1px solid #30382d;overflow:hidden;display:grid;place-items:center}
+.photo img{width:100%;height:100%;object-fit:contain;padding:8px}
+.photo .no-photo{display:none;color:var(--muted);font-size:11px;text-align:center;padding:20px}
+.notes{margin-top:14px;padding:13px 14px;border:1px solid #35412d;background:#c5f36b0b;border-radius:13px;color:#c2cbb8;font-size:11px;line-height:1.6}
+.notes b{color:var(--lime)}
+footer{margin-top:15px;color:#707b6b;font-size:10px;text-align:center}
+@media(max-width:760px){main{padding:16px 12px 30px}header{margin-bottom:22px}.tag{display:none}.layout{grid-template-columns:1fr}.stage{min-height:270px}#gearSvg{max-height:300px}.controls{padding:15px}.photo{height:180px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="brand"><div class="mark">MG</div><div><strong>MG30 Studio · Gear Lab</strong><small>Reference-based SVG study</small></div></div>
+  <div class="tag">VISUAL DEMO · TERPISAH DARI APP UTAMA</div>
+</header>
+<section class="intro">
+  <div class="eyebrow">Product-inspired vector artwork</div>
+  <h1>Gear visuals, closer to the real thing.</h1>
+  <p>Eksperimen bentuk amplifier dan stompbox berdasarkan model hardware yang menjadi referensi nama efek MG-30. Fokus pada siluet, material, tata letak kontrol, dan detail khas tiap perangkat.</p>
+</section>
+<section class="layout">
+  <div class="panel stage-panel">
+    <div class="stage-head"><strong id="stageTitle">Amplifier · Front view</strong><span>SCALABLE SVG · 2D PRODUCT STUDY</span></div>
+    <div class="stage"><svg id="gearSvg" viewBox="0 0 640 390" role="img" aria-label="Vector illustration of selected guitar gear"></svg></div>
+    <div class="stage-foot"><span id="viewLabel">FRONT PANEL / CABINET DETAIL</span><span>SVG · crisp at any scale</span></div>
+  </div>
+  <aside class="panel controls">
+    <label class="control-label">Gear category</label>
+    <div class="switch"><button id="ampTab" class="active" type="button">AMP</button><button id="efxTab" type="button">STOMPBOX</button></div>
+    <label class="control-label" for="modelSelect">Select reference model</label>
+    <select id="modelSelect"></select>
+    <div class="model-name" id="modelName"></div>
+    <div class="model-ref" id="modelRef"></div>
+    <p class="description" id="modelDescription"></p>
+    <div class="reference">
+      <div class="reference-top"><strong>REAL PRODUCT REFERENCE</strong><a id="referenceLink" href="#" target="_blank" rel="noreferrer">Open source ↗</a></div>
+      <div class="photo"><img id="referencePhoto" alt="Reference product photograph"><div class="no-photo" id="noPhoto">Foto referensi tidak tersedia untuk model ini.</div></div>
+    </div>
+    <div class="notes"><b>Catatan visual:</b> ini studi ilustrasi, bukan replika CAD atau artwork resmi. Detail yang paling penting untuk iterasi berikutnya adalah proporsi bodi, posisi knob/switch, bentuk panel, grille, tekstur, serta warna khas model.</div>
+  </aside>
+</section>
+<footer>Demo berada di branch terpisah. Tidak mengubah MIDI, preset sync, NAM, IR transfer, atau komunikasi perangkat.</footer>
+</main>
+<script>
+const models = {
+  AMP: [
+    {id:'deluxe',name:'Deluxe Rvb',ref:'Fender ’65 Deluxe Reverb',desc:'Combo amp gaya blackface: kabinet tweed/cream, grille kain gelap, piping terang, panel kontrol atas berwarna silver, dan deretan knob khas Fender.',photo:'https://r2.gear4music.com/media/117/1172017/1200/preview.jpg',url:'https://r2.gear4music.com/media/117/1172017/1200/preview.jpg'},
+    {id:'plexi',name:'Plexi 100',ref:'Marshall 1959 Super Lead',desc:'Amp head klasik dengan casing hitam, panel kontrol gold/brass memanjang, enam knob utama, input di sisi kiri, dan handle kulit di bagian atas.',photo:'https://r2.gear4music.com/media/133/1332394/600/preview.jpg',url:'https://r2.gear4music.com/media/133/1332394/600/preview.jpg'},
+    {id:'jazz',name:'Jazz Clean',ref:'Roland JC-120 Jazz Chorus',desc:'Combo solid-state besar dengan panel silver di bagian atas, dua speaker besar di balik grille, dan karakter kabinet hitam yang lebar.',photo:'https://media.sweetwater.com/m/products/image/b4fcb60da1oBU6UZaRoldXqU3cOe4TD7IePj9xVe.jpg?ha=b4fcb60da128ffad&quality=82',url:'https://www.sweetwater.com/store/detail/JC120--roland-jc-120-jazz-chorus-120-watt-2x12-inch-stereo-combo-amp'},
+  ],
+  EFX: [
+    {id:'ts808',name:'T Scream',ref:'Ibanez TS808 Tube Screamer',desc:'Overdrive hijau dengan tiga knob putih berjajar, indikator LED kecil, label kontrol ringkas, dan footswitch metal di bagian bawah.',photo:'https://f.fcdn.app/imgs/a477e7/www.palaciodelamusica.com.uy/pmusuy/026f/original/catalogo/TS808-TS808_1/1500-1500/pedal-de-efectos-ibanez-ts808-tube-screamer-pedal-de-efectos-ibanez-ts808-tube-screamer.jpg',url:'https://www.ibanez.com/usa/products/detail/ts808_99.html'},
+    {id:'bd2',name:'Blues Drv',ref:'BOSS BD-2 Blues Driver',desc:'Pedal BOSS biru dengan bentuk casing stompbox ikonik, tiga knob hitam di baris atas, LED status, serta pedal plate dan baut di bagian bawah.',photo:'https://foundsound.com.au/cdn/shop/products/BOSS_BD-2_Blues_Driver.jpg?v=1630504189',url:'https://www.boss.info/global/products/bd-2/'},
+    {id:'distplus',name:'Distortion+',ref:'MXR Distortion+',desc:'Pedal MXR casing kuning keemasan dengan dua knob besar, grafis hitam minimal, jack di sisi bodi, dan footswitch metal di bagian bawah.',photo:'https://moridaira.jp/img/mxr/ogp.jpg',url:'https://www.jimdunlop.com/mxr-distortion/'}
+  ]
+};
+const svg = document.getElementById('gearSvg');
+const select = document.getElementById('modelSelect');
+let category = 'AMP';
+let current = models.AMP[0];
+const commonDefs = '<defs>'+
+  '<linearGradient id="metal" x2="0" y2="1"><stop stop-color="#f2f0df"/><stop offset=".45" stop-color="#9da39a"/><stop offset="1" stop-color="#555c55"/></linearGradient>'+
+  '<linearGradient id="blackCase" x2=".15" y2="1"><stop stop-color="#343a35"/><stop offset=".5" stop-color="#141814"/><stop offset="1" stop-color="#070907"/></linearGradient>'+
+  '<linearGradient id="goldPanel" x2="0" y2="1"><stop stop-color="#e2c58b"/><stop offset=".45" stop-color="#b89150"/><stop offset="1" stop-color="#76552e"/></linearGradient>'+
+  '<linearGradient id="greenPaint" x2=".2" y2="1"><stop stop-color="#6da94a"/><stop offset=".5" stop-color="#347b36"/><stop offset="1" stop-color="#174b29"/></linearGradient>'+
+  '<linearGradient id="bluePaint" x2=".2" y2="1"><stop stop-color="#5b91d5"/><stop offset=".5" stop-color="#2462a9"/><stop offset="1" stop-color="#14365f"/></linearGradient>'+
+  '<linearGradient id="yellowPaint" x2=".2" y2="1"><stop stop-color="#f4d86a"/><stop offset=".5" stop-color="#d4a928"/><stop offset="1" stop-color="#8d6916"/></linearGradient>'+
+  '<radialGradient id="knob"><stop stop-color="#555d57"/><stop offset=".65" stop-color="#171b18"/><stop offset="1" stop-color="#050605"/></radialGradient>'+
+  '<radialGradient id="speaker"><stop stop-color="#343a36"/><stop offset=".25" stop-color="#171b18"/><stop offset=".55" stop-color="#080a08"/><stop offset=".8" stop-color="#272d28"/><stop offset="1" stop-color="#080a08"/></radialGradient>'+
+  '<pattern id="grille" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 0L6 6M6 0L0 6" stroke="#92988d" stroke-opacity=".22" stroke-width=".8"/></pattern>'+
+  '<pattern id="tweed" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#9b835b"/><path d="M0 1H8M0 5H8" stroke="#d6c29a" stroke-opacity=".35"/><path d="M1 0V8M5 0V8" stroke="#57472f" stroke-opacity=".35"/></pattern>'+
+  '<filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>'+
+  '</defs>';
+function knob(x,y,r,label,color){
+  return '<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#080a08" stroke="#777e73" stroke-width="1.4"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(color||'url(#knob)')+'" stroke="#aeb5a8" stroke-opacity=".5"/><path d="M'+x+' '+(y-r+3)+'v-'+Math.max(4,r*.38)+'" stroke="#f2f2e8" stroke-width="2" stroke-linecap="round"/><circle cx="'+x+'" cy="'+y+'" r="2" fill="#bdc5b7"/><text x="'+x+'" y="'+(y+r+14)+'" text-anchor="middle" font-size="9" fill="#f0eadc" letter-spacing=".5">'+label+'</text></g>';
+}
+function screw(x,y){return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="url(#metal)" stroke="#343a35"/><path d="M'+(x-2)+' '+y+'h4" stroke="#424840" stroke-width="1"/>'}
+function ampDeluxe(){
+  let k='';['VOLUME','TREBLE','BASS','REVERB','SPEED','INTENSITY'].forEach((v,i)=>{k+=knob(184+i*54,116,10,v,'url(#knob)')});
+  return commonDefs+'<ellipse cx="320" cy="337" rx="205" ry="15" fill="#000" opacity=".6" filter="url(#shadow)"/>'+
+  '<g stroke-linejoin="round"><rect x="103" y="72" width="434" height="248" rx="12" fill="#6d583c" stroke="#d4c39a" stroke-width="3"/><rect x="110" y="79" width="420" height="234" rx="9" fill="url(#tweed)" stroke="#493b29" stroke-width="2"/><rect x="119" y="86" width="402" height="45" rx="5" fill="#c4bca7" stroke="#f0e5c9" stroke-width="2"/><rect x="126" y="91" width="388" height="33" rx="3" fill="url(#metal)" opacity=".88"/>'+k+
+  '<rect x="126" y="140" width="388" height="157" rx="5" fill="#171b18" stroke="#d4c39a" stroke-width="5"/><rect x="132" y="146" width="376" height="145" fill="url(#grille)"/><rect x="132" y="146" width="376" height="145" fill="#161a17" opacity=".35"/><path d="M132 151H508M132 286H508" stroke="#b6a17b" stroke-opacity=".65" stroke-width="2"/><text x="320" y="224" font-size="30" text-anchor="middle" fill="#d8d0be" font-family="Georgia,serif" font-style="italic" font-weight="bold">Fender</text><text x="320" y="242" font-size="8" text-anchor="middle" letter-spacing="2" fill="#c7c1b4">DELUXE REVERB</text>'+screw(119,90)+screw(521,90)+screw(119,302)+screw(521,302)+
+  '<rect x="130" y="317" width="48" height="7" rx="2" fill="#111"/><rect x="462" y="317" width="48" height="7" rx="2" fill="#111"/></g>';
+}
+function ampPlexi(){
+  let k='';['PRESENCE','BASS','MIDDLE','TREBLE','HIGH TREBLE','NORMAL'].forEach((v,i)=>{k+=knob(245+i*39,206,9,v,'url(#knob)')});
+  return commonDefs+'<ellipse cx="320" cy="321" rx="212" ry="15" fill="#000" opacity=".6" filter="url(#shadow)"/>'+
+  '<g stroke-linejoin="round"><rect x="102" y="116" width="436" height="178" rx="12" fill="url(#blackCase)" stroke="#555b52" stroke-width="3"/><rect x="128" y="93" width="384" height="35" rx="12" fill="#111611" stroke="#555b52" stroke-width="5"/><path d="M248 111Q320 75 392 111" fill="none" stroke="#777d73" stroke-width="7" stroke-linecap="round"/><rect x="118" y="153" width="404" height="105" rx="5" fill="url(#goldPanel)" stroke="#dfc58f" stroke-width="2"/><text x="320" y="174" text-anchor="middle" font-size="23" font-family="Georgia,serif" font-style="italic" font-weight="bold" fill="#27241b">MARSHALL</text><text x="320" y="188" text-anchor="middle" font-size="8" fill="#3e3322" letter-spacing="2">1959 SUPER LEAD</text>'+k+
+  '<g fill="#161a16" stroke="#d4c49c" stroke-width="1"><circle cx="145" cy="217" r="4"/><circle cx="163" cy="217" r="4"/><circle cx="181" cy="217" r="4"/><circle cx="199" cy="217" r="4"/></g><text x="320" y="278" text-anchor="middle" fill="#9da397" font-size="8" letter-spacing="3">100 WATT · ALL VALVE AMPLIFIER</text>'+screw(113,142)+screw(527,142)+screw(113,279)+screw(527,279)+'</g>';
+}
+function ampJazz(){
+  let k='';['VOLUME','TREBLE','MIDDLE','BASS','DISTORTION','REVERB','SPEED','DEPTH'].forEach((v,i)=>{k+=knob(170+i*43,112,8,v,'url(#knob)')});
+  return commonDefs+'<ellipse cx="320" cy="342" rx="214" ry="14" fill="#000" opacity=".6" filter="url(#shadow)"/>'+
+  '<g stroke-linejoin="round"><rect x="92" y="55" width="456" height="280" rx="12" fill="url(#blackCase)" stroke="#505850" stroke-width="3"/><rect x="108" y="72" width="424" height="65" rx="4" fill="url(#metal)" stroke="#d5d8ca" stroke-width="2"/><rect x="118" y="82" width="404" height="43" rx="2" fill="#b9beb5" stroke="#656d66"/>'+k+
+  '<rect x="110" y="148" width="420" height="174" rx="4" fill="#101410" stroke="#777f75" stroke-width="4"/><rect x="116" y="154" width="408" height="162" fill="url(#grille)"/>'+
+  '<circle cx="218" cy="235" r="72" fill="url(#speaker)" stroke="#737b70" stroke-width="3"/><circle cx="422" cy="235" r="72" fill="url(#speaker)" stroke="#737b70" stroke-width="3"/><circle cx="218" cy="235" r="18" fill="#090b09" stroke="#414841"/><circle cx="422" cy="235" r="18" fill="#090b09" stroke="#414841"/><circle cx="218" cy="235" r="55" fill="none" stroke="#7a8178" stroke-opacity=".3" stroke-width="2"/><circle cx="422" cy="235" r="55" fill="none" stroke="#7a8178" stroke-opacity=".3" stroke-width="2"/><text x="320" y="294" text-anchor="middle" font-size="15" fill="#c9d0c4" font-weight="800" letter-spacing="3">JAZZ CHORUS</text><text x="320" y="311" text-anchor="middle" font-size="8" fill="#a3ac9f" letter-spacing="2">JC-120 STEREO</text>'+screw(102,65)+screw(538,65)+screw(102,325)+screw(538,325)+'</g>';
+}
+function pedalBase(paint,accent){
+ return commonDefs+'<ellipse cx="320" cy="337" rx="175" ry="14" fill="#000" opacity=".65" filter="url(#shadow)"/><g stroke-linejoin="round"><path d="M180 55Q180 45 194 45H446Q460 45 460 60L450 321Q449 336 433 336H207Q191 336 190 321Z" fill="'+paint+'" stroke="#111611" stroke-width="6"/><path d="M194 57H446L439 319H201Z" fill="'+paint+'" stroke="'+accent+'" stroke-opacity=".65" stroke-width="2"/>';
+}
+function pedalTS(){
+ let s=pedalBase('url(#greenPaint)','#a7d279');
+ s+='<text x="320" y="83" text-anchor="middle" font-size="23" font-family="Georgia,serif" font-weight="bold" font-style="italic" fill="#e6ead6">Ibanez</text><text x="320" y="105" text-anchor="middle" font-size="10" letter-spacing="3" fill="#e3e8d4">TUBE SCREAMER</text>';
+ s+=knob(235,151,17,'DRIVE','#e4e6d8')+knob(320,151,17,'TONE','#e4e6d8')+knob(405,151,17,'LEVEL','#e4e6d8');
+ s+='<circle cx="320" cy="222" r="8" fill="#a9ff70" stroke="#d9ffb4" stroke-width="2"/><circle cx="320" cy="222" r="13" fill="none" stroke="#d9f9ad" stroke-opacity=".55"/><circle cx="320" cy="286" r="28" fill="url(#metal)" stroke="#414940" stroke-width="4"/><circle cx="320" cy="286" r="17" fill="#858d82" stroke="#edf1e8" stroke-width="2"/><path d="M307 286h26" stroke="#454d45" stroke-width="3"/>'+screw(204,68)+screw(436,68)+screw(204,311)+screw(436,311)+'</g>';
+ return s;
+}
+function pedalBD(){
+ let s=pedalBase('url(#bluePaint)','#8fbbec');
+ s+='<rect x="205" y="62" width="230" height="35" rx="4" fill="#d8e4ef" stroke="#24476d" stroke-width="2"/><text x="320" y="87" text-anchor="middle" font-size="24" font-weight="950" letter-spacing="-1" fill="#1d3550">BOSS</text><text x="320" y="113" text-anchor="middle" font-size="11" font-weight="800" letter-spacing="2" fill="#e9f1fa">BLUES DRIVER</text>';
+ s+=knob(235,166,17,'LEVEL','#161a1e')+knob(320,166,17,'TONE','#161a1e')+knob(405,166,17,'GAIN','#161a1e');
+ s+='<circle cx="320" cy="226" r="7" fill="#79ed69" stroke="#d8ffbc" stroke-width="2"/><circle cx="320" cy="292" r="28" fill="url(#metal)" stroke="#3a4247" stroke-width="4"/><circle cx="320" cy="292" r="17" fill="#858d91" stroke="#eef3f1" stroke-width="2"/><path d="M307 292h26" stroke="#454d52" stroke-width="3"/>'+screw(204,68)+screw(436,68)+screw(204,311)+screw(436,311)+'</g>';
+ return s;
+}
+function pedalMXR(){
+ let s=pedalBase('url(#yellowPaint)','#ffe99d');
+ s+='<text x="320" y="95" text-anchor="middle" font-size="15" font-weight="950" letter-spacing="4" fill="#25251a">MXR</text><text x="320" y="119" text-anchor="middle" font-size="12" font-weight="850" letter-spacing="2" fill="#29271a">DISTORTION +</text>';
+ s+=knob(260,177,19,'OUTPUT','#1a1b17')+knob(380,177,19,'DISTORTION','#1a1b17');
+ s+='<circle cx="320" cy="238" r="7" fill="#f4f2dd" stroke="#fff" stroke-width="2"/><circle cx="320" cy="294" r="29" fill="url(#metal)" stroke="#55513f" stroke-width="4"/><circle cx="320" cy="294" r="17" fill="#86877c" stroke="#f7f1dc" stroke-width="2"/><path d="M307 294h26" stroke="#45473f" stroke-width="3"/>'+screw(204,68)+screw(436,68)+screw(204,311)+screw(436,311)+'</g>';
+ return s;
+}
+function render(){
+ const item=current;
+ document.getElementById('modelName').textContent=item.name;
+ document.getElementById('modelRef').textContent='Visual basis: '+item.ref;
+ document.getElementById('modelDescription').textContent=item.desc;
+ document.getElementById('stageTitle').textContent=category==='AMP'?'Amplifier · Front view':'Stompbox · Top/front view';
+ document.getElementById('viewLabel').textContent=category==='AMP'?'CABINET / CONTROL PANEL DETAIL':'ENCLOSURE / KNOB / FOOTSWITCH DETAIL';
+ const art={deluxe:ampDeluxe,plexi:ampPlexi,jazz:ampJazz,ts808:pedalTS,bd2:pedalBD,distplus:pedalMXR};
+ svg.innerHTML=art[item.id]();
+ const img=document.getElementById('referencePhoto');
+ const noPhoto=document.getElementById('noPhoto');
+ img.style.display='block';noPhoto.style.display='none';
+ img.src=item.photo;img.onerror=function(){img.style.display='none';noPhoto.style.display='block';};
+ img.alt='Foto referensi '+item.ref;
+ const link=document.getElementById('referenceLink');link.href=item.url;
+}
+function setCategory(next){
+ category=next;
+ document.getElementById('ampTab').classList.toggle('active',next==='AMP');
+ document.getElementById('efxTab').classList.toggle('active',next==='EFX');
+ select.innerHTML='';
+ models[next].forEach(function(item){const opt=document.createElement('option');opt.value=item.id;opt.textContent=item.name+' — '+item.ref;select.appendChild(opt);});
+ current=models[next][0];select.value=current.id;render();
+}
+document.getElementById('ampTab').addEventListener('click',function(){setCategory('AMP');});
+document.getElementById('efxTab').addEventListener('click',function(){setCategory('EFX');});
+select.addEventListener('change',function(){current=models[category].find(function(item){return item.id===select.value;})||models[category][0];render();});
+setCategory('AMP');
+</script>
+</body>
+</html>
