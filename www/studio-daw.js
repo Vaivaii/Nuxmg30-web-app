@@ -32,6 +32,11 @@ let usbDiagnosticRecording = false;
 let recordingTrackId = '';
 let recordingStartPosition = 0;
 let recordingStartPerformanceTime = 0;
+let recordingWaveformTimer = 0;
+let recordingWaveformPollInFlight = false;
+let liveRecordingClipNode = null;
+let liveRecordingWaveform = [3];
+let liveRecordingInputRouteId = '';
 let pendingImportTrackId = '';
 let databasePromise = null;
 let mediaBuffers = new Map();
@@ -420,6 +425,10 @@ function renderProject() {
   const metrics = timelineMetrics();
   renderRuler(metrics);
   renderTrackRows();
+  if (recording) {
+    ensureLiveRecordingClipNode();
+    updateLiveRecordingClipGeometry();
+  }
   renderMixer();
   renderInspector();
   if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = project.tracks.length + ' tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
@@ -993,6 +1002,7 @@ function updatePlayheadFrame() {
     return;
   }
   renderPlayhead();
+  updateLiveRecordingClipGeometry();
   followPlayheadDuringPlayback();
   updateAudioMeters();
   if (project.metronomeEnabled && audioContext) {
@@ -1103,6 +1113,120 @@ async function togglePlayback() {
   else await startPlayback(playheadSeconds);
 }
 
+function getLiveRecordingElapsedSeconds() {
+  if (playing && audioContext) return Math.max(0, playheadSeconds - recordingStartPosition);
+  return Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000);
+}
+
+function waveformLevelsFromRecordingStats(stats, route) {
+  const channels = Array.isArray(stats?.channelWaveforms) ? stats.channelWaveforms : [];
+  if (!channels.length) return [];
+  const capturedMask = Number(stats.channelIndexMask) || route.channelIndexMask;
+  let positions = [];
+  try {
+    positions = selectUsbChannelPositions(capturedMask, route.channelIndexMask);
+  } catch (_) {
+    positions = channels.map((_, index) => index);
+  }
+  const selected = positions.map((position) => channels[position]?.peaks)
+    .filter((peaks) => Array.isArray(peaks) && peaks.length);
+  if (!selected.length) return [];
+  const length = Math.max(...selected.map((peaks) => peaks.length));
+  const levels = [];
+  for (let index = 0; index < length; index += 1) {
+    let peak = 0;
+    selected.forEach((peaks) => { peak = Math.max(peak, Number(peaks[index]) || 0); });
+    levels.push(Math.max(3, Math.min(100, Math.round(peak * 100))));
+  }
+  return levels;
+}
+
+function ensureLiveRecordingClipNode() {
+  if (!recording || !recordingTrackId) return null;
+  if (liveRecordingClipNode?.isConnected) return liveRecordingClipNode;
+  const lane = document.querySelector('[data-track-lane="' + recordingTrackId + '"]');
+  if (!lane) return null;
+  const node = document.createElement('div');
+  node.className = 'daw-clip daw-clip-live-recording';
+  node.dataset.liveRecordingClip = 'true';
+  node.setAttribute('aria-label', 'Live USB recording waveform');
+  node.style.pointerEvents = 'none';
+  node.style.zIndex = '4';
+  lane.appendChild(node);
+  liveRecordingClipNode = node;
+  updateLiveRecordingClipGeometry();
+  updateLiveRecordingClipWaveform();
+  return node;
+}
+
+function updateLiveRecordingClipGeometry() {
+  if (!recording || !recordingTrackId) return;
+  const node = ensureLiveRecordingClipNode();
+  if (!node) return;
+  const metrics = timelineMetrics();
+  const startSeconds = snapTime(recordingStartPosition, project);
+  const elapsedSeconds = getLiveRecordingElapsedSeconds();
+  const left = (startSeconds / metrics.barSeconds) * project.zoom;
+  const width = Math.max(24, (elapsedSeconds / metrics.barSeconds) * project.zoom);
+  node.style.left = left + 'px';
+  node.style.width = width + 'px';
+  const track = getTrack(recordingTrackId);
+  node.title = 'Recording ' + (track?.name || 'track') + ' · ' + formatClock(elapsedSeconds);
+}
+
+function updateLiveRecordingClipWaveform() {
+  const node = ensureLiveRecordingClipNode();
+  if (!node) return;
+  const track = getTrack(recordingTrackId);
+  const title = 'REC · ' + (track?.name || 'USB');
+  node.innerHTML = '<strong>' + safeText(title) + '</strong>' +
+    '<span class="daw-clip-fade daw-clip-fade-in"></span>' +
+    '<span class="daw-clip-fade daw-clip-fade-out"></span>' +
+    waveformMarkup(liveRecordingWaveform);
+}
+
+function stopLiveRecordingWaveformPolling() {
+  if (recordingWaveformTimer) window.clearInterval(recordingWaveformTimer);
+  recordingWaveformTimer = 0;
+  recordingWaveformPollInFlight = false;
+}
+
+function removeLiveRecordingClip() {
+  stopLiveRecordingWaveformPolling();
+  liveRecordingClipNode?.remove();
+  liveRecordingClipNode = null;
+  liveRecordingWaveform = [3];
+  liveRecordingInputRouteId = '';
+}
+
+function beginLiveRecordingWaveformPolling() {
+  stopLiveRecordingWaveformPolling();
+  const poll = async () => {
+    if (!recording || recordingWaveformPollInFlight) return;
+    const recorder = window.NUXStudioRecorder;
+    if (typeof recorder?.getRecordingStats !== 'function') return;
+    recordingWaveformPollInFlight = true;
+    try {
+      const stats = await recorder.getRecordingStats();
+      if (!recording || !stats?.recording) return;
+      const route = DAW_INPUT_ROUTES.find((item) => item.id === liveRecordingInputRouteId) || DAW_INPUT_ROUTES[0];
+      const levels = waveformLevelsFromRecordingStats(stats, route);
+      if (levels.length) {
+        liveRecordingWaveform = levels;
+        updateLiveRecordingClipWaveform();
+      }
+      updateLiveRecordingClipGeometry();
+    } catch (_) {
+      // The take remains recordable; a temporary stats-query failure only
+      // pauses the live preview and must not stop or interrupt USB capture.
+    } finally {
+      recordingWaveformPollInFlight = false;
+    }
+  };
+  void poll();
+  recordingWaveformTimer = window.setInterval(() => { void poll(); }, 200);
+}
+
 async function startDawRecording() {
   if (recording) {
     await stopDawRecording();
@@ -1138,14 +1262,19 @@ async function startDawRecording() {
     recording = true;
     recordingTrackId = track.id;
     recordingStartPosition = playheadSeconds;
+    recordingStartPerformanceTime = performance.now();
+    liveRecordingInputRouteId = inputRoute.id;
+    liveRecordingWaveform = [3];
     if (!playing) {
       playStartPosition = playheadSeconds;
       playStartContextTime = context ? context.currentTime : 0;
-      recordingStartPerformanceTime = performance.now();
       cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(updatePlayheadFrame);
     }
     updateTransport();
+    ensureLiveRecordingClipNode();
+    updateLiveRecordingClipGeometry();
+    beginLiveRecordingWaveformPolling();
     setStatus('Recording ' + track.name + ' · source ' + inputRoute.label +
       ' · raw USB capture ' + (result.channels || 2) + ' channel(s) from ' + (result.routeName || 'NUX MG-30') +
       '. The selected channel(s) will be routed into this track only.', 'ok');
@@ -1156,6 +1285,7 @@ async function startDawRecording() {
     recording = false;
     recordingTrackId = '';
     cancelAnimationFrame(animationFrame);
+    removeLiveRecordingClip();
     updateTransport();
     setStatus('DAW recording failed: ' + (error?.message || 'USB recording error'), 'warn');
   }
@@ -1173,6 +1303,7 @@ async function stopDawRecording() {
   recording = false;
   recordingTrackId = '';
   cancelAnimationFrame(animationFrame);
+  stopLiveRecordingWaveformPolling();
   updateTransport();
   try {
     const recorder = window.NUXStudioRecorder;
@@ -1187,6 +1318,7 @@ async function stopDawRecording() {
   } catch (error) {
     setStatus('Could not save DAW overdub: ' + (error?.message || 'WAV save error'), 'warn');
   } finally {
+    removeLiveRecordingClip();
     updateTransport();
     refreshQuickTakes();
   }
