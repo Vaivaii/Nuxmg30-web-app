@@ -152,13 +152,13 @@ test('Quick Record remains separate and passes multichannel mode without alterin
 test('Loopback is not mislabeled as USB Input 3/4; 3/4 is Wet Sync / Dry Out', () => {
   assert.ok(core.includes("id: 'usb-ch1-2-stereo'"));
   assert.ok(core.includes("label: 'MG-30 USB · Input 1–2 (Stereo + Host Loopback Mix)'"));
-  assert.ok(daw.includes('Loopback HP memakai jalur rekam Input 1–2, bukan bus USB terpisah'));
+  assert.ok(daw.includes('Phone loopback uses the USB Input 1–2 recording path, not a separate USB bus.'));
   assert.ok(core.includes("id: 'usb-wet-sync-3-4-stereo'"));
   assert.ok(core.includes("label: 'MG-30 USB · Input 3–4 (Wet Sync / Dry Out)'"));
   assert.doesNotMatch(core, /Loopback 3–4/);
-  assert.ok(daw.includes('Input 3–4 = Wet Sync (Dry Out mode).'));
-  assert.ok(daw.includes('pemisahan gitar dan playback saat Loopback ON belum terbukti.'));
-  assert.ok(daw.includes('Routing Mode Normal dan opsi Loopback ON'));
+  assert.ok(daw.includes('Inputs 3–4 = Wet Sync (Dry Out mode).'));
+  assert.ok(daw.includes('separation of guitar and playback while Loopback is ON has not been verified.'));
+  assert.ok(daw.includes('Routing Mode is Normal and Loopback is ON'));
   assert.ok(daw.includes('captureMode: \'diagnostic\''));
   assert.ok(daw.includes('channelStats'));
   assert.ok(daw.includes('USB IN '));

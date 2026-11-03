@@ -126,3 +126,8 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - Removed the standalone `studio-usb-output.js` diagnostic-panel module from the app page. The output-discovery / tone-test implementation remains in the repository and native USB audio output plugin remains registered, but the separate test card is no longer mounted in Track Settings.
 - Kept the DAW's actual Playback Output routing selector and persisted `project.outputRoute` value unchanged. Replaced the native-looking dropdown presentation with an app-styled custom details menu with larger 56px trigger and 58px option rows; choices update the same hidden native select and existing change handler.
 - Added regression assertions for English Track Input Routing copy, shared card palette, custom output menu behavior, and absence of the diagnostic card script.
+
+
+### English UI assertion follow-up
+- Run #436 failed only because the USB loopback regression test still expected the old Indonesian note string after the Track Input Routing copy was translated.
+- Updated the test to assert the equivalent English description while continuing to check Input 1–2 host loopback and Input 3–4 Wet Sync separately.
