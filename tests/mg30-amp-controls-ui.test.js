@@ -81,3 +81,42 @@ test('Mic selector styling is present without changing the existing rotary contr
   assert.match(css, /\.dial\{/);
   assert.doesNotMatch(css, /font:600 11px\/1\.25 inherit/);
 });
+
+
+test('DGLASS exposes two independent three-position frequency switches at original CC indices', () => {
+  const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block, 'Three-position switch catalogue must exist');
+  assert.match(block[1], /30:\s*\[/);
+  assert.match(block[1], /param:'lo mids freq',label:'LO MIDS FREQ',ccIndex:2/);
+  assert.match(block[1], /param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5/);
+  for (const value of [0,50,100]) assert.ok(block[1].includes('value:'+value));
+  for (const label of ['250 Hz','500 Hz','1 kHz','750 Hz','1.5 kHz','3 kHz']) {
+    assert.ok(block[1].includes("label:'"+label+"'"), 'Missing DGLASS frequency: '+label);
+  }
+});
+
+test('STARLIFT Contour has Vintage / Off / Modern top-middle-bottom positions on CC index 4', () => {
+  const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block);
+  assert.match(block[1], /31:\s*\[/);
+  assert.match(block[1], /param:'contour',label:'CONTOUR',ccIndex:4/);
+  for (const label of ['VINTAGE','OFF','MODERN']) assert.ok(block[1].includes("label:'"+label+"'"));
+  assert.match(block[1], /position:'TOP',value:0/);
+  assert.match(block[1], /position:'MIDDLE',value:50/);
+  assert.match(block[1], /position:'BOTTOM',value:100/);
+});
+
+test('three-position switch controls use existing CC read/write path and do not borrow old generic knob values', () => {
+  assert.match(html, /AMP_THREE_POSITION_SWITCHES\[modelIndex\][\s\S]*?sort\(\(a,b\)=>a\.ccIndex-b\.ccIndex\)/);
+  assert.match(html, /control\.type==='three-way-switch'\)return undefined/);
+  assert.match(html, /querySelectorAll\('\.switch-position-button'\)/);
+  assert.match(html, /sendBlockParam\(selected,param,value\)/);
+  assert.match(html, /switchButtons\.forEach\(button/);
+  assert.match(html, /control\.ccIndex\]\);if\(selectorParam/);
+});
+
+test('IR Collection status prefixes are translated when CRC/device text is appended', () => {
+  const english = readFileSync(new URL('../www/english-ui.js', import.meta.url), 'utf8');
+  assert.match(english, /"IR tersimpan di perangkat · CRC ":"IR stored on device · CRC "/);
+  assert.match(english, /"Import WAV ke salah satu dari 24 slot Collection MG-30\. Pilih slot, lalu validasi dan kirim IR langsung\.":"Import WAV to one of the 24 MG-30 Collection slots/);
+});
