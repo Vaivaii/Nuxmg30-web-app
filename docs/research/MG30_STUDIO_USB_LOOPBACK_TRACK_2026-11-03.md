@@ -315,3 +315,55 @@ Evidence references:
 - NUX MG-30 product page describing USB audio modes: https://www.nuxaudio.id/products/mg-30
 - USB descriptor evidence is from the user's supplied `ir user import.pcapng` and `nam import.pcapng`; no audio streaming data is present in these captures.
 
+
+
+## Handoff correction — the pedal's routing mode was the actual mistake (3 November 2026)
+
+This is the authoritative correction to the earlier Loopback implementation notes above. The previous app guidance incorrectly told the user to set the pedal's **USB ROUTING MODE = LOOPBACK** to capture phone/host playback. That is not the documented QuickTone workflow for host playback.
+
+### Original QuickTone behavior (Windows 2.6.7.16)
+
+The supplied executable contains separate USB Settings strings for:
+- `Routing Mode`: `Normal`, `Reamp`, `Dry Out`, and `Loopback`.
+- A separate `Loopback` control/label.
+- `Wet Sync in Input 3/4`.
+- `Input 1/2 - Output 1/2` and `Input 1/2 - Output 3/4`.
+- `Recording Level` and `Playback Level`.
+
+The string table alone proves the UI labels exist, but not their semantics. The guide "NUX MG-30 Secret Tips (FW: v2.3)" (Monk Custom, 27 June 2021) explicitly explains the distinction:
+1. **Normal mode + Loopback enabled**: includes audio playback from the computer/host in the recording/stream.
+2. **Loopback routing mode**: makes the MG-30's internal drum machine and phrase looper recordable over USB.
+3. **Dry Out mode**: USB Input 1/2 is dry guitar; optional wet guitar is exposed on USB Input 3/4 using "Wet Sync in Input 3/4".
+4. **Input 1/2 - Output 3/4** is the distinct Re-Amp routing option described later in the same guide.
+
+NUX's current MG-30 product page lists NORMAL, USB Loopback, REAMP and DRY OUT as distinct USB audio routing modes. The official product page does not describe channel-level mapping.
+
+### Correct setting for the user's phone/host playback goal
+
+For capturing audio played by the connected phone/host, the target configuration is **Routing Mode = NORMAL, with the separate Loopback option enabled**. Do not set the pedal's Routing Mode to LOOPBACK for this goal. The latter is for internal drum machine / phrase-looper audio. Do not enable Reamp or Dry Out for host playback.
+
+The guide refers to computer/host playback. Applying this to Android phone playback over USB is the closest supported interpretation, but actual Android host/USB playback behavior still requires a physical test on the user's setup.
+
+### Correct channel labels and app changes
+
+- USB Input 1/2 remains the normal stereo input route.
+- USB Input 3/4 must be labelled **Wet Sync (Dry Out)**, not Loopback.
+- The old persisted route ID `usb-loopback-3-4-stereo` is migrated to `usb-wet-sync-3-4-stereo`; no track clips or recorded media are deleted.
+- A raw 4-channel diagnostic capture mode (`captureMode: diagnostic`, channel-index mask `0xF`) was added. It preserves the interleaved 4-channel WAV and computes per-channel sample count, peak, RMS, and dBFS. It does not import the diagnostic file to any DAW track.
+- This diagnostic identifies which MG-30 USB IN channel(s) contain host playback after the pedal is set to **Normal + Loopback enabled**. The QuickTone guide does not specify the USB IN channel pair, and the USB descriptor PCAPs contain no isochronous audio samples; therefore no channel pair should yet be hardcoded as host Loopback.
+- This diagnostic implementation is experimental and must pass CI/build and physical verification before an APK is offered as ready.
+
+### Original USB topology, limits of existing PCAP evidence
+
+The supplied USB descriptors show a four-channel, 24-bit USB Audio IN stream on endpoint `0x83`, and a four-channel, 24-bit USB Audio OUT stream on endpoint `0x01` (with feedback endpoint `0x81`). MIDI uses separate bulk endpoints `0x02` OUT and `0x82` IN. The supplied IR/NAM PCAPs capture MIDI traffic and USB descriptors, not isochronous audio payloads. They cannot establish which channel index carries the host Loopback mix.
+
+### Evidence / source distinction
+
+- **QuickTone executable strings (user-supplied)**: prove the listed USB Settings controls and route labels exist; strings by themselves do not prove their audio semantics.
+- **Monk Custom guide**: supports the Normal + Loopback host-playback distinction and Dry Out Input 1/2 vs Wet Sync Input 3/4 distinction.
+  https://monkcustom.blogspot.com/2021/06/NUXMG-30SecretTips.html
+- **NUX official MG-30 page**: confirms the four routing modes are separate options, without documenting the channel map.
+  https://www.nuxaudio.id/products/mg-30
+- **User-supplied USB PCAP descriptors**: support the 4-in/4-out UAC topology only; no isochronous audio payload was present.
+- **Not yet verified**: the exact USB IN channel(s) containing Android host playback after Normal + Loopback is enabled, and whether the current Android build records that mix on the user's phone/firmware.
+
