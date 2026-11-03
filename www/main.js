@@ -274,7 +274,7 @@ $('guitarPlayback')?.addEventListener('ended', () => {
   $('guitarPlayLabel').textContent = 'PLAY';
 });
 async function startGuitarRecording(options = {}) {
-  const captureMode = ['loopback', 'multichannel'].includes(options?.captureMode) ? options.captureMode : 'normal';
+  const captureMode = ['loopback', 'multichannel', 'diagnostic'].includes(options?.captureMode) ? options.captureMode : 'normal';
   const channelIndexMask = Math.max(0, Math.min(255, Math.round(Number(options?.channelIndexMask) || 0)));
   const isDawCapture = captureMode !== 'normal';
   if (!isNative()) {
@@ -314,7 +314,7 @@ async function startGuitarRecording(options = {}) {
 async function stopGuitarRecording() {
   if (!isNative() || !recording) return null;
   const captureMode = recordingCaptureMode;
-  const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel';
+  const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel' || captureMode === 'diagnostic';
   let savedTake = null;
   if (!isDawCapture) {
     $('guitarStopBtn').disabled = true;
