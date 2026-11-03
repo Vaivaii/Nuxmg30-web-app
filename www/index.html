@@ -2385,8 +2385,8 @@ const MG30_AMP_ART_SKIN_BY_MODEL=Object.freeze({
 });
 function renderAmpArtworkForApp(modelName,basis){
  const isNam=AMP_NAM_SLOT_PROFILES.some(profile=>profile.name===modelName)
-  ||/\\bNAM\\s*\\d+\\b/i.test(modelName)
-  ||/·\\s*NAM profile$/i.test(modelName);
+  ||/\bNAM\s*\d+\b/i.test(modelName)
+  ||/·\s*NAM profile$/i.test(modelName);
  const skin=isNam?"nam":(MG30_AMP_ART_SKIN_BY_MODEL[modelName]||MG30_AMP_ART_SKIN_BY_MODEL[modelName.replace(/ · IMAGE$/,"")]||"nam");
  const model={name:modelName,ref:basis||modelName,skin};
  const artwork=renderAmpHeadArtwork(model);
