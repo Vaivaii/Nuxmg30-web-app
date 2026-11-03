@@ -55,9 +55,13 @@ function displayDevice(device) {
   const rates = (device.sampleRates || []).length ? device.sampleRates.join(' / ') + ' Hz' : 'Rate tidak dilaporkan Android';
   const channels = (device.channelCounts || []).length ? device.channelCounts.join(' / ') + ' channel' : 'Kanal belum dilaporkan';
   const enc = (device.encodings || []).map((x) => x === 2 ? 'PCM 16-bit' : (x === 4 ? 'PCM float 32-bit' : (x === 21 ? 'PCM 24-bit packed' : (x === 22 ? 'PCM 32-bit integer' : 'encoding ' + x))));
+  const indexMasks = (device.channelIndexMasks || [])
+    .map((mask) => '0x' + Number(mask).toString(16).toUpperCase());
   return '<div class="audio-device-card"><div><strong>' + safeText(device.name || 'Audio input') + '</strong><small>' +
     safeText(device.typeName || device.type || 'Input audio') + ' · ' + safeText(rates) + ' · ' + safeText(channels) +
-    (enc.length ? '<br>' + safeText(enc.join(', ')) : '') + '</small></div><span class="audio-device-tag">' +
+    (enc.length ? '<br>' + safeText(enc.join(', ')) : '') +
+    (indexMasks.length ? '<br>Channel index masks: ' + safeText(indexMasks.join(' / ')) : '<br>Channel index masks: not reported') +
+    '</small></div><span class="audio-device-tag">' +
     (usb ? 'USB INPUT' : 'INPUT') + '</span></div>';
 }
 async function inspectAudio() {
