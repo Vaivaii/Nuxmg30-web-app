@@ -308,15 +308,15 @@ function ampSvg(m){
  if(m.skin==='blackface'){
   s+=shell('#15191b','#8c938d')+handle;
   s+='<rect x="82" y="116" width="596" height="100" fill="#101516" stroke="#bbc1ba" stroke-width="1.6"/>';
-  const twin=raw.includes('Twin'),super=raw.includes('Super'),vibro=raw.includes('Vibro');
-  const knobCount=twin?8:super?8:vibro?7:6;
+  const twin=raw.includes('Twin'),isSuper=raw.includes('Super'),vibro=raw.includes('Vibro');
+  const knobCount=twin?8:isSuper?8:vibro?7:6;
   const inputs=twin?4:2;
   for(let i=0;i<inputs;i++)s+=jack(105+i*19,153,5);
   s+=toggle(twin?183:149,153);
   for(let i=0;i<knobCount;i++)s+=k((twin?218:205)+i*(twin?51:61),164,twin?8.2:9,'',true);
   s+='<rect x="82" y="224" width="596" height="113" fill="#252c2b" stroke="#afb6af" stroke-width="2"/><rect x="89" y="231" width="582" height="99" fill="url(#headMesh)"/>';
   word(190,301,'Fender',50,'Brush Script MT,Segoe Script,cursive','#f5f1e8','middle','font-style="italic" font-weight="bold" stroke="#333b38" stroke-width=".6"');
-  const modelBadge=twin?'TWIN REVERB':super?'SUPER-SONIC':vibro?'VIBRO-KING':raw.includes('Princeton')?'PRINCETON REVERB':'DELUXE REVERB';
+  const modelBadge=twin?'TWIN REVERB':isSuper?'SUPER-SONIC':vibro?'VIBRO-KING':raw.includes('Princeton')?'PRINCETON REVERB':'DELUXE REVERB';
   s+=label(548,292,modelBadge,10,'#e7eae2',850,1.4);
   return s+feet+screw(72,103)+screw(688,103);
  }
