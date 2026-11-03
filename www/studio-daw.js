@@ -242,9 +242,16 @@ async function decodeBlob(blob) {
 
 function analyzeWaveform(buffer, count = 128) {
   if (!buffer?.numberOfChannels || !buffer.length) return [];
-  const first = buffer.getChannelData(0);
-  const second = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : first;
-  return analyzeWaveformPeaks(first, second, count);
+  const peaks = new Array(count).fill(3);
+  for (let channel = 0; channel < buffer.numberOfChannels; channel += 2) {
+    const left = buffer.getChannelData(channel);
+    const right = channel + 1 < buffer.numberOfChannels ? buffer.getChannelData(channel + 1) : left;
+    const pairPeaks = analyzeWaveformPeaks(left, right, count);
+    for (let index = 0; index < count; index += 1) {
+      peaks[index] = Math.max(peaks[index], Number(pairPeaks[index]) || 3);
+    }
+  }
+  return peaks;
 }
 
 function connectClipWithFade(context, source, clip, elapsedIntoClip, playbackDuration, when, trackGain) {
@@ -413,7 +420,7 @@ function renderProject() {
   renderTrackRows();
   renderMixer();
   renderInspector();
-  if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = '4 tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
+  if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = project.tracks.length + ' tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
   updatePlayheadReadout();
   updateTransport();
 }
@@ -445,7 +452,7 @@ function renderPlayhead() {
     holder.style.width = metrics.width + 'px';
     holder.style.setProperty('--daw-timeline-width', metrics.width + 'px');
     holder.querySelectorAll('.daw-track-lane').forEach((lane) => { lane.style.width = metrics.width + 'px'; });
-    if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = '4 tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
+    if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = project.tracks.length + ' tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
   }
   const left = Math.max(0, (playheadSeconds / metrics.barSeconds) * project.zoom);
   const playhead = $('dawGlobalPlayhead');
@@ -485,6 +492,7 @@ function updateTransport() {
   }
   const armed = project.tracks.some((track) => track.armed);
   if (record) record.disabled = !recording && !armed;
+  syncLoopbackPanel();
 }
 
 function scheduleProjectSave() {
@@ -583,12 +591,12 @@ async function createNewProject() {
   playheadSeconds = 0;
   renderProject();
   await saveProject(false);
-  setStatus('New four-track project created. Backing and Guitar are prepared; Bass and Vocals are empty.', 'ok');
+  setStatus('New five-track project created. Backing, Guitar and Loopback are prepared; Bass and Vocals are empty.', 'ok');
 }
 
 async function addAudioBlobToTrack(blob, trackId, fileName, startAt = playheadSeconds, metadata = {}) {
   const track = getTrack(trackId);
-  if (!track) throw new Error('Select one of the four DAW tracks first.');
+  if (!track) throw new Error('Select a DAW track first.');
   if (!(blob instanceof Blob) || !blob.size) throw new Error('The selected audio file is empty.');
   if (blob.size > 180 * 1024 * 1024) throw new Error('This audio file is too large for a mobile DAW project (180 MB limit per source).');
   setStatus('Importing and decoding ' + fileName + '…');
@@ -614,10 +622,14 @@ async function addAudioBlobToTrack(blob, trackId, fileName, startAt = playheadSe
     sampleRate: Number(metadata.sampleRate) || buffer.sampleRate,
     channels: Number(metadata.channels) || buffer.numberOfChannels,
     waveform: analyzeWaveform(buffer),
+    captureMode: String(metadata.captureMode || 'file'),
+    channelIndexMask: Number(metadata.channelIndexMask) || 0,
   });
   selectedTrackId = track.id;
   selectedClipId = track.clips[track.clips.length - 1].id;
-  track.input = track.id === 'guitar' ? 'MG-30 USB / imported audio' : 'Audio file · imported';
+  if (track.id === 'guitar') track.input = 'MG-30 USB / imported audio';
+  else if (track.id === 'loopback') track.input = metadata.captureMode === 'loopback' ? 'MG-30 USB Loopback' : 'Audio file · imported';
+  else track.input = 'Audio file · imported';
   renderProject();
   commitHistoryChange();
   await saveProject(false);
@@ -703,7 +715,9 @@ function armTrack(trackId) {
   selectedClipId = '';
   renderProject();
   scheduleProjectSave();
-  setStatus(getTrack(trackId).name + ' is armed. Recording uses the verified MG-30 USB input only.', 'ok');
+  setStatus(trackId === 'loopback'
+    ? 'Loopback lane armed. Confirm USB ROUTING MODE = LOOPBACK on the MG-30 before recording.'
+    : getTrack(trackId).name + ' is armed. Recording uses the verified MG-30 USB input only.', 'ok');
 }
 
 function deleteSelectedClip() {
@@ -1069,7 +1083,8 @@ async function startDawRecording() {
     return;
   }
   try {
-    const result = await recorder.start();
+    const captureMode = track.id === 'loopback' ? 'loopback' : 'normal';
+    const result = await recorder.start({ captureMode });
     if (!result?.recording) throw new Error('The MG-30 USB recorder did not confirm that recording started.');
     const context = await getAudioContext();
     recording = true;
@@ -1082,7 +1097,14 @@ async function startDawRecording() {
       animationFrame = requestAnimationFrame(updatePlayheadFrame);
     }
     updateTransport();
-    setStatus('Recording ' + track.name + ' from the verified MG-30 USB input. Record one overdub track at a time.', 'ok');
+    if (track.id === 'loopback') {
+      const channelInfo = Number(result.channels || 2) + ' channel(s)' +
+        (result.channelLayout ? ' · ' + result.channelLayout : '');
+      setStatus('USB LOOPBACK CAPTURE active on its own track. Capturing ' + channelInfo +
+        ' from ' + (result.routeName || 'NUX MG-30') + '. Play the phone audio through the MG-30 now.', 'ok');
+    } else {
+      setStatus('Recording ' + track.name + ' from the verified MG-30 USB input. Record one overdub track at a time.', 'ok');
+    }
   } catch (error) {
     if (recorder.isRecording()) {
       try { await recorder.stop(); } catch (_) {}
@@ -1111,7 +1133,8 @@ async function stopDawRecording() {
     if (!take?.path) throw new Error('The MG-30 recorder did not return a saved WAV take.');
     await importQuickTake(take, trackId, startAt);
     const track = getTrack(trackId);
-    setStatus('Overdub saved on ' + (track?.name || 'track') + ': ' + take.fileName, 'ok');
+    setStatus((trackId === 'loopback' ? 'USB Loopback saved on its separate track: ' : 'Overdub saved on ' + (track?.name || 'track') + ': ') + take.fileName +
+      ' · ' + (take.channels || 2) + ' ch / ' + (take.sampleRate || 48000) + ' Hz.', 'ok');
   } catch (error) {
     setStatus('Could not save DAW overdub: ' + (error?.message || 'WAV save error'), 'warn');
   } finally {
@@ -1317,6 +1340,106 @@ function updateProjectField(field, value) {
   scheduleProjectSave();
 }
 
+
+function addLoopbackPanelStyles() {
+  if ($('dawLoopbackPanelStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'dawLoopbackPanelStyles';
+  style.textContent = `
+    #page-studio .daw-loopback-panel{margin:14px 0;padding:14px;border:1px solid rgba(83,212,199,.28);border-radius:13px;background:linear-gradient(145deg,rgba(20,54,54,.72),rgba(13,22,25,.92));color:#e3f3f1}
+    #page-studio .daw-loopback-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    #page-studio .daw-loopback-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#78d7cf}
+    #page-studio .daw-loopback-panel h4{margin:4px 0 5px;font-size:15px;font-weight:800}
+    #page-studio .daw-loopback-panel p{margin:0;color:#aabfbd;font-size:10px;line-height:1.5}
+    #page-studio .daw-loopback-button{width:100%;min-height:42px;margin-top:12px;padding:10px;border:1px solid rgba(83,212,199,.45);border-radius:9px;background:rgba(43,143,135,.2);color:#d9fffa;font-size:10px;font-weight:850;letter-spacing:.045em}
+    #page-studio .daw-loopback-button.recording{background:rgba(174,63,63,.18);border-color:rgba(232,120,120,.38);color:#ffd0d0}
+    #page-studio .daw-loopback-button:disabled{opacity:.42}
+    #page-studio .daw-loopback-status{margin-top:9px;padding:9px 10px;border-radius:8px;background:rgba(148,163,184,.08);color:#c7d6d4;font-size:10px;line-height:1.5}
+    #page-studio .daw-loopback-status.ok{background:rgba(55,143,126,.14);color:#a9e7dd}
+    #page-studio .daw-loopback-status.warn{background:rgba(174,119,42,.13);color:#efd09a}
+    #page-studio .daw-loopback-note{display:block;margin-top:9px;color:var(--muted,#9aa9b5);font-size:9px;line-height:1.5}
+  `;
+  document.head.appendChild(style);
+}
+
+function setLoopbackPanelStatus(message, kind = '') {
+  const node = $('dawLoopbackStatus');
+  if (!node) return;
+  node.textContent = String(message || '');
+  node.classList.remove('ok', 'warn');
+  if (kind) node.classList.add(kind);
+}
+
+function syncLoopbackPanel() {
+  const button = $('dawLoopbackRecord');
+  const status = $('dawLoopbackStatus');
+  if (!button || !status) return;
+  const loopbackTrack = getTrack('loopback');
+  const active = recording && recordingTrackId === 'loopback';
+  const otherRecording = recording && !active;
+  button.disabled = !Capacitor.isNativePlatform() || otherRecording;
+  button.classList.toggle('recording', active);
+  button.textContent = active ? '■ STOP USB LOOPBACK CAPTURE' : '● START USB LOOPBACK CAPTURE';
+  if (active) {
+    status.textContent = 'Merekam input USB MG-30 ke lane Loopback. Audio tidak digabung ke track Backing/Guitar.';
+    status.classList.add('ok');
+    status.classList.remove('warn');
+    return;
+  }
+  const clips = loopbackTrack?.clips || [];
+  const latest = clips[clips.length - 1];
+  status.classList.remove('ok', 'warn');
+  if (otherRecording) {
+    status.textContent = 'Track ' + (getTrack(recordingTrackId)?.name || recordingTrackId) + ' sedang merekam. Hentikan sebelum memulai Loopback.';
+  } else if (latest) {
+    status.textContent = 'Loopback siap · ' + clips.length + ' klip tersimpan · take terakhir ' +
+      (latest.channels || 2) + ' ch / ' + (latest.sampleRate || 48000) + ' Hz.';
+  } else {
+    status.textContent = 'Belum ada take Loopback. Pastikan USB ROUTING MODE pedal = LOOPBACK, lalu mulai capture dan putar audio dari HP melalui MG-30.';
+  }
+}
+
+function mountLoopbackPanel() {
+  const host = $('dawTrackSettingsPage');
+  const projectSettings = host?.querySelector('.daw-project-settings');
+  if (!host || !projectSettings || $('dawLoopbackPanel')) return;
+  addLoopbackPanelStyles();
+  const panel = document.createElement('section');
+  panel.id = 'dawLoopbackPanel';
+  panel.className = 'daw-loopback-panel';
+  panel.innerHTML = `
+    <div class="daw-loopback-head">
+      <div>
+        <span class="daw-loopback-eyebrow">USB AUDIO · LOOPBACK INPUT</span>
+        <h4>Phone Audio → MG-30 → Loopback Track</h4>
+        <p>Capture the MG-30 USB Loopback input as a separate clip on the dedicated Loopback lane. The recording is not inserted into the Backing or Guitar track.</p>
+      </div>
+    </div>
+    <button type="button" class="daw-loopback-button" id="dawLoopbackRecord">● START USB LOOPBACK CAPTURE</button>
+    <div class="daw-loopback-status" id="dawLoopbackStatus" role="status" aria-live="polite">Pastikan ROUTING MODE pedal = LOOPBACK. Aplikasi tidak mengubah mode pedal secara otomatis.</div>
+    <small class="daw-loopback-note">Untuk playback paling stabil, import file lagu ke track Backing lalu jalankan DAW Play sambil merekam Loopback. Bisa juga memakai pemutar musik HP, tetapi MG30 Studio harus tetap terlihat (atau gunakan split-screen) agar Android tidak menghentikan sesi capture ketika aplikasi masuk latar. Semua kanal USB yang tersedia akan dipertahankan bila endpoint mendukung multichannel; arti setiap kanal masih perlu diverifikasi dari hasil capture fisik.</small>
+  `;
+  host.insertBefore(panel, projectSettings);
+  $('dawLoopbackRecord')?.addEventListener('click', async () => {
+    if (recording && recordingTrackId === 'loopback') {
+      await stopDawRecording();
+      return;
+    }
+    if (recording) {
+      setLoopbackPanelStatus('Hentikan rekaman pada track lain sebelum memulai Loopback.', 'warn');
+      return;
+    }
+    armTrack('loopback');
+    await startDawRecording();
+  });
+  if (!Capacitor.isNativePlatform()) {
+    $('dawLoopbackRecord').disabled = true;
+    setLoopbackPanelStatus('USB Loopback recording tersedia dari APK Android.', 'warn');
+  } else {
+    syncLoopbackPanel();
+  }
+}
+
 function syncStudioPinnedControls() {
   const dock = $('dawStudioDock');
   const appNav = document.querySelector('.nav');
@@ -1391,6 +1514,7 @@ function setStudioMode(mode) {
 
 function bindEvents() {
   syncStudioPinnedControls();
+  mountLoopbackPanel();
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
   document.querySelector('.nav')?.addEventListener('click', (event) => {
     if (event.target.closest('button[data-page="studio"]')) {
@@ -1556,7 +1680,7 @@ async function initDaw() {
   try {
     await openDatabase();
     await populateSavedProjects();
-    setStatus('4-track Mini DAW ready. Backing and Guitar are prepared; Bass and Vocals are ready for import or one-at-a-time overdubs.', 'ok');
+    setStatus('5-track Mini DAW ready. Backing, Guitar and a dedicated USB Loopback lane are prepared; Bass and Vocals are ready for import or overdubs.', 'ok');
   } catch (error) {
     setStatus('Project storage could not open: ' + (error?.message || 'IndexedDB unavailable'), 'warn');
   }
