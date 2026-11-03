@@ -284,6 +284,21 @@ function ampSvg(m){
   s+=zipHead('#111619','#69716e','#121719');s+='<rect x="82" y="116" width="596" height="139" fill="#aeb6b4" stroke="#e0e3dd" stroke-width="2"/><rect x="90" y="124" width="580" height="123" fill="url(#headDiamond)"/>';s+='<rect x="276" y="135" width="208" height="50" rx="2" fill="#d5d8d3" stroke="#6d7470" stroke-width="2"/>'+word(380,168,'Boogie',37,'Georgia,serif','#252b29','middle','font-weight="bold"');s+='<rect x="82" y="261" width="596" height="76" fill="#151a1c" stroke="#818985" stroke-width="1.5"/>';s+=jack(105,300,5);for(let i=0;i<9;i++)s+=k(155+i*52,300,8.2,'',true);s+=toggle(640,300)+led(666,300,'#c83d35');return s+feet+screw(72,103)+screw(688,103);
  }
 
+
+ // VOX AC family: black upper face with cream perimeter piping and gold VOX badge;
+ // diamond cloth occupies the lower face, controls remain on a narrow upper ledge.
+ if(raw==='Class A15'||raw==='Class A30'){
+  s+=zipHead('#17191a','#5c6260','#101415');
+  s+='<rect x="82" y="116" width="596" height="91" fill="#111617" stroke="#d6c69d" stroke-width="2"/>';
+  s+='<rect x="91" y="124" width="578" height="75" fill="#171c1d" stroke="#858b83" stroke-width="1"/>';
+  s+='<rect x="105" y="139" width="93" height="45" rx="2" fill="#d5c39a" stroke="#f3e4c2" stroke-width="1.5"/>'+word(151,170,'VOX',29,'Georgia,serif','#29241c','middle','font-weight="bold"');
+  const voxCount=raw==='Class A30'?8:6;
+  for(let i=0;i<voxCount;i++)s+=k(235+i*(raw==='Class A30'?48:61),162,7.8,'',true);
+  s+='<rect x="82" y="216" width="596" height="121" fill="#3b2922" stroke="#d2c098" stroke-width="2"/><rect x="90" y="224" width="580" height="105" fill="url(#headDiamond)"/>';
+  s+=label(598,322,raw==='Class A30'?'AC30':'AC15',8,'#e6d5b4',800,1.2);
+  return s+feet+screw(72,103)+screw(688,103);
+ }
+
  // ROLAND JC-120: head-format visual, with the original two-channel control grouping and Roland badge.
  if(m.skin==='roland'){
   s+=shell('#14191b','#79817e')+handle;
