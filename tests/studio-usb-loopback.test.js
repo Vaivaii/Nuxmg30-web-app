@@ -147,7 +147,7 @@ test('Loopback is not mislabeled as USB Input 3/4; 3/4 is Wet Sync / Dry Out', (
   assert.doesNotMatch(core, /Loopback 3–4/);
   assert.ok(daw.includes('Input 3–4 = Wet Sync (Dry Out mode).'));
   assert.ok(daw.includes('pemisahan gitar dan playback saat Loopback ON belum terbukti.'));
-  assert.ok(daw.includes('Normal + Loopback option'));
+  assert.ok(daw.includes('Routing Mode Normal dan opsi Loopback ON'));
   assert.ok(daw.includes('captureMode: \'diagnostic\''));
   assert.ok(daw.includes('channelStats'));
   assert.ok(daw.includes('USB IN '));
