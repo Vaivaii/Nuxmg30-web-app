@@ -367,3 +367,49 @@ The supplied USB descriptors show a four-channel, 24-bit USB Audio IN stream on 
 - **User-supplied USB PCAP descriptors**: support the 4-in/4-out UAC topology only; no isochronous audio payload was present.
 - **Not yet verified**: the exact USB IN channel(s) containing Android host playback after Normal + Loopback is enabled, and whether the current Android build records that mix on the user's phone/firmware.
 
+
+
+## Physical raw USB input diagnostic — four-channel capture result (3 November 2026, 17:00 WIB)
+
+The user supplied both the Studio diagnostic screenshot and the exact raw WAV written by the diagnostic UI:
+
+- WAV: `MG30_USB_Raw4ch_Diagnostic_20261103_170049.wav`
+- Duration: 13.900 s
+- Format: 48,000 Hz, 4-channel, signed 24-bit PCM
+- File size: 8,006,444 bytes (matches the UI's reported byte count)
+- SHA-256: `9202918e9bade3905b7a6e478287024e2b55050d6be0413fdc68557ec6a56f8f`
+- UI confirms endpoint `USB-Audio - NUX MG-30`, actual channels = 4, requested mask = `0xF`, actual mask = `0xF`.
+
+Independent analysis of the supplied WAV confirms:
+
+| USB IN channel | Peak | RMS | Nonzero samples |
+|---|---:|---:|---:|
+| 1 | -0.044 dBFS | -12.347 dBFS | 667,200 |
+| 2 | -0.044 dBFS | -11.969 dBFS | 667,200 |
+| 3 | -infinity | -infinity | 0 |
+| 4 | -infinity | -infinity | 0 |
+
+Channels 3 and 4 are exactly zero for all 667,200 sample frames. Channels 1 and 2 both contain continuous nonzero stereo audio. This independently matches the app's on-screen results (Input 1/2 peak approximately -0.0 dBFS, RMS -12.3/-12.0 dBFS; Input 3/4 silent).
+
+### What this establishes
+
+1. The Android diagnostic successfully opened the named MG-30 USB Audio input stream and captured a true four-channel interleaved WAV with requested and actual channel-index mask `0xF`. The diagnostic capture path is physically working on this handset/device connection.
+2. For this tested state, the active stereo signal is on USB IN 1–2; USB IN 3–4 carry no samples. The DAW's ordinary `MG-30 USB · Input 1–2 (Stereo)` route matches the measured active pair. Do not label Input 3–4 as host Loopback based on the earlier assumption.
+3. If the stimulus during this take was phone/host playback with guitar and internal drum/phrase-looper sources absent, then this is the first physical evidence that the host playback return is present on USB IN 1–2 under the tested Normal + separate Loopback-enabled configuration. In that case, expose/use Input 1–2 Stereo for the host-playback return; keep Input 3–4 labelled only as Wet Sync (Dry Out).
+4. The source stimulus and exact pedal setting are not encoded in the WAV or screenshot. The app was instructed immediately before this test to use Routing Mode = Normal and the separate Loopback option = ON, but the screenshot does not show the pedal's USB settings. Until the user confirms the playback stimulus and pedal setting, record the channel result as measured fact and the host-Loopback semantic as conditional rather than absolute.
+
+### Signal-level note
+
+The largest samples in channels 1/2 reach 0.995 full scale (about -0.044 dBFS), with many samples at that ceiling. The recorded peak is therefore very close to digital full scale. For subsequent tests, lower the host/playback or MG-30 recording level by a few dB if audible distortion or flattened peaks are present. Do not change channel mapping to solve a level issue.
+
+### Implementation impact
+
+- Do not keep a dedicated DAW source labelled `Loopback 3–4` on the basis of the earlier assumption.
+- Maintain the four-channel raw diagnostic as an optional test tool; it has now been verified to return mask `0xF` and preserve per-channel activity data on the user's physical setup.
+- For the tested active stereo pair, the existing Input 1–2 Stereo source is correct. Any later UI copy should explain that Normal + Loopback may return host playback via the normal stereo USB capture pair; do not confuse it with Wet Sync Input 3–4 or the separate pedal Loopback routing mode.
+- Do not alter NAM, IR User/Third Party or Collection import, or MIDI mappings as part of this routing correction.
+
+### Next controlled confirmation
+
+Ask the user only to confirm two test conditions: (a) whether the audio played during this 13.9-second take was phone/host music (rather than guitar, MG-30 drums/phrase looper, or another source), and (b) whether the pedal was in Routing Mode = Normal with the separate Loopback option enabled. If both are yes, mark host playback return on USB IN 1–2 as physically verified for this device/firmware/handset setup. If not, repeat the test with phone/host music only and the stated routing.
+
