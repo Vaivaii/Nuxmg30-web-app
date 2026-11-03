@@ -837,18 +837,23 @@ const AMP_QUICKTONE_LAYOUTS = [
  * User-confirmed three-position controls from original MG-30 panel photos.
  * QuickTone switch range is 0..100; three positions are represented at 0/50/100.
  */
+/*
+ * Labels and physical positions are transcribed from the user's MG-30 display photos.
+ * Raw CC values for each frame are NOT yet validated. Keep these controls read-only
+ * until a QuickTone capture maps each physical position to its exact wire value.
+ */
 const AMP_THREE_POSITION_SWITCHES = {
   30: [
     {param:'lo mids freq',label:'LO MIDS FREQ',ccIndex:2,type:'three-way-switch',choices:[
-      {label:'250 Hz',position:'TOP',value:0},{label:'500 Hz',position:'MIDDLE',value:50},{label:'1 kHz',position:'BOTTOM',value:100}
+      {label:'500 Hz',position:'TOP'},{label:'1 kHz',position:'MIDDLE'},{label:'250 Hz',position:'BOTTOM'}
     ]},
     {param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5,type:'three-way-switch',choices:[
-      {label:'750 Hz',position:'TOP',value:0},{label:'1.5 kHz',position:'MIDDLE',value:50},{label:'3 kHz',position:'BOTTOM',value:100}
+      {label:'1.5 kHz',position:'TOP'},{label:'3 kHz',position:'MIDDLE'},{label:'750 Hz',position:'BOTTOM'}
     ]}
   ],
   31: [
     {param:'contour',label:'CONTOUR',ccIndex:4,type:'three-way-switch',choices:[
-      {label:'VINTAGE',position:'TOP',value:0},{label:'OFF',position:'MIDDLE',value:50},{label:'MODERN',position:'BOTTOM',value:100}
+      {label:'VINTAGE',position:'TOP'},{label:'OFF',position:'MIDDLE'},{label:'MODERN',position:'BOTTOM'}
     ]}
   ]
 };
@@ -958,18 +963,16 @@ function syncIncomingParameterCC(cc,rawValue){
   if(state.values[param]===next)return;
   state.values[param]=next;
   if(index===selected){
-    const switchButtons=[...document.querySelectorAll('#knobs .switch-position-button')].filter(x=>x.dataset.p===param);
-    if(switchButtons.length){
-      const raw=encodeParameterValue(param,next);
-      switchButtons.forEach(button=>{
-        const active=Number(button.dataset.value)===raw;
-        button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
-      });
+    const switchButtons=[...document.querySelectorAll('#knobs .switch-position-button')].filter(x=>x.getAttribute('aria-label')&&x.closest('.knob-three-way'));
+    const switchControl=AMP_THREE_POSITION_SWITCHES[state.model]?.find(item=>item.param===param);
+    if(switchControl&&switchButtons.length){
+      const rawLabel=[...document.querySelectorAll('#knobs .switch-raw-value')].find(x=>x.closest('.knob-three-way')?.querySelector('label')?.textContent===switchControl.label);
+      if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(Math.round(next))+' · mapping not verified';
     }
     const selector=[...document.querySelectorAll('#knobs .parameter-select')].find(x=>x.dataset.p===param);
     if(selector){
       selector.value=String(encodeParameterValue(param,next));
-    }else if(!switchButtons.length){
+    }else if(!switchControl){
       const el=[...document.querySelectorAll('#knobs .dial-control')].find(x=>x.dataset.p===param);
       if(el){
         const dial=el.querySelector('.dial'),readout=el.querySelector('.knob-value');
@@ -1883,8 +1886,8 @@ function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle
 const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=controls.map(control=>{
  const p=control.param,stored=parameterValueForControl(selected,s,s.model,control);
  if(control.type==='three-way-switch'){
-  const raw=stored===undefined?null:encodeParameterValue(p,stored);
-  return '<div class="knob knob-three-way"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button '+(raw===choice.value?'is-active':'')+'" data-p="'+p+'" data-value="'+choice.value+'" aria-pressed="'+String(raw===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+choice.position+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div></div>';
+  const raw=stored===undefined?'not read':String(Math.round(Number(stored)));
+  return '<div class="knob knob-three-way"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button" disabled aria-disabled="true" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+choice.position+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">Hardware raw value: '+escapeHtml(raw)+' · mapping not verified</small><small class="switch-safe-note">Read-only until the correct switch values are captured</small></div>';
  }
  if(p==='mic'||p==='position'){
   const options=p==='mic'?MIC_OPTIONS:MIC_POSITION_OPTIONS,raw=stored===undefined?'':String(encodeParameterValue(p,stored));
@@ -1894,20 +1897,6 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
  const v=stored??50,label=control.label||p.toUpperCase();
  return '<div class="knob"><label>'+escapeHtml(label)+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>';
 }).join('');
-$('knobs').querySelectorAll('.switch-position-button').forEach(el=>{
- el.onclick=()=>{
-  const param=el.dataset.p,raw=Number(el.dataset.value);
-  if(!Number.isFinite(raw)||!AMP_THREE_POSITION_SWITCHES[s.model]?.some(control=>control.param===param))return;
-  const value=normalizeParameterValue(param,raw);
-  s.values[param]=value;changed.add(selected+':'+param);
-  const group=el.closest('.three-way-switch');
-  group?.querySelectorAll('.switch-position-button').forEach(button=>{
-   const active=Number(button.dataset.value)===raw;
-   button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
-  });
-  $('statChanged').textContent=changed.size;persist();sendBlockParam(selected,param,value);
- };
-});
 $('knobs').querySelectorAll('.parameter-select').forEach(el=>{
  el.onchange=()=>{
   const raw=Number(el.value),param=el.dataset.p;
