@@ -95,10 +95,17 @@ select:focus{border-color:var(--gold)}
 </section>
 <div class="footnote">Standalone visual prototype · Tidak terhubung ke MG-30 dan tidak mengubah MIDI, preset, NAM, IR, atau transfer perangkat.</div>
 </main>
-<script src="../../www/model-assets.js"></script>
 <script>
 (function(){
- const data = window.MG30_MODEL_ART && window.MG30_MODEL_ART.AMP || {};
+ // Keep demo data self-contained: this page may be opened directly from Android content://
+ const data = {
+  'Deluxe Rvb': {image:'https://r2.gear4music.com/media/117/1172017/1200/preview.jpg',reference:'Fender ’65 Deluxe Reverb'},
+  'Plexi 100': {image:'https://r2.gear4music.com/media/133/1332394/600/preview.jpg',reference:'Marshall 1959 Super Lead'},
+  'Jazz Clean': {image:'https://media.sweetwater.com/m/products/image/b4fcb60da1oBU6UZaRoldXqU3cOe4TD7IePj9xVe.jpg?ha=b4fcb60da128ffad&quality=82',reference:'Roland JC-120 Jazz Chorus'},
+  'Dual Rect': {image:'https://images.musicstore.de/images/1280/mesa-boogie-dual-rectifier-cabezal-de-amplificador-_1_GIT0018626-000.jpg',reference:'Mesa/Boogie Dual Rectifier'},
+  'Twin Rvb': {image:'https://spicersmusic.com/cdn/shop/products/fender-65-twin-1_1024x.jpg?v=1712855342',reference:'Fender ’65 Twin Reverb'},
+  'Class A15': {image:'https://rainbowmusicshop.com/cdn/shop/files/ac15_SP.jpg?v=1705698066',reference:'Vox AC15'}
+ };
  const select = document.getElementById('model');
  const photo = document.getElementById('ampPhoto');
  const stage = document.getElementById('stage');
