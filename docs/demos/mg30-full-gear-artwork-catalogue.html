@@ -161,6 +161,7 @@ silverBlue:{body:'#455d6d',face:'#9db3c1',edge:'#d6e1e6',ink:'#19242a',knob:'#14
 white:{body:'#b9beb6',face:'#e5e7dc',edge:'#fffdef',ink:'#202525',knob:'#171a1a'}
 };
 const ampPalettes={
+roland:{body:'#202529',panel:'#c7c9c3',grille:'#343b3d',edge:'#d3d5ce',ink:'#1b2224',accent:'#bdc5c2'},
 blackface:{body:'#171a1d',panel:'#c8c8bd',grille:'#333a39',edge:'#e1ded0',ink:'#1a1d1d',accent:'#d9d7cb'},
 tweed:{body:'#927047',panel:'#c0a16d',grille:'#8e7959',edge:'#dfc99a',ink:'#2a2116',accent:'#e4cf9f'},
 vox:{body:'#28211b',panel:'#ba884e',grille:'#40342b',edge:'#d3ad70',ink:'#211912',accent:'#e5d3ab'},
@@ -251,6 +252,15 @@ function ampSvg(m){
   if(m.ref.includes('Twin')||m.ref.includes('JC-120')){s+=speaker(279,260,66)+speaker(481,260,66);}
   else{s+='<text x="202" y="253" font-family="Georgia,serif" font-size="31" font-style="italic" font-weight="bold" fill="#e4e3d8" stroke="#4c5653" stroke-width=".6">Fender</text>';}
   s+=ampLabel(380,351,m.name.toUpperCase().replace(' · IMAGE',''),9,'#dedfd5')+feet(157,557,379)+screw(126,83)+screw(634,83)+screw(126,382)+screw(634,382);
+  return s+'</svg>';
+ }
+ // ROLAND JC-120: wide stereo solid-state combo, two speakers, silver top panel.
+ if(m.skin==='roland'){
+  s+='<rect x="112" y="53" width="536" height="340" rx="12" fill="url(#tolex)" stroke="#6b7475" stroke-width="4"/>'+handle(334,48,92);
+  s+='<rect x="129" y="73" width="502" height="72" rx="3" fill="url(#silverPanel)" stroke="#e0e2d8" stroke-width="2"/><rect x="137" y="81" width="486" height="56" fill="#171c1d"/>';
+  rowKnobs(111,['VOL','TREB','MID','BASS','DIST','REVERB','SPEED','DEPTH'],168,59,8,true);
+  s+='<rect x="129" y="153" width="502" height="217" fill="#171c1d" stroke="#858e8c" stroke-width="3"/><rect x="136" y="160" width="488" height="203" fill="url(#ampCloth)"/>'+speaker(266,257,78)+speaker(494,257,78);
+  s+=ampLabel(380,348,'JAZZ CHORUS · JC-120',12,'#e6e9e1')+feet(145,570,378)+screw(120,62)+screw(640,62);
   return s+'</svg>';
  }
  // FENDER TWEED: woven tweed cabinet, brown grille, small vintage top control panel.
@@ -379,6 +389,14 @@ function ampSvg(m){
   s+='<rect x="290" y="184" width="180" height="39" rx="3" fill="url(#goldPanel)" stroke="#f0dcab" stroke-width="2"/>'+ampLabel(380,210,brand,18,'#2a241b')+speaker(380,286,61)+ampLabel(380,358,m.name.toUpperCase(),9,'#f0e5cf')+feet(155,562,380)+screw(125,72)+screw(635,72);
   return s+'</svg>';
  }
+ // NUX STAGEMAN AC-50: acoustic combo cabinet with broad top panel and wood-toned grille.
+ if(m.skin==='nuxAcoustic'&&m.shape==='combo'){
+  s+='<rect x="126" y="62" width="508" height="330" rx="13" fill="#30271e" stroke="#d3bb91" stroke-width="4"/>'+handle(334,56,92);
+  s+='<rect x="143" y="82" width="474" height="68" rx="4" fill="#141c1d" stroke="#9c8a69" stroke-width="2"/>'+ampLabel(380,105,'NUX STAGEMAN',15,'#e3d1b0');
+  rowKnobs(128,['GAIN','BASS','MID','TREB','REVERB','CHORUS','MASTER'],185,61,9,true);
+  s+='<rect x="143" y="158" width="474" height="213" fill="#7d6145" stroke="#d6c19b" stroke-width="2"/><rect x="150" y="165" width="460" height="199" fill="url(#ampCloth)"/>'+speaker(380,258,75)+ampLabel(380,356,'ACOUSTIC AMPLIFIER',9,'#efe2cb')+feet(160,558,378)+screw(134,71)+screw(626,71);
+  return s+'</svg>';
+ }
  // AGUILAR slim silver bass head; NUX / Darkglass compact preamps.
  if(m.skin==='aguilar'){
   s+='<rect x="89" y="169" width="582" height="126" rx="9" fill="#242b2e" stroke="#8d999c" stroke-width="4"/><rect x="99" y="178" width="562" height="105" rx="5" fill="url(#silverPanel)" stroke="#e4e7e2" stroke-width="2"/>';
@@ -388,11 +406,12 @@ function ampSvg(m){
   return s+'</svg>';
  }
  if(m.skin==='darkglass'||m.skin==='nuxBass'||m.skin==='nuxAcoustic'){
-  const dark=m.skin==='darkglass';
-  s+='<rect x="116" y="86" width="528" height="287" rx="17" fill="#121819" stroke="'+p.edge+'" stroke-width="4"/><rect x="128" y="98" width="504" height="263" rx="12" fill="url(#panel)" stroke="'+p.edge+'" stroke-opacity=".6" stroke-width="2"/>'+ampLabel(380,133,dark?'DARKGLASS':m.skin==='nuxBass'?'NUX MLD':'NUX OPTIMA AIR',20,p.ink);
-  const pp=dark?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:['REVERB','IR LEVEL','SELECT','GAIN','BASS','MIDDLE','TREBLE'];
-  pp.forEach((l,i)=>{const cols=dark?5:4,xx=170+(i%cols)*(dark?105:118),yy=dark?191+Math.floor(i/cols)*82:200+Math.floor(i/cols)*85;s+=k(xx,yy,13,l,false)});
-  s+='<rect x="310" y="153" width="140" height="29" rx="3" fill="#101719" stroke="#8e9c98"/>'+ampLabel(380,172,dark?'B7K ULTRA':'PRESET / IR',9,'#d8e1d6')+'<circle cx="290" cy="328" r="7" fill="#bfe078"/><circle cx="470" cy="328" r="7" fill="#db5a4f"/>'+feet(180,550,373);
+  const dark=m.skin==='darkglass',optima=m.ref.toLowerCase().includes('optima'),mld=m.ref.toLowerCase().includes('mld');
+  s+='<rect x="126" y="74" width="508" height="304" rx="18" fill="#101516" stroke="'+p.edge+'" stroke-width="4"/><rect x="139" y="87" width="482" height="278" rx="13" fill="url(#panel)" stroke="'+p.edge+'" stroke-opacity=".6" stroke-width="2"/>'+ampLabel(380,121,dark?'DARKGLASS':mld?'NUX MLD':'NUX OPTIMA AIR',20,p.ink);
+  const pp=dark?['MASTER','ATTACK','BLEND','LEVEL','DRIVE','BASS','LO MIDS','HI MIDS','TREBLE']:mld?['GAIN','DRIVE','BLEND','BASS','MID','TREBLE']:['REVERB','IR LEVEL','SELECT','GAIN','BASS','MIDDLE','TREBLE'];
+  pp.forEach((l,i)=>{const cols=dark?5:4,xx=dark?166+(i%5)*91:mld?204+(i%3)*116:172+(i%4)*112,yy=dark?178+Math.floor(i/5)*76:mld?190+Math.floor(i/3)*78:190+Math.floor(i/4)*78;s+=k(xx,yy,11,l,false)});
+  s+='<rect x="303" y="135" width="154" height="26" rx="3" fill="#101719" stroke="#8e9c98"/>'+ampLabel(380,153,optima?'8 VINTAGE':'BASS / IR PRESET',9,'#d8e1d6');
+  if(dark||mld)s+=led(255,326)+led(445,326)+foot(255,341,17)+foot(445,341,17);else s+=led(270,329,'#58da9c')+led(490,329,'#df6754')+foot(270,343,17)+foot(490,343,17);
   return s+'</svg>';
  }
  // ORANGE and RIVERA / general high gain amp heads.
