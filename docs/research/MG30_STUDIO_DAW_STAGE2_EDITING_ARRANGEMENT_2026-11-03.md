@@ -131,3 +131,10 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 ### English UI assertion follow-up
 - Run #436 failed only because the USB loopback regression test still expected the old Indonesian note string after the Track Input Routing copy was translated.
 - Updated the test to assert the equivalent English description while continuing to check Input 1–2 host loopback and Input 3–4 Wet Sync separately.
+
+
+## Three-dot menu stacking fix (4 November 2026)
+- Fixed the overlap visible when the three-dot menu is open: the entire metronome/top toolbar row now has stacking priority `z-index:80`, while the Loop/Clip/Track row is isolated below at `z-index:20`.
+- The three-dot popup remains at `z-index:1000` inside the elevated top row. This corrects the ancestor stacking order; raising the popup alone was not enough because the Clip/Track controls occupied a competing sibling stacking level.
+- Added an automated regression assertion for the parent-row stacking hierarchy.
+- Verification plan: repository regression suite plus a Chromium headless hit-test where the dropdown overlaps the Clip/Track controls; the hit-test must resolve to the dropdown panel, never the underlying action-menu buttons.

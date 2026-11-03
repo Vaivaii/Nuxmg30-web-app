@@ -2124,7 +2124,11 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-output-route-native{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;opacity:0!important;pointer-events:none!important}
 
     #page-studio .daw-quick-toolbar{position:relative!important;z-index:32!important;overflow:visible!important;isolation:isolate!important}
-    #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:34!important}
+    /* Keep the complete top row above the Loop / Clip / Track row.
+       Raising only the popover is insufficient because action-menu children
+       create sibling stacking levels that can paint over its nested panel. */
+    #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:80!important}
+    #page-studio .daw-section-toolbar{position:relative!important;z-index:20!important}
     #page-studio .daw-more-menu{position:relative!important;z-index:100!important}
     #page-studio .daw-more-menu-panel{z-index:1000!important}
     #page-studio .daw-timeline-panel{position:relative!important;z-index:1!important}

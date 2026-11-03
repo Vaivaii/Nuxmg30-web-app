@@ -740,3 +740,13 @@ test('USB Output Routing Test card is not mounted in the Studio Track Settings p
   assert.equal(html.includes('./studio-usb-output.js'), false);
   assert.equal(html.includes('dawUsbOutput'), false);
 });
+
+
+test('three-dot dropdown row stacks above the entire Loop/Clip/Track row', () => {
+  const toolbar = daw.slice(daw.indexOf('function addTrackInputRoutingStyles()'), daw.indexOf('function syncTrackInputRoutingPanel()'));
+  assert.ok(toolbar.includes('.daw-quick-toolbar-primary{position:relative!important;z-index:80!important}'));
+  assert.ok(toolbar.includes('.daw-section-toolbar{position:relative!important;z-index:20!important}'));
+  assert.ok(toolbar.includes('.daw-more-menu-panel{z-index:1000!important}'));
+  assert.ok(toolbar.indexOf('z-index:80!important') < toolbar.indexOf('z-index:20!important'));
+  assert.ok(toolbar.includes('isolation:isolate!important'));
+});
