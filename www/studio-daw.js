@@ -395,6 +395,14 @@ function updateToolbar() {
   if ($('dawTimeSignature')) $('dawTimeSignature').value = project.timeSignature;
   if ($('dawMetronome')) $('dawMetronome').checked = project.metronomeEnabled;
   if ($('dawLoop')) $('dawLoop').checked = project.loopEnabled;
+  const loopReadout = $('dawLoopRangeReadout');
+  if (loopReadout) {
+    const loop = activeLoopRange();
+    const hasSection = project.loopStartSeconds > 0 || project.loopEndSeconds > 0;
+    loopReadout.textContent = hasSection
+      ? 'Loop ' + formatClock(loop.start) + ' – ' + formatClock(loop.end)
+      : 'Loop: full timeline';
+  }
   if ($('dawSnap')) $('dawSnap').value = project.snap;
   if ($('dawZoom')) $('dawZoom').value = String(project.zoom);
   if ($('dawProjectSummary')) $('dawProjectSummary').textContent = project.name;
@@ -439,7 +447,11 @@ function renderRuler(metrics) {
   const beatCount = Number(String(project.timeSignature).split('/')[0]) || 4;
   canvas.style.setProperty('--daw-beat-width', (project.zoom / beatCount) + 'px');
   ruler.style.width = metrics.width + 'px';
-  ruler.innerHTML = Array.from({ length: metrics.bars }, (_, index) =>
+  const loop = project.loopEnabled ? activeLoopRange() : null;
+  const loopMarkup = loop
+    ? '<span class="daw-loop-range" style="left:' + (loop.start / metrics.barSeconds * project.zoom) + 'px;width:' + ((loop.end - loop.start) / metrics.barSeconds * project.zoom) + 'px"></span>'
+    : '';
+  ruler.innerHTML = loopMarkup + Array.from({ length: metrics.bars }, (_, index) =>
     '<span class="daw-ruler-mark" style="left:' + (index * project.zoom) + 'px">' + (index + 1) + '</span>'
   ).join('');
 }
@@ -1813,6 +1825,13 @@ function addTrackInputRoutingStyles() {
   const style = document.createElement('style');
   style.id = 'dawTrackInputRoutingStyles';
   style.textContent = `
+    #page-studio .daw-arrangement-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;margin:0 0 8px;border:1px solid rgba(148,163,184,.16);border-radius:10px;background:rgba(9,17,22,.72)}
+    #page-studio .daw-arrangement-tools .daw-tool-btn{min-height:32px;padding:5px 9px;font-size:10px}
+    #page-studio .daw-arrangement-divider{width:1px;height:22px;background:rgba(148,163,184,.24);margin:0 3px}
+    #page-studio .daw-loop-range-readout{font-size:9px;color:#8fd7cf;white-space:nowrap;padding:0 4px}
+    #page-studio .daw-loop-range{position:absolute;top:0;bottom:0;background:rgba(83,212,199,.18);border-left:2px solid #53d4c7;border-right:2px solid #53d4c7;pointer-events:none;z-index:1}
+    #page-studio .daw-ruler-inner{position:relative}
+    @media(max-width:520px){#page-studio .daw-arrangement-tools{gap:5px}#page-studio .daw-arrangement-tools .daw-tool-btn{min-height:30px;padding:4px 7px;font-size:9px}#page-studio .daw-loop-range-readout{width:100%}}
     #page-studio .daw-input-routing-panel{margin:14px 0;padding:14px;border:1px solid rgba(83,212,199,.28);border-radius:13px;background:linear-gradient(145deg,rgba(20,54,54,.72),rgba(13,22,25,.92));color:#e3f3f1}
     #page-studio .daw-input-routing-head{margin-bottom:12px}
     #page-studio .daw-input-routing-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#78d7cf}
