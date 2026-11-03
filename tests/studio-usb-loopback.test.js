@@ -139,6 +139,9 @@ test('Quick Record remains separate and passes multichannel mode without alterin
 });
 
 test('Loopback is not mislabeled as USB Input 3/4; 3/4 is Wet Sync / Dry Out', () => {
+  assert.ok(core.includes("id: 'usb-ch1-2-stereo'"));
+  assert.ok(core.includes("label: 'MG-30 USB · Input 1–2 (Stereo / Host Loopback)'"));
+  assert.ok(daw.includes('Tes fisik MG-30 Gen 2 mengonfirmasi audio HP masuk melalui Input 1–2'));
   assert.ok(core.includes("id: 'usb-wet-sync-3-4-stereo'"));
   assert.ok(core.includes("label: 'MG-30 USB · Input 3–4 (Wet Sync / Dry Out)'"));
   assert.doesNotMatch(core, /Loopback 3–4/);
