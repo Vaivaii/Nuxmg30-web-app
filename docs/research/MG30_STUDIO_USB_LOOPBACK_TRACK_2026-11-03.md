@@ -53,8 +53,10 @@ The pre-existing input recorder normally tries two-channel stereo and then mono.
 
 Loopback mode is separate:
 - Reads advertised input channel counts, channel masks, and channel-index masks from Android's USB endpoint information.
-- Tries the widest supported channel-index layout first (4, then 3, 2, 1).
+- Uses the exact channel-index masks advertised by the input endpoint, ordered by channel count (widest first). This includes non-contiguous masks such as `0xC` (endpoint channels 3 and 4) as well as `0xF` (endpoint channels 1 through 4).
 - Uses `AudioFormat.Builder.setChannelIndexMask` when Loopback capture mode is requested and the Android API supports it.
+- Does not pass an endpoint index mask to `AudioRecord.getMinBufferSize`, which expects a channel-position mask; Loopback buffer sizing is derived from sample rate, channel count, and sample format.
+- Stops with an explicit error instead of guessing when Android advertises channel-index masks but none is compatible with the exposed channel counts.
 - Verifies the AudioRecord route is still the USB NUX/MG-30 input before accepting the stream.
 - Writes all selected interleaved input samples to the WAV, retaining the actual channel count.
 - Returns the channel count, channel-index mask and capture mode to the DAW; the DAW persists those values with the clip.
@@ -107,7 +109,7 @@ Source tests cover:
 
 Official NUX documentation confirms that original MG-30 firmware V5 added a USB ROUTING LOOPBACK option. It does not specify USB input channel ordering or the semantic mapping of channel indexes.
 
-Android's official API documents channel-index masks for multichannel recording, including USB devices. This supports using channel-index masks to preserve a multichannel layout, but it does not decode the MG-30's channel meanings.
+Android's official API documents channel-index masks for multichannel recording, including USB devices. The API describes non-contiguous masks: `0xC` selects endpoint channels 3 and 4, while `0xF` selects channels 1–4. This supports preserving the exact multichannel layout exposed by the endpoint; it does not decode the MG-30's channel meanings.
 
 Physical confirmation still required:
 - confirm Android exposes the MG-30 USB input when Loopback mode is active,
