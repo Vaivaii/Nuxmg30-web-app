@@ -69,7 +69,7 @@ test('Mic and Mic Position expose the eight and three original MG-30 choices', (
 
 test('readback, selector sync, and writes use existing discrete parameter encoding', () => {
   assert.match(html, /function sendBlockParam\([\s\S]*?control\.ccIndex/);
-  assert.match(html, /function syncIncomingParameterCC\([\s\S]*?control\.ccIndex===pi/);
+  assert.match(html, /function syncIncomingParameterCC\([\s\S]*?item\.ccIndex===pi/);
   assert.match(html, /selector\.value=String\(encodeParameterValue\(param,next\)\)/);
   assert.match(html, /sendBlockParam\(selected,param,value\)/);
   assert.match(html, /normalizeParameterValue\(param,raw\)/);
