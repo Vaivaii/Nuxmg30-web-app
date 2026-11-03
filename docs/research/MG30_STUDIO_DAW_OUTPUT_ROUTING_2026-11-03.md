@@ -71,3 +71,14 @@ No source changes are intended in:
 6. Report separately: Android route ID, audible result at MG-30 outputs, clip continuity, latency, dropouts, pause/stop and resume/seek behavior.
 7. After successful playback, add metronome/loop and output meter support, then test simultaneous USB playback and the existing USB recording path.
 8. Continue protecting NAM, both IR protocol families, MIDI mappings, presets and Signal Chain.
+
+
+## Follow-up guard and CI status (3 November 2026)
+- Added a guard so the existing Web Audio metronome does not unexpectedly play through the phone speaker while the selected output is MG-30 USB. Native-output metronome click generation remains a follow-up.
+- Build #421 failed only because the first version of the new test file contained an invalid regular-expression assertion. No APK was produced.
+- The assertions were rewritten as literal checks. Build #422 then passed the Node test suite, initializer validation and Capacitor Android generation; Gradle APK assembly was still running at the time of the next check.
+- Build #423 includes the metronome-output guard. At the latest check its Node test suite, initializer validation and Capacitor Android generation had passed; Gradle `assembleDebug` was still in progress.
+- Build #423 run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41658067058
+- Build #423 source commit: `7852e117fdc3951c10494b35f676e735987c3d44`.
+- Current branch HEAD at this documentation update: `7852e117fdc3951c10494b35f676e735987c3d44` (documentation-only commit may follow).
+- No APK from this branch is approved for installation until Gradle, artifact upload and package inspection complete.
