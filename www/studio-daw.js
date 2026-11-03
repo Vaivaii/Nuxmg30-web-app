@@ -1092,8 +1092,11 @@ async function startDawRecording() {
     const result = await recorder.start({ captureMode });
     if (!result?.recording) throw new Error('The MG-30 USB recorder did not confirm that recording started.');
     // A Loopback-only capture must not create/resume Web Audio output: doing so
-    // can take audio focus away from a separate phone music player. Use a wall
-    // clock for the DAW cursor when no DAW playback is running.
+    // can take audio focus away from a separate phone music player. Suspend an
+    // existing idle Web Audio context too, then use a wall clock for the cursor.
+    if (track.id === 'loopback' && !playing && audioContext?.state === 'running') {
+      await audioContext.suspend();
+    }
     const context = playing ? audioContext : (track.id === 'loopback' ? null : await getAudioContext());
     recording = true;
     recordingTrackId = track.id;
