@@ -1002,6 +1002,7 @@ function startClipDrag(event) {
   dragClip = {
     pointerId: event.pointerId,
     x: event.clientX,
+    y: event.clientY,
     mode: edge,
     trackId: track.id,
     clipId: clip.id,
@@ -1013,7 +1014,7 @@ function startClipDrag(event) {
 
 function moveClipDrag(event) {
   if (!dragClip || dragClip.pointerId !== event.pointerId) return;
-  if (Math.abs(event.clientX - dragClip.x) > 4) dragClip.moved = true;
+  if (Math.abs(event.clientX - dragClip.x) > 4 || Math.abs(event.clientY - dragClip.y) > 4) dragClip.moved = true;
 }
 
 function finishClipDrag(event) {
