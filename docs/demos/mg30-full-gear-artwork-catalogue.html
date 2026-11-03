@@ -254,7 +254,7 @@ function ampSvg(m){
   if(m.ref.includes('Twin')||m.ref.includes('JC-120')){s+=speaker(279,260,66)+speaker(481,260,66);}
   else{s+='<text x="202" y="253" font-family="Georgia,serif" font-size="31" font-style="italic" font-weight="bold" fill="#e4e3d8" stroke="#4c5653" stroke-width=".6">Fender</text>';}
   s+=ampLabel(380,351,m.name.toUpperCase().replace(' · IMAGE',''),9,'#dedfd5')+feet(157,557,379)+screw(126,83)+screw(634,83)+screw(126,382)+screw(634,382);
-  return s+'</svg>';
+  return s;
  }
  // ROLAND JC-120: wide stereo solid-state combo, two speakers, silver top panel.
  if(m.skin==='roland'){
@@ -263,7 +263,7 @@ function ampSvg(m){
   rowKnobs(111,['VOL','TREB','MID','BASS','DIST','REVERB','SPEED','DEPTH'],168,59,8,true);
   s+='<rect x="129" y="153" width="502" height="217" fill="#171c1d" stroke="#858e8c" stroke-width="3"/><rect x="136" y="160" width="488" height="203" fill="url(#ampCloth)"/>'+speaker(266,257,78)+speaker(494,257,78);
   s+=ampLabel(380,348,'JAZZ CHORUS · JC-120',12,'#e6e9e1')+feet(145,570,378)+screw(120,62)+screw(640,62);
-  return s+'</svg>';
+  return s;
  }
  // FENDER TWEED: woven tweed cabinet, brown grille, small vintage top control panel.
  if(m.skin==='tweed'){
@@ -273,7 +273,7 @@ function ampSvg(m){
   s+=rowKnobs(113,tw?['VOL','TONE','BASS','VOL','TONE','BASS']:['MIC','INST','TONE','PRES'],tw?195:245,tw?72:90,9,true);
   s+='<rect x="145" y="147" width="470" height="221" fill="#6c5036" stroke="#d9bc8d" stroke-width="3"/><rect x="151" y="153" width="458" height="209" fill="#63462f"/><rect x="151" y="153" width="458" height="209" fill="url(#ampDiamond)" opacity=".48"/>';
   s+='<rect x="159" y="171" width="112" height="37" rx="3" fill="url(#goldPanel)" stroke="#4b3420" stroke-width="2"/>'+ampLabel(215,195,tw?'BASSMAN':'DELUXE',15,'#2e2115')+ampLabel(380,336,m.name.toUpperCase(),9,'#ead9b6')+feet(165,554,379)+screw(137,78)+screw(623,78);
-  return s+'</svg>';
+  return s;
  }
  // VOX AC15 / AC30: black woven top, gold piping, diamond grille, VOX badge.
  if(m.skin==='vox'){
@@ -282,7 +282,7 @@ function ampSvg(m){
   s+=ampLabel(213,108,'VOX',24,'#dfc58c')+ampLabel(509,148,m.name.toUpperCase(),8,'#ead6b0');
   s+='<path d="M142 164H618" stroke="#d5b579" stroke-width="4"/><rect x="142" y="169" width="476" height="196" fill="#2b2421" stroke="#d2b17d" stroke-width="2"/><rect x="148" y="175" width="464" height="184" fill="url(#ampDiamond)"/>';
   s+=ampLabel(380,345,m.ref.includes('AC30')?'2 × 12 CLASS A':'1 × 12 CLASS A',9,'#ead6b0')+feet(164,555,379)+screw(132,66)+screw(628,66);
-  return s+'</svg>';
+  return s;
  }
  // MARSHALL HEAD / BLUESBREAKER: signature black tolex + script logo + gold control strip.
  if(m.skin==='marshall'||m.skin==='marshallCombo'){
@@ -303,7 +303,7 @@ function ampSvg(m){
    s+='<rect x="138" y="88" width="484" height="55" fill="#121515" stroke="#b38a59" stroke-width="2"/>'+ampLabel(380,126,'Marshall',30,'#e8dfcc')+'<rect x="138" y="150" width="484" height="218" fill="url(#ampCloth)" stroke="#d3d0c6" stroke-width="2"/>'+speaker(380,257,72)+ampLabel(380,353,'BLUESBREAKER 1962',10,'#e6dbc7');
   }
   s+=feet(161,560,combo?376:332)+screw(106,112)+screw(654,112);
-  return s+'</svg>';
+  return s;
  }
  // FRIEDMAN: black head with gold maker plate in upper left and long lower gold control strip.
  if(m.skin==='friedman'){
@@ -316,7 +316,7 @@ function ampSvg(m){
   const start=214,step=labels.length>12?30:34;
   labels.forEach((l,i)=>{const x=start+i*step;s+=k(x,298,8,l,true);});
   s+='<circle cx="624" cy="298" r="8" fill="#111817" stroke="#eee0b7" stroke-width="2"/><circle cx="624" cy="298" r="3" fill="#222a27"/>'+ampLabel(380,348,'BE · HBE · CLEAN CHANNELS',8,'#e5d0a0')+feet(145,570,355)+screw(106,111)+screw(654,111);
-  return s+'</svg>';
+  return s;
  }
  // MESA/BOOGIE: Dual Rectifier diamond plate head; Mark/Lone Star family uses wicker combo.
  if(m.skin==='mesa'){
@@ -335,7 +335,7 @@ function ampSvg(m){
    s+='<rect x="148" y="155" width="464" height="209" fill="#b77c43"/><path d="M150 156H610V362H150Z" fill="url(#ampDiamond)" opacity=".9"/><rect x="158" y="176" width="114" height="43" fill="#242321" stroke="#d5bc8b" stroke-width="2"/>'+ampLabel(215,204,'BOOGIE',17,'#eee7d4')+speaker(380,265,71)+ampLabel(380,357,m.name.toUpperCase(),9,'#efe0be')+feet(164,556,379);
   }
   s+=screw(108,121)+screw(652,121);
-  return s+'</svg>';
+  return s;
  }
  // DIEZEL VH4: black perforated upper section with silver four-channel control fascia.
  if(m.skin==='diezel'){
@@ -346,7 +346,7 @@ function ampSvg(m){
   const lbl=['GAIN','VOL','TREB','MID','BASS','PRES','DEEP','MASTER','GAIN','VOL','TREB','MID','BASS','PRES'];
   lbl.forEach((l,i)=>s+=k(143+i*36.5,279,7.7,l,true));
   s+='<circle cx="124" cy="299" r="5" fill="#bd3d33"/><circle cx="630" cy="299" r="5" fill="#9fc46c"/>'+ampLabel(380,338,'VH4 · FOUR CHANNEL TUBE AMPLIFIER',8,'#e8e8df')+feet(154,568,347)+screw(106,127)+screw(654,127);
-  return s+'</svg>';
+  return s;
  }
  // HIWATT: light faceplate, large rectangular head and white/cream knob row.
  if(m.skin==='hiwatt'){
@@ -354,7 +354,7 @@ function ampSvg(m){
   s+='<rect x="120" y="131" width="520" height="193" rx="5" fill="#f0eee2" stroke="#acb1a7" stroke-width="2"/><rect x="120" y="131" width="520" height="50" fill="#e8e7db"/>'+ampLabel(380,164,'HIWATT',24,'#151a1b');
   const hi=['INPUT','BRIGHT','BASS','MID','TREB','PRES','MASTER','LEVEL'];hi.forEach((l,i)=>s+=k(157+i*66,220,11,l,true));
   s+='<rect x="142" y="264" width="475" height="42" rx="2" fill="#262c2d"/>'+ampLabel(380,291,'CUSTOM 100 · DR103',12,'#e9e6d9')+feet(158,561,352)+screw(111,120)+screw(649,120);
-  return s+'</svg>';
+  return s;
  }
  // SOLDANO: blue/black high gain head, gold/white faceplate and two banks of controls.
  if(m.skin==='soldano'){
@@ -362,7 +362,7 @@ function ampSvg(m){
   s+='<rect x="116" y="126" width="528" height="75" fill="#182433" stroke="#61738a" stroke-width="2"/>'+ampLabel(380,176,'SOLDANO',30,'#e4eaf0')+'<rect x="116" y="207" width="528" height="113" fill="#bfc2bb" stroke="#e1dfd5" stroke-width="2"/>'+ampLabel(380,226,'SUPER LEAD OVERDRIVE · SLO-100',8,'#18202b');
   const sl=['PRES','MASTER','GAIN','BASS','MID','TREB','LEVEL','DEPTH'];sl.forEach((l,i)=>s+=k(161+i*61,265,10,l,true));
   s+='<circle cx="132" cy="294" r="5" fill="#a83931"/><circle cx="625" cy="294" r="5" fill="#9ec86f"/>'+feet(155,566,352);
-  return s+'</svg>';
+  return s;
  }
  // BOGNER: black woven chassis with script-style badge and dual channel control rows.
  if(m.skin==='bogner'){
@@ -371,7 +371,7 @@ function ampSvg(m){
   s+='<rect x="116" y="241" width="528" height="79" fill="#1b2121" stroke="#aab0a5" stroke-width="1.5"/>';
   ['PRES','BASS','MID','TREB','GAIN','MASTER','PRES','BASS','MID','TREB','GAIN','MASTER'].forEach((l,i)=>s+=k(147+i*43,272,8,l,true));
   s+=ampLabel(380,310,'UBERSCHALL · CHANNEL 1 / 2',8,'#e9e5d8')+feet(155,566,351);
-  return s+'</svg>';
+  return s;
  }
  // PEAVEY 5150: black hex mesh with large 5150 logo and brushed silver bottom panel.
  if(m.skin==='peavey'){
@@ -380,7 +380,7 @@ function ampSvg(m){
   s+='<rect x="113" y="245" width="534" height="78" fill="url(#silverPanel)" stroke="#d9ddd5" stroke-width="2"/>'+ampLabel(180,263,'PEAVEY',10,'#252a29');
   ['PRES','RES','POST','LOW','MID','HIGH','PRE','GAIN','VOL','LEAD','CRUNCH'].forEach((l,i)=>s+=k(162+i*43,291,7.7,l,true));
   s+='<circle cx="127" cy="300" r="5" fill="#a33c34"/><circle cx="633" cy="300" r="5" fill="#9dbe74"/>'+feet(152,570,354);
-  return s+'</svg>';
+  return s;
  }
  // MATCHLESS / DR Z / BUDDA: boutique combo with distinctive badge and woven grille.
  if(['matchless','drz','budda'].includes(m.skin)){
@@ -389,7 +389,7 @@ function ampSvg(m){
   s+='<rect x="136" y="149" width="488" height="225" fill="'+p.grille+'" stroke="'+p.edge+'" stroke-width="2"/><rect x="142" y="155" width="476" height="213" fill="url(#ampCloth)"/>';
   const brand=m.skin==='matchless'?'MATCHLESS':m.skin==='drz'?'DR. Z':'BUDDA';
   s+='<rect x="290" y="184" width="180" height="39" rx="3" fill="url(#goldPanel)" stroke="#f0dcab" stroke-width="2"/>'+ampLabel(380,210,brand,18,'#2a241b')+speaker(380,286,61)+ampLabel(380,358,m.name.toUpperCase(),9,'#f0e5cf')+feet(155,562,380)+screw(125,72)+screw(635,72);
-  return s+'</svg>';
+  return s;
  }
  // NUX STAGEMAN AC-50: acoustic combo cabinet with broad top panel and wood-toned grille.
  if(m.skin==='nuxAcoustic'&&m.shape==='combo'){
@@ -397,7 +397,7 @@ function ampSvg(m){
   s+='<rect x="143" y="82" width="474" height="68" rx="4" fill="#141c1d" stroke="#9c8a69" stroke-width="2"/>'+ampLabel(380,105,'NUX STAGEMAN',15,'#e3d1b0');
   rowKnobs(128,['GAIN','BASS','MID','TREB','REVERB','CHORUS','MASTER'],185,61,9,true);
   s+='<rect x="143" y="158" width="474" height="213" fill="#7d6145" stroke="#d6c19b" stroke-width="2"/><rect x="150" y="165" width="460" height="199" fill="url(#ampCloth)"/>'+speaker(380,258,75)+ampLabel(380,356,'ACOUSTIC AMPLIFIER',9,'#efe2cb')+feet(160,558,378)+screw(134,71)+screw(626,71);
-  return s+'</svg>';
+  return s;
  }
  // AGUILAR slim silver bass head; NUX / Darkglass compact preamps.
  if(m.skin==='aguilar'){
@@ -405,7 +405,7 @@ function ampSvg(m){
   s+='<text x="128" y="206" font-size="19" font-family="Georgia,serif" font-style="italic" fill="#20282a">aguilar</text>'+ampLabel(511,204,'TONE HAMMER 500',15,'#1f282a');
   ['GAIN','DRIVE','MID','BASS','TREBLE','VOLUME'].forEach((l,i)=>s+=k(220+(i%3)*76,223+Math.floor(i/3)*38,8,l,true));
   s+='<circle cx="122" cy="245" r="7" fill="#151a1c" stroke="#5a6260"/><circle cx="635" cy="246" r="7" fill="#141a1b" stroke="#626a67"/><rect x="115" y="296" width="50" height="9" rx="3" fill="#080a0b"/><rect x="595" y="296" width="50" height="9" rx="3" fill="#080a0b"/>';
-  return s+'</svg>';
+  return s;
  }
  if(m.skin==='darkglass'||m.skin==='nuxBass'||m.skin==='nuxAcoustic'){
   const dark=m.skin==='darkglass',optima=m.ref.toLowerCase().includes('optima'),mld=m.ref.toLowerCase().includes('mld');
@@ -414,22 +414,22 @@ function ampSvg(m){
   pp.forEach((l,i)=>{const cols=dark?5:4,xx=dark?166+(i%5)*91:mld?204+(i%3)*116:172+(i%4)*112,yy=dark?178+Math.floor(i/5)*76:mld?190+Math.floor(i/3)*78:190+Math.floor(i/4)*78;s+=k(xx,yy,11,l,false)});
   s+='<rect x="303" y="135" width="154" height="26" rx="3" fill="#101719" stroke="#8e9c98"/>'+ampLabel(380,153,optima?'8 VINTAGE':'BASS / IR PRESET',9,'#d8e1d6');
   if(dark||mld)s+=led(255,326)+led(445,326)+foot(255,341,17)+foot(445,341,17);else s+=led(270,329,'#58da9c')+led(490,329,'#df6754')+foot(270,343,17)+foot(490,343,17);
-  return s+'</svg>';
+  return s;
  }
  // ORANGE and RIVERA / general high gain amp heads.
  if(m.skin==='orange'){
   s+='<rect x="100" y="112" width="560" height="240" rx="13" fill="#252321" stroke="#d26a2b" stroke-width="4"/>'+handle(334,106,92);
   s+='<rect x="116" y="130" width="528" height="106" fill="#bd5422" stroke="#f0b078" stroke-width="2"/>'+ampLabel(380,197,'ORANGE',42,'#241914')+'<rect x="116" y="243" width="528" height="78" fill="#171b1c" stroke="#7f8986"/>'+rowKnobs(278,['PRES','BASS','MID','TREB','GAIN','MASTER','VOL','LEVEL'],169,60,9,true)+feet(155,566,353);
-  return s+'</svg>';
+  return s;
  }
  if(m.skin==='rivera'){
   s+='<rect x="100" y="112" width="560" height="240" rx="13" fill="#15212a" stroke="#8fa2aa" stroke-width="4"/>'+handle(334,106,92);
   s+='<rect x="116" y="130" width="528" height="100" fill="#253641" stroke="#9aa8aa"/>'+ampLabel(380,190,'RIVERA',31,'#efe9d8')+'<rect x="116" y="238" width="528" height="84" fill="url(#silverPanel)" stroke="#e1e3db"/>'+rowKnobs(275,['PRES','BASS','MID','TREB','GAIN','MASTER','LEVEL','BOOST'],163,62,9,true)+feet(155,566,353);
-  return s+'</svg>';
+  return s;
  }
  // Generic NAM and remaining NUX/standard heads: hardware-inspired neutral skin, never a photo.
  s+='<rect x="100" y="112" width="560" height="240" rx="14" fill="url(#tolex)" stroke="'+p.edge+'" stroke-width="4"/>'+handle(334,106,92)+'<rect x="116" y="130" width="528" height="104" fill="#121718" stroke="'+p.edge+'" stroke-opacity=".55"/>'+ampLabel(380,194,nm,24,'#e5e8df')+'<rect x="116" y="242" width="528" height="80" fill="url(#panel)" stroke="'+p.edge+'"/>'+rowKnobs(278,labels,163,62,9,true)+feet(155,566,353);
- return s+'</svg>';
+ return s;
 }
 function pedalSvg(m){
  const p=palettes[m.skin]||palettes.silver, name=m.name.replace(/ · IMAGE/,'');
@@ -458,14 +458,14 @@ function pedalSvg(m){
   s+='<path d="M164 55Q170 42 189 48L478 82Q495 85 490 107L447 333Q443 352 423 350L159 314Q139 311 144 291Z" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><path d="M177 68L465 99L425 298L157 271Z" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-width="2"/><path d="M182 89L457 117M177 116L451 144M172 143L445 171M167 170L439 198M162 197L434 225M158 224L429 252" stroke="'+p.ink+'" stroke-opacity=".34" stroke-width="9" stroke-linecap="round"/><path d="M190 90L453 119" stroke="#fff" stroke-opacity=".22" stroke-width="3"/>';
   s+=title(brand,91,15)+title(name.toUpperCase(),292,12);
   s+='<rect x="459" y="123" width="16" height="33" rx="4" fill="#181d1d" stroke="'+p.edge+'"/><circle cx="467" cy="139" r="4" fill="#c6d5a6"/><path d="M155 315Q320 340 443 342" fill="none" stroke="#070909" stroke-width="7"/>'+screw(162,66)+screw(473,92);
-  return s+'</svg>';
+  return s;
  }
  // DigiTech Whammy: broad red expression base plus treadle and selector bank.
  if(m.shape==='whammy'){
   s+='<rect x="95" y="30" width="450" height="328" rx="16" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="4"/><rect x="109" y="43" width="422" height="300" rx="11" fill="url(#pedalBody)" stroke="#f0b1a4" stroke-opacity=".6" stroke-width="2"/><rect x="130" y="60" width="170" height="240" rx="11" fill="#131819" stroke="#e9a99b" stroke-width="3"/><path d="M153 83H278V277H153Z" fill="#1e2526"/><text x="215" y="190" text-anchor="middle" font-size="38" font-weight="900" letter-spacing="3" fill="#f4e9e2" transform="rotate(-90 215 190)">WHAMMY</text><rect x="319" y="64" width="194" height="186" rx="8" fill="#891f22" stroke="#efc3b5" stroke-width="2"/>'+title('HARMONY',92,13);
   const opts=['OCT','5TH','4TH','3RD','2ND','DIVE','BOMB','DETUNE'];opts.forEach((v,i)=>{s+='<rect x="337" y="'+(104+i*16)+'" width="158" height="13" rx="3" fill="#4d181c" stroke="#e6a8a0" stroke-opacity=".35"/><text x="345" y="'+(114+i*16)+'" font-size="8" fill="#f3ddd2">'+v+'</text><circle cx="485" cy="'+(110+i*16)+'" r="3" fill="#d4473d"/>';});
   s+='<circle cx="415" cy="277" r="17" fill="url(#pedalKnob)" stroke="'+p.edge+'"/>'+foot(415,323,21)+screw(111,47)+screw(529,47);
-  return s+'</svg>';
+  return s;
  }
  // Roland Space Echo is a wide tape unit with transport reels and a mode selector.
  if(m.shape==='tape'){
@@ -474,7 +474,7 @@ function pedalSvg(m){
   s+='<circle cx="229" cy="181" r="42" fill="#101515" stroke="url(#pedalMetal)" stroke-width="5"/><circle cx="229" cy="181" r="25" fill="#8a928d" stroke="#222b28" stroke-width="7"/><circle cx="229" cy="181" r="6" fill="#141a19"/><circle cx="422" cy="181" r="42" fill="#101515" stroke="url(#pedalMetal)" stroke-width="5"/><circle cx="422" cy="181" r="25" fill="#8a928d" stroke="#222b28" stroke-width="7"/><circle cx="422" cy="181" r="6" fill="#141a19"/>';
   ['MIC','INST','REPEAT','INTENSITY','ECHO'].forEach((v,i)=>s+=knob(183+i*69,269,9,v));
   s+='<rect x="80" y="293" width="480" height="16" fill="#0d1212" opacity=".65"/>'+screw(63,88)+screw(577,88);
-  return s+'</svg>';
+  return s;
  }
  // BOSS CE-1: wide, grey/olive enclosure, four controls, mode selector and dual footswitches.
  if(m.shape==='largeBoss'||m.name==='CE-1'){
@@ -483,7 +483,7 @@ function pedalSvg(m){
   s+='<rect x="115" y="210" width="418" height="23" fill="#4a514a" opacity=".7"/><text x="320" y="226" text-anchor="middle" font-size="10" letter-spacing="2" fill="#ecddcf">BOSS CE-1</text>';
   s+=foot(220,294,25)+foot(420,294,25)+'<text x="220" y="337" text-anchor="middle" font-size="9" fill="#30352e">CHORUS</text><text x="420" y="337" text-anchor="middle" font-size="9" fill="#30352e">VIBRATO</text>';
   s+='<rect x="502" y="115" width="13" height="47" rx="3" fill="#292f29" stroke="#d2d4c8"/>'+screw(106,86)+screw(534,86)+screw(106,342)+screw(534,342);
-  return s+'</svg>';
+  return s;
  }
  // Wide multi-knob control pedals: Darkglass, TC SCF, Xotic AC/RC, MXR M134 and dual delay.
  const wide=/darkglass|B7K|Duotime|Stereo Chorus|SCF|AC Booster|RC Booster|Tone Hammer|M108|10-Band|M300|Lex|Lexicon/i.test(m.ref+' '+m.name)||m.name==='Duotime';
@@ -497,7 +497,7 @@ function pedalSvg(m){
   if(m.name==='Duotime'){s+='<rect x="279" y="140" width="108" height="37" rx="3" fill="#101719" stroke="#6d8a89"/><text x="333" y="163" text-anchor="middle" font-size="10" fill="#98d5d1">T1:181 T2:181</text>'+foot(234,306,23)+foot(426,306,23);}
   else if(m.ref.includes('Lex')){s+=led(197,288)+led(443,288)+foot(197,318,22)+foot(443,318,22);}
   else{s+=led(320,292)+foot(320,322,23);}
-  return s+'</svg>';
+  return s;
  }
  // Parametric and graphic EQ have real slider/control banks.
  if(m.shape==='eq'||m.shape==='eqKnob'){
@@ -506,7 +506,7 @@ function pedalSvg(m){
   if(count){for(let i=0;i<count;i++){const xx=142+i*(356/(count-1)),top=157+(i%3)*9;s+='<rect x="'+(xx-5)+'" y="150" width="10" height="136" rx="4" fill="#101617" stroke="'+p.edge+'" stroke-opacity=".45"/><rect x="'+(xx-8)+'" y="'+top+'" width="16" height="20" rx="3" fill="url(#pedalMetal)" stroke="#3a4240"/><text x="'+xx+'" y="307" text-anchor="middle" font-size="8" fill="'+p.ink+'">'+['100','220','500','1.2K','2.6K','6.4K','8K','10K','12K','16K'][i]+'</text>';}}
   else{['FREQ','GAIN','Q'].forEach((v,i)=>s+=knob(200+i*120,218,17,v));}
   s+=led(320,324)+foot(320,325,19);
-  return s+'</svg>';
+  return s;
  }
  // Mu-Tron III is a wider envelope filter with upper control row and switches.
  if(/mu-tron|touch wah/i.test(m.ref+' '+m.name)){
@@ -514,12 +514,12 @@ function pedalSvg(m){
   ['DRIVE','PEAK','MODE','GAIN'].forEach((v,i)=>s+=knob(171+i*94,180,14,v));
   for(let i=0;i<4;i++)s+='<rect x="'+(145+i*93)+'" y="228" width="20" height="52" rx="3" fill="#13191a" stroke="'+p.edge+'"/><rect x="'+(147+i*93)+'" y="'+(248+(i%2)*10)+'" width="16" height="12" rx="2" fill="url(#pedalMetal)"/>';
   s+=led(320,297)+foot(320,322,20)+screw(111,78)+screw(529,78);
-  return s+'</svg>';
+  return s;
  }
  // Fuzz Face circular body.
  if(m.shape==='round'){
   s+='<circle cx="320" cy="210" r="144" fill="url(#pedalSide)" stroke="'+p.edge+'" stroke-width="5"/><circle cx="320" cy="210" r="130" fill="url(#pedalBody)" stroke="'+p.edge+'" stroke-width="2"/>'+title('FUZZ',137,22)+title('FACE',160,14)+knob(245,214,18,'FUZZ')+knob(395,214,18,'VOLUME')+foot(320,322,23)+'<path d="M193 184Q320 99 447 184" fill="none" stroke="'+p.edge+'" stroke-opacity=".35" stroke-width="4"/>';
-  return s+'</svg>';
+  return s;
  }
  // Standard compact stompbox: model family determines proportions, knob layout and label placement.
  const boss=isBoss, ibanez=isIbanez, mxr=isMXR, xotic=isXotic, keeley=isKeeley;
@@ -557,14 +557,14 @@ function pedalSvg(m){
   s+=title(m.name.replace(' · IMAGE','').toUpperCase(),220,16)+led(320,254)+foot(320,315,21);
  }
  s+=screw(x+13,y+13)+screw(x+width-13,y+13)+screw(x+13,y+height-13)+screw(x+width-13,y+height-13);
- return s+'</svg>';
+ return s;
 }
 function eqSvg(m){
  const p=palettes[m.skin]||palettes.silver;let s='<defs><linearGradient id="body" x2="0" y2="1"><stop stop-color="'+p.edge+'"/><stop offset="1" stop-color="'+p.body+'"/></linearGradient><radialGradient id="dial" cx=".3" cy=".2"><stop stop-color="#8c918b"/><stop offset=".22" stop-color="#454b48"/><stop offset="1" stop-color="'+p.knob+'"/></radialGradient><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#f3f1e7"/><stop offset=".5" stop-color="#a4aaa5"/><stop offset="1" stop-color="#4a5350"/></linearGradient></defs><rect x="48" y="100" width="544" height="235" rx="16" fill="url(#body)" stroke="'+p.edge+'" stroke-width="4"/><rect x="63" y="114" width="514" height="205" rx="8" fill="'+p.face+'" stroke="'+p.edge+'" stroke-opacity=".55"/><text x="320" y="144" text-anchor="middle" font-size="19" font-weight="900" letter-spacing="3" fill="'+p.ink+'">'+m.name.toUpperCase()+'</text>';
  const count=m.name.includes('10-Band')?10:m.name.includes('6-Band')?6:0;
  if(count){for(let i=0;i<count;i++){const x=115+i*(410/(count-1));s+='<rect x="'+(x-8)+'" y="169" width="16" height="124" rx="6" fill="#1a2020" stroke="'+p.edge+'" stroke-opacity=".4"/><rect x="'+(x-6)+'" y="'+(217+(i%3)*7)+'" width="12" height="18" rx="3" fill="url(#metal)"/><text x="'+x+'" y="305" text-anchor="middle" font-size="8" fill="'+p.ink+'">'+['100','220','500','1.2k','2.6k','6.4k','8k','10k','12k','16k'][i]+'</text>'}}
  else{for(let i=0;i<3;i++){const x=220+i*100;s+='<circle cx="'+x+'" cy="220" r="25" fill="url(#dial)" stroke="'+p.edge+'"/><path d="M'+x+' 200v-8" stroke="#f2dfb7" stroke-width="3"/><text x="'+x+'" y="271" text-anchor="middle" font-size="9" fill="'+p.ink+'">BAND '+(i+1)+'</text>'}}
- return s+'</svg>';
+ return s;
 }
 function makeArt(m){
  if(m.cat==='AMP'){
