@@ -116,6 +116,8 @@ test('Quick Record bridge forwards the requested capture mode to MG30Audio', () 
   assert.match(main, /async function startGuitarRecording\(options = \{\}\)/);
   assert.match(main, /options\?\.captureMode === 'loopback' \? 'loopback' : 'normal'/);
   assert.ok(main.includes('MG30Audio.startRecording({ prefer24Bit: true, captureMode })'));
+  assert.ok(main.includes('device.channelIndexMasks'));
+  assert.ok(main.includes('Channel index masks:'));
   assert.ok(main.includes("let recordingCaptureMode = 'normal'"));
   assert.match(main, /if \(!isLoopback\) \{[\s\S]*?guitarStopBtn/);
   assert.match(main, /if \(!isLoopback\) \{[\s\S]*?setCurrentPlayback\(take, false\)/);
