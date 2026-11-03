@@ -108,6 +108,10 @@ test('native recorder exposes and captures the MG-30 multichannel USB endpoint',
   assert.ok(recorder.includes('call.getInt("channelIndexMask", 0)'));
   assert.ok(recorder.includes('(indexMask & requestedChannelIndexMask) != requestedChannelIndexMask'));
   assert.ok(recorder.includes('(fallbackMask & requestedChannelIndexMask) != requestedChannelIndexMask'));
+  assert.ok(recorder.includes('MAX_LIVE_WAVEFORM_BUCKETS = 8192'));
+  assert.ok(recorder.includes('getRecordingStats(PluginCall call)'));
+  assert.ok(recorder.includes('buildLiveChannelWaveforms()'));
+  assert.ok(recorder.includes('LIVE_WAVEFORM_BUCKET_MS = 100'));
   assert.ok(recorder.includes('MG-30 tidak mengekspos kanal USB yang dibutuhkan oleh input track ini'));
 });
 
@@ -121,6 +125,10 @@ test('four-track DAW exposes per-track routes and only imports selected USB chan
   assert.ok(daw.includes('encodeWavHeader(pcm.byteLength, buffer.sampleRate, 2, 24)'));
   assert.ok(daw.includes('storedBlob = new Blob'));
   assert.ok(daw.includes('inputChannelMask: route.channelIndexMask'));
+  assert.ok(daw.includes('beginLiveRecordingWaveformPolling()'));
+  assert.ok(daw.includes('waveformLevelsFromRecordingStats(stats, route)'));
+  assert.ok(daw.includes('data-live-recording-clip'));
+  assert.ok(daw.includes('window.setInterval(() => { void poll(); }, 200)'));
   assert.doesNotMatch(daw, /id: 'loopback', name: 'Loopback'/);
   assert.doesNotMatch(daw, /dawLoopbackRecord|mountLoopbackPanel|syncLoopbackPanel/);
 });
@@ -135,6 +143,8 @@ test('Quick Record remains separate and passes multichannel mode without alterin
   assert.ok(main.includes('Channel index masks:'));
   assert.ok(main.includes("let recordingCaptureMode = 'normal'"));
   assert.match(main, /if \(!isDawCapture\) \{[\s\S]*?guitarStopBtn/);
+  assert.ok(main.includes('MG30Audio.getRecordingStats()'));
+  assert.ok(main.includes('getRecordingStats, isRecording: () => recording'));
   assert.ok(main.includes('start: startGuitarRecording'));
 });
 
