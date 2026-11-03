@@ -1051,7 +1051,7 @@ function updatePlayheadFrame() {
   updateLiveRecordingClipGeometry();
   followPlayheadDuringPlayback();
   updateAudioMeters();
-  if (project.metronomeEnabled && audioContext) {
+  if (project.metronomeEnabled && audioContext && !nativeOutputPlayback) {
     const beatDuration = 60 / project.tempo;
     const beat = Math.floor(playheadSeconds / beatDuration + 0.015);
     if (beat !== lastMetronomeBeat) {
