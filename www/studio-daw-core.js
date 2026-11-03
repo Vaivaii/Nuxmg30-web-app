@@ -3,6 +3,7 @@ export const DAW_TRACKS = Object.freeze([
   { id: 'guitar', name: 'Guitar', shortName: 'GUITAR', color: '#c5f36b', input: 'MG-30 USB' },
   { id: 'bass', name: 'Bass', shortName: 'BASS', color: '#bd83f5', input: 'Import / MG-30 USB overdub' },
   { id: 'vocals', name: 'Vocals', shortName: 'VOCALS', color: '#edc85b', input: 'Import / MG-30 USB overdub' },
+  { id: 'loopback', name: 'Loopback', shortName: 'LOOPBACK', color: '#53d4c7', input: 'MG-30 USB Loopback' },
 ]);
 
 export function makeId(prefix = 'daw') {
@@ -35,7 +36,7 @@ export function createDefaultProject(name = 'Untitled Project', now = new Date()
       pan: 0,
       mute: false,
       solo: false,
-      armed: index === 1,
+      armed: track.id === 'guitar',
       clips: [],
     })),
   };
