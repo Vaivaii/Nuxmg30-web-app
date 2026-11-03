@@ -39,6 +39,7 @@ import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 
@@ -273,16 +274,45 @@ public class MG30AudioPlugin extends Plugin {
         int[] countOptions = usb.getChannelCounts();
         int[] advertisedIndexMasks = Build.VERSION.SDK_INT >= 23 ? usb.getChannelIndexMasks() : new int[0];
         ArrayList<Integer> channelOptions = new ArrayList<>();
+        ArrayList<Integer> loopbackIndexMasks = new ArrayList<>();
         if (loopbackCapture && Build.VERSION.SDK_INT >= 23) {
-            // USB interfaces may expose the loopback stream on channels beyond L/R.
-            // Capture the widest advertised index layout first, without assigning
-            // channel meanings. The full frame is preserved in the Loopback track.
-            int[] preferredLoopbackCounts = new int[] { 4, 3, 2, 1 };
-            for (int channels : preferredLoopbackCounts) {
-                int indexMask = (1 << channels) - 1;
-                boolean countSupported = countOptions.length == 0 || contains(countOptions, channels);
-                boolean maskSupported = advertisedIndexMasks.length == 0 || contains(advertisedIndexMasks, indexMask);
-                if (countSupported && maskSupported) channelOptions.add(channels);
+            // Preserve the exact index masks advertised by Android. They need not be
+            // contiguous: for example 0xC selects index channels 3 and 4, while 0xF
+            // selects all four. Prefer the widest layout without assigning semantics.
+            if (advertisedIndexMasks.length > 0) {
+                for (int indexMask : advertisedIndexMasks) {
+                    int channels = Integer.bitCount(indexMask);
+                    if (indexMask == 0 || channels < 1 || channels > 8) continue;
+                    if (countOptions.length > 0 && !contains(countOptions, channels)) continue;
+                    if (!loopbackIndexMasks.contains(indexMask)) {
+                        loopbackIndexMasks.add(indexMask);
+                        channelOptions.add(channels);
+                    }
+                }
+                // Collections.sort is stable, so equal-width masks retain the
+                // endpoint's advertised order for deterministic fallback behavior.
+                ArrayList<Integer> originalMasks = new ArrayList<>(loopbackIndexMasks);
+                ArrayList<Integer> originalCounts = new ArrayList<>(channelOptions);
+                ArrayList<Integer> order = new ArrayList<>();
+                for (int i = 0; i < originalMasks.size(); i++) order.add(i);
+                Collections.sort(order, (left, right) ->
+                    Integer.compare(Integer.bitCount(originalMasks.get(right)),
+                                    Integer.bitCount(originalMasks.get(left))));
+                loopbackIndexMasks.clear();
+                channelOptions.clear();
+                for (int index : order) {
+                    loopbackIndexMasks.add(originalMasks.get(index));
+                    channelOptions.add(originalCounts.get(index));
+                }
+            } else {
+                // No index masks advertised: try contiguous layouts by width.
+                int[] preferredLoopbackCounts = new int[] { 4, 3, 2, 1 };
+                for (int channels : preferredLoopbackCounts) {
+                    if (countOptions.length == 0 || contains(countOptions, channels)) {
+                        channelOptions.add(channels);
+                        loopbackIndexMasks.add((1 << channels) - 1);
+                    }
+                }
             }
         } else {
             if (countOptions.length == 0 || contains(countOptions, 2)) channelOptions.add(2);
@@ -327,9 +357,12 @@ public class MG30AudioPlugin extends Plugin {
             boolean foundForSource = false;
             for (int encoding : encodings) {
                 if (encoding == AudioFormat.ENCODING_PCM_32BIT && Build.VERSION.SDK_INT < 31) continue;
-                for (int channels : channelOptions) {
+                for (int channelOptionIndex = 0; channelOptionIndex < channelOptions.size(); channelOptionIndex++) {
+                    int channels = channelOptions.get(channelOptionIndex);
                     boolean useChannelIndexMask = loopbackCapture && Build.VERSION.SDK_INT >= 23;
-                    int channelIndexMask = useChannelIndexMask ? (1 << channels) - 1 : 0;
+                    int channelIndexMask = useChannelIndexMask
+                        ? (loopbackIndexMasks.isEmpty() ? (1 << channels) - 1 : loopbackIndexMasks.get(channelOptionIndex))
+                        : 0;
                     int channelConfig = useChannelIndexMask
                         ? channelIndexMask
                         : (channels == 2 ? AudioFormat.CHANNEL_IN_STEREO : AudioFormat.CHANNEL_IN_MONO);
