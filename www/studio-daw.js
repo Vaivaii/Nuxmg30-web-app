@@ -47,6 +47,7 @@ let mediaBuffers = new Map();
 let projectSaveTimer = null;
 let lastMetronomeBeat = -1;
 let dragClip = null;
+let clipClipboard = null;
 let playheadDragPointerId = null;
 let selectedDawPage = 'timeline';
 let historyPast = [];
@@ -188,6 +189,111 @@ function setStatus(message, kind = '') {
 
 function getTrack(trackId) {
   return project.tracks.find((track) => track.id === trackId) || null;
+}
+
+function getSelectedClipContext() {
+  const track = getTrack(selectedTrackId);
+  const index = track?.clips.findIndex((clip) => clip.id === selectedClipId) ?? -1;
+  return index >= 0 ? { track, index, clip: track.clips[index] } : null;
+}
+
+function activeLoopRange() {
+  const duration = projectDurationSeconds(project);
+  const start = Math.max(0, Math.min(duration, Number(project.loopStartSeconds) || 0));
+  const requestedEnd = Number(project.loopEndSeconds) || 0;
+  const end = requestedEnd > start + 0.05 ? Math.min(duration, requestedEnd) : duration;
+  return end > start + 0.05 ? { start, end } : { start: 0, end: duration };
+}
+
+function copySelectedClip() {
+  const selected = getSelectedClipContext();
+  if (!selected) { setStatus('Select a clip before copying.', 'warn'); return; }
+  clipClipboard = { ...selected.clip };
+  setStatus('Copied "' + selected.clip.name + '". Paste at the playhead or duplicate it.', 'ok');
+}
+
+function pasteClip() {
+  if (recording || playing) { setStatus('Pause playback and stop recording before pasting clips.', 'warn'); return; }
+  if (!clipClipboard) { setStatus('Copy a clip first.', 'warn'); return; }
+  const track = getTrack(selectedTrackId);
+  if (!track) return;
+  if (!mediaBuffers.has(clipClipboard.mediaId)) {
+    setStatus('The source audio is not loaded in this project. Reopen the project and try again.', 'warn');
+    return;
+  }
+  const clip = {
+    ...clipClipboard,
+    id: makeId('clip'),
+    startSeconds: snapTime(playheadSeconds, project),
+    name: String(clipClipboard.name || 'Audio clip') + ' (copy)',
+  };
+  track.clips.push(clip);
+  track.clips.sort((a, b) => a.startSeconds - b.startSeconds);
+  selectedClipId = clip.id;
+  renderProject();
+  scheduleProjectSave();
+  setStatus('Pasted clip at the playhead on ' + track.name + '.', 'ok');
+}
+
+function duplicateSelectedClip() {
+  if (recording || playing) { setStatus('Pause playback and stop recording before duplicating clips.', 'warn'); return; }
+  const selected = getSelectedClipContext();
+  if (!selected) { setStatus('Select a clip to duplicate.', 'warn'); return; }
+  const duplicate = {
+    ...selected.clip,
+    id: makeId('clip'),
+    startSeconds: snapTime(selected.clip.startSeconds + selected.clip.durationSeconds, project),
+    name: String(selected.clip.name || 'Audio clip') + ' (copy)',
+  };
+  selected.track.clips.push(duplicate);
+  selected.track.clips.sort((a, b) => a.startSeconds - b.startSeconds);
+  selectedClipId = duplicate.id;
+  renderProject();
+  scheduleProjectSave();
+  setStatus('Clip duplicated immediately after the original.', 'ok');
+}
+
+function nudgeSelectedClip(direction, bars = 0) {
+  if (recording || playing) return;
+  const selected = getSelectedClipContext();
+  if (!selected) return;
+  const step = bars ? barDurationSeconds(project.tempo, project.timeSignature)
+    : project.snap === 'off' ? 0.01
+      : project.snap === 'bar' ? barDurationSeconds(project.tempo, project.timeSignature)
+        : project.snap === 'eighth' ? 30 / project.tempo : 60 / project.tempo;
+  selected.clip.startSeconds = Math.max(0, snapTime(selected.clip.startSeconds + direction * step, project, project.snap));
+  selected.track.clips.sort((a, b) => a.startSeconds - b.startSeconds);
+  renderProject();
+  scheduleProjectSave();
+}
+
+function setLoopBoundary(which) {
+  if (recording) { setStatus('Stop recording before changing the loop section.', 'warn'); return; }
+  const position = snapTime(playheadSeconds, project);
+  if (which === 'start') {
+    if (project.loopEndSeconds > 0 && position >= project.loopEndSeconds - 0.05) {
+      setStatus('Loop In must be before Loop Out.', 'warn'); return;
+    }
+    project.loopStartSeconds = position;
+  } else {
+    if (position <= project.loopStartSeconds + 0.05) {
+      setStatus('Move the playhead after Loop In before setting Loop Out.', 'warn'); return;
+    }
+    project.loopEndSeconds = position;
+  }
+  project.loopEnabled = true;
+  renderProject();
+  scheduleProjectSave();
+  setStatus('Loop ' + (which === 'start' ? 'In' : 'Out') + ' set at ' + formatClock(position) + '.', 'ok');
+}
+
+function clearLoopSection() {
+  project.loopStartSeconds = 0;
+  project.loopEndSeconds = 0;
+  project.loopEnabled = false;
+  renderProject();
+  scheduleProjectSave();
+  setStatus('Loop section cleared.', 'ok');
 }
 
 function openDatabase() {
@@ -415,7 +521,7 @@ function renderInspector() {
     ? '<div class="daw-clip-tools"><small>' + safeText(clip.name) + '</small>' +
       '<div class="daw-fade-control"><label>Fade in <strong data-fade-readout="in">' + (Number(clip.fadeInSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeInSeconds) || 0) + '" data-clip-fade="in" aria-label="Clip fade in"></label>' +
       '<label>Fade out <strong data-fade-readout="out">' + (Number(clip.fadeOutSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeOutSeconds) || 0) + '" data-clip-fade="out" aria-label="Clip fade out"></label></div>' +
-      '<div><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
+      '<div><button type="button" class="daw-tool-btn" data-clip-action="copy">Copy</button><button type="button" class="daw-tool-btn" data-clip-action="duplicate">Duplicate</button><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
     : '<p class="daw-inspector-note">Select a clip to trim its edges, split it, or set individual fades.</p>';
   holder.innerHTML =
     '<label class="daw-track-name-field">Track name<input type="text" maxlength="32" value="' + safeText(track.name) + '" data-track-name="' + track.id + '" aria-label="Rename ' + safeText(track.name) + '" autocomplete="off"></label>' +
@@ -921,12 +1027,26 @@ function finishClipDrag(event) {
   } else {
     next.startSeconds = snapTime(Math.max(0, initial.startSeconds + movement), project);
   }
-  track.clips[index] = next;
-  selectedTrackId = track.id;
+  if (drag.mode === 'move') {
+    const destinationLane = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-track-lane]');
+    const destinationTrack = destinationLane ? getTrack(destinationLane.dataset.trackLane) : track;
+    if (destinationTrack && destinationTrack.id !== track.id) {
+      track.clips.splice(index, 1);
+      destinationTrack.clips.push(next);
+      destinationTrack.clips.sort((a, b) => a.startSeconds - b.startSeconds);
+      selectedTrackId = destinationTrack.id;
+    } else {
+      track.clips[index] = next;
+      selectedTrackId = track.id;
+    }
+  } else {
+    track.clips[index] = next;
+    selectedTrackId = track.id;
+  }
   selectedClipId = next.id;
   renderProject();
   scheduleProjectSave();
-  setStatus(drag.mode === 'move' ? 'Clip moved without changing its source audio.' : 'Clip edge trimmed non-destructively.', 'ok');
+  setStatus(drag.mode === 'move' ? 'Clip moved on the timeline without changing its source audio.' : 'Clip edge trimmed non-destructively.', 'ok');
 }
 
 function createPlaybackMaster(context) {
@@ -1026,14 +1146,18 @@ function updatePlayheadFrame() {
       : recording
         ? Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000)
         : 0;
-  playheadSeconds = playStartPosition + elapsed;
   const maxDuration = projectDurationSeconds(project);
-  if (!recording && playheadSeconds >= maxDuration) {
-    if (project.loopEnabled) {
-      playheadSeconds = 0;
-      void restartPlaybackAt(0);
-      return;
-    }
+  const loop = project.loopEnabled ? activeLoopRange() : null;
+  const rawPosition = playStartPosition + elapsed;
+  playheadSeconds = loop && nativeOutputPlayback && rawPosition >= loop.end
+    ? loop.start + ((rawPosition - loop.start) % (loop.end - loop.start))
+    : rawPosition;
+  if (!recording && loop && playheadSeconds >= loop.end) {
+    playheadSeconds = loop.start;
+    void restartPlaybackAt(loop.start);
+    return;
+  }
+  if (!recording && !loop && playheadSeconds >= maxDuration) {
     playing = false;
     cancelAnimationFrame(animationFrame);
     if (nativeOutputPlayback) {
@@ -1100,9 +1224,15 @@ function encodeFloatStereoPcm16Base64(left, right) {
 async function pumpNativeDawPlayback(position, generation, trackIds) {
   const chunkFrames = 24000; // 500 ms at 48 kHz; bounds stop/seek latency.
   let cursor = position;
-  const end = projectDurationSeconds(project);
+  const projectEnd = projectDurationSeconds(project);
+  const loop = project.loopEnabled ? activeLoopRange() : null;
+  const end = loop ? loop.end : projectEnd;
   try {
-    while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration && cursor < end) {
+    while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration) {
+      if (cursor >= end) {
+        if (loop) cursor = loop.start;
+        else break;
+      }
       const count = Math.min(chunkFrames, Math.ceil((end - cursor) * SAMPLE_RATE));
       if (count <= 0) break;
       const rendered = await renderAudioChunk(trackIds, cursor, count, 'mix');
@@ -1157,6 +1287,10 @@ async function startNativeDawPlayback(position, tracksWithAudio) {
 }
 
 async function startPlayback(position = playheadSeconds) {
+  if (project.loopEnabled) {
+    const loop = activeLoopRange();
+    if (position < loop.start || position >= loop.end) position = loop.start;
+  }
   const tracksWithAudio = project.tracks.filter((track) => track.clips.some((clip) => mediaBuffers.has(clip.mediaId)));
   if (!tracksWithAudio.length) {
     setStatus('Import at least one audio clip before starting playback.', 'warn');
@@ -1221,9 +1355,15 @@ async function startPlayback(position = playheadSeconds) {
 
 function pausePlayback() {
   if (!playing) return;
-  playheadSeconds = playStartPosition + Math.max(0, nativeOutputPlayback
+  const rawPosition = playStartPosition + Math.max(0, nativeOutputPlayback
     ? (performance.now() - nativePlaybackStartedAt) / 1000
     : (audioContext ? audioContext.currentTime - playStartContextTime : 0));
+  if (project.loopEnabled) {
+    const loop = activeLoopRange();
+    playheadSeconds = rawPosition >= loop.end ? loop.start + ((rawPosition - loop.start) % (loop.end - loop.start)) : rawPosition;
+  } else {
+    playheadSeconds = rawPosition;
+  }
   playing = false;
   cancelAnimationFrame(animationFrame);
   if (nativeOutputPlayback) {
@@ -1917,6 +2057,16 @@ function bindEvents() {
   $('dawTimeSignature')?.addEventListener('change', (event) => updateProjectField('timeSignature', event.target.value));
   $('dawMetronome')?.addEventListener('change', (event) => updateProjectField('metronome', event.target.checked));
   $('dawLoop')?.addEventListener('change', (event) => updateProjectField('loop', event.target.checked));
+  $('dawCopyClip')?.addEventListener('click', copySelectedClip);
+  $('dawPasteClip')?.addEventListener('click', pasteClip);
+  $('dawDuplicateClip')?.addEventListener('click', duplicateSelectedClip);
+  $('dawLoopIn')?.addEventListener('click', () => setLoopBoundary('start'));
+  $('dawLoopOut')?.addEventListener('click', () => setLoopBoundary('end'));
+  $('dawClearLoop')?.addEventListener('click', clearLoopSection);
+  $('dawCursorStart')?.addEventListener('click', () => { playheadSeconds = 0; renderPlayhead(); });
+  $('dawCursorEnd')?.addEventListener('click', () => { playheadSeconds = projectDurationSeconds(project); renderPlayhead(); });
+  $('dawNudgeLeft')?.addEventListener('click', () => nudgeSelectedClip(-1));
+  $('dawNudgeRight')?.addEventListener('click', () => nudgeSelectedClip(1));
   $('dawSnap')?.addEventListener('change', (event) => updateProjectField('snap', event.target.value));
   $('dawZoom')?.addEventListener('input', (event) => updateProjectField('zoom', event.target.value));
   $('dawAudioFileInput')?.addEventListener('change', async (event) => {
@@ -1933,6 +2083,18 @@ function bindEvents() {
   $('dawTrackList')?.addEventListener('pointermove', moveClipDrag);
   $('dawTrackList')?.addEventListener('pointerup', finishClipDrag);
   $('dawTrackList')?.addEventListener('pointercancel', () => { dragClip = null; });
+  document.addEventListener('keydown', (event) => {
+    const target = event.target;
+    const typing = target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+    if (typing || event.altKey) return;
+    const command = event.ctrlKey || event.metaKey;
+    if (command && event.key.toLowerCase() === 'c') { event.preventDefault(); copySelectedClip(); }
+    else if (command && event.key.toLowerCase() === 'v') { event.preventDefault(); pasteClip(); }
+    else if (command && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicateSelectedClip(); }
+    else if ((event.key === 'Delete' || event.key === 'Backspace') && selectedClipId) { event.preventDefault(); deleteSelectedClip(); }
+    else if (event.key === 'ArrowLeft' && selectedClipId) { event.preventDefault(); nudgeSelectedClip(-1, event.shiftKey ? 1 : 0); }
+    else if (event.key === 'ArrowRight' && selectedClipId) { event.preventDefault(); nudgeSelectedClip(1, event.shiftKey ? 1 : 0); }
+  });
   document.addEventListener('input', (event) => {
     const gain = event.target.closest('[data-track-gain]');
     if (gain) updateTrackMix(gain.dataset.trackGain, 'gain', gain.value);
@@ -1955,6 +2117,8 @@ function bindEvents() {
     const action = event.target.closest('[data-clip-action]')?.dataset.clipAction;
     if (action === 'delete') deleteSelectedClip();
     if (action === 'split') splitSelectedClip();
+    if (action === 'copy') copySelectedClip();
+    if (action === 'duplicate') duplicateSelectedClip();
   });
   $('dawTrackInspector')?.addEventListener('input', (event) => {
     const fade = event.target.closest('[data-clip-fade]');
