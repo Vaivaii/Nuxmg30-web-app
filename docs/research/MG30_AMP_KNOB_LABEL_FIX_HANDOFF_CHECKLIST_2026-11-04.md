@@ -362,3 +362,26 @@ Pengguna melaporkan bahwa urutan/value switch yang dikirim aplikasi terbalik dan
 - Capture QuickTone terpisah saat STARLIFT CONTOUR berpindah VINTAGE → OFF → MODERN.
 - Cocokkan CC number, raw value, urutan state, dan frame asset (1/2/3) untuk tiap kontrol.
 - Uji readback dan writeback MG-30 pada firmware original Gen 2 6.0.x. Jangan gunakan 0/50/100 atau membalik urutan lagi tanpa capture.
+
+
+## Uji perangkat oleh pengguna — switch tiga posisi gagal (4 Nov 2026)
+
+Pengguna melaporkan dari APK #448 yang benar-benar dipakai:
+- Pada kedua amp yang memiliki switch (DGLASS dan STARLIFT), memilih posisi MIDDLE membuat switch menghilang dari layar perangkat.
+- Mengembalikan pilihan ke posisi TOP membuat switch muncul kembali.
+- Label frekuensi DGLASS pada APK tersebut terbalik terhadap posisi fisik yang terlihat pada foto MG-30.
+
+### Kesimpulan dan tindakan wajib
+- Nilai 0/50/100 yang pernah diasumsikan sebagai TOP/MIDDLE/BOTTOM adalah tebakan berbasis rentang generik, bukan bukti enum firmware. Jangan kirim nilai tersebut.
+- Gejala menghilangnya elemen setelah nilai tengah dikirim menunjukkan write sebelumnya tidak aman; penyebab byte-level pastinya masih perlu capture QuickTone per posisi.
+- Untuk DGLASS, caption fisik yang benar dari foto: LO MIDS TOP=500 Hz, MIDDLE=1 kHz, BOTTOM=250 Hz; HI MIDS TOP=1.5 kHz, MIDDLE=3 kHz, BOTTOM=750 Hz.
+- Untuk STARLIFT, caption fisik tetap TOP=VINTAGE, MIDDLE=OFF, BOTTOM=MODERN.
+- Semua tombol switch harus nonaktif/read-only. sendBlockParam juga wajib menolak switch three-way-switch agar pemanggil generik tidak dapat mengirim enum yang belum diverifikasi.
+- Pemetaan CC dan indeks parameter tetap dipertahankan untuk kebutuhan readback; jangan mengubah MIDI block/model switch atau kontrol rotary lain.
+- Build #454 sebelumnya gagal pada dua tes karena tes mencari renderer switch terlalu awal dan justru mengambil helper parameterValueForControl. Perbaiki pencarian tes agar dimulai dari renderer yang membuat konten #knobs; jangan melemahkan pengamanan untuk membuat tes lulus.
+
+### Status setelah koreksi kode
+- Label fisik switch telah dibetulkan di source setelah APK #448.
+- Switch tetap read-only; generic MIDI writer diberi guard eksplisit untuk menolak switch.
+- Belum ada nilai wire untuk ketiga posisi pada masing-masing switch. Pengaktifan ulang menunggu capture TOP/MIDDLE/BOTTOM dan uji readback/writeback pada MG-30 original Gen 2 firmware 6.0.x.
+- APK #448 tetap baseline instalasi terakhir yang dikonfirmasi pengguna; perubahan ini adalah source perbaikan berikutnya, bukan klaim bahwa APK lama sudah diperbaiki.
