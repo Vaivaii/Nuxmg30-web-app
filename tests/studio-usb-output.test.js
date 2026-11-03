@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const outputPlugin = read('../native-android/MG30AudioOutputPlugin.java');
@@ -8,6 +10,11 @@ const init = read('../scripts/init-android.mjs');
 const index = read('../www/index.html');
 const ui = read('../www/studio-usb-output.js');
 const recorder = read('../native-android/MG30AudioPlugin.java');
+
+test('Android initializer is valid JavaScript before platform generation', () => {
+  const initializerPath = fileURLToPath(new URL('../scripts/init-android.mjs', import.meta.url));
+  assert.doesNotThrow(() => execFileSync(process.execPath, ['--check', initializerPath]));
+});
 
 test('USB output discovery uses Android output endpoints and labels USB types', () => {
   assert.ok(outputPlugin.includes('AudioManager.GET_DEVICES_OUTPUTS'));
