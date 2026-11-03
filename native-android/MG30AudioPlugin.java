@@ -65,6 +65,11 @@ public class MG30AudioPlugin extends Plugin {
     private String activeRouteName = "USB audio";
     private String activeCaptureMode = "normal";
     private int activeChannelIndexMask = 0;
+    private int activeRequestedChannelIndexMask = 0;
+    private int activeRouteDeviceId = -1;
+    private long[] channelSampleCounts = new long[0];
+    private double[] channelSquareSums = new double[0];
+    private double[] channelPeakAbs = new double[0];
     private String captureError = "";
 
     @PluginMethod
@@ -236,14 +241,19 @@ public class MG30AudioPlugin extends Plugin {
     private void startRecordingWithPermission(PluginCall call) {
         String captureMode = call.getString("captureMode", "normal");
         boolean loopbackCapture = "loopback".equalsIgnoreCase(captureMode);
-        boolean multichannelCapture = loopbackCapture || "multichannel".equalsIgnoreCase(captureMode);
+        boolean diagnosticCapture = "diagnostic".equalsIgnoreCase(captureMode);
+        boolean multichannelCapture = loopbackCapture || diagnosticCapture || "multichannel".equalsIgnoreCase(captureMode);
         int requestedChannelIndexMask = call.getInt("channelIndexMask", 0);
-        if (multichannelCapture && requestedChannelIndexMask != 0 &&
+        if (diagnosticCapture && requestedChannelIndexMask != 0xF) {
+            call.reject("Mode diagnostik USB memerlukan empat kanal mentah dengan index mask 0xF.");
+            return;
+        }
+        if (multichannelCapture && !diagnosticCapture && requestedChannelIndexMask != 0 &&
             (Integer.bitCount(requestedChannelIndexMask) < 1 || Integer.bitCount(requestedChannelIndexMask) > 2)) {
             call.reject("Pemetaan input track harus memilih satu kanal mono atau sepasang kanal stereo.");
             return;
         }
-        if (multichannelCapture && Build.VERSION.SDK_INT < 23 && (requestedChannelIndexMask & 0xC) != 0) {
+        if (multichannelCapture && Build.VERSION.SDK_INT < 23 && (requestedChannelIndexMask & 0xF) != 0) {
             call.reject("Pemilihan input USB kanal 3–4 memerlukan Android API 23 atau lebih baru.");
             return;
         }
@@ -483,11 +493,14 @@ public class MG30AudioPlugin extends Plugin {
                 return;
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            activeFile = new File(dir, (loopbackCapture ? "MG30_Loopback_Take_" : (multichannelCapture ? "MG30_USB_Input_Take_" : "MG30_Take_")) + timestamp + ".wav");
+            activeFile = new File(dir, (diagnosticCapture ? "MG30_USB_Raw4ch_Diagnostic_" : (loopbackCapture ? "MG30_Loopback_Take_" : (multichannelCapture ? "MG30_USB_Input_Take_" : "MG30_Take_")) ) + timestamp + ".wav");
             activeSampleRate = selectedRate;
             activeChannels = selectedChannels;
             activeChannelIndexMask = selectedChannelIndexMask;
-            activeCaptureMode = multichannelCapture ? (loopbackCapture ? "loopback" : "multichannel") : "normal";
+            activeRequestedChannelIndexMask = requestedChannelIndexMask;
+            activeRouteDeviceId = selectedRoute.getId();
+            activeCaptureMode = diagnosticCapture ? "diagnostic"
+                : (multichannelCapture ? (loopbackCapture ? "loopback" : "multichannel") : "normal");
             activeEncoding = selectedEncoding;
             activeBits = 24; // User-facing file is always integer PCM 24-bit WAV.
             activeWavFormatCode = 1;
@@ -495,6 +508,9 @@ public class MG30AudioPlugin extends Plugin {
             activeInputEncodingName = captureEncodingName(selectedEncoding);
             activeRouteName = selectedRoute.getProductName() == null ? typeName(selectedRoute.getType()) : selectedRoute.getProductName().toString();
             pcmBytesWritten = 0;
+            channelSampleCounts = new long[selectedChannels];
+            channelSquareSums = new double[selectedChannels];
+            channelPeakAbs = new double[selectedChannels];
             captureError = "";
 
             RandomAccessFile output = new RandomAccessFile(activeFile, "rw");
@@ -529,6 +545,7 @@ public class MG30AudioPlugin extends Plugin {
                                 rawBuffer.position(0);
                                 rawBuffer.get(rawSamples, 0, read);
                                 int samplesRead = read / 4;
+                                accumulatePcm32Stats(rawSamples, samplesRead, captureChannels);
                                 packInt32LeftJustified24(rawSamples, samplesRead, pcm24);
                                 int bytes = samplesRead * 3;
                                 outputRef.write(pcm24, 0, bytes);
@@ -543,6 +560,7 @@ public class MG30AudioPlugin extends Plugin {
                         while (recording) {
                             int read = recordRef.read(samples, 0, samples.length, AudioRecord.READ_BLOCKING);
                             if (read > 0) {
+                                accumulateFloatStats(samples, read, captureChannels);
                                 packFloatToPcm24(samples, read, pcm24);
                                 int bytes = read * 3;
                                 outputRef.write(pcm24, 0, bytes);
@@ -557,6 +575,7 @@ public class MG30AudioPlugin extends Plugin {
                         while (recording) {
                             int read = recordRef.read(samples, 0, samples.length, AudioRecord.READ_BLOCKING);
                             if (read > 0) {
+                                accumulatePcm16Stats(samples, read, captureChannels);
                                 packShortToPcm24(samples, read, pcm24);
                                 int bytes = read * 3;
                                 outputRef.write(pcm24, 0, bytes);
@@ -582,6 +601,8 @@ public class MG30AudioPlugin extends Plugin {
             result.put("channels", activeChannels);
             result.put("captureMode", activeCaptureMode);
             result.put("channelIndexMask", activeChannelIndexMask);
+            result.put("requestedChannelIndexMask", activeRequestedChannelIndexMask);
+            result.put("routeDeviceId", activeRouteDeviceId);
             result.put("channelLayout", activeChannelIndexMask != 0
                 ? "USB channel-index mask 0x" + Integer.toHexString(activeChannelIndexMask).toUpperCase(Locale.ROOT)
                 : (activeChannels == 2 ? "USB stereo position mask" : "USB mono position mask"));
@@ -607,6 +628,54 @@ public class MG30AudioPlugin extends Plugin {
         if (source == MediaRecorder.AudioSource.MIC) return "MIC";
         if (Build.VERSION.SDK_INT >= 24 && source == MediaRecorder.AudioSource.UNPROCESSED) return "UNPROCESSED";
         return "AudioSource " + source;
+    }
+
+    private void accumulatePcm32Stats(byte[] data, int sampleCount, int channels) {
+        for (int i = 0; i < sampleCount; i++) {
+            int offset = i * 4;
+            int raw = (data[offset] & 0xff)
+                | ((data[offset + 1] & 0xff) << 8)
+                | ((data[offset + 2] & 0xff) << 16)
+                | (data[offset + 3] << 24);
+            updateChannelStats(i % channels, raw / 2147483648.0);
+        }
+    }
+
+    private void accumulatePcm16Stats(short[] data, int sampleCount, int channels) {
+        for (int i = 0; i < sampleCount; i++) {
+            updateChannelStats(i % channels, data[i] / 32768.0);
+        }
+    }
+
+    private void accumulateFloatStats(float[] data, int sampleCount, int channels) {
+        for (int i = 0; i < sampleCount; i++) {
+            updateChannelStats(i % channels, data[i]);
+        }
+    }
+
+    private void updateChannelStats(int channel, double sample) {
+        if (channel < 0 || channel >= channelSampleCounts.length || !Double.isFinite(sample)) return;
+        channelSampleCounts[channel]++;
+        channelSquareSums[channel] += sample * sample;
+        channelPeakAbs[channel] = Math.max(channelPeakAbs[channel], Math.abs(sample));
+    }
+
+    private JSArray buildChannelStats() {
+        JSArray values = new JSArray();
+        for (int i = 0; i < channelSampleCounts.length; i++) {
+            long count = channelSampleCounts[i];
+            double rms = count > 0 ? Math.sqrt(channelSquareSums[i] / count) : 0.0;
+            double peak = channelPeakAbs[i];
+            JSObject channel = new JSObject();
+            channel.put("channel", i + 1);
+            channel.put("samples", count);
+            channel.put("peak", peak);
+            channel.put("rms", rms);
+            channel.put("peakDbfs", peak > 0 ? 20.0 * Math.log10(peak) : -240.0);
+            channel.put("rmsDbfs", rms > 0 ? 20.0 * Math.log10(rms) : -240.0);
+            values.put(channel);
+        }
+        return values;
     }
 
     private static String captureEncodingName(int encoding) {
@@ -677,6 +746,10 @@ public class MG30AudioPlugin extends Plugin {
             result.put("channels", activeChannels);
             result.put("captureMode", activeCaptureMode);
             result.put("channelIndexMask", activeChannelIndexMask);
+            result.put("requestedChannelIndexMask", activeRequestedChannelIndexMask);
+            result.put("routeDeviceId", activeRouteDeviceId);
+            result.put("channelStats", buildChannelStats());
+            result.put("bytesWritten", dataBytes);
             result.put("channelLayout", activeChannelIndexMask != 0
                 ? "USB channel-index mask 0x" + Integer.toHexString(activeChannelIndexMask).toUpperCase(Locale.ROOT)
                 : (activeChannels == 2 ? "USB stereo position mask" : "USB mono position mask"));
