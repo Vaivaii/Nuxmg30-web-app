@@ -320,3 +320,18 @@ Jangan mengubah komunikasi perangkat yang sudah bekerja untuk mencapai tampilan 
 - Generate Capacitor Android project and install USB audio plugin: success.
 - Tahap Build debug APK masih berjalan saat catatan ini dibuat; belum menyatakan build sukses sampai artifact tersedia.
 - Belum ada pengujian hardware untuk switch tiga posisi. User harus memastikan setiap posisi mengubah frekuensi/Contour yang sesuai dan readback kembali ke tombol yang tepat.
+
+
+### Hasil akhir build & paket APK
+
+- GitHub Actions run `41701473159` pada source commit `7f50ee7c1fa6ee92aa70c0c8d9357e6693cfee23`: **success**.
+- Test suite: **193 passed, 0 failed**.
+- Android initializer syntax: success.
+- Capacitor Android project generation: success.
+- Gradle: `BUILD SUCCESSFUL in 1m 13s`.
+- Artifact `MG30-Studio-debug-APK`, ID `13262874325`, SHA-256 ZIP `7e00c8ff6952ddf16a816a5109c090bfc4470d7955dce28127196a4fd63dc972`.
+- APK diekstrak dari artifact dan diperiksa: ZIP integrity valid; `AndroidManifest.xml`, `classes.dex`, serta web assets tersedia. Pemeriksaan asset APK mengonfirmasi string `AMP_THREE_POSITION_SWITCHES`, `LO MIDS FREQ`, `250 Hz`, `VINTAGE`, `MODERN`, dan terjemahan `IR stored on device · CRC` ikut terpaket.
+- APK filename: `MG30-Studio-amp-switch-ir-english.apk`.
+- APK SHA-256: `408ee07e0bfc6485296c9fdc58429f32d129d03cd4fe401811ec3fc0385b125a`.
+- Build APK berasal dari source commit di atas; commit setelahnya hanya memperbarui dokumen handoff. Tidak ada perubahan kode aplikasi setelah build tersebut.
+- Batas validasi: ini adalah regression/simulation test + Android debug build, bukan pengujian perangkat keras fisik. Pemetaan nilai switch 0/50/100 tetap harus dicoba pada MG-30 dan dikonfirmasi lewat readback serta perubahan suara/parameter.
