@@ -491,11 +491,13 @@ export function pinchZoomFromDistance(initialZoom, initialDistance, currentDista
   const start = Number(initialDistance);
   const current = Number(currentDistance);
   const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 92;
-  const safeStart = Number.isFinite(start) && start > 0 ? start : 1;
-  const safeCurrent = Number.isFinite(current) && current > 0 ? current : safeStart;
   const minimum = Math.max(1, Number(minZoom) || 44);
   const maximum = Math.max(minimum, Number(maxZoom) || 180);
-  return Math.round(Math.max(minimum, Math.min(maximum, safeZoom * safeCurrent / safeStart)));
+  if (!Number.isFinite(start) || start <= 0) {
+    return Math.round(Math.max(minimum, Math.min(maximum, safeZoom)));
+  }
+  const safeCurrent = Number.isFinite(current) && current > 0 ? current : start;
+  return Math.round(Math.max(minimum, Math.min(maximum, safeZoom * safeCurrent / start)));
 }
 
 /** Keep the timeline position under the pinch midpoint anchored while zoom changes. */

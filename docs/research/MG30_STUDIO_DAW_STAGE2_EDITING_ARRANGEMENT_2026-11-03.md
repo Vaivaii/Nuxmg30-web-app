@@ -108,3 +108,8 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - Two-finger pinch on the timeline grid scales the complete timeline canvas live. The bar position beneath the fingers' midpoint remains anchored; zoom is bounded to the existing 44–180 range.
 - During pinch, a one-finger clip drag is cancelled and DOM rebuilding is deferred until pointer-up. The chosen zoom is committed once at the end of the gesture; tap/click after pinch is suppressed to avoid an accidental seek.
 - Added core tests for proportional pinch scaling and midpoint anchor math, plus UI assertions for overlay stacking, cursor button placement, and pointer gesture registration.
+
+
+### Pinch zoom fallback follow-up
+- Run #433 showed that an invalid initial pinch distance should preserve the current zoom instead of using a synthetic one-pixel denominator.
+- Updated the helper to return the bounded current zoom when the initial distance is invalid; the regression test for this input is retained.
