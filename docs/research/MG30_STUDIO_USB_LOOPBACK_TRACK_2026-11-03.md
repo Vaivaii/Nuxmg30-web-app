@@ -461,3 +461,49 @@ Distinguish this observation from the raw WAV diagnostic:
 - Protect NAM, IR User/Third Party, IR Collection and MIDI mapping paths.
 
 This is a user-reported practical behavior, not an independently measured simultaneous guitar+phone multichannel test. Any future claim about exact internal summing point or alternate isolated route needs a dedicated capture test.
+
+
+## Live waveform while USB DAW recording — implemented and built (3 November 2026)
+
+The user reported that DAW clips showed a flat placeholder during recording and only displayed their waveform after Stop. Root cause was in the DAW UI lifecycle: the native recorder wrote the WAV continuously, but the DAW did not create/import a clip or analyze its waveform until `stopDawRecording()` called `importQuickTake()`.
+
+### Implementation
+
+1. `native-android/MG30AudioPlugin.java`
+   - Maintains a bounded per-channel rolling waveform ring (`MAX_LIVE_WAVEFORM_BUCKETS = 8192`).
+   - Accumulates peak values per 100 ms audio window while the existing USB capture thread writes the WAV.
+   - Exposes `getRecordingStats()` as a Capacitor plugin method. It returns recording state, sample rate, channel count, actual/requested channel-index masks, elapsed capture duration and up to 256 downsampled peak bins per channel.
+   - The capture loop remains the single audio writer; snapshot reads only copy the bounded peak summary under a short synchronization lock. It does not open a second AudioRecord or read from the WAV while it is still being written.
+
+2. `www/main.js`
+   - Exposes the native `getRecordingStats()` method through the existing `window.NUXStudioRecorder` bridge.
+   - Does not change Quick Record's start/stop behavior.
+
+3. `www/studio-daw.js`
+   - Adds a temporary, non-persisted live recording clip on the armed DAW track.
+   - Polls native waveform snapshots every 200 ms while recording.
+   - Updates the clip waveform from the selected route's channel(s) and grows its timeline width with elapsed recording time.
+   - Uses the existing playhead animation for smooth clip geometry updates. The saved take is still imported and fully analyzed after Stop; that final decoded waveform replaces the temporary preview.
+   - Removes the temporary preview on stop, failure or after the final take is imported. The preview is not stored in project history or the project database.
+
+4. `tests/studio-usb-loopback.test.js`
+   - Asserts the native rolling snapshot method, 100 ms aggregation, bridge exposure, 200 ms UI polling and temporary live clip.
+   - Existing USB route, four-track, Loopback/Wet Sync, NAM/IR and MIDI regression coverage remains in place.
+
+### Build verification
+
+- Workflow: [Build MG30 Studio Android APK — live waveform](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41624398218), run ID `41624398218`.
+- Source commit: `3c0d4a98363fba8e54bb873f4fa6d549ad6d1d30`.
+- Regression tests: **158 passed, 0 failed**.
+- Android initializer syntax: passed.
+- Capacitor Android generation and USB audio plugin registration: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 31s**.
+- Artifact ID: `13225581074`; archive size 4,133,568 bytes; SHA-256 `8119428dc61b49a6d7ebdcb18a4e7868de53359f153b63da7b186db59222543b`.
+- Extracted APK: 4,511,664 bytes; SHA-256 `0f7a9bda2f008916ff2d175ac8fefcc817de9b95e1c7dc24266e2881fcd90a59`.
+- APK inspection confirms the live-preview UI strings in the web bundle and `getRecordingStats`, `LIVE_WAVEFORM_BUCKET_MS`, and `channelWaveforms` in the compiled DEX.
+
+### Physical verification still required
+
+CI confirms tests and APK packaging, not the visible behavior on the user's phone. Install this APK and record guitar through MG-30 USB: the waveform should start appearing during capture and extend as recording continues, before Stop is pressed. Confirm that the waveform does not lag badly, flicker, or affect capture audio. Stop should then replace the temporary live preview with the final decoded clip waveform.
+
+Protected paths: NAM features, custom IR User/Third Party, IR Collection and MIDI mappings were not modified by this live-waveform change.
