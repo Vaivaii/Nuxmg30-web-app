@@ -671,12 +671,22 @@ test('DAW overflow menu stacks above the timeline playhead and stays unclipped',
   assert.ok(daw.includes('z-index:1!important'));
 });
 
-test('cursor start and end actions flank the right side of the DAW clock instead of the dropdown', () => {
+test('cursor start and end sit beside Undo/Redo left of timer; Copy/Paste/Duplicate stay right of timer', () => {
   const start = html.indexOf('<div class="daw-quick-toolbar-position">');
   const end = html.indexOf('<div class="daw-section-toolbar"', start);
   const position = html.slice(start, end);
-  assert.ok(position.includes('id="dawCursorStart"'));
-  assert.ok(position.includes('id="dawCursorEnd"'));
+  const leftStart = position.indexOf('class="daw-clock-actions daw-clock-actions-left"');
+  const clock = position.indexOf('id="dawClock"');
+  const rightStart = position.indexOf('class="daw-clock-actions daw-clock-actions-right"');
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd']) {
+    const p = position.indexOf('id="' + id + '"');
+    assert.ok(p >= leftStart && p < clock, id + ' must be on the left side of the clock');
+  }
+  for (const id of ['dawCopyClip','dawPasteClip','dawDuplicateClip']) {
+    const p = position.indexOf('id="' + id + '"');
+    assert.ok(p > rightStart, id + ' must remain on the right side of the clock');
+  }
+  assert.ok(leftStart >= 0 && rightStart > clock);
   const menuStart = html.indexOf('id="dawMoreMenuPanel"');
   const menuEnd = html.indexOf('</details>', menuStart);
   const menu = html.slice(menuStart, menuEnd);

@@ -113,3 +113,9 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 ### Pinch zoom fallback follow-up
 - Run #433 showed that an invalid initial pinch distance should preserve the current zoom instead of using a synthetic one-pixel denominator.
 - Updated the helper to return the bounded current zoom when the initial distance is invalid; the regression test for this input is retained.
+
+
+### Clock-row button placement correction (3 November 2026)
+- Cursor Start/End now sit directly after Undo/Redo in the left action group beside the clock.
+- Copy/Paste/Duplicate are restored to the right action group in their previous position; they are no longer pushed aside by cursor navigation controls.
+- UI regression test asserts the exact left/right grouping and verifies cursor actions stay out of the three-dot menu.
