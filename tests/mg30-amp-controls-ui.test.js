@@ -104,7 +104,8 @@ test('STARLIFT Contour labels match the physical top-middle-bottom positions on 
 test('unverified three-position switches remain visible and read-only, with raw state retained', () => {
   assert.match(html, /AMP_THREE_POSITION_SWITCHES\[modelIndex\][\s\S]*?sort\(\(a,b\)=>a\.ccIndex-b\.ccIndex\)/);
   assert.match(html, /control\.type==='three-way-switch'\)return undefined/);
-  const start = html.indexOf("if(control.type==='three-way-switch')");
+  const rendererStart = html.indexOf("$('knobs').innerHTML=controls.map(control=>{");
+  const start = html.indexOf("if(control.type==='three-way-switch')", rendererStart);
   const end = html.indexOf("\n }", start);
   assert.ok(start>=0&&end>start);
   const renderer = html.slice(start,end+3);
@@ -137,8 +138,16 @@ test('STARLIFT switch label positions remain Vintage / Off / Modern from top to 
   assert.match(block[1], /param:'contour'[\s\S]*?label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
 });
 
+test('generic parameter writer refuses unverified three-position switch values', () => {
+  const writer = html.match(/function sendBlockParam\([\s\S]*?\n\}/);
+  assert.ok(writer, 'generic parameter writer must exist');
+  assert.match(writer[0], /control\.type==='three-way-switch'\)return/);
+  assert.match(writer[0], /sendCC\(cc,encodeParameterValue\(param,value\)\)/);
+});
+
 test('unverified switch mapping cannot send MIDI values and controls remain read-only', () => {
-  const start = html.indexOf("if(control.type==='three-way-switch')");
+  const rendererStart = html.indexOf("$('knobs').innerHTML=controls.map(control=>{");
+  const start = html.indexOf("if(control.type==='three-way-switch')", rendererStart);
   const end = html.indexOf("\n }", start);
   assert.ok(start>=0&&end>start);
   const renderer = html.slice(start,end+3);
