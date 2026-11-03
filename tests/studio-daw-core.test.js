@@ -31,6 +31,10 @@ test('project normalization clamps unsafe values and keeps exactly four lanes', 
       { id: 'guitar', armed: true, gain: 9, pan: -9, clips: [{ id: 'a', mediaId: 'media-a', startSeconds: 2, sourceOffsetSeconds: 0.5, durationSeconds: 4 }] },
       { id: 'backing', clips: [{ mediaId: 'media-b', startSeconds: -3, durationSeconds: 0 }] },
       { id: 'unknown', clips: [{ mediaId: 'ignore', durationSeconds: 3 }] },
+      { id: 'loopback', clips: [{
+        id: 'old-loopback-clip', mediaId: 'old-loopback-media', name: 'Loopback take',
+        startSeconds: 8, durationSeconds: 5, channels: 4, captureMode: 'loopback', channelIndexMask: 15,
+      }] },
     ],
   });
   assert.equal(project.name, 'Demo');
@@ -42,7 +46,10 @@ test('project normalization clamps unsafe values and keeps exactly four lanes', 
   assert.equal(project.tracks[1].clips[0].startSeconds, 2);
   assert.equal(project.tracks[0].clips.length, 0);
   assert.equal(project.tracks.filter((track) => track.armed).length, 1);
-  assert.deepEqual(project.legacyLoopbackClips, []);
+  assert.equal(project.legacyLoopbackClips.length, 1);
+  assert.equal(project.legacyLoopbackClips[0].id, 'old-loopback-clip');
+  assert.equal(project.legacyLoopbackClips[0].mediaId, 'old-loopback-media');
+  assert.equal(project.legacyLoopbackClips[0].channelIndexMask, 15);
   assert.equal(normalizeProject(null), null);
 });
 
