@@ -237,3 +237,23 @@ Do not mark USB Loopback as physically verified. Next diagnosis must obtain:
 
 Initial diagnostic interpretation: WAV creation succeeded, but the near-flat waveform is consistent with silence or extremely low level in the selected channel(s). It does not by itself establish whether the problem is phone USB playback routing, the MG-30 Loopback input channel assignment, Android's exposed channel-index mask, or sample conversion. Preserve the current four-track routing and protected NAM/IR/MIDI paths while diagnosing.
 
+
+
+## User confirmation — Backing is explicitly set to Loopback 3–4 (3 November 2026)
+
+The next screenshot explicitly shows the Backing route selected as "MG-30 USB · Loopback 3–4 (Stereo)". The prior assumption that Backing might still be set to File/Import, Input 1, or Input 1–2 is therefore ruled out. Do not ask the user to repeat this route-selection check.
+
+The screenshot also shows the saved clip name "MG30_USB_Input_Take_20261103_150952.wav" in Track Settings/clip inspector. Thus the native recording start/stop and file import path produced a take, but the displayed Timeline waveform from the preceding screenshot was nearly flat. No acoustic input signal has been confirmed yet.
+
+### Remaining fault domains
+
+1. USB playback/output route: the DAW captures the MG-30 USB input endpoint with AudioRecord, but that operation does not prove Android sent the phone/DAW music to the MG-30 USB output endpoint. The separate native output plugin only enumerates USB outputs and has an isolated low-level test-tone probe; it is not currently integrated as a verification of the phone player's media route in the DAW.
+2. MG-30 stream channel mapping: the app requests the selected index mask and preserves channel metadata, but NUX's public product information only confirms existence of USB Loopback mode, not the semantic signal assigned to each MG-30 USB capture channel.
+3. Capture payload: a successful WAV file and AudioRecord routed-device match prove that a stream was opened and a file written, not that its samples contain the phone song.
+
+### Required next evidence
+
+Obtain the original raw Quick Take WAV "MG30_USB_Input_Take_20261103_150952.wav" (export from Record/Quick Takes, not the decoded/stereo DAW clip). Analyze RIFF channel count, sample rate, bit depth, data length, and per-channel peak/RMS/DC offset. If four channels are present, compare all four channel energies and listen to each pair before altering the channel-index selection. If only two are present, inspect the persisted channelIndexMask metadata to confirm whether Android really opened mask 0xC.
+
+Next diagnostic UI should expose, per take: selected endpoint, AudioRecord routed endpoint, sample format, actual channel count, actual channel-index mask, bytes written, capture errors, and per-channel peak/RMS. It should separately indicate whether the MG-30 USB output endpoint is present; do not conflate USB MIDI connectivity with USB Audio output routing.
+
