@@ -80,7 +80,7 @@ Normal DAW playback and the existing MG-30 USB recorder are reused. No Reamp Aud
 5. Start the song playback. The capture is written to the dedicated Loopback lane.
 6. Press `STOP USB LOOPBACK CAPTURE`. The captured clip appears on Loopback separately from Backing/Guitar.
 
-For a first controlled test, prefer the DAW Backing lane and DAW Play while the app remains foregrounded. Android may stop or restrict microphone/USB capture if the app is backgrounded; the app's existing visibility lifecycle also stops a DAW recording when the page is hidden. External music-player playback can be tried while MG30 Studio remains visible (or split-screen), but this must be verified on the actual handset.
+For a first controlled test, prefer the DAW Backing lane and DAW Play while the app remains foregrounded. Android may stop or restrict microphone/USB capture if the app is backgrounded; the app's existing visibility lifecycle also stops a DAW recording when the page is hidden. For Loopback-only capture, the app does not create or resume its Web Audio playback context, and suspends an idle context so it does not take audio focus from a separate phone music player. An external music-player can therefore be tested while MG30 Studio remains visible (for example in split-screen); leaving the app or hiding its page still stops capture. This behavior must be confirmed on the actual handset.
 
 ## Protected areas
 
