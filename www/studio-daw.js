@@ -592,32 +592,74 @@ function renderOutputRoutingPanel() {
   let panel = host.querySelector('[data-daw-output-routing]');
   if (!panel) {
     panel = document.createElement('section');
-    panel.className = 'daw-settings-section';
+    panel.className = 'daw-settings-section daw-output-routing-card';
     panel.dataset.dawOutputRouting = 'true';
-    panel.innerHTML = '<div class="daw-project-settings-heading"><div><h4>Audio Output</h4><p>Choose where the complete DAW mix is played.</p></div></div>' +
-      '<label class="daw-track-name-field">PLAYBACK OUTPUT<select id="dawOutputRoute"><option value="speaker">Phone speaker / current Android output</option><option value="mg30">NUX MG-30 · USB</option></select></label>' +
+    panel.innerHTML =
+      '<div class="daw-project-settings-heading"><div><h4>Audio Output</h4><p>Choose where the complete DAW mix is played.</p></div></div>' +
+      '<div class="daw-output-route-field">' +
+        '<span class="daw-output-route-label">PLAYBACK OUTPUT</span>' +
+        '<details class="daw-output-route-menu" id="dawOutputRouteMenu">' +
+          '<summary aria-label="Select DAW playback output"><span id="dawOutputRouteLabel">Phone speaker / current Android output</span><span class="daw-output-route-chevron" aria-hidden="true">⌄</span></summary>' +
+          '<div class="daw-output-route-options" role="group" aria-label="Playback output">' +
+            '<button type="button" data-output-route-option="speaker" aria-pressed="true"><span><strong>Phone speaker</strong><small>Current Android output</small></span><span class="daw-output-route-check" aria-hidden="true">✓</span></button>' +
+            '<button type="button" data-output-route-option="mg30" aria-pressed="false"><span><strong>NUX MG-30</strong><small>USB playback output</small></span><span class="daw-output-route-check" aria-hidden="true">✓</span></button>' +
+          '</div>' +
+        '</details>' +
+        '<select id="dawOutputRoute" class="daw-output-route-native" aria-hidden="true" tabindex="-1"><option value="speaker">Phone speaker / current Android output</option><option value="mg30">NUX MG-30 · USB</option></select>' +
+      '</div>' +
       '<small id="dawOutputRouteStatus" class="daw-inspector-note">The selected output applies to DAW playback. Recording input routing remains independent.</small>';
     host.prepend(panel);
-    panel.querySelector('#dawOutputRoute').addEventListener('change', (event) => {
+
+    const select = panel.querySelector('#dawOutputRoute');
+    const menu = panel.querySelector('#dawOutputRouteMenu');
+    const syncMenu = () => {
+      const route = select.value === 'mg30' ? 'mg30' : 'speaker';
+      const label = panel.querySelector('#dawOutputRouteLabel');
+      if (label) label.textContent = route === 'mg30' ? 'NUX MG-30 · USB output' : 'Phone speaker / current Android output';
+      panel.querySelectorAll('[data-output-route-option]').forEach((button) => {
+        const active = button.dataset.outputRouteOption === route;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    select.addEventListener('change', () => {
       if (playing) pausePlayback();
-      project.outputRoute = event.target.value === 'mg30' ? 'mg30' : 'speaker';
+      project.outputRoute = select.value === 'mg30' ? 'mg30' : 'speaker';
       const status = panel.querySelector('#dawOutputRouteStatus');
       if (status) status.textContent = project.outputRoute === 'mg30'
         ? 'MG-30 USB selected. Android route is checked before playback; acoustic output still needs listening confirmation.'
         : 'Phone / Android default output selected.';
+      syncMenu();
       scheduleProjectSave();
+    });
+    panel.querySelectorAll('[data-output-route-option]').forEach((button) => {
+      button.addEventListener('click', () => {
+        select.value = button.dataset.outputRouteOption === 'mg30' ? 'mg30' : 'speaker';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        if (menu) menu.open = false;
+      });
     });
   }
   const select = panel.querySelector('#dawOutputRoute');
   if (select && document.activeElement !== select) select.value = project.outputRoute === 'mg30' ? 'mg30' : 'speaker';
+
+  const route = project.outputRoute === 'mg30' ? 'mg30' : 'speaker';
+  const label = panel.querySelector('#dawOutputRouteLabel');
+  if (label) label.textContent = route === 'mg30' ? 'NUX MG-30 · USB output' : 'Phone speaker / current Android output';
+  panel.querySelectorAll('[data-output-route-option]').forEach((button) => {
+    const active = button.dataset.outputRouteOption === route;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+
   const status = panel.querySelector('#dawOutputRouteStatus');
-  if (status && document.activeElement !== panel.querySelector('#dawOutputRoute')) {
-    status.textContent = project.outputRoute === 'mg30'
+  if (status && document.activeElement !== select) {
+    status.textContent = route === 'mg30'
       ? 'MG-30 USB selected. Android route is checked before playback; acoustic output still needs listening confirmation.'
       : 'Phone / Android default output selected.';
   }
 }
-
 function formatClock(seconds) {
   const total = Math.max(0, Number(seconds) || 0);
   const minutes = Math.floor(total / 60);
@@ -2048,21 +2090,39 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-edit-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
     #page-studio .daw-edit-menu-grid .daw-tool-btn{width:100%;min-width:0;min-height:36px;padding:6px 8px;font-size:10px;text-align:left;white-space:nowrap}
     @media(max-width:520px){#page-studio .daw-quick-toolbar-position{gap:4px!important}#page-studio .daw-clock-actions{gap:3px!important}#page-studio .daw-clock-action-btn{min-width:30px!important;height:32px!important;padding:0 5px!important;font-size:9px!important}#page-studio .daw-position-readout{min-width:78px!important}#page-studio .daw-section-toolbar{gap:4px;flex-wrap:wrap}#page-studio .daw-section-controls{gap:4px}#page-studio .daw-section-loop-toggle{padding:0 6px;font-size:9px}#page-studio .daw-section-toolbar .daw-tool-btn{padding:4px 6px;font-size:9px}#page-studio .daw-loop-range-readout{flex:1 1 75px;font-size:8px}#page-studio .daw-section-context{margin-left:auto}#page-studio .daw-toolbar-fade-control{grid-template-columns:1fr}}
-    #page-studio .daw-input-routing-panel{margin:14px 0;padding:14px;border:1px solid rgba(83,212,199,.28);border-radius:13px;background:linear-gradient(145deg,rgba(20,54,54,.72),rgba(13,22,25,.92));color:#e3f3f1}
+    #page-studio .daw-input-routing-panel{margin:14px 0;padding:12px;border:1px solid #334139;border-radius:14px;background:#101816;color:#e6eddf}
     #page-studio .daw-input-routing-head{margin-bottom:12px}
-    #page-studio .daw-input-routing-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#78d7cf}
-    #page-studio .daw-input-routing-panel h4{margin:4px 0 5px;font-size:15px;font-weight:800}
-    #page-studio .daw-input-routing-panel p{margin:0;color:#aabfbd;font-size:10px;line-height:1.5}
+    #page-studio .daw-input-routing-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#a7b89a}
+    #page-studio .daw-input-routing-panel h4{margin:4px 0 5px;font-size:15px;font-weight:800;color:#eaf1e6}
+    #page-studio .daw-input-routing-panel p{margin:0;color:#97a694;font-size:10px;line-height:1.5}
     #page-studio .daw-input-routing-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-    #page-studio .daw-input-route-row{display:grid;gap:6px;padding:9px;border:1px solid rgba(148,163,184,.18);border-radius:9px;background:rgba(7,14,16,.35);font-size:10px;font-weight:750}
-    #page-studio .daw-input-route-row select{width:100%;min-width:0;min-height:38px;padding:7px;border:1px solid rgba(148,163,184,.25);border-radius:7px;background:#101a1d;color:#e3f3f1;font-size:10px}
-    #page-studio .daw-input-routing-note{display:block;margin-top:10px;color:var(--muted,#9aa9b5);font-size:9px;line-height:1.5}
-    #page-studio .daw-usb-diagnostic{display:grid;gap:8px;margin-top:12px;padding:11px;border:1px solid rgba(83,212,199,.22);border-radius:10px;background:rgba(5,15,17,.42)}
-    #page-studio .daw-usb-diagnostic strong{font-size:11px}
-    #page-studio .daw-usb-diagnostic p{font-size:9px}
-    #page-studio .daw-usb-diagnostic button{justify-self:start;min-height:38px}
-    #page-studio .daw-usb-diagnostic-result{font-size:10px;line-height:1.65;white-space:pre-wrap;color:#b9d8d4}
+    #page-studio .daw-input-route-row{display:grid;gap:7px;padding:10px;border:1px solid #303d34;border-radius:10px;background:#0c1411;color:#d5e1d3;font-size:11px;font-weight:750}
+    #page-studio .daw-input-route-row select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;min-height:48px;padding:0 34px 0 12px;border:1px solid #3a493e;border-radius:9px;background-color:#111b16;background-image:linear-gradient(45deg,transparent 50%,#b7c5b3 50%),linear-gradient(135deg,#b7c5b3 50%,transparent 50%);background-position:calc(100% - 17px) 21px,calc(100% - 12px) 21px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;color:#e6eddf;font-size:12px}
+    #page-studio .daw-input-routing-note{display:block;margin-top:10px;color:#97a694;font-size:10px;line-height:1.55}
+    #page-studio .daw-usb-diagnostic{display:grid;gap:8px;margin-top:12px;padding:11px;border:1px solid #303d34;border-radius:10px;background:#0c1411}
+    #page-studio .daw-usb-diagnostic strong{font-size:11px;color:#e6eddf}
+    #page-studio .daw-usb-diagnostic p{font-size:10px;color:#97a694}
+    #page-studio .daw-usb-diagnostic button{justify-self:start;min-height:40px}
+    #page-studio .daw-usb-diagnostic-result{font-size:10px;line-height:1.65;white-space:pre-wrap;color:#b9c8b5}
     @media(max-width:420px){#page-studio .daw-input-routing-list{grid-template-columns:1fr}}
+    #page-studio .daw-output-route-field{display:grid;gap:8px;min-width:0}
+    #page-studio .daw-output-route-label{font-size:10px;font-weight:800;letter-spacing:.06em;color:#9eac99}
+    #page-studio .daw-output-route-menu{position:relative;z-index:8;min-width:0}
+    #page-studio .daw-output-route-menu>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:56px;padding:0 15px;border:1px solid #3b493d;border-radius:12px;background:#0c1411;color:#eef4e9;font-size:14px;font-weight:750;list-style:none;cursor:pointer}
+    #page-studio .daw-output-route-menu>summary::-webkit-details-marker{display:none}
+    #page-studio .daw-output-route-menu[open]>summary{border-color:#a6ce62;border-bottom-left-radius:7px;border-bottom-right-radius:7px}
+    #page-studio .daw-output-route-chevron{flex:0 0 auto;color:#c5f36b;font-size:20px;line-height:1;transition:transform .15s ease}
+    #page-studio .daw-output-route-menu[open] .daw-output-route-chevron{transform:rotate(180deg)}
+    #page-studio .daw-output-route-options{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:30;display:grid;gap:5px;padding:7px;border:1px solid #3b493d;border-radius:11px;background:#101816;box-shadow:0 12px 28px #0009}
+    #page-studio .daw-output-route-options button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:0;min-height:58px;padding:9px 12px;border:1px solid transparent;border-radius:9px;background:#0c1411;color:#e6eddf;text-align:left}
+    #page-studio .daw-output-route-options button.active{border-color:#a6ce62;background:#18251a}
+    #page-studio .daw-output-route-options button>span:first-child{display:grid;gap:3px;min-width:0}
+    #page-studio .daw-output-route-options strong{font-size:12px;font-weight:800}
+    #page-studio .daw-output-route-options small{color:#9eac99;font-size:10px}
+    #page-studio .daw-output-route-check{color:#c5f36b;opacity:0;font-weight:900;font-size:16px}
+    #page-studio .daw-output-route-options button.active .daw-output-route-check{opacity:1}
+    #page-studio .daw-output-route-native{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;opacity:0!important;pointer-events:none!important}
+
     #page-studio .daw-quick-toolbar{position:relative!important;z-index:32!important;overflow:visible!important;isolation:isolate!important}
     #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:34!important}
     #page-studio .daw-more-menu{position:relative!important;z-index:100!important}
@@ -2119,22 +2179,22 @@ async function toggleRawUsbDiagnostic() {
         '\n' + (report.length ? report.join('\n') : 'Per-channel statistics were not returned.');
       const result = $('dawUsbDiagnosticResult');
       if (result) result.textContent = header;
-      setStatus('Raw USB diagnostic saved. Export the raw 4-channel take from Quick Takes if deeper analysis is needed.', 'ok');
+      setStatus('Raw USB diagnostic saved. Export the four-channel take from Quick Takes for further analysis.', 'ok');
       refreshQuickTakes();
     } catch (error) {
       usbDiagnosticRecording = false;
-      setStatus('USB diagnostic could not be finalized: ' + (error?.message || 'capture error'), 'warn');
+      setStatus('The USB diagnostic could not be finalized: ' + (error?.message || 'capture error'), 'warn');
     } finally {
       renderUsbDiagnosticButton();
     }
     return;
   }
   if (!recorder?.isNative?.()) {
-    setStatus('Raw USB diagnostics require the Android APK.', 'warn');
+    setStatus('Raw USB diagnostics require the Android app.', 'warn');
     return;
   }
   if (recording || recorder.isRecording()) {
-    setStatus('Stop the current DAW/Quick Record capture before starting the raw USB diagnostic.', 'warn');
+    setStatus('Stop the current DAW/Quick Record recording before starting the raw USB diagnostic.', 'warn');
     return;
   }
   try {
@@ -2145,10 +2205,10 @@ async function toggleRawUsbDiagnostic() {
     const report = $('dawUsbDiagnosticResult');
     if (report) report.textContent = 'Capturing USB IN mask 0xF · ' + (result.channels || 0) +
       ' channels · ' + (result.sampleRate || 0) + ' Hz. Play the phone/host audio that should be included by Loopback, then stop this test.';
-    setStatus('Raw four-channel USB diagnostic is recording. This does not change any DAW track or preset.', 'ok');
+    setStatus('The four-channel USB diagnostic is recording. This does not change any DAW track or preset.', 'ok');
   } catch (error) {
     usbDiagnosticRecording = false;
-    setStatus('Could not start raw USB diagnostic: ' + (error?.message || 'capture error'), 'warn');
+    setStatus('Could not start the raw USB diagnostic: ' + (error?.message || 'capture error'), 'warn');
   } finally {
     renderUsbDiagnosticButton();
   }
@@ -2161,21 +2221,21 @@ function mountTrackInputRoutingPanel() {
   addTrackInputRoutingStyles();
   const panel = document.createElement('section');
   panel.id = 'dawTrackInputRoutingPanel';
-  panel.className = 'daw-input-routing-panel';
+  panel.className = 'daw-settings-section daw-input-routing-panel';
   panel.innerHTML = `
     <div class="daw-input-routing-head">
       <span class="daw-input-routing-eyebrow">USB AUDIO · PER-TRACK INPUT</span>
       <h4>Track Input Routing</h4>
-      <p>Empat track tetap. Input USB 1/2 dan Wet Sync 3/4 adalah jalur yang berbeda. Input 3/4 bukan otomatis Loopback playback dari HP.</p>
+      <p>Four fixed tracks. USB Input 1/2 and Wet Sync 3/4 are separate paths. Input 3/4 is not automatically the phone's playback loopback.</p>
     </div>
     <div class="daw-input-routing-list" id="dawTrackInputRoutingList"></div>
     <div class="daw-usb-diagnostic">
       <strong>Raw USB input diagnostic · 4 channels</strong>
-      <p>Rekam semua kanal USB mentah sekaligus untuk mengetahui kanal mana yang benar-benar membawa audio. Hasil diagnostik tidak dimasukkan ke track; file asli tersedia di Quick Takes untuk diekspor.</p>
+      <p>Record all four raw USB input channels simultaneously to identify which channels carry audio. Diagnostic recordings are not added to any track; the original file is available in Quick Takes for export.</p>
       <button type="button" id="dawUsbDiagnosticButton" class="daw-tool-btn">START RAW USB 1–4 TEST</button>
-      <div id="dawUsbDiagnosticResult" class="daw-usb-diagnostic-result" aria-live="polite">Belum ada hasil pengukuran.</div>
+      <div id="dawUsbDiagnosticResult" class="daw-usb-diagnostic-result" aria-live="polite">No measurement yet.</div>
     </div>
-    <small class="daw-input-routing-note">Input 1 = mono · Input 1–2 = stereo + Host Loopback mix saat Routing Mode Normal dan opsi Loopback ON · Input 3–4 = Wet Sync (Dry Out mode). Loopback HP memakai jalur rekam Input 1–2, bukan bus USB terpisah. Untuk Backing yang tetap terpisah, gunakan Audio file / Import; pemisahan gitar dan playback saat Loopback ON belum terbukti.</small>
+    <small class="daw-input-routing-note">Input 1 = mono · Inputs 1–2 = stereo + host loopback mix when Routing Mode is Normal and Loopback is ON · Inputs 3–4 = Wet Sync (Dry Out mode). Phone loopback uses the USB Input 1–2 recording path, not a separate USB bus. To keep backing tracks separate, use Audio file / Import; separation of guitar and playback while Loopback is ON has not been verified.</small>
   `;
   host.insertBefore(panel, projectSettings);
   syncTrackInputRoutingPanel();
@@ -2193,7 +2253,7 @@ function mountTrackInputRoutingPanel() {
     track.input = route.label;
     renderProject();
     scheduleProjectSave();
-    setStatus(track.name + ' input set to ' + route.label + '. This affects the next recording only; existing clips remain unchanged.', 'ok');
+    setStatus(track.name + ' input set to ' + route.label + '. This applies to the next recording only; existing clips remain unchanged.', 'ok');
   });
 }
 

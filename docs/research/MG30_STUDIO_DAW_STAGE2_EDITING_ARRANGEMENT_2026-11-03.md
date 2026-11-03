@@ -119,3 +119,10 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 - Cursor Start/End now sit directly after Undo/Redo in the left action group beside the clock.
 - Copy/Paste/Duplicate are restored to the right action group in their previous position; they are no longer pushed aside by cursor navigation controls.
 - UI regression test asserts the exact left/right grouping and verifies cursor actions stay out of the three-dot menu.
+
+
+## Track Settings visual cleanup (4 November 2026)
+- Track Input Routing now uses the same dark green/charcoal card surface, border and radius as the other Track Settings cards. Its descriptive paragraphs, diagnostic readout and change/status messages are English to match the app's default language.
+- Removed the standalone `studio-usb-output.js` diagnostic-panel module from the app page. The output-discovery / tone-test implementation remains in the repository and native USB audio output plugin remains registered, but the separate test card is no longer mounted in Track Settings.
+- Kept the DAW's actual Playback Output routing selector and persisted `project.outputRoute` value unchanged. Replaced the native-looking dropdown presentation with an app-styled custom details menu with larger 56px trigger and 58px option rows; choices update the same hidden native select and existing change handler.
+- Added regression assertions for English Track Input Routing copy, shared card palette, custom output menu behavior, and absence of the diagnostic card script.

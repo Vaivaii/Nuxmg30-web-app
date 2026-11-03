@@ -700,3 +700,43 @@ test('timeline grid supports two-finger pinch pointer gestures', () => {
   assert.ok(daw.includes("addEventListener('pointercancel', endTimelinePinch)"));
   assert.ok(css.includes('touch-action:pan-x pan-y!important'));
 });
+
+
+test('Track Input Routing uses the standard Track Settings card palette and English copy', () => {
+  assert.ok(daw.includes("panel.className = 'daw-settings-section daw-input-routing-panel'"));
+  for (const value of [
+    'Four fixed tracks.',
+    'USB Input 1/2 and Wet Sync 3/4 are separate paths.',
+    'Record all four raw USB input channels simultaneously',
+    'No measurement yet.',
+    'Phone loopback uses the USB Input 1–2 recording path',
+  ]) {
+    assert.ok(daw.includes(value), 'missing English Track Input Routing copy: ' + value);
+  }
+  assert.ok(daw.includes('background:#101816'));
+  assert.ok(daw.includes('border:1px solid #334139'));
+  assert.equal(daw.includes('Empat track tetap.'), false);
+});
+
+test('Playback Output uses the app-styled custom selector, retaining the persisted route value', () => {
+  for (const value of [
+    'dawOutputRouteMenu',
+    'dawOutputRouteLabel',
+    'data-output-route-option="speaker"',
+    'data-output-route-option="mg30"',
+    'daw-output-route-options',
+    'daw-output-route-native',
+    'dispatchEvent(new Event(\'change\', { bubbles: true }))',
+    'project.outputRoute = select.value === \'mg30\' ? \'mg30\' : \'speaker\'',
+  ]) {
+    assert.ok(daw.includes(value), 'missing custom Playback Output feature: ' + value);
+  }
+  assert.ok(daw.includes('min-height:56px'));
+  assert.ok(daw.includes('min-height:58px'));
+  assert.equal(daw.includes('PLAYBACK OUTPUT<select id="dawOutputRoute">'), false);
+});
+
+test('USB Output Routing Test card is not mounted in the Studio Track Settings page', () => {
+  assert.equal(html.includes('./studio-usb-output.js'), false);
+  assert.equal(html.includes('dawUsbOutput'), false);
+});

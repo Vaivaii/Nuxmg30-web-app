@@ -59,8 +59,8 @@ test('Android initialization copies and registers the isolated output plugin', (
   assert.ok(init.includes('registerPlugin(MG30AudioOutputPlugin.class);'));
 });
 
-test('Studio exposes native USB output discovery and an explicit tone-test action', () => {
-  assert.ok(index.includes('./studio-usb-output.js'));
+test('Standalone USB output diagnostic UI is not mounted in Studio Track Settings', () => {
+  assert.equal(index.includes('./studio-usb-output.js'), false);
   assert.ok(ui.includes("registerPlugin('MG30AudioOutput')"));
   assert.ok(ui.includes('inspectOutputDevices()'));
   assert.ok(ui.includes('playTestTone({ deviceId: Number(selectedMg30Device.id) })'));
