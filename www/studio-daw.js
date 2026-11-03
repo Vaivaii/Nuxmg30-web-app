@@ -403,6 +403,35 @@ function updateToolbar() {
       ? 'Loop ' + formatClock(loop.start) + ' – ' + formatClock(loop.end)
       : 'Loop: full timeline';
   }
+  const selectedClip = getSelectedClipContext()?.clip || null;
+  const selectedTrack = getTrack(selectedTrackId);
+  const fadeIn = $('dawFadeIn');
+  const fadeOut = $('dawFadeOut');
+  const fadeInReadout = $('dawFadeInReadout');
+  const fadeOutReadout = $('dawFadeOutReadout');
+  const fadeTarget = $('dawFadeTarget');
+  if (fadeTarget) fadeTarget.textContent = selectedClip ? selectedClip.name : 'Select a clip to adjust its fades';
+  if (fadeIn) {
+    fadeIn.disabled = !selectedClip;
+    fadeIn.max = String(selectedClip ? Math.min(10, selectedClip.durationSeconds) : 10);
+    if (document.activeElement !== fadeIn) fadeIn.value = String(selectedClip ? (Number(selectedClip.fadeInSeconds) || 0) : 0);
+  }
+  if (fadeOut) {
+    fadeOut.disabled = !selectedClip;
+    fadeOut.max = String(selectedClip ? Math.min(10, selectedClip.durationSeconds) : 10);
+    if (document.activeElement !== fadeOut) fadeOut.value = String(selectedClip ? (Number(selectedClip.fadeOutSeconds) || 0) : 0);
+  }
+  if (fadeInReadout) fadeInReadout.textContent = (selectedClip ? (Number(selectedClip.fadeInSeconds) || 0) : 0).toFixed(2) + ' s';
+  if (fadeOutReadout) fadeOutReadout.textContent = (selectedClip ? (Number(selectedClip.fadeOutSeconds) || 0) : 0).toFixed(2) + ' s';
+  const clipActionDisabled = !selectedClip || recording || playing;
+  ['dawCopyClip','dawDuplicateClip','dawNudgeLeft','dawNudgeRight','dawTrimStart','dawTrimEnd','dawSplitClip','dawDeleteClip'].forEach((id) => {
+    const button = $(id);
+    if (button) button.disabled = clipActionDisabled;
+  });
+  const paste = $('dawPasteClip');
+  if (paste) paste.disabled = !clipClipboard || !mediaBuffers.has(clipClipboard.mediaId) || recording || playing;
+  const deleteTrack = $('dawDeleteTrack');
+  if (deleteTrack) deleteTrack.disabled = !selectedTrack || project.tracks.length <= 1 || recording || playing;
   if ($('dawSnap')) $('dawSnap').value = project.snap;
   if ($('dawZoom')) $('dawZoom').value = String(project.zoom);
   if ($('dawProjectSummary')) $('dawProjectSummary').textContent = project.name;
@@ -528,19 +557,13 @@ function renderInspector() {
   const track = getTrack(selectedTrackId) || project.tracks[1];
   if (!track) return;
   if (label) label.textContent = track.name + ' selected';
-  const clip = track.clips.find((item) => item.id === selectedClipId) || null;
-  const clipTools = clip
-    ? '<div class="daw-clip-tools"><small>' + safeText(clip.name) + '</small>' +
-      '<div class="daw-fade-control"><label>Fade in <strong data-fade-readout="in">' + (Number(clip.fadeInSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeInSeconds) || 0) + '" data-clip-fade="in" aria-label="Clip fade in"></label>' +
-      '<label>Fade out <strong data-fade-readout="out">' + (Number(clip.fadeOutSeconds) || 0).toFixed(2) + ' s</strong><input type="range" min="0" max="' + Math.min(10, clip.durationSeconds) + '" step="0.05" value="' + (Number(clip.fadeOutSeconds) || 0) + '" data-clip-fade="out" aria-label="Clip fade out"></label></div>' +
-      '<div><button type="button" class="daw-tool-btn" data-clip-action="copy">Copy</button><button type="button" class="daw-tool-btn" data-clip-action="duplicate">Duplicate</button><button type="button" class="daw-tool-btn" data-clip-action="split">Split at cursor</button><button type="button" class="daw-tool-btn" data-clip-action="delete">Delete clip</button></div></div>'
-    : '<p class="daw-inspector-note">Select a clip to trim its edges, split it, or set individual fades.</p>';
   holder.innerHTML =
     '<label class="daw-track-name-field">Track name<input type="text" maxlength="32" value="' + safeText(track.name) + '" data-track-name="' + track.id + '" aria-label="Rename ' + safeText(track.name) + '" autocomplete="off"></label>' +
     '<div class="daw-inspector-grid">' +
       '<label>Track level <strong data-gain-readout="' + track.id + '">' + Math.round(track.gain * 100) + '%</strong><input type="range" min="0" max="150" value="' + Math.round(track.gain * 100) + '" data-track-gain="' + track.id + '"></label>' +
       '<label>Pan <strong data-pan-readout="' + track.id + '">' + Math.round(track.pan * 100) + '</strong><input type="range" min="-100" max="100" value="' + Math.round(track.pan * 100) + '" data-track-pan="' + track.id + '"></label>' +
-    '</div>' + clipTools;
+    '</div>' +
+    '<p class="daw-inspector-note">Clip trim, fade, split and delete controls are available from the main DAW card.</p>';
 }
 function renderProject() {
   updateToolbar();
@@ -921,17 +944,70 @@ function armTrack(trackId) {
 }
 
 function deleteSelectedClip() {
-  const track = getTrack(selectedTrackId);
-  if (!track) return;
-  const index = track.clips.findIndex((clip) => clip.id === selectedClipId);
-  if (index < 0) return;
-  track.clips.splice(index, 1);
+  if (recording || playing) {
+    setStatus('Pause playback and stop recording before deleting a clip.', 'warn');
+    return;
+  }
+  const selected = getSelectedClipContext();
+  if (!selected) { setStatus('Select a clip to delete.', 'warn'); return; }
+  selected.track.clips.splice(selected.index, 1);
   selectedClipId = '';
   renderProject();
   scheduleProjectSave();
   setStatus('Clip removed from the project. Source audio remains in local media storage.');
 }
 
+function trimSelectedClipToPlayhead(edge) {
+  if (recording || playing) {
+    setStatus('Pause playback and stop recording before trimming a clip.', 'warn');
+    return;
+  }
+  const selected = getSelectedClipContext();
+  if (!selected) { setStatus('Select a clip before trimming.', 'warn'); return; }
+  const clip = selected.clip;
+  const start = Number(clip.startSeconds) || 0;
+  const end = start + Math.max(0, Number(clip.durationSeconds) || 0);
+  const position = snapTime(playheadSeconds, project);
+  if (position <= start + 0.05 || position >= end - 0.05) {
+    setStatus('Place the cursor inside the selected clip to trim its ' + (edge === 'start' ? 'start' : 'end') + '.', 'warn');
+    return;
+  }
+  const source = mediaBuffers.get(clip.mediaId);
+  const sourceDuration = source?.duration || (Number(clip.sourceOffsetSeconds) + Number(clip.durationSeconds));
+  const trimmed = edge === 'start'
+    ? trimClipStart(clip, position - start, sourceDuration)
+    : trimClipEnd(clip, position - end, sourceDuration);
+  selected.track.clips[selected.index] = trimmed;
+  selectedClipId = trimmed.id;
+  renderProject();
+  scheduleProjectSave();
+  setStatus(edge === 'start'
+    ? 'Clip start trimmed to the cursor. Source audio remains unchanged.'
+    : 'Clip end trimmed to the cursor. Source audio remains unchanged.', 'ok');
+}
+
+function deleteSelectedTrack() {
+  if (recording || playing) {
+    setStatus('Pause playback and stop recording before deleting a track.', 'warn');
+    return;
+  }
+  const index = project.tracks.findIndex((track) => track.id === selectedTrackId);
+  if (index < 0) { setStatus('Select a track to delete.', 'warn'); return; }
+  if (project.tracks.length <= 1) {
+    setStatus('At least one track must remain in the project.', 'warn');
+    return;
+  }
+  const track = project.tracks[index];
+  const clipCount = track.clips.length;
+  const confirmed = window.confirm('Delete track "' + track.name + '" and its ' + clipCount + ' clip(s) from this project? The original audio files will remain in local media storage.');
+  if (!confirmed) return;
+  project.tracks.splice(index, 1);
+  selectedTrackId = project.tracks[Math.min(index, project.tracks.length - 1)].id;
+  selectedClipId = '';
+  renderProject();
+  scheduleProjectSave();
+  setStatus('Track "' + track.name + '" removed from the project. Source audio files remain in local media storage.', 'ok');
+}
 function splitSelectedClip() {
   const track = getTrack(selectedTrackId);
   const index = track?.clips.findIndex((clip) => clip.id === selectedClipId) ?? -1;
@@ -1826,22 +1902,46 @@ function addTrackInputRoutingStyles() {
   const style = document.createElement('style');
   style.id = 'dawTrackInputRoutingStyles';
   style.textContent = `
-    #page-studio .daw-section-toolbar{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:nowrap;padding-top:7px;border-top:1px solid rgba(148,163,184,.16)}
+    #page-studio .daw-quick-toolbar-position{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;gap:7px!important;min-width:0!important}
+    #page-studio .daw-position-readout{text-align:center!important;min-width:90px!important}
+    #page-studio .daw-clock-actions{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important}
+    #page-studio .daw-clock-actions-left{justify-content:flex-start!important}
+    #page-studio .daw-clock-actions-right{justify-content:flex-end!important}
+    #page-studio .daw-clock-action-btn{display:grid!important;place-items:center!important;min-width:34px!important;height:34px!important;padding:0 7px!important;border:1px solid #34413c!important;border-radius:9px!important;background:#141d1b!important;color:#e7eee5!important;font:750 10px system-ui!important}
+    #page-studio .daw-clock-action-btn:disabled{opacity:.3!important}
+    #page-studio .daw-section-toolbar{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:nowrap;padding-top:7px;border-top:1px solid rgba(148,163,184,.16)}
+    #page-studio .daw-section-controls{display:flex;align-items:center;gap:5px;flex:0 0 auto}
     #page-studio .daw-section-toolbar .daw-tool-btn{flex:0 0 auto;min-height:30px;padding:4px 7px;font-size:9px}
     #page-studio .daw-section-loop-toggle{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-height:30px;padding:0 7px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#e7eee5;font-size:10px;font-weight:750;white-space:nowrap}
     #page-studio .daw-section-loop-toggle input{width:14px;height:14px;margin:0;accent-color:#c5f36b}
     #page-studio .daw-section-loop-toggle:has(input:checked){border-color:#c5f36b;color:#c5f36b;background:#c5f36b12}
-    #page-studio .daw-loop-range-readout{flex:1 1 auto;min-width:48px;overflow:hidden;text-overflow:ellipsis;font-size:9px;color:#8fd7cf;white-space:nowrap;padding:0 3px}
+    #page-studio .daw-loop-range-readout{flex:1 1 auto;min-width:30px;overflow:hidden;text-overflow:ellipsis;font-size:9px;color:#8fd7cf;white-space:nowrap;padding:0 3px}
+    #page-studio .daw-section-context{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+    #page-studio .daw-action-menu{position:relative;flex:0 0 auto;z-index:40}
+    #page-studio .daw-action-menu>summary{display:flex;align-items:center;justify-content:center;min-height:30px;padding:4px 9px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#dce8d8;font-size:9px;font-weight:800;white-space:nowrap;cursor:pointer;list-style:none}
+    #page-studio .daw-action-menu>summary::-webkit-details-marker{display:none}
+    #page-studio .daw-action-menu[open]>summary{border-color:#8fae60;color:#c5f36b}
+    #page-studio .daw-action-menu-panel{position:absolute;z-index:60;right:0;top:36px;width:min(220px,calc(100vw - 38px));display:grid;gap:6px;padding:9px;border:1px solid #3d4a3e;border-radius:11px;background:#111a16;box-shadow:0 8px 24px #0009}
+    #page-studio .daw-action-menu-panel .daw-tool-btn{width:100%;min-height:36px;padding:6px 9px;text-align:left;font-size:10px}
+    #page-studio .daw-action-menu-panel .daw-tool-btn:disabled{opacity:.35}
+    #page-studio .daw-danger-btn{border-color:#70423e!important;background:#2b1918!important;color:#ffb6a9!important}
     #page-studio .daw-loop-range{position:absolute;top:0;bottom:0;background:rgba(83,212,199,.18);border-left:2px solid #53d4c7;border-right:2px solid #53d4c7;pointer-events:none;z-index:1}
     #page-studio .daw-ruler-inner{position:relative}
     #page-studio .daw-more-menu{position:relative!important;z-index:50!important}
-    #page-studio .daw-more-menu-panel{position:absolute!important;z-index:60!important;right:0!important;top:42px!important;width:min(270px,calc(100vw - 40px))!important;display:grid!important;gap:7px!important;padding:10px!important;border:1px solid #3d4a3e!important;border-radius:11px!important;background:#111a16!important;box-shadow:0 8px 24px #0009!important}
+    #page-studio .daw-more-menu-panel{position:absolute!important;z-index:60!important;right:0!important;top:42px!important;width:min(310px,calc(100vw - 40px))!important;max-height:min(72vh,560px)!important;overflow-y:auto!important;display:grid!important;gap:7px!important;padding:11px!important;border:1px solid #3d4a3e!important;border-radius:11px!important;background:#111a16!important;box-shadow:0 8px 24px #0009!important}
     #page-studio .daw-menu-section-label{font-size:9px;color:#91a08b;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 1px}
-    #page-studio .daw-more-menu .daw-history-tools{position:static!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:auto!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
-    #page-studio .daw-more-menu .daw-history-tools button{width:100%!important;height:34px!important;min-width:0!important;padding:0 8px!important;font-size:10px!important}
+    #page-studio .daw-fade-target{font-size:10px;color:#9ba996;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #page-studio .daw-toolbar-fade-control{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px;border:1px solid #29372e;border-radius:9px;background:#0d1512}
+    #page-studio .daw-toolbar-fade-control label{display:grid;gap:5px;font-size:10px;color:#dce8d8}
+    #page-studio .daw-toolbar-fade-control strong{font-size:10px;color:#c5f36b}
+    #page-studio .daw-toolbar-fade-control input{width:100%;min-width:0;accent-color:#c5f36b}
+    #page-studio .daw-toolbar-fade-control input:disabled{opacity:.3}
+    #page-studio .daw-menu-control{display:flex;align-items:center;justify-content:space-between;gap:9px;color:#cbd8c8;font-size:10px}
+    #page-studio .daw-menu-control select{max-width:125px;padding:6px;border:1px solid #39483a;border-radius:7px;background:#101713;color:#e9f1e5}
+    #page-studio .daw-menu-control input{width:125px;accent-color:#c5f36b}
     #page-studio .daw-edit-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
     #page-studio .daw-edit-menu-grid .daw-tool-btn{width:100%;min-width:0;min-height:36px;padding:6px 8px;font-size:10px;text-align:left;white-space:nowrap}
-    @media(max-width:520px){#page-studio .daw-section-toolbar{gap:4px}#page-studio .daw-section-loop-toggle{padding:0 6px;font-size:9px}#page-studio .daw-section-toolbar .daw-tool-btn{padding:4px 6px;font-size:9px}#page-studio .daw-loop-range-readout{font-size:8px}}
+    @media(max-width:520px){#page-studio .daw-quick-toolbar-position{gap:4px!important}#page-studio .daw-clock-actions{gap:3px!important}#page-studio .daw-clock-action-btn{min-width:30px!important;height:32px!important;padding:0 5px!important;font-size:9px!important}#page-studio .daw-position-readout{min-width:78px!important}#page-studio .daw-section-toolbar{gap:4px;flex-wrap:wrap}#page-studio .daw-section-controls{gap:4px}#page-studio .daw-section-loop-toggle{padding:0 6px;font-size:9px}#page-studio .daw-section-toolbar .daw-tool-btn{padding:4px 6px;font-size:9px}#page-studio .daw-loop-range-readout{flex:1 1 75px;font-size:8px}#page-studio .daw-section-context{margin-left:auto}#page-studio .daw-toolbar-fade-control{grid-template-columns:1fr}}
     #page-studio .daw-input-routing-panel{margin:14px 0;padding:14px;border:1px solid rgba(83,212,199,.28);border-radius:13px;background:linear-gradient(145deg,rgba(20,54,54,.72),rgba(13,22,25,.92));color:#e3f3f1}
     #page-studio .daw-input-routing-head{margin-bottom:12px}
     #page-studio .daw-input-routing-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#78d7cf}
@@ -2086,6 +2186,11 @@ function bindEvents() {
   $('dawTimeSignature')?.addEventListener('change', (event) => updateProjectField('timeSignature', event.target.value));
   $('dawMetronome')?.addEventListener('change', (event) => updateProjectField('metronome', event.target.checked));
   $('dawLoop')?.addEventListener('change', (event) => updateProjectField('loop', event.target.checked));
+  $('dawTrimStart')?.addEventListener('click', () => trimSelectedClipToPlayhead('start'));
+  $('dawTrimEnd')?.addEventListener('click', () => trimSelectedClipToPlayhead('end'));
+  $('dawSplitClip')?.addEventListener('click', splitSelectedClip);
+  $('dawDeleteClip')?.addEventListener('click', deleteSelectedClip);
+  $('dawDeleteTrack')?.addEventListener('click', deleteSelectedTrack);
   $('dawCopyClip')?.addEventListener('click', copySelectedClip);
   $('dawPasteClip')?.addEventListener('click', pasteClip);
   $('dawDuplicateClip')?.addEventListener('click', duplicateSelectedClip);
@@ -2096,9 +2201,9 @@ function bindEvents() {
   $('dawCursorEnd')?.addEventListener('click', () => { playheadSeconds = projectDurationSeconds(project); renderPlayhead(); });
   $('dawNudgeLeft')?.addEventListener('click', () => nudgeSelectedClip(-1));
   $('dawNudgeRight')?.addEventListener('click', () => nudgeSelectedClip(1));
-  document.querySelectorAll('#page-studio .daw-more-menu-panel button').forEach((button) => {
+  document.querySelectorAll('#page-studio .daw-menu-panel button').forEach((button) => {
     button.addEventListener('click', () => {
-      const menu = button.closest('.daw-more-menu');
+      const menu = button.closest('details');
       if (menu) menu.open = false;
     });
   });
@@ -2155,29 +2260,22 @@ function bindEvents() {
     if (action === 'copy') copySelectedClip();
     if (action === 'duplicate') duplicateSelectedClip();
   });
-  $('dawTrackInspector')?.addEventListener('input', (event) => {
-    const fade = event.target.closest('[data-clip-fade]');
+  $('dawMoreMenuPanel')?.addEventListener('input', (event) => {
+    const fade = event.target.closest('[data-toolbar-fade]');
     if (!fade) return;
-    const track = getTrack(selectedTrackId);
-    const clip = track?.clips.find((item) => item.id === selectedClipId);
-    if (!clip) return;
+    const selected = getSelectedClipContext();
+    if (!selected) return;
     const next = normalizeClipFades(
-      clip.durationSeconds,
-      fade.dataset.clipFade === 'in' ? fade.value : clip.fadeInSeconds,
-      fade.dataset.clipFade === 'out' ? fade.value : clip.fadeOutSeconds,
+      selected.clip.durationSeconds,
+      fade.dataset.toolbarFade === 'in' ? fade.value : selected.clip.fadeInSeconds,
+      fade.dataset.toolbarFade === 'out' ? fade.value : selected.clip.fadeOutSeconds,
     );
-    clip.fadeInSeconds = next.fadeInSeconds;
-    clip.fadeOutSeconds = next.fadeOutSeconds;
-    $('dawTrackInspector')?.querySelectorAll('[data-clip-fade]').forEach((input) => {
-      input.max = String(Math.min(10, clip.durationSeconds));
-      input.value = String(input.dataset.clipFade === 'in' ? clip.fadeInSeconds : clip.fadeOutSeconds);
-    });
-    $('dawTrackInspector')?.querySelectorAll('[data-fade-readout]').forEach((readout) => {
-      const value = readout.dataset.fadeReadout === 'in' ? clip.fadeInSeconds : clip.fadeOutSeconds;
-      readout.textContent = Number(value).toFixed(2) + ' s';
-    });
+    selected.clip.fadeInSeconds = next.fadeInSeconds;
+    selected.clip.fadeOutSeconds = next.fadeOutSeconds;
+    updateToolbar();
     scheduleProjectSave();
   });
+
   $('dawGlobalPlayhead')?.addEventListener('pointerdown', startPlayheadDrag);
   $('dawGlobalPlayhead')?.addEventListener('lostpointercapture', finishPlayheadDrag);
   document.addEventListener('pointermove', movePlayheadDrag, { passive: false });

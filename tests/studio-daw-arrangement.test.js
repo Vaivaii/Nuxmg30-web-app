@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createDefaultProject, normalizeProject } from '../www/studio-daw-core.js';
+import { createDefaultProject, normalizeProject, trimClipStart, trimClipEnd } from '../www/studio-daw-core.js';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const daw = read('../www/studio-daw.js');
@@ -91,4 +91,59 @@ test('mobile DAW controls are consolidated into the metronome card and overflow 
   assert.equal(index.includes('class="daw-arrangement-tools"'), false);
   assert.ok(daw.includes("document.querySelectorAll('#page-studio .daw-more-menu-panel button')"));
   assert.ok(daw.includes('menu.open = false'));
+});
+
+
+test('trim-to-cursor keeps trim non-destructive and uses the existing source media reference', () => {
+  const clip = {
+    id: 'clip-a', mediaId: 'media-a', startSeconds: 2,
+    sourceOffsetSeconds: 1, durationSeconds: 6, fadeInSeconds: 0.4, fadeOutSeconds: 0.5,
+  };
+  const trimStart = trimClipStart(clip, 2, 12);
+  assert.equal(trimStart.startSeconds, 4);
+  assert.equal(trimStart.sourceOffsetSeconds, 3);
+  assert.equal(trimStart.durationSeconds, 4);
+  assert.equal(trimStart.mediaId, 'media-a');
+  const trimEnd = trimClipEnd(clip, -2, 12);
+  assert.equal(trimEnd.durationSeconds, 4);
+  assert.equal(trimEnd.mediaId, 'media-a');
+  assert.equal(clip.durationSeconds, 6, 'the original clip object remains unchanged');
+});
+
+test('main DAW card exposes selected clip trim/delete and selected track delete actions', () => {
+  const start = index.indexOf('<div class="daw-quick-toolbar">');
+  const end = index.indexOf('<div class="daw-timeline-panel">', start);
+  const toolbar = index.slice(start, end);
+  for (const id of ['dawTrimStart','dawTrimEnd','dawSplitClip','dawDeleteClip','dawDeleteTrack']) {
+    assert.ok(toolbar.includes(`id="${id}"`), `${id} is available in the DAW card`);
+  }
+  assert.ok(toolbar.includes('class="daw-section-context"'));
+  assert.ok(daw.includes('function trimSelectedClipToPlayhead(edge)'));
+  assert.ok(daw.includes('trimClipStart(clip, position - start, sourceDuration)'));
+  assert.ok(daw.includes('trimClipEnd(clip, position - end, sourceDuration)'));
+  assert.ok(daw.includes('function deleteSelectedTrack()'));
+  assert.ok(daw.includes('At least one track must remain in the project.'));
+  assert.ok(daw.includes('function deleteSelectedClip()'));
+  assert.ok(daw.includes('Source audio remains in local media storage.'));
+});
+
+test('fade in/out controls are in the overflow menu rather than Track Settings', () => {
+  const morePanel = index.slice(index.indexOf('id="dawMoreMenuPanel"'), index.indexOf('</details>', index.indexOf('id="dawMoreMenuPanel"')));
+  assert.ok(morePanel.includes('id="dawFadeIn"'));
+  assert.ok(morePanel.includes('id="dawFadeOut"'));
+  assert.ok(daw.includes("$('dawMoreMenuPanel')?.addEventListener('input'"));
+  assert.equal(daw.includes("data-clip-fade=\"in\""), false);
+  assert.equal(daw.includes("data-clip-fade=\"out\""), false);
+  assert.ok(daw.includes('Clip trim, fade, split and delete controls are available from the main DAW card.'));
+});
+
+test('Undo/Redo flank the timer and Copy/Paste/Duplicate use the other side', () => {
+  const start = index.indexOf('<div class="daw-quick-toolbar-position">');
+  const end = index.indexOf('<div class="daw-section-toolbar"', start);
+  const positionRow = index.slice(start, end);
+  assert.ok(positionRow.indexOf('id="dawUndo"') < positionRow.indexOf('id="dawClock"'));
+  assert.ok(positionRow.indexOf('id="dawRedo"') < positionRow.indexOf('id="dawClock"'));
+  assert.ok(positionRow.indexOf('id="dawCopyClip"') > positionRow.indexOf('id="dawClock"'));
+  assert.ok(positionRow.indexOf('id="dawPasteClip"') > positionRow.indexOf('id="dawClock"'));
+  assert.ok(positionRow.indexOf('id="dawDuplicateClip"') > positionRow.indexOf('id="dawClock"'));
 });

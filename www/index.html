@@ -492,17 +492,17 @@
         <label class="daw-icon-toggle" title="Metronome"><input id="dawMetronome" type="checkbox"><span>♩</span></label>
         <details class="daw-more-menu">
           <summary aria-label="More Studio options" title="More options">•••</summary>
-          <div class="daw-more-menu-panel">
-            <div class="daw-menu-section-label">History</div>
-            <div class="daw-history-tools">
-              <button type="button" id="dawUndo" aria-label="Undo" title="Undo" disabled>↶ Undo</button>
-              <button type="button" id="dawRedo" aria-label="Redo" title="Redo" disabled>↷ Redo</button>
+          <div id="dawMoreMenuPanel" class="daw-more-menu-panel daw-menu-panel">
+            <div class="daw-menu-section-label">Clip fades</div>
+            <small id="dawFadeTarget" class="daw-fade-target">Select a clip to adjust its fades</small>
+            <div class="daw-toolbar-fade-control">
+              <label>Fade In <strong id="dawFadeInReadout">0.00 s</strong><input id="dawFadeIn" type="range" min="0" max="10" step="0.05" value="0" data-toolbar-fade="in" aria-label="Selected clip fade in" disabled></label>
+              <label>Fade Out <strong id="dawFadeOutReadout">0.00 s</strong><input id="dawFadeOut" type="range" min="0" max="10" step="0.05" value="0" data-toolbar-fade="out" aria-label="Selected clip fade out" disabled></label>
             </div>
-            <div class="daw-menu-section-label">Clip &amp; cursor</div>
+            <div class="daw-menu-section-label">Grid &amp; navigation</div>
+            <label class="daw-menu-control">Snap<select id="dawSnap" aria-label="Snap"><option value="beat">Beat</option><option value="bar">Bar</option><option value="eighth">1/8</option><option value="off">Off</option></select></label>
+            <label class="daw-menu-control">Zoom<input id="dawZoom" type="range" min="44" max="180" value="92" aria-label="Timeline zoom"></label>
             <div class="daw-edit-menu-grid">
-              <button type="button" id="dawCopyClip" class="daw-tool-btn" title="Copy selected clip (Ctrl+C)">Copy clip</button>
-              <button type="button" id="dawPasteClip" class="daw-tool-btn" title="Paste clip at playhead (Ctrl+V)">Paste</button>
-              <button type="button" id="dawDuplicateClip" class="daw-tool-btn" title="Duplicate selected clip (Ctrl+D)">Duplicate</button>
               <button type="button" id="dawNudgeLeft" class="daw-tool-btn" title="Move selected clip one snap step left">Nudge ←</button>
               <button type="button" id="dawNudgeRight" class="daw-tool-btn" title="Move selected clip one snap step right">Nudge →</button>
               <button type="button" id="dawCursorStart" class="daw-tool-btn" title="Move cursor to timeline start">Cursor start</button>
@@ -512,16 +512,42 @@
         </details>
       </div>
       <div class="daw-quick-toolbar-position">
+        <div class="daw-clock-actions daw-clock-actions-left" aria-label="History">
+          <button type="button" id="dawUndo" class="daw-clock-action-btn" aria-label="Undo" title="Undo" disabled>↶</button>
+          <button type="button" id="dawRedo" class="daw-clock-action-btn" aria-label="Redo" title="Redo" disabled>↷</button>
+        </div>
         <div class="daw-position-readout"><strong id="dawClock">00:00.0</strong><small id="dawPosition">1:1:000</small></div>
-        <label class="daw-snap-control" title="Grid snap"><span>▦</span><select id="dawSnap" aria-label="Snap"><option value="beat">Beat</option><option value="bar">Bar</option><option value="eighth">1/8</option><option value="off">Off</option></select></label>
-        <label class="daw-zoom-control" title="Timeline zoom"><span>⌕</span><input id="dawZoom" type="range" min="44" max="180" value="92" aria-label="Timeline zoom"></label>
+        <div class="daw-clock-actions daw-clock-actions-right" aria-label="Clip quick actions">
+          <button type="button" id="dawCopyClip" class="daw-clock-action-btn" title="Copy selected clip" aria-label="Copy selected clip" disabled>Copy</button>
+          <button type="button" id="dawPasteClip" class="daw-clock-action-btn" title="Paste clip at playhead" aria-label="Paste clip" disabled>Paste</button>
+          <button type="button" id="dawDuplicateClip" class="daw-clock-action-btn" title="Duplicate selected clip" aria-label="Duplicate selected clip" disabled>Dup</button>
+        </div>
       </div>
-      <div class="daw-section-toolbar" role="group" aria-label="Section loop controls">
-        <label class="daw-section-loop-toggle" title="Repeat selected section"><input id="dawLoop" type="checkbox"><span>⟲ Section</span></label>
-        <button type="button" id="dawLoopIn" class="daw-tool-btn" title="Set loop start at playhead" aria-label="Set loop In">In</button>
-        <button type="button" id="dawLoopOut" class="daw-tool-btn" title="Set loop end at playhead" aria-label="Set loop Out">Out</button>
-        <button type="button" id="dawClearLoop" class="daw-tool-btn" title="Clear loop section">Clear</button>
+      <div class="daw-section-toolbar" role="group" aria-label="Section loop and clip actions">
+        <div class="daw-section-controls">
+          <label class="daw-section-loop-toggle" title="Repeat selected section"><input id="dawLoop" type="checkbox"><span>⟲ Section</span></label>
+          <button type="button" id="dawLoopIn" class="daw-tool-btn" title="Set loop start at playhead" aria-label="Set loop In">In</button>
+          <button type="button" id="dawLoopOut" class="daw-tool-btn" title="Set loop end at playhead" aria-label="Set loop Out">Out</button>
+          <button type="button" id="dawClearLoop" class="daw-tool-btn" title="Clear loop section">Clear</button>
+        </div>
         <span id="dawLoopRangeReadout" class="daw-loop-range-readout">Loop: full timeline</span>
+        <div class="daw-section-context">
+          <details class="daw-action-menu">
+            <summary aria-label="Clip actions" title="Clip actions">Clip ▾</summary>
+            <div class="daw-action-menu-panel daw-menu-panel">
+              <button type="button" id="dawTrimStart" class="daw-tool-btn" disabled>Trim Start to Cursor</button>
+              <button type="button" id="dawTrimEnd" class="daw-tool-btn" disabled>Trim End to Cursor</button>
+              <button type="button" id="dawSplitClip" class="daw-tool-btn" disabled>Split at Cursor</button>
+              <button type="button" id="dawDeleteClip" class="daw-tool-btn daw-danger-btn" disabled>Delete Clip</button>
+            </div>
+          </details>
+          <details class="daw-action-menu">
+            <summary aria-label="Track actions" title="Track actions">Track ▾</summary>
+            <div class="daw-action-menu-panel daw-menu-panel">
+              <button type="button" id="dawDeleteTrack" class="daw-tool-btn daw-danger-btn">Delete Track</button>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
 

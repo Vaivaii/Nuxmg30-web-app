@@ -50,6 +50,14 @@ Tahap kedua yang benar adalah **Editing dan arrangement**, bukan native metronom
 - The overflow menu closes after a command is selected. Existing button IDs, keyboard shortcuts, loop state, and action handlers are retained.
 - Automated layout regression coverage checks that loop controls remain in the metronome card and editing/history controls remain available in the overflow menu.
 
+### Contextual editing controls in the main card
+- Undo/Redo sit to the left of the transport clock; Copy/Paste/Duplicate sit to its right, using the previously unused horizontal space.
+- The three-dot menu contains Fade In/Fade Out sliders for the currently selected clip, plus Snap, Zoom, Nudge and cursor navigation. Fade controls are removed from Track Settings.
+- Compact Clip and Track menus sit on the right side of the loop row. Clip actions include Trim Start to Cursor, Trim End to Cursor, Split at Cursor and Delete Clip. Track actions include Delete Track.
+- Trim-to-cursor requires the snapped cursor to sit inside the selected clip, uses the existing non-destructive trim helpers and preserves the mediaId/source audio.
+- Deleting a clip or track removes its arrangement references only; original audio files stay in local media storage. Track deletion requires confirmation, is blocked during playback/recording, and never allows the last remaining track to be removed.
+- Automated tests cover trim helper behaviour, toolbar action placement, fade control location, and selected track/clip action wiring.
+
 ## Regression guardrails
 - Stage 1 speaker/MG-30 output routing dan native AudioTrack code diwarisi apa adanya.
 - Tidak mengubah USB AudioRecord plugin `native-android/MG30AudioPlugin.java`.
@@ -77,7 +85,7 @@ File baru `tests/studio-daw-arrangement.test.js` memeriksa:
 4. Uji snap Off, Beat, 1/8 dan Bar.
 5. Set Loop In/Out, aktifkan Section, dengarkan speaker dan MG-30; periksa transisi dan posisi playhead.
 6. Clear Loop dan pastikan playback kembali normal.
-7. Uji Undo/Redo melalui menu tiga titik, save, tutup/buka project dan pastikan arrangement tersimpan.
+7. Uji Undo/Redo di sisi kiri timer, save, tutup/buka project dan pastikan arrangement tersimpan.
 8. Pastikan NAM, IR collection/user, MIDI dan USB recording masih bekerja.
 
 ## Status
