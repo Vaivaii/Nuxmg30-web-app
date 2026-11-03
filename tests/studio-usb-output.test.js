@@ -77,3 +77,31 @@ test('the existing MG-30 USB recorder plugin remains unchanged and isolated', ()
   assert.ok(!recorder.includes('GET_DEVICES_OUTPUTS'));
   assert.ok(!recorder.includes('AudioTrack'));
 });
+
+
+test('DAW output stream is isolated in the USB output plugin and verifies routing before PCM writes', () => {
+  assert.match(outputPlugin, /public synchronized void startDawPlayback/);
+  assert.match(outputPlugin, /public synchronized void writeDawPlaybackChunk/);
+  assert.match(outputPlugin, /public synchronized void stopDawPlayback/);
+  assert.match(outputPlugin, /AudioFormat\\.ENCODING_PCM_16BIT/);
+  assert.match(outputPlugin, /track\\.setPreferredDevice\\(target\\)/);
+  assert.match(outputPlugin, /routed\\.getId\\(\\) != requestedId/);
+  assert.match(outputPlugin, /dawPlaybackTrack\\.write\\(pcm/);
+  assert.match(outputPlugin, /stopDawPlaybackInternal/);
+  assert.doesNotMatch(outputPlugin, /new AudioRecord/);
+});
+
+test('DAW output selector supports phone output and explicit MG-30 USB playback', () => {
+  const daw = read('../www/studio-daw.js');
+  const core = read('../www/studio-daw-core.js');
+  assert.match(core, /outputRoute: 'speaker'/);
+  assert.match(core, /outputRoute: input\\.outputRoute === 'mg30' \\? 'mg30' : 'speaker'/);
+  assert.match(daw, /Phone speaker \\/ current Android output/);
+  assert.match(daw, /NUX MG-30 · USB/);
+  assert.match(daw, /project\\.outputRoute === 'mg30'/);
+  assert.match(daw, /startNativeDawPlayback/);
+  assert.match(daw, /writeDawPlaybackChunk/);
+  assert.match(daw, /encodeFloatStereoPcm16Base64/);
+  assert.match(daw, /Listen to confirm the pedal output/);
+  assert.match(daw, /nativePlaybackGeneration/);
+});
