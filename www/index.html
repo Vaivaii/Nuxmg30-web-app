@@ -908,6 +908,8 @@ function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
 }
 function parameterValueForControl(blockIndex,state,modelIndex,control){
  if(Object.prototype.hasOwnProperty.call(state.values,control.param))return state.values[control.param];
+ // A switch has no equivalent in the former generic rotary draft; never borrow a knob value.
+ if(control.type==='three-way-switch')return undefined;
  // Migrate old local amp drafts by their original parameter slot, not by label.
  const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.ccIndex];
  if(legacy&&Object.prototype.hasOwnProperty.call(state.values,legacy))return state.values[legacy];
