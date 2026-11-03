@@ -27,7 +27,7 @@ test('USB output discovery uses Android output endpoints and labels USB types', 
 });
 
 test('USB playback probe remains separate from the existing USB input recorder', () => {
-  assert.match(outputPlugin, /separate from MG30AudioPlugin/);
+  assert.match(outputPlugin, /does not touch MG30AudioPlugin/);
   assert.doesNotMatch(outputPlugin, /new AudioRecord/);
   assert.doesNotMatch(outputPlugin, /AudioRecord\.Builder/);
   assert.ok(!outputPlugin.includes('import android.media.AudioRecord;'));
