@@ -490,7 +490,11 @@ public class MG30AudioPlugin extends Plugin {
             final int captureChannels = selectedChannels;
             captureThread = new Thread(() -> {
                 int inputBytesPerSample = captureEncoding == AudioFormat.ENCODING_PCM_16BIT ? 2 : 4;
+                // Keep each read request on a complete interleaved frame for
+                // 1/2/3/4-channel captures, including non-contiguous index masks.
                 int sampleCount = Math.max(2048, captureBufferSize / inputBytesPerSample);
+                sampleCount -= sampleCount % captureChannels;
+                if (sampleCount <= 0) sampleCount = captureChannels * 512;
                 byte[] pcm24 = new byte[sampleCount * 3];
                 try {
                     if (captureEncoding == AudioFormat.ENCODING_PCM_32BIT) {
