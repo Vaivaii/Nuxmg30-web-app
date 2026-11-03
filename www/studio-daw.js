@@ -7,6 +7,7 @@ import {
 } from './studio-daw-core.js';
 
 const NativeDawFiles = registerPlugin('MG30DawFiles');
+const NativeAudioOutput = registerPlugin('MG30AudioOutput');
 const $ = (id) => document.getElementById(id);
 const DB_NAME = 'mg30-studio-daw';
 const DB_VERSION = 1;
@@ -24,6 +25,9 @@ let liveTrackNodes = new Map();
 let liveSources = [];
 let playbackMaster = null;
 let playing = false;
+let nativeOutputPlayback = false;
+let nativePlaybackGeneration = 0;
+let nativePlaybackStartedAt = 0;
 let playStartContextTime = 0;
 let playStartPosition = 0;
 let animationFrame = 0;
@@ -431,9 +435,42 @@ function renderProject() {
   }
   renderMixer();
   renderInspector();
+  renderOutputRoutingPanel();
   if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = project.tracks.length + ' tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
   updatePlayheadReadout();
   updateTransport();
+}
+
+function renderOutputRoutingPanel() {
+  const host = $('dawTrackSettingsPage');
+  if (!host) return;
+  let panel = host.querySelector('[data-daw-output-routing]');
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.className = 'daw-settings-section';
+    panel.dataset.dawOutputRouting = 'true';
+    panel.innerHTML = '<div class="daw-project-settings-heading"><div><h4>Audio Output</h4><p>Choose where the complete DAW mix is played.</p></div></div>' +
+      '<label class="daw-track-name-field">PLAYBACK OUTPUT<select id="dawOutputRoute"><option value="speaker">Phone speaker / current Android output</option><option value="mg30">NUX MG-30 · USB</option></select></label>' +
+      '<small id="dawOutputRouteStatus" class="daw-inspector-note">The selected output applies to DAW playback. Recording input routing remains independent.</small>';
+    host.prepend(panel);
+    panel.querySelector('#dawOutputRoute').addEventListener('change', (event) => {
+      if (playing) pausePlayback();
+      project.outputRoute = event.target.value === 'mg30' ? 'mg30' : 'speaker';
+      const status = panel.querySelector('#dawOutputRouteStatus');
+      if (status) status.textContent = project.outputRoute === 'mg30'
+        ? 'MG-30 USB selected. Android route is checked before playback; acoustic output still needs listening confirmation.'
+        : 'Phone / Android default output selected.';
+      scheduleProjectSave();
+    });
+  }
+  const select = panel.querySelector('#dawOutputRoute');
+  if (select && document.activeElement !== select) select.value = project.outputRoute === 'mg30' ? 'mg30' : 'speaker';
+  const status = panel.querySelector('#dawOutputRouteStatus');
+  if (status && document.activeElement !== panel.querySelector('#dawOutputRoute')) {
+    status.textContent = project.outputRoute === 'mg30'
+      ? 'MG-30 USB selected. Android route is checked before playback; acoustic output still needs listening confirmation.'
+      : 'Phone / Android default output selected.';
+  }
 }
 
 function formatClock(seconds) {
@@ -982,11 +1019,13 @@ function updateAudioMeters() {
 
 function updatePlayheadFrame() {
   if (!playing && !recording) return;
-  const elapsed = playing && audioContext
-    ? Math.max(0, audioContext.currentTime - playStartContextTime)
-    : recording
-      ? Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000)
-      : 0;
+  const elapsed = playing && nativeOutputPlayback
+    ? Math.max(0, (performance.now() - nativePlaybackStartedAt) / 1000)
+    : playing && audioContext
+      ? Math.max(0, audioContext.currentTime - playStartContextTime)
+      : recording
+        ? Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000)
+        : 0;
   playheadSeconds = playStartPosition + elapsed;
   const maxDuration = projectDurationSeconds(project);
   if (!recording && playheadSeconds >= maxDuration) {
@@ -1018,13 +1057,96 @@ function updatePlayheadFrame() {
 
 async function restartPlaybackAt(position) {
   const shouldContinue = playing;
-  if (shouldContinue && audioContext) {
+  if (shouldContinue) {
     playheadSeconds = position;
     playing = false;
     cancelAnimationFrame(animationFrame);
-    stopScheduledAudio();
+    if (nativeOutputPlayback) {
+      nativeOutputPlayback = false;
+      nativePlaybackGeneration += 1;
+      try { await NativeAudioOutput.stopDawPlayback(); } catch (_) {}
+    } else {
+      stopScheduledAudio();
+    }
     await startPlayback(position);
   }
+}
+
+function encodeFloatStereoPcm16Base64(left, right) {
+  if (!left || !right || left.length !== right.length) throw new TypeError('Stereo render buffers are invalid.');
+  const bytes = new Uint8Array(left.length * 4);
+  const view = new DataView(bytes.buffer);
+  for (let index = 0; index < left.length; index += 1) {
+    const l = Math.max(-1, Math.min(1, Number(left[index]) || 0));
+    const r = Math.max(-1, Math.min(1, Number(right[index]) || 0));
+    view.setInt16(index * 4, Math.round(l * (l < 0 ? 32768 : 32767)), true);
+    view.setInt16(index * 4 + 2, Math.round(r * (r < 0 ? 32768 : 32767)), true);
+  }
+  let binary = '';
+  const step = 0x6000;
+  for (let offset = 0; offset < bytes.length; offset += step) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + step));
+  }
+  return btoa(binary);
+}
+
+async function pumpNativeDawPlayback(position, generation, trackIds) {
+  const chunkFrames = 24000; // 500 ms at 48 kHz; bounds stop/seek latency.
+  let cursor = position;
+  const end = projectDurationSeconds(project);
+  try {
+    while (playing && nativeOutputPlayback && generation === nativePlaybackGeneration && cursor < end) {
+      const count = Math.min(chunkFrames, Math.ceil((end - cursor) * SAMPLE_RATE));
+      if (count <= 0) break;
+      const rendered = await renderAudioChunk(trackIds, cursor, count, 'mix');
+      if (!playing || generation !== nativePlaybackGeneration) break;
+      const payload = encodeFloatStereoPcm16Base64(rendered.getChannelData(0), rendered.getChannelData(1));
+      await NativeAudioOutput.writeDawPlaybackChunk({ dataBase64: payload });
+      cursor += count / SAMPLE_RATE;
+    }
+    if (generation === nativePlaybackGeneration && playing) {
+      playing = false;
+      nativeOutputPlayback = false;
+      cancelAnimationFrame(animationFrame);
+      try { await NativeAudioOutput.stopDawPlayback(); } catch (_) {}
+      updateTransport();
+      renderPlayhead();
+    }
+  } catch (error) {
+    if (generation === nativePlaybackGeneration) {
+      playing = false;
+      nativeOutputPlayback = false;
+      cancelAnimationFrame(animationFrame);
+      try { await NativeAudioOutput.stopDawPlayback(); } catch (_) {}
+      updateTransport();
+      setStatus('MG-30 USB playback stopped: ' + (error?.message || 'audio stream error'), 'warn');
+    }
+  }
+}
+
+async function startNativeDawPlayback(position, tracksWithAudio) {
+  if (!Capacitor.isNativePlatform()) throw new Error('MG-30 USB playback requires the Android app.');
+  const endpoints = await NativeAudioOutput.inspectOutputDevices();
+  const target = (endpoints.devices || []).find((device) => device.isMg30 && Number.isInteger(Number(device.id)));
+  if (!target) throw new Error('USB output NUX MG-30 was not found. Connect the pedal and check USB OUT.');
+  const started = await NativeAudioOutput.startDawPlayback({ deviceId: Number(target.id) });
+  if (!started.started || Number(started.routedDeviceId) !== Number(target.id)) {
+    throw new Error('Android did not confirm the selected MG-30 output route.');
+  }
+  stopScheduledAudio();
+  playheadSeconds = Math.max(0, position);
+  playStartPosition = playheadSeconds;
+  nativePlaybackStartedAt = performance.now();
+  nativeOutputPlayback = true;
+  playing = true;
+  const generation = ++nativePlaybackGeneration;
+  lastMetronomeBeat = -1;
+  updateTransport();
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(updatePlayheadFrame);
+  setStatus('Android output route confirmed: ' + (started.routedDeviceName || 'NUX MG-30') + '. Listen to confirm the pedal output.', 'ok');
+  void pumpNativeDawPlayback(playheadSeconds, generation, tracksWithAudio.map((track) => track.id));
+  return true;
 }
 
 async function startPlayback(position = playheadSeconds) {
@@ -1034,6 +1156,8 @@ async function startPlayback(position = playheadSeconds) {
     return false;
   }
   try {
+    if (project.outputRoute === 'mg30') return await startNativeDawPlayback(position, tracksWithAudio);
+    nativeOutputPlayback = false;
     const context = await getAudioContext();
     stopScheduledAudio();
     const soloActive = project.tracks.some((track) => track.solo && !track.mute);
@@ -1089,20 +1213,33 @@ async function startPlayback(position = playheadSeconds) {
 }
 
 function pausePlayback() {
-  if (playing && audioContext) {
-    playheadSeconds = playStartPosition + Math.max(0, audioContext.currentTime - playStartContextTime);
-    playing = false;
-    cancelAnimationFrame(animationFrame);
+  if (!playing) return;
+  playheadSeconds = playStartPosition + Math.max(0, nativeOutputPlayback
+    ? (performance.now() - nativePlaybackStartedAt) / 1000
+    : (audioContext ? audioContext.currentTime - playStartContextTime : 0));
+  playing = false;
+  cancelAnimationFrame(animationFrame);
+  if (nativeOutputPlayback) {
+    nativeOutputPlayback = false;
+    nativePlaybackGeneration += 1;
+    void NativeAudioOutput.stopDawPlayback().catch(() => {});
+  } else {
     stopScheduledAudio();
-    updateTransport();
-    renderPlayhead();
   }
+  updateTransport();
+  renderPlayhead();
 }
 
 function stopPlayback(reset = true) {
   playing = false;
   cancelAnimationFrame(animationFrame);
-  stopScheduledAudio();
+  if (nativeOutputPlayback) {
+    nativeOutputPlayback = false;
+    nativePlaybackGeneration += 1;
+    void NativeAudioOutput.stopDawPlayback().catch(() => {});
+  } else {
+    stopScheduledAudio();
+  }
   if (reset) playheadSeconds = 0;
   updateTransport();
   renderPlayhead();
@@ -1114,7 +1251,7 @@ async function togglePlayback() {
 }
 
 function getLiveRecordingElapsedSeconds() {
-  if (playing && audioContext) return Math.max(0, playheadSeconds - recordingStartPosition);
+  if (playing && !nativeOutputPlayback && audioContext) return Math.max(0, playheadSeconds - recordingStartPosition);
   return Math.max(0, (performance.now() - recordingStartPerformanceTime) / 1000);
 }
 
@@ -1746,6 +1883,7 @@ function setStudioMode(mode) {
 function bindEvents() {
   syncStudioPinnedControls();
   mountTrackInputRoutingPanel();
+  renderOutputRoutingPanel();
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
   document.querySelector('.nav')?.addEventListener('click', (event) => {
     if (event.target.closest('button[data-page="studio"]')) {
