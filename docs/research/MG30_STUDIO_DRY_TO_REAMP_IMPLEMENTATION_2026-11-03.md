@@ -72,3 +72,17 @@ CI and APK build status should be recorded separately after the workflow for the
 ## Format alignment update
 
 The Reamp file stream uses interleaved little-endian Float32 samples (L, R), 8 bytes per stereo frame, and Android `AudioFormat.ENCODING_PCM_FLOAT`. This matches the 48 kHz PCM_FLOAT AudioTrack encoding used by the prior audible output test and advertised by the user's Android endpoint. This is a compatibility choice based on the user's successful output-test configuration, not proof that all USB Reamp input/output directions accept the same format. The app still validates advertised float support where Android exposes it and verifies the selected routed endpoint before sending samples.
+
+
+## CI build and packaged APK verification
+
+- Source commit used for CI build: `19cf1fd724002f062ad6206f652f5dfd01493826`.
+- Workflow run: [Build Reamp debug APK](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41585031808), run ID `41585031808`, conclusion **success**.
+- `node --check scripts/init-android.mjs`: passed.
+- Regression test suite: **156 passed, 0 failed**.
+- Capacitor Android generation/plugin registration: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- Workflow artifact ID: `13207212731`, name `MG30-Studio-debug-APK`, archive size 4,133,287 bytes, SHA-256 `abd63ba33247c6b0073f1ca66677686a80f21eafa4c1a9137a25505f51503f1c`.
+- Extracted APK: 4,511,216 bytes, SHA-256 `783d0e865eb87533859bc6e66c75ba111280f02338c0cac9369c8e26804b3aa4`.
+- APK package inspection found `MG30AudioOutputPlugin`, `beginReampPlayback`, `appendReampPlaybackChunk`, `PCM_FLOAT32_LE`, and the existing `MG30AudioPlugin` in `classes9.dex`. The bundled web asset contains the Reamp panel labels and Float32 conversion path.
+- These checks establish source tests, Android compilation and packaging only. They do **not** establish physical MG-30 Reamp playback, USB full-duplex behavior, or that the captured return is the processed/wet channel. Those tests remain required on the user's device.
