@@ -17,6 +17,7 @@ on:
       - feature/studio-daw-output-routing
       - feature/studio-daw-editing-arrangement
       - feature/amp-knob-label-correction
+      - feature/amp-artwork-apk-validation
     paths:
       - 'www/**'
       - 'tests/**'
