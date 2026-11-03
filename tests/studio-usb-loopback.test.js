@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const core = read('../www/studio-daw-core.js');
 const daw = read('../www/studio-daw.js');
+const dawStyles = read('../www/studio-daw.css');
 const main = read('../www/main.js');
 const recorder = read('../native-android/MG30AudioPlugin.java');
 const outputPlugin = read('../native-android/MG30AudioOutputPlugin.java');
@@ -170,4 +171,12 @@ test('Reamp output path remains absent and four-track labels are shipped', () =>
   assert.ok(outputPlugin.includes('playTestTone'));
   assert.doesNotMatch(outputPlugin, /import android\\.media\\.AudioRecord|new AudioRecord|AudioRecord\\.Builder/);
   assert.ok(index.includes('4 tracks · 48 kHz / 24-bit'));
+});
+
+
+test('live recording clip inherits the armed track color for its fill and SVG waveform', () => {
+  assert.ok(daw.includes("const track = getTrack(recordingTrackId);\n  if (track?.color) node.style.setProperty('--track-color', track.color);"));
+  assert.ok(dawStyles.includes('background:color-mix(in srgb,var(--track-color) 22%,#101816)!important;'));
+  assert.ok(dawStyles.includes('fill:color-mix(in srgb,var(--track-color) 24%,#f5fbff)!important;'));
+  assert.ok(dawStyles.includes('stroke:color-mix(in srgb,var(--track-color) 10%,#eaf8ff)!important;'));
 });
