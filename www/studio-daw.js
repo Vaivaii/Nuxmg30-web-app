@@ -534,7 +534,8 @@ async function populateSavedProjects() {
 
 async function loadProject(projectId) {
   if (!projectId) return;
-  if (recording) await stopDawRecording();
+  if (reampPlaybackActive || reampSessionId) await stopReampWorkflow(true);
+  else if (recording) await stopDawRecording();
   stopPlayback(true);
   try {
     const saved = await databaseRequest('projects', 'readonly', 'get', projectId);
@@ -576,6 +577,7 @@ async function loadProject(projectId) {
 }
 
 async function createNewProject() {
+  if (reampPlaybackActive || reampSessionId) await stopReampWorkflow(true);
   if (recording) {
     setStatus('Stop the active recording before creating a new project.', 'warn');
     return;
@@ -1053,6 +1055,10 @@ function stopPlayback(reset = true) {
 }
 
 async function togglePlayback() {
+  if (reampPlaybackActive) {
+    setStatus('Stop USB Reamp before starting the normal DAW transport.', 'warn');
+    return;
+  }
   if (playing) pausePlayback();
   else await startPlayback(playheadSeconds);
 }
@@ -1129,6 +1135,10 @@ async function stopDawRecording() {
 }
 
 async function handleDawRecordClick() {
+  if (reampRecordingActive) {
+    await stopReampWorkflow(true);
+    return;
+  }
   if (recording) await stopDawRecording();
   else await startDawRecording();
 }
@@ -1781,7 +1791,8 @@ function setStudioMode(mode) {
     renderPlayhead();
     refreshQuickTakes();
   } else {
-    if (recording) void stopDawRecording();
+    if (reampPlaybackActive || reampSessionId) void stopReampWorkflow(true);
+    else if (recording) void stopDawRecording();
     else if (playing) pausePlayback();
   }
 }
@@ -1901,6 +1912,7 @@ function bindEvents() {
     }
   });
   $('dawForward')?.addEventListener('click', () => {
+    if (reampPlaybackActive || reampSessionId) { void stopReampWorkflow(true); return; }
     const metrics = timelineMetrics();
     playheadSeconds = Math.min(metrics.bars * metrics.barSeconds, playheadSeconds + metrics.barSeconds);
     if (playing) void restartPlaybackAt(playheadSeconds);
@@ -1908,10 +1920,12 @@ function bindEvents() {
   });
   $('dawPlay')?.addEventListener('click', () => { void togglePlayback(); });
   $('dawStop')?.addEventListener('click', async () => {
-    if (recording) await stopDawRecording();
+    if (reampPlaybackActive || reampSessionId) await stopReampWorkflow(true);
+    else if (recording) await stopDawRecording();
     stopPlayback(true);
   });
   $('dawRewind')?.addEventListener('click', () => {
+    if (reampPlaybackActive || reampSessionId) void stopReampWorkflow(true);
     if (playing) void restartPlaybackAt(0);
     else { playheadSeconds = 0; renderPlayhead(); }
   });
