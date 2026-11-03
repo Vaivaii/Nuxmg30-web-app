@@ -545,6 +545,11 @@ public class MG30AudioOutputPlugin extends Plugin {
             while (!session.stopRequested &&
                 (read = input.read(buffer, pendingBytes, buffer.length - pendingBytes)) != -1) {
                 if (read == 0) continue;
+                AudioDeviceInfo current = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                    ? track.getRoutedDevice() : null;
+                if (current == null || current.getId() != session.deviceId) {
+                    throw new IOException("Rute USB berubah selama Reamp. Pengiriman dihentikan.");
+                }
                 int totalRead = pendingBytes + read;
                 int usableBytes = totalRead - (totalRead % REAMP_BYTES_PER_FRAME);
                 if (usableBytes > 0) {
