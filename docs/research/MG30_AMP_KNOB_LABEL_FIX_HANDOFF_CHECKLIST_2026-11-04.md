@@ -271,3 +271,11 @@ Jangan mengubah komunikasi perangkat yang sudah bekerja untuk mencapai tampilan 
 - Belum dilakukan pengujian langsung pada MG-30 untuk memastikan pilihan Mic/Mic Position dapat ditulis dan dibaca kembali di perangkat.
 - Setelah CI lulus, tetap perlu uji perangkat dengan sedikitnya satu model amp generik, TWEEDY, DGLASS, STARLIFT, dan satu cab dengan pergantian Mic serta Mic Position.
 - Jangan menggabungkan branch ke branch utama sebelum hasil hardware user dilaporkan.
+
+
+### Pembaruan hasil CI — setelah assertion diperbaiki
+
+- Run GitHub Actions terbaru pada commit `5314fda7a233c3bc489dac26a1610be3b88faec2`: langkah **Run protocol regression tests = success**.
+- Total hasil: **189 test lulus, 0 gagal**.
+- Generate Capacitor Android project and install USB audio plugin = success.
+- Pada pemeriksaan terakhir, langkah **Build debug APK masih in progress**; artifact APK belum tersedia untuk dinyatakan berhasil.
