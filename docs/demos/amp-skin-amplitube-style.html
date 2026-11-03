@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d0d">
+<title>MG30 Studio · Amp Skin Study</title>
+<style>
+:root{color-scheme:dark;--bg:#090c0d;--panel:#14191b;--panel2:#1b2224;--line:#303a3d;--text:#f0f1ec;--muted:#8b999c;--gold:#d4b47a;--orange:#ef9b52;--lime:#bddc76}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#354044 0,transparent 45%),var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select{font:inherit}
+main{max-width:1280px;margin:auto;padding:18px 18px 36px}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+.brand{display:flex;gap:11px;align-items:center}.logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,#d9c08d,#98774c);color:#171512;font-weight:950;letter-spacing:-1px}
+.brand b{display:block;font-size:14px;letter-spacing:.1px}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;margin-top:2px}
+.header-tag{font-size:10px;color:#aab4b3;letter-spacing:1.4px;border:1px solid #394447;border-radius:99px;padding:8px 11px}
+.heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 2px 16px}
+.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:800}
+h1{font-size:clamp(25px,4vw,36px);letter-spacing:-1.3px;line-height:1.08;margin:5px 0 6px}
+.sub{margin:0;color:var(--muted);font-size:12px;max-width:670px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:13px;align-items:stretch}
+.card{background:linear-gradient(145deg,#171d1f,#101516);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 16px 45px #0003}
+.visual{padding:13px}
+.visual-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:1px 2px 12px}
+.visual-head .name{font-size:13px;font-weight:800;letter-spacing:.2px}
+.status{display:flex;align-items:center;gap:7px;color:#9ca9a9;font-size:9px;letter-spacing:1.4px}
+.status i{width:6px;height:6px;border-radius:50%;background:#8fbd65;box-shadow:0 0 10px #9ccf72}
+.amp-stage{position:relative;isolation:isolate;min-height:450px;border:1px solid #333e3f;border-radius:14px;overflow:hidden;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 52%,#4a5050 0,#252c2d 42%,#131819 78%,#0d1112 100%)}
+.amp-stage:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(115deg,transparent 28%,#ffffff0a 48%,transparent 70%),radial-gradient(ellipse at 50% 110%,#0009,transparent 55%)}
+.amp-stage:after{content:"";position:absolute;left:12%;right:12%;bottom:24px;height:18px;border-radius:50%;background:#000b;filter:blur(14px);z-index:-1}
+#ampPhoto{display:block;max-width:100%;width:100%;height:395px;object-fit:contain;filter:drop-shadow(0 27px 22px #0009);transition:opacity .2s ease,transform .35s ease}
+.amp-stage.switching #ampPhoto{opacity:.25;transform:scale(.985)}
+.photo-fallback{display:none;text-align:center;max-width:390px;color:#d5d0c4;padding:28px}
+.photo-fallback strong{display:block;font-size:18px;margin-bottom:7px}
+.photo-fallback p{color:#aab1ac;font-size:12px}
+.visual-foot{display:flex;justify-content:space-between;gap:12px;padding:11px 3px 1px;color:#839092;font-size:9px;letter-spacing:1px}
+.controls{padding:16px}
+.control-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.control-head strong{font-size:12px}.power{display:flex;align-items:center;gap:7px;color:#a7b1ae;font-size:9px;letter-spacing:1px}
+.power button{width:32px;height:19px;padding:2px;border:1px solid #505b5c;border-radius:99px;background:#242c2d;cursor:pointer}
+.power button span{display:block;width:13px;height:13px;border-radius:50%;background:#8a9491;transition:transform .2s,background .2s}
+.power button.on{background:#4c603c;border-color:#779550}.power button.on span{transform:translateX(12px);background:#d3ed91}
+.divider{height:1px;background:#303a3b;margin:13px 0}
+.small-label{font-size:9px;color:#879496;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;margin-bottom:8px}
+select{width:100%;background:#0d1213;color:#e9ece5;border:1px solid #3b4748;border-radius:10px;padding:11px 10px;outline:none;font-size:12px}
+select:focus{border-color:var(--gold)}
+.ref-name{font-size:17px;font-weight:850;letter-spacing:-.5px;margin-top:15px}
+.ref-sub{font-size:11px;color:var(--gold);margin-top:2px}
+.params{display:grid;grid-template-columns:repeat(3,1fr);gap:13px 7px;padding:7px 0 2px}
+.param{min-width:0;text-align:center}
+.knob{--angle:0deg;width:53px;height:53px;margin:0 auto 6px;position:relative;border-radius:50%;background:radial-gradient(circle at 35% 27%,#747a78 0,#3b4140 18%,#1a1e1e 48%,#090b0b 72%);border:2px solid #727a77;box-shadow:inset 0 2px 3px #ffffff30,0 3px 8px #0009,0 0 0 3px #202626}
+.knob:before{content:"";position:absolute;left:calc(50% - 1px);top:5px;width:2px;height:10px;border-radius:3px;background:#f4dfb5;transform-origin:1px 20px;transform:rotate(var(--angle))}
+.knob:after{content:"";position:absolute;inset:6px;border-radius:50%;border:1px solid #ffffff17}
+.param label{display:block;font-size:8px;letter-spacing:1px;color:#bac2ba;font-weight:750}
+.param input{width:100%;height:14px;margin:2px 0 0;accent-color:var(--gold)}
+.readout{font-size:9px;color:#8d9a94;font-variant-numeric:tabular-nums}
+.info{border:1px solid #41433a;background:#d4b47a0a;border-radius:11px;padding:11px 12px;color:#aeb6aa;font-size:10px;line-height:1.6}
+.info b{color:#ddc28e}
+.footnote{margin-top:12px;color:#677477;font-size:9px;text-align:center}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.amp-stage{min-height:340px}#ampPhoto{height:315px}.controls{padding:15px}.params{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:540px){main{padding:13px 10px 25px}.header-tag{display:none}.heading{display:block}.sub{font-size:11px}.amp-stage{min-height:260px;padding:10px}#ampPhoto{height:245px}.params{grid-template-columns:repeat(3,1fr)}.visual{padding:9px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div class="brand"><div class="logo">MG</div><div><b>MG30 Studio · Visual Lab</b><small>Amplifier skin exploration</small></div></div>
+ <div class="header-tag">AMP VISUAL STUDY · SEPARATE DEMO</div>
+</header>
+<section class="heading">
+ <div><div class="eyebrow">Hardware-first amp design</div><h1>Let the amplifier be the interface.</h1><p class="sub">Arah visual mengambil inspirasi dari amp skin AmpliTube dan TONEX: hardware menjadi fokus utama, sementara kontrol digital disusun mengikuti karakter amplifier yang dipilih.</p></div>
+</section>
+<section class="layout">
+ <div class="card visual">
+  <div class="visual-head"><div class="name">AMPLIFIER MODEL</div><div class="status"><i></i> MODEL PREVIEW</div></div>
+  <div class="amp-stage" id="stage">
+   <img id="ampPhoto" alt="Selected amplifier product reference">
+   <div class="photo-fallback" id="fallback"><strong id="fallbackName"></strong><p>Gambar referensi tidak dapat dimuat. Coba model lain atau periksa koneksi internet.</p></div>
+  </div>
+  <div class="visual-foot"><span id="visualCaption">PRODUCT SKIN / FRONT VIEW</span><span>REFERENCE-BASED HARDWARE ART</span></div>
+ </div>
+ <aside class="card controls">
+  <div class="control-head"><strong>AMP CONTROLS</strong><div class="power">POWER <button class="on" id="power" type="button" aria-label="Toggle power"><span></span></button></div></div>
+  <div class="small-label">Choose amplifier</div>
+  <select id="model"></select>
+  <div class="ref-name" id="modelName"></div>
+  <div class="ref-sub" id="modelRef"></div>
+  <div class="divider"></div>
+  <div class="small-label">Tone controls · interactive mockup</div>
+  <div class="params" id="params"></div>
+  <div class="divider"></div>
+  <div class="info"><b>Design direction:</b> jangan membuat satu gambar amp generik untuk semua model. Setiap amplifier perlu skin sendiri berdasarkan foto atau render hardware yang sesuai—grille, chassis, panel, knob, logo, material, dan warna. Kontrol digital mengikuti nama serta karakter amp tersebut.</div>
+ </aside>
+</section>
+<div class="footnote">Standalone visual prototype · Tidak terhubung ke MG-30 dan tidak mengubah MIDI, preset, NAM, IR, atau transfer perangkat.</div>
+</main>
+<script src="../../www/model-assets.js"></script>
+<script>
+(function(){
+ const data = window.MG30_MODEL_ART && window.MG30_MODEL_ART.AMP || {};
+ const select = document.getElementById('model');
+ const photo = document.getElementById('ampPhoto');
+ const stage = document.getElementById('stage');
+ const fallback = document.getElementById('fallback');
+ const params = document.getElementById('params');
+ const power = document.getElementById('power');
+ const candidates = ['Deluxe Rvb','Plexi 100','Jazz Clean','Dual Rect','Twin Rvb','Class A15'];
+ const names = candidates.filter(n => data[n] && data[n].image);
+ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ names.forEach(function(n){const o=document.createElement('option');o.value=n;o.textContent=n;select.appendChild(o);});
+ const controlSets = {
+  'Deluxe Rvb':['Volume','Treble','Bass','Reverb','Speed','Intensity'],
+  'Plexi 100':['Presence','Bass','Middle','Treble','High Treble','Normal'],
+  'Jazz Clean':['Volume','Treble','Middle','Bass','Distortion','Reverb','Speed','Depth'],
+  'Dual Rect':['Presence','Master','Gain','Bass','Middle','Treble'],
+  'Twin Rvb':['Volume','Treble','Middle','Bass','Reverb','Vibrato'],
+  'Class A15':['Volume','Treble','Bass','Tone Cut','Master','Top Boost']
+ };
+ function makeControls(model){
+  params.innerHTML='';
+  (controlSets[model]||['Gain','Bass','Middle','Treble','Volume']).forEach(function(label,i){
+   const box=document.createElement('div');box.className='param';
+   const knob=document.createElement('div');knob.className='knob';knob.style.setProperty('--angle',(-132+i*29)+'deg');
+   const lab=document.createElement('label');lab.textContent=label.toUpperCase();
+   const input=document.createElement('input');input.type='range';input.min='0';input.max='100';input.value=String([62,48,55,50,68,43,57,60][i%8]);input.setAttribute('aria-label',label);
+   const read=document.createElement('div');read.className='readout';read.textContent=input.value;
+   input.addEventListener('input',function(){const angle=-135+(Number(input.value)/100)*270;knob.style.setProperty('--angle',angle+'deg');read.textContent=input.value;});
+   box.append(knob,lab,input,read);params.appendChild(box);
+  });
+ }
+ function render(){
+  const model=select.value;const item=data[model];if(!item)return;
+  stage.classList.add('switching');
+  photo.onload=function(){photo.style.display='block';fallback.style.display='none';stage.classList.remove('switching');};
+  photo.onerror=function(){photo.style.display='none';fallback.style.display='block';document.getElementById('fallbackName').textContent=model;stage.classList.remove('switching');};
+  photo.src=item.image;
+  document.getElementById('modelName').textContent=model;
+  document.getElementById('modelRef').textContent=item.reference||'Amp reference';
+  document.getElementById('visualCaption').textContent=(item.reference||model).toUpperCase()+' / PRODUCT REFERENCE';
+  makeControls(model);
+ }
+ select.addEventListener('change',render);
+ power.addEventListener('click',function(){power.classList.toggle('on');});
+ if(names.length){select.value=names[0];render();}
+ else{document.getElementById('fallbackName').textContent='AMP REFERENCES';fallback.style.display='block';photo.style.display='none';}
+})();
+</script>
+</body>
+</html>
