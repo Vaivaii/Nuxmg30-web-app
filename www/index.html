@@ -2460,7 +2460,7 @@ function renderBlockIcon(blockId){
  'S/R':'<path d="M4 11h22l-4-4M26 11l-4 4"/><path d="M28 21H6l4-4M6 21l4 4"/>',
  VOL:'<circle cx="16" cy="16" r="12"/><path d="M16 8v8l6 4M7 25h18"/>'
  };
- return '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">'+(shapes[blockId]||'<circle cx="16" cy="16" r="10"/>')+'</svg>';
+ return '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+(shapes[blockId]||'<circle cx="16" cy="16" r="10"/>')+'</svg>';
 }
 function renderChain(){
  const holder=$('chain');
