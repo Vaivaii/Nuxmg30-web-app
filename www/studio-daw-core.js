@@ -135,8 +135,41 @@ export function normalizeProject(input) {
     snap: ['off', 'beat', 'bar', 'eighth'].includes(input.snap) ? input.snap : 'beat',
     zoom: Math.max(44, Math.min(180, Number(input.zoom) || defaults.zoom)),
     masterGain: Number.isFinite(Number(input.masterGain)) ? Math.max(0, Math.min(1.5, Number(input.masterGain))) : defaults.masterGain,
+    legacyLoopbackClips: normalizeArchivedLoopbackClips(input, tracks),
     tracks: normalizedTracks,
   };
+}
+
+ 
+function normalizeArchivedLoopbackClips(input, tracks) {
+  const priorArchive = Array.isArray(input.legacyLoopbackClips)
+    ? input.legacyLoopbackClips
+    : (tracks.find((track) => track && track.id === 'loopback')?.clips || []);
+  return priorArchive.slice(0, 512).map((clip) => {
+    if (!clip || typeof clip !== 'object' || !String(clip.mediaId || '')) return null;
+    const startSeconds = Math.max(0, Number(clip.startSeconds) || 0);
+    const sourceOffsetSeconds = Math.max(0, Number(clip.sourceOffsetSeconds) || 0);
+    const durationSeconds = Math.max(0, Number(clip.durationSeconds) || 0);
+    if (!Number.isFinite(startSeconds + sourceOffsetSeconds + durationSeconds) || durationSeconds <= 0) return null;
+    const fades = normalizeClipFades(durationSeconds, clip.fadeInSeconds, clip.fadeOutSeconds);
+    return {
+      ...clip,
+      id: String(clip.id || makeId('clip')).slice(0, 100),
+      mediaId: String(clip.mediaId).slice(0, 120),
+      name: String(clip.name || 'Archived Loopback clip').slice(0, 120),
+      startSeconds,
+      sourceOffsetSeconds,
+      durationSeconds,
+      ...fades,
+      sampleRate: Math.max(8000, Math.min(384000, Number(clip.sampleRate) || 48000)),
+      channels: Math.max(1, Math.min(8, Math.round(Number(clip.channels) || 2))),
+      captureMode: ['normal', 'loopback', 'multichannel', 'file'].includes(clip.captureMode) ? clip.captureMode : 'loopback',
+      channelIndexMask: Math.max(0, Math.min(255, Math.round(Number(clip.channelIndexMask) || 0))),
+      inputChannelMask: Math.max(0, Math.min(255, Math.round(Number(clip.inputChannelMask) || 0))),
+      inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === clip.inputRoute) ? clip.inputRoute : 'usb-loopback-3-4-stereo',
+      waveform: Array.isArray(clip.waveform) ? clip.waveform.slice(0, 128).map((value) => Math.max(0, Math.min(100, Number(value) || 0))) : [],
+    };
+  }).filter(Boolean);
 }
 
 
