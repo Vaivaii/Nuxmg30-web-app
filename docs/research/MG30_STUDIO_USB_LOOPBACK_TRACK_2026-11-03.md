@@ -13,6 +13,8 @@ The user rejected the dedicated fifth Loopback lane because the DAW's Timeline l
 
 The Loopback 3–4 source can be selected on any of the four tracks. The user arms the destination track and records; the resulting clip is inserted into that same track. Existing clips are not rerouted when a user changes the track's input setting; the selection applies to the next recording.
 
+When migrating an older five-track project, the old fifth lane is removed from the visible DAW but its clips are preserved in the project-level `legacyLoopbackClips` archive with their media IDs and channel metadata. They are not silently deleted and are not rendered as a hidden fifth lane. They can be reassigned/imported into one of the four visible tracks in a later recovery workflow.
+
 ### Capture and channel isolation
 
 The Android recorder is requested in multichannel mode with the selected track's channel-index mask. It selects an MG-30 USB endpoint layout that contains the requested mask; a larger advertised endpoint mask may be used when it includes the requested channel(s). It rejects an unavailable selection instead of silently recording unrelated channels. The raw multichannel take is retained in the Quick Takes list.
