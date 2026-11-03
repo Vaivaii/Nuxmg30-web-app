@@ -3591,3 +3591,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Artifact ZIP ID `13176995035`, size **4,116,944 bytes**, SHA-256 `922823f6bd9b382640441c2b4240f467c4117878e07b1740e1687437fe411191`.
 - Extracted APK size **4,494,948 bytes**, SHA-256 `bfd3120ca348abcf9f1cb20309479caa520883d2f7b4182f544bfe7f033f3211`. ZIP/APK integrity passed. Packaged CSS in `assets/public/assets/index-DNyHPIoq.css` was checked for the one-column grid, page width guard, child width clamp, catalogue list fallback clamp and active TONE3000 card clamp.
 - Physical device check remains: reproduce selecting a TONE3000 tone externally, return to app, click NAM, and verify the pane/control widths do not stretch; repeat switching between NAM and TONE3000.
+
+## USB output discovery — Build #352 passed (3 November 2026)
+
+- Continued from the latest isolated source branch `feature/studio-usb-reamp-loopback`, not from Build #351 or Build #248.
+- Fixed a syntax defect in `scripts/init-android.mjs`: the generated MainActivity plugin-registration lines had been joined into a literal newline inside a single-quoted JavaScript string. Split them into separate valid source-line entries.
+- Added a regression test invoking `node --check scripts/init-android.mjs`; added an explicit syntax-check workflow step.
+- Added `feature/studio-usb-reamp-loopback` to the APK workflow branch filter. The workflow remains limited to this source branch and the existing listed build branches.
+- Authoritative Build #352: run ID `41579657826`, source commit `093bad9b8ceec9a583ba3b9ff02f19a10b107354`, conclusion **success**. [GitHub Actions](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41579657826).
+- Initializer syntax check passed. `npm test`: **148/148 passed, 0 failed, 0 skipped**. Vite 7.3.7 production build passed. Capacitor Android generation/plugin registration passed. Gradle `assembleDebug` passed (`BUILD SUCCESSFUL`). Artifact upload passed.
+- Artifact ID `13204194446`; ZIP size **4,119,222 bytes**, SHA-256 `7ebac3877b96e34a5f4e8754bb28410ddcbbc30318e6dc96b2ddaa209aa3467c`.
+- Extracted APK size **4,497,820 bytes**, SHA-256 `7e55987f01eab8b40ca6387a2692d6a242f5de4903bd0022901cea7b64fbfef8`. ZIP and APK integrity checks passed.
+- APK DEX inspection found `MG30AudioOutputPlugin`, `MG30AudioOutput`, `inspectOutputDevices`, and the existing `MG30AudioPlugin` / `startRecording` markers. Packaged web assets contain the USB-output discovery panel and method markers. The pre-existing AudioRecord source file was not modified in this branch.
+- Scope remains endpoint discovery only. No AudioTrack DI playback, processed return capture, full-duplex validation or routing-mode changes are implemented.
+- **Physical device validation pending:** user must install Build #352 and run PERIKSA USB OUT with the original MG-30 Gen 2 connected; record endpoint names, IDs, types, sample rates, channel counts and encodings. Build/packaging validation does not prove that audio streams to/from the pedal.
+- Protected NAM, custom IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset and Signal Chain implementations remain unchanged by the USB output discovery code.
