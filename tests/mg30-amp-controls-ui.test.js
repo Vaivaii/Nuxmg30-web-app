@@ -120,3 +120,30 @@ test('IR Collection status prefixes are translated when CRC/device text is appen
   assert.match(english, /"IR tersimpan di perangkat · CRC ":"IR stored on device · CRC "/);
   assert.match(english, /"Import WAV ke salah satu dari 24 slot Collection MG-30\. Pilih slot, lalu validasi dan kirim IR langsung\.":"Import WAV to one of the 24 MG-30 Collection slots/);
 });
+
+
+test('DGLASS switch labels follow the actual physical screen positions from the photos', () => {
+  const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block);
+  assert.match(block[1], /param:'lo mids freq'[\s\S]*?label:'500 Hz',position:'TOP'[\s\S]*?label:'1 kHz',position:'MIDDLE'[\s\S]*?label:'250 Hz',position:'BOTTOM'/);
+  assert.match(block[1], /param:'hi mids freq'[\s\S]*?label:'1.5 kHz',position:'TOP'[\s\S]*?label:'3 kHz',position:'MIDDLE'[\s\S]*?label:'750 Hz',position:'BOTTOM'/);
+});
+
+test('STARLIFT switch label positions remain Vintage / Off / Modern from top to bottom', () => {
+  const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block);
+  assert.match(block[1], /param:'contour'[\s\S]*?label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
+});
+
+test('unverified switch mapping cannot send MIDI values and controls remain read-only', () => {
+  const start = html.indexOf("if(control.type==='three-way-switch')");
+  const end = html.indexOf("\n }", start);
+  assert.ok(start>=0&&end>start);
+  const renderer = html.slice(start,end+3);
+  assert.match(renderer,/disabled aria-disabled="true"/);
+  assert.doesNotMatch(renderer,/data-value|onclick|sendBlockParam/);
+  assert.doesNotMatch(html,/querySelectorAll\\('\\.switch-position-button'\\)\\.forEach\\(el=>\\{/);
+  assert.match(html,/Hardware raw value:/);
+  assert.match(html,/mapping not verified/);
+  assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
+});
