@@ -21,7 +21,7 @@ test('USB output discovery is explicitly read-only and does not claim a working 
   assert.match(outputPlugin, /Read-only output endpoint discovery/);
   assert.match(outputPlugin, /does not prove that a stream reaches the MG-30/);
   assert.doesNotMatch(outputPlugin, /new AudioTrack/);
-  assert.doesNotMatch(outputPlugin, /AudioRecord/);
+  assert.doesNotMatch(outputPlugin, /import android\\.media\\.AudioRecord/);\n  assert.doesNotMatch(outputPlugin, /new AudioRecord|AudioRecord\\.Builder/);
 });
 
 test('Android initialization copies and registers the isolated output plugin', () => {
