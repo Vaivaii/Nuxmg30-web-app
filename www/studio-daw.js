@@ -1035,7 +1035,14 @@ function updatePlayheadFrame() {
       return;
     }
     playing = false;
-    stopScheduledAudio();
+    cancelAnimationFrame(animationFrame);
+    if (nativeOutputPlayback) {
+      nativeOutputPlayback = false;
+      nativePlaybackGeneration += 1;
+      void NativeAudioOutput.stopDawPlayback().catch(() => {});
+    } else {
+      stopScheduledAudio();
+    }
     updateTransport();
     renderPlayhead();
     return;
