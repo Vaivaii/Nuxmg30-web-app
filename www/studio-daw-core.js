@@ -2,7 +2,7 @@ export const DAW_INPUT_ROUTES = Object.freeze([
   { id: 'file', label: 'Audio file / Import', channelIndexMask: 0, captureMode: 'file' },
   { id: 'usb-ch1-mono', label: 'MG-30 USB · Input 1 (Mono)', channelIndexMask: 1, captureMode: 'multichannel' },
   { id: 'usb-ch1-2-stereo', label: 'MG-30 USB · Input 1–2 (Stereo)', channelIndexMask: 3, captureMode: 'multichannel' },
-  { id: 'usb-loopback-3-4-stereo', label: 'MG-30 USB · Loopback 3–4 (Stereo)', channelIndexMask: 12, captureMode: 'multichannel' },
+  { id: 'usb-wet-sync-3-4-stereo', label: 'MG-30 USB · Input 3–4 (Wet Sync / Dry Out)', channelIndexMask: 12, captureMode: 'multichannel' },
 ]);
 
 export const DAW_TRACKS = Object.freeze([
@@ -99,7 +99,8 @@ export function normalizeProject(input) {
         captureMode: ['normal', 'loopback', 'multichannel', 'file'].includes(clip.captureMode) ? clip.captureMode : 'file',
         channelIndexMask: Math.max(0, Math.min(255, Math.round(Number(clip.channelIndexMask) || 0))),
         inputChannelMask: Math.max(0, Math.min(255, Math.round(Number(clip.inputChannelMask) || 0))),
-        inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === clip.inputRoute) ? clip.inputRoute : 'file',
+        inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === (clip.inputRoute === 'usb-loopback-3-4-stereo' ? 'usb-wet-sync-3-4-stereo' : clip.inputRoute))
+          ? (clip.inputRoute === 'usb-loopback-3-4-stereo' ? 'usb-wet-sync-3-4-stereo' : clip.inputRoute) : 'file',
         waveform: Array.isArray(clip.waveform) ? clip.waveform.slice(0, 128).map((value) => Math.max(0, Math.min(100, Number(value) || 0))) : [],
       };
     }).filter(Boolean) : [];
@@ -108,7 +109,8 @@ export function normalizeProject(input) {
       name: String(source.name || definition.name).slice(0, 40),
       color: definition.color,
       input: String(source.input || definition.input).slice(0, 80),
-      inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === source.inputRoute) ? source.inputRoute : definition.inputRoute,
+      inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === (source.inputRoute === 'usb-loopback-3-4-stereo' ? 'usb-wet-sync-3-4-stereo' : source.inputRoute))
+        ? (source.inputRoute === 'usb-loopback-3-4-stereo' ? 'usb-wet-sync-3-4-stereo' : source.inputRoute) : definition.inputRoute,
       gain: Math.max(0, Math.min(2, Number.isFinite(Number(source.gain)) ? Number(source.gain) : 1)),
       pan: Math.max(-1, Math.min(1, Number.isFinite(Number(source.pan)) ? Number(source.pan) : 0)),
       mute: Boolean(source.mute),
@@ -166,7 +168,8 @@ function normalizeArchivedLoopbackClips(input, tracks) {
       captureMode: ['normal', 'loopback', 'multichannel', 'file'].includes(clip.captureMode) ? clip.captureMode : 'loopback',
       channelIndexMask: Math.max(0, Math.min(255, Math.round(Number(clip.channelIndexMask) || 0))),
       inputChannelMask: Math.max(0, Math.min(255, Math.round(Number(clip.inputChannelMask) || 0))),
-      inputRoute: DAW_INPUT_ROUTES.some((route) => route.id === clip.inputRoute) ? clip.inputRoute : 'usb-loopback-3-4-stereo',
+      inputRoute: clip.inputRoute === 'usb-loopback-3-4-stereo' ? 'usb-wet-sync-3-4-stereo'
+        : (DAW_INPUT_ROUTES.some((route) => route.id === clip.inputRoute) ? clip.inputRoute : 'usb-wet-sync-3-4-stereo'),
       waveform: Array.isArray(clip.waveform) ? clip.waveform.slice(0, 128).map((value) => Math.max(0, Math.min(100, Number(value) || 0))) : [],
     };
   }).filter(Boolean);
