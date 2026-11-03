@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -302,7 +304,7 @@ public class MG30AudioOutputPlugin extends Plugin {
     // the existing AudioRecord plugin or its input-device selection.
     private static final int REAMP_SAMPLE_RATE = 48000;
     private static final int REAMP_CHANNELS = 2;
-    private static final int REAMP_BYTES_PER_FRAME = 4; // stereo PCM16
+    private static final int REAMP_BYTES_PER_FRAME = 8; // stereo PCM_FLOAT32
     private static final int REAMP_MAX_CHUNK_BYTES = 192 * 1024;
     private static final long REAMP_MAX_FILE_BYTES =
         (long) REAMP_SAMPLE_RATE * REAMP_BYTES_PER_FRAME * 30 * 60;
@@ -375,7 +377,7 @@ public class MG30AudioOutputPlugin extends Plugin {
             result.put("ready", true);
             result.put("sampleRate", REAMP_SAMPLE_RATE);
             result.put("channelCount", REAMP_CHANNELS);
-            result.put("encoding", "PCM_16BIT_LE");
+            result.put("encoding", "PCM_FLOAT32_LE");
             result.put("targetDeviceId", deviceId);
             result.put("targetDeviceName", target.getProductName() == null ? "NUX MG-30" : target.getProductName().toString());
             call.resolve(result);
@@ -401,7 +403,7 @@ public class MG30AudioOutputPlugin extends Plugin {
             byte[] bytes = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT);
             if (bytes.length == 0 || bytes.length > REAMP_MAX_CHUNK_BYTES ||
                 bytes.length % REAMP_BYTES_PER_FRAME != 0) {
-                call.reject("Chunk Reamp harus berisi frame PCM16 stereo lengkap.");
+                call.reject("Chunk Reamp harus berisi frame PCM_FLOAT stereo lengkap.");
                 return;
             }
             synchronized (session) {
@@ -449,7 +451,7 @@ public class MG30AudioOutputPlugin extends Plugin {
             int minBuffer = AudioTrack.getMinBufferSize(
                 REAMP_SAMPLE_RATE,
                 AudioFormat.CHANNEL_OUT_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT
+                AudioFormat.ENCODING_PCM_FLOAT
             );
             if (minBuffer <= 0) {
                 throw new IllegalStateException("Android menolak buffer PCM16 stereo 48 kHz (" + minBuffer + ").");
@@ -524,23 +526,41 @@ public class MG30AudioOutputPlugin extends Plugin {
     }
 
     private void runReampPlayback(ReampSession session, AudioTrack track) {
-        byte[] buffer = new byte[16 * 1024];
+        byte[] buffer = new byte[16 * 1024 + REAMP_BYTES_PER_FRAME];
+        int pendingBytes = 0;
         try (FileInputStream input = new FileInputStream(session.file)) {
             int read;
-            while (!session.stopRequested && (read = input.read(buffer)) != -1) {
+            while (!session.stopRequested &&
+                (read = input.read(buffer, pendingBytes, buffer.length - pendingBytes)) != -1) {
                 if (read == 0) continue;
-                AudioDeviceInfo current = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? track.getRoutedDevice() : null;
-                if (current == null || current.getId() != session.deviceId) {
-                    throw new IOException("Rute USB berubah selama Reamp. Pengiriman dihentikan.");
+                int totalRead = pendingBytes + read;
+                int usableBytes = totalRead - (totalRead % REAMP_BYTES_PER_FRAME);
+                if (usableBytes > 0) {
+                    int sampleCount = usableBytes / 4;
+                    float[] samples = new float[sampleCount];
+                    ByteBuffer.wrap(buffer, 0, usableBytes)
+                        .order(ByteOrder.LITTLE_ENDIAN)
+                        .asFloatBuffer()
+                        .get(samples);
+                    int offset = 0;
+                    while (offset < sampleCount && !session.stopRequested) {
+                        int written = track.write(samples, offset, sampleCount - offset, AudioTrack.WRITE_BLOCKING);
+                        if (written < 0) throw new IOException("AudioTrack.write Reamp gagal: " + written);
+                        if (written == 0) throw new IOException("AudioTrack tidak menerima data Reamp.");
+                        if (written % REAMP_CHANNELS != 0) {
+                            throw new IOException("AudioTrack menulis frame stereo Reamp yang tidak lengkap.");
+                        }
+                        offset += written;
+                        session.framesWritten += written / REAMP_CHANNELS;
+                    }
                 }
-                int offset = 0;
-                while (offset < read && !session.stopRequested) {
-                    int written = track.write(buffer, offset, read - offset, AudioTrack.WRITE_BLOCKING);
-                    if (written < 0) throw new IOException("AudioTrack.write Reamp gagal: " + written);
-                    if (written == 0) throw new IOException("AudioTrack tidak menerima data Reamp.");
-                    offset += written;
-                    session.framesWritten += written / REAMP_BYTES_PER_FRAME;
+                pendingBytes = totalRead - usableBytes;
+                if (pendingBytes > 0) {
+                    System.arraycopy(buffer, usableBytes, buffer, 0, pendingBytes);
                 }
+            }
+            if (!session.stopRequested && pendingBytes != 0) {
+                throw new IOException("File Reamp berakhir di tengah frame PCM_FLOAT stereo.");
             }
 
             if (!session.stopRequested) {
