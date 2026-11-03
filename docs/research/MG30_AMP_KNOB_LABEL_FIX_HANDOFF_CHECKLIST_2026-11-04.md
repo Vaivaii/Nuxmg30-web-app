@@ -335,3 +335,30 @@ Jangan mengubah komunikasi perangkat yang sudah bekerja untuk mencapai tampilan 
 - APK SHA-256: `408ee07e0bfc6485296c9fdc58429f32d129d03cd4fe401811ec3fc0385b125a`.
 - Build APK berasal dari source commit di atas; commit setelahnya hanya memperbarui dokumen handoff. Tidak ada perubahan kode aplikasi setelah build tersebut.
 - Batas validasi: ini adalah regression/simulation test + Android debug build, bukan pengujian perangkat keras fisik. Pemetaan nilai switch 0/50/100 tetap harus dicoba pada MG-30 dan dikonfirmasi lewat readback serta perubahan suara/parameter.
+
+
+## Koreksi keselamatan setelah laporan pengguna — 4 Nov 2026
+
+Pengguna melaporkan bahwa urutan/value switch yang dikirim aplikasi terbalik dan setelah memilih switch dari aplikasi, elemen switch pada display MG-30 menghilang. Ini menunjukkan implementasi sebelumnya berisiko dan **tidak boleh dipakai untuk menulis switch**.
+
+### Posisi visual yang benar dari foto perangkat
+
+- DGLASS LO MIDS: TOP = 500 Hz, MIDDLE = 1 kHz, BOTTOM = 250 Hz.
+- DGLASS HI MIDS: TOP = 1.5 kHz, MIDDLE = 3 kHz, BOTTOM = 750 Hz.
+- STARLIFT CONTOUR: TOP = VINTAGE, MIDDLE = OFF, BOTTOM = MODERN.
+
+### Mitigasi yang diterapkan
+
+- Label visual DGLASS diperbaiki mengikuti posisi di atas.
+- Ketiga kontrol switch sementara menjadi **read-only/disabled**.
+- Handler pengiriman MIDI dari tombol switch dihapus sepenuhnya. Tidak ada nilai switch 0/50/100 yang dikirim lagi.
+- UI menampilkan raw value dari readback perangkat sebagai angka, tetapi tidak mengarang posisi aktif karena mapping raw-to-frame belum terverifikasi.
+- Jalur knob amp lain, Mic/Mic Position, NAM, IR, preset, MIDI block/model switch, Signal Chain dan DAW tidak diubah.
+
+### Gate sebelum switch diaktifkan kembali
+
+- Capture QuickTone terpisah saat switch DGLASS LOW berpindah TOP → MIDDLE → BOTTOM.
+- Capture QuickTone terpisah saat switch DGLASS HIGH berpindah TOP → MIDDLE → BOTTOM.
+- Capture QuickTone terpisah saat STARLIFT CONTOUR berpindah VINTAGE → OFF → MODERN.
+- Cocokkan CC number, raw value, urutan state, dan frame asset (1/2/3) untuk tiap kontrol.
+- Uji readback dan writeback MG-30 pada firmware original Gen 2 6.0.x. Jangan gunakan 0/50/100 atau membalik urutan lagi tanpa capture.
