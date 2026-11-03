@@ -253,6 +253,7 @@ function ampSvg(m){
  const zipFender=(model,kind)=>{s+=zipHead('#171b1c','#777d79','#111719');s+='<rect x="82" y="116" width="596" height="54" fill="#111719" stroke="#8f9690" stroke-width="1.4"/>';s+=jack(105,143,5)+jack(124,143,5)+toggle(146,143);const xs=kind==='princeton'?[177,220,263,306,349,392]:kind==='deluxe'?[176,213,250,287,324,361,398,435,472,509]:[180,225,270,315,360,405,450,495,540];xs.forEach((x,i)=>s+=k(x,143,8.2,'',true));s+=led(647,143,'#c84b3d');s+='<rect x="82" y="178" width="596" height="159" fill="#252c2d" stroke="#aab1aa" stroke-width="1.7"/>'+zipMesh(90,186,580,143);s+=word(194,258,'Fender',47,'Brush Script MT,Segoe Script,cursive','#f2eee5','middle','font-style="italic" font-weight="bold" stroke="#353a37" stroke-width=".7"');s+='<rect x="507" y="214" width="147" height="49" fill="#111719" stroke="#c4c7bd" stroke-width="1.2"/>'+label(580,234,model,12,'#f0eee5',900,1.1)+label(580,250,'REVERB AMP',7,'#c9cec6',700,1.2);return s+feet+screw(72,103)+screw(688,103);};
 
 
+ const zipPattern=(id,w,h,inner)=>'<pattern id="'+id+'" width="'+w+'" height="'+h+'" patternUnits="userSpaceOnUse">'+inner+'</pattern>';
  // Additional seven-model reference batch (XTC Red/Blue share the photographed Ecstasy chassis,
  // but have independent channel-specific renderer branches and distinct indicator colors).
  // XTC chassis from supplied photo: patterned silver/cream grille, centred Bogner script,
@@ -353,7 +354,6 @@ function ampSvg(m){
 
  // Exact visual pass from the six additional photographs supplied in chat.
  // All six are drawn as amp heads, retaining the reference panel, wordmark, materials and layout.
- const zipPattern=(id,w,h,inner)=>'<pattern id="'+id+'" width="'+w+'" height="'+h+'" patternUnits="userSpaceOnUse">'+inner+'</pattern>';
  // Fender Vibro-King — tan tweed shell; black upper control strip split into three functional groups;
  // script model mark at upper-right and raised Fender script badge on the dark grille.
  if(raw==='Vibro King'){
