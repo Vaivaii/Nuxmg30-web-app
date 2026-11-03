@@ -51,7 +51,7 @@ The paired record control arms the selected return track and uses the existing `
 - The current MG-30 USB input channel pair and its semantic mapping (dry versus processed/wet) have **not** been resolved from an independent USB audio capture. The app therefore does not claim that the captured USB return is definitely wet/processed. Listen to and inspect a take before treating it as a final wet track.
 - The app's current AudioRecord input route is preserved, not reimplemented. No assumed channel selection has been added.
 - AudioTrack full-duplex operation, long-file stability, latency, drift, underruns, and physical processed-return capture still require testing on the user's phone and MG-30.
-- The native output path currently supports PCM_FLOAT32 little-endian stereo at 48 kHz only. This was selected to match the 48 kHz float AudioTrack format used in the previous audible output test; physical Reamp streaming remains to be verified. No 24-bit/float USB OUT negotiation is claimed.
+- The native output path currently requests PCM_FLOAT32 little-endian stereo at 48 kHz only. This was selected to match the 48 kHz float AudioTrack format used in the previous audible output test; physical Reamp streaming remains to be verified. The app validates PCM_FLOAT support when Android exposes an encoding list; it does not yet negotiate 24-bit packed PCM or alternate output formats.
 - No USB routing mode is changed by the app; the user sets REAMP on the pedal.
 - This source change does not modify NAM transfer, User/Third Party or Collection IR command families, MIDI mapping/framing, preset I/O, or the existing USB AudioRecord plugin.
 
