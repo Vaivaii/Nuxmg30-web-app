@@ -12,125 +12,132 @@ const recorder = read('../native-android/MG30AudioPlugin.java');
 const outputPlugin = read('../native-android/MG30AudioOutputPlugin.java');
 const index = read('../www/index.html');
 
-test('DAW and Android recorder bridge scripts parse after Loopback changes', () => {
+test('DAW and Android recorder bridge scripts parse after four-track routing changes', () => {
   for (const relative of ['../www/studio-daw.js', '../www/main.js']) {
     const path = fileURLToPath(new URL(relative, import.meta.url));
     assert.doesNotThrow(() => execFileSync(process.execPath, ['--check', path]));
   }
 });
 
-test('project has a dedicated fifth Loopback lane, separate from Backing and Guitar', async () => {
-  const { DAW_TRACKS, createDefaultProject, normalizeProject } = await import('../www/studio-daw-core.js');
-  assert.deepEqual(DAW_TRACKS.map((track) => track.id), ['backing', 'guitar', 'bass', 'vocals', 'loopback']);
-  const project = createDefaultProject('Loopback session');
-  const loopback = project.tracks.find((track) => track.id === 'loopback');
-  assert.ok(loopback);
-  assert.equal(loopback.name, 'Loopback');
-  assert.equal(loopback.input, 'MG-30 USB Loopback');
-  assert.equal(loopback.armed, false);
+test('DAW stays at four visible tracks and every track has an independent input route', async () => {
+  const { DAW_TRACKS, DAW_INPUT_ROUTES, createDefaultProject, normalizeProject } = await import('../www/studio-daw-core.js');
+  assert.deepEqual(DAW_TRACKS.map((track) => track.id), ['backing', 'guitar', 'bass', 'vocals']);
+  assert.deepEqual(DAW_INPUT_ROUTES.map((route) => route.id), [
+    'file', 'usb-ch1-mono', 'usb-ch1-2-stereo', 'usb-loopback-3-4-stereo',
+  ]);
+  assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-ch1-mono').channelIndexMask, 0x1);
+  assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-ch1-2-stereo').channelIndexMask, 0x3);
+  assert.equal(DAW_INPUT_ROUTES.find((route) => route.id === 'usb-loopback-3-4-stereo').channelIndexMask, 0xC);
+
+  const project = createDefaultProject('Four-track routing session');
+  assert.equal(project.tracks.length, 4);
+  assert.equal(project.tracks.find((track) => track.id === 'backing').inputRoute, 'file');
+  assert.equal(project.tracks.find((track) => track.id === 'guitar').inputRoute, 'usb-ch1-2-stereo');
   assert.equal(project.tracks.find((track) => track.id === 'guitar').armed, true);
 
   const legacy = normalizeProject({
-    name: 'Old four-track project',
+    name: 'Former five-lane project',
     tracks: [
       { id: 'backing', clips: [{ mediaId: 'song', durationSeconds: 12 }] },
       { id: 'guitar', armed: true, clips: [{ mediaId: 'guitar-take', durationSeconds: 4 }] },
       { id: 'bass' },
       { id: 'vocals' },
+      { id: 'loopback' },
     ],
   });
-  assert.equal(legacy.tracks.length, 5);
-  assert.equal(legacy.tracks.find((track) => track.id === 'loopback').clips.length, 0);
+  assert.equal(legacy.tracks.length, 4);
   assert.equal(legacy.tracks.find((track) => track.id === 'backing').clips.length, 1);
   assert.equal(legacy.tracks.find((track) => track.id === 'guitar').clips.length, 1);
+  assert.equal(legacy.tracks.some((track) => track.id === 'loopback'), false);
 });
 
-test('Loopback takes preserve channel count and raw channel-index metadata in project clips', async () => {
+test('channel selection maps mono input 1, stereo inputs 1-2, and Loopback inputs 3-4', async () => {
+  const { selectUsbChannelPositions } = await import('../www/studio-daw-core.js');
+  assert.deepEqual(selectUsbChannelPositions(0xF, 0x1), [0]);
+  assert.deepEqual(selectUsbChannelPositions(0xF, 0x3), [0, 1]);
+  assert.deepEqual(selectUsbChannelPositions(0xF, 0xC), [2, 3]);
+  assert.deepEqual(selectUsbChannelPositions(0xC, 0xC), [0, 1]);
+  assert.throws(() => selectUsbChannelPositions(0x3, 0xC), /does not contain/);
+  assert.throws(() => selectUsbChannelPositions(0xF, 0x0), /one mono channel or one stereo pair/);
+});
+
+test('per-track route and original capture-channel metadata persist with clips', async () => {
   const { normalizeProject } = await import('../www/studio-daw-core.js');
   const project = normalizeProject({
     tracks: [{
-      id: 'loopback',
+      id: 'bass',
+      inputRoute: 'usb-loopback-3-4-stereo',
       clips: [{
-        mediaId: 'loopback-media',
+        mediaId: 'loopback-capture',
         durationSeconds: 5,
-        channels: 4,
+        channels: 2,
         sampleRate: 48000,
-        captureMode: 'loopback',
+        captureMode: 'multichannel',
         channelIndexMask: 15,
+        inputChannelMask: 12,
+        inputRoute: 'usb-loopback-3-4-stereo',
       }],
     }],
   });
-  const clip = project.tracks.find((track) => track.id === 'loopback').clips[0];
-  assert.equal(clip.channels, 4);
-  assert.equal(clip.captureMode, 'loopback');
-  assert.equal(clip.channelIndexMask, 15);
+  const bass = project.tracks.find((track) => track.id === 'bass');
+  assert.equal(bass.inputRoute, 'usb-loopback-3-4-stereo');
+  assert.equal(bass.clips[0].captureMode, 'multichannel');
+  assert.equal(bass.clips[0].channelIndexMask, 15);
+  assert.equal(bass.clips[0].inputChannelMask, 12);
+  assert.equal(bass.clips[0].inputRoute, 'usb-loopback-3-4-stereo');
 });
 
-test('native recorder exposes USB input channel counts, position masks, and index masks', () => {
+test('native recorder exposes and captures the MG-30 multichannel USB endpoint', () => {
   assert.ok(recorder.includes('device.getChannelCounts()'));
   assert.ok(recorder.includes('device.getChannelMasks()'));
   assert.ok(recorder.includes('device.getChannelIndexMasks()'));
   assert.ok(recorder.includes('item.put("channelIndexMasks"'));
   assert.ok(recorder.includes('candidate.setPreferredDevice(usb)'));
   assert.ok(recorder.includes('candidate.getRoutedDevice()'));
-  assert.ok(recorder.includes('if (usb == null && !loopbackCapture)'));
-  assert.ok(recorder.includes('!loopbackCapture || isMg30UsbDevice(routed)'));
+  assert.ok(recorder.includes('if (usb == null && !multichannelCapture)'));
+  assert.ok(recorder.includes('!multichannelCapture || isMg30UsbDevice(routed)'));
   assert.ok(recorder.includes('private static boolean isMg30UsbDevice(AudioDeviceInfo device)'));
   assert.ok(recorder.includes('sampleCount -= sampleCount % captureChannels'));
-});
-
-test('Loopback capture prefers the widest advertised raw USB channel layout', () => {
-  assert.match(recorder, /call\.getString\("captureMode", "normal"\)/);
-  assert.match(recorder, /boolean loopbackCapture = "loopback"\.equalsIgnoreCase\(captureMode\)/);
+  assert.match(recorder, /boolean multichannelCapture = loopbackCapture \|\| "multichannel"\.equalsIgnoreCase\(captureMode\)/);
   assert.match(recorder, /preferredLoopbackCounts = new int\[\] \{ 4, 3, 2, 1 \}/);
   assert.match(recorder, /Integer\.bitCount\(indexMask\)/);
-  assert.match(recorder, /loopbackIndexMasks\.add\(indexMask\)/);
-  assert.match(recorder, /0xC/);
   assert.match(recorder, /setChannelIndexMask\(channelIndexMask\)/);
-  assert.match(recorder, /useChannelIndexMask[\s\S]*?rate \* channels \* bytesPerCaptureSample \/ 10/);
-  assert.match(recorder, /advertisedIndexMasks\.length > 0 && channelOptions\.isEmpty\(\)/);
-  assert.match(recorder, /selectedChannelIndexMask = channelIndexMask/);
-  assert.match(recorder, /MG30_Loopback_Take_/);
-  assert.match(recorder, /activeCaptureMode = loopbackCapture \? "loopback" : "normal"/);
-  assert.match(recorder, /result\.put\("channelIndexMask", activeChannelIndexMask\)/);
-  assert.match(recorder, /result\.put\("captureMode", activeCaptureMode\)/);
-  assert.doesNotMatch(recorder, /AudioTrack/);
+  assert.match(recorder, /activeCaptureMode = multichannelCapture \? \(loopbackCapture \? "loopback" : "multichannel"\) : "normal"/);
+  assert.ok(recorder.includes('MG30_USB_Input_Take_'));
 });
 
-test('DAW Loopback button arms the independent lane and requests Loopback capture mode', () => {
-  assert.ok(core.includes("{ id: 'loopback', name: 'Loopback'"));
-  assert.ok(daw.includes('Phone Audio → MG-30 → Loopback Track'));
-  assert.ok(daw.includes('armTrack(\'loopback\')'));
-  assert.ok(daw.includes("track.id === 'loopback' ? 'loopback' : 'normal'"));
+test('four-track DAW exposes per-track routes and only imports selected USB channels', () => {
+  assert.ok(daw.includes('Track Input Routing'));
+  assert.ok(daw.includes('data-track-input-route'));
+  assert.ok(daw.includes('track.inputRoute = route.id'));
+  assert.ok(daw.includes('const captureMode = \'multichannel\''));
   assert.ok(daw.includes('recorder.start({ captureMode })'));
-  assert.ok(daw.includes('Loopback-only capture must not create/resume Web Audio output'));
-  assert.ok(daw.includes("audioContext.suspend()"));
-  assert.ok(daw.includes('(performance.now() - recordingStartPerformanceTime) / 1000'));
-  assert.ok(daw.includes('importQuickTake(take, trackId, startAt)'));
-  assert.ok(daw.includes('syncLoopbackPanel'));
-  assert.ok(daw.includes('START USB LOOPBACK CAPTURE'));
-  assert.ok(daw.includes('STOP USB LOOPBACK CAPTURE'));
-  assert.match(daw, /not inserted into the Backing or Guitar track/i);
+  assert.ok(daw.includes('selectUsbChannelPositions(capturedMask, route.channelIndexMask)'));
+  assert.ok(daw.includes('encodeWavHeader(pcm.byteLength, buffer.sampleRate, 2, 24)'));
+  assert.ok(daw.includes('storedBlob = new Blob'));
+  assert.ok(daw.includes('inputChannelMask: route.channelIndexMask'));
+  assert.doesNotMatch(daw, /id: 'loopback', name: 'Loopback'/);
+  assert.doesNotMatch(daw, /dawLoopbackRecord|mountLoopbackPanel|syncLoopbackPanel/);
 });
 
-test('Quick Record bridge forwards the requested capture mode to MG30Audio', () => {
+test('Quick Record remains separate and passes multichannel mode without altering Guitar UI', () => {
   assert.match(main, /async function startGuitarRecording\(options = \{\}\)/);
-  assert.match(main, /options\?\.captureMode === 'loopback' \? 'loopback' : 'normal'/);
-  assert.ok(main.includes('MG30Audio.startRecording({ prefer24Bit: true, captureMode })'));
+  assert.ok(main.includes("['loopback', 'multichannel'].includes(options?.captureMode)"));
+  assert.ok(main.includes("const isDawCapture = captureMode !== 'normal'"));
+  assert.ok(main.includes("MG30Audio.startRecording({ prefer24Bit: true, captureMode })"));
+  assert.ok(main.includes("const isDawCapture = captureMode === 'loopback' || captureMode === 'multichannel'"));
   assert.ok(main.includes('device.channelIndexMasks'));
   assert.ok(main.includes('Channel index masks:'));
   assert.ok(main.includes("let recordingCaptureMode = 'normal'"));
-  assert.match(main, /if \(!isLoopback\) \{[\s\S]*?guitarStopBtn/);
-  assert.match(main, /if \(!isLoopback\) \{[\s\S]*?setCurrentPlayback\(take, false\)/);
+  assert.match(main, /if \(!isDawCapture\) \{[\s\S]*?guitarStopBtn/);
   assert.ok(main.includes('start: startGuitarRecording'));
 });
 
-test('Reamp output path is absent; existing USB output discovery/tone probe stays isolated', () => {
+test('Reamp output path remains absent and four-track labels are shipped', () => {
   assert.doesNotMatch(daw, /Reamp|reamp/);
   assert.doesNotMatch(outputPlugin, /beginReampPlayback|startReampPlayback|ReampSession/);
   assert.ok(outputPlugin.includes('inspectOutputDevices'));
   assert.ok(outputPlugin.includes('playTestTone'));
   assert.doesNotMatch(outputPlugin, /import android\\.media\\.AudioRecord|new AudioRecord|AudioRecord\\.Builder/);
-  assert.ok(index.includes('5 tracks · 48 kHz / 24-bit'));
+  assert.ok(index.includes('4 tracks · 48 kHz / 24-bit'));
 });
-
