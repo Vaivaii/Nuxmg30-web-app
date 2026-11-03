@@ -268,7 +268,8 @@ $('guitarPlayback')?.addEventListener('ended', () => {
   $('guitarPlayGlyph').textContent = '▶';
   $('guitarPlayLabel').textContent = 'PLAY';
 });
-async function startGuitarRecording() {
+async function startGuitarRecording(options = {}) {
+  const captureMode = options?.captureMode === 'loopback' ? 'loopback' : 'normal';
   if (!isNative()) {
     setStatus('recordStatus', 'Direct USB recording is available only in the native Android APK. Run the APK to test the MG-30.', 'warn');
     return;
@@ -277,15 +278,18 @@ async function startGuitarRecording() {
   $('guitarRecordBtn').disabled = true;
   setStatus('recordStatus', 'Preparing AudioRecord and verifying USB routing…');
   try {
-    const result = await MG30Audio.startRecording({ prefer24Bit: true });
+    const result = await MG30Audio.startRecording({ prefer24Bit: true, captureMode });
     recording = true;
     $('guitarStopBtn').disabled = false;
     $('guitarPlayBtn').disabled = true;
     stopPlayback(true);
     $('guitarRecordBtn').classList.add('is-recording');
     $('guitarTrackMeter').classList.add('is-recording');
-    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit';
-    setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format not reported') + '.', 'ok');
+    $('guitarTrackMeta').textContent = result.sampleRate + ' Hz · WAV PCM ' + result.bitDepth + '-bit · ' + (result.channels || 2) + ' ch';
+    const loopbackNote = captureMode === 'loopback'
+      ? ' LOOPBACK CAPTURE · preserving ' + (result.channels || 2) + ' USB channel(s) · ' + (result.channelLayout || 'channel layout not reported') + '.'
+      : '';
+    setStatus('recordStatus', 'RECORDING · ' + (result.routeName || 'USB audio') + ' · output WAV PCM ' + result.bitDepth + '-bit / ' + result.sampleRate + ' Hz. Capture: ' + (result.captureSource || 'format not reported') + '.' + loopbackNote, 'ok');
     return result;
   } catch (error) {
     setStatus('recordStatus', error?.message || 'Could not start USB recording.', 'warn');
