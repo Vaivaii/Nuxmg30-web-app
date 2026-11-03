@@ -52,7 +52,7 @@ test('DAW stays at four visible tracks and every track has an independent input 
   assert.equal(legacy.legacyLoopbackClips.length, 0);
 });
 
-test('channel selection maps mono input 1, stereo inputs 1-2, and Loopback inputs 3-4', async () => {
+test('channel selection maps mono input 1, stereo inputs 1-2, and Wet Sync inputs 3-4', async () => {
   const { selectUsbChannelPositions } = await import('../www/studio-daw-core.js');
   assert.deepEqual(selectUsbChannelPositions(0xF, 0x1), [0]);
   assert.deepEqual(selectUsbChannelPositions(0xF, 0x3), [0, 1]);
@@ -99,7 +99,7 @@ test('native recorder exposes and captures the MG-30 multichannel USB endpoint',
   assert.ok(recorder.includes('!multichannelCapture || isMg30UsbDevice(routed)'));
   assert.ok(recorder.includes('private static boolean isMg30UsbDevice(AudioDeviceInfo device)'));
   assert.ok(recorder.includes('sampleCount -= sampleCount % captureChannels'));
-  assert.match(recorder, /boolean multichannelCapture = loopbackCapture \|\| "multichannel"\.equalsIgnoreCase\(captureMode\)/);
+  assert.match(recorder, /boolean multichannelCapture = loopbackCapture \\|\\| diagnosticCapture \\|\\| "multichannel"\\.equalsIgnoreCase\\(captureMode\\)/);
   assert.match(recorder, /preferredLoopbackCounts = new int\[\] \{ 4, 3, 2, 1 \}/);
   assert.match(recorder, /Integer\.bitCount\(indexMask\)/);
   assert.match(recorder, /setChannelIndexMask\(channelIndexMask\)/);
