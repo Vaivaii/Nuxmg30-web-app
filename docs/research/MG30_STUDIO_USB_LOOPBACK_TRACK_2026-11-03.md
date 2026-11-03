@@ -220,3 +220,20 @@ This build supersedes the earlier five-lane Loopback APKs and represents the use
 - The APK contains four DAW track model entries. The old fifth-lane clips are held in the project-level `legacyLoopbackClips` archive during migration; they are not rendered into a hidden lane.
 - These checks establish source/test/build/package integrity, not acoustic proof of the MG-30 channel meanings. Test with the original MG-30 Gen 2 and listen to the captured Loopback 3–4 result before treating that physical signal mapping as confirmed.
 
+
+
+## First user handset test — take saved but signal appears silent (3 November 2026)
+
+The user tested the four-track APK by playing a song and recording with Backing armed. Screenshot observation:
+- DAW has four visible tracks as intended.
+- A take named with prefix `MG30_USB_Input_Take_...` was saved/imported as a clip on Backing; this indicates the native multichannel capture start/stop and take import path ran.
+- The displayed clip waveform is almost a flat line. No audible signal has yet been confirmed.
+- The screenshot is the Timeline page and does not show which Backing input route was selected in Track Settings. The take prefix is generic to the per-track multichannel capture and does not identify whether mask 0x1, 0x3 or 0xC was requested.
+
+Do not mark USB Loopback as physically verified. Next diagnosis must obtain:
+1. Backing's selected Track Settings route, especially whether it is `MG-30 USB · Loopback 3–4 (Stereo)` rather than Input 1 mono or Input 1–2 stereo.
+2. Whether the song is actually audible from the MG-30 headphone/output while being played on the phone.
+3. If the selected route is confirmed as Loopback 3–4 and the capture is still silent, obtain the original raw `MG30_USB_Input_Take_...` WAV from Quick Takes/Record export and analyze per-channel peak/RMS before changing native capture code. The raw take retains the selected AudioRecord channels and channel-index mask.
+
+Initial diagnostic interpretation: WAV creation succeeded, but the near-flat waveform is consistent with silence or extremely low level in the selected channel(s). It does not by itself establish whether the problem is phone USB playback routing, the MG-30 Loopback input channel assignment, Android's exposed channel-index mask, or sample conversion. Preserve the current four-track routing and protected NAM/IR/MIDI paths while diagnosing.
+
