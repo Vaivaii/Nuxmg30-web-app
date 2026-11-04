@@ -856,6 +856,40 @@ const AMP_THREE_POSITION_SWITCHES = {
     ]}
   ]
 };
+/*
+ * User-confirmed effect switches. Existing parameter slots/CC indices are retained:
+ * Octave-Shift UP/DOWN CC12; Katana Boost CC18; Touch Wah UP/DOWN CC21;
+ * Harmonist Major/Minor CC49; S.C.F modes CC50; U-Vibe mode CC51.
+ * Discrete values are provisional and will be verified on the user's MG-30.
+ */
+const EFFECT_DISCRETE_SWITCHES = {
+ WAH: {
+  'Octave-Shift': [{param:'updown',label:'UP / DOWN',type:'two-way-switch',defaultValue:0,choices:[
+   {label:'UP',position:'UP',value:0},{label:'DOWN',position:'DOWN',value:1}
+  ]}]
+ },
+ EFX: {
+  'Katana': [{param:'boost',label:'BOOST',type:'two-way-switch',defaultValue:0,choices:[
+   {label:'OFF',position:'OFF',value:0},{label:'ON',position:'ON',value:1}
+  ]}],
+  'Touch Wah': [{param:'updown',label:'UP / DOWN',type:'two-way-switch',defaultValue:0,choices:[
+   {label:'UP',position:'UP',value:0},{label:'DOWN',position:'DOWN',value:1}
+  ]}]
+ },
+ MOD: {
+  'SCF': [{param:'chfl',label:'MODE',type:'three-way-switch',defaultValue:0,choices:[
+   {label:'CHORUS',position:'TOP',value:0},
+   {label:'P.M. · PITCH MODULATION',position:'MIDDLE',value:1},
+   {label:'FLANGER',position:'BOTTOM',value:2}
+  ]}],
+  'U-Vibe': [{param:'chvib',label:'MODE',type:'two-way-switch',defaultValue:0,choices:[
+   {label:'CHORUS',position:'TOP',value:0},{label:'VIBRATO',position:'BOTTOM',value:1}
+  ]}],
+  'Harmonist': [{param:'minor',label:'MODE',type:'two-way-switch',defaultValue:0,choices:[
+   {label:'MINOR',position:'TOP',value:0},{label:'MAJOR',position:'BOTTOM',value:1}
+  ]}]
+ }
+};
 const MIC_OPTIONS = ['1. DYN421','2. S57','3. U87','4. R122','5. R121','6. C414','7. C3000','8. B52'];
 const MIC_POSITION_OPTIONS = ['CENTER','MIDDLE','EDGE'];
 
@@ -905,15 +939,27 @@ function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
  if(blockIndex===3&&AMP_QUICKTONE_LAYOUTS[modelIndex]){
   return [...AMP_QUICKTONE_LAYOUTS[modelIndex],...(AMP_THREE_POSITION_SWITCHES[modelIndex]||[])].sort((a,b)=>a.ccIndex-b.ccIndex);
  }
- return block.models[modelIndex][1].split(',').map((raw,ccIndex)=>{
+ const controls=block.models[modelIndex][1].split(',').map((raw,ccIndex)=>{
   const param=raw.trim();
   return {param,label:param.toUpperCase(),ccIndex};
  });
+ const modelName=block.models[modelIndex][0];
+ const switches=EFFECT_DISCRETE_SWITCHES[block.id]?.[modelName]||[];
+ return controls.map(control=>{
+  const override=switches.find(item=>item.param===control.param);
+  return override?{...control,...override,ccIndex:control.ccIndex}:control;
+ });
+}
+function isDiscreteSwitch(control){
+ return control?.type==='three-way-switch'||control?.type==='two-way-switch';
 }
 function parameterValueForControl(blockIndex,state,modelIndex,control){
+ // Old local drafts may contain normalized rotary values; do not reuse them for switches.
+ if(isDiscreteSwitch(control)){
+  const stored=state.values[control.param];
+  return control.choices?.some(choice=>choice.value===Number(stored))?Number(stored):undefined;
+ }
  if(Object.prototype.hasOwnProperty.call(state.values,control.param))return state.values[control.param];
- // A switch has no equivalent in the former generic rotary draft; never borrow a knob value.
- if(control.type==='three-way-switch')return undefined;
  // Migrate old local amp drafts by their original parameter slot, not by label.
  const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.ccIndex];
  if(legacy&&Object.prototype.hasOwnProperty.call(state.values,legacy))return state.values[legacy];
@@ -935,7 +981,7 @@ function sendBlockParam(index,param,value){
   if(!control||control.ccIndex<0||control.ccIndex>=ccs.length)return;
   const cc=ccs[control.ccIndex];
   if(!Number.isInteger(cc))return;
-  if(control.type==='three-way-switch'){
+  if(isDiscreteSwitch(control)){
     const choice=control.choices?.find(item=>item.value===Number(value));
     if(!choice)return;
     sendCC(cc,choice.value);
@@ -964,20 +1010,23 @@ function syncIncomingParameterCC(cc,rawValue){
   if(!state||!block)return;
   const control=parameterControls(index,state.model).find(item=>item.ccIndex===pi);
   if(!control)return;
-  const param=control.param,next=normalizeParameterValue(param,rawValue);
+  const param=control.param;
+  const discrete=isDiscreteSwitch(control),next=discrete?Number(rawValue):normalizeParameterValue(param,rawValue);
+  if(discrete&&!control.choices?.some(choice=>choice.value===next))return;
   if(state.values[param]===next)return;
   state.values[param]=next;
   if(index===selected){
-    const switchControl=AMP_THREE_POSITION_SWITCHES[state.model]?.find(item=>item.param===param);
+    const switchControl=discrete?control:null;
     if(switchControl){
-      const group=[...document.querySelectorAll('#knobs .knob-three-way')].find(x=>x.querySelector('label')?.textContent===switchControl.label);
+      const group=[...document.querySelectorAll('#knobs .knob-discrete-switch')].find(x=>x.dataset.switchParam===param);
       if(group){
        group.querySelectorAll('.switch-position-button').forEach(button=>{
         const active=Number(button.dataset.switchValue)===next;
         button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
        });
+       const selectedChoice=switchControl.choices.find(choice=>choice.value===next);
        const rawLabel=group.querySelector('.switch-raw-value');
-       if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(Math.round(next))+' · TOP=0 / MIDDLE=1 / BOTTOM=2';
+       if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(next)+' · '+selectedChoice.position+' / '+selectedChoice.label;
       }
     }
     const selector=[...document.querySelectorAll('#knobs .parameter-select')].find(x=>x.dataset.p===param);
@@ -1078,7 +1127,12 @@ async function readActiveBuffer(options={}){
    for(const control of controls){
     if(control.ccIndex<0||control.ccIndex>=slots.length)continue;
     let value=bitSlot(body,slots[control.ccIndex]);if(selectorParam(control.param))value&=0x0F;
-    candidate[i].values[control.param]=normalizeParameterValue(control.param,value);
+     if(isDiscreteSwitch(control)){
+      if(control.choices?.some(choice=>choice.value===value))candidate[i].values[control.param]=value;
+      else delete candidate[i].values[control.param];
+     }else{
+      candidate[i].values[control.param]=normalizeParameterValue(control.param,value);
+     }
    }
   }
   states=candidate;
@@ -1896,13 +1950,18 @@ function setChainEditMode(enabled){
 function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id;const namProfile=selected===3?ampNamProfileForModelIndex(s.model):null;$('editorSub').textContent=namProfile?('QuickTone Slot '+namProfile.slot+' · ID '+namProfile.id):('Model '+(s.model+1));$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();const controls=parameterControls(selected,s.model);$('knobs').className='knobs '+(controls.length>=6?'knobs-many':'knobs-few');$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');const blockQuick=$('blockQuickSelect');if(blockQuick){blockQuick.innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');blockQuick.value=String(s.model);blockQuick.setAttribute('aria-label','Pilih model '+b.id);}$('modelCurrentName').textContent=modelDisplayLabel(b.id,b.models[s.model]);$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
 const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=controls.map(control=>{
  const p=control.param,stored=parameterValueForControl(selected,s,s.model,control);
- if(control.type==='three-way-switch'){
-  const hasReadback=Object.prototype.hasOwnProperty.call(s.values,p);
-  const displayValue=stored===undefined?control.choices.find(choice=>choice.position==='TOP')?.value:stored;
-  const status=hasReadback?'Hardware raw value: '+String(Math.round(Number(stored)))+' · captured 1/2/0':'Default TOP · MIDI 0 · awaiting pedal readback';
-  return '<div class="knob knob-three-way"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button'+(displayValue!==undefined&&Number(displayValue)===choice.value?' is-active':'')+'" data-switch-param="'+escapeHtml(p)+'" data-switch-value="'+choice.value+'" aria-pressed="'+String(displayValue!==undefined&&Number(displayValue)===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+choice.position+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">'+escapeHtml(status)+'</small><small class="switch-safe-note">Default TOP hanya untuk tampilan awal; nilai hardware dibaca dari pedal saat tersedia.</small></div>';
- }
- if(p==='mic'||p==='position'){
+ if(isDiscreteSwitch(control)){
+  const hasReadback=stored!==undefined;
+  const defaultChoice=control.choices.find(choice=>choice.value===control.defaultValue)??control.choices[0];
+  const displayValue=hasReadback?stored:defaultChoice?.value;
+  const selectedChoice=control.choices.find(choice=>choice.value===displayValue);
+  const status=hasReadback
+   ?'Hardware raw value: '+String(Math.round(Number(stored)))+' · '+selectedChoice.position+' / '+selectedChoice.label
+   :'Default '+defaultChoice.position+' · MIDI '+defaultChoice.value+' · awaiting pedal readback';
+  const twoWay=control.type==='two-way-switch';
+  return '<div class="knob knob-discrete-switch '+(twoWay?'knob-two-way':'knob-three-way')+'" data-switch-param="'+escapeHtml(p)+'"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch'+(twoWay?' two-way-switch':'')+'" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button'+(displayValue!==undefined&&Number(displayValue)===choice.value?' is-active':'')+'" data-switch-param="'+escapeHtml(p)+'" data-switch-value="'+choice.value+'" aria-pressed="'+String(displayValue!==undefined&&Number(displayValue)===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+escapeHtml(choice.position)+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">'+escapeHtml(status)+'</small><small class="switch-safe-note">Posisi awal hanya tampilan; tidak mengirim MIDI sampai tombol dipilih.</small></div>';
+  }
+  if(p==='mic'||p==='position'){
   const options=p==='mic'?MIC_OPTIONS:MIC_POSITION_OPTIONS,raw=stored===undefined?'':String(encodeParameterValue(p,stored));
   const label=p==='mic'?'MIC':'MIC POSITION',placeholder=p==='mic'?'Pilih mic':'Pilih posisi';
   return '<div class="knob knob-selector"><label>'+label+'</label><select class="parameter-select" data-p="'+p+'" aria-label="'+label+'"><option value="" disabled '+(raw===''?'selected':'')+'>'+placeholder+'</option>'+options.map((name,index)=>'<option value="'+index+'" '+(raw===String(index)?'selected':'')+'>'+escapeHtml(name)+'</option>').join('')+'</select></div>';
@@ -1913,15 +1972,16 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
 $('knobs').querySelectorAll('.switch-position-button').forEach(el=>{
  el.onclick=()=>{
   const param=el.dataset.switchParam,value=Number(el.dataset.switchValue);
-  const control=controls.find(item=>item.param===param&&item.type==='three-way-switch');
+  const control=controls.find(item=>item.param===param&&isDiscreteSwitch(item));
   if(!control||!control.choices?.some(choice=>choice.value===value))return;
   s.values[param]=value;changed.add(selected+':'+param);
   $('knobs').querySelectorAll('.switch-position-button[data-switch-param="'+param+'"]').forEach(button=>{
    const active=Number(button.dataset.switchValue)===value;
    button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
   });
-  const rawLabel=el.closest('.knob-three-way')?.querySelector('.switch-raw-value');
-  if(rawLabel)rawLabel.textContent='Selected MIDI value: '+value+' · TOP=0 / MIDDLE=1 / BOTTOM=2';
+  const rawLabel=el.closest('.knob-discrete-switch')?.querySelector('.switch-raw-value');
+  const choice=control.choices.find(item=>item.value===value);
+  if(rawLabel)rawLabel.textContent='Selected MIDI value: '+value+' · '+choice.position+' / '+choice.label;
   $('statChanged').textContent=changed.size;persist();
   sendBlockParam(selected,param,value);
  };
