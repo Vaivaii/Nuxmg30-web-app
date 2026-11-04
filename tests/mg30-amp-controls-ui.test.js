@@ -101,18 +101,18 @@ test('STARLIFT Contour labels match the physical top-middle-bottom positions on 
   assert.match(block[1], /label:'VINTAGE',position:'TOP',value:1[\s\S]*?label:'OFF',position:'MIDDLE',value:2[\s\S]*?label:'MODERN',position:'BOTTOM',value:0/);
 });
 
-test('captured switch MIDI enum values map TOP/MIDDLE/BOTTOM to 1/2/0 and write on the original CCs', () => {
+test('physical MG-30 switch enum values map TOP/MIDDLE/BOTTOM to 0/1/2 and write on the original CCs', () => {
   const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
   assert.ok(block);
-  assert.match(block[1], /ccIndex:2[\s\S]*?position:'TOP',value:1[\s\S]*?position:'MIDDLE',value:2[\s\S]*?position:'BOTTOM',value:0/);
-  assert.match(block[1], /ccIndex:5[\s\S]*?position:'TOP',value:1[\s\S]*?position:'MIDDLE',value:2[\s\S]*?position:'BOTTOM',value:0/);
-  assert.match(block[1], /ccIndex:4[\s\S]*?position:'TOP',value:1[\s\S]*?position:'MIDDLE',value:2[\s\S]*?position:'BOTTOM',value:0/);
+  assert.match(block[1], /ccIndex:2[\s\S]*?position:'TOP',value:0[\s\S]*?position:'MIDDLE',value:1[\s\S]*?position:'BOTTOM',value:2/);
+  assert.match(block[1], /ccIndex:5[\s\S]*?position:'TOP',value:0[\s\S]*?position:'MIDDLE',value:1[\s\S]*?position:'BOTTOM',value:2/);
+  assert.match(block[1], /ccIndex:4[\s\S]*?position:'TOP',value:0[\s\S]*?position:'MIDDLE',value:1[\s\S]*?position:'BOTTOM',value:2/);
   const writer = html.match(/function sendBlockParam\([\s\S]*?\n\}/);
   assert.ok(writer);
   assert.match(writer[0], /item\.value===Number\(value\)/);
   assert.match(writer[0], /sendCC\(cc,choice\.value\)/);
   assert.match(html,/querySelectorAll\('\.switch-position-button'\)\.forEach\(el=>\{/);
-  assert.match(html,/captured 1\/2\/0/);
+  assert.match(html,/TOP=0 \/ MIDDLE=1 \/ BOTTOM=2/);
   assert.match(html,/Number\(button\.dataset\.switchValue\)===next/);
   assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
 });
@@ -141,7 +141,7 @@ test('three-position switches default visually to physical TOP without sending M
   assert.match(html, /const hasReadback=Object\.prototype\.hasOwnProperty\.call\(s\.values,p\)/);
   assert.match(html, /const displayValue=stored===undefined\?control\.choices\.find\(choice=>choice\.position==='TOP'\)\?\.value:stored/);
   assert.match(html, /displayValue!==undefined&&Number\(displayValue\)===choice\.value/);
-  assert.match(html, /Default TOP · MIDI 1 · awaiting pedal readback/);
-  assert.match(html, /Selected MIDI value: '\+value\+' · captured 1\/2\/0/);
+  assert.match(html, /Default TOP · MIDI 0 · awaiting pedal readback/);
+  assert.match(html, /Selected MIDI value: '\+value\+' · TOP=0 \/ MIDDLE=1 \/ BOTTOM=2/);
   assert.match(html, /sendBlockParam\(selected,param,value\)/);
 });
