@@ -857,23 +857,29 @@ const AMP_THREE_POSITION_SWITCHES = {
   ]
 };
 /*
- * User-confirmed effect switches. Existing parameter slots/CC indices are retained:
- * Octave-Shift UP/DOWN CC12; Katana Boost CC18; Touch Wah UP/DOWN CC21;
- * Harmonist Major/Minor CC49; S.C.F modes CC50; U-Vibe mode CC51.
- * Discrete values are provisional and will be verified on the user's MG-30.
+ * Physical MG-30 Gen 2 firmware 6.0.x test results:
+ * Confirmed correct: Katana Boost CC18 (OFF=0/ON=1), SCF mode CC50
+ * (TOP=0/MIDDLE=1/BOTTOM=2).
+ * The following four controls were physically observed inverted, so their
+ * UI positions map to reversed raw enum values:
+ * Octave-Shift UP=1/DOWN=0 on existing CC12;
+ * Touch Wah UP=1/DOWN=0 on existing CC21;
+ * Harmonist MINOR=1/MAJOR=0 on existing CC49;
+ * U-Vibe CHORUS=1/VIBRATO=0 on existing CC51.
+ * Default values are visual fallbacks only and are never written on editor open.
  */
 const EFFECT_DISCRETE_SWITCHES = {
  WAH: {
-  'Octave-Shift': [{param:'updown',label:'UP / DOWN',type:'two-way-switch',defaultValue:0,choices:[
-   {label:'UP',position:'UP',value:0},{label:'DOWN',position:'DOWN',value:1}
+  'Octave-Shift': [{param:'updown',label:'UP / DOWN',type:'two-way-switch',defaultValue:1,choices:[
+   {label:'UP',position:'UP',value:1},{label:'DOWN',position:'DOWN',value:0}
   ]}]
  },
  EFX: {
   'Katana': [{param:'boost',label:'BOOST',type:'two-way-switch',defaultValue:0,choices:[
    {label:'OFF',position:'OFF',value:0},{label:'ON',position:'ON',value:1}
   ]}],
-  'Touch Wah': [{param:'updown',label:'UP / DOWN',type:'two-way-switch',defaultValue:0,choices:[
-   {label:'UP',position:'UP',value:0},{label:'DOWN',position:'DOWN',value:1}
+  'Touch Wah': [{param:'updown',label:'UP / DOWN',type:'two-way-switch',defaultValue:1,choices:[
+   {label:'UP',position:'UP',value:1},{label:'DOWN',position:'DOWN',value:0}
   ]}]
  },
  MOD: {
@@ -882,11 +888,11 @@ const EFFECT_DISCRETE_SWITCHES = {
    {label:'P.M. · PITCH MODULATION',position:'MIDDLE',value:1},
    {label:'FLANGER',position:'BOTTOM',value:2}
   ]}],
-  'U-Vibe': [{param:'chvib',label:'MODE',type:'two-way-switch',defaultValue:0,choices:[
-   {label:'CHORUS',position:'TOP',value:0},{label:'VIBRATO',position:'BOTTOM',value:1}
+  'U-Vibe': [{param:'chvib',label:'MODE',type:'two-way-switch',defaultValue:1,choices:[
+   {label:'CHORUS',position:'TOP',value:1},{label:'VIBRATO',position:'BOTTOM',value:0}
   ]}],
-  'Harmonist': [{param:'minor',label:'MODE',type:'two-way-switch',defaultValue:0,choices:[
-   {label:'MINOR',position:'TOP',value:0},{label:'MAJOR',position:'BOTTOM',value:1}
+  'Harmonist': [{param:'minor',label:'MODE',type:'two-way-switch',defaultValue:1,choices:[
+   {label:'MINOR',position:'TOP',value:1},{label:'MAJOR',position:'BOTTOM',value:0}
   ]}]
  }
 };

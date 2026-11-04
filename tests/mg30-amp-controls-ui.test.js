@@ -155,8 +155,8 @@ test('six QuickTone effect switches use their existing parameter positions and r
   assert.match(block[1], /'Touch Wah': \[\{param:'updown',label:'UP \/ DOWN',type:'two-way-switch'/);
   assert.match(block[1], /'Octave-Shift': \[\{param:'updown',label:'UP \/ DOWN',type:'two-way-switch'/);
   assert.match(block[1], /label:'CHORUS',position:'TOP',value:0[\s\S]*?label:'P\.M\. · PITCH MODULATION',position:'MIDDLE',value:1[\s\S]*?label:'FLANGER',position:'BOTTOM',value:2/);
-  assert.match(block[1], /label:'CHORUS',position:'TOP',value:0[\s\S]*?label:'VIBRATO',position:'BOTTOM',value:1/);
-  assert.match(block[1], /label:'MINOR',position:'TOP',value:0[\s\S]*?label:'MAJOR',position:'BOTTOM',value:1/);
+  assert.match(block[1], /label:'CHORUS',position:'TOP',value:1[\s\S]*?label:'VIBRATO',position:'BOTTOM',value:0/);
+  assert.match(block[1], /label:'MINOR',position:'TOP',value:1[\s\S]*?label:'MAJOR',position:'BOTTOM',value:0/);
 });
 
 test('effect switch CCs resolve through the existing parameter index maps without renumbering', () => {
@@ -179,4 +179,17 @@ test('switch raw values bypass rotary scaling for both live MIDI and preset read
   assert.match(html, /if\(isDiscreteSwitch\(control\)\)\{[\s\S]*?sendCC\(cc,choice\.value\)/);
   assert.match(html, /knob-two-way/);
   assert.match(css, /#knobs \.two-way-switch\{grid-template-rows:repeat\(2/);
+});
+
+
+test('physical enum reversals are limited to Octave-Shift, Touch Wah, U-Vibe, and Harmonist', () => {
+  const block = html.match(/const EFFECT_DISCRETE_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block, 'Effect switch catalogue must exist');
+  assert.match(block[1], /'Octave-Shift':[\s\S]*?defaultValue:1,choices:\[[\s\S]*?label:'UP',position:'UP',value:1[\s\S]*?label:'DOWN',position:'DOWN',value:0/);
+  assert.match(block[1], /'Touch Wah':[\s\S]*?defaultValue:1,choices:\[[\s\S]*?label:'UP',position:'UP',value:1[\s\S]*?label:'DOWN',position:'DOWN',value:0/);
+  assert.match(block[1], /'U-Vibe':[\s\S]*?defaultValue:1,choices:\[[\s\S]*?label:'CHORUS',position:'TOP',value:1[\s\S]*?label:'VIBRATO',position:'BOTTOM',value:0/);
+  assert.match(block[1], /'Harmonist':[\s\S]*?defaultValue:1,choices:\[[\s\S]*?label:'MINOR',position:'TOP',value:1[\s\S]*?label:'MAJOR',position:'BOTTOM',value:0/);
+  // Preserve the physically verified controls; these must not inherit the reversal.
+  assert.match(block[1], /'Katana':[\s\S]*?defaultValue:0,choices:\[[\s\S]*?label:'OFF',position:'OFF',value:0[\s\S]*?label:'ON',position:'ON',value:1/);
+  assert.match(block[1], /'SCF':[\s\S]*?defaultValue:0,choices:\[[\s\S]*?label:'CHORUS',position:'TOP',value:0[\s\S]*?position:'MIDDLE',value:1[\s\S]*?label:'FLANGER',position:'BOTTOM',value:2/);
 });
