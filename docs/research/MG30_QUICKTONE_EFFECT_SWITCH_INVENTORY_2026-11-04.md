@@ -66,3 +66,16 @@ Preserve:
 - Existing NAM functionality.
 - IR User / Third Party and IR Collection import behavior.
 - Preset transfer and all unrelated MIDI mappings.
+
+## User correction: TOUCH WAH and OCTAVE-SHIFT also confirmed
+
+After the initial four-pedal confirmation, the user clarified that two more effect pedals do have physical switches:
+
+| Category | Pedal | Confirmed positions | Function labels |
+|---|---|---|---|
+| Wah / EFX | **TOUCH WAH** | UP / DOWN | Exact function associated with each position not yet supplied |
+| Pitch / Octave | **OCTAVE-SHIFT** | UP / DOWN | Exact function associated with each position not yet supplied |
+
+Therefore the confirmed effect-switch inventory now contains **six pedals**: KATANA, S.C.F, UNIVIBE, HARMONIST, TOUCH WAH, and OCTAVE-SHIFT. TOUCH WAH and OCTAVE-SHIFT must no longer be listed as false positives or exclusions.
+
+Do not infer UP/DOWN function labels, raw MIDI values, or hardware CC addresses from the image assets or embedded catalogue fields. These remain to be captured/verified with QuickTone and the original MG-30 Gen 2 hardware. Existing AMP switch mapping and all other application behavior remain unchanged. Analysis only; no UI or source-code implementation yet.
