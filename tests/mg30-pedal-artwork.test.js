@@ -91,9 +91,11 @@ test('repeated instances use isolated SVG gradient and pattern IDs', () => {
 });
 
 test('the original in-app gear renderer loads and calls the local pedal SVG module', () => {
-  assert.ok(html.includes('<script src="./pedal-reference-artwork.js"></script>'));
+  assert.ok(html.includes('<script type="module" src="./pedal-reference-artwork.js"></script>'));
   assert.ok(html.includes('window.renderPedalReferenceSvg?.(blockId,modelName)'));
-  assert.ok(html.indexOf('<script src="./pedal-reference-artwork.js"></script>') < html.indexOf('<script>'));
+  assert.ok(html.indexOf('<script type="module" src="./pedal-reference-artwork.js"></script>') < html.indexOf('<script>'));
+  assert.match(source, /document\.addEventListener\('DOMContentLoaded', refreshInitialPedalArtwork/);
+  assert.match(source, /queueMicrotask\(refreshInitialPedalArtwork\)/);
 });
 
 test('pedal art module remains syntactically valid and has no remote image dependencies', () => {
