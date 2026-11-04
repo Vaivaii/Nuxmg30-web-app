@@ -72,8 +72,8 @@ test('large or non-stompbox references retain their own form factors', () => {
 
 test('pedal models absent from the uploaded archives keep the previous renderer', () => {
   for (const [block, model] of [
-    ['MOD', 'CE-2'], ['MOD', 'Detune'], ['DLY', 'Phi Delay'],
-    ['RVB', 'Damp'], ['WAH', 'V847'], ['VOL', 'Volume']
+    ['MOD', 'CE-3'], ['MOD', 'Detune II'], ['DLY', 'Phi Delay II'],
+    ['RVB', 'Cathedral'], ['WAH', 'Custom Wah'], ['VOL', 'Expression']
   ]) {
     assert.equal(render(block, model), null, block + ' / ' + model + ' must not be replaced with invented reference artwork');
   }
@@ -156,7 +156,7 @@ test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift 
   const volume = getSvg('VOL', 'Volume');
   assert.match(volume, /Expression wah\/volume pedal reference/);
   assert.match(volume, /ribbed treadle/);
-  const wah = getSvg('WAH', 'Wah Pedal');
+  const wah = getSvg('WAH', 'V847');
   assert.match(wah, /Expression wah\/volume pedal reference/);
 
   const octave = getSvg('WAH', 'Octave-Shift');
