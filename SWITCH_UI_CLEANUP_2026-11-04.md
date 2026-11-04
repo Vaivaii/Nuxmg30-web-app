@@ -27,3 +27,8 @@ Also removed the CSS rules used only by those captions.
 ## Regression coverage
 
 Added assertions that the AMP/effect shared renderer retains position and choice labels but emits no debug captions. Updated the existing default-display/no-auto-write test to assert the diagnostics are absent while the MIDI write handler remains present.
+
+
+## CI test correction
+
+The first cleanup CI run correctly verified the UI cleanup test but exposed one older AMP regression assertion that still looked for the removed debug caption expression `choice.position + ' / ' + choice.label`. Replaced that stale expectation with an assertion that position and choice labels remain exposed via the button's accessible `aria-label`. No application runtime code changed in this follow-up.

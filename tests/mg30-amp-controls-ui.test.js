@@ -112,7 +112,7 @@ test('physical MG-30 switch enum values map TOP/MIDDLE/BOTTOM to 0/1/2 and write
   assert.match(writer[0], /item\.value===Number\(value\)/);
   assert.match(writer[0], /sendCC\(cc,choice\.value\)/);
   assert.match(html,/querySelectorAll\('\.switch-position-button'\)\.forEach\(el=>\{/);
-  assert.match(html,/choice\.position\+' \/ '\+choice\.label/);
+  assert.match(html,/aria-label="'\+escapeHtml\(choice\.position\+' '\+choice\.label\)\+'"/);
   assert.match(html,/Number\(button\.dataset\.switchValue\)===next/);
   assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
 });
