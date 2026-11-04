@@ -254,9 +254,8 @@
         s+=T(243,113,'depth',12,'#e8e6ed',600,'middle','font-family="Arial,sans-serif"');
         s+=C(210,129,8,'#292832','#77717d',1.2)+C(210,129,3,'#a49cae','none',0);
         s+=P('M160 145l-9 -6v12z','#eeeaf2',1,'#eeeaf2')+P('M260 145l9 -6v12z','#eeeaf2',1,'#eeeaf2');
-        s+=T(210,177,'WET',35,'#f1eff3',900,'middle','letter-spacing="1.5"')+T(210,199,'r e v e r b',12,'#e4e0ea',500);
+        s+=T(210,177,'WET',35,'#f1eff3',900,'middle','letter-spacing="1.5"')+T(210,199,'reverb',12,'#e4e0ea',500,'middle','letter-spacing="2"');
         s+=foot(210,218,10);
-        s+=T(177,240,'nt',18,'#71c878',900,'middle','font-family="Arial Black,Arial,sans-serif"')+T(232,237,'neunaber',8,'#e3e0e9',700,'middle')+T(232,246,'technology',6,'#d4d0df',600,'middle');
         s+=jack(141,128,3.5)+jack(279,128,3.5);
         return wrap(s,'Neunaber Wet reverb reference for Damp · dark purple swirl enclosure, Mix and Depth knobs, centre LED, side I/O arrows and single footswitch');
       }
@@ -315,17 +314,19 @@
         let s=R(46,3,328,244,'#181a1d','#777a7d',3,18)+R(54,9,312,232,'#222326','#44464b',1.1,14);
         s+=R(63,15,294,220,'none','#55565d',.7,10);
         s+=T(210,29,'TIME',8,'#f0edf0',800,'middle','letter-spacing="1"')+T(210,38,'HPF',6,'#d6d2da',700);
-        s+=knob(132,78,29,'#17191c',-30)+knob(286,78,38,'#17191c',-30)+knob(132,151,29,'#17191c',-30);
-        s+=T(132,121,'FDBK',8,'#f1eef2',800)+T(132,132,'TONE',6,'#c9c5ce',700);
+        // Lift the FDBK control and caption clear of the lower Tone knob.
+        s+=knob(132,65,29,'#17191c',-30)+knob(286,78,38,'#17191c',-30)+knob(132,153,29,'#17191c',-30);
+        s+=T(132,106,'FDBK',8,'#f1eef2',800)+T(132,190,'TONE',6,'#c9c5ce',700);
         s+=T(286,132,'LEVEL',8,'#f1eef2',800)+T(286,142,'SATURATE',6,'#c9c5ce',700);
-        s+=C(210,101,9,'#34343a','#777780',1.2)+C(210,101,3,'#a7a7ab','none',0);
-        s+=T(247,181,'HALO',31,'#f4f1f4',900,'middle','letter-spacing="-1"')+T(247,198,'CORE',10,'#c8c4cd',900,'middle','letter-spacing="3"');
+        s+=C(210,108,9,'#34343a','#777780',1.2)+C(210,108,3,'#a7a7ab','none',0);
+        s+=P('M160 145l-9 -6v12z','#eeeaf2',1,'#eeeaf2')+P('M260 145l9 -6v12z','#eeeaf2',1,'#eeeaf2');
+        s+=T(247,181,'PHI DELAY',20,'#f4f1f4',900,'middle','letter-spacing="1.1"');
         s+=R(221,203,52,5,'#acafb0','#65666a',.5,2);
         s+=foot(112,218,12)+foot(310,218,12);
         s+=T(112,243,'ON / OFF',6,'#e7e3e9',700)+T(310,243,'TAP / HOLD',6,'#e7e3e9',700);
         s+=T(210,17,'9V ⊖',8,'#ebe8ee',700);
         s+=jack(43,112,3.5)+jack(377,112,3.5);
-        return wrap(s,'NUX Phi Delay artwork based on supplied Keeley Halo Core reference · black wide enclosure, three rotary controls, Halo/Core wordmark and twin footswitches');
+        return wrap(s,'NUX Phi Delay reference layout · black wide enclosure, three rotary controls, Phi Delay wordmark and twin footswitches');
       }
 
       /* DELAYS */

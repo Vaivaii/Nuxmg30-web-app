@@ -128,6 +128,20 @@ test('1176, Big Muff and OCD lettering is placed clear of their control areas', 
 });
 
 
+test('Damp and Phi Delay logo and knob spacing match the latest review', () => {
+  const damp = getSvg('RVB', 'Damp');
+  assert.match(damp, />WET<\/text>/);
+  assert.match(damp, />reverb<\/text>/);
+  assert.doesNotMatch(damp, /neunaber|technology|>nt<\/text>/i);
+
+  const phi = getSvg('DLY', 'Phi Delay');
+  assert.match(phi, />PHI DELAY<\/text>/);
+  assert.doesNotMatch(phi, />HALO<\/text>|>CORE<\/text>/);
+  assert.match(phi, /cx="132" cy="65"/);
+  assert.match(phi, /cx="132" cy="153"/);
+  assert.ok(153 - 29 > 65 + 29, 'FDBK and lower Tone knobs must have a visible gap');
+});
+
 test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift references have dedicated artwork', () => {
   const ce2 = getSvg('MOD', 'CE-2');
   assert.match(ce2, /BOSS CE-2 Chorus reference/);
@@ -142,7 +156,7 @@ test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift 
   assert.match(damp, />depth<\/text>/);
 
   const phi = getSvg('DLY', 'Phi Delay');
-  assert.match(phi, /Keeley Halo Core reference/);
+  assert.match(phi, /NUX Phi Delay reference layout/);
   assert.match(phi, />HALO<\/text>/);
   assert.match(phi, />CORE<\/text>/);
   assert.match(phi, /cx="112" cy="218"/);
@@ -169,7 +183,7 @@ test('model names route to the matching new pedal artwork without changing the M
   for (const [block, model, label] of [
     ['MOD','CE-2','BOSS CE-2 Chorus reference'],
     ['RVB','Damp','Neunaber Wet reverb reference'],
-    ['DLY','Phi Delay','Keeley Halo Core reference'],
+    ['DLY','Phi Delay','NUX Phi Delay reference layout'],
     ['MOD','Detune','DigiTech Luxe anti-chorus reference'],
     ['VOL','Volume','Expression wah/volume pedal reference'],
     ['WAH','V847','Expression wah/volume pedal reference'],

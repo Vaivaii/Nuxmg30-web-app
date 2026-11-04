@@ -88,11 +88,62 @@ test('right-edge controls stay inset on Cali Crunch, Dr. Z, Twin Reverb and Oran
   assert.ok(666 + 8 <= 678);
   assert.ok(drz.includes('<circle cx="665" cy="156" r="8"'));
   assert.ok(665 + 8 <= 678);
-  assert.ok(twin.includes('<circle cx="670" cy="174" r="8"'));
+  assert.ok(twin.includes('<circle cx="648" cy="174" r="8"'));
+  assert.ok(648 + 8 <= 678, 'Twin Reverb jewel light must sit inside the right edge');
   assert.ok(670 + 8 <= 678);
   assert.ok(orange.includes('<circle cx="660" cy="309" r="7"'));
   assert.ok(orange.includes('<circle cx="634" cy="279" r="11"'));
   assert.ok(660 - 634 >= 7 + 11, 'Orange input jack must not overlap the final knob');
+});
+
+test('Hiwatt and Diezel red indicators and switches remain inside the head faceplate', () => {
+  const hiwatt = render('Hiwire', 'Hiwatt DR103');
+  assert.ok(hiwatt.includes('<circle cx="627" cy="293" r="8"'));
+  assert.ok(hiwatt.includes('M651 302v-12'));
+  assert.ok(627 + 8 <= 678 && 651 + 4 <= 678);
+
+  const diezel = render('Die VH4', 'Diezel VH4');
+  assert.ok(diezel.includes('<circle cx="658" cy="300" r="8"'));
+  assert.ok(diezel.includes('M618 309v-12'));
+  assert.ok(diezel.includes('M641 309v-12'));
+  assert.ok(658 + 8 <= 678, 'Diezel jewel light must stay within the faceplate');
+});
+
+test('Plexi 100 follows the newly uploaded Marshall 1959 Super Lead head reference', () => {
+  const plexi = render('Plexi 100', 'Marshall 1959 Super Lead');
+  assert.ok(plexi.includes('<rect x="205" y="238" width="370" height="50"'));
+  assert.ok(plexi.includes('font-family="Arial Black, Impact, sans-serif"'));
+  assert.ok(plexi.includes('>Marshall</text>'));
+  assert.ok(plexi.includes('#c9a35f'));
+});
+
+test('the ten NAM slots each use the requested amp-family chassis with NAM-only maker branding', () => {
+  const slots = Array.from({ length: 10 }, (_, index) => {
+    const slot = index + 1;
+    const id = slot === 7 ? 60 : 53 + slot;
+    return render('NAM Slot ' + String(slot).padStart(2,'0') + ' · ID ' + id);
+  });
+  assert.equal(new Set(slots).size, 10, 'each NAM slot must have distinct artwork');
+  for (const [index, svg] of slots.entries()) {
+    assert.match(svg, />NAM<\/text>/, 'NAM slot ' + (index + 1) + ' should carry NAM as its logo');
+    assert.doesNotMatch(svg, />(?:Fender|MESA|Boogie|Bogner|Friedman|Soldano|Marshall|Diezel|Peavey)<\/text>/i,
+      'NAM slot ' + (index + 1) + ' must not retain a manufacturer wordmark');
+    assert.doesNotMatch(svg, /NaN|undefined/);
+  }
+  assert.ok(slots[0].includes('#08776e'), 'slot 1 should use the Tone King teal reference');
+  assert.ok(slots[3].includes('namRectDiamond'), 'slot 4 should use the Mesa-style front panel');
+  assert.ok(slots[9].includes('#c9a35f'), 'slot 10 should use the Plexi gold control fascia');
+});
+
+test('amp wordmarks use brand-appropriate type families rather than one shared script font', () => {
+  const fender = render('Twin Rvb', 'Fender Twin Reverb');
+  const hiwatt = render('Hiwire', 'Hiwatt DR103');
+  const diezel = render('Die VH4', 'Diezel VH4');
+  const mesa = render('Dual Rect', 'Mesa/Boogie Dual Rectifier');
+  assert.match(fender, /font-family="Brush Script MT, Segoe Script, cursive"/);
+  assert.match(hiwatt, /font-family="Arial Narrow, Arial, sans-serif"/);
+  assert.match(diezel, /font-family="Arial Black, Impact, sans-serif"/);
+  assert.match(mesa, /font-family="Georgia, Times New Roman, serif"/);
 });
 
 test('reviewed AMP variants all produce complete, non-placeholder SVG', () => {
