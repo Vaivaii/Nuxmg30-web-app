@@ -418,7 +418,7 @@
         s+=T(151,181,'OUTPUT',5.4,'#fff0df',800,'middle','transform="rotate(-90 151 181)"')+T(269,181,'INPUT',5.4,'#fff0df',800,'middle','transform="rotate(-90 269 181)"');
         s+=foot(210,207,11)+S(210,237,'keeley',15,'#fff0df');
         s+=jack(141,121,3.7)+jack(279,121,3.7);
-        return wrap(s,'Keeley Red Dirt Pro GE808 reference · glitter-red case, top-centre Tone plus left/right Overdrive and Level knobs, blue LED, large RED DIRT lettering and one chrome footswitch; no BOSS pad');
+        return wrap(s,'Keeley Red Dirt Pro GE808 reference · glitter-red case, top-centre Tone plus left/right Overdrive and Level knobs, blue LED, large RED DIRT lettering and one chrome footswitch; matching the source enclosure');
       }
       case 'EFX|Crunch':{
         let s=vcase('#9e272b','#591e22')+R(151,10,118,226,'#bd3436','#742328',1,5);
