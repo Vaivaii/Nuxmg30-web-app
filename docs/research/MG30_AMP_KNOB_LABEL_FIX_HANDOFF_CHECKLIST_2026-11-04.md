@@ -588,3 +588,58 @@ Current confirmed effect-switch list: KATANA (ON/OFF Boost), S.C.F (TOP Chorus /
 Do not treat Touch Wah or Octave-Shift as false positives anymore. Detailed inventory updated in docs/research/MG30_QUICKTONE_EFFECT_SWITCH_INVENTORY_2026-11-04.md; update commit fcdfe5dc6ecb1a16fb1bff92f498d081a54719e8.
 
 Analysis-only boundary remains: no UI, rotary control, MIDI mapping, NAM, IR, or preset code changes until all positions/functions and QuickTone hardware values have been verified.
+
+## Implementasi enam switch efek — instruksi terbaru pengguna (4 Nov 2026)
+
+Pengguna secara eksplisit meminta agar switch efek langsung diterapkan menggunakan pola MIDI diskret yang sama dengan AMP yang sudah berfungsi, lalu dilakukan capture dan koreksi hanya apabila hasil uji MG-30 tidak cocok. Instruksi ini **menggantikan batas analisis-only sebelumnya** untuk enam kontrol efek berikut saja.
+
+### Kontrol dan CC yang dipakai
+
+CC tidak dialokasikan ulang. Setiap switch memakai slot parameter yang sudah ada dalam `MIDI_PARAM_CC`:
+
+| Pedal / model | Parameter yang dipertahankan | CC existing | Nilai sementara |
+|---|---|---:|---|
+| KATANA (EFX) | `boost`, indeks 0 | 18 | OFF=0, ON/Boost=1 |
+| S.C.F (MOD) | `chfl`, indeks 2 | 50 | TOP Chorus=0, MIDDLE P.M.=1, BOTTOM Flanger=2 |
+| UNIVIBE / U-Vibe (MOD) | `chvib`, indeks 3 | 51 | TOP Chorus=0, BOTTOM Vibrato=1 |
+| HARMONIST (MOD) | `minor`, indeks 1 | 49 | TOP Minor=0, BOTTOM Major=1 |
+| TOUCH WAH (EFX) | `updown`, indeks 3 | 21 | UP=0, DOWN=1 |
+| OCTAVE-SHIFT (WAH) | `updown`, indeks 1 | 12 | UP=0, DOWN=1 |
+
+Catatan: UP/DOWN pada Touch Wah dan Octave-Shift adalah label posisi yang dikonfirmasi pengguna; arti musikal lebih spesifik per posisi belum dipastikan. Nilai di atas bersifat sementara dan mengikuti analogi enum AMP atas/off=0, tengah=1, bawah/down/on=1 atau 2 sesuai jumlah state.
+
+### Perubahan source dan pengamanan
+
+- `www/index.html`: menambahkan `EFFECT_DISCRETE_SWITCHES` untuk enam model dan renderer two-way / three-way.
+- `www/index.html`: read/write MIDI untuk switch menggunakan nilai raw diskret, bukan normalisasi knob 0–100.
+- `www/index.html`: preset-buffer readback mempertahankan nilai enum yang dikenali; nilai di luar pilihan tidak dipetakan ke state lain.
+- `www/index.html`: membuka editor hanya menampilkan default visual, tidak otomatis mengirim MIDI. Pengiriman terjadi setelah pengguna memilih tombol.
+- `www/index.html`: U-Vibe model override diperluas menjadi `speed, volume, intensity, chvib` agar `chvib` tetap pada indeks parameter 3 / CC51. Kontrol U-Vibe lain tetap menggunakan urutan CC yang ada.
+- `www/ui-redesign.css`: menambahkan layout tombol dua posisi.
+- `tests/mg30-amp-controls-ui.test.js`: menambahkan assertion untuk enam switch, indeks CC existing, dan jalur raw enum.
+
+### Commit implementasi
+
+- Source switch efek: `5f4befb0cf333e16c388ade92ae836a85f30ee8f`
+- CSS dua posisi: `46c7d7c4158ea99ecf5ff5b02464ed38535c10d9`
+- Tes enam switch: `632042e594757c450616484370c1daa393c152df`
+- U-Vibe slot correction: `f2e74fe430f950ee650eedd83c3f91b6345c8421`
+- Assertion U-Vibe: `62f8c233aa6bcd95338840cf681489ddb7204528`
+- Rapikan akhir test: `d04f673b1e037c245f84b91ecd7b17a6dbbe4f37`
+- Inventory mapping update: `2e9e2e90caebbe2e5d3969f2d3babf5e4e3fbd02`
+
+### Status validasi dan hal yang belum boleh diklaim
+
+- Pemeriksaan sumber manual/regex terhadap 28 kondisi mapping, indeks CC, dan jalur raw enum: **28/28 cocok**.
+- `npm test` belum dijalankan pada checkout lokal; status CI workflow belum tersedia dari pemeriksaan terakhir.
+- Build APK baru belum dijalankan/dihasilkan.
+- Enam switch efek belum diuji secara fisik pada MG-30. Raw value di atas adalah provisional, bukan hasil capture QuickTone.
+- Setelah APK tersedia, minta pengguna menguji satu pedal/posisi setiap kali. Jika state UI dan hardware/readback berbeda, lakukan capture QuickTone khusus pada kontrol tersebut dan koreksi hanya mapping itu.
+
+### Batas regresi — jangan disentuh
+
+Tidak ada perubahan yang dimaksudkan pada:
+- AMP switch: DGLASS CC26/CC29 dan STARLIFT CC28, TOP=0 / MIDDLE=1 / BOTTOM=2.
+- MIDI block/model switch dan seluruh CC selain enam parameter efek yang dirender ulang di atas.
+- NAM, IR User / Third Party, IR Collection, preset transfer, signal chain, USB audio/DAW.
+- Target perangkat: original NUX MG-30 Gen 2 firmware 6.0.x, bukan MKII.
