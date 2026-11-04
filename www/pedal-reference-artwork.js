@@ -49,7 +49,8 @@
     const id='pedal-art-'+(++svgSerial);
     s=s.replaceAll('url(#pa-metal)','url(#'+id+'-metal)')
        .replaceAll('url(#pa-wood)','url(#'+id+'-wood)')
-       .replaceAll('url(#pa-gold)','url(#'+id+'-gold)');
+       .replaceAll('url(#pa-gold)','url(#'+id+'-gold)')
+       .replaceAll('volume-red-rubber',''+id+'-volume-red-rubber');
     return '<svg class="gear-svg pedal-reference-svg" viewBox="0 0 420 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(label)+'"><defs>'+
     '<linearGradient id="'+id+'-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f5ef"/><stop offset=".42" stop-color="#9ca5a2"/><stop offset=".68" stop-color="#e3e6df"/><stop offset="1" stop-color="#525c5c"/></linearGradient>'+
     '<linearGradient id="'+id+'-silver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ece7"/><stop offset=".5" stop-color="#bac2bd"/><stop offset="1" stop-color="#7b8581"/></linearGradient>'+
@@ -95,6 +96,7 @@
       }
       case 'VOL|Volume':{
         // Red angled volume/expression pedal based on the newly supplied three-quarter product reference.
+        let s='';
         s+='<defs><pattern id="volume-red-rubber" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#111416"/><path d="M0 1H7M0 4H7" stroke="#303638" stroke-width="1"/></pattern></defs>';
         // Lower red chassis and shadow.
         s+=P('M54 143L124 104 365 184 370 211 320 244 48 170Z','#8f1018',2.8,'#ce2028');
@@ -713,13 +715,12 @@
   };
 
   window.renderPedalReferenceSvg=function(blockId,modelName){
+    const display=String(modelName||'').trim();
+    const base=display.replace(/\s*·\s*IMAGE$/i,'').trim();
     if(blockId==='IR'){
       const isThirdParty=/^third-party\b/i.test(base)||/third.party/i.test(display);
       return drawCabinetArtwork(isThirdParty);
     }
-
-    const display=String(modelName||'').trim();
-    const base=display.replace(/\s*·\s*IMAGE$/i,'').trim();
     const aliases={
       'MOD|CE-2':'CE-2','MOD|Detune':'Detune','RVB|Damp':'Damp','DLY|Phi Delay':'Phi Delay',
       'VOL|Volume':'Volume','WAH|Clyde':'Wah Pedal','WAH|Cry BB':'Wah Pedal','WAH|V847':'Wah Pedal','WAH|Horse Wah':'Wah Pedal','WAH|Octave-Shift':'Octave-Shift',
