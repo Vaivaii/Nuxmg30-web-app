@@ -90,7 +90,7 @@ test('DGLASS switch captions match physical top-middle-bottom positions and reta
   assert.match(block[1], /param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5/);
   assert.match(block[1], /label:'500 Hz',position:'TOP'[\s\S]*?label:'1 kHz',position:'MIDDLE'[\s\S]*?label:'250 Hz',position:'BOTTOM'/);
   assert.match(block[1], /label:'1.5 kHz',position:'TOP'[\s\S]*?label:'3 kHz',position:'MIDDLE'[\s\S]*?label:'750 Hz',position:'BOTTOM'/);
-  assert.doesNotMatch(block[1], /value:\s*\d/);
+  assert.match(block[1], /label:'500 Hz',position:'TOP',value:1[\s\S]*?label:'1 kHz',position:'MIDDLE',value:2[\s\S]*?label:'250 Hz',position:'BOTTOM',value:0/);
 });
 
 test('STARLIFT Contour labels match the physical top-middle-bottom positions on CC index 4', () => {
@@ -98,23 +98,22 @@ test('STARLIFT Contour labels match the physical top-middle-bottom positions on 
   assert.ok(block);
   assert.match(block[1], /param:'contour',label:'CONTOUR',ccIndex:4/);
   assert.match(block[1], /label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
-  assert.doesNotMatch(block[1], /value:\s*\d/);
+  assert.match(block[1], /label:'VINTAGE',position:'TOP',value:1[\s\S]*?label:'OFF',position:'MIDDLE',value:2[\s\S]*?label:'MODERN',position:'BOTTOM',value:0/);
 });
 
-test('unverified three-position switches remain visible and read-only, with raw state retained', () => {
-  assert.match(html, /AMP_THREE_POSITION_SWITCHES\[modelIndex\][\s\S]*?sort\(\(a,b\)=>a\.ccIndex-b\.ccIndex\)/);
-  assert.match(html, /control\.type==='three-way-switch'\)return undefined/);
-  const rendererStart = html.indexOf("$('knobs').innerHTML=controls.map(control=>{");
-  const start = html.indexOf("if(control.type==='three-way-switch')", rendererStart);
-  const end = html.indexOf("\n }", start);
-  assert.ok(start>=0&&end>start);
-  const renderer = html.slice(start,end+3);
-  assert.match(renderer,/disabled aria-disabled="true"/);
-  assert.match(renderer,/Hardware raw value:/);
-  assert.match(renderer,/mapping not verified/);
-  assert.doesNotMatch(renderer,/data-value|onclick|sendBlockParam/);
-  assert.match(html,/const switchControl=AMP_THREE_POSITION_SWITCHES\[state\.model\]/);
-  assert.match(html,/Hardware raw value: '\+String\(Math\.round\(next\)\)/);
+test('captured switch MIDI enum values map TOP/MIDDLE/BOTTOM to 1/2/0 and write on the original CCs', () => {
+  const block = html.match(/const AMP_THREE_POSITION_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block);
+  assert.match(block[1], /ccIndex:2[\s\S]*?position:'TOP',value:1[\s\S]*?position:'MIDDLE',value:2[\s\S]*?position:'BOTTOM',value:0/);
+  assert.match(block[1], /ccIndex:5[\s\S]*?position:'TOP',value:1[\s\S]*?position:'MIDDLE',value:2[\s\S]*?position:'BOTTOM',value:0/);
+  assert.match(block[1], /ccIndex:4[\s\S]*?position:'TOP',value:1[\s\S]*?position:'MIDDLE',value:2[\s\S]*?position:'BOTTOM',value:0/);
+  const writer = html.match(/function sendBlockParam\([\s\S]*?\n\}/);
+  assert.ok(writer);
+  assert.match(writer[0], /item\.value===Number\(value\)/);
+  assert.match(writer[0], /sendCC\(cc,choice\.value\)/);
+  assert.match(html,/querySelectorAll\('\.switch-position-button'\)\.forEach\(el=>\{/);
+  assert.match(html,/captured 1\/2\/0/);
+  assert.match(html,/Number\(button\.dataset\.switchValue\)===next/);
   assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
 });
 
@@ -138,23 +137,3 @@ test('STARLIFT switch label positions remain Vintage / Off / Modern from top to 
   assert.match(block[1], /param:'contour'[\s\S]*?label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
 });
 
-test('generic parameter writer refuses unverified three-position switch values', () => {
-  const writer = html.match(/function sendBlockParam\([\s\S]*?\n\}/);
-  assert.ok(writer, 'generic parameter writer must exist');
-  assert.match(writer[0], /control\.type==='three-way-switch'\)return/);
-  assert.match(writer[0], /sendCC\(cc,encodeParameterValue\(param,value\)\)/);
-});
-
-test('unverified switch mapping cannot send MIDI values and controls remain read-only', () => {
-  const rendererStart = html.indexOf("$('knobs').innerHTML=controls.map(control=>{");
-  const start = html.indexOf("if(control.type==='three-way-switch')", rendererStart);
-  const end = html.indexOf("\n }", start);
-  assert.ok(start>=0&&end>start);
-  const renderer = html.slice(start,end+3);
-  assert.match(renderer,/disabled aria-disabled="true"/);
-  assert.doesNotMatch(renderer,/data-value|onclick|sendBlockParam/);
-  assert.equal(html.includes("querySelectorAll('.switch-position-button').forEach(el=>{"), false);
-  assert.match(html,/Hardware raw value:/);
-  assert.match(html,/mapping not verified/);
-  assert.match(html,/control\.ccIndex\]\);if\(selectorParam/);
-});
