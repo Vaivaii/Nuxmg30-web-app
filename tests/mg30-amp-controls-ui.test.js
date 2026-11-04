@@ -137,3 +137,11 @@ test('STARLIFT switch label positions remain Vintage / Off / Modern from top to 
   assert.match(block[1], /param:'contour'[\s\S]*?label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
 });
 
+test('three-position switches default visually to physical TOP without sending MIDI until clicked', () => {
+  assert.match(html, /const hasReadback=Object\.prototype\.hasOwnProperty\.call\(s\.values,p\)/);
+  assert.match(html, /const displayValue=stored===undefined\?control\.choices\.find\(choice=>choice\.position==='TOP'\)\?\.value:stored/);
+  assert.match(html, /displayValue!==undefined&&Number\(displayValue\)===choice\.value/);
+  assert.match(html, /Default TOP · MIDI 1 · awaiting pedal readback/);
+  assert.match(html, /Selected MIDI value: '\+value\+' · captured 1\/2\/0/);
+  assert.match(html, /sendBlockParam\(selected,param,value\)/);
+});
