@@ -385,3 +385,25 @@ Pengguna melaporkan dari APK #448 yang benar-benar dipakai:
 - Switch tetap read-only; generic MIDI writer diberi guard eksplisit untuk menolak switch.
 - Belum ada nilai wire untuk ketiga posisi pada masing-masing switch. Pengaktifan ulang menunggu capture TOP/MIDDLE/BOTTOM dan uji readback/writeback pada MG-30 original Gen 2 firmware 6.0.x.
 - APK #448 tetap baseline instalasi terakhir yang dikonfirmasi pengguna; perubahan ini adalah source perbaikan berikutnya, bukan klaim bahwa APK lama sudah diperbaiki.
+
+
+## Permintaan pemetaan MIDI switch setelah label dikonfirmasi — 4 Nov 2026
+
+Pengguna telah menguji APK #456 dan mengonfirmasi bahwa urutan tulisan/label fisik sudah benar.
+
+### Keputusan keselamatan
+- Nilai 0/50/100 hanya pernah dipakai sebagai asumsi rentang QuickTone pada implementasi Build #448; itu bukan hasil capture TOP/MIDDLE/BOTTOM.
+- Pengguna sebelumnya melaporkan bahwa setelah switch dipilih dari APK #448, memilih MIDDLE membuat switch menghilang pada layar MG-30, lalu TOP membuatnya muncul kembali. Karena itu nilai lama tidak boleh diaktifkan ulang hanya karena label sekarang benar.
+- Permintaan untuk menambahkan nilai MIDI belum bisa dipenuhi secara aman tanpa bukti wire. Jangan kirim 0/50/100, jangan membaliknya menjadi 100/50/0, dan jangan menebak enum lain.
+- Source tetap pada mode read-only: sendBlockParam menolak three-way-switch; tombol UI disabled; CC index dipertahankan (DGLASS 2/5, STARLIFT 4). Pemetaan MIDI lain tidak disentuh.
+
+### Bukti yang diperlukan sebelum menulis MIDI
+Ambil capture QuickTone original MG-30 Gen 2 firmware 6.0.x untuk setiap switch, satu posisi per transaksi:
+1. DGLASS LO MIDS FREQ: TOP 500 Hz, MIDDLE 1 kHz, BOTTOM 250 Hz.
+2. DGLASS HI MIDS FREQ: TOP 1.5 kHz, MIDDLE 3 kHz, BOTTOM 750 Hz.
+3. STARLIFT CONTOUR: TOP VINTAGE, MIDDLE OFF, BOTTOM MODERN.
+
+Untuk tiap perpindahan, catat pesan CC keluar dan readback masuk (nomor CC dan raw value), lalu cocokkan dengan pilihan di UI. Setelah cocok, aktifkan hanya tiga switch ini dan lakukan uji write/readback bertahap; hentikan jika switch hilang atau nilai tidak cocok.
+
+### Perubahan branch saat permintaan ini
+Percobaan sementara mengembalikan nilai 0/50/100 dan handler write dibatalkan sebelum build APK dibuat. Source dan regression test dikembalikan ke mode aman/read-only. Commit pemulihan source: 371aed29d4a3dd6289a61ba86ad1ddb28de8251f; test: 528ece297380b2fa07fbd91a7f3c3fccc24373bd. Tidak ada APK baru dari percobaan nilai MIDI tersebut.
