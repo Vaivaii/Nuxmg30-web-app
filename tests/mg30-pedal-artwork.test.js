@@ -127,6 +127,60 @@ test('1176, Big Muff and OCD lettering is placed clear of their control areas', 
   assert.doesNotMatch(ocd, /cx="210" cy="141"/);
 });
 
+
+test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift references have dedicated artwork', () => {
+  const ce2 = getSvg('MOD', 'CE-2');
+  assert.match(ce2, /BOSS CE-2 Chorus reference/);
+  assert.match(ce2, />RATE<\/text>/);
+  assert.match(ce2, />DEPTH<\/text>/);
+  assert.match(ce2, />CE-2<\/text>/);
+
+  const damp = getSvg('RVB', 'Damp');
+  assert.match(damp, /Neunaber Wet reverb reference for Damp/);
+  assert.match(damp, />WET<\/text>/);
+  assert.match(damp, />mix<\/text>/);
+  assert.match(damp, />depth<\/text>/);
+
+  const phi = getSvg('DLY', 'Phi Delay');
+  assert.match(phi, /Keeley Halo Core reference/);
+  assert.match(phi, />HALO<\/text>/);
+  assert.match(phi, />CORE<\/text>/);
+  assert.match(phi, /cx="112" cy="218"/);
+  assert.match(phi, /cx="310" cy="218"/);
+
+  const detune = getSvg('MOD', 'Detune');
+  assert.match(detune, /DigiTech Luxe anti-chorus reference/);
+  assert.match(detune, />Luxe<\/text>/);
+  assert.match(detune, />Detune<\/text>/);
+
+  const volume = getSvg('VOL', 'Volume');
+  assert.match(volume, /Expression wah\/volume pedal reference/);
+  assert.match(volume, /ribbed treadle/);
+  const wah = getSvg('WAH', 'Wah Pedal');
+  assert.match(wah, /Expression wah\/volume pedal reference/);
+
+  const octave = getSvg('WAH', 'Octave-Shift');
+  assert.match(octave, /DigiTech Whammy octave shift reference/);
+  assert.match(octave, />WHAMMY<\/text>/);
+  assert.match(octave, />HARMONY<\/text>/);
+});
+
+test('model names route to the matching new pedal artwork without changing the MG-30 model map', () => {
+  for (const [block, model, label] of [
+    ['MOD','CE-2','BOSS CE-2 Chorus reference'],
+    ['RVB','Damp','Neunaber Wet reverb reference'],
+    ['DLY','Phi Delay','Keeley Halo Core reference'],
+    ['MOD','Detune','DigiTech Luxe anti-chorus reference'],
+    ['VOL','Volume','Expression wah/volume pedal reference'],
+    ['WAH','V847','Expression wah/volume pedal reference'],
+    ['WAH','Octave-Shift','DigiTech Whammy octave shift reference']
+  ]) {
+    const svg = fakeWindow.renderPedalReferenceSvg(block, model);
+    assert.ok(svg, block + ' / ' + model + ' should resolve a reference artwork');
+    assert.ok(svg.includes(label), block + ' / ' + model + ' should resolve to the intended pedal');
+  }
+});
+
 test('the original in-app gear renderer loads and calls the local pedal SVG module', () => {
   assert.ok(html.includes('<script type="module" src="./pedal-reference-artwork.js"></script>'));
   assert.ok(html.includes('window.renderPedalReferenceSvg?.(blockId,modelName)'));

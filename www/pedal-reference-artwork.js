@@ -78,7 +78,84 @@
         s+=jack(145,107,3.7)+jack(275,107,3.7)+R(198,238,24,7,'#101516','#090d0e',.5,2);
         return wrap(s,'BOSS Noise Gate NF-1 reference · metal silver case, twin oversized Sens/Decay knobs, check LED, I/O arrows and embossed Boss rubber pad');
       }
-       /* COMPRESSORS */
+ 
+      /* EXPRESSION / WAH PEDALS */
+      case 'WAH|Wah Pedal':
+      case 'VOL|Volume':{
+        // Generic expression treadle based on the uploaded top-down wah/volume pedal reference.
+        let s=P('M168 5Q210 -2 252 5L282 27 300 216Q302 239 278 244H142Q118 239 120 216L138 27Z','#50575a',3,'#191d20');
+        s+=P('M177 15Q210 9 243 15L266 35 280 212Q282 226 267 231H153Q138 226 140 212L154 35Z','#707879',2,'#292f32');
+        s+=P('M185 24Q210 18 235 24L252 43 262 207Q263 216 253 220H167Q157 216 158 207L168 43Z','#111619',1.7,'#101416');
+        for(let i=0;i<19;i++){const y=48+i*8.1;s+=P('M171 '+y+'L249 '+y,'#465054',1.8)+P('M176 '+(y+2.8)+'L244 '+(y+2.8),'#080b0d',1);}
+        s+=P('M154 34L266 34M159 221L261 221','#858d8c',1.2);
+        [[146,44],[274,44],[140,214],[280,214]].forEach(p=>s+=screw(p[0],p[1]));
+        s+=R(190,5,40,8,'#0b0e10','#626b6a',.8,3)+R(185,237,50,8,'#0b0e10','#626b6a',.8,3);
+        s+=C(134,118,5,'#0b0e10','#9da5a2',1)+C(286,118,5,'#0b0e10','#9da5a2',1);
+        s+=P('M132 102v32M288 102v32','#7b8585',2.4);
+        return wrap(s,'Expression wah/volume pedal reference · black tapered chassis with long ribbed treadle, raised side rails and metal hinge details');
+      }
+      case 'WAH|Octave-Shift':{
+        // DigiTech Whammy reference: wide red housing, black treadle on the left and pitch selector panel on the right.
+        let s=R(35,16,350,220,'#b71922','#681016',3.2,8)+R(42,22,336,208,'#e12a31','#ff7774',1.2,5);
+        s+=R(51,28,191,198,'#171a1d','#090c0e',2.2,7)+R(62,38,171,172,'#202428','#485052',1.1,3);
+        s+=R(84,52,126,143,'#bf1f29','#e65c5f',2,5)+R(94,61,106,125,'#a81722','#f07c77',1.2,3);
+        s+=T(147,125,'DIGITECH',22,'#f5f1e9',900,'middle','letter-spacing="1.1" transform="rotate(-90 147 125)"');
+        s+=R(251,31,111,146,'#161a1c','#080b0c',1.8,5);
+        s+=T(306,46,'HARMONY',8,'#f0e8dc',900)+T(306,58,'WHAMMY',8,'#f0e8dc',900);
+        const left=['OCT 2 UP','OCT 1 UP','5TH UP','4TH UP','3RD UP','2ND UP','OCT 1 DOWN','OCT 2 DOWN'];
+        const right=['2 OCT UP','1 OCT UP','5TH UP','4TH UP','3RD UP','2ND UP','1 OCT DOWN','DIVE BOMB'];
+        for(let i=0;i<8;i++){
+          const y=70+i*11;
+          s+=R(260,y,42,8,'#7d151d','#cf454b',.7,3)+C(268,y+4,2.5,'#e44b4d','#4b1115',.5)+T(285,y+5.5,left[i],4.1,'#f6e8df',800);
+          s+=R(310,y,44,8,'#7d151d','#cf454b',.7,3)+C(318,y+4,2.5,'#e44b4d','#4b1115',.5)+T(337,y+5.5,right[i],4.1,'#f6e8df',800);
+        }
+        s+=R(285,165,42,10,'#d5d1c7','#494d4d',.8,2)+T(306,172,'DETUNE',5.2,'#b6252d',900);
+        s+=R(280,181,54,24,'#292d30','#111416',1,3)+T(307,197,'WHAMMY',11,'#f0e9e0',900,'middle','font-style="italic"');
+        s+=C(306,213,4.3,'#191c1d','#aeb5b2',1)+C(306,213,2,'#e3453e','#742024',.5);
+        s+=metalSwitch(306,228,8)+T(306,244,'ON',5.5,'#f5e9de',800);
+        s+=screw(47,31)+screw(373,31)+screw(47,221)+screw(373,221);
+        return wrap(s,'DigiTech Whammy octave shift reference · wide red body, oversized black expression treadle on the left, right-side harmony selector and bypass footswitch');
+      }
+
+
+      case 'MOD|CE-2':{
+        // BOSS CE-2 Chorus: sky-blue compact chassis, twin silver-centred knobs and embossed black pedal pad.
+        let s=R(143,3,134,244,'#5c9bb5','#3f6878',2.5,11)+R(148,8,124,234,'#83c7e1','#b9e8f4',1.1,9);
+        s+=R(154,14,112,219,'none','#e2f3f7',.7,7,'opacity=".48"');
+        s+=T(210,24,'CHECK',8,'#1e323d',800)+led(210,38,'#bd2e35',3.5);
+        s+=knob(178,76,20,'#e3e6e4',-42)+knob(242,76,20,'#e3e6e4',-42);
+        s+=C(178,43,2.7,'#111a1d','none',0)+C(242,43,2.7,'#111a1d','none',0);
+        s+=T(178,112,'RATE',11,'#163344',900)+T(242,112,'DEPTH',11,'#163344',900);
+        s+=P('M150 132H270','#a7dcea',1.7);
+        s+=T(178,151,'← OUTPUT',9,'#173344',900,'middle')+T(242,151,'INPUT →',9,'#173344',900,'middle');
+        s+=T(210,183,'Chorus',25,'#101b21',500,'middle','font-family="Arial,sans-serif" letter-spacing="-1.4"');
+        s+=T(250,199,'CE-2',13,'#152a35',700,'middle');
+        s+=R(153,205,114,31,'#15191b','#070a0b',1.5,4)+bossLogo(210,225,'#090d0e',13);
+        s+=foot(210,240,6)+jack(141,113,3.5)+jack(279,113,3.5);
+        return wrap(s,'BOSS CE-2 Chorus reference · sky-blue compact pedal, twin silver-centred Rate/Depth knobs, CHECK LED, side input/output and lower black BOSS pad');
+      }
+      case 'MOD|Detune':{
+        // DigiTech Luxe anti-chorus / detune reference: white enclosure with gold ornamental linework and two silver controls.
+        let s=R(143,3,134,244,'#e9e8e1','#aaa69a',2.2,5)+R(149,9,122,232,'#f8f7ef','#d3cbb8',1,3);
+        for(let i=0;i<9;i++){
+          const x=154+i*13.5;
+          s+=P('M'+x+' 18q-14 28 4 47t-3 49q-8 25 5 53','#bca56d',.85,'none','opacity=".78"');
+          s+=P('M'+(x+4)+' 18q13 28 -4 47t3 49q8 25 -5 53','#c8b47f',.75,'none','opacity=".62"');
+        }
+        s+=T(210,28,'DIGITECH',14,'#22252a',900,'middle','letter-spacing="-1.1"');
+        s+=knob(177,78,24,'#cfd2d2',-40)+knob(243,78,24,'#cfd2d2',-40);
+        s+=T(177,119,'Level',11,'#272a2d',600,'middle','font-family="Georgia,serif" font-style="italic"');
+        s+=T(243,119,'Detune',11,'#272a2d',600,'middle','font-family="Georgia,serif" font-style="italic"');
+        s+=T(177,134,'⊖',16,'#282a2d',800)+T(243,134,'⊕',16,'#282a2d',800);
+        s+=T(210,181,'Luxe',43,'#171b20',900,'middle','font-family="Georgia,serif" font-style="italic"');
+        s+=T(210,196,'anti-chorus',13,'#282b2f',600,'middle','font-family="Georgia,serif" font-style="italic"');
+        s+=led(210,211,'#c52f31',3.5)+foot(210,231,8);
+        s+=screw(157,17)+screw(263,17)+screw(157,229)+screw(263,229);
+        s+=jack(141,126,3.5)+jack(279,126,3.5);
+        return wrap(s,'DigiTech Luxe anti-chorus reference for NUX Detune · white pedal with gold ornamental scrollwork, silver Level/Detune knobs, red LED and chrome footswitch');
+      }
+
+      /* COMPRESSORS */
       case 'CMP|Rose Comp':{
         // Ross Compressor: compact lavender enclosure, two large controls, ROSS wordmark and one metal footswitch.
         let s=R(143,3,134,244,'#8f909f','#535663',2.2,10)+R(148,8,124,234,'#b9b9c9','#e0e1e8',1,8);
@@ -161,6 +238,29 @@
         s+=R(64,187,292,19,'#232f3a','#586775',.6,2)+T(210,200,'PARAMETRIC EQ · BAND CONTROL',6,'#e0e7ed',800);
         return wrap(s,'Parametric EQ software reference · dark equalizer interface with cyan frequency response curve');
       }
+
+      case 'RVB|Damp':{
+        // Neunaber Wet-style reference supplied for the Damp reverb: dark purple swirl finish and two controls.
+        let s=R(143,3,134,244,'#16131f','#555064',2.5,13)+R(148,8,124,234,'#211b33','#77708d',1.2,10);
+        for(let i=0;i<7;i++){
+          const y=28+i*28;
+          s+=P('M153 '+(y+27)+'C177 '+(y-4)+' 238 '+(y-8)+' 267 '+(y+22),'#51428e',2.5,'none','opacity=".62"');
+          s+=P('M153 '+(y+8)+'C184 '+(y+38)+' 235 '+(y+42)+' 267 '+(y+4),'#7566bd',1.8,'none','opacity=".48"');
+        }
+        s+=T(210,26,'9V ⊖',9,'#e8e7ee',800);
+        s+=knob(177,69,22,'#17191e',-42)+knob(243,69,22,'#17191e',-42);
+        s+=P('M177 44v-4M243 44v-4','#d6d8e3',1.6);
+        s+=T(177,113,'mix',12,'#e8e6ed',600,'middle','font-family="Arial,sans-serif"');
+        s+=T(243,113,'depth',12,'#e8e6ed',600,'middle','font-family="Arial,sans-serif"');
+        s+=C(210,129,8,'#292832','#77717d',1.2)+C(210,129,3,'#a49cae','none',0);
+        s+=P('M160 145l-9 -6v12z','#eeeaf2',1,'#eeeaf2')+P('M260 145l9 -6v12z','#eeeaf2',1,'#eeeaf2');
+        s+=T(210,177,'WET',35,'#f1eff3',900,'middle','letter-spacing="1.5"')+T(210,199,'r e v e r b',12,'#e4e0ea',500);
+        s+=foot(210,218,10);
+        s+=T(177,240,'nt',18,'#71c878',900,'middle','font-family="Arial Black,Arial,sans-serif"')+T(232,237,'neunaber',8,'#e3e0e9',700,'middle')+T(232,246,'technology',6,'#d4d0df',600,'middle');
+        s+=jack(141,128,3.5)+jack(279,128,3.5);
+        return wrap(s,'Neunaber Wet reverb reference for Damp · dark purple swirl enclosure, Mix and Depth knobs, centre LED, side I/O arrows and single footswitch');
+      }
+
       /* REVERBS */
       case 'RVB|Room':{
         let s=vcase('#4b565a','#303a3d')+R(151,10,118,226,'#343e42','#798589',1,5);
@@ -209,6 +309,25 @@
         s+=T(170,189,'BYPASS',4.5,'#e6ecec')+T(250,189,'SHIMMER',4.5,'#e6ecec');
         return wrap(s,'Neunaber Seraphim Shimmer reference · dark enclosure, three knobs and multicolour spiral artwork');
       }
+
+      case 'DLY|Phi Delay':{
+        // Keeley Halo Core pedal reference supplied for the Phi Delay artwork: three controls and dual footswitches.
+        let s=R(46,3,328,244,'#181a1d','#777a7d',3,18)+R(54,9,312,232,'#222326','#44464b',1.1,14);
+        s+=R(63,15,294,220,'none','#55565d',.7,10);
+        s+=T(210,29,'TIME',8,'#f0edf0',800,'middle','letter-spacing="1"')+T(210,38,'HPF',6,'#d6d2da',700);
+        s+=knob(132,78,29,'#17191c',-30)+knob(286,78,38,'#17191c',-30)+knob(132,151,29,'#17191c',-30);
+        s+=T(132,121,'FDBK',8,'#f1eef2',800)+T(132,132,'TONE',6,'#c9c5ce',700);
+        s+=T(286,132,'LEVEL',8,'#f1eef2',800)+T(286,142,'SATURATE',6,'#c9c5ce',700);
+        s+=C(210,101,9,'#34343a','#777780',1.2)+C(210,101,3,'#a7a7ab','none',0);
+        s+=T(247,181,'HALO',31,'#f4f1f4',900,'middle','letter-spacing="-1"')+T(247,198,'CORE',10,'#c8c4cd',900,'middle','letter-spacing="3"');
+        s+=R(221,203,52,5,'#acafb0','#65666a',.5,2);
+        s+=foot(112,218,12)+foot(310,218,12);
+        s+=T(112,243,'ON / OFF',6,'#e7e3e9',700)+T(310,243,'TAP / HOLD',6,'#e7e3e9',700);
+        s+=T(210,17,'9V ⊖',8,'#ebe8ee',700);
+        s+=jack(43,112,3.5)+jack(377,112,3.5);
+        return wrap(s,'NUX Phi Delay artwork based on supplied Keeley Halo Core reference · black wide enclosure, three rotary controls, Halo/Core wordmark and twin footswitches');
+      }
+
       /* DELAYS */
       case 'DLY|Analog Delay':
         return standard(model,{body:'#bd4c59',edge:'#852d38',top:'#d66b73',topH:93,check:true,topInk:'#fff4ed',knobs:[[177,54,9,'#f0e2d2',-35,'REPEAT RATE'],[243,54,9,'#f0e2d2',-35,'INTENSITY'],[210,83,8,'#e8dacc',-35,'ECHO']],midText:'Delay',midY:132,midSize:23,midWeight:500,midInk:'#fff4ed',name:'DM-3',padColor:'#343638',logoColor:'#111518',footY:236,extra:T(210,151,'DM-3',7,'#fff0e8',800)});
@@ -526,6 +645,8 @@
     const display=String(modelName||'').trim();
     const base=display.replace(/\s*·\s*IMAGE$/i,'').trim();
     const aliases={
+      'MOD|CE-2':'CE-2','MOD|Detune':'Detune','RVB|Damp':'Damp','DLY|Phi Delay':'Phi Delay',
+      'VOL|Volume':'Volume','WAH|Clyde':'Wah Pedal','WAH|Cry BB':'Wah Pedal','WAH|V847':'Wah Pedal','WAH|Horse Wah':'Wah Pedal','WAH|Octave-Shift':'Octave-Shift',
       'RVB|Room':'Room','RVB|Hall':'Hall','RVB|Plate':'Plate','RVB|Spring':'Spring','RVB|Shimmer':'Shimmer',
       'DLY|Analog Delay':'Analog Delay','DLY|Digital Delay':'Digital Delay','DLY|Modulation':'Modulation','DLY|Tape Echo':'Tape Echo','DLY|Reverse':'Reverse','DLY|Pan Delay':'Pan Delay','DLY|Duotime':'Duotime',
       'MOD|CE-1':'CE-1','MOD|St Chorus':'St Chorus','MOD|Vibrator':'Vibrator','MOD|Flanger':'Flanger','MOD|Phase 90':'Phase 90','MOD|Phase 100':'Phase 100','MOD|SCF':'SCF','MOD|U-Vibe':'U-Vibe','MOD|Tremolo':'Tremolo','MOD|Rotary':'Rotary','MOD|Harmonist':'Harmonist','MOD|SCH-1':'SCH-1','MOD|Mono Octave':'Mono Octave',
