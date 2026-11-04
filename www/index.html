@@ -1921,7 +1921,7 @@ $('knobs').querySelectorAll('.switch-position-button').forEach(el=>{
    button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
   });
   const rawLabel=el.closest('.knob-three-way')?.querySelector('.switch-raw-value');
-  if(rawLabel)rawLabel.textContent='Selected MIDI value: '+value+' · captured 1/2/0';
+  if(rawLabel)rawLabel.textContent='Selected MIDI value: '+value+' · TOP=0 / MIDDLE=1 / BOTTOM=2';
   $('statChanged').textContent=changed.size;persist();
   sendBlockParam(selected,param,value);
  };
