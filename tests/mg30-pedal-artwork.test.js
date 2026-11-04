@@ -143,6 +143,38 @@ test('Damp and Phi Delay logo and knob spacing match the latest review', () => {
   assert.ok(153 - 29 > 65 + 29, 'FDBK and lower Tone knobs must have a visible gap');
 });
 
+test('all standard IR cabinets use one universal cabinet design while Third-party IR uses a speaker driver', () => {
+  const standardA = getSvg('IR', '1960');
+  const standardB = getSvg('IR', 'JZ120');
+  const standardC = getSvg('IR', 'AGL DB810');
+  assert.match(standardA, /Universal guitar cabinet reference/);
+  assert.match(standardA, /gold woven grille/);
+  assert.match(standardA, /cabinet-universal-grille/);
+  assert.match(standardB, /Universal guitar cabinet reference/);
+  assert.match(standardC, /Universal guitar cabinet reference/);
+  assert.doesNotMatch(standardA, /CELESTION/);
+
+  const thirdParty = getSvg('IR', 'Third-party');
+  assert.match(thirdParty, /Third-party IR speaker reference/);
+  assert.match(thirdParty, />CELESTION<\/text>/);
+  assert.match(thirdParty, />G12H<\/text>/);
+  assert.match(thirdParty, />30W<\/text>/);
+  assert.doesNotMatch(thirdParty, /Universal guitar cabinet reference/);
+});
+
+test('Volume uses the red angled expression pedal reference while Wah remains unchanged', () => {
+  const volume = getSvg('VOL', 'Volume');
+  assert.match(volume, /Red volume expression pedal reference/);
+  assert.match(volume, /#e5252c/);
+  assert.match(volume, /volume-red-rubber/);
+  assert.match(volume, /white expression emblem/);
+
+  const wah = getSvg('WAH', 'V847');
+  assert.match(wah, /Wah treadle reference/);
+  assert.match(wah, /#50575a/);
+  assert.doesNotMatch(wah, /Red volume expression pedal reference/);
+});
+
 test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift references have dedicated artwork', () => {
   const ce2 = getSvg('MOD', 'CE-2');
   assert.match(ce2, /BOSS CE-2 Chorus reference/);
@@ -169,10 +201,10 @@ test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift 
   assert.match(detune, />Detune<\/text>/);
 
   const volume = getSvg('VOL', 'Volume');
-  assert.match(volume, /Expression wah\/volume pedal reference/);
-  assert.match(volume, /ribbed treadle/);
+  assert.match(volume, /Red volume expression pedal reference/);
+  assert.match(volume, /black ribbed treadle/);
   const wah = getSvg('WAH', 'V847');
-  assert.match(wah, /Expression wah\/volume pedal reference/);
+  assert.match(wah, /Wah treadle reference/);
 
   const octave = getSvg('WAH', 'Octave-Shift');
   assert.match(octave, /DigiTech Whammy octave shift reference/);
@@ -186,8 +218,8 @@ test('model names route to the matching new pedal artwork without changing the M
     ['RVB','Damp','Damp reverb reference'],
     ['DLY','Phi Delay','NUX Phi Delay reference layout'],
     ['MOD','Detune','DigiTech Luxe anti-chorus reference'],
-    ['VOL','Volume','Expression wah/volume pedal reference'],
-    ['WAH','V847','Expression wah/volume pedal reference'],
+    ['VOL','Volume','Red volume expression pedal reference'],
+    ['WAH','V847','Wah treadle reference'],
     ['WAH','Octave-Shift','DigiTech Whammy octave shift reference']
   ]) {
     const svg = fakeWindow.renderPedalReferenceSvg(block, model);

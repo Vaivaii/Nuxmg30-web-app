@@ -80,9 +80,8 @@
       }
  
       /* EXPRESSION / WAH PEDALS */
-      case 'WAH|Wah Pedal':
-      case 'VOL|Volume':{
-        // Generic expression treadle based on the uploaded top-down wah/volume pedal reference.
+      case 'WAH|Wah Pedal':{
+        // Keep the existing neutral treadle design for dedicated wah models.
         let s=P('M168 5Q210 -2 252 5L282 27 300 216Q302 239 278 244H142Q118 239 120 216L138 27Z','#50575a',3,'#191d20');
         s+=P('M177 15Q210 9 243 15L266 35 280 212Q282 226 267 231H153Q138 226 140 212L154 35Z','#707879',2,'#292f32');
         s+=P('M185 24Q210 18 235 24L252 43 262 207Q263 216 253 220H167Q157 216 158 207L168 43Z','#111619',1.7,'#101416');
@@ -92,7 +91,33 @@
         s+=R(190,5,40,8,'#0b0e10','#626b6a',.8,3)+R(185,237,50,8,'#0b0e10','#626b6a',.8,3);
         s+=C(134,118,5,'#0b0e10','#9da5a2',1)+C(286,118,5,'#0b0e10','#9da5a2',1);
         s+=P('M132 102v32M288 102v32','#7b8585',2.4);
-        return wrap(s,'Expression wah/volume pedal reference · black tapered chassis with long ribbed treadle, raised side rails and metal hinge details');
+        return wrap(s,'Wah treadle reference · dark chassis with long ribbed footboard and metal hinge details');
+      }
+      case 'VOL|Volume':{
+        // Red angled volume/expression pedal based on the newly supplied three-quarter product reference.
+        s+='<defs><pattern id="volume-red-rubber" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#111416"/><path d="M0 1H7M0 4H7" stroke="#303638" stroke-width="1"/></pattern></defs>';
+        // Lower red chassis and shadow.
+        s+=P('M54 143L124 104 365 184 370 211 320 244 48 170Z','#8f1018',2.8,'#ce2028');
+        s+=P('M63 154L126 120 358 192 318 229 55 164Z','#ed3035',1.3,'#e32930');
+        s+=P('M83 89L151 40 380 162 365 203 316 224 78 111Z','#8f111a',2.8,'#d91e27');
+        // Raised red treadle frame, with a black ribbed rubber insert.
+        s+=P('M96 70L160 18Q171 9 184 17L368 143Q382 154 374 169L350 199Q343 207 331 200L105 91Q87 83 96 70Z','#8a151b',2.2,'#e5252c');
+        s+=P('M116 66L167 27Q176 21 186 28L352 145Q361 152 355 163L337 183Q331 190 321 184L119 87Q108 81 116 66Z','#25292b',1.8,'url(#volume-red-rubber)');
+        // Narrow parallel ribs follow the diagonal treadle surface.
+        for(let i=0;i<18;i++){
+          const x=132+i*11;
+          s+=P('M'+x+' '+(48+i*2.2)+'L'+(x+17)+' '+(82+i*2.2),'#555b5d',1.35,'none','opacity=".72"');
+        }
+        // White expression/wah emblem on the upper black footboard.
+        s+=P('M190 68Q202 53 216 60Q229 67 239 81','#f4f2eb',4.4,'none');
+        s+=P('M194 78L225 62L251 84L239 96L221 81L204 93Z','#f4f2eb',2,'#f4f2eb');
+        s+=P('M204 52Q213 41 224 47M211 57Q218 51 225 54','#f4f2eb',2.3,'none');
+        s+=C(226,91,4.6,'#f4f2eb','none',0);
+        // Two side I/O jacks and a small chassis screw on the visible red side wall.
+        s+=R(146,135,24,19,'#a7aca9','#f1e6d9',1.6,5)+C(158,144,6.3,'#101416','#d8d8d1',1.2)+C(158,144,2.7,'#050708','#858c8b',.7);
+        s+=C(190,158,11,'#15191b','#f1e6d9',1.6)+C(190,158,6.2,'#050708','#777f7e',1)+C(190,158,2.2,'#7c8582','none',0);
+        s+=screw(283,188)+screw(100,122);
+        return wrap(s,'Red volume expression pedal reference · angled bright-red chassis, long black ribbed treadle, white expression emblem and side-mounted input jacks');
       }
       case 'WAH|Octave-Shift':{
         // DigiTech Whammy reference: wide red housing, black treadle on the left and pitch selector panel on the right.
@@ -643,7 +668,56 @@
       default:return null;
     }
   }
+  const drawCabinetArtwork=(thirdParty)=>{
+    let s='';
+    if(!thirdParty){
+      const patternId='cabinet-universal-grille';
+      s+='<defs><pattern id="'+patternId+'" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#15191a"/><circle cx="2" cy="2" r="1.15" fill="#bca06a"/><circle cx="6" cy="6" r="1.15" fill="#e1c78e"/></pattern><linearGradient id="cabinet-side" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#30373b"/><stop offset=".72" stop-color="#161a1d"/><stop offset="1" stop-color="#080b0d"/></linearGradient><linearGradient id="cabinet-top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#343a3d"/><stop offset="1" stop-color="#111517"/></linearGradient></defs>';
+      // Compact perspective 4x12 cabinet: deep textured left wall, black shell and gold woven grille.
+      s+=P('M73 46L137 17L363 29L363 220L137 235L73 211Z','#080b0d',4,'#111517');
+      s+=P('M73 46L137 17L137 219L73 211Z','#090d0f',2,'url(#cabinet-side)');
+      s+=P('M137 17L363 29L363 220L137 219Z','#090d0f',2,'url(#cabinet-top)');
+      s+=P('M137 17L363 29L363 41L137 31Z','#555a58',1,'#272d2f');
+      s+=P('M137 219L363 220L363 235L137 235Z','#080b0c',1,'#15191b');
+      s+=P('M148 39L350 49L350 207L148 210Z','#88724b',1.2,'#0a0e10');
+      s+='<path d="M152 43L346 52L346 203L152 206Z" fill="url(#'+patternId+')" stroke="#c5a66d" stroke-width="1.4"/>';
+      s+=P('M148 39L350 49L350 56L148 47Z','#e0c48b',.8,'#b99a5c');
+      s+=P('M148 206L350 203L350 211L148 215Z','#d1b477',.8,'#9e814b');
+      // Left-side recessed handhold.
+      s+=R(91,87,36,48,'#080b0d','#454c4d',2,3)+R(96,92,26,38,'#020405','#111618',1,3)+R(100,97,19,28,'#060809','#050708',.8,3);
+      [[82,55],[126,36],[354,42],[354,207],[128,218]].forEach(([x,y])=>s+=screw(x,y));
+      s+=R(155,50,32,11,'#d5c7a4','#eee1c7',.7,1)+T(171,58,'CAB',6,'#a72027',900);
+      s+=P('M106 221l8 0 0 13-8 0zM309 226h24v8h-24z','#090c0d',1,'#060809');
+      return wrap(s,'Universal guitar cabinet reference · black angled 4x12 enclosure with gold woven grille and recessed side handle');
+    }
+    // Third-party IR is represented by the rear basket and magnet label of a separate speaker driver.
+    s+='<defs><radialGradient id="speaker-frame" cx=".4" cy=".32" r=".8"><stop offset="0" stop-color="#f3e5c5"/><stop offset=".72" stop-color="#d4c19a"/><stop offset="1" stop-color="#8b7a5c"/></radialGradient><linearGradient id="speaker-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6f7f2"/><stop offset=".48" stop-color="#9ca5a4"/><stop offset="1" stop-color="#4a5152"/></linearGradient></defs>';
+    s+=C(210,125,110,'url(#speaker-frame)','#88795f',2.2)+C(210,125,97,'#17191a','#eee0bd',2);
+    // Four dark basket windows and four broad cast spokes.
+    s+=P('M177 30Q210 11 243 30L230 83Q210 96 190 83Z','#a99a77',2,'#d8c69e');
+    s+=P('M177 220Q210 239 243 220L230 167Q210 154 190 167Z','#a99a77',2,'#d8c69e');
+    s+=P('M115 92Q94 125 115 158L169 145Q181 125 169 105Z','#a99a77',2,'#d8c69e');
+    s+=P('M305 92Q326 125 305 158L251 145Q239 125 251 105Z','#a99a77',2,'#d8c69e');
+    s+=C(210,125,72,'url(#speaker-metal)','#e7e9e3',2.2)+C(210,125,66,'#17191b','#3f4545',2);
+    s+=C(210,125,58,'#d3a94f','#30251a',2)+C(210,125,54,'#e2bd62','#fff0c1',1.1);
+    s+=T(210,91,'CELESTION',15,'#19130e',900,'middle','letter-spacing="1"');
+    s+=T(210,104,'Vintage Series',8,'#21170f',700,'middle','font-family="Georgia,serif" font-style="italic"');
+    s+=P('M168 109H252','#2d2116',.8)+T(172,139,'G12H',14,'#1c140c',700)+T(248,139,'30W',14,'#1c140c',700);
+    s+=C(210,125,20,'url(#speaker-metal)','#eef1eb',1.3)+C(210,125,11,'#bec4c0','#6e7674',1)+C(210,125,3,'#e1e5dc','none',0);
+    s+=T(210,165,'70th Anniversary',7,'#21170f',700,'middle','font-family="Georgia,serif" font-style="italic"');
+    s+=T(210,175,'Special Edition',7,'#21170f',700,'middle','font-family="Georgia,serif" font-style="italic"');
+    s+=T(210,187,'CELESTION INTERNATIONAL',4.8,'#322415',700,'middle','letter-spacing=".7"');
+    [[128,49],[292,49],[128,201],[292,201]].forEach(([x,y])=>s+=C(x,y,5,'#171b1b','#f4e7c8',1.2));
+    s+=C(210,26,5,'#b2b6b0','#f6edd9',1)+C(210,224,5,'#b2b6b0','#f6edd9',1);
+    return wrap(s,'Third-party IR speaker reference · rear-view Celestion-style G12H 30W driver with cast basket and gold magnet label');
+  };
+
   window.renderPedalReferenceSvg=function(blockId,modelName){
+    if(blockId==='IR'){
+      const isThirdParty=/^third-party\b/i.test(base)||/third.party/i.test(display);
+      return drawCabinetArtwork(isThirdParty);
+    }
+
     const display=String(modelName||'').trim();
     const base=display.replace(/\s*·\s*IMAGE$/i,'').trim();
     const aliases={
