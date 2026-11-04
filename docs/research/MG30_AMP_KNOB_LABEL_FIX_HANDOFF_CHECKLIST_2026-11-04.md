@@ -430,3 +430,20 @@ Urutan pesan pada capture ditafsirkan mengikuti urutan langkah capture yang dimi
 - Mapping TOP/MIDDLE/BOTTOM assumes the capture interactions were performed in the requested order. The captures prove QuickTone's outbound CC values, not pedal readback acceptance. First hardware test should verify one position at a time; if the MG-30 display switch disappears or readback differs, stop and revert switch writes.
 - Source commit: e8ddd7aebf5ff8f36e315da8c03dd7fe363946fa. Regression-test update: 6d5f9649999f0a55f06780fd802c2abe740efce7.
 - Build #462 was running for the source commit when this note was written; the test-update commit may trigger a subsequent workflow. Do not declare build success or provide APK until the run for the final test commit completes.
+
+## Update 4 November 2026 — physical default position confirmed
+
+User confirmed that the three-position hardware switches are at **TOP by default**. Combined with the QuickTone capture order and captured values, the working mapping is:
+
+| Switch | CC | TOP (default) | MIDDLE | BOTTOM |
+|---|---:|---:|---:|---:|
+| DGLASS LO MIDS FREQ | 26 | 1 | 2 | 0 |
+| STARLIFT CONTOUR | 28 | 1 | 2 | 0 |
+| DGLASS HI MIDS FREQ | 29 | 1 | 2 | 0 |
+
+The initial editor display now marks TOP as active when no device readback or local value exists. This is a **visual/default-state fallback only**: opening/rendering the editor does not send MIDI and does not write 1 to the pedal. Once an incoming CC value is read, that hardware value takes precedence. A user click explicitly writes the selected captured enum value to the existing CC.
+
+Source commit: 624a280118bad3fe1310d33a148385f4188a3e30
+Test commit: ffe0ef7c7f9488d27415a13d5138a795d3e05d8d
+
+Safety constraints remain: original MG-30 Gen 2 firmware 6.0.x only (not MKII); AMP CC indices 2/4/5 and MIDI CC mapping remain unchanged; no changes to NAM, IR import/collection, preset transfer, or other MIDI mappings. Physical write/readback acceptance still requires testing on the user's MG-30.
