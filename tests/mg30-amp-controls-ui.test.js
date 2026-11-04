@@ -137,11 +137,45 @@ test('STARLIFT switch label positions remain Vintage / Off / Modern from top to 
   assert.match(block[1], /param:'contour'[\s\S]*?label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
 });
 
-test('three-position switches default visually to physical TOP without sending MIDI until clicked', () => {
-  assert.match(html, /const hasReadback=Object\.prototype\.hasOwnProperty\.call\(s\.values,p\)/);
-  assert.match(html, /const displayValue=stored===undefined\?control\.choices\.find\(choice=>choice\.position==='TOP'\)\?\.value:stored/);
+test('discrete switches default visually without sending MIDI until the user selects a position', () => {
+  assert.match(html, /const hasReadback=stored!==undefined/);
+  assert.match(html, /const defaultChoice=control\.choices\.find\(choice=>choice\.value===control\.defaultValue\)/);
   assert.match(html, /displayValue!==undefined&&Number\(displayValue\)===choice\.value/);
-  assert.match(html, /Default TOP · MIDI 0 · awaiting pedal readback/);
-  assert.match(html, /Selected MIDI value:/);
+  assert.match(html, /Posisi awal hanya tampilan; tidak mengirim MIDI sampai tombol dipilih/);
   assert.match(html, /sendBlockParam\(selected,param,value\)/);
 });
+
+test('six QuickTone effect switches use their existing parameter positions and retain model order', () => {
+  const block = html.match(/const EFFECT_DISCRETE_SWITCHES = \{([\s\S]*?)\n\};/);
+  assert.ok(block, 'Effect switch catalogue must exist');
+  assert.match(block[1], /'Katana': \[\{param:'boost',label:'BOOST',type:'two-way-switch'/);
+  assert.match(block[1], /'SCF': \[\{param:'chfl',label:'MODE',type:'three-way-switch'/);
+  assert.match(block[1], /'U-Vibe': \[\{param:'chvib',label:'MODE',type:'two-way-switch'/);
+  assert.match(block[1], /'Harmonist': \[\{param:'minor',label:'MODE',type:'two-way-switch'/);
+  assert.match(block[1], /'Touch Wah': \[\{param:'updown',label:'UP \/ DOWN',type:'two-way-switch'/);
+  assert.match(block[1], /'Octave-Shift': \[\{param:'updown',label:'UP \/ DOWN',type:'two-way-switch'/);
+  assert.match(block[1], /label:'CHORUS',position:'TOP',value:0[\s\S]*?label:'P\.M\. · PITCH MODULATION',position:'MIDDLE',value:1[\s\S]*?label:'FLANGER',position:'BOTTOM',value:2/);
+  assert.match(block[1], /label:'CHORUS',position:'TOP',value:0[\s\S]*?label:'VIBRATO',position:'BOTTOM',value:1/);
+  assert.match(block[1], /label:'MINOR',position:'TOP',value:0[\s\S]*?label:'MAJOR',position:'BOTTOM',value:1/);
+});
+
+test('effect switch CCs resolve through the existing parameter index maps without renumbering', () => {
+  assert.match(html, /\[11,12,13\],\s*\/\/ WAH: base CC 11/);
+  assert.match(html, /\[18,19,20,21,22,23\],\s*\/\/ EFX: base CC 18/);
+  assert.match(html, /\[48,49,50,51,52,53\],\s*\/\/ MOD: base CC 48/);
+  assert.match(html, /'Octave-Shift','pedal, updown'/);
+  assert.match(html, /'Katana','boost, volume'/);
+  assert.match(html, /'Touch Wah','mode, decay, sens, updown, level'/);
+  assert.match(html, /'SCF','speed, width, chfl, intensity, subd'/);
+  assert.match(html, /'U-Vibe','speed, volume, intensity, chvib, subd'/);
+  assert.match(html, /'Harmonist','key, minor, harmo, blend'/);
+  assert.match(html, /const cc=ccs\[control\.ccIndex\]/);
+});
+
+test('switch raw values bypass rotary scaling for both live MIDI and preset readback', () => {
+  assert.match(html, /const discrete=isDiscreteSwitch\(control\),next=discrete\?Number\(rawValue\):normalizeParameterValue/);
+  assert.match(html, /if\(isDiscreteSwitch\(control\)\)\{[\s\S]*?candidate\[i\]\.values\[control\.param\]=value/);
+  assert.match(html, /if\(isDiscreteSwitch\(control\)\)\{[\s\S]*?sendCC\(cc,choice\.value\)/);
+  assert.match(html, /knob-two-way/);
+  assert.match(css, /#knobs \.two-way-switch\{grid-template-rows:repeat\(2/);
+});;
