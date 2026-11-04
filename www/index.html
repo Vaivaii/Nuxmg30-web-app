@@ -838,18 +838,24 @@ const AMP_QUICKTONE_LAYOUTS = [
  * Exact raw CC values for TOP / MIDDLE / BOTTOM have not been captured. Never infer
  * enum values from the generic 0..100 range; keep these controls read-only until verified.
  */
+/*
+ * Captured from QuickTone USB-MIDI on original MG-30 Gen 2:
+ * TOP / MIDDLE / BOTTOM actions emitted raw CC values 1 / 2 / 0.
+ * CCs: DGLASS LO=26, HI=29; STARLIFT CONTOUR=28.
+ * These are captured QuickTone outbound values; confirm pedal readback after first app test.
+ */
 const AMP_THREE_POSITION_SWITCHES = {
   30: [
     {param:'lo mids freq',label:'LO MIDS FREQ',ccIndex:2,type:'three-way-switch',choices:[
-      {label:'500 Hz',position:'TOP'},{label:'1 kHz',position:'MIDDLE'},{label:'250 Hz',position:'BOTTOM'}
+      {label:'500 Hz',position:'TOP',value:1},{label:'1 kHz',position:'MIDDLE',value:2},{label:'250 Hz',position:'BOTTOM',value:0}
     ]},
     {param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5,type:'three-way-switch',choices:[
-      {label:'1.5 kHz',position:'TOP'},{label:'3 kHz',position:'MIDDLE'},{label:'750 Hz',position:'BOTTOM'}
+      {label:'1.5 kHz',position:'TOP',value:1},{label:'3 kHz',position:'MIDDLE',value:2},{label:'750 Hz',position:'BOTTOM',value:0}
     ]}
   ],
   31: [
     {param:'contour',label:'CONTOUR',ccIndex:4,type:'three-way-switch',choices:[
-      {label:'VINTAGE',position:'TOP'},{label:'OFF',position:'MIDDLE'},{label:'MODERN',position:'BOTTOM'}
+      {label:'VINTAGE',position:'TOP',value:1},{label:'OFF',position:'MIDDLE',value:2},{label:'MODERN',position:'BOTTOM',value:0}
     ]}
   ]
 };
@@ -930,10 +936,14 @@ function sendBlockParam(index,param,value){
   if(!block||!state||!ccs||!midiConnected)return;
   const control=parameterControls(index,state.model).find(item=>item.param===param);
   if(!control||control.ccIndex<0||control.ccIndex>=ccs.length)return;
-  // Switch enums are not validated yet; block every generic write path defensively.
-  if(control.type==='three-way-switch')return;
   const cc=ccs[control.ccIndex];
   if(!Number.isInteger(cc))return;
+  if(control.type==='three-way-switch'){
+    const choice=control.choices?.find(item=>item.value===Number(value));
+    if(!choice)return;
+    sendCC(cc,choice.value);
+    return;
+  }
   sendCC(cc,encodeParameterValue(param,value));
 }
 function scheduleHardwareUiRefresh(){
@@ -961,11 +971,17 @@ function syncIncomingParameterCC(cc,rawValue){
   if(state.values[param]===next)return;
   state.values[param]=next;
   if(index===selected){
-    const switchButtons=[...document.querySelectorAll('#knobs .switch-position-button')].filter(x=>x.getAttribute('aria-label')&&x.closest('.knob-three-way'));
     const switchControl=AMP_THREE_POSITION_SWITCHES[state.model]?.find(item=>item.param===param);
-    if(switchControl&&switchButtons.length){
-      const rawLabel=[...document.querySelectorAll('#knobs .switch-raw-value')].find(x=>x.closest('.knob-three-way')?.querySelector('label')?.textContent===switchControl.label);
-      if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(Math.round(next))+' · mapping not verified';
+    if(switchControl){
+      const group=[...document.querySelectorAll('#knobs .knob-three-way')].find(x=>x.querySelector('label')?.textContent===switchControl.label);
+      if(group){
+       group.querySelectorAll('.switch-position-button').forEach(button=>{
+        const active=Number(button.dataset.switchValue)===next;
+        button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
+       });
+       const rawLabel=group.querySelector('.switch-raw-value');
+       if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(Math.round(next))+' · captured 1/2/0';
+      }
     }
     const selector=[...document.querySelectorAll('#knobs .parameter-select')].find(x=>x.dataset.p===param);
     if(selector){
@@ -1885,7 +1901,7 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
  const p=control.param,stored=parameterValueForControl(selected,s,s.model,control);
  if(control.type==='three-way-switch'){
   const raw=stored===undefined?'not read':String(Math.round(Number(stored)));
-  return '<div class="knob knob-three-way"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button" disabled aria-disabled="true" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+choice.position+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">Hardware raw value: '+escapeHtml(raw)+' · mapping not verified</small><small class="switch-safe-note">Read-only until the correct switch values are captured</small></div>';
+  return '<div class="knob knob-three-way"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button'+(stored!==undefined&&Number(stored)===choice.value?' is-active':'')+'" data-switch-param="'+escapeHtml(p)+'" data-switch-value="'+choice.value+'" aria-pressed="'+String(stored!==undefined&&Number(stored)===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+choice.position+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">Hardware raw value: '+escapeHtml(raw)+' · captured 1/2/0</small><small class="switch-safe-note">Nilai ditangkap dari QuickTone; periksa readback pedal.</small></div>';
  }
  if(p==='mic'||p==='position'){
   const options=p==='mic'?MIC_OPTIONS:MIC_POSITION_OPTIONS,raw=stored===undefined?'':String(encodeParameterValue(p,stored));
@@ -1895,6 +1911,22 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
  const v=stored??50,label=control.label||p.toUpperCase();
  return '<div class="knob"><label>'+escapeHtml(label)+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>';
 }).join('');
+$('knobs').querySelectorAll('.switch-position-button').forEach(el=>{
+ el.onclick=()=>{
+  const param=el.dataset.switchParam,value=Number(el.dataset.switchValue);
+  const control=controls.find(item=>item.param===param&&item.type==='three-way-switch');
+  if(!control||!control.choices?.some(choice=>choice.value===value))return;
+  s.values[param]=value;changed.add(selected+':'+param);
+  $('knobs').querySelectorAll('.switch-position-button[data-switch-param="'+param+'"]').forEach(button=>{
+   const active=Number(button.dataset.switchValue)===value;
+   button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
+  });
+  const rawLabel=el.closest('.knob-three-way')?.querySelector('.switch-raw-value');
+  if(rawLabel)rawLabel.textContent='Hardware raw value: '+value+' · captured 1/2/0';
+  $('statChanged').textContent=changed.size;persist();
+  sendBlockParam(selected,param,value);
+ };
+});
 $('knobs').querySelectorAll('.parameter-select').forEach(el=>{
  el.onchange=()=>{
   const raw=Number(el.value),param=el.dataset.p;
