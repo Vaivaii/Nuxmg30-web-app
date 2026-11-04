@@ -63,21 +63,22 @@
     switch(key(block)+'|'+model){
       /* NOISE GATE — BOSS NF-1 */
       case 'GATE|Noise Gate':{
-        let s=R(151,3,118,244,'#b8c6bc','#68756e',2.2,7)+R(155,7,110,111,'#c9d5ca','#e4e9e0',1,3)+R(155,122,110,115,'#aebdb3','#dfe5dc',1,3);
-        s+=T(210,21,'CHECK',10,'#111718',900)+C(210,43,7,'#be272d','#8a3034',1.2)+C(208,41,2,'#f48d8e','none',0);
-        s+=C(173,33,3.4,'#080b0c','#4e5c56',.8)+C(247,33,3.4,'#080b0c','#4e5c56',.8);
-        s+=knob(177,76,27,'#d9dedb',-42)+knob(243,76,27,'#d9dedb',-42);
-        [[177,115],[177,38],[147,76],[207,76],[243,115],[243,38],[213,76],[273,76]].forEach(p=>s+=C(p[0],p[1],2.9,'#090d0f','none',0));
-        s+=T(177,133,'SENS',17,'#090d0e',800)+T(243,133,'DECAY',17,'#090d0e',800);
-        s+=R(146,119,128,12,'#9eaca3','#d8ded6',1,2)+P('M149 124H271','#e9eee5',1);
-        s+=T(171,161,'← OUTPUT',15,'#080d0f',900)+T(249,161,'INPUT →',15,'#080d0f',900);
-        s+=T(210,201,'Noise Gate',29,'#101718',600,'middle','font-family="Arial Rounded MT Bold,Arial,sans-serif" letter-spacing="-1.1"');
-        s+=T(249,218,'NF-1',21,'#101718',500);
-        s+=R(155,224,110,18,'#111a26','#4c555e',1.5,4)+T(210,238,'BOSS',12,'#0a111a',900,'middle','letter-spacing="2" stroke="#27354a" stroke-width="1"');
-        s+=jack(145,147,4)+jack(275,147,4)+R(198,242,24,6,'#101516','#090d0e',.5,2);
-        return wrap(s,'BOSS Noise Gate NF-1 reference · two large Sens/Decay knobs, check LED and Boss footpad');
+        let s=R(151,3,118,244,'#b8c6bc','#68756e',2.2,7)+R(155,7,110,80,'#c9d5ca','#e4e9e0',1,3)+R(155,91,110,146,'#aebdb3','#dfe5dc',1,3);
+        s+=T(210,20,'CHECK',10,'#111718',900)+C(210,34,7,'#be272d','#8a3034',1.2)+C(208,32,2,'#f48d8e','none',0);
+        s+=C(177,24,3.4,'#080b0c','#4e5c56',.8)+C(243,24,3.4,'#080b0c','#4e5c56',.8);
+        s+=knob(177,53,19,'#d9dedb',-42)+knob(243,53,19,'#d9dedb',-42);
+        [[177,30],[155,53],[199,79],[243,30],[221,79],[265,53]].forEach(p=>s+=C(p[0],p[1],2.5,'#090d0f','none',0));
+        s+=T(177,88,'SENS',14,'#090d0e',800)+T(243,88,'DECAY',14,'#090d0e',800);
+        s+=R(146,89,128,8,'#9eaca3','#d8ded6',1,2)+P('M149 93H271','#e9eee5',1);
+        s+=T(172,116,'← OUTPUT',14,'#080d0f',900)+T(248,116,'INPUT →',14,'#080d0f',900);
+        s+=T(210,158,'Noise Gate',25,'#101718',600,'middle','font-family="Arial Rounded MT Bold,Arial,sans-serif" letter-spacing="-1.1"');
+        s+=T(250,176,'NF-1',18,'#101718',500);
+        s+=R(155,185,110,51,'#101a27','#4c555e',1.7,5)+R(160,190,100,41,'#141e2b','#293746',.7,3);
+        s+=T(210,219,'BOSS',27,'#080e19',900,'middle','letter-spacing="2" stroke="#27354a" stroke-width="1.1"');
+        s+=jack(145,107,3.7)+jack(275,107,3.7)+R(198,238,24,7,'#101516','#090d0e',.5,2);
+        return wrap(s,'BOSS Noise Gate NF-1 reference · metal silver case, twin oversized Sens/Decay knobs, check LED, I/O arrows and embossed Boss rubber pad');
       }
-      /* COMPRESSORS */
+       /* COMPRESSORS */
       case 'CMP|Rose Comp':
         return standard(model,{body:'#aeb3c7',edge:'#666e7e',top:'#c6cada',topStroke:'#9298a6',knobs:[[179,56,12,'#171b21',-35],[241,56,12,'#171b21',-35]],labels:[[179,81,'LEVEL',5],[241,81,'SUSTAIN',5]],midText:'ROSS',midY:118,midSize:24,midInk:'#242338',midWeight:400,extra:T(210,146,'COMPRESSOR',7,'#282b39',800)+led(210,24,'#c94748',2.5),padColor:'#20232d',logoColor:'#171a20',logoY:216});
       case 'CMP|K Comp':{
