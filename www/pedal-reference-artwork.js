@@ -257,7 +257,7 @@
         s+=T(210,177,'WET',35,'#f1eff3',900,'middle','letter-spacing="1.5"')+T(210,199,'reverb',12,'#e4e0ea',500,'middle','letter-spacing="2"');
         s+=foot(210,218,10);
         s+=jack(141,128,3.5)+jack(279,128,3.5);
-        return wrap(s,'Neunaber Wet reverb reference for Damp · dark purple swirl enclosure, Mix and Depth knobs, centre LED, side I/O arrows and single footswitch');
+        return wrap(s,'Damp reverb reference · dark purple swirl enclosure, Mix and Depth knobs, centre LED, side I/O arrows and single footswitch');
       }
 
       /* REVERBS */

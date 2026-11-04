@@ -150,15 +150,15 @@ test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift 
   assert.match(ce2, />CE-2<\/text>/);
 
   const damp = getSvg('RVB', 'Damp');
-  assert.match(damp, /Neunaber Wet reverb reference for Damp/);
+  assert.match(damp, /Damp reverb reference/);
   assert.match(damp, />WET<\/text>/);
   assert.match(damp, />mix<\/text>/);
   assert.match(damp, />depth<\/text>/);
 
   const phi = getSvg('DLY', 'Phi Delay');
   assert.match(phi, /NUX Phi Delay reference layout/);
-  assert.match(phi, />HALO<\/text>/);
-  assert.match(phi, />CORE<\/text>/);
+  assert.match(phi, />PHI DELAY<\/text>/);
+  assert.doesNotMatch(phi, />HALO<\/text>|>CORE<\/text>/);
   assert.match(phi, /cx="112" cy="218"/);
   assert.match(phi, /cx="310" cy="218"/);
 

@@ -1714,7 +1714,7 @@ function renderAmpHeadArtwork(m){
   const logo=String(t).trim().toUpperCase();
   const logoFonts={
     'FENDER':'Brush Script MT, Segoe Script, cursive',
-    'MARSHALL':'Arial Black, Impact, sans-serif',
+    'MARSHALL':'Brush Script MT, Segoe Script, cursive',
     'HIWATT':'Arial Narrow, Arial, sans-serif',
     'DIEZEL':'Arial Black, Impact, sans-serif',
     'BOGNER':'Brush Script MT, Segoe Script, cursive',
@@ -1861,7 +1861,7 @@ function renderAmpHeadArtwork(m){
    [184,228,272,316,360,404,448,492].forEach(x=>s+=k(x,150,8.5,'',true));
    s+=led(530,149,'#b73e35')+toggle(555,150);
    s+='<rect x="82" y="194" width="596" height="143" fill="#e0d8c5" stroke="#f4ecd9" stroke-width="2"/><rect x="90" y="202" width="580" height="127" fill="url(#headMesh)"/>';
-   nam(585,253,35,'#203b37','Georgia,Times New Roman,serif','font-weight="bold" letter-spacing="2"');
+   s+=nam(585,253,35,'#203b37','Georgia,Times New Roman,serif','font-weight="bold" letter-spacing="2"');
    return s+feet+screw(72,103)+screw(688,103);
   }
   if(slot===2){
@@ -1872,7 +1872,7 @@ function renderAmpHeadArtwork(m){
    [191,232,273,314,355,396,437,478].forEach(x=>s+=k(x,151,8.3,'',true));
    s+=led(626,149,'#b93b35');
    s+='<rect x="82" y="201" width="596" height="136" fill="#a9aaa0" stroke="#d5d6ca" stroke-width="2"/><rect x="90" y="209" width="580" height="120" fill="url(#headMesh)"/>';
-   nam(205,278,50,'#ecebe1','Brush Script MT,Segoe Script,cursive','font-style="italic" font-weight="bold" stroke="#303735" stroke-width=".7" paint-order="stroke fill"');
+   s+=nam(205,278,50,'#ecebe1','Brush Script MT,Segoe Script,cursive','font-style="italic" font-weight="bold" stroke="#303735" stroke-width=".7" paint-order="stroke fill"');
    s+=label(566,277,'DELUXE REVERB',9,'#f0eee4',850,1.1);
    return s+feet+screw(72,103)+screw(688,103);
   }
@@ -1884,7 +1884,7 @@ function renderAmpHeadArtwork(m){
    [174,207,240,273,347,380,413,446,479,512,545].forEach(x=>s+=k(x,149,7.8,'',true));
    s+=toggle(584,147)+led(612,147,'#b93c36');
    s+='<rect x="82" y="202" width="596" height="135" fill="#a5a89f" stroke="#d2d3ca" stroke-width="2"/><rect x="90" y="210" width="580" height="119" fill="url(#headMesh)"/>';
-   nam(207,279,48,'#f0eee2','Brush Script MT,Segoe Script,cursive','font-style="italic" font-weight="bold" stroke="#303735" stroke-width=".7" paint-order="stroke fill"');
+   s+=nam(207,279,48,'#f0eee2','Brush Script MT,Segoe Script,cursive','font-style="italic" font-weight="bold" stroke="#303735" stroke-width=".7" paint-order="stroke fill"');
    s+=label(566,279,'TWIN REVERB',10,'#f0eee2',850,1.4);
    return s+feet+screw(72,103)+screw(688,103);
   }
@@ -1898,7 +1898,7 @@ function renderAmpHeadArtwork(m){
    for(let i=0;i<5;i++){const x=546+i*24;s+='<rect x="'+x+'" y="136" width="12" height="86" rx="2" fill="#090d0e" stroke="#555e5a" stroke-width=".8"/><rect x="'+(x+1)+'" y="'+(165+(i%3)*8)+'" width="10" height="15" rx="2" fill="#c4c9c1"/>';}
    s+='<rect x="82" y="255" width="596" height="82" fill="#191d1d" stroke="#555d5a" stroke-width="1.5"/><rect x="90" y="263" width="580" height="66" fill="url(#headMesh)"/>';
    s+='<rect x="121" y="269" width="155" height="47" rx="2" fill="#0a0d0e" stroke="#aeb5ad" stroke-width="1.4"/>';
-   nam(199,301,29,'#eee9d8','Georgia,Times New Roman,serif','font-weight="900" letter-spacing="2"');
+   s+=nam(199,301,29,'#eee9d8','Georgia,Times New Roman,serif','font-weight="900" letter-spacing="2"');
    return s+feet+screw(72,103)+screw(688,103);
   }
   if(slot===5){
@@ -1906,7 +1906,7 @@ function renderAmpHeadArtwork(m){
    s+='<defs>'+zipPattern('namXtcCloth',9,9,'<rect width="9" height="9" fill="#a9a69c"/><path d="M0 1H9M0 5H9M2 0V9M7 0V9" stroke="#e6e0d1" stroke-width="1"/><path d="M0 3H9M4 0V9" stroke="#56544f" stroke-width=".8"/>')+'</defs>';
    s+=zipHead('#212326','#46484a','#111516');
    s+='<rect x="82" y="116" width="596" height="139" fill="#a9a69c" stroke="#d7d1c0" stroke-width="2"/><rect x="90" y="124" width="580" height="123" fill="url(#namXtcCloth)"/>';
-   nam(380,207,68,'#f2e8ce','Brush Script MT,Segoe Script,cursive','font-style="italic" font-weight="bold" stroke="#d3c5a4" stroke-width="1.1" paint-order="stroke fill"');
+   s+=nam(380,207,68,'#f2e8ce','Brush Script MT,Segoe Script,cursive','font-style="italic" font-weight="bold" stroke="#d3c5a4" stroke-width="1.1" paint-order="stroke fill"');
    s+='<rect x="82" y="262" width="596" height="75" fill="#111516" stroke="#5d605b" stroke-width="1.4"/>';
    s+=jack(104,298,5)+led(130,298,'#b63e36')+led(157,298,'#376eb5');
    [205,244,283,322,361,400,459,498,537,576,615,654].forEach(x=>s+=k(x,302,8.5,'',true));
@@ -1921,14 +1921,14 @@ function renderAmpHeadArtwork(m){
    s+=led(650,149,'#b83b32');
    s+='<rect x="82" y="202" width="596" height="135" fill="#191817" stroke="#a47b5a" stroke-width="1.8"/><rect x="90" y="210" width="580" height="119" fill="url(#headMesh)"/>';
    s+='<rect x="280" y="242" width="200" height="54" rx="2" fill="#d2bd93" stroke="#f2dfb6" stroke-width="1.5"/>';
-   nam(380,280,36,'#27201a','Arial Black,Arial,sans-serif','font-weight="900" letter-spacing="3"');
+   s+=nam(380,280,36,'#27201a','Arial Black,Arial,sans-serif','font-weight="900" letter-spacing="3"');
    return s+feet+screw(72,103)+screw(688,103);
   }
   if(slot===7){
    // Soldano SLO: black perforated fascia, restrained white modern lettering and silver lower controls.
    s+=zipHead('#11161d','#788792','#0c1014');
    s+='<rect x="82" y="116" width="596" height="139" fill="#10161d" stroke="#7c8994" stroke-width="1.5"/><rect x="90" y="124" width="580" height="123" fill="url(#headMesh)"/>';
-   nam(380,211,68,'#e4e9ed','Arial,Helvetica,sans-serif','font-weight="300" letter-spacing="4"');
+   s+=nam(380,211,68,'#e4e9ed','Arial,Helvetica,sans-serif','font-weight="300" letter-spacing="4"');
    s+='<rect x="82" y="262" width="596" height="75" fill="#c8cdca" stroke="#eef0ea" stroke-width="2"/>';
    s+=jack(106,300,5);
    ['PRES','MASTER','GAIN','BASS','MID','TREB','PRES','MASTER'].forEach((v,i)=>s+=k(190+i*59,301,8.5,v,true));
@@ -1939,7 +1939,7 @@ function renderAmpHeadArtwork(m){
    // PV 5150: black perforated upper face, bold NAM monogram and a bright silver control strip.
    s+=zipHead('#11161c','#77838f','#090d11');
    s+='<rect x="82" y="116" width="596" height="139" fill="#080c10" stroke="#7c8588" stroke-width="1.5"/><rect x="90" y="124" width="580" height="123" fill="url(#headPerforated)"/>';
-   nam(380,214,82,'#dfe4e4','Arial Black,Impact,sans-serif','font-style="italic" font-weight="900" letter-spacing="-2"');
+   s+=nam(380,214,82,'#dfe4e4','Arial Black,Impact,sans-serif','font-style="italic" font-weight="900" letter-spacing="-2"');
    s+='<rect x="82" y="262" width="596" height="75" fill="url(#headSilver)" stroke="#e4e7df" stroke-width="2"/>';
    s+=jack(106,299,5);
    ['PRES','RES','POST','LOW','MID','HIGH','PRE','GAIN','VOL','LEAD'].forEach((v,i)=>s+=k(170+i*48,302,8,v,true));
@@ -1953,7 +1953,7 @@ function renderAmpHeadArtwork(m){
    s+='<rect x="82" y="116" width="596" height="139" fill="#aeb5b3" stroke="#e0e4e1" stroke-width="2"/><rect x="90" y="124" width="580" height="123" fill="url(#namRectDiamond)"/>';
    for(let i=0;i<10;i++){const xl=122+i*13,xr=530+i*13;s+='<rect x="'+xl+'" y="158" width="5" height="34" rx="1.5" fill="#20282a"/><rect x="'+xr+'" y="158" width="5" height="34" rx="1.5" fill="#20282a"/>';}
    s+='<rect x="286" y="145" width="188" height="56" rx="3" fill="#171d1e" stroke="#e4e8e3" stroke-width="2.5"/>';
-   nam(380,184,35,'#e8eee8','Georgia,Times New Roman,serif','font-weight="900" letter-spacing="4"');
+   s+=nam(380,184,35,'#e8eee8','Georgia,Times New Roman,serif','font-weight="900" letter-spacing="4"');
    s+='<rect x="82" y="262" width="596" height="75" fill="#111718" stroke="#7a8580" stroke-width="1.5"/>';
    s+=jack(106,300,5)+toggle(132,300)+led(157,300,'#b94036');
    [214,262,310,358,406,454,502,550,598,646].forEach(x=>s+=k(x,300,8.4,'',true));
@@ -1965,7 +1965,7 @@ function renderAmpHeadArtwork(m){
    s+='<path d="M78 108H682V346H78Z" fill="none" stroke="#c7a96a" stroke-width="2.4"/>';
    s+='<path d="M84 114H676V217H84Z" fill="#17191a" stroke="#090b0c" stroke-width="2"/>';
    s+='<path d="M84 218H676" stroke="#b99b5c" stroke-width="2.1"/>'+handle;
-   nam(380,187,56,'#eee8d9','Arial Black,Impact,sans-serif','font-style="italic" font-weight="900" letter-spacing="-1"');
+   s+=nam(380,187,56,'#eee8d9','Arial Black,Impact,sans-serif','font-style="italic" font-weight="900" letter-spacing="-1"');
    s+='<rect x="205" y="238" width="370" height="50" rx="3" fill="#c9a35f" stroke="#edcf8d" stroke-width="2"/>';
    s+='<rect x="213" y="244" width="354" height="38" rx="2" fill="#d7b878" stroke="#8c6838" stroke-width="1"/>';
    s+=jack(232,261,5)+jack(255,261,5)+led(278,261,'#b83b32');
