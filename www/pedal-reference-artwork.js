@@ -91,7 +91,7 @@
         s+=T(210,153,'ROSS',35,'#34313b',400,'middle','font-family="Georgia,serif" letter-spacing="-2"');
         s+=foot(210,188,9)+T(210,226,'COMPRESSOR',12,'#30323b',800,'middle','letter-spacing="1.2"');
         s+=jack(141,102,3.5)+jack(279,102,3.5);
-        return wrap(s,'Ross Compressor reference · lavender enclosure, two black Level/Sustain knobs, centered ROSS wordmark and metal footswitch; without a rubber BOSS-style pad');
+        return wrap(s,'Ross Compressor reference · lavender enclosure, two black Level/Sustain knobs, centered ROSS wordmark and metal footswitch; without a generic lower rubber pad');
       }
       case 'CMP|K Comp':{
         let s=vcase('#b9bab7','#69716e')+R(151,10,118,226,'#d0d1ce','#eff0ea',1,5);
