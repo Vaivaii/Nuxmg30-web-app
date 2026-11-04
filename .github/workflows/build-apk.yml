@@ -18,6 +18,7 @@ on:
       - feature/studio-daw-editing-arrangement
       - feature/amp-knob-label-correction
       - feature/amp-artwork-apk-validation
+      - feature/pedal-reference-svg-artwork
     paths:
       - 'www/**'
       - 'tests/**'
