@@ -2565,3 +2565,12 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
 #knobs .switch-position-button:disabled{opacity:.8;cursor:not-allowed;filter:saturate(.55)}
 #knobs .switch-raw-value,#knobs .switch-safe-note{display:block;margin-top:5px;color:#9aa8a8;font-size:8px;line-height:1.25;text-align:center}
 #knobs .switch-safe-note{color:#d8bd87}
+
+/* Two-position effect switches reuse the discrete switch button treatment. */
+#knobs .knob-two-way{display:flex;flex-direction:column;min-width:0;justify-content:flex-start}
+#knobs .knob-two-way>label{min-height:22px;line-height:1.3;margin-top:7px}
+#knobs .two-way-switch{grid-template-rows:repeat(2,minmax(36px,auto))}
+@media(max-width:720px){
+ #knobs .two-way-switch{gap:3px}
+ #knobs .two-way-switch .switch-position-button{padding:5px 4px;min-height:34px}
+}
