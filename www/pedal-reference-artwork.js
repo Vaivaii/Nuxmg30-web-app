@@ -44,12 +44,19 @@
     if(o.sideJacks!==false){s+=jack(141,62,3.5)+jack(279,62,3.5);}
     return s;
   };
-  const wrap=(s,label)=>'<svg class="gear-svg pedal-reference-svg" viewBox="0 0 420 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(label)+'"><defs>'+
-    '<linearGradient id="pa-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f5ef"/><stop offset=".42" stop-color="#9ca5a2"/><stop offset=".68" stop-color="#e3e6df"/><stop offset="1" stop-color="#525c5c"/></linearGradient>'+
-    '<linearGradient id="pa-silver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ece7"/><stop offset=".5" stop-color="#bac2bd"/><stop offset="1" stop-color="#7b8581"/></linearGradient>'+
-    '<linearGradient id="pa-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ebd69b"/><stop offset=".48" stop-color="#bf964d"/><stop offset="1" stop-color="#80562e"/></linearGradient>'+
-    '<pattern id="pa-wood" width="24" height="90" patternUnits="userSpaceOnUse"><rect width="24" height="90" fill="#94653e"/><path d="M3 0q-5 24 1 45t-1 45M12 0q6 22 0 44t3 46M21 0q-4 24 1 48t-1 42" stroke="#d9ae72" stroke-opacity=".42" stroke-width="1.5" fill="none"/></pattern>'+
+  let svgSerial=0;
+  const wrap=(s,label)=>{
+    const id='pedal-art-'+(++svgSerial);
+    s=s.replaceAll('url(#pa-metal)','url(#'+id+'-metal)')
+       .replaceAll('url(#pa-wood)','url(#'+id+'-wood)')
+       .replaceAll('url(#pa-gold)','url(#'+id+'-gold)');
+    return '<svg class="gear-svg pedal-reference-svg" viewBox="0 0 420 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(label)+'"><defs>'+
+    '<linearGradient id="'+id+'-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f5ef"/><stop offset=".42" stop-color="#9ca5a2"/><stop offset=".68" stop-color="#e3e6df"/><stop offset="1" stop-color="#525c5c"/></linearGradient>'+
+    '<linearGradient id="'+id+'-silver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ece7"/><stop offset=".5" stop-color="#bac2bd"/><stop offset="1" stop-color="#7b8581"/></linearGradient>'+
+    '<linearGradient id="'+id+'-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ebd69b"/><stop offset=".48" stop-color="#bf964d"/><stop offset="1" stop-color="#80562e"/></linearGradient>'+
+    '<pattern id="'+id+'-wood" width="24" height="90" patternUnits="userSpaceOnUse"><rect width="24" height="90" fill="#94653e"/><path d="M3 0q-5 24 1 45t-1 45M12 0q6 22 0 44t3 46M21 0q-4 24 1 48t-1 42" stroke="#d9ae72" stroke-opacity=".42" stroke-width="1.5" fill="none"/></pattern>'+
     '</defs>'+s+'</svg>';
+  };
   const standard=(model,o)=>wrap(boss(o),model+' · locally drawn vector reference');
   const key=blockId=>blockId;
   function draw(model,block){
