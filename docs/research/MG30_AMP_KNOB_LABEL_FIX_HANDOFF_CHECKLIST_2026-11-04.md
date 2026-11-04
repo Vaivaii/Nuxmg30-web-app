@@ -558,3 +558,23 @@ Detailed catalogue records, image names, element types, QuickTone stored midiCC 
 **Implementation remains prohibited at this stage.** Next: inspect each candidate's panel artwork, resolve function labels, and capture physical QuickTone output/readback on original MG-30 Gen 2 before proposing any replacement of rotary knobs. Do not alter application source or any MIDI mappings now. Preserve NAM, IR User/Collection, preset transfer, and the confirmed AMP switch mapping TOP=0 / MIDDLE=1 / BOTTOM=2.
 
 Inventory documentation commit: 3d156b160f32c35a60fda2bcc2d7ce176a49ac14
+
+## User-confirmed effect switch inventory — supersedes static candidates
+
+The user confirms exactly four non-AMP pedal models with switch controls:
+
+| Family | Pedal | Positions / functions |
+|---|---|---|
+| OD | KATANA | ON=Boost; OFF=Boost off |
+| Modulation | S.C.F | TOP=Chorus; MIDDLE=Mono; BOTTOM=Flange |
+| Modulation | UNIVIBE | BOTTOM=Vibrato; TOP=Chorus |
+| Modulation | HARMONIST | BOTTOM=Major; TOP=Minor |
+
+This hardware/UI confirmation supersedes the preliminary static executable scan. Exclude TOUCH WAH, PARA EQ, OCTAVE-SHIFT, and other false-positive toggle-looking assets from the switch conversion scope. Compressors, delays, reverbs, and other modulation effects have no additional confirmed switch controls according to the user's inventory.
+
+The displayed functions and physical positions are confirmed by the user. Exact hardware CC addresses/raw values for these four effect controls have not yet been captured; they must be measured separately in QuickTone and verified by physical pedal readback. Embedded QuickTone midiCC metadata alone is not sufficient.
+
+Detailed corrected inventory: docs/research/MG30_QUICKTONE_EFFECT_SWITCH_INVENTORY_2026-11-04.md
+Inventory update commit: b630a7f2dec40354ee4c5532a61406fbdc65713f
+
+Implementation remains paused. Do not change any knob, switch UI, CC mapping, NAM, IR, or preset behavior until capture/readback analysis is complete and the user approves.
