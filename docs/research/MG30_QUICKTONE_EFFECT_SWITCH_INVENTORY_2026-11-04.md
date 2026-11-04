@@ -38,24 +38,39 @@ Reference manuals:
 
 The manual confirms the meaning of P.M.; the TOP/MIDDLE/BOTTOM orientation above is the user's MG-30/QuickTone observation.
 
-## MIDI mapping status — not yet captured
+## MIDI mapping status — provisional implementation applied
 
-User expects the MIDI state mapping to follow the same pattern as the already validated three-position AMP switches. Record this only as a **working hypothesis** for S.C.F:
-- TOP / Chorus: raw 0
-- MIDDLE / P.M.: raw 1
-- BOTTOM / Flanger: raw 2
+At the user's instruction, the first implementation now uses the same discrete value convention as the already validated AMP switches. These effect values are **provisional application mappings**, not yet independently proven by QuickTone capture. If a hardware position/readback does not match, capture the exact interaction and correct only that control.
 
-This is not yet a measured S.C.F hardware result. Do not enable or write this mapping based only on the AMP analogy. Confirm with a dedicated QuickTone USB-MIDI capture and MG-30 readback.
+| Pedal | Existing parameter | Existing app CC | Provisional position → raw value |
+|---|---|---:|---|
+| KATANA | `boost` | 18 | OFF=0, ON/Boost=1 |
+| S.C.F | `chfl` | 50 | TOP/Chorus=0, MIDDLE/P.M.=1, BOTTOM/Flanger=2 |
+| UNIVIBE | `chvib` | 51 | TOP/Chorus=0, BOTTOM/Vibrato=1 |
+| HARMONIST | `minor` | 49 | TOP/Minor=0, BOTTOM/Major=1 |
+| TOUCH WAH | `updown` | 21 | UP=0, DOWN=1 |
+| OCTAVE-SHIFT | `updown` | 12 | UP=0, DOWN=1 |
 
-For all six pedals, exact hardware CC addresses and raw MIDI values remain pending capture/readback:
-1. KATANA: OFF and ON/Boost.
-2. S.C.F: TOP/Chorus, MIDDLE/P.M., BOTTOM/Flanger.
-3. UNIVIBE: BOTTOM/Vibrato, TOP/Chorus.
-4. HARMONIST: BOTTOM/Major, TOP/Minor.
-5. TOUCH WAH: UP and DOWN; function labels still unknown.
-6. OCTAVE-SHIFT: UP and DOWN; function labels still unknown.
+CC numbers are resolved from the app's existing parameter slot maps, not from a new CC allocation:
+- WAH: `[11,12,13]`; Octave-Shift's `updown` is parameter index 1 → CC12.
+- EFX: `[18,19,20,21,22,23]`; Katana's `boost` is index 0 → CC18, Touch Wah's `updown` is index 3 → CC21.
+- MOD: `[48,49,50,51,52,53]`; Harmonist's `minor` is index 1 → CC49, S.C.F's `chfl` is index 2 → CC50, U-Vibe's `chvib` is index 3 → CC51.
 
-Capture each position separately in QuickTone on the original MG-30 Gen 2. Establish the relationship between the displayed control, parameter index, actual CC, raw value, and physical position; verify pedal readback before proposing implementation.
+No CC table was renumbered and no new CC was allocated. The existing parameter slots are converted from rotary presentation to discrete switch presentation for the six confirmed models only. The U-Vibe model override now retains its existing `chvib` parameter so its user-confirmed Chorus/Vibrato switch can be rendered at its existing parameter index.
+
+### Implemented read/write behavior
+
+- Discrete controls preserve raw enum values directly; they do not pass through generic rotary 0–100 scaling.
+- The same discrete value is used for outgoing CC and incoming CC readback.
+- Preset-buffer readback preserves only recognized switch values; unknown values are not coerced into a different state.
+- First render shows a visual default only; opening the editor does **not** automatically transmit a MIDI value.
+- The existing AMP DGLASS/STARLIFT switch mapping remains TOP=0 / MIDDLE=1 / BOTTOM=2.
+- Controls outside the six confirmed models remain on their existing parameter rendering and MIDI paths.
+
+### Hardware verification still pending
+
+No new USB-MIDI capture or physical MG-30 test has yet been performed for these six effect switches. Test one switch at a time on the original MG-30 Gen 2 firmware 6.0.x. If any raw state or position differs, capture QuickTone output and pedal readback, then correct only that specific mapping. Do not assume that a successful write without matching readback proves the mapping.
+
 
 ## QuickTone static-catalogue context
 
