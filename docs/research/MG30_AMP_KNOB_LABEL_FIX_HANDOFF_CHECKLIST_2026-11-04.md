@@ -578,3 +578,13 @@ Detailed corrected inventory: docs/research/MG30_QUICKTONE_EFFECT_SWITCH_INVENTO
 Inventory update commit: b630a7f2dec40354ee4c5532a61406fbdc65713f
 
 Implementation remains paused. Do not change any knob, switch UI, CC mapping, NAM, IR, or preset behavior until capture/readback analysis is complete and the user approves.
+
+## User correction: two additional effect switches confirmed
+
+The user clarified that **TOUCH WAH** and **OCTAVE-SHIFT** also have physical UP/DOWN switches. They are added to the confirmed effect inventory. Their exact function labels per position, hardware CCs, and raw MIDI values remain to be determined by user confirmation and QuickTone capture/readback.
+
+Current confirmed effect-switch list: KATANA (ON/OFF Boost), S.C.F (TOP Chorus / MIDDLE Mono / BOTTOM Flange), UNIVIBE (BOTTOM Vibrato / TOP Chorus), HARMONIST (BOTTOM Major / TOP Minor), TOUCH WAH (UP/DOWN), OCTAVE-SHIFT (UP/DOWN).
+
+Do not treat Touch Wah or Octave-Shift as false positives anymore. Detailed inventory updated in docs/research/MG30_QUICKTONE_EFFECT_SWITCH_INVENTORY_2026-11-04.md; update commit fcdfe5dc6ecb1a16fb1bff92f498d081a54719e8.
+
+Analysis-only boundary remains: no UI, rotary control, MIDI mapping, NAM, IR, or preset code changes until all positions/functions and QuickTone hardware values have been verified.
