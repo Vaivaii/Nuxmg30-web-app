@@ -407,3 +407,26 @@ Untuk tiap perpindahan, catat pesan CC keluar dan readback masuk (nomor CC dan r
 
 ### Perubahan branch saat permintaan ini
 Percobaan sementara mengembalikan nilai 0/50/100 dan handler write dibatalkan sebelum build APK dibuat. Source dan regression test dikembalikan ke mode aman/read-only. Commit pemulihan source: 371aed29d4a3dd6289a61ba86ad1ddb28de8251f; test: 528ece297380b2fa07fbd91a7f3c3fccc24373bd. Tidak ada APK baru dari percobaan nilai MIDI tersebut.
+
+
+## Analisis capture MIDI switch — starlift.pcapng dan dglass.pcapng (4 Nov 2026)
+
+### Hasil byte-level USBPcap
+- Kedua file memakai USBPcap linktype 249. Pesan MIDI berada pada paket USB-MIDI event di endpoint OUT; byte event `0B B0 <CC> <value>`.
+- `starlift.pcapng`: tiga pesan CC28 dengan value berurutan `01`, `02`, `00`.
+- `dglass.pcapng`: CC26 berurutan `01`, `02`, `00`; kemudian CC29 berurutan `01`, `02`, `00`.
+- Tidak ada payload parameter lain pada paket perubahan switch yang ditemukan. Paket-paket tersebut merupakan pesan Control Change MIDI channel 1 (`B0`).
+
+### Mapping UI yang diterapkan
+Urutan pesan pada capture ditafsirkan mengikuti urutan langkah capture yang diminta pengguna, TOP → MIDDLE → BOTTOM:
+- DGLASS LO MIDS FREQ: TOP 500 Hz = raw 1; MIDDLE 1 kHz = raw 2; BOTTOM 250 Hz = raw 0. CC26 (AMP parameter index 2).
+- DGLASS HI MIDS FREQ: TOP 1.5 kHz = raw 1; MIDDLE 3 kHz = raw 2; BOTTOM 750 Hz = raw 0. CC29 (AMP parameter index 5).
+- STARLIFT CONTOUR: TOP VINTAGE = raw 1; MIDDLE OFF = raw 2; BOTTOM MODERN = raw 0. CC28 (AMP parameter index 4).
+
+### Source update
+- `www/index.html` now encodes the captured enum values explicitly per choice and sends the exact raw value, bypassing generic 0..100 scaling only for these three-way switches.
+- UI buttons are interactive and update active state; incoming CC readback updates the selected position.
+- Existing CC map and parameter indices remain unchanged. Other rotary controls, block/model mappings, NAM, IR, and preset paths are untouched.
+- Mapping TOP/MIDDLE/BOTTOM assumes the capture interactions were performed in the requested order. The captures prove QuickTone's outbound CC values, not pedal readback acceptance. First hardware test should verify one position at a time; if the MG-30 display switch disappears or readback differs, stop and revert switch writes.
+- Source commit: e8ddd7aebf5ff8f36e315da8c03dd7fe363946fa. Regression-test update: 6d5f9649999f0a55f06780fd802c2abe740efce7.
+- Build #462 was running for the source commit when this note was written; the test-update commit may trigger a subsequent workflow. Do not declare build success or provide APK until the run for the final test commit completes.
