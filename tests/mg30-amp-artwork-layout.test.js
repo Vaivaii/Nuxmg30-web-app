@@ -112,7 +112,7 @@ test('Hiwatt and Diezel red indicators and switches remain inside the head facep
 test('Plexi 100 follows the newly uploaded Marshall 1959 Super Lead head reference', () => {
   const plexi = render('Plexi 100', 'Marshall 1959 Super Lead');
   assert.ok(plexi.includes('<rect x="205" y="238" width="370" height="50"'));
-  assert.ok(plexi.includes('font-family="Arial Black, Impact, sans-serif"'));
+  assert.ok(plexi.includes('font-family="Brush Script MT, Segoe Script, cursive"'));
   assert.ok(plexi.includes('>Marshall</text>'));
   assert.ok(plexi.includes('#c9a35f'));
 });
@@ -131,7 +131,7 @@ test('the ten NAM slots each use the requested amp-family chassis with NAM-only 
     assert.doesNotMatch(svg, /NaN|undefined/);
   }
   assert.ok(slots[0].includes('#08776e'), 'slot 1 should use the Tone King teal reference');
-  assert.ok(slots[3].includes('namRectDiamond'), 'slot 4 should use the Mesa-style front panel');
+  assert.ok(slots[3].includes('<rect x="532" y="127" width="133"'), 'slot 4 should use the Mesa JP graphic EQ bay');
   assert.ok(slots[9].includes('#c9a35f'), 'slot 10 should use the Plexi gold control fascia');
 });
 

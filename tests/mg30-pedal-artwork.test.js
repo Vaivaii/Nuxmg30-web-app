@@ -182,7 +182,7 @@ test('newly supplied CE-2, Damp, Phi Delay, Detune, Volume/Wah and Octave Shift 
 test('model names route to the matching new pedal artwork without changing the MG-30 model map', () => {
   for (const [block, model, label] of [
     ['MOD','CE-2','BOSS CE-2 Chorus reference'],
-    ['RVB','Damp','Neunaber Wet reverb reference'],
+    ['RVB','Damp','Damp reverb reference'],
     ['DLY','Phi Delay','NUX Phi Delay reference layout'],
     ['MOD','Detune','DigiTech Luxe anti-chorus reference'],
     ['VOL','Volume','Expression wah/volume pedal reference'],
