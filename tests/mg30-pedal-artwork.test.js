@@ -90,6 +90,43 @@ test('repeated instances use isolated SVG gradient and pattern IDs', () => {
   assert.ok(first.includes('url(#' + id1 + ')') || first.includes('url(#pedal-art-1-metal)') || first.includes('1176'));
 });
 
+
+test('Ross Compressor and Keeley Red Dirt use their archived non-BOSS pedal layouts', () => {
+  const ross = getSvg('CMP', 'Rose Comp');
+  assert.match(ross, /Ross Compressor reference/);
+  assert.match(ross, />ROSS<\/text>/);
+  assert.match(ross, />LEVEL<\/text>/);
+  assert.match(ross, />SUSTAIN<\/text>/);
+  assert.doesNotMatch(ross, /BOSS/);
+
+  const redDirt = getSvg('EFX', 'Red Dirt');
+  assert.match(redDirt, /Keeley Red Dirt Pro GE808 reference/);
+  assert.match(redDirt, />RED DIRT<\/text>/);
+  assert.match(redDirt, /Overdrive Pro GE808/);
+  assert.match(redDirt, />OVERDRIVE<\/text>/);
+  assert.match(redDirt, />LEVEL<\/text>/);
+  assert.match(redDirt, />TONE<\/text>/);
+  assert.doesNotMatch(redDirt, /BOSS/);
+});
+
+test('1176, Big Muff and OCD lettering is placed clear of their control areas', () => {
+  const studioComp = getSvg('CMP', 'Studio Comp');
+  assert.match(studioComp, /x="210" y="185"[^>]*>1176<\/text>/);
+  assert.doesNotMatch(studioComp, /x="210" y="36"[^>]*>1176<\/text>/);
+
+  const bigMuff = getSvg('EFX', 'Muff Fuzz');
+  assert.match(bigMuff, /x="210" y="120"[^>]*>BIG MUFF<\/text>/);
+  assert.match(bigMuff, /cx="157" cy="57"/);
+  assert.match(bigMuff, /cx="210" cy="57"/);
+  assert.match(bigMuff, /cx="263" cy="57"/);
+  assert.doesNotMatch(bigMuff, /cx="174" cy="109"/);
+
+  const ocd = getSvg('EFX', 'Full-OD HP · IMAGE');
+  assert.match(ocd, /cx="210" cy="68" r="3.5"/);
+  assert.match(ocd, /x="210" y="169"[^>]*>OCD<\/text>/);
+  assert.doesNotMatch(ocd, /cx="210" cy="141"/);
+});
+
 test('the original in-app gear renderer loads and calls the local pedal SVG module', () => {
   assert.ok(html.includes('<script type="module" src="./pedal-reference-artwork.js"></script>'));
   assert.ok(html.includes('window.renderPedalReferenceSvg?.(blockId,modelName)'));

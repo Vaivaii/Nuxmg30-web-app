@@ -79,8 +79,20 @@
         return wrap(s,'BOSS Noise Gate NF-1 reference · metal silver case, twin oversized Sens/Decay knobs, check LED, I/O arrows and embossed Boss rubber pad');
       }
        /* COMPRESSORS */
-      case 'CMP|Rose Comp':
-        return standard(model,{body:'#aeb3c7',edge:'#666e7e',top:'#c6cada',topStroke:'#9298a6',knobs:[[179,56,12,'#171b21',-35],[241,56,12,'#171b21',-35]],labels:[[179,81,'LEVEL',5],[241,81,'SUSTAIN',5]],midText:'ROSS',midY:118,midSize:24,midInk:'#242338',midWeight:400,extra:T(210,146,'COMPRESSOR',7,'#282b39',800)+led(210,24,'#c94748',2.5),padColor:'#20232d',logoColor:'#171a20',logoY:216});
+      case 'CMP|Rose Comp':{
+        // Ross Compressor: compact lavender enclosure, two large controls, ROSS wordmark and one metal footswitch.
+        let s=R(143,3,134,244,'#8f909f','#535663',2.2,10)+R(148,8,124,234,'#b9b9c9','#e0e1e8',1,8);
+        s+=R(153,13,114,224,'none','#f1f1f4',.55,6,'opacity=".35"');
+        s+=R(169,1,10,9,'#aeb3b6','#60666b',1,2)+R(241,1,10,9,'#aeb3b6','#60666b',1,2);
+        s+=T(177,27,'OUT',6,'#292b35',700)+T(243,27,'IN',6,'#292b35',700);
+        s+=led(210,36,'#c94748',2.4);
+        s+=knob(177,67,18,'#15191d',-38)+knob(243,67,18,'#15191d',-38);
+        s+=T(177,101,'LEVEL',7,'#292b35',700)+T(243,101,'SUSTAIN',7,'#292b35',700);
+        s+=T(210,153,'ROSS',35,'#34313b',400,'middle','font-family="Georgia,serif" letter-spacing="-2"');
+        s+=foot(210,188,9)+T(210,226,'COMPRESSOR',12,'#30323b',800,'middle','letter-spacing="1.2"');
+        s+=jack(141,102,3.5)+jack(279,102,3.5);
+        return wrap(s,'Ross Compressor reference · lavender enclosure, two black Level/Sustain knobs, centered ROSS wordmark and metal footswitch; no BOSS pad');
+      }
       case 'CMP|K Comp':{
         let s=vcase('#b9bab7','#69716e')+R(151,10,118,226,'#d0d1ce','#eff0ea',1,5);
         s+=T(177,25,'sustain',6,'#323535',500,'middle','font-style="italic"')+T(243,25,'level',6,'#323535',500,'middle','font-style="italic"');
@@ -93,15 +105,18 @@
         return wrap(s,'Keeley four-knob compressor reference · silver enclosure with 2 by 2 control layout');
       }
       case 'CMP|Studio Comp':{
-        let s=vcase('#aeb3b1','#59615f')+R(151,10,118,225,'#c6cbc7','#eef0eb',1,5)+R(159,22,102,43,'#1d3038','#67777a',1,3);
-        s+=T(210,36,'1176',23,'#d7e6e5',900,'middle','letter-spacing="2"')+T(210,52,'FET COMPRESSOR',5.5,'#b2c9c8',700);
-        s+=knob(174,88,12,'#202629',-38)+knob(246,88,12,'#202629',-38);
-        s+=T(174,108,'INPUT',5,'#263133',700)+T(246,108,'OUTPUT',5,'#263133',700);
-        s+=knob(174,136,11,'#202629',-38)+knob(246,136,11,'#202629',-38);
-        s+=T(174,154,'ATTACK',5,'#263133',700)+T(246,154,'RELEASE',5,'#263133',700);
-        s+=led(210,170,'#8bcf83',3)+foot(210,205,10)+T(210,231,'UAFX',9,'#34403f',900,'middle','letter-spacing="1.5"');
+        // UAFX 1176: the model number belongs in the lower blue nameplate, not above the controls.
+        let s=vcase('#aeb3b1','#59615f')+R(151,10,118,225,'#c6cbc7','#eef0eb',1,5);
+        s+=led(210,42,'#8bcf83',3.2);
+        s+=knob(177,66,14,'#202629',-38)+knob(243,66,14,'#202629',-38);
+        s+=T(177,91,'INPUT',6,'#263133',700)+T(243,91,'OUTPUT',6,'#263133',700);
+        s+=metalSwitch(210,103,4.2)+T(210,117,'SINGLE  DUAL  SUSTAIN',5.2,'#263133',700);
+        s+=knob(165,137,12,'#202629',-38)+knob(210,137,12,'#202629',-38)+knob(255,137,12,'#202629',-38);
+        s+=T(165,157,'ATTACK',5,'#263133',700)+T(210,157,'RELEASE',5,'#263133',700)+T(255,157,'RATIO',5,'#263133',700);
+        s+=R(158,164,104,27,'#2b526d','#6c8998',1,1)+T(210,185,'1176',22,'#d7e6e5',900,'middle','letter-spacing="2"');
+        s+=foot(210,211,9)+T(210,235,'UAFX STUDIO COMPRESSOR',6.5,'#34403f',900,'middle','letter-spacing=".8"');
         s+=jack(143,55,3.5)+jack(277,55,3.5);
-        return wrap(s,'Universal Audio UAFX 1176 compressor reference · silver FET pedal with four controls');
+        return wrap(s,'Universal Audio UAFX 1176 compressor reference · silver five-control FET pedal with centered 1176 lettering in the lower blue nameplate');
       }
       /* EQUALIZERS */
       case 'EQ|6-Band EQ':{
@@ -389,8 +404,22 @@
         s+=foot(210,208,11)+jack(143,51,3.5)+jack(277,51,3.5);
         return wrap(s,'Pro Co RAT distortion reference · matte black box, three large white-lined controls and RAT badge');
       }
-      case 'EFX|Red Dirt':
-        return standard(model,{body:'#7d292e',edge:'#4f2024',top:'#9e353b',topH:96,check:false,topInk:'#f6e5e1',knobs:[[177,53,9,'#eeeeea',-35,'OVDRIVE'],[243,53,9,'#eeeeea',-35,'LEVEL'],[210,85,8,'#eeeeea',-35,'TONE']],midText:'RED DIRT',midY:139,midSize:16,midInk:'#f4e4df',midWeight:900,name:'OVERDRIVE',nameY:153,nameSize:6,nameColor:'#f2e0da',padColor:'#25252a',logoColor:'#111318',logoY:215,extra:T(210,25,'KEELEY',6,'#f6e7df',800)});
+      case 'EFX|Red Dirt':{
+        // Keeley Red Dirt Pro GE808: glitter-red portrait chassis, triangular cream controls and its own lower label/footswitch layout.
+        let s=R(143,3,134,244,'#5e0d19','#32101a',2.4,13)+R(148,7,124,236,'#9b1022','#e65d61',1.2,11);
+        s+=R(153,12,114,226,'none','#f5dfcf',1.6,9);
+        for(let i=0;i<54;i++){const x=157+((i*37)%106),y=17+((i*53)%214);s+=C(x,y,.55,i%3===0?'#ffd0b7':'#e95a60','none',0,'opacity=".42"');}
+        s+=led(210,35,'#2998df',3.6);
+        s+=P('M239 17l16 -5 16 5v13l-16 11 -16 -11z','#fff0dc',1.2,'#982235')+T(255,27,'GERMANIUM',4.6,'#fff0dc',800)+T(255,34,'EQUIPPED',3.7,'#fff0dc',700);
+        s+=knob(210,64,16,'#f0e7d5',-38)+knob(177,99,16,'#f0e7d5',-38)+knob(243,99,16,'#f0e7d5',-38);
+        s+=T(177,76,'OVERDRIVE',6.5,'#fff0df',800)+T(243,76,'LEVEL',6.5,'#fff0df',800)+T(210,126,'TONE',7,'#fff0df',800);
+        s+=P('M157 146V231Q157 239 165 239H255Q263 239 263 231V146','#fff0df',1.7);
+        s+=T(210,165,'RED DIRT',23,'#fff0df',900,'middle','letter-spacing=".5"')+T(210,179,'Overdrive Pro GE808',7.3,'#fff0df',700);
+        s+=T(151,181,'OUTPUT',5.4,'#fff0df',800,'middle','transform="rotate(-90 151 181)"')+T(269,181,'INPUT',5.4,'#fff0df',800,'middle','transform="rotate(-90 269 181)"');
+        s+=foot(210,207,11)+S(210,237,'keeley',15,'#fff0df');
+        s+=jack(141,121,3.7)+jack(279,121,3.7);
+        return wrap(s,'Keeley Red Dirt Pro GE808 reference · glitter-red case, top-centre Tone plus left/right Overdrive and Level knobs, blue LED, large RED DIRT lettering and one chrome footswitch; no BOSS pad');
+      }
       case 'EFX|Crunch':{
         let s=vcase('#9e272b','#591e22')+R(151,10,118,226,'#bd3436','#742328',1,5);
         s+=knob(177,56,15,'#eee6d3',-35)+knob(243,56,15,'#eee6d3',-35)+knob(210,95,15,'#eee6d3',-35);
@@ -400,12 +429,19 @@
         return wrap(s,'MI Audio Crunch Box reference · red pedal with three white knobs and white lettering');
       }
       case 'EFX|Muff Fuzz':{
-        let s=vcase('#cfd0c9','#71766f')+R(151,10,118,226,'#e0e1d8','#a4a79f',1,5);
-        s+=T(210,30,'ELECTRO-HARMONIX',6,'#202625',900)+T(210,70,'BIG MUFF',22,'#bd333a',900,'middle','font-family="Georgia,serif"')+T(210,84,'π',10,'#bd333a',900);
-        s+=knob(174,48,8,'#f2f1e8',-35)+knob(246,48,8,'#f2f1e8',-35)+knob(174,109,8,'#f2f1e8',-35)+knob(210,109,8,'#f2f1e8',-35)+knob(246,109,8,'#f2f1e8',-35);
-        s+=T(174,63,'VOL',5,'#202625')+T(246,63,'TONE',5,'#202625')+T(174,124,'SUSTAIN',5,'#202625')+T(210,124,'TONE',5,'#202625')+T(246,124,'VOL',5,'#202625');
-        s+=R(158,144,104,37,'#15191b','#383e3e',1,2)+T(210,168,'ELECTRO-HARMONIX',6,'#e7e7df',800)+foot(210,212,10);
-        return wrap(s,'Electro-Harmonix Big Muff Pi reference · ivory enclosure and red Big Muff lettering');
+        // Electro-Harmonix Big Muff Pi: wider enclosure, one row of three controls and a large lower black panel.
+        let s=R(116,5,188,240,'#c8c7bd','#777970',2.2,5)+R(122,10,176,230,'#e6e4d9','#a9a99f',1,3);
+        s+=R(130,17,160,68,'#ecebe2','#262a27',1.2,4);
+        s+=T(145,30,'AMPLIFIER',5.7,'#242725',800,'start')+T(274,30,'INPUT',5.7,'#242725',800,'end');
+        s+=knob(157,57,12,'#171b1d',-38)+knob(210,57,12,'#171b1d',-38)+knob(263,57,12,'#171b1d',-38);
+        s+=T(157,81,'VOLUME',6.1,'#242725',800)+T(210,81,'TONE',6.1,'#242725',800)+T(263,81,'SUSTAIN',6.1,'#242725',800);
+        s+=led(188,82,'#a52b2b',2.5);
+        s+=T(210,120,'BIG MUFF',28,'#b92f31',900,'middle','font-family="Georgia,serif" letter-spacing="-1"');
+        s+=P('M133 128H287','#ba3031',2.2)+P('M210 128C210 128 184 139 185 145C187 153 200 159 210 164C220 159 233 153 235 145C236 139 210 128 210 128Z','#ba3031',1,'#ba3031');
+        s+=R(132,149,156,69,'#111517','#343a39',1.2,4)+foot(210,185,9);
+        s+=screw(137,99)+screw(283,99)+screw(137,207)+screw(283,207);
+        s+=T(210,235,'electro-harmonix',11,'#272724',500,'middle','font-family="Georgia,serif" font-style="italic"');
+        return wrap(s,'Electro-Harmonix Big Muff Pi reference · wide ivory enclosure, three upper Volume/Tone/Sustain controls, red BIG MUFF lettering and broad black lower panel');
       }
       case 'EFX|Katana':{
         let s=vcase('#d5d8d8','#8b9292')+R(151,10,118,226,'#f0f1ed','#d0d3ce',1,5);
@@ -443,12 +479,16 @@
         return wrap(s,'Musitronics Mu-Tron III envelope filter reference · wide green enclosure with five controls');
       }
       case 'EFX|Full-OD HP · IMAGE':{
+        // Fulltone OCD reference: LED sits between the upper controls; OCD wordmark stays below the Tone knob.
         let s=vcase('#ddd7c9','#8e8777')+R(151,10,118,226,'#ece8dd','#b9ae9a',1,5);
-        s+=knob(177,53,13,'#14191a',-35)+knob(243,53,13,'#14191a',-35)+knob(210,97,13,'#14191a',-35);
-        s+=T(177,75,'VOLUME',5,'#2e3432')+T(243,75,'DRIVE',5,'#2e3432')+T(210,119,'TONE',5,'#2e3432');
-        s+=led(210,141,'#3b8fd5',3.3)+T(210,165,'OCD',34,'#151a1b',900,'middle','font-family="Arial Black,Arial,sans-serif" letter-spacing="-2"')+T(210,180,'FULLTONE',6,'#1b2120',900,'middle','letter-spacing="1.5"');
-        s+=foot(210,214,10)+jack(143,58,3.5)+jack(277,58,3.5);
-        return wrap(s,'Fulltone OCD-style overdrive reference used for NUX Full-OD HP image model · cream case and three black controls');
+        s+=T(177,28,'VOLUME',6,'#2e3432',600)+T(243,28,'DRIVE',6,'#2e3432',600);
+        s+=knob(177,57,15,'#14191a',-35)+knob(243,57,15,'#14191a',-35);
+        s+=T(210,27,'HP / LP',4.8,'#2e3432',700)+metalSwitch(210,38,3.5)+led(210,68,'#3b9cdb',3.5);
+        s+=knob(210,113,15,'#14191a',-35)+T(233,118,'TONE',6,'#2e3432',700,'start');
+        s+=T(210,169,'OCD',37,'#151a1b',900,'middle','font-family="Arial Black,Arial,sans-serif" letter-spacing="-2"');
+        s+=foot(210,207,10)+S(210,238,'Fulltone',13,'#1b2120')+T(210,246,'BUILT IN THE USA',4,'#343a37',700);
+        s+=jack(143,58,3.5)+jack(277,58,3.5);
+        return wrap(s,'Fulltone OCD-style overdrive reference used for NUX Full-OD HP image model · cream case with two upper Volume/Drive knobs, central tone control, blue LED above the OCD wordmark and chrome footswitch');
       }
       case 'EFX|Horseman OD · IMAGE':{
         let s=R(84,29,252,196,'url(#pa-gold)','#8b632d',2.2,9)+R(91,36,238,182,'#dba94f','#f0d68e',.8,5);
