@@ -1981,7 +1981,7 @@ function renderAmpHeadArtwork(m){
   const tri=(x,y)=>'<path d="M'+(x-10)+' '+(y+13)+'L'+(x-7)+' '+(y-7)+'Q'+x+' '+(y-16)+' '+(x+7)+' '+(y-7)+'L'+(x+10)+' '+(y+13)+'Z" fill="#101316" stroke="#373c3b" stroke-width="1.2"/><path d="M'+x+' '+(y-8)+'v8" stroke="#858a83" stroke-width="1.2"/>';
   [317,368,419,470,521,564].forEach((x,i)=>{s+=tri(x,150);});
   s+=label(317,181,'MASTER',5.3,'#f0e2ec',750,0)+label(368,181,'BASS',5.3,'#f0e2ec',750,0)+label(419,181,'MID',5.3,'#f0e2ec',750,0)+label(470,181,'TREBLE',5.3,'#f0e2ec',750,0)+label(521,181,'DRIVE',5.3,'#f0e2ec',750,0)+label(564,181,'PRESENCE',5.3,'#f0e2ec',750,0);
-  s+=jack(615,142,5+jack(615,174,5+label(615,133,'DEPTH',5.2,'#f0e2ec',700,0)+label(615,187,'FOOTSWITCH',4.7,'#f0e2ec',700,0);
+  s+=jack(615,142,5)+jack(615,174,5)+label(615,133,'DEPTH',5.2,'#f0e2ec',700,0)+label(615,187,'FOOTSWITCH',4.7,'#f0e2ec',700,0);
   s+='<path d="M83 225L220 269Q241 276 264 276H340M677 225L540 269Q519 276 496 276H420" fill="none" stroke="#d6d6cb" stroke-width="3"/>';
   s+='<ellipse cx="380" cy="274" rx="112" ry="38" fill="#7f3d7b" stroke="#d2acd0" stroke-width="2.5"/><ellipse cx="380" cy="274" rx="103" ry="30" fill="none" stroke="#e9cfe5" stroke-opacity=".7" stroke-width="1"/>';
   s+=word(380,289,'BUDDA',43,'Brush Script MT,Segoe Script,cursive','#f0d8eb','middle','font-style="italic" font-weight="bold"');
