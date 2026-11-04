@@ -168,6 +168,7 @@ test('effect switch CCs resolve through the existing parameter index maps withou
   assert.match(html, /'Touch Wah','mode, decay, sens, updown, level'/);
   assert.match(html, /'SCF','speed, width, chfl, intensity, subd'/);
   assert.match(html, /'U-Vibe','speed, volume, intensity, chvib, subd'/);
+  assert.match(html, /"U-Vibe":"speed, volume, intensity, chvib"/);
   assert.match(html, /'Harmonist','key, minor, harmo, blend'/);
   assert.match(html, /const cc=ccs\[control\.ccIndex\]/);
 });
