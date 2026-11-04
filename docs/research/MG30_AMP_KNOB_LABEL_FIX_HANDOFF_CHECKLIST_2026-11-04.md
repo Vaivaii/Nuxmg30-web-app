@@ -494,3 +494,50 @@ User noticed temporary UI copy below the switches:
 **Do not remove or edit these UI messages yet.** User explicitly wants to first inventory other QuickTone pedal models that expose discrete switches. After the QuickTone analysis identifies the complete applicable pedal/model list, discuss and confirm the inventory with the user. Only then consider replacing the corresponding rotary-knob UI controls with three-position switch UI. The immediate next phase is analysis-only: do not modify application controls, mappings, CC assignments, MIDI writes, or UI until the inventory is complete and the user explicitly asks for implementation.
 
 Preserve the current confirmed three-switch mapping and do not disturb NAM, IR User/Collection import, preset transfer, or existing MIDI mappings.
+
+## QuickTone 2.6.7.16 static inventory — analysis only
+
+Source inspected: user-provided `NUX_QuickTone_V2.6.7.16_Windows.zip` (165 MB archive; one 190,296,504-byte PE32 `QuickTone.exe`). Static string/resource inspection found an embedded model/control catalogue with `elementType`, `midiCC`, `languageKey`, `parameter1/2/3`, and image asset references. The catalogue includes duplicated profile/localization variants, so raw occurrence counts are not unique pedal counts.
+
+### Amp models with explicit two-state AmpParts toggle graphics
+
+These model entries contain controls whose `elementType` is 6 and whose image references use `AmpParts__Toggle*_Open/Close`, or corresponding AmpParts Light Open/Close assets. This proves QuickTone has a graphical two-state toggle representation for these amp models; it does **not** prove that any of them is a three-position switch, nor does it prove the knob being considered for conversion should be replaced.
+
+- JAZZ CLEAN — includes AMP_BRIGHT and another AmpParts toggle control.
+- PLEXI 100 / PLEXI 100W
+- PLEXI 45
+- KATANA — includes EFX_BOOST plus AmpParts toggle graphics.
+- 1987 X 50 / 1987X 50W
+- SLO 100
+- FIREMAN HBE / FRIEDMAN
+- DUAL RECT
+- DIE VH4
+- MR.Z 38
+- BRIT BLUES
+- MATCH / MATCH D30
+- AGL
+- MLD
+- STAGEMAN
+- VIVO
+- I CLASS A30
+- I FIREMAN
+- TWEEDY
+- HIWIRE
+- CLASS A15
+- CLASS A30
+- STARLIFT — has AmpParts Light11 Open/Close asset on CC 53.
+
+### Important exclusions / interpretation
+
+- `AmpParts_Tube_%04d` entries appear on many amp models but are tube/power-amp artwork, not evidence of a user-operated switch; do not count them as switch controls.
+- `__Nail_*_Normal/Press` controls on effect models appear to be footswitch/button elements (often bypass/activation), not three-position parameter selectors; keep them separate from rotary-knob replacement candidates.
+- The embedded catalogue's explicit toggle assets are Open/Close (two states). No three-position switch widget/asset/value map has yet been confirmed from this static pass.
+- DGLASS and STARLIFT parameter entries coexist with rotary knob assets in some QuickTone catalogue/profile data, even though the user's physical MG-30 testing established three-way hardware switches on the original MG-30. Therefore QuickTone's editor artwork alone is not authoritative for hardware position/value semantics.
+- Multiple duplicate catalogue profiles use differing CC assignments/defaults. Do not copy CCs or parameter defaults from a model entry until the correct MG-30 Gen 2 profile block is identified and corroborated with USB-MIDI capture.
+
+### Next analysis steps (no source changes)
+
+1. Identify the correct QuickTone product/profile catalogue block for original MG-30 Gen 2 firmware 6.0.x and distinguish it from other model/profile variants.
+2. For each candidate above, extract the full control array in order: elementType, image1/2/3, languageKey, midiCC, parameter1/2/3, and surrounding model key.
+3. Inspect the referenced Open/Close assets and the QuickTone UI for labels/function names; classify each as binary toggle, multi-position selector, status light, or footswitch.
+4. Only propose knob-to-switch conversions for controls supported by both QuickTone UI evidence and hardware capture/readback. No application controls, MIDI mappings, or UI have been modified during this inventory.
