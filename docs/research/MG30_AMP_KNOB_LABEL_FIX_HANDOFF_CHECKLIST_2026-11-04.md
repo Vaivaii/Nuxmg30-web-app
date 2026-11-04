@@ -481,3 +481,16 @@ Final source commit: 94e09838c8bcf72acdcbfb19909b2a7d18dfb350
 Final test commit: a622221971cdbc5a26145c2024a60195eeb52872
 
 Run CI against the test commit before handing out a new APK.
+
+## User validation of build #474 and planned switch inventory — 4 November 2026
+
+User confirmed that the corrected physical mapping in build #474 now works on the original MG-30. Final observed mapping for all three currently implemented controls remains TOP=0 / MIDDLE=1 / BOTTOM=2.
+
+User noticed temporary UI copy below the switches:
+- `Hardware raw value: 2 · captured 1/2/0` (or the corresponding current raw value): diagnostic readback text from switch validation.
+- `Default TOP hanya untuk tampilan awal; nilai hardware dibaca dari pedal saat tersedia.`: explanatory note for the visual TOP fallback; it is not a hardware warning.
+- The green `Collection sync stopped: no valid slot responses. Check USB and retry.` toast is a separate IR Collection slot-sync status, not a switch mapping message. Do not assume it is caused by the switch work without further investigation.
+
+**Do not remove or edit these UI messages yet.** User explicitly wants to first inventory other QuickTone pedal models that expose discrete switches. After the QuickTone analysis identifies the complete applicable pedal/model list, discuss and confirm the inventory with the user. Only then consider replacing the corresponding rotary-knob UI controls with three-position switch UI. The immediate next phase is analysis-only: do not modify application controls, mappings, CC assignments, MIDI writes, or UI until the inventory is complete and the user explicitly asks for implementation.
+
+Preserve the current confirmed three-switch mapping and do not disturb NAM, IR User/Collection import, preset transfer, or existing MIDI mappings.
