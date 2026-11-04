@@ -835,27 +835,24 @@ const AMP_QUICKTONE_LAYOUTS = [
 ];
 /*
  * Labels and physical positions are transcribed from the user's original MG-30 display photos.
- * Exact raw CC values for TOP / MIDDLE / BOTTOM have not been captured. Never infer
- * enum values from the generic 0..100 range; keep these controls read-only until verified.
- */
-/*
- * Captured from QuickTone USB-MIDI on original MG-30 Gen 2:
- * TOP / MIDDLE / BOTTOM actions emitted raw CC values 1 / 2 / 0.
+ * QuickTone outbound captures contained the three enum values 1 / 2 / 0, but that packet
+ * sequence alone did not establish which physical position each value represented.
+ * Physical MG-30 testing confirmed the actual mapping: TOP=0, MIDDLE=1, BOTTOM=2.
+ * Keep the captured hardware values discrete; do not scale them through the generic 0..100 range.
  * CCs: DGLASS LO=26, HI=29; STARLIFT CONTOUR=28.
- * These are captured QuickTone outbound values; confirm pedal readback after first app test.
  */
 const AMP_THREE_POSITION_SWITCHES = {
   30: [
     {param:'lo mids freq',label:'LO MIDS FREQ',ccIndex:2,type:'three-way-switch',choices:[
-      {label:'500 Hz',position:'TOP',value:1},{label:'1 kHz',position:'MIDDLE',value:2},{label:'250 Hz',position:'BOTTOM',value:0}
+      {label:'500 Hz',position:'TOP',value:0},{label:'1 kHz',position:'MIDDLE',value:1},{label:'250 Hz',position:'BOTTOM',value:2}
     ]},
     {param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5,type:'three-way-switch',choices:[
-      {label:'1.5 kHz',position:'TOP',value:1},{label:'3 kHz',position:'MIDDLE',value:2},{label:'750 Hz',position:'BOTTOM',value:0}
+      {label:'1.5 kHz',position:'TOP',value:0},{label:'3 kHz',position:'MIDDLE',value:1},{label:'750 Hz',position:'BOTTOM',value:2}
     ]}
   ],
   31: [
     {param:'contour',label:'CONTOUR',ccIndex:4,type:'three-way-switch',choices:[
-      {label:'VINTAGE',position:'TOP',value:1},{label:'OFF',position:'MIDDLE',value:2},{label:'MODERN',position:'BOTTOM',value:0}
+      {label:'VINTAGE',position:'TOP',value:0},{label:'OFF',position:'MIDDLE',value:1},{label:'MODERN',position:'BOTTOM',value:2}
     ]}
   ]
 };
@@ -980,7 +977,7 @@ function syncIncomingParameterCC(cc,rawValue){
         button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
        });
        const rawLabel=group.querySelector('.switch-raw-value');
-       if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(Math.round(next))+' · captured 1/2/0';
+       if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(Math.round(next))+' · TOP=0 / MIDDLE=1 / BOTTOM=2';
       }
     }
     const selector=[...document.querySelectorAll('#knobs .parameter-select')].find(x=>x.dataset.p===param);
@@ -1902,7 +1899,7 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
  if(control.type==='three-way-switch'){
   const hasReadback=Object.prototype.hasOwnProperty.call(s.values,p);
   const displayValue=stored===undefined?control.choices.find(choice=>choice.position==='TOP')?.value:stored;
-  const status=hasReadback?'Hardware raw value: '+String(Math.round(Number(stored)))+' · captured 1/2/0':'Default TOP · MIDI 1 · awaiting pedal readback';
+  const status=hasReadback?'Hardware raw value: '+String(Math.round(Number(stored)))+' · captured 1/2/0':'Default TOP · MIDI 0 · awaiting pedal readback';
   return '<div class="knob knob-three-way"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button'+(displayValue!==undefined&&Number(displayValue)===choice.value?' is-active':'')+'" data-switch-param="'+escapeHtml(p)+'" data-switch-value="'+choice.value+'" aria-pressed="'+String(displayValue!==undefined&&Number(displayValue)===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+choice.position+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">'+escapeHtml(status)+'</small><small class="switch-safe-note">Default TOP hanya untuk tampilan awal; nilai hardware dibaca dari pedal saat tersedia.</small></div>';
  }
  if(p==='mic'||p==='position'){
