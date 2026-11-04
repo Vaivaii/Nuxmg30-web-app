@@ -139,6 +139,7 @@ test('Damp and Phi Delay logo and knob spacing match the latest review', () => {
   assert.doesNotMatch(phi, />HALO<\/text>|>CORE<\/text>/);
   assert.match(phi, /cx="132" cy="65"/);
   assert.match(phi, /cx="132" cy="153"/);
+  assert.doesNotMatch(phi, /M160 145l-9 -6v12z|M260 145l9 -6v12z/, 'the white side arrows must be removed');
   assert.ok(153 - 29 > 65 + 29, 'FDBK and lower Tone knobs must have a visible gap');
 });
 

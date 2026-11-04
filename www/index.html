@@ -2015,9 +2015,10 @@ function renderAmpHeadArtwork(m){
   s+=word(380,212,'Bogner',70,'Brush Script MT,Segoe Script,cursive','#f3e8ca','middle','font-style="italic" font-weight="bold" stroke="#cfc2a1" stroke-width="1.1" paint-order="stroke fill"');
   s+='<rect x="82" y="265" width="596" height="72" fill="#121719" stroke="#404749" stroke-width="1.3"/>';
   s+=label(119,285,'ÜBER-ULTRA',8,'#d9dcd5',850,.6)+toggle(106,311)+toggle(137,311);
-  const ux=[190,230,270,310,350,390,450,490,530,570,610,650];
+  // Keep the final control clear of the right-side input pair.
+  const ux=[190,230,270,310,350,390,430,470,510,550,590];
   ux.forEach((x,i)=>{s+=k(x,309,8.5,'',true);});
-  s+=jack(668,309,5)+led(171,286,'#b63a32');
+  s+=jack(655,289,5)+jack(655,320,5)+led(171,286,'#b63a32');
   return s+feet+screw(72,103)+screw(688,103);
  }
  // Mesa Triple Rectifier Modern (MB T-Rect): black textured shell, dark diamond plate,
@@ -2064,10 +2065,10 @@ function renderAmpHeadArtwork(m){
   s+='<rect x="96" y="227" width="140" height="98" rx="4" fill="#101516" stroke="#4c5250" stroke-width="2"/><rect x="241" y="227" width="158" height="98" rx="4" fill="#df7920" stroke="#1b2020" stroke-width="2"/><rect x="404" y="227" width="158" height="98" rx="4" fill="#df7920" stroke="#1b2020" stroke-width="2"/><rect x="567" y="227" width="97" height="98" rx="4" fill="#101516" stroke="#4c5250" stroke-width="2"/>';
   s+=toggle(119,271)+toggle(151,271)+toggle(184,271)+toggle(217,271);
   const orangeKnob=(x,y,r=9)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#101414" stroke="#8f5728" stroke-width="1"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#headKnob)" stroke="#d7c9ab" stroke-width=".9"/><path d="M'+x+' '+(y-r+3)+'v-5" stroke="#e9a34a" stroke-width="2.5" stroke-linecap="round"/></g>';
-  [270,323].forEach(x=>s+=orangeKnob(x,279,11));[420,458,496,534].forEach(x=>s+=orangeKnob(x,279,8.5));[580,608,634].forEach(x=>s+=orangeKnob(x,279,8));
+  [270,323].forEach(x=>s+=orangeKnob(x,279,11));[420,458,496,534].forEach(x=>s+=orangeKnob(x,279,8.5));[578,600,621].forEach(x=>s+=orangeKnob(x,279,8));
   s+='<path d="M255 245h129M418 245h129" stroke="#2b2f2d" stroke-width="1.5"/>';
   s+=label(319,313,'CLEAN',6,'#171c1b',800,.5)+label(484,313,'DIRTY / LEAD',6,'#171c1b',800,.5);
-  s+=jack(660,309,5);
+  s+=jack(642,294,5);
   return s+feet+screw(72,103)+screw(688,103);
  }
  // Peavey 5150 IMAGE slot: black woven upper panel, dotted 5150 logo, PEAVEY mark at right,
@@ -2083,7 +2084,7 @@ function renderAmpHeadArtwork(m){
   [205,252,299,346,393,440,487,534].forEach(x=>s+=k(x,300,8.5,'',true));
   s+=label(596,282,'EVH',14,'#1b2020',900,.3);
   const rocker=(x,y)=>'<g><rect x="'+(x-8)+'" y="'+(y-15)+'" width="16" height="30" rx="2" fill="#101416" stroke="#69716e" stroke-width="1.2"/><rect x="'+(x-5)+'" y="'+(y-11)+'" width="10" height="10" rx="1" fill="#303a3a" stroke="#9ba19a" stroke-width=".7"/><rect x="'+(x-5)+'" y="'+(y+2)+'" width="10" height="9" rx="1" fill="#0a0d0e" stroke="#555d59" stroke-width=".7"/></g>';
-  s+=rocker(638,300)+rocker(666,300)+label(638,329,'STBY',4.5,'#333a37',800,0)+label(666,329,'POWER',4.5,'#333a37',800,0);
+  s+=rocker(630,300)+rocker(658,300)+label(630,329,'STBY',4.5,'#333a37',800,0)+label(658,329,'POWER',4.5,'#333a37',800,0);
   return s+feet+screw(72,103)+screw(688,103);
  }
 
@@ -2173,20 +2174,28 @@ function renderAmpHeadArtwork(m){
   s+='<rect x="125" y="230" width="151" height="59" rx="3" fill="#121719" stroke="#b7b8ae" stroke-width="2"/>'+word(201,271,'Boogie',39,'Georgia,serif','#e5e2d7','middle','font-weight="bold"')+label(201,282,'MESA ENGINEERING',5.2,'#d9d7cc',750,1);
   return s+feet+screw(72,103)+screw(688,103);
  }
- // Dr. Z — black tolex, cream outlined grouped controls, EZG 50 shield, cream/brown houndstooth cloth and central Z emblem.
+ // Dr. Z MAZ 38 Senior — red textured tolex, cream piping and the black lower control deck
+ // are redrawn from the newly supplied reference photograph.
  if(raw==='Mr Z 38'){
-  s+='<defs>'+zipPattern('drzCloth',10,10,'<rect width="10" height="10" fill="#b6a17c"/><path d="M0 0H5V5H0ZM5 5H10V10H5Z" fill="#282725"/><path d="M0 5H5V10H0ZM5 0H10V5H5Z" fill="#ddd0b0"/><path d="M0 0L10 10M10 0L0 10" stroke="#77684e" stroke-width=".5"/>')+'</defs>';
-  s+=zipHead('#151719','#42494a','#101416');
-  s+='<rect x="82" y="116" width="596" height="94" fill="#0d1112" stroke="#9b9d94" stroke-width="1.4"/>';
-  s+=jack(110,153,6)+label(110,137,'INPUT',6,'#efeee5',750,.6);
-  s+='<rect x="174" y="127" width="105" height="63" rx="18" fill="none" stroke="#e2e3d9" stroke-width="1.5"/><rect x="282" y="127" width="164" height="63" rx="18" fill="none" stroke="#e2e3d9" stroke-width="1.5"/><rect x="449" y="127" width="111" height="63" rx="18" fill="none" stroke="#e2e3d9" stroke-width="1.5"/>';
-  [195,251,305,359,413,474,530].forEach(x=>s+=k(x,157,9,'',true));
-  s+=label(223,139,'VOLUME',6,'#eeeade',800,.7)+label(363,139,'E Q',6,'#eeeade',800,.7)+label(504,139,'REVERB',6,'#eeeade',800,.7);
-  s+=label(195,182,'PRE',5.8,'#eeeade',750,.3)+label(251,182,'POST',5.8,'#eeeade',750,.3)+label(305,182,'TREBLE',5.8,'#eeeade',750,.3)+label(359,182,'MID',5.8,'#eeeade',750,.3)+label(413,182,'BASS',5.8,'#eeeade',750,.3)+label(474,182,'DWELL',5.8,'#eeeade',750,.3)+label(530,182,'MIX',5.8,'#eeeade',750,.3);
-  s+='<path d="M577 137l31 0 0 37-31 0z" fill="#e4e3da" stroke="#fcfcf4" stroke-width="1.5"/>'+word(592,153,'EZG',13,'Arial Black,Arial,sans-serif','#141819','middle','font-weight="900"')+word(592,169,'50',15,'Arial Black,Arial,sans-serif','#141819','middle','font-weight="900"');
-  s+=toggle(620,156)+toggle(645,156)+led(665,156,'#34618c')+label(620,184,'STBY',5,'#eeeade',700,.1)+label(645,184,'POWER',5,'#eeeade',700,.1);
-  s+='<rect x="82" y="217" width="596" height="120" fill="#b7a27e" stroke="#e1d2b1" stroke-width="2"/><rect x="90" y="225" width="580" height="104" fill="url(#drzCloth)"/>';
-  s+=word(380,307,'Z',84,'Georgia,serif','#ede1c2','middle','font-weight="900" italic');
+  s+='<defs>'+zipPattern('drzMazRedWeave',12,12,'<rect width="12" height="12" fill="#cf202b"/><path d="M0 1H12M0 7H12M2 0V12M8 0V12" stroke="#f34a4b" stroke-width="1.05" opacity=".7"/><path d="M0 4H12M5 0V12" stroke="#94131d" stroke-width=".65" opacity=".6"/>')+'</defs>';
+  s+='<rect x="63" y="94" width="634" height="268" rx="13" fill="url(#drzMazRedWeave)" stroke="#7c1b22" stroke-width="4"/>';
+  s+='<rect x="72" y="103" width="616" height="250" rx="9" fill="none" stroke="#f2d9bd" stroke-width="3"/>';
+  s+='<path d="M322 94q0-16 16-16h84q16 0 16 16" fill="none" stroke="#141718" stroke-width="10" stroke-linecap="round"/>';
+  s+='<rect x="82" y="116" width="596" height="145" rx="5" fill="url(#drzMazRedWeave)" stroke="#e7c9ae" stroke-width="2.2"/>';
+  s+='<rect x="96" y="128" width="568" height="119" rx="3" fill="none" stroke="#f2ddc5" stroke-width="2.8"/>';
+  s+='<path d="M350 151L424 160L393 181L429 207L338 192L373 171L347 171Z" fill="#f1e5c9" stroke="#3a2923" stroke-width="2.4" stroke-linejoin="round"/>';
+  s+='<rect x="82" y="269" width="596" height="68" rx="2" fill="#090d0e" stroke="#e8d6bb" stroke-width="2"/>';
+  s+='<rect x="91" y="277" width="578" height="52" fill="#111719" stroke="#343a38" stroke-width="1"/>';
+  s+='<circle cx="137" cy="301" r="8" fill="#cf252b" opacity=".16"/><circle cx="137" cy="301" r="5.2" fill="#e62d35" stroke="#f1c8ae" stroke-width="1.3"/>';
+  s+=toggle(174,301)+toggle(205,301);
+  s+=label(174,326,'POWER',5.8,'#e9dfcb',800,.3)+label(205,326,'STANDBY',5.2,'#e9dfcb',800,.1);
+  s+='<path d="M245 286H343V320H245Z" fill="#101416" stroke="#b4b3a7" stroke-width="1"/>';
+  s+=word(294,309,'MAZ 38',27,'Arial Black,Impact,sans-serif','#efe7d6','middle','font-weight="900" italic letter-spacing="-1"');
+  s+=label(294,326,'SENIOR NR',5.4,'#e8dfca',800,.4);
+  const mazKnob=(x)=>'<g><circle cx="'+x+'" cy="300" r="13" fill="#101314" stroke="#b8aa91" stroke-width="1.2"/><path d="M'+(x-7)+' 300a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" fill="#eee2c8" stroke="#c7b99d" stroke-width=".6"/><path d="M'+x+' 300l5 -8" stroke="#34312b" stroke-width="2" stroke-linecap="round"/></g>';
+  [375,416,457,498,539,580].forEach(mazKnob);
+  s+=[label(375,326,'MASTER',5.1,'#e9dfcb',750,.1),label(416,326,'CUT',5.4,'#e9dfcb',750,.1),label(457,326,'BASS',5.4,'#e9dfcb',750,.1),label(498,326,'MIDDLE',5.0,'#e9dfcb',750,.1),label(539,326,'TREBLE',5.0,'#e9dfcb',750,.1),label(580,326,'VOLUME',4.9,'#e9dfcb',750,.1)].join('');
+  s+=jack(625,289,5)+jack(625,317,5)+label(645,288,'HI',5.2,'#e9dfcb',750,.2)+label(645,317,'LO',5.2,'#e9dfcb',750,.2);
   return s+feet+screw(72,103)+screw(688,103);
  }
 
@@ -2200,7 +2209,7 @@ function renderAmpHeadArtwork(m){
  }
  // Peavey 5150 reference: black perforated upper fascia, large dotted 5150, white/silver lower control rail.
  if(raw==='Vivo'){
-  s+=zipHead('#111416','#4f5655','#0a0d0e');s+='<rect x="82" y="116" width="596" height="139" fill="#090c0e" stroke="#343b3b" stroke-width="2"/><rect x="89" y="123" width="582" height="125" fill="url(#headPerforated)"/>';s+=word(380,209,'5150',66,'Arial Black,Impact,sans-serif','#d0d0c9','middle','font-weight="900" letter-spacing="-2"');s+=word(581,241,'PEAVEY',14,'Arial Black,Arial,sans-serif','#d9ddd6','middle','font-weight="900" italic');s+='<rect x="82" y="261" width="596" height="76" fill="#c8cbc4" stroke="#eef0e9" stroke-width="2"/>';s+=jack(106,299,6)+jack(128,299,6);['PRE','LOW','MID','HIGH','POST','RES','PRES','LEAD','RHY'].forEach((v,i)=>s+=k(190+i*51,302,8.5,'',true));s+=label(614,279,'EVH',11,'#222a28',900,1.5)+toggle(655,301)+toggle(675,301);return s+feet+screw(72,103)+screw(688,103);
+  s+=zipHead('#111416','#4f5655','#0a0d0e');s+='<rect x="82" y="116" width="596" height="139" fill="#090c0e" stroke="#343b3b" stroke-width="2"/><rect x="89" y="123" width="582" height="125" fill="url(#headPerforated)"/>';s+=word(380,209,'5150',66,'Arial Black,Impact,sans-serif','#d0d0c9','middle','font-weight="900" letter-spacing="-2"');s+=word(581,241,'PEAVEY',14,'Arial Black,Arial,sans-serif','#d9ddd6','middle','font-weight="900" italic');s+='<rect x="82" y="261" width="596" height="76" fill="#c8cbc4" stroke="#eef0e9" stroke-width="2"/>';s+=jack(106,299,6)+jack(128,299,6);['PRE','LOW','MID','HIGH','POST','RES','PRES','LEAD','RHY'].forEach((v,i)=>s+=k(190+i*51,302,8.5,'',true));s+=label(614,279,'EVH',11,'#222a28',900,1.5)+toggle(628,301)+toggle(654,301);return s+feet+screw(72,103)+screw(688,103);
  }
  // Soldano SLO-100: black grille, prominent white Soldano script, continuous silver control strip.
  if(raw==='Slo 100'){

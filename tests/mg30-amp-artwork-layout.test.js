@@ -78,6 +78,24 @@ test('PV 5150 right rail has two contained rocker switches, not an overflowing t
   assert.ok(658 + 16 <= 678, 'right rocker must remain inside the lower faceplate');
 });
 
+test('Bogner, standard 5150 and Orange right-side hardware stays clear of the head edge', () => {
+  const bogner = render('Uber', 'Bogner Uberschall');
+  assert.ok(bogner.includes('<circle cx="655" cy="289" r="7"'));
+  assert.ok(bogner.includes('<circle cx="655" cy="320" r="7"'));
+  assert.ok(655 + 7 <= 678);
+  assert.ok(bogner.includes('cx="590" cy="309" r="11.5"'), 'last Bogner knob must be inset before the input pair');
+
+  const peavey = render('Vivo', 'Peavey 5150');
+  assert.ok(peavey.includes('M628 310v-12'));
+  assert.ok(peavey.includes('M654 310v-12'));
+  assert.ok(654 + 4 <= 678, 'right 5150 switch must stay inset');
+
+  const orange = render('ORA Rock Lead · IMAGE', 'Orange Rockerverb family');
+  assert.ok(orange.includes('<circle cx="642" cy="294" r="7"'));
+  assert.ok(642 + 7 <= 664, 'Orange jack must stay inside its lower black control bay');
+  assert.ok(orange.includes('cx="621" cy="279" r="11"'), 'rightmost Orange control must leave room for the input jack');
+});
+
 test('right-edge controls stay inset on Cali Crunch, Dr. Z, Twin Reverb and Orange', () => {
   const cali = render('Cali Crunch', 'Mesa/Boogie Mark I');
   const drz = render('Mr Z 38', 'Dr. Z MAZ 38 Senior');
@@ -86,14 +104,17 @@ test('right-edge controls stay inset on Cali Crunch, Dr. Z, Twin Reverb and Oran
 
   assert.ok(cali.includes('<circle cx="666" cy="179" r="8"'));
   assert.ok(666 + 8 <= 678);
-  assert.ok(drz.includes('<circle cx="665" cy="156" r="8"'));
-  assert.ok(665 + 8 <= 678);
+  assert.ok(drz.includes('<circle cx="137" cy="301" r="5.2"'));
+  assert.ok(drz.includes('>MAZ 38</text>'));
+  assert.ok(drz.includes('<circle cx="625" cy="289" r="7"'));
+  assert.ok(drz.includes('<circle cx="625" cy="317" r="7"'));
+  assert.ok(625 + 7 <= 678);
   assert.ok(twin.includes('<circle cx="648" cy="174" r="8"'));
   assert.ok(648 + 8 <= 678, 'Twin Reverb jewel light must sit inside the right edge');
   assert.ok(670 + 8 <= 678);
-  assert.ok(orange.includes('<circle cx="660" cy="309" r="7"'));
-  assert.ok(orange.includes('<circle cx="634" cy="279" r="11"'));
-  assert.ok(660 - 634 >= 7 + 11, 'Orange input jack must not overlap the final knob');
+  assert.ok(orange.includes('<circle cx="642" cy="294" r="7"'));
+  assert.ok(orange.includes('<circle cx="621" cy="279" r="11"'));
+  assert.ok(Math.hypot(642 - 621, 294 - 279) >= 7 + 11, 'Orange input jack must not overlap the final knob');
 });
 
 test('Hiwatt and Diezel red indicators and switches remain inside the head faceplate', () => {

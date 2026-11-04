@@ -253,7 +253,7 @@
         s+=T(177,113,'mix',12,'#e8e6ed',600,'middle','font-family="Arial,sans-serif"');
         s+=T(243,113,'depth',12,'#e8e6ed',600,'middle','font-family="Arial,sans-serif"');
         s+=C(210,129,8,'#292832','#77717d',1.2)+C(210,129,3,'#a49cae','none',0);
-        s+=P('M160 145l-9 -6v12z','#eeeaf2',1,'#eeeaf2')+P('M260 145l9 -6v12z','#eeeaf2',1,'#eeeaf2');
+        // White directional arrows removed per latest review.
         s+=T(210,177,'WET',35,'#f1eff3',900,'middle','letter-spacing="1.5"')+T(210,199,'reverb',12,'#e4e0ea',500,'middle','letter-spacing="2"');
         s+=foot(210,218,10);
         s+=jack(141,128,3.5)+jack(279,128,3.5);
