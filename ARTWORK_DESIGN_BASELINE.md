@@ -186,11 +186,51 @@ Kriteria penerimaan minimum:
 - Tes artwork dan tes proyek lulus.
 - Tidak ada perubahan tak disengaja pada MIDI, NAM, import IR User/Third Party, preset, atau fungsi editor lain.
 
-## 10. Catatan aset dan dokumentasi visual
+## 10. Referensi screenshot aplikasi aktual
 
-Sumber visual dan implementasi yang tersedia saat dokumen ini dibuat adalah kode renderer dan peta referensi di repository. **Snapshot screenshot final yang disetujui pengguna belum tercatat sebagai file terpisah di repository pada baseline ini.**
+Pada **2026-11-05**, pengguna mengirim delapan screenshot dari aplikasi **NUX MG-30 Gen 2 Mobile Editor** sebagai acuan visual nyata untuk artwork pedal dan amplifier. Screenshot ini adalah tangkapan layar aplikasi yang sedang berjalan, bukan mockup atau preview SVG terpisah.
 
-Untuk mengunci tampilan visual lebih kuat pada iterasi berikutnya, simpan screenshot aplikasi aktual ke folder seperti `docs/research/artwork-baseline/`, beri nama berdasarkan block/model dan ukuran viewport, lalu tambahkan tautannya di dokumen ini. Screenshot harus berasal dari build aplikasi yang sedang diuji, bukan mockup baru.
+### 10.1 Daftar referensi yang diterima
+
+| File upload | Blok/model yang terlihat | Identitas artwork pada layar |
+|---|---|---|
+| 1001011682.jpg | DLY — Pan Delay | Pedal vertikal biru, Ibanez DPL-10 |
+| 1001011683.jpg | RVB — Shimmer | Pedal vertikal gelap, Neunaber Seraphim |
+| 1001011681.jpg | MOD — St Chorus | Pedal horizontal kuning, MXR M134 Stereo Chorus |
+| 1001011680.jpg | EFX — Horseman OD · IMAGE | Perangkat horizontal warna emas/kuning, NUX Horseman image-based EFX |
+| 1001011679.jpg | AMP — Fireman HBE | Head amplifier horizontal, Friedman HBE-100 |
+| 1001011678.jpg | AMP — Plexi 100 | Head amplifier horizontal, Marshall Plexi 100W / JTM45-100 family |
+| 1001011677.jpg | AMP — Class A15 | Combo amplifier, Vox AC15 |
+| 1001011676.jpg | AMP — Cali Crunch | Combo amplifier, Mesa/Boogie Mark I |
+
+File-file di atas adalah nama upload asli pada percakapan proyek tanggal tersebut. Screenshot telah diterima sebagai sumber referensi, tetapi **belum disalin menjadi aset biner di Git repository**. Jangan mengarang path repository atau menganggap file tersebut sudah berada di folder docs.
+
+### 10.2 Ciri visual yang dapat diamati dari screenshot
+
+**Area artwork**
+- Ilustrasi ditempatkan di dalam panel tersendiri dengan border tipis abu-abu gelap, sudut membulat besar, dan latar charcoal yang sedikit lebih terang daripada latar halaman.
+- Perangkat berada di tengah area; skala mengikuti bentuk aslinya. Pedal vertikal tetap sempit dan tinggi, pedal horizontal memakai lebar area, dan head/combo amplifier menggunakan siluet lebar.
+- Artwork tidak boleh dipaksa memenuhi seluruh panel, dipotong, atau diregangkan. Ruang kosong di sekeliling perangkat adalah bagian dari komposisi.
+- Bayangan, highlight, kontur enclosure, tekstur grille, knob, switch, LED, jack, footswitch, badge, dan tulisan pada perangkat terlihat sebagai detail ilustrasi, bukan ikon datar.
+- Warna model tetap spesifik: biru pada DPL-10, kuning pada MXR Chorus, emas pada Horseman, hitam/emas pada Friedman dan Marshall, serta grille cokelat pada Vox dan krem pada Mesa/Boogie.
+
+**Keterangan di bawah artwork**
+- Kategori perangkat tampil sebagai teks uppercase kecil berwarna lime.
+- Baris Based on: menampilkan identitas perangkat referensi dalam teks terang, dengan labelnya diberi aksen lime.
+- Khusus EFX image-based, layar juga menampilkan penanda IMAGE dan catatan bahwa artwork adalah ilustrasi UI, bukan foto model hasil capture. Informasi ini merupakan konteks UI; jangan mengubah klasifikasi audio model atau perilaku EFX saat mengerjakan gambar.
+
+**Konteks layar editor**
+- Panel artwork berada setelah nama/nomor blok, pemilih model, dan toggle ON/OFF.
+- Signal chain, Scene cards, kontrol navigasi model, dan bottom navigation adalah bagian dari konteks aplikasi. Screenshot ini boleh dipakai untuk memahami skala dan hierarki, tetapi perubahan artwork tidak dengan sendirinya mengizinkan redesign atau perubahan fungsi bagian-bagian tersebut.
+
+### 10.3 Cara menggunakan referensi ini
+
+1. Gunakan screenshot sebagai acuan bentuk, orientasi, warna, skala, dan karakter visual masing-masing perangkat.
+2. Cocokkan artwork pada model yang sama terlebih dahulu; jangan menyimpulkan bentuk satu model dari screenshot model lain.
+3. Saat merevisi SVG lokal, pertahankan perangkat di tengah area artwork dan gunakan object-fit: contain agar keseluruhan siluet terlihat.
+4. Jika detail kecil sulit dibaca pada ukuran editor, prioritaskan siluet, panel, tata letak kontrol, material, dan warna yang paling mudah dikenali.
+5. Screenshot ini mengacu pada tampilan aplikasi NUX MG-30 Gen 2. Tetap validasi hasil akhir di MG30 Studio yang sedang dibangun; jangan menganggap UI atau aset aplikasi referensi sudah otomatis tersedia di repository.
+6. Bila screenshot aktual baru dikirim, tambahkan nama file, blok/model, dan detail yang menjadi acuan ke tabel di atas. Jika kemudian disimpan ke repository, baru tambahkan path repository yang benar.
 
 ## 11. Template prompt untuk sesi chat baru
 
@@ -202,4 +242,5 @@ Salin instruksi ini saat melanjutkan pekerjaan di sesi baru:
 
 | Tanggal | Versi | Catatan |
 |---|---|---|
-| 2026-11-04 | 1.0 | Mencatat baseline AMP + pedal SVG dari branch `feature/amp-knob-label-correction-artwork`, commit `a59e389baf147f0cae0c265796c8e912016b6bdc`. Belum ada snapshot screenshot terpisah yang disimpan. |
+| 2026-11-04 | 1.0 | Mencatat baseline AMP + pedal SVG dari branch `feature/amp-knob-label-correction-artwork`, commit `a59e389baf147f0cae0c265796c8e912016b6bdc`. |
+| 2026-11-05 | 1.1 | Menambahkan delapan screenshot NUX MG-30 Gen 2 Mobile Editor yang dikirim pengguna sebagai acuan aktual pedal DPL-10, Seraphim, MXR Chorus, Horseman OD, Friedman HBE, Marshall Plexi, Vox AC15, dan Mesa/Boogie Mark I. Mencatat karakter area artwork, skala, warna, dan caption. File upload belum disalin ke Git repository. |
