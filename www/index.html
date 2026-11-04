@@ -1895,10 +1895,10 @@ function renderAmpHeadArtwork(m){
   s+='<rect x="96" y="227" width="140" height="98" rx="4" fill="#101516" stroke="#4c5250" stroke-width="2"/><rect x="241" y="227" width="158" height="98" rx="4" fill="#df7920" stroke="#1b2020" stroke-width="2"/><rect x="404" y="227" width="158" height="98" rx="4" fill="#df7920" stroke="#1b2020" stroke-width="2"/><rect x="567" y="227" width="97" height="98" rx="4" fill="#101516" stroke="#4c5250" stroke-width="2"/>';
   s+=toggle(119,271)+toggle(151,271)+toggle(184,271)+toggle(217,271);
   const orangeKnob=(x,y,r=9)=>'<g><circle cx="'+x+'" cy="'+y+'" r="'+(r+3)+'" fill="#101414" stroke="#8f5728" stroke-width="1"/><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="url(#headKnob)" stroke="#d7c9ab" stroke-width=".9"/><path d="M'+x+' '+(y-r+3)+'v-5" stroke="#e9a34a" stroke-width="2.5" stroke-linecap="round"/></g>';
-  [270,323].forEach(x=>s+=orangeKnob(x,279,11));[420,458,496,534].forEach(x=>s+=orangeKnob(x,279,8.5));[583,618,650].forEach(x=>s+=orangeKnob(x,279,8));
+  [270,323].forEach(x=>s+=orangeKnob(x,279,11));[420,458,496,534].forEach(x=>s+=orangeKnob(x,279,8.5));[580,608,634].forEach(x=>s+=orangeKnob(x,279,8));
   s+='<path d="M255 245h129M418 245h129" stroke="#2b2f2d" stroke-width="1.5"/>';
   s+=label(319,313,'CLEAN',6,'#171c1b',800,.5)+label(484,313,'DIRTY / LEAD',6,'#171c1b',800,.5);
-  s+=jack(644,309,5);
+  s+=jack(660,309,5);
   return s+feet+screw(72,103)+screw(688,103);
  }
  // Peavey 5150 IMAGE slot: black woven upper panel, dotted 5150 logo, PEAVEY mark at right,
@@ -1908,11 +1908,13 @@ function renderAmpHeadArtwork(m){
   s+=zipHead('#111416','#25292b','#090d0f');
   s+='<rect x="82" y="116" width="596" height="139" fill="#080c0e" stroke="#333a3c" stroke-width="1.6"/><rect x="90" y="124" width="580" height="123" fill="url(#peaveyMesh)"/>';
   s+=word(371,207,'5150',71,'Arial Black,Impact,sans-serif','#c9cdca','middle','font-weight="900" letter-spacing="-3"');
-  s+=word(585,233,'PEAVEY',18,'Arial Black,Arial,sans-serif','#d5d9d5','middle','font-weight="900" italic');
+  s+=word(590,233,'PEAVEY',17,'Arial Black,Arial,sans-serif','#d5d9d5','middle','font-weight="900" italic');
   s+='<rect x="82" y="261" width="596" height="76" fill="#c9cbc5" stroke="#f0f0e9" stroke-width="2"/>';
   s+=jack(105,294,6)+jack(130,294,6)+label(118,279,'INPUTS',5.5,'#333a37',800,.4);
   [205,252,299,346,393,440,487,534].forEach(x=>s+=k(x,300,8.5,'',true));
-  s+=label(620,282,'EVH',15,'#1b2020',900,.3)+toggle(625,310)+toggle(656,310)+toggle(679,310);
+  s+=label(596,282,'EVH',14,'#1b2020',900,.3);
+  const rocker=(x,y)=>'<g><rect x="'+(x-8)+'" y="'+(y-15)+'" width="16" height="30" rx="2" fill="#101416" stroke="#69716e" stroke-width="1.2"/><rect x="'+(x-5)+'" y="'+(y-11)+'" width="10" height="10" rx="1" fill="#303a3a" stroke="#9ba19a" stroke-width=".7"/><rect x="'+(x-5)+'" y="'+(y+2)+'" width="10" height="9" rx="1" fill="#0a0d0e" stroke="#555d59" stroke-width=".7"/></g>';
+  s+=rocker(638,300)+rocker(666,300)+label(638,329,'STBY',4.5,'#333a37',800,0)+label(666,329,'POWER',4.5,'#333a37',800,0);
   return s+feet+screw(72,103)+screw(688,103);
  }
 
@@ -1950,7 +1952,7 @@ function renderAmpHeadArtwork(m){
   s+='<rect x="82" y="198" width="596" height="139" fill="#898b82" stroke="#b7b9ae" stroke-width="2"/><rect x="90" y="206" width="580" height="123" fill="url(#twinSilverCloth)"/>';
   s+=word(204,274,'Fender',54,'Brush Script MT,Segoe Script,cursive','#171b1d','middle','font-style="italic" font-weight="bold" stroke="#d2d0c5" stroke-width="1.3" paint-order="stroke fill"');
   s+=word(584,160,'Twin',16,'Brush Script MT,Segoe Script,cursive','#f0ede1','middle','font-style="italic" font-weight="bold"')+word(584,179,'Reverb II',16,'Brush Script MT,Segoe Script,cursive','#f0ede1','middle','font-style="italic" font-weight="bold"');
-  s+=toggle(638,143)+toggle(660,143)+led(676,174,'#a8322f');
+  s+=toggle(630,143)+toggle(652,143)+led(670,174,'#a8322f');
   return s+feet+screw(72,103)+screw(688,103);
  }
  // Mesa Rectifier — raised silver diamond plate, long central vent with MESA badge,
@@ -1997,7 +1999,7 @@ function renderAmpHeadArtwork(m){
   s+='<rect x="478" y="125" width="132" height="58" rx="3" fill="#dce0de" stroke="#f5f6f2" stroke-width="2"/>';
   const sliderXs=[494,518,542,566,590];sliderXs.forEach((x,i)=>{s+='<path d="M'+x+' 134V174" stroke="#596260" stroke-width="4"/><path d="M'+(x-7)+' '+[141,156,166,148,137][i]+'h14v7h-14z" fill="#252c2c" stroke="#737b77" stroke-width="1"/>';});
   s+=label(542,192,'80   240   750   2200   6600',5.1,'#f0f1eb',750,.2);
-  s+=toggle(628,149)+toggle(653,149)+toggle(676,149)+led(676,179,'#d34a31');
+  s+=toggle(616,149)+toggle(642,149)+toggle(666,149)+led(666,179,'#d34a31');
   s+='<rect x="82" y="205" width="596" height="132" fill="#d7c49b" stroke="#f3e6c9" stroke-width="2"/><rect x="90" y="213" width="580" height="116" fill="url(#boogieCane)"/>';
   s+='<rect x="125" y="230" width="151" height="59" rx="3" fill="#121719" stroke="#b7b8ae" stroke-width="2"/>'+word(201,271,'Boogie',39,'Georgia,serif','#e5e2d7','middle','font-weight="bold"')+label(201,282,'MESA ENGINEERING',5.2,'#d9d7cc',750,1);
   return s+feet+screw(72,103)+screw(688,103);
@@ -2013,7 +2015,7 @@ function renderAmpHeadArtwork(m){
   s+=label(223,139,'VOLUME',6,'#eeeade',800,.7)+label(363,139,'E Q',6,'#eeeade',800,.7)+label(504,139,'REVERB',6,'#eeeade',800,.7);
   s+=label(195,182,'PRE',5.8,'#eeeade',750,.3)+label(251,182,'POST',5.8,'#eeeade',750,.3)+label(305,182,'TREBLE',5.8,'#eeeade',750,.3)+label(359,182,'MID',5.8,'#eeeade',750,.3)+label(413,182,'BASS',5.8,'#eeeade',750,.3)+label(474,182,'DWELL',5.8,'#eeeade',750,.3)+label(530,182,'MIX',5.8,'#eeeade',750,.3);
   s+='<path d="M577 137l31 0 0 37-31 0z" fill="#e4e3da" stroke="#fcfcf4" stroke-width="1.5"/>'+word(592,153,'EZG',13,'Arial Black,Arial,sans-serif','#141819','middle','font-weight="900"')+word(592,169,'50',15,'Arial Black,Arial,sans-serif','#141819','middle','font-weight="900"');
-  s+=toggle(628,156)+toggle(654,156)+led(672,156,'#34618c')+label(628,184,'STBY',5,'#eeeade',700,.1)+label(654,184,'POWER',5,'#eeeade',700,.1);
+  s+=toggle(620,156)+toggle(645,156)+led(665,156,'#34618c')+label(620,184,'STBY',5,'#eeeade',700,.1)+label(645,184,'POWER',5,'#eeeade',700,.1);
   s+='<rect x="82" y="217" width="596" height="120" fill="#b7a27e" stroke="#e1d2b1" stroke-width="2"/><rect x="90" y="225" width="580" height="104" fill="url(#drzCloth)"/>';
   s+=word(380,307,'Z',84,'Georgia,serif','#ede1c2','middle','font-weight="900" italic');
   return s+feet+screw(72,103)+screw(688,103);
