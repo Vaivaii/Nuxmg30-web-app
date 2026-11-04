@@ -1,85 +1,68 @@
-# QuickTone Effect Pedal Switch Inventory — 4 November 2026
+# QuickTone Effect Pedal Switch Inventory — Confirmed by user
 
-Target: **NUX MG-30 original Gen 2, firmware 6.0.x — not MKII**  
-QuickTone source: user-provided `NUX_QuickTone_V2.6.7.16_Windows.zip`  
-Executable extracted: `QuickTone.exe` (190,296,504 bytes; PE32 Windows GUI executable)
+Date: 4 November 2026
+Target: **NUX MG-30 original Gen 2, firmware 6.0.x — not MKII**
+QuickTone: **V2.6.7.16 Windows**
 
-## Scope correction
+## Scope and authority
 
-The previous preliminary inventory mistakenly examined AMP models. That does not answer the user's request. The present inventory excludes AMP entirely and focuses on stomp/FX model panels: EFX/drive, modulation, delay, compressor, EQ, reverb, wah/pitch, and related effects.
+This document supersedes the preliminary static-asset candidate list. The final inventory below is based on the user's direct confirmation of the physical QuickTone/MG-30 controls. It is the definitive scope for future UI consideration.
 
-## Method
+**There are exactly four confirmed effect pedals with switch-style controls:**
 
-- Parsed the embedded QuickTone panel catalogue containing model keys and per-panel `array` entries.
-- Inspected each effect control's `elementType`, `elementImage1/2`, `languageKey`, `midiCC`, and `parameter1/2/3`.
-- Classified explicit `Toggle_Open/Close` and `Switch_Open/Close` image pairs separately from `Light_Open/Close` status indicators and `Nail_Normal/Press` pedal footswitch/bypass graphics.
-- Compared a second near-duplicate panel catalogue; the six effect candidates below are repeated there with the same names, control image pairs, and stored `midiCC` fields.
-- The QuickTone `midiCC` field is recorded exactly as embedded. It must not automatically be treated as a verified physical MIDI CC or converted to a hardware CC without capture/readback confirmation.
+| Category | Pedal | Switch positions / functions | Confirmed control behavior |
+|---|---|---|---|
+| OD / Overdrive | **KATANA** | ON = Boost; OFF = Boost off | Two-state ON/OFF |
+| Modulation | **S.C.F** | TOP = Chorus; MIDDLE = Mono; BOTTOM = Flange | Three-state |
+| Modulation | **UNIVIBE** | BOTTOM = Vibrato; TOP = Chorus | Two-state |
+| Modulation | **HARMONIST** | BOTTOM = Major; TOP = Minor | Two-state |
 
-## A. Explicit switch/toggle image controls found in the MG-30 effect catalogue
+For UNIVIBE and HARMONIST, the BOTTOM/TOP function pairing follows the order the user supplied. Retain this exact orientation unless the user later corrects it.
 
-These are the strongest candidates because their panel-control records use explicit two-image switch/toggle assets rather than rotary-knob assets.
+## Explicit exclusions
 
-| Effect family | QuickTone model | Switch evidence | Stored `midiCC` | `languageKey` / label evidence | Initial interpretation |
-|---|---|---|---:|---|---|
-| EFX / Boost | **12. KATANA** | `elementType=6`; `AmpParts__Toggle5_Open_png` / `AmpParts__Toggle5_Close_png` | 0 | `EFX_BOOST` resolves to **BOOST** | Explicit Boost toggle |
-| Modulation / pitch | **13. HARMONIST** | `elementType=6`; `AmpParts__Toggle1_Open_png` / `AmpParts__Toggle1_Close_png` | 1 | No `languageKey` on this element | Toggle exists; function/label unresolved |
-| EFX / filter | **15. TOUCH WAH** | `elementType=6`; `__Switch_1_Open_png` / `__Switch_1_Close_png` | 3 | No `languageKey` on this element | Explicit switch exists; function/label unresolved |
-| EQ | **4. PARA EQ** | `elementType=6`; `AmpParts__Toggle6_Open_png` / `AmpParts__Toggle6_Close_png` | 54 | No `languageKey` on this element | Toggle graphic exists; function/label unresolved |
-| Wah / pitch | **5. OCTAVE-SHIFT** | `elementType=6`; `AmpParts__Toggle1_Open_png` / `AmpParts__Toggle1_Close_png` | 0 | No `languageKey` on this element | Toggle graphic exists; function/label unresolved |
+The following were false positives or are outside the confirmed switch inventory and must not be converted based only on the earlier static scan:
 
-**Count: 5 model panels with explicit Toggle/Switch image pairs.** The data proves the two-state graphics are present in QuickTone; it does not yet prove the pedal's physical throw, function, raw MIDI values, or whether each should replace an existing knob in MG30 Studio.
+- TOUCH WAH
+- PARA EQ
+- OCTAVE-SHIFT
+- S.C.F's unrelated rotary controls
+- ALIGN EQ HPF, HORSE WAH RANGE, TOUCH WAH MODE, HARMONIST HARMO stepped rotary controls
+- Compressor models (Rose Comp, K Comp, Studio Comp)
+- Delay models (Analog, Digital, Modulation Delay, Tape Echo, Reverse, Pan Delay, DuoTime, Phi Delay)
+- Reverb models (Room, Hall, Plate, Spring, Shimmer, Damp)
+- Ordinary status lights and pedal bypass/footswitch graphics
 
-## B. Two-frame list/button control (separate from the five toggles)
+The earlier AMP candidate list is also out of scope here. AMP's confirmed switch inventory remains only DGLASS LO MIDS FREQ, DGLASS HI MIDS FREQ, and STARLIFT CONTOUR.
 
-| Effect family | QuickTone model | Evidence | Stored `midiCC` | Status |
-|---|---|---|---:|---|
-| Modulation / chorus-flanger | **9. S.C.F** | `elementType=5`; `_Plist_Button_Frame_1_png` / `_Plist_Button_Frame_2_png` | 2 | Possible two-state/list selector; not yet confirmed as a physical switch |
+## QuickTone static-catalogue context
 
-Do not merge S.C.F into the five explicit toggle candidates until the control's exact behavior is established.
+The user-provided archive contains QuickTone V2.6.7.16 and its embedded control catalogue. Earlier static analysis found:
+- KATANA BOOST toggle (elementType=6, language key EFX_BOOST).
+- S.C.F two-frame list/button element.
+- HARMONIST toggle graphic.
+- Other toggle-looking entries in Touch Wah, Para EQ, and Octave-Shift; the user's hardware confirmation excludes these from the required inventory.
+- UNIVIBE is included by the user's physical confirmation even though the earlier static scan did not identify its control correctly.
 
-## C. Rotary knobs with small numeric ranges — selector candidates, not confirmed switches
+Catalogue midiCC properties are not treated as verified hardware CC numbers. Do not copy them into MG30 Studio mappings without a QuickTone USB-MIDI capture and pedal readback.
 
-These controls are still represented by `Knob_*.png` and `elementType=2` in QuickTone. Their short ranges suggest stepped/discrete settings, but the source does not establish that the physical MG-30 control is a switch. Keep them separate from section A.
+## Values and mappings still to measure
 
-| Family | Model | Parameter key | Stored `midiCC` | Range | Embedded default |
-|---|---|---|---:|---:|---:|
-| EQ | **2. ALIGN EQ** | `EQ_HPF` | 0 | 0–2 (3 values) | 1 |
-| Wah | **4. HORSE WAH** | `WAH_RANGE` | 1 | 0–5 (6 values) | 3 |
-| EFX / filter | **15. TOUCH WAH** | `EFX_MODE` | 0 | 0–3 (4 values) | 0 |
-| Modulation / pitch | **13. HARMONIST** | `MOD_HARMO` | 2 | 0–9 (10 values) | 0 |
+The physical function labels and positions above are confirmed, but exact raw MIDI values / CC addresses for these four effects have not yet been captured and confirmed in this inventory. They remain pending analysis:
 
-Touch Wah and Harmonist therefore each have both an explicit switch/toggle graphic and a separate stepped rotary parameter in the same panel.
+1. KATANA: OFF and ON/Boost.
+2. S.C.F: TOP/Chorus, MIDDLE/Mono, BOTTOM/Flange.
+3. UNIVIBE: BOTTOM/Vibrato, TOP/Chorus.
+4. HARMONIST: BOTTOM/Major, TOP/Minor.
 
-## D. Categories with no additional explicit switch pair found in this pass
-
-- **Compressor:** Rose Comp, K Comp, Studio Comp — rotary controls plus the common pedal press/bypass and status-light elements; no separate switch/toggle image pair found.
-- **Delay:** Analog Delay, Digital Delay, Modulation (delay), Tape Echo, Reverse, Pan Delay, DuoTime, Phi Delay — no separate switch/toggle image pair found.
-- **Reverb:** Room, Hall, Plate, Spring, Shimmer, Damp — no separate switch/toggle image pair found.
-- **General modulation:** CE-1, CE-2, ST.Chorus, Vibrator, Detune, Flanger, Phase 90, Phase 100, U-Vibe, Tremolo, Rotary Speaker, SCH-1 — no separate switch/toggle pair found, except Harmonist; S.C.F has the separate Plist button described in section B.
-- **EQ:** 6-Band EQ and 10-Band EQ are fader layouts; Align EQ has a three-value HPF rotary candidate; Para EQ has the explicit Toggle6 image pair.
-- Common `__Light_Open/Close` pairs were treated as status/indicator graphics, not user-adjustable switches. Common `__Nail_Normal/Press` pairs were treated as pedal footswitch/bypass graphics, not parameter selectors.
-
-This is a static catalogue observation; it does not prove that no other hardware switch exists if a model's panel uses an unlabelled/background image rather than a separate switch asset.
-
-## Initial candidate list to discuss with the user
-
-1. KATANA — Boost toggle (label positively identified).
-2. HARMONIST — unlabeled toggle; also has a 10-step Harmony knob.
-3. TOUCH WAH — unlabeled toggle; also has a 4-step Mode knob.
-4. PARA EQ — unlabeled Toggle6 graphic.
-5. OCTAVE-SHIFT — unlabeled Toggle1 graphic.
-6. S.C.F — two-frame Plist control; keep as a lower-confidence selector candidate.
-7. ALIGN EQ / HORSE WAH — stepped rotary controls only; do not call them switches based on this file alone.
-
-## Required next validation before any UI change
-
-1. Inspect the actual QuickTone pedal panel artwork around each candidate switch and resolve the printed function/position labels.
-2. For each candidate, use original MG-30 Gen 2 QuickTone interaction/capture to record both or all positions and actual USB-MIDI values.
-3. Compare readback from the physical pedal to QuickTone output; the embedded `parameter1/2` range is not sufficient evidence of raw MIDI values.
-4. Decide which existing MG30 Studio knob control, if any, represents each switch; preserve unrelated parameter controls and the current confirmed AMP mapping.
-5. Present the complete verified candidate list to the user before implementation.
+Capture each position separately in QuickTone on the original MG-30 Gen 2 and verify the pedal's response/readback. Establish the relation between displayed control, parameter index, actual CC, raw value, and physical position before proposing an implementation.
 
 ## Implementation boundary
 
-**Analysis only.** No application source, control rendering, MIDI mapping, NAM, IR User/Collection, preset transfer, or hardware-write behavior was changed as part of this inventory. The existing DGLASS/STARLIFT AMP mapping TOP=0 / MIDDLE=1 / BOTTOM=2 remains untouched.
+**Analysis and inventory only. No application code or UI was changed for these effect controls.** Do not replace rotary knobs or alter effect mappings until the above MIDI captures/readbacks are completed and the user approves the final inventory.
+
+Preserve:
+- Confirmed AMP mapping TOP=0 / MIDDLE=1 / BOTTOM=2 for DGLASS and STARLIFT.
+- Existing NAM functionality.
+- IR User / Third Party and IR Collection import behavior.
+- Preset transfer and all unrelated MIDI mappings.
