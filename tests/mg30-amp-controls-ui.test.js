@@ -179,4 +179,4 @@ test('switch raw values bypass rotary scaling for both live MIDI and preset read
   assert.match(html, /if\(isDiscreteSwitch\(control\)\)\{[\s\S]*?sendCC\(cc,choice\.value\)/);
   assert.match(html, /knob-two-way/);
   assert.match(css, /#knobs \.two-way-switch\{grid-template-rows:repeat\(2/);
-}});
+});
