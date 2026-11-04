@@ -447,3 +447,28 @@ Source commit: 624a280118bad3fe1310d33a148385f4188a3e30
 Test commit: ffe0ef7c7f9488d27415a13d5138a795d3e05d8d
 
 Safety constraints remain: original MG-30 Gen 2 firmware 6.0.x only (not MKII); AMP CC indices 2/4/5 and MIDI CC mapping remain unchanged; no changes to NAM, IR import/collection, preset transfer, or other MIDI mappings. Physical write/readback acceptance still requires testing on the user's MG-30.
+
+## Correction after physical MG-30 test — 4 November 2026
+
+**This section supersedes the earlier assumed TOP=1 / MIDDLE=2 / BOTTOM=0 mapping.** The user installed build #465 and tested all three switch positions against the physical MG-30. The observed result was:
+
+- App TOP click caused the pedal to move to MIDDLE.
+- App MIDDLE click caused the pedal to move to BOTTOM.
+- App BOTTOM click caused the pedal to move to TOP.
+
+This cyclic offset proves the earlier interpretation of the QuickTone capture sequence as physical TOP/MIDDLE/BOTTOM was incorrect. The QuickTone packet values 1 / 2 / 0 were genuinely observed, but the sequence alone did not establish their physical meaning.
+
+**Verified application-to-pedal mapping from the physical test:**
+
+| Switch | CC | TOP | MIDDLE | BOTTOM |
+|---|---:|---:|---:|---:|
+| DGLASS LO MIDS FREQ | 26 | 0 | 1 | 2 |
+| STARLIFT CONTOUR | 28 | 0 | 1 | 2 |
+| DGLASS HI MIDS FREQ | 29 | 0 | 1 | 2 |
+
+Source changed to use these raw values for all three switch controls. Initial UI fallback now marks TOP / MIDI 0 active without sending a MIDI message automatically. Incoming pedal readback still takes precedence. User click writes the selected discrete value directly to the existing CC.
+
+Source commit: 8d388061058e7daa0d7a2ed9ab4eb995e65ea34e
+Test commit: 01689b89dc16906661b24c2b01c553e475e59d1b
+
+Next validation after build: confirm one position at a time on hardware, especially STARLIFT CONTOUR. Keep target as original NUX MG-30 Gen 2 firmware 6.0.x, not MKII. Do not modify NAM, IR User/Collection, preset transfer, or unrelated MIDI mappings.
