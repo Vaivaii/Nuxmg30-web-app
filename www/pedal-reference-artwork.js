@@ -503,4 +503,18 @@
     if(!model)return null;
     return draw(model,blockId);
   };
+
+  // Vite defers module scripts until HTML parsing is complete. The main editor
+  // is still a classic inline script and performs its first render before this
+  // module executes, so refresh the visual once the SVG renderer is available.
+  if (typeof document !== 'undefined') {
+    const refreshInitialPedalArtwork = () => {
+      if (typeof window.renderModelVisual === 'function') window.renderModelVisual();
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', refreshInitialPedalArtwork, { once: true });
+    } else {
+      queueMicrotask(refreshInitialPedalArtwork);
+    }
+  }
 })();
