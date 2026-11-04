@@ -666,6 +666,7 @@
 <div id="tone3000SettingsMount"></div></section>
 <section id="page-backup" class="hidden"><div class="hero"><div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup & Restore</h2><p>Ekspor atau impor draft preset dalam JSON.</p></div><button class="btn" id="backToDevice">← Device & Settings</button></div><div class="panel"><div class="panel-head"><div><h3>Backup lokal</h3><p>File ini bukan dump preset hardware.</p></div></div><button class="btn primary" id="backupBtn">Ekspor semua preset</button> <label class="btn" for="importFile">Impor JSON</label><input class="hidden" type="file" id="importFile" accept=".json,application/json"><div class="notice"><b>Catatan:</b> backup berisi format kerja prototipe MG30 Studio. Simpan file di tempat aman.</div></div></section>
 </div><div id="toast" class="toast"></div>
+<script src="./pedal-reference-artwork.js"></script>
 <script>
 // NAM ID convention observed on MG-30 GEN2: QuickTone slot 7 reports ID 60
 // and slot 8 reports ID 61. Other slot IDs are provisionally mapped contiguously.
@@ -2401,6 +2402,8 @@ function renderGearSvg(blockId,modelName){
   if(blockId==="AMP"){
     return renderAmpArtworkForApp(modelName,basis);
   }
+  const referencePedalSvg=window.renderPedalReferenceSvg?.(blockId,modelName);
+  if(referencePedalSvg)return referencePedalSvg;
   if(blockId==="IR"){
     let cones='';for(let i=0;i<4;i++){const x=135+(i%2)*150,y=70+Math.floor(i/2)*75;cones+='<circle cx="'+x+'" cy="'+y+'" r="25" fill="#111516" stroke="'+style.accent+'" stroke-width="2"/><circle cx="'+x+'" cy="'+y+'" r="17" fill="#424a4b" stroke="#828b8b"/><circle cx="'+x+'" cy="'+y+'" r="5" fill="#c0c7c4"/>'}
     return '<svg class="gear-svg" viewBox="0 0 420 220" role="img" aria-label="Ilustrasi cabinet IR '+name+'"><rect x="36" y="18" width="348" height="181" rx="8" fill="'+style.body+'" stroke="'+style.accent+'" stroke-width="2"/><rect x="46" y="28" width="328" height="160" rx="4" fill="'+style.grille+'"/>'+cones+'<text x="210" y="215" text-anchor="middle" fill="#e5e9df" font-size="9">'+name.toUpperCase()+'</text></svg>';
