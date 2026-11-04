@@ -203,7 +203,7 @@ Pada **2026-11-05**, pengguna mengirim delapan screenshot dari aplikasi **NUX MG
 | 1001011677.jpg | AMP — Class A15 | Combo amplifier, Vox AC15 |
 | 1001011676.jpg | AMP — Cali Crunch | Combo amplifier, Mesa/Boogie Mark I |
 
-File-file di atas adalah nama upload asli pada percakapan proyek tanggal tersebut. Screenshot telah diterima sebagai sumber referensi, tetapi **belum disalin menjadi aset biner di Git repository**. Jangan mengarang path repository atau menganggap file tersebut sudah berada di folder docs.
+File-file di atas adalah nama upload asli pada percakapan proyek tanggal tersebut. Arsip screenshot asli sudah diunggah ke Git repository pada `docs/research/MG30_artwork_baseline_screenshots.zip` (850,022 byte). Arsip ini berisi delapan gambar referensi. Gunakan file ZIP tersebut sebagai sumber asli; jangan menganggap gambar sudah diekstrak menjadi file terpisah di repository.
 
 ### 10.2 Ciri visual yang dapat diamati dari screenshot
 
@@ -230,7 +230,7 @@ File-file di atas adalah nama upload asli pada percakapan proyek tanggal tersebu
 3. Saat merevisi SVG lokal, pertahankan perangkat di tengah area artwork dan gunakan object-fit: contain agar keseluruhan siluet terlihat.
 4. Jika detail kecil sulit dibaca pada ukuran editor, prioritaskan siluet, panel, tata letak kontrol, material, dan warna yang paling mudah dikenali.
 5. Screenshot ini mengacu pada tampilan aplikasi NUX MG-30 Gen 2. Tetap validasi hasil akhir di MG30 Studio yang sedang dibangun; jangan menganggap UI atau aset aplikasi referensi sudah otomatis tersedia di repository.
-6. Bila screenshot aktual baru dikirim, tambahkan nama file, blok/model, dan detail yang menjadi acuan ke tabel di atas. Jika kemudian disimpan ke repository, baru tambahkan path repository yang benar.
+6. Bila screenshot aktual baru dikirim, tambahkan nama file, blok/model, dan detail yang menjadi acuan ke tabel di atas. Simpan aset biner ke repository dan catat path yang sudah diverifikasi.
 
 ## 11. Template prompt untuk sesi chat baru
 
@@ -243,4 +243,4 @@ Salin instruksi ini saat melanjutkan pekerjaan di sesi baru:
 | Tanggal | Versi | Catatan |
 |---|---|---|
 | 2026-11-04 | 1.0 | Mencatat baseline AMP + pedal SVG dari branch `feature/amp-knob-label-correction-artwork`, commit `a59e389baf147f0cae0c265796c8e912016b6bdc`. |
-| 2026-11-05 | 1.1 | Menambahkan delapan screenshot NUX MG-30 Gen 2 Mobile Editor yang dikirim pengguna sebagai acuan aktual pedal DPL-10, Seraphim, MXR Chorus, Horseman OD, Friedman HBE, Marshall Plexi, Vox AC15, dan Mesa/Boogie Mark I. Mencatat karakter area artwork, skala, warna, dan caption. File upload belum disalin ke Git repository. |
+| 2026-11-05 | 1.1 | Menambahkan delapan screenshot NUX MG-30 Gen 2 Mobile Editor sebagai acuan aktual dan mencatat karakter area artwork, skala, warna, serta caption. |\n| 2026-11-05 | 1.2 | Memverifikasi arsip asli `docs/research/MG30_artwork_baseline_screenshots.zip` (850,022 byte) sudah ada di branch kerja. Baseline kini menunjuk ke arsip tersebut sebagai sumber gambar referensi. |
