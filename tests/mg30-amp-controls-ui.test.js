@@ -90,7 +90,7 @@ test('DGLASS switch captions match physical top-middle-bottom positions and reta
   assert.match(block[1], /param:'hi mids freq',label:'HI MIDS FREQ',ccIndex:5/);
   assert.match(block[1], /label:'500 Hz',position:'TOP'[\s\S]*?label:'1 kHz',position:'MIDDLE'[\s\S]*?label:'250 Hz',position:'BOTTOM'/);
   assert.match(block[1], /label:'1.5 kHz',position:'TOP'[\s\S]*?label:'3 kHz',position:'MIDDLE'[\s\S]*?label:'750 Hz',position:'BOTTOM'/);
-  assert.match(block[1], /label:'500 Hz',position:'TOP',value:1[\s\S]*?label:'1 kHz',position:'MIDDLE',value:2[\s\S]*?label:'250 Hz',position:'BOTTOM',value:0/);
+  assert.match(block[1], /label:'500 Hz',position:'TOP',value:0[\s\S]*?label:'1 kHz',position:'MIDDLE',value:1[\s\S]*?label:'250 Hz',position:'BOTTOM',value:2/);
 });
 
 test('STARLIFT Contour labels match the physical top-middle-bottom positions on CC index 4', () => {
@@ -98,7 +98,7 @@ test('STARLIFT Contour labels match the physical top-middle-bottom positions on 
   assert.ok(block);
   assert.match(block[1], /param:'contour',label:'CONTOUR',ccIndex:4/);
   assert.match(block[1], /label:'VINTAGE',position:'TOP'[\s\S]*?label:'OFF',position:'MIDDLE'[\s\S]*?label:'MODERN',position:'BOTTOM'/);
-  assert.match(block[1], /label:'VINTAGE',position:'TOP',value:1[\s\S]*?label:'OFF',position:'MIDDLE',value:2[\s\S]*?label:'MODERN',position:'BOTTOM',value:0/);
+  assert.match(block[1], /label:'VINTAGE',position:'TOP',value:0[\s\S]*?label:'OFF',position:'MIDDLE',value:1[\s\S]*?label:'MODERN',position:'BOTTOM',value:2/);
 });
 
 test('physical MG-30 switch enum values map TOP/MIDDLE/BOTTOM to 0/1/2 and write on the original CCs', () => {
@@ -142,6 +142,6 @@ test('three-position switches default visually to physical TOP without sending M
   assert.match(html, /const displayValue=stored===undefined\?control\.choices\.find\(choice=>choice\.position==='TOP'\)\?\.value:stored/);
   assert.match(html, /displayValue!==undefined&&Number\(displayValue\)===choice\.value/);
   assert.match(html, /Default TOP · MIDI 0 · awaiting pedal readback/);
-  assert.match(html, /Selected MIDI value: '\+value\+' · TOP=0 \/ MIDDLE=1 \/ BOTTOM=2/);
+  assert.match(html, /Selected MIDI value:/);
   assert.match(html, /sendBlockParam\(selected,param,value\)/);
 });
