@@ -472,3 +472,12 @@ Source commit: 8d388061058e7daa0d7a2ed9ab4eb995e65ea34e
 Test commit: 01689b89dc16906661b24c2b01c553e475e59d1b
 
 Next validation after build: confirm one position at a time on hardware, especially STARLIFT CONTOUR. Keep target as original NUX MG-30 Gen 2 firmware 6.0.x, not MKII. Do not modify NAM, IR User/Collection, preset transfer, or unrelated MIDI mappings.
+
+## Follow-up source/test alignment
+
+The first CI attempts after changing the enum exposed stale assertions in the earlier tests and one stale UI status string. These were corrected; the mapping itself remains TOP=0 / MIDDLE=1 / BOTTOM=2.
+
+Final source commit: 94e09838c8bcf72acdcbfb19909b2a7d18dfb350
+Final test commit: a622221971cdbc5a26145c2024a60195eeb52872
+
+Run CI against the test commit before handing out a new APK.
