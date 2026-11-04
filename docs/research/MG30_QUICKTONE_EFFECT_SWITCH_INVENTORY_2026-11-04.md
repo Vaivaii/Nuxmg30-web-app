@@ -101,13 +101,15 @@ The earlier AMP candidate list is out of scope here. AMP's already validated swi
 - STARLIFT CONTOUR, CC28: TOP=0 / MIDDLE=1 / BOTTOM=2.
 - DGLASS HI MIDS FREQ, CC29: TOP=0 / MIDDLE=1 / BOTTOM=2.
 
-## Implementation boundary
+## Implementation boundary — superseded by the user's latest authorization
 
-**Analysis and inventory only. No application code or UI was changed for these effect controls.** Do not replace rotary knobs, alter effect UI, or send effect-switch MIDI until the missing captures/readbacks are completed and the user approves implementation.
+The user explicitly authorized applying these six effect switches now using the same discrete enum pattern as the validated AMP switches, with QuickTone capture and hardware readback reserved for correcting any mismatches. A provisional implementation has been committed to the working branch.
 
-Preserve:
-- The confirmed AMP mappings listed above.
+This permission is limited to the six confirmed effect models and their existing parameter slots. Do not renumber CC assignments or change other controls. Do not change:
+- The confirmed AMP mappings: DGLASS CC26/CC29 and STARLIFT CC28, TOP=0 / MIDDLE=1 / BOTTOM=2.
 - Existing NAM functionality.
 - IR User / Third Party and IR Collection import behavior.
 - Preset transfer and all unrelated MIDI mappings.
-- Target compatibility with original MG-30 Gen 2 firmware 6.0.x only, not MKII.
+- Target compatibility: original MG-30 Gen 2 firmware 6.0.x only, not MKII.
+
+The six effect-switch raw values remain provisional until tested on the user's hardware. No physical test or new capture has yet been reported.
