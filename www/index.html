@@ -1030,9 +1030,6 @@ function syncIncomingParameterCC(cc,rawValue){
         const active=Number(button.dataset.switchValue)===next;
         button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
        });
-       const selectedChoice=switchControl.choices.find(choice=>choice.value===next);
-       const rawLabel=group.querySelector('.switch-raw-value');
-       if(rawLabel)rawLabel.textContent='Hardware raw value: '+String(next)+' · '+selectedChoice.position+' / '+selectedChoice.label;
       }
     }
     const selector=[...document.querySelectorAll('#knobs .parameter-select')].find(x=>x.dataset.p===param);
@@ -1960,12 +1957,8 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
   const hasReadback=stored!==undefined;
   const defaultChoice=control.choices.find(choice=>choice.value===control.defaultValue)??control.choices[0];
   const displayValue=hasReadback?stored:defaultChoice?.value;
-  const selectedChoice=control.choices.find(choice=>choice.value===displayValue);
-  const status=hasReadback
-   ?'Hardware raw value: '+String(Math.round(Number(stored)))+' · '+selectedChoice.position+' / '+selectedChoice.label
-   :'Default '+defaultChoice.position+' · MIDI '+defaultChoice.value+' · awaiting pedal readback';
   const twoWay=control.type==='two-way-switch';
-  return '<div class="knob knob-discrete-switch '+(twoWay?'knob-two-way':'knob-three-way')+'" data-switch-param="'+escapeHtml(p)+'"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch'+(twoWay?' two-way-switch':'')+'" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button'+(displayValue!==undefined&&Number(displayValue)===choice.value?' is-active':'')+'" data-switch-param="'+escapeHtml(p)+'" data-switch-value="'+choice.value+'" aria-pressed="'+String(displayValue!==undefined&&Number(displayValue)===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+escapeHtml(choice.position)+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div><small class="switch-raw-value">'+escapeHtml(status)+'</small><small class="switch-safe-note">Posisi awal hanya tampilan; tidak mengirim MIDI sampai tombol dipilih.</small></div>';
+  return '<div class="knob knob-discrete-switch '+(twoWay?'knob-two-way':'knob-three-way')+'" data-switch-param="'+escapeHtml(p)+'"><label>'+escapeHtml(control.label)+'</label><div class="three-way-switch'+(twoWay?' two-way-switch':'')+'" role="group" aria-label="'+escapeHtml(control.label)+'">'+control.choices.map(choice=>'<button type="button" class="switch-position-button'+(displayValue!==undefined&&Number(displayValue)===choice.value?' is-active':'')+'" data-switch-param="'+escapeHtml(p)+'" data-switch-value="'+choice.value+'" aria-pressed="'+String(displayValue!==undefined&&Number(displayValue)===choice.value)+'" aria-label="'+escapeHtml(choice.position+' '+choice.label)+'"><span class="switch-position">'+escapeHtml(choice.position)+'</span><strong>'+escapeHtml(choice.label)+'</strong></button>').join('')+'</div></div>';
   }
   if(p==='mic'||p==='position'){
   const options=p==='mic'?MIC_OPTIONS:MIC_POSITION_OPTIONS,raw=stored===undefined?'':String(encodeParameterValue(p,stored));
@@ -1985,9 +1978,6 @@ $('knobs').querySelectorAll('.switch-position-button').forEach(el=>{
    const active=Number(button.dataset.switchValue)===value;
    button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
   });
-  const rawLabel=el.closest('.knob-discrete-switch')?.querySelector('.switch-raw-value');
-  const choice=control.choices.find(item=>item.value===value);
-  if(rawLabel)rawLabel.textContent='Selected MIDI value: '+value+' · '+choice.position+' / '+choice.label;
   $('statChanged').textContent=changed.size;persist();
   sendBlockParam(selected,param,value);
  };

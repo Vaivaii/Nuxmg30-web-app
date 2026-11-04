@@ -141,8 +141,8 @@ test('discrete switches default visually without sending MIDI until the user sel
   assert.match(html, /const hasReadback=stored!==undefined/);
   assert.match(html, /const defaultChoice=control\.choices\.find\(choice=>choice\.value===control\.defaultValue\)/);
   assert.match(html, /displayValue!==undefined&&Number\(displayValue\)===choice\.value/);
-  assert.match(html, /Posisi awal hanya tampilan; tidak mengirim MIDI sampai tombol dipilih/);
   assert.match(html, /sendBlockParam\(selected,param,value\)/);
+  assert.doesNotMatch(html, /switch-raw-value|switch-safe-note|Hardware raw value|Selected MIDI value|awaiting pedal readback|Posisi awal hanya tampilan/);
 });
 
 test('six QuickTone effect switches use their existing parameter positions and retain model order', () => {
@@ -192,4 +192,14 @@ test('physical enum reversals are limited to Octave-Shift, Touch Wah, U-Vibe, an
   // Preserve the physically verified controls; these must not inherit the reversal.
   assert.match(block[1], /'Katana':[\s\S]*?defaultValue:0,choices:\[[\s\S]*?label:'OFF',position:'OFF',value:0[\s\S]*?label:'ON',position:'ON',value:1/);
   assert.match(block[1], /'SCF':[\s\S]*?defaultValue:0,choices:\[[\s\S]*?label:'CHORUS',position:'TOP',value:0[\s\S]*?position:'MIDDLE',value:1[\s\S]*?label:'FLANGER',position:'BOTTOM',value:2/);
+});
+
+
+test('AMP and effect switch UI shows positions and labels without debug captions', () => {
+  assert.match(html, /class="knob knob-discrete-switch/);
+  assert.match(html, /class="switch-position-button/);
+  assert.match(html, /<span class="switch-position">/);
+  assert.match(html, /<strong>\x27\+escapeHtml\(choice\.label\)/);
+  assert.doesNotMatch(html, /Hardware raw value|Selected MIDI value|awaiting pedal readback|switch-raw-value|switch-safe-note/);
+  assert.doesNotMatch(css, /switch-raw-value|switch-safe-note/);
 });
