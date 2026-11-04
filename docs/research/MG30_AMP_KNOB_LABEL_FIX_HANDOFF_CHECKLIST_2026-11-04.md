@@ -643,3 +643,41 @@ Tidak ada perubahan yang dimaksudkan pada:
 - MIDI block/model switch dan seluruh CC selain enam parameter efek yang dirender ulang di atas.
 - NAM, IR User / Third Party, IR Collection, preset transfer, signal chain, USB audio/DAW.
 - Target perangkat: original NUX MG-30 Gen 2 firmware 6.0.x, bukan MKII.
+
+## Build recovery and verified Android APK — 4 Nov 2026
+
+The user reported the preceding build failed and explicitly requested a simulated/test run until success before the APK is handed over. The failed workflow was investigated using the GitHub Actions run and job logs, not guessed.
+
+### Failure causes found and fixed
+
+1. Run #500 / job 126650537567 stopped during `npm test`, before Capacitor sync or Android assembly. The terminal test file `tests/mg30-amp-controls-ui.test.js` ended with a malformed `}});` at line 182. Node 22 reported `SyntaxError: missing ) after argument list`. Fixed by restoring the single test closure `});`.
+2. Run #501 parsed the file, but one legacy AMP UI assertion still expected the old literal debug string `TOP=0 / MIDDLE=1 / BOTTOM=2`. The new shared switch handler reports the selected position/label instead. The test was corrected to assert the new generic status while the separate AMP enum assertions continue to enforce TOP=0 / MIDDLE=1 / BOTTOM=2 and the original CC indices.
+3. No effect parameter mapping, CC table, AMP mapping, NAM implementation, IR handling, or preset transfer code was changed to resolve these test failures.
+
+### Successful verification — GitHub Actions run #502
+
+- Branch: `feature/amp-knob-label-correction`
+- Tested commit: `1ca4700f5d970b8fd4abe3a9b2098000349bd7d2`
+- Run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/41854994490
+- Overall workflow: **completed / success**
+- Node: v22.23.4; Java: Temurin 21.0.13+9
+- `npm install`: success; 115 packages installed, 0 vulnerabilities reported.
+- `node --check scripts/init-android.mjs`: success.
+- `npm test`: **199 tests, 199 passed, 0 failed**.
+- `npm run android:init`: success (Vite build + Capacitor Android generation / sync).
+- `cd android && ./gradlew --no-daemon assembleDebug`: **BUILD SUCCESSFUL in 1m 15s**.
+- Upload APK artifact: success.
+
+### Artifact identity
+
+- GitHub artifact: `MG30-Studio-debug-APK`, artifact ID `13337420643`.
+- Artifact ZIP size: 4,147,420 bytes; SHA-256 `afd0b71fbb258aae8b182e212c3e96186b26a29e577a7a2ae9479063db9d9627`.
+- APK inside ZIP: `app-debug.apk`, size 4,524,200 bytes.
+- Downloaded and extracted APK local SHA-256: `dc9335a52c6523fac70327a311e56b707c51a130540ca1ca8f250969569b261c`.
+- Archive integrity check: `unzip -t` reported no errors; file utility recognizes the extracted file as an Android package (APK).
+
+### Remaining verification boundary
+
+This is a successful automated debug build and protocol/UI regression test run. It is **not** a physical USB-MIDI/hardware test on the user's MG-30. The six effect switch raw values remain provisional until the user tries the APK with the original MG-30 Gen 2 firmware 6.0.x. If a switch state disagrees with the hardware, capture that individual control and correct only that mapping.
+
+Keep existing NAM, IR User/Third Party and IR Collection, preset-transfer, AMP mappings, and unrelated MIDI behavior unchanged.
