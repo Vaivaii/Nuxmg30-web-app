@@ -541,3 +541,20 @@ These model entries contain controls whose `elementType` is 6 and whose image re
 2. For each candidate above, extract the full control array in order: elementType, image1/2/3, languageKey, midiCC, parameter1/2/3, and surrounding model key.
 3. Inspect the referenced Open/Close assets and the QuickTone UI for labels/function names; classify each as binary toggle, multi-position selector, status light, or footswitch.
 4. Only propose knob-to-switch conversions for controls supported by both QuickTone UI evidence and hardware capture/readback. No application controls, MIDI mappings, or UI have been modified during this inventory.
+
+## Corrected scope: effect pedal switch inventory
+
+User clarified the requested QuickTone analysis is for EFX/modulation/delay/compressor/EQ/reverb/wah and other stomp effects, not AMP. The earlier AMP-only candidate inventory is out of scope and must not be presented as satisfying this request. AMP work remains limited to the already-confirmed DGLASS and STARLIFT switches.
+
+Static analysis of the user-provided QuickTone 2.6.7.16 executable identified five non-AMP model panels with explicit Toggle/Switch Open/Close image pairs: **12. KATANA** (Boost), **13. HARMONIST** (unlabelled), **15. TOUCH WAH** (unlabelled), **4. PARA EQ** (unlabelled), and **5. OCTAVE-SHIFT** (unlabelled). A lower-confidence selector candidate is **9. S.C.F**, which uses a two-frame Plist button element rather than the explicit Toggle/Switch image pair.
+
+Four rotary controls have short discrete ranges but are still represented by knob assets in QuickTone: ALIGN EQ HPF 0–2, HORSE WAH RANGE 0–5, TOUCH WAH MODE 0–3, and HARMONIST HARMO 0–9. They must not be relabelled as physical switches without hardware evidence.
+
+No explicit toggle pair was found in this static pass for Compressor (Rose/K/Studio), Delay (Analog/Digital/Modulation/Tape Echo/Reverse/Pan/DuoTime/Phi), or Reverb (Room/Hall/Plate/Spring/Shimmer/Damp). Ordinary Light Open/Close assets are status indicators; Nail Normal/Press assets are pedal press/bypass graphics and are not counted as parameter switches.
+
+Detailed catalogue records, image names, element types, QuickTone stored midiCC fields, parameter ranges, exclusions, confidence levels, and next capture steps are documented in:
+`docs/research/MG30_QUICKTONE_EFFECT_SWITCH_INVENTORY_2026-11-04.md`
+
+**Implementation remains prohibited at this stage.** Next: inspect each candidate's panel artwork, resolve function labels, and capture physical QuickTone output/readback on original MG-30 Gen 2 before proposing any replacement of rotary knobs. Do not alter application source or any MIDI mappings now. Preserve NAM, IR User/Collection, preset transfer, and the confirmed AMP switch mapping TOP=0 / MIDDLE=1 / BOTTOM=2.
+
+Inventory documentation commit: 3d156b160f32c35a60fda2bcc2d7ce176a49ac14
