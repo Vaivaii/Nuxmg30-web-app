@@ -319,7 +319,8 @@
         s+=T(132,106,'FDBK',8,'#f1eef2',800)+T(132,190,'TONE',6,'#c9c5ce',700);
         s+=T(286,132,'LEVEL',8,'#f1eef2',800)+T(286,142,'SATURATE',6,'#c9c5ce',700);
         s+=C(210,108,9,'#34343a','#777780',1.2)+C(210,108,3,'#a7a7ab','none',0);
-        s+=P('M160 145l-9 -6v12z','#eeeaf2',1,'#eeeaf2')+P('M260 145l9 -6v12z','#eeeaf2',1,'#eeeaf2');
+        // The white side arrows are intentionally omitted.
+
         s+=T(247,181,'PHI DELAY',20,'#f4f1f4',900,'middle','letter-spacing="1.1"');
         s+=R(221,203,52,5,'#acafb0','#65666a',.5,2);
         s+=foot(112,218,12)+foot(310,218,12);

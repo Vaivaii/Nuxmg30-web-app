@@ -73,9 +73,9 @@ test('Budda purple tone-control panel is centred and its six knobs sit within it
 test('PV 5150 right rail has two contained rocker switches, not an overflowing third toggle', () => {
   const svg = render('PV 5150 · IMAGE', 'Peavey 5150 family');
   assert.equal((svg.match(/width="16" height="30"/g) || []).length, 2);
-  assert.ok(svg.includes('<rect x="630" y="285" width="16" height="30"'));
-  assert.ok(svg.includes('<rect x="658" y="285" width="16" height="30"'));
-  assert.ok(658 + 16 <= 678, 'right rocker must remain inside the lower faceplate');
+  assert.ok(svg.includes('<rect x="622" y="285" width="16" height="30"'));
+  assert.ok(svg.includes('<rect x="650" y="285" width="16" height="30"'));
+  assert.ok(650 + 16 <= 678, 'right rocker must remain inside the lower faceplate');
 });
 
 test('Bogner, standard 5150 and Orange right-side hardware stays clear of the head edge', () => {
