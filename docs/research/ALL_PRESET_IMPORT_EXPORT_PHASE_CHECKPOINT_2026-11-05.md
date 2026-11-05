@@ -425,3 +425,34 @@ This build is CI- and package-verified only. It has not been confirmed installed
 - First Export All in a fresh session may still read all slots that have not already been cached by Export Single. Later Export All can serialize from the 128 fresh cached records.
 - No NAM protocol, User/Third Party IR frame bytes, IR Collection packet mapping, MIDI/CC mapping, Signal Chain protocol, preset import packet ordering, or native USB-MIDI transport behavior was changed. The only IR-uploader addition emits an internal completion event after all 75 User-path ACKs succeed; Collection does not emit that event.
 - Do not describe cache speed or hardware behavior as physically validated until the user's on-device test above is completed.
+
+
+## Export All native transfer — chunked staging revision (5 November 2026)
+
+User re-tested the prior build and reported the same result: the pedal was scanned preset-by-preset, but the saved All Preset file still showed 0 bytes. The prior SAF verification path was not confirmed to fix the user's device.
+
+Source review separated two behaviors:
+- The first Export All still reads each uncached slot from the MG-30. That is currently expected: the session cache is populated by readback and does not yet reproduce QuickTone's connection-time synchronization.
+- After all 128 records pass validation, JavaScript serializes a Uint8Array of exactly 0x135700 bytes. The Android native path previously passed the entire approximately 1.7 MB Base64 string as one Capacitor plugin-call payload before staging it.
+- Capacitor / Android documentation warns that large payloads across the WebView/native bridge can cause memory and transfer issues. This makes the single large plugin call a plausible failure boundary, but the user's new report alone does not prove it was the root cause.
+
+Revision on feature/all-preset-import-export:
+- www/mg30-preset-export.js now passes the binary Uint8Array to the local native wrapper instead of constructing and sending a full-file Base64 string.
+- www/native-midi.js sends the file in sequential 48 KiB raw chunks. Every chunk is Base64-encoded separately, awaited, and checked against the native ACK offset/byte count.
+- native-android/MG30MidiPlugin.java adds beginPatchExport, writePatchExportChunk, finishPatchExport, and abortPatchExport. It validates allowed total sizes, exact sequential offsets, 64 KiB maximum native chunk size, cumulative received bytes, staged file length and final file sync before opening ACTION_CREATE_DOCUMENT.
+- The final staged file is renamed to the existing callback-ID-derived persistent path. The existing SAF copy, destination readback byte-count verification and CRC32 check remain in place.
+- Existing savePatch method remains for compatibility; NAM/model saving and MIDI transfer methods are unchanged.
+- Added tests/native-patch-export-chunks.test.js for the chunk transfer contract.
+
+Protected areas not modified:
+- No MG-30 SysEx request/reply bytes or Program Change sequencing.
+- No NAM transfer path.
+- No User / Third Party IR transfer frames.
+- No Collection IR 6A/6B/6C behavior or mapping.
+- No existing MIDI/CC mappings.
+- No preset import/write path and no single-preset serialization format.
+
+Validation status:
+- The change has been committed to the working branch and awaits GitHub Actions results.
+- No claim of physical Android SAF success is made yet. After CI succeeds, the resulting APK must still be tested on the user's phone; success must report exactly 1,267,456 bytes and a non-empty CRC32. Then import that exact file and verify the All Preset parser sees 128 records.
+- If the next device test still yields 0 bytes, capture the complete Export All status/error text. The chunk ACKs and native staging guard will now distinguish payload transfer/staging failure from final SAF destination write/readback failure.
