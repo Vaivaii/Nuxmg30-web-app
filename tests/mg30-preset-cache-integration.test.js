@@ -16,10 +16,9 @@ test("Export Single checks the session manager before invoking live readback", (
 test("Export All reuses fresh cache entries and reads only misses or stale slots", () => {
   assert.match(exportSource, /let readback = presetManagerCache\.get\(program\)/);
   assert.match(exportSource, /cacheHits \+= 1/);
-  assert.match(exportSource, /sceneReadCommand: 0x0B/);
-  assert.doesNotMatch(exportSource, /await bridge\.selectProgramForRead\(program\)/);
+  assert.match(exportSource, /await bridge\.selectProgramForRead\(program\)/);
   assert.match(exportSource, /readSingleWithManagerCache\(bridge, program/);
-  assert.doesNotMatch(exportSource, /changedProgram/);
+  assert.match(exportSource, /changedProgram/);
 });
 
 test("cache session starts on app connection and resets after disconnect", () => {
@@ -59,23 +58,4 @@ test("successful User IR upload invalidates preset cache, while Collection trans
 test("Export All readback uses explicit metadata hasResource flag so placeholder names skip waveform and curve reads", () => {
   assert.match(appSource, /if\(metadata\.hasResource!==true\)/);
   assert.match(exportSource, /allowMissingResource: true/);
-});
-
-
-test("Export All manager cache is warmed after connection using QuickTone 0B/00 indexed reads", () => {
-  assert.match(exportSource, /syncPresetManagerCacheOnConnect/);
-  assert.match(exportSource, /mg30-midi-connected'[\s\S]*?syncPresetManagerCacheOnConnect/);
-  assert.match(exportSource, /source: 'QuickTone-connection-manager-sync'/);
-  assert.match(exportSource, /sceneReadCommand: 0x0B/);
-  assert.match(appSource, /sceneCommand=Number\(options\?\.sceneReadCommand\)===0x0B\?0x0B:0x0C/);
-  assert.match(appSource, /sceneCommand\.toString\(16\)/);
-  assert.doesNotMatch(exportSource, /selectProgramForRead\(program\)/);
-});
-
-
-test("Android preset manager warm-up waits for NAM name scan and Collection sync", () => {
-  assert.match(exportSource, /nativeStartupSync/);
-  assert.match(exportSource, /pendingManagerSyncAfterStartup = true/);
-  assert.match(exportSource, /mg30-ir-collection-sync-complete/);
-  assert.match(irTransferSource, /mg30-nam-sync-complete',async[\s\S]*?await syncCollectionFromDevice[\s\S]*?mg30-ir-collection-sync-complete/);
 });
