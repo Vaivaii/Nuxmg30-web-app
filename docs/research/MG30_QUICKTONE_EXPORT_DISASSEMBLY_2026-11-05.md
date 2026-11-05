@@ -445,3 +445,44 @@ The supplied capture is 2,880 bytes and contains only a short sequence of USBPca
 - The response decoder VA 0x004A4970 is the same 7-bit decoder used elsewhere; the exact response byte order and resulting float32 sample ordering are inferable from the copy loop, but still require a real 10/02 + 11/02 capture to validate against hardware data.
 - The supplied pre-export capture does not contain that evidence. A dedicated capture must include USB bulk traffic while QuickTone is synchronizing a resource-bearing preset; capturing only the Export All save dialog is insufficient because the export click serializes the manager already in memory.
 - No app source, APK, firmware/device state, NAM path, User/Third Party import, Collection logic, Import All transaction, or MIDI mapping was changed.
+
+
+## Follow-up: preset-wide 09/00 name scan and sync order (2026-11-05)
+
+The readback entry point for resource names is now identified as a preset-wide scan, not a one-off request issued only when a preset is selected.
+
+### 09/00 per-preset request
+
+- Routine VA 0x004A9560 loops a local index from 0 up to manager field +0x640 (the current preset count).
+- For every index it calls VA 0x004A95F0.
+- VA 0x004A95F0 builds a 15-byte SysEx request with command bytes 09/00 and a one-byte preset index payload, then waits through transport helper VA 0x00B0E360 with a 1,000 ms timeout.
+- Its callback target is VA 0x004A9720, which accepts 09/02. The handler decodes the returned name/resource descriptor, looks up the corresponding manager resource object, and checks whether a resource is present.
+- When the resource-presence test succeeds, the handler calls VA 0x004AB340 (10/00 waveform read) and VA 0x004AAEA0 (11/00 curve read) for that same preset index. If the resource is absent, it does not launch those sample/curve reads.
+
+This establishes the resource gating mechanism: the 09/02 result decides whether the 10/00 and 11/00 readbacks are started for each preset.
+
+### Connection/synchronization call order
+
+A caller at VA 0x00841C99 invokes a sequence of sync routines after connection/manager setup. In order, the inspected calls include:
+
+- 0x004A4DF0
+- 0x004A57E0
+- 0x004A5A60
+- 0x004A6350
+- 0x004A5E10
+- 0x004A6670
+- 0x004A8CA0
+- 0x004A8FF0
+- 0x004A9560 (the 09/00 resource-name scan)
+- 0x004A6800 and later routines
+
+The caller's surrounding code validates connection/setup state before invoking this sequence. This indicates that QuickTone's manager/resource population happens as part of its connection synchronization, before the user invokes Export All. The 09/00 scan is explicitly after the 18/19 metadata routines in this call sequence.
+
+### Export All implications
+
+1. To reproduce QuickTone's manager population, the app's read-only sync path must enumerate each valid preset index, read three scenes, and query its 09/02 resource descriptor.
+2. Only when 09/02 indicates an attached resource should the app issue 10/00 and 11/00 for that preset.
+3. The read-side requests are sequential per frame in QuickTone, use a 1,000 ms transport timeout, and register a matching response handler. This is distinct from the import-side ACK sender state machine.
+4. The manager preset count +0x640 is used as the loop bound in this scan; the known MG-30 all-bank sample has 128 records. The exact UI/connection state that establishes this count should be kept in mind before assuming 128 is universal.
+5. No actual `10/02` or `11/02` frames are present in `exportallpre.pcapng`; a dedicated connection-sync capture is still required to validate runtime packet bytes and decoded sample ordering.
+6. No app source, APK, device communication, NAM, User/Third Party import, Collection, Import All or MIDI mapping was changed.
