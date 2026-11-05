@@ -1119,7 +1119,7 @@ async function readActiveProgramScene(){
  })();
  try{return await sceneStatusReadPromise}finally{sceneStatusReadPromise=null}
 }
-async function readSysExPart(cmd,prog,part){if(!midiConnected)throw new Error('Hubungkan MG-30 terlebih dahulu');await flushMidi();const reply=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===cmd&&b[4]===0x02&&b[6]===part);await midiFrame([0x43,0x58,0x70,cmd,0x00,prog,part,0,0,0,0,0,0]);return reply}
+async function readSysExPart(cmd,prog,part){if(!midiConnected)throw new Error('Hubungkan MG-30 terlebih dahulu');await flushMidi();const reply=waitForSysEx(b=>b.length===220&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===cmd&&b[4]===0x02&&b[5]===prog&&b[6]===part);const sent=await midiFrame([0x43,0x58,0x70,cmd,0x00,prog,part,0,0,0,0,0,0]);if(!sent)throw new Error('Permintaan preset '+prog+' part '+part+' tidak terkirim.');return reply}
 function bitSlot(body,k){const p=6+21*Math.floor(k/2)+8*(k%2);let v=0;for(let i=0;i<7;i++){const bit=p+i,byte=body[7+Math.floor(bit/7)];v=(v<<1)|((byte>>(6-bit%7))&1)}return v}
 async function readActiveBuffer(options={}){
  if(presetImportBusy||presetExportBusy)throw new Error('Transfer preset sedang berlangsung; pembacaan buffer ditunda.');
@@ -1393,10 +1393,11 @@ async function connectMG30(options={}){
     $('midiSupport').textContent='Native USB-MIDI';
     if(!silent)toast('Terhubung: '+(connection.deviceName||midiOutput.name||'NUX MG-30'));
     await readActiveBuffer().then(n=>setDeviceStatus('Terhubung via OTG · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('USB-MIDI terhubung, baca buffer gagal: '+e.message));
-    renderChain();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
-    if(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames){
-     setTimeout(()=>{void scanNamDeviceSlots(true)},80);
-    }
+    renderChain();startHardwareStatePolling();
+    const nativeStartupSync=Boolean(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames);
+    window.MG30NativeStartupSyncComplete=!nativeStartupSync;
+    window.dispatchEvent(new Event('mg30-midi-connected'));
+    if(nativeStartupSync)setTimeout(()=>{void scanNamDeviceSlots(true)},80);
    }catch(e){
     midiConnected=false;
     setDeviceStatus('USB-MIDI Android belum terhubung');
@@ -1437,7 +1438,7 @@ async function connectMG30(options={}){
    $('midiSupport').textContent='API tersedia';
    if(!silent)toast('Terhubung: '+(midiOutput.name||'MIDI device'));
    await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));
-   renderChain();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
+   renderChain();startHardwareStatePolling();window.MG30NativeStartupSyncComplete=true;window.dispatchEvent(new Event('mg30-midi-connected'));
   }catch(e){
    midiConnected=false;
    setDeviceStatus('Gagal terhubung');
@@ -3442,13 +3443,26 @@ window.MG30PresetExportBridge=Object.freeze({
   const traceHex=bytes=>Array.from(bytes||[],value=>Number(value).toString(16).padStart(2,'0')).join(' ').toUpperCase();
   window.MG30PresetExportLastDiagnostics=exportTrace;
   try{
+   const sceneCommand=Number(options?.sceneReadCommand)===0x0B?0x0B:0x0C;
+   const initialSceneReply0=options?.initialSceneReply0==null?null:Uint8Array.from(options.initialSceneReply0);
    const sceneReplies=[];
-   for(let part=0;part<3;part++){
+   if(initialSceneReply0){
+    if(initialSceneReply0.length!==220||initialSceneReply0[0]!==0x43||initialSceneReply0[1]!==0x58||
+       initialSceneReply0[2]!==0x70||initialSceneReply0[3]!==sceneCommand||initialSceneReply0[4]!==0x02||
+       initialSceneReply0[5]!==program||initialSceneReply0[6]!==0){
+     throw new Error('Balasan Scene 1 dari Preset Manager tidak cocok dengan slot '+slotName(program)+'.');
+    }
+    sceneReplies.push(initialSceneReply0);
+    exportTrace.reusedPresetManagerScene0=true;
+    onProgress({phase:'Membaca preset scene',completed:1,total:3,detail:'Scene 1/3 dipakai dari sinkronisasi Preset Manager'});
+   }
+   exportTrace.sceneReadCommand=sceneCommand;
+   for(let part=sceneReplies.length;part<3;part++){
     onProgress({phase:'Membaca preset scene',completed:part,total:3,detail:'Scene '+(part+1)+'/3'});
     const body=await requestPresetExportFrame(
-     Uint8Array.from([0xF0,0x43,0x58,0x70,0x0C,0x00,program,part,0,0,0,0,0,0xF7]),
-     b=>b.length===220&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x0C&&b[4]===0x02&&b[5]===program&&b[6]===part,
-     '0C/00 scene '+part
+     Uint8Array.from([0xF0,0x43,0x58,0x70,sceneCommand,0x00,program,part,0,0,0,0,0,0xF7]),
+     b=>b.length===220&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===sceneCommand&&b[4]===0x02&&b[5]===program&&b[6]===part,
+     sceneCommand.toString(16).toUpperCase().padStart(2,'0')+'/00 scene '+part
     );
     sceneReplies.push(Uint8Array.from(body));
     onProgress({phase:'Membaca preset scene',completed:part+1,total:3,detail:'Scene '+(part+1)+'/3 terbaca'});
