@@ -314,6 +314,11 @@ function init() {
       if (cachedRead.cacheHit) setStatus('Preset ' + label + ' menggunakan cache readback sesi USB-MIDI.');
       // QuickTone-compatible fixed field: preserve the first 16 ASCII bytes.
       // This changes only the name stored in the file, never the device's IR metadata.
+      if (Number(source.resourceMarker) !== 1 || !source.resourceName ||
+          !(source.samples instanceof Float32Array) || source.samples.length !== 2048 ||
+          !(source.curve instanceof Uint16Array) || source.curve.length !== 600) {
+        throw new Error('Preset ' + label + ' tidak memiliki resource IR lengkap untuk Export Single.');
+      }
       const exportResourceName = fitMG30QuickToneIRName(source.resourceName);
       const exportSource = { ...source, resourceName: exportResourceName };
       const bytes = buildMG30SinglePresetPatchFromReplies(exportSource);

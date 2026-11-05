@@ -368,3 +368,11 @@ Implemented on \`feature/all-preset-import-export\` after auditing the differenc
 - Added integration assertions that Export Single/All use the cache-first path and connection/write invalidation hooks remain connected.
 - No automatic 128-slot scan is started on connect. The first Export All still reads uncached slots and warms the cache incrementally. Reproducing QuickTone's connection-time manager population without an unproven trigger or disruptive Program Changes remains a separate research item.
 - No physical-device/export-speed claim is made until the new APK is installed and exercised on original MG-30 Gen2 FW 6.0.x.
+
+
+### Follow-up safety correction — legacy direct Save-to-device path (2026-11-05)
+
+- Static search found \`writeHardwarePreset()\` sends its captured \`0B/01\` scene frames and final \`07/01\` command directly through \`midiOutput.send()\`, outside the central \`midiSend()\` queue.
+- The cache invalidation helper is now called with the exact frame immediately after each of those existing sends. Frame bytes, order, ACK handling and readback verification are unchanged; the affected preset entry is only marked stale.
+- Export Single explicitly rejects a cached marker-0/no-resource entry with a clear User IR resource message before invoking the existing serializer. The resource-bearing Single Export path and device readback implementation remain unchanged.
+- Added an integration assertion for invalidation in the direct Save-to-device path. This correction changes no NAM, User/Third Party transfer packet, Collection command, MIDI/CC mapping, or USB-MIDI transport behavior.
