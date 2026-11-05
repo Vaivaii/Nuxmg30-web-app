@@ -136,18 +136,39 @@ async function cacheLocalAllPresetFile(file) {
  * No MIDI connection, readSingle(), SysEx request, or pedal access is used.
  */
 async function exportAllPresets() {
+  // Export All is deliberately a local serializer. Do not call the MIDI bridge,
+  // readSingle(), readPresetParts(), or any SysEx helper from this function.
   const source = localAllPresetSource();
   if (!source) {
     throw new Error('Data All Preset belum ada di memori lokal. Pilih file 128-preset .mg30patch melalui tombol Import All terlebih dahulu; operasi ini tidak membaca preset dari pedal.');
   }
 
+  if (!Array.isArray(source.records) || source.records.length !== 128) {
+    throw new Error('Sumber lokal Export All harus berisi tepat 128 record preset.');
+  }
+  for (let ordinal = 0; ordinal < 128; ordinal++) {
+    const record = source.records[ordinal];
+    if (!record || Number(record.recordOrdinal) !== ordinal ||
+        !Array.isArray(record.scenes) || record.scenes.length !== 3) {
+      throw new Error('Memori lokal tidak lengkap/berurutan pada preset ' + ordinal + '. Export dibatalkan.');
+    }
+  }
+
+  // buildMG30AllPresetPatch writes one 0x26AE record per slot. Parsed local
+  // records retain rawRecord, preserving each original RIFF/WAVE header and
+  // opaque padding; newly-created resource records get padded name/header
+  // fields from the format serializer.
   const bytes = buildMG30AllPresetPatch(source.records);
   if (!(bytes instanceof Uint8Array) || bytes.length !== 0x135700) {
     throw new Error('Buffer Export All harus tepat 0x135700 byte (128 × 0x26AE).');
   }
+
+  // Validate the completed binary before opening the save dialog.
   const verified = parseMG30AllPresetPatch(bytes);
-  if (verified.records.length !== 128 || verified.byteLength !== 0x135700) {
-    throw new Error('Validasi hasil serialisasi All Preset gagal.');
+  if (verified.records.length !== 128 ||
+      verified.byteLength !== 0x135700 ||
+      verified.resourcePrograms.length !== 27) {
+    throw new Error('Validasi hasil serialisasi All Preset gagal (128 record / 27 resource IR).');
   }
 
   const filename = 'MG30_All_Preset.mg30patch';
