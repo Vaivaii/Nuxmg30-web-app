@@ -55,3 +55,11 @@ The two newly supplied files use the same 12 block IDs in both status replies; o
 - No command was sent to a physical pedal during this analysis.
 - Firmware behavior and bitmask mapping are capture-derived; the new write UI still requires physical-device verification on original Gen 2 firmware 6.0.x.
 - APK CI status is pending. Do not treat the feature as physically validated until both links can be toggled from the app and read back correctly.
+
+## Signal Chain UI layout update
+
+- The two toggles are rendered as fixed routing cards inside the Signal Chain horizontal row.
+- MOD–DELAY card is anchored immediately after MOD (block ID 6); DELAY–REVERB card is anchored immediately after DELAY (block ID 7).
+- Cards have no block ID, are not selectable/editable, and are excluded from persisted chain order.
+- During drag preview, CSS ordering keeps each card immediately after its anchor effect; hit-testing over a routing card resolves to the nearest real effect block, allowing the drag to pass across the card.
+- Each card displays a serial/parallel path icon and current mode. Tapping toggles only its corresponding routing bit.
