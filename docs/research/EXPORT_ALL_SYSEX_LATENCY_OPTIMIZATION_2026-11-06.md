@@ -34,3 +34,16 @@ Added coverage to ensure:
 ## Validation state
 
 The code commit triggers the repository Android workflow. CI test and APK results, followed by physical MG-30 Gen2 validation, must be recorded separately. Do not infer that 22 ms pacing is hardware-proven until the user tests the resulting APK; if a response/offset is missed, preserve the diagnostics and adjust pacing only for Export All.
+
+
+## Build #596 verification
+
+- Source commit: `939d281c75954bb6403b01eddad889f85fa27fe2`.
+- GitHub Actions run #596: `42079319062`, conclusion **success**.
+- Regression tests: **267 passed, 0 failed**.
+- Android initializer syntax validation and Capacitor generation passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 30s**.
+- Artifact ID: `13440470324`; ZIP size 4,214,475 bytes; ZIP SHA-256 `4486281a7bd281162dddf7edf8a95c88cc102c70008080857f02431d21519435`.
+- Extracted APK: `MG30-Studio-ExportAll-Latency-Build-596.apk`, size 4,592,044 bytes; SHA-256 `5ae6b84eeeea0e6664b2a23caa62f15ebc0f1d008acc4de3df1af2d0e9d2a884`.
+- ZIP integrity passed and contained exactly `app-debug.apk`.
+- This verifies CI and APK packaging only. Real transfer-speed and response reliability must still be measured on the original MG-30 Gen2 firmware 6.0.x. If any slot/offset fails, retain the export diagnostics and consider a safer Export-All-only pacing value between 22 and 45 ms; do not modify the global MIDI gap or other transfer protocols.
