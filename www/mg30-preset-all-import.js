@@ -1,7 +1,6 @@
 import { buildMG30SinglePresetImportPlan } from './mg30-preset-format.js';
 
 const PRESET_COUNT = 128;
-const RESOURCE_PRESET_COUNT = 27;
 const SCENE_COUNT = 3;
 
 function encodeWord16(value) {
@@ -77,11 +76,9 @@ export function buildMG30AllPresetImportPlan(records) {
     sceneGroups.push(...sceneSteps(record, program));
   }
 
-  if (resourcePrograms.length !== RESOURCE_PRESET_COUNT) {
-    throw new Error('Capture QuickTone menunjukkan 27 preset dengan resource IR; file ini memiliki ' +
-      resourcePrograms.length + '. Batch ditolak sebelum perangkat disentuh.');
-  }
-
+  // The capture fixture contained 27 resource-bearing presets, but that is
+  // a property of that bank, not a protocol limit. Each resource group uses
+  // the same 75-frame 09/10/11 transaction sequence for its own preset index.
   // QuickTone completes all 27 resource groups before writing any of the
   // 384 scene records. Preserve that captured phase ordering exactly.
   steps.push(...sceneGroups);
@@ -102,8 +99,10 @@ export function buildMG30AllPresetImportPlan(records) {
     body: Uint8Array.from([0x43,0x58,0x70,0x75,0x01,0,0,0,0,0,0,0,0]),
   });
 
-  if (steps.length !== 2412) {
-    throw new Error('Jumlah frame Import All tidak cocok dengan capture: ' + steps.length + ' (diharapkan 2412).');
+  const expectedFrames = 3 + resourcePrograms.length * 75 + PRESET_COUNT * SCENE_COUNT;
+  if (steps.length !== expectedFrames) {
+    throw new Error('Jumlah frame Import All tidak cocok dengan jumlah resource dan scene: ' +
+      steps.length + ' (diharapkan ' + expectedFrames + ').');
   }
 
   return Object.freeze({
@@ -111,12 +110,11 @@ export function buildMG30AllPresetImportPlan(records) {
     presetCount: PRESET_COUNT,
     resourcePrograms: Object.freeze(resourcePrograms),
     steps: Object.freeze(steps),
-    totalFrames: steps.length,
+    totalFrames: expectedFrames,
   });
 }
 
 export const MG30AllPresetImport = Object.freeze({
   PRESET_COUNT,
-  RESOURCE_PRESET_COUNT,
   buildPlan: buildMG30AllPresetImportPlan,
 });
