@@ -109,3 +109,43 @@ This directly explains how All-file loading can retain mixed 24-bit/32-bit heade
 - Do not infer 32-bit live readback from the name, preset number, sample buffer size or waveform values.
 - The original source/provenance of the 32-bit records before All-file loading remains unresolved.
 - No app code/APK, NAM, User/Third Party, Collection, Import All or MIDI mappings changed.
+
+
+## Follow-up: legacy All Preset converter discovered — VA 0x004B5A20
+
+A separate QuickTone path accepts a legacy all-bank buffer and converts it into the modern manager/export record representation.
+
+### Input and output sizes
+
+- Input must be exactly 0x12C800 bytes = 128 × 0x2590.
+- Output allocation is 0x135700 bytes = 128 × 0x26AE.
+- The converter loops exactly 128 records.
+- Source record stride is 0x2590; destination record stride is 0x26AE.
+
+### Conversion behavior
+
+The converter allocates/clears a 0x12C800 intermediate buffer. For each source record it:
+- initializes scene conversion state using helper 0x004B7620 and converts three scenes through 0x004B5EC0;
+- writes RIFF, WAVE, fmt and data identifiers into the intermediate audio structure;
+- writes fmt chunk length 0x10 and PCM format tag 1;
+- copies source audio payload (0x2000 bytes) into the destination record's waveform region;
+- copies 600 WORD curve values into the destination curve region;
+- writes three converted scenes and advances by source stride 0x2590 and destination stride 0x26AE.
+
+The resulting 0x135700 buffer is then passed into the modern All Preset manager-loading path.
+
+### What this does and does not prove
+
+- Confirmed: QuickTone has a legacy all-bank conversion path distinct from the modern 0x26AE record loader and from live device readback.
+- Confirmed: this converter writes WAVE container identifiers and the PCM format tag while constructing intermediate records.
+- Not yet proven: whether this legacy converter can create the 32-bit headers observed in the modern All Preset file. The inspected instructions do not yet establish every WAVE numeric field written or copied into the intermediate structure.
+- Therefore do not attribute the 11 observed 32-bit records to this converter without further tracing.
+
+### Current provenance model
+
+There are now three confirmed construction paths:
+1. Live device sync: 09/02 name/presence + 10/02 samples + 11/02 curve; finalizer uses fixed 24-bit WAVE initializer.
+2. Modern All Preset load: copies each record's raw WAVE header into the manager resource object, preserving mixed variants.
+3. Legacy All Preset conversion: converts 128 × 0x2590 input records into 128 × 0x26AE modern records, writing WAVE structural identifiers and PCM format tag during conversion; exact bit-depth provenance remains unresolved.
+
+No app source/APK, NAM, User/Third Party, Collection, Import All, or MIDI mapping was changed.
