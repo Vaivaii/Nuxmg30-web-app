@@ -183,7 +183,8 @@ test('Export All serializes 128 local Gen2 records into exactly 0x135700 bytes',
   const recordBase = 0 * 0x26AE;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const name = bytes.subarray(recordBase + 0x1B2, recordBase + 0x1D2);
-  assert.equal(String.fromCharCode(...name).split('\\0')[0], 'IR_0');
+  const nameEnd = name.indexOf(0);
+  assert.equal(String.fromCharCode(...name.subarray(0, nameEnd < 0 ? name.length : nameEnd)), 'IR_0');
   assert.deepEqual(Array.from(bytes.subarray(recordBase + 0x1D2, recordBase + 0x1D6)), [0x52,0x49,0x46,0x46]);
   assert.equal(view.getUint32(recordBase + 0x1D2 + 4, true), 0x1824);
   assert.deepEqual(Array.from(bytes.subarray(recordBase + 0x1D2 + 8, recordBase + 0x1D2 + 12)), [0x57,0x41,0x56,0x45]);
