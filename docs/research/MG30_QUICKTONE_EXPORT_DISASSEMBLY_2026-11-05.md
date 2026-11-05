@@ -104,7 +104,7 @@ A cross-reference search for the global manager pointer at VA 0x0B8D9718 found t
 2. The handler inspected here establishes scene storage only. It does not yet prove the exact request scheduling for all 128 slots, nor how IR metadata, waveform, curve and the 24-/32-bit resource variants are attached to each manager preset object.
 3. The all-export routine reads manager count at +0x640, and each indexed object is serialized through 0x004B4F80. The manager's scene storage offset +0x54 is consistent with a manager-owned per-preset object, but a complete object layout has not been recovered.
 4. This strengthens the design direction for MG30 Studio: batch export should perform read-only hardware readback for each slot, validate all three 0C/02 scenes, and separately read associated IR data only where a resource marker is positively established. Do not synthesize resource data for marker-0 presets.
-5.. No app code, import transaction, NAM path, Collection path, or MIDI mapping was changed by this analysis.
+5. No app code, import transaction, NAM path, Collection path, or MIDI mapping was changed by this analysis.
 
 ### Remaining static-analysis targets
 
@@ -112,3 +112,55 @@ A cross-reference search for the global manager pointer at VA 0x0B8D9718 found t
 - Trace manager resource fields and their inbound response handlers (resource name, waveform, curve), including the 27 resource-bearing slots.
 - Decode the 0B/02 and 0C/02 manager refresh callbacks sufficiently to determine whether a complete slot is considered valid only after all three scenes.
 - Reconcile the app's successful single-preset export readback contract with this QuickTone manager ingestion path without modifying the known-good app exporter.
+
+## Follow-up: QuickTone scene-read request scheduler and resource metadata ingestion (2026-11-05)
+
+Further disassembly of the same original-MG30 Gen2 dispatcher resolved the immediate request/response pairing for scene data and clarified the role of the 0B/02 response.
+
+### 0B/02 response selects the current preset and starts scene reads
+
+In dispatcher VA 0x004A4E70, the 0B branch accepts response subcommand byte +7 equal to 0 or 2. It reads the preset/program index from response byte +8 and stores it in the transport/controller object at +0x30. It then ensures the manager at global VA 0x0B8D9718 exists, calls manager method VA 0x004B2060 with argument 0, and schedules callback VA 0x004A6DB0.
+
+This is stronger than the earlier observation that 0B/02 merely refreshes the manager: the response's +8 byte is used as the current preset index, and the callback starts three scene reads for that selected preset. The exact distinction between 0B/02 response values 0 and 2 is not yet resolved; both enter the same scene-read callback path.
+
+### Scene-read callback — VA 0x004A6DB0
+
+The callback loops a local scene counter from 0 through 2. For each iteration it:
+
+- Builds an MG-30 Gen2 SysEx request with command bytes 0C/00.
+- Places the loop counter (scene index) in the request's scene field.
+- Sends the request through the transport object at +0x74 using helper VA 0x00B0E360.
+- Supplies a 1,000 ms timeout and waits through the transport helper before advancing to the next scene.
+
+The matching inbound response handler is VA 0x004A6EF0, which accepts 0C/02 and stores the returned 142-byte scene at manager object +0x54 + sceneIndex * 0x8E. Therefore the paired sequence is:
+
+1. Receive 0B/02 with preset index at response byte +8.
+2. Set that preset as current manager/transport selection.
+3. Send 0C/00 scene request for scene 0, then scene 1, then scene 2.
+4. Receive corresponding 0C/02 responses and store each 142-byte scene.
+5. On scene 2, invoke manager/cache update helpers and callback.
+
+The code establishes the three-scene request order and the one-second timeout argument passed to the transport helper. It does not establish the exact retry policy or whether every wait consumes the full timeout.
+
+### 19/03 and 18/03 inbound fields
+
+The dispatcher also accepts response families 19/03 and 18/03 when response byte +7 equals 3:
+
+- 19/03 obtains a manager-owned small record through VA 0x004B4E20 and copies response bytes +8 through +12 into record offsets +3 through +7 (five bytes).
+- 18/03 obtains a manager-owned small record through VA 0x004B4E50 and copies response bytes +8 through +11 into record offsets +0 through +3 (four bytes).
+
+These are confirmed manager-field updates, but their semantic labels (resource name, resource type, format, slot mapping, or other metadata) are not yet established. Do not map them to IR name/type fields in application code based only on their lengths.
+
+### 6C/00 response path — what is and is not established
+
+When command byte 6C is received with subcommand 00 and byte +7 equals 0, the dispatcher obtains several manager values through helpers VA 0x004B2180, 0x004B4830, 0x004B3E80, and 0x004B4000; serializes the manager object using VA 0x004B4F80; copies 0x2504 bytes into a temporary record; writes the current program index into the record's first four bytes; and calls VA 0x004B50A0.
+
+This is a manager/resource processing and record-refresh path, but its relationship to IR waveform/curve acquisition is still unresolved. It is not enough to call 6C/00 an IR read request or to equate it with Collection's 6C/01 import command.
+
+### Current evidence boundary
+
+- Confirmed: QuickTone uses 0B/02 to select a preset and initiate the three sequential 0C/00 scene reads; 0C/02 fills the three 142-byte scene slots.
+- Confirmed: 19/03 and 18/03 update small manager-owned metadata records, but field meanings remain unknown.
+- Confirmed: 6C/00 invokes manager/resource helpers and refreshes a serialized record, but its underlying resource acquisition trigger is not yet identified.
+- Not confirmed: the outbound request commands and payloads that cause the 19/03 and 18/03 replies; whether 6C/00 is a completion signal or a readback trigger; how 10/11 waveform/curve data is obtained in this QuickTone path; and how the manager's resource-presence flag is set.
+- No application source code, firmware communication, NAM transfer, IR User/Third Party import, IR Collection logic, MIDI mapping, or Import All transaction was changed in this analysis.
