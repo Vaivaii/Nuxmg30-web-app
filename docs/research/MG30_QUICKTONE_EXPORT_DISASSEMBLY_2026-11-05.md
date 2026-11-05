@@ -79,3 +79,36 @@ Uses the file stream/buffer helper stack. When the stream is valid, passes the s
 - Why did MG30 Studio Import All receive 2,412/2,412 ACKs but report a byte mismatch at program 72 scene 0 during readback? ACK completion and data verification must remain separate.
 
 No application source code was changed in this disassembly step.
+
+## Follow-up: inbound preset readback populates the export manager (2026-11-05)
+
+A cross-reference search for the global manager pointer at VA 0x0B8D9718 found the inbound SysEx dispatcher and a concrete scene-readback ingestion path. This narrows the upstream question: the export manager is not merely an unexplained static cache; at least its scene portion is populated/refreshed by received Gen2 preset readback messages.
+
+### Inbound dispatcher — VA 0x004A4E70 (message handling region)
+
+- The dispatcher branches on the decoded SysEx command byte and handles several MG-30 Gen2 response families.
+- In the 0B/02 branch, it ensures the global manager at 0x0B8D9718 exists (constructing via 0x004B1500 if needed), then invokes manager method VA 0x004B2060 with argument 0 before dispatching the update callback. The exact semantic meaning of this 0B/02 branch and method argument remains unresolved.
+- In the 0C/02 branch, it reads scene/program fields from the response and dispatches the data into the manager path. The dedicated handler is VA 0x004A6EF0.
+
+### Scene response handler — VA 0x004A6EF0
+
+- Accepts only response command 0C/02 in the inspected branch.
+- Reads the scene index from response byte offset +7.
+- Calls VA 0x004B0410 to prepare a scene object, then VA 0x004A4970 to decode/copy exactly 0x8E (142) bytes from the response payload.
+- Stores the 142-byte scene at manager object offset +0x54 + sceneIndex * 0x8E.
+- When scene index is 2, invokes additional manager/cache update helpers (including VA 0x004B1110 and VA 0x004B2250) and a callback. This suggests the third scene closes or refreshes a complete three-scene preset object; the precise side effects still need to be named.
+
+### Implication and limits
+
+1. QuickTone's export manager scene content is fed by inbound 0C/02 preset-readback messages. This is direct static-code evidence of a readback-to-manager path.
+2. The handler inspected here establishes scene storage only. It does not yet prove the exact request scheduling for all 128 slots, nor how IR metadata, waveform, curve and the 24-/32-bit resource variants are attached to each manager preset object.
+3. The all-export routine reads manager count at +0x640, and each indexed object is serialized through 0x004B4F80. The manager's scene storage offset +0x54 is consistent with a manager-owned per-preset object, but a complete object layout has not been recovered.
+4. This strengthens the design direction for MG30 Studio: batch export should perform read-only hardware readback for each slot, validate all three 0C/02 scenes, and separately read associated IR data only where a resource marker is positively established. Do not synthesize resource data for marker-0 presets.
+5.. No app code, import transaction, NAM path, Collection path, or MIDI mapping was changed by this analysis.
+
+### Remaining static-analysis targets
+
+- Identify the outbound QuickTone request path paired with the inbound 0C/02 response, including slot iteration and request pacing.
+- Trace manager resource fields and their inbound response handlers (resource name, waveform, curve), including the 27 resource-bearing slots.
+- Decode the 0B/02 and 0C/02 manager refresh callbacks sufficiently to determine whether a complete slot is considered valid only after all three scenes.
+- Reconcile the app's successful single-preset export readback contract with this QuickTone manager ingestion path without modifying the known-good app exporter.
