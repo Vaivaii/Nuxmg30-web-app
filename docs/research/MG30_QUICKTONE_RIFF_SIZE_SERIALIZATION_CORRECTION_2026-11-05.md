@@ -229,3 +229,16 @@ Do not force Third Party/User IR to 32-bit PCM or rewrite existing IR headers on
 Sources checked 2026-11-05:
 - NUX official MG-30 product page: https://nuxaudio.com/product/mg30/
 - MG-30 owner manual specification excerpt: A/D Converter 32-bit; sampling frequency 48 kHz; dynamic range 110 dB.
+
+
+## Correction from user: source IR files are consistently 24-bit
+
+The user clarified that the IR files they use are always 24-bit. Therefore the 11 records with 32-bit WAVE headers in the QuickTone All Preset sample must not be described as evidence that the user's source IRs are 32-bit, nor as a requirement for Third Party/User import.
+
+Updated interpretation:
+- Observed fact: 11 All Preset resource records contain 32-bit WAVE headers; 15 contain 24-bit WAVE headers among the 26 standard WAVE records.
+- User-provided fact: the user's IR source files are consistently 24-bit.
+- Unproven hypotheses: QuickTone or MG-30 may convert 24-bit source IR data into a 32-bit internal/resource representation, or the records may have another provenance. Existing evidence does not distinguish these explanations.
+- The 32-bit A/D and D/A converter specification does not imply that source IR WAV files should be 32-bit.
+
+Next investigation should compare a known 24-bit source IR against the exact corresponding resource after QuickTone import/export, then inspect the point at which the record's WAVE header changes. Do not force 32-bit conversion, change the Third Party/User `09/10/11` protocol, or alter NAM, Collection, Import All, or MIDI mappings without evidence.
