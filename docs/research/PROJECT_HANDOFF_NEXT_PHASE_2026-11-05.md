@@ -37,3 +37,14 @@ Revisi visual atau teknis masih boleh dilakukan di kemudian hari bila ditemukan 
 ## Urutan kerja yang disepakati
 
 Mulai dari reverse engineering dan validasi **import/export all preset**, kemudian lanjutkan audit dan checklist **Loop Back mapping perangkat dengan aplikasi**. Pekerjaan artwork/amp knob dianggap selesai untuk saat ini dan tidak menjadi penghambat fase tersebut.
+
+
+## QuickTone Export All disassembly update (2026-11-05)
+
+New static disassembly document: `docs/research/MG30_QUICKTONE_EXPORT_DISASSEMBLY_2026-11-05.md`.
+
+Confirmed: QuickTone MG-30 Export All routine at VA 0x004AB710 iterates the in-memory manager at global VA 0x0B8D9718, reads manager count at object offset +0x640, fetches indexed records through 0x004B4C40, serializes each record through 0x004B4F80, appends exactly 0x26AE bytes per record, and passes the full 0x135700-byte buffer to the file writer at 0x004B56A0. The export button handler inspected here does not issue MIDI/SysEx. This explains why the user's QuickTone export captures contain no new MIDI data; the upstream manager-population path remains to be located.
+
+The separate helper at 0x004B5A20 is the all-file reader/import converter: it validates 0x12C800 input and constructs 0x135700 internal records. Do not confuse this import conversion with the all-export serializer. The previously observed 0x11E-byte difference is now explained as distinct code-path representations, not an instruction to trim exported records.
+
+Next: trace where the global manager is populated/refreshed, and independently validate MG30 Studio single hardware readback before implementing Export All as 128 readbacks plus 128-record serialization. No app source code changed in this disassembly step.
