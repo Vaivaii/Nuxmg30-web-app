@@ -113,3 +113,23 @@ User supplied `exportallpre.pcapng` for the Export All investigation. The captur
 The user clarified that QuickTone Single Export has never shown MIDI data in the captures, and Export All produces the same result/file behavior. Therefore the 22-packet `exportallpre.pcapng` (USB enumeration/descriptors only) must not be interpreted as a failed or incomplete MIDI capture of a transfer. Stop asking the user to repeat USB-MIDI captures for QuickTone Export. Import and Export are distinct paths: Import All has captured USB-MIDI writes; Export must be investigated independently and may use a non-MIDI transport, a cached/local source, or a different USB interface. These are hypotheses only, not established facts.
 
 The app's own single-preset export path is a separate implementation that issues MG-30 SysEx read requests (`0C/00`, `09/00`, `10/00`, `11/00`) and has previously encountered a physical readback mismatch. Do not conflate that app path with QuickTone's export mechanism. Next investigation should compare QuickTone's exported `.mg30patch` bytes across controlled device/preset changes and inspect the QuickTone executable's export code path/USB API usage, without modifying the working Import All path. User also reported Import All reached 2,412/2,412 ACK but app readback differed at program 72 scene 0; retain this as a separate outstanding validation issue.
+
+
+## Static QuickTone executable investigation — Export path (2026-11-05)
+
+Analyzed the user-provided `NUX_QuickTone_V2.6.7.16_Windows.zip` / `QuickTone.exe` (PE32 x86, 190,296,504 bytes).
+
+### Confirmed executable facts
+- The executable contains MSVC RTTI/type-name strings for `NuxMidiTransmissionMG30::exportPresetLogic` and `NuxMidiTransmissionMG30::exportAllPresetLogic` (and corresponding classes for MG30MK2, MG101, MG300MK2, MG400, etc.). This confirms separate original-MG30 export and export-all logic exists in the program binary.
+- The executable imports `WINMM.dll` functions `midiInGetNumDevs`, `midiInGetDevCapsW`, `midiInOpen`, `midiInPrepareHeader`, `midiInAddBuffer`, `midiInStart`, `midiInStop`, `midiInReset`, `midiOutGetNumDevs`, `midiOutGetDevCapsW`, `midiOutOpen`, `midiOutPrepareHeader`, `midiOutLongMsg`, `midiOutShortMsg`, and related WinMM MIDI APIs.
+- The normal PE import table includes KERNEL32, USER32, GDI32, COMDLG32, ADVAPI32, SHELL32, OLE32/OLEAUT32, WININET, WS2_32, VERSION, SHLWAPI, WINMM, dbghelp, IMM32, OPENGL32. No direct WinUSB/HID/SetupAPI DLL import was observed in the normal import table. KERNEL32 dynamic library loading APIs (`LoadLibrary*`, `GetProcAddress`) are present, so absence from the static import table does not rule out runtime-loaded dependencies.
+- Strings include `MG30AllPatch.mg30patch`, `.mg30patch`, and model-specific import/export RTTI. The executable is a multi-model QuickTone build; all conclusions must be scoped specifically to `NuxMidiTransmissionMG30`, not MKII.
+
+### What this means / what remains unproven
+- User observation remains authoritative: QuickTone Single Export and Export All produce no visible USB-MIDI traffic during the export action in their captures.
+- Static imports and RTTI prove QuickTone has MIDI transport support and named export methods, but do NOT prove that the export button itself initiates MIDI reads. It may serialize a previously populated in-memory preset cache, or use another code path/transport. These are hypotheses only.
+- Do not ask for another USBPcap capture of the export button action as the primary next step. Do not assume export request commands from the app's separate SysEx readback implementation are equivalent to QuickTone's.
+- The next static-analysis target is the machine code / call graph for `NuxMidiTransmissionMG30::exportPresetLogic` and `exportAllPresetLogic`, including their data-source buffers and file writer. The executable is PE32 with a large `.rdata` section; RTTI decorated lambda names were found, but function bodies have not yet been mapped to RVAs. No export implementation changes are justified yet.
+
+### Separate Import All issue
+- User screenshot shows all 2,412/2,412 ACKs accepted, followed by byte-readback mismatch at program 72, scene 0. Treat this as an outstanding validation mismatch, not as a failed transfer or a reason to change the now-working batch transaction without more evidence.
