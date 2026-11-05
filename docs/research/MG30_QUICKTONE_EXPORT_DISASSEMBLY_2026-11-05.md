@@ -414,3 +414,34 @@ This ties the waveform and curve readbacks together in the resource manager: wav
 - The app should not be modified based on this disassembly alone. Before implementation, compare actual 10/02 and 11/02 response bytes, decoded offsets, sample ordering and completion behavior against a dedicated readback capture or an existing complete device-export capture. The supplied `exportallpre.pcapng` is very short and does not by itself establish a complete resource-read transaction.
 - Preserve the existing capture-validated 10/01, 09/01, 11/01 User/Third Party import path. Do not change Collection's 6A/6C/6B protocol, NAM, MIDI mappings, or the existing Import All transaction.
 - No application source code, APK, or device communication was changed in this analysis.
+
+
+## Follow-up: readback packet fields and supplied pre-export capture audit (2026-11-05)
+
+A second instruction-level pass refined the readback description and audited the newly supplied `exportallpre.pcapng` instead of assuming it contains the resource transaction.
+
+### Exact request-frame construction
+
+Both read routines call the common payload encoder VA 0x004A4910 with a four-byte payload and send a 15-byte SysEx frame through VA 0x00B0E360:
+
+- Waveform request routine VA 0x004AB340 initializes the request command word to 0x0010 (bytes 10/00), places the selected preset index in the first 16-bit payload field, and places the current sample offset in the second 16-bit field. Offset begins at 0 and increments by 0x20 (32) until 0x7E0; the loop bound is 0x800, so it emits 64 requests.
+- Curve request routine VA 0x004AAEA0 initializes the request command word to 0x0011 (bytes 11/00), places the selected preset index and current curve offset in the same four-byte payload shape, and increments offset by 0x40 (64). The loop bound is the live manager field +0x670, not a hardcoded 600. For the observed 600-value record this emits ten requests at offsets 0, 64, ..., 576.
+- Both request loops pass a 15-byte frame length and 1,000 ms timeout to the transport helper. They register separate response handlers (10/02 at 0x004AB510 and 11/02 at 0x004AB090).
+
+### Exact response-buffer handling
+
+- The 10/02 response handler decodes 0x84 bytes from the response payload, reads the 16-bit offset, and copies 32 DWORD values (128 bytes) to resource object +0x60 + offset×4. It only performs completion cleanup when the returned offset is 0x7E0. The destination was cleared to 0x2000 bytes by the request routine.
+- The 11/02 response handler decodes 0x84 bytes, reads the 16-bit offset, and copies up to 64 WORD values to resource object +0x2060 + offset×2, checking the manager's +0x670 count for each value. It only performs the final resource refresh when the returned offset equals 0x240 (576). It then builds a RIFF/WAVE wrapper using the 0x2000-byte waveform buffer, retains/copies the 0x258-byte curve region (0x12C DWORDs = 600 WORDs), and calls manager resource helper 0x004B50A0.
+
+The response handler's finalization condition is explicitly offset 576, while the actual copy count is bounded by manager field +0x670. This distinction matters if a device reports a curve length other than 600: the observed code's finalization sentinel is still fixed at 576 in this path, so do not generalize alternate curve lengths without further evidence.
+
+### `exportallpre.pcapng` audit
+
+The supplied capture is 2,880 bytes and contains only a short sequence of USBPcap records around device/interface activity. Parsing its Enhanced Packet Blocks shows no complete MG-30 SysEx resource readback transaction and no `10/02` or `11/02` response frames. It therefore cannot validate the decoded waveform/curve response payload or prove the runtime ordering of 09/02, 10/00 and 11/00. Treat this capture as a pre-export/device-activity trace only, not as a readback capture.
+
+### Updated evidence boundary
+
+- Static code confirms the request command bytes, payload fields, block offsets, request count for a 600-value curve, response command validators, response data copy sizes, and the manager refresh path.
+- The response decoder VA 0x004A4970 is the same 7-bit decoder used elsewhere; the exact response byte order and resulting float32 sample ordering are inferable from the copy loop, but still require a real 10/02 + 11/02 capture to validate against hardware data.
+- The supplied pre-export capture does not contain that evidence. A dedicated capture must include USB bulk traffic while QuickTone is synchronizing a resource-bearing preset; capturing only the Export All save dialog is insufficient because the export click serializes the manager already in memory.
+- No app source, APK, firmware/device state, NAM path, User/Third Party import, Collection logic, Import All transaction, or MIDI mapping was changed.
