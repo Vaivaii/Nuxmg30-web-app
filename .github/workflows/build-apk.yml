@@ -18,6 +18,7 @@ on:
       - feature/studio-daw-editing-arrangement
       - feature/amp-knob-label-correction
       - feature/amp-knob-label-correction-artwork
+      - feature/all-preset-import-export
     paths:
       - 'www/**'
       - 'tests/**'
