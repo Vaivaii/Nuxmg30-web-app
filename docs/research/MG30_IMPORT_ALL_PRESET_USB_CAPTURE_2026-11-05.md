@@ -92,3 +92,12 @@ Review against the packet sequence showed the planner must not interleave one pr
 Commit b63e90c743d84e1e3d8ce68733ae42c29a87adc9 corrects www/mg30-preset-all-import.js to collect the 384 scene steps separately and append them only after all 27 resource groups. Commit 9eed04ab3433ed80a54434289ac61b6aeaaae99f adds regression assertions for the phase boundary and ascending scene order.
 
 The actual binary fixture was validated by direct byte inspection in this session. The repository's complete Node test suite, Android build, and physical hardware import have not yet been run in this session. Do not treat the current branch as ready for a destructive full-bank pedal test until those checks pass.
+
+
+## Physical Import All test report — user screenshots (2026-11-05)
+
+The user reports the Import All operation completed. The app status shown in the screenshot confirms 2,412/2,412 frames acknowledged, but reports a byte-for-byte scene readback mismatch at program 72, scene 0. Therefore the write transaction received all ACKs, while the post-write readback verification did not pass completely. The second screenshot shows USB MIDI Disconnected after the operation. Do not describe this run as fully verified, do not automatically retry Import All, and do not alter the captured write sequence without investigating program 72 scene 0. Preserve this report for the next session.
+
+## Next phase: Export All Preset
+
+The current implementation supports read-only export of one selected preset (three scenes plus resource metadata/waveform/curve). Export All is not yet implemented. The all-preset import capture does not establish the inverse read protocol or QuickTone's all-export transaction. Next required evidence: a separate USBPcap capture of QuickTone v2.6.7.16 performing Export All on the original MG-30 Gen2 FW 6.0.x. Export is read-only and does not overwrite the pedal. Capture must include the full transaction from before pressing Export All until QuickTone finishes saving the all-preset file. Preserve the capture and exported .mg30patch as paired golden fixtures. Do not assume the import packet sequence can simply be reversed.
