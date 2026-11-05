@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildMG30SinglePresetPatch,
   parseMG30SinglePresetPatch,
+  parseMG30AllPresetPatch,
   buildMG30SinglePresetImportPlan,
   fitMG30QuickToneIRName,
 } from '../www/mg30-preset-format.js';
@@ -67,4 +68,80 @@ test('names longer than 32 ASCII bytes are limited to the first 32 bytes', () =>
 
 test('QuickTone name fitting rejects unsupported characters', () => {
   assert.throws(() => fitMG30QuickToneIRName('IR_ÜBER_LONG_NAME'), /ASCII printable/);
+});
+
+
+test('all-preset parser validates 128 ordered records and only parses resources on marked records', () => {
+  const resourcePrograms = new Set([0,1,2,3,6,7,8,9,10,11,12,13,14,15,17,22,27,31,80,81,82,83,91,109,110,111,115]);
+  const chunks = [];
+  for (let program = 0; program < 128; program++) {
+    if (resourcePrograms.has(program)) {
+      const source = makeRecord('IR_' + program);
+      source.recordOrdinal = program;
+      const bytes = buildMG30SinglePresetPatch(source);
+      // Program 91 is a captured resource-bearing record with a nonstandard RIFF signature.
+      if (program === 91) bytes.set([0x4A,0x55,0x4E,0x4B], 0x1D2);
+      chunks.push(bytes);
+    } else {
+      const bytes = new Uint8Array(0x26AE);
+      const view = new DataView(bytes.buffer);
+      view.setUint32(0, program, true);
+      for (let scene = 0; scene < 3; scene++) {
+        for (let word = 0; word < 71; word++) {
+          view.setUint16(4 + scene * 142 + word * 2, (program + scene + word) & 0xffff, true);
+        }
+      }
+      view.setUint32(0x1AE, 0, true);
+      chunks.push(bytes);
+    }
+  }
+  const allBytes = new Uint8Array(128 * 0x26AE);
+  chunks.forEach((chunk, index) => allBytes.set(chunk, index * 0x26AE));
+
+  const parsed = parseMG30AllPresetPatch(allBytes);
+  assert.equal(parsed.records.length, 128);
+  assert.deepEqual(parsed.resourcePrograms, [...resourcePrograms]);
+  assert.equal(parsed.records[0].resourceName, 'IR_0');
+  assert.equal(parsed.records[4].hasResource, false);
+  assert.equal(parsed.records[4].samples, undefined);
+  assert.equal(parsed.records[91].resourceName, 'IR_91');
+  assert.equal(parsed.records[91].samples.length, 2048);
+  assert.equal(parsed.records[91].curve.length, 600);
+  assert.throws(() => parseMG30SinglePresetPatch(allBytes), /128 preset sekaligus/);
+});
+
+test('all-preset parser rejects wrong size, reordered ordinals, invalid markers and invalid resource arrays', () => {
+  const resourcePrograms = new Set([0,1,2,3,6,7,8,9,10,11,12,13,14,15,17,22,27,31,80,81,82,83,91,109,110,111,115]);
+  const chunks = [];
+  for (let program = 0; program < 128; program++) {
+    const bytes = new Uint8Array(0x26AE);
+    const view = new DataView(bytes.buffer);
+    view.setUint32(0, program, true);
+    for (let scene = 0; scene < 3; scene++) {
+      for (let word = 0; word < 71; word++) view.setUint16(4 + scene * 142 + word * 2, word, true);
+    }
+    view.setUint32(0x1AE, resourcePrograms.has(program) ? 1 : 0, true);
+    if (resourcePrograms.has(program)) {
+      bytes.set(new TextEncoder().encode('IR_' + program), 0x1B2);
+      const sampleView = new DataView(bytes.buffer);
+      for (let i = 0; i < 2048; i++) sampleView.setFloat32(0x1FE + i * 4, 0.1, true);
+      for (let i = 0; i < 600; i++) sampleView.setUint16(0x21FE + i * 2, i % 306, true);
+    }
+    chunks.push(bytes);
+  }
+  const allBytes = new Uint8Array(128 * 0x26AE);
+  chunks.forEach((chunk, index) => allBytes.set(chunk, index * 0x26AE));
+  assert.throws(() => parseMG30AllPresetPatch(allBytes.subarray(0, -1)), /tepat/);
+
+  const reordered = allBytes.slice();
+  reordered.set(chunks[1], 0);
+  assert.throws(() => parseMG30AllPresetPatch(reordered), /tidak berurutan/);
+
+  const invalidMarker = allBytes.slice();
+  new DataView(invalidMarker.buffer).setUint32(0x1AE, 2, true);
+  assert.throws(() => parseMG30AllPresetPatch(invalidMarker), /Penanda resource/);
+
+  const invalidCurve = allBytes.slice();
+  new DataView(invalidCurve.buffer).setUint16(0x21FE, 306, true);
+  assert.throws(() => parseMG30AllPresetPatch(invalidCurve), /Nilai kurva/);
 });
