@@ -18,7 +18,7 @@ test('Routing cards show only the compact routing symbol, not labels or helper c
   assert.match(html, /class="routing-symbol"/);
   assert.doesNotMatch(html, /routing-mode-label/);
   assert.doesNotMatch(html, /Tap untuk ubah/);
-  assert.doesNotMatch(html, /<b>\'+title\+\'<\\/b>/);
+  assert.ok(!html.includes("<b>'+title+'</b>"));
 });
 
 test('Serial and Parallel use distinct NUX-style signal-path SVG topologies', () => {
