@@ -74,3 +74,22 @@ Do not modify or regress:
 - No application source code has been changed for this phase checkpoint.
 - A dedicated branch has been created from the latest accepted artwork branch to isolate all-preset work.
 - Next implementation must follow evidence from the batch import/export captures; no guessed slot mapping, resource-marker interpretation, record padding/truncation, or MKII protocol is permitted.
+
+
+## Correction: the all-preset sample was already supplied (2026-10-30)
+
+The user is correct: the exact original-MG30 MG30AllPatch.mg30patch sample was previously supplied and analyzed. The earlier sample analysis is retained in docs/research/MG30_PRESET_FILE_FORMAT_RESEARCH_2026-10-30.md; do **not** ask the user to upload the same file again as a prerequisite.
+
+Recorded sample facts:
+- Size: 1,267,456 bytes (0x135700).
+- SHA-256: ea502ba24001d363c21950ed676bf77271026ac30ced4d10241168e10fe0b22a.
+- 128 fixed-stride records, each 0x26AE bytes; record ordinal 0–127 at offset 0 as uint32 LE.
+- Record 1 matches the known 1B DELUX DIST.mg30patch sample in its first 0x1B2 bytes.
+- Resource marker inventory: 101 marker-0 records, 27 marker-1 records; 26 of the latter contain standard RIFF/WAVE at the expected offset; ordinal 91 is the anomalous marker-1 record without the expected standard RIFF/WAVE header.
+- Of the 26 standard WAVE records, 15 use the 24-bit/0x1800 data variant and 11 use the 32-bit/0x2000 data variant.
+- The single-preset parser is intentionally stricter and must not be reused to force-parse these all-file variants.
+
+Important distinction:
+- The sample bytes are documented and analyzed, but the raw binary is not currently listed among this Project conversation's mounted attachments. The existing analysis is enough to continue format/protocol work; if a future byte-for-byte fixture test requires the original binary bytes and no archived artifact is accessible, ask only then—not now.
+- The missing critical evidence is the QuickTone all-preset import USBPcap capture and the corresponding full transaction/mapping, not the all-preset file itself.
+- No all-preset writes are allowed until record-to-destination mapping, marker-0 behavior, marker-1 WAVE variants, ordinal 91, transaction ordering and rollback/failure behavior are validated.
