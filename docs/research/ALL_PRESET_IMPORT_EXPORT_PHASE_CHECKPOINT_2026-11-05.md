@@ -164,3 +164,35 @@ Build verification:
 - Artifact: `MG30-Studio-debug-APK`, ID `13399187356`, ZIP size 4,203,797 bytes; SHA-256 `b0a894078018f510b1726db3236af26213d57b04b669a9b3a8970d696c5fac22`.
 - Extracted APK: `MG30-Studio-Export-All-Confirm-Fix.apk`, size 4,581,768 bytes; SHA-256 `81888c6bd2da2b841c4b522a7c9ecbae8a776126b399fe077d4d80a04260cd74`.
 - User still needs to install this latest APK and confirm: (1) confirmation appears first, (2) tapping OK opens Android File Manager without the USB progress overlay, (3) saved file is 1,267,456 bytes and reparses to 128 records. This last device-side validation remains pending.
+
+
+## Critical correction: QuickTone memory source vs Import All file input (2026-11-05)
+
+The user's distinction is correct. "Local/in-memory" in QuickTone's Export All routine means its **live preset manager/cache**, which is populated from device synchronization; it does not mean asking the user to choose an existing All Patch file in the Import All file picker and then saving that same file again.
+
+Evidence from `docs/research/MG30_QUICKTONE_EXPORT_DISASSEMBLY_2026-11-05.md`:
+- Export All click routine VA `0x004AB710` reads the already-populated manager at global `0x0B8D9718`, serializes each manager object as a `0x26AE` record, concatenates 128 records, and writes `0x135700` bytes. No new read request is issued inside that click handler.
+- Separate upstream connection/synchronization routines populate the manager. Recovered code includes per-preset scene readback (`0C/02` responses), per-index `09/00 -> 09/02` resource descriptor reads, and conditional `10/00 -> 10/02` waveform plus `11/00 -> 11/02` curve readback when the resource is present.
+- These are Gen2 SysEx/MIDI read transactions carried over the device's USB-MIDI transport during synchronization. The evidence does not support a USB mass-storage/file-copy transfer from the pedal. The file-save helper is a separate local Windows file writer.
+- Therefore "no MIDI when pressing Export All" is true for the final serialization click, but does not mean the complete data acquisition workflow never uses MIDI/SysEx.
+
+MG30 Studio distinction:
+- Existing **Export Single** is on-demand and explicitly sends read-only SysEx requests when tapped: `0C/00` for 3 scenes, `09/00` for resource metadata, and conditionally `10/00` / `11/00` reads for waveform/curve. It then serializes one `0x26AE` record and invokes Android `ACTION_CREATE_DOCUMENT` to save the file.
+- Android `savePatch()` / `ACTION_CREATE_DOCUMENT` is a phone storage picker and ContentResolver write, not USB transfer to the MG-30.
+- The current attempted Export All implementation incorrectly uses the All Patch file selected through the Import All picker as its source. That only reserializes a chosen file; it does not collect the connected pedal's current 128-preset manager. Do not describe it as a completed live bank export.
+- Correct target architecture: obtain/refresh all 128 preset records and only read resource waveform/curve for records positively identified as resource-bearing; validate the whole bank; then serialize to `0x135700` and save using Android's native file picker. Ideally acquisition is a pre-populated manager/sync step, matching QuickTone's boundary. The app currently has a working on-demand Single Export path but not yet a validated full-bank readback manager.
+- Do not blindly loop the current Single Export 128 times: its current metadata parser requires a non-empty IR resource name and its serializer is resource-bearing; original All Patch has 101 marker-0 records and 27 marker-1 records. Batch readback must support marker-0 records and preserve resource header variants/opaque fields. Current complete QuickTone `10/02` / `11/02` payload capture and byte-for-byte batch comparison are still outstanding.
+
+## Android save bridge size gate fix (2026-11-05)
+
+The user reported no visible response from Export All. Inspection found an independent hard blocker in `native-android/MG30MidiPlugin.java`:
+- Native `savePatch()` capped Base64 at 1 MiB and accepted only exactly `0x26AE` bytes.
+- `savePatchResult()` repeated the same single-record-only size check.
+- An All Patch output is `0x135700` bytes and approximately 1.69 MiB Base64, so native Android rejected the request before `ACTION_CREATE_DOCUMENT` could open.
+
+Fix:
+- Commit `aa93feb465f5506392e0408d6899107ae315e1d2` adds a shared exact-size gate accepting only `0x26AE` (single) or `0x135700` (all bank), and raises the bounded Base64 input ceiling to 2 MiB.
+- Commit `d5f9fecaf20b3117bee0a3d27eff0a8e26238e75` ensures final Export All success/error/cancel statuses are not swallowed by the local-export overlay suppression. Intermediate local statuses still do not display the USB-transfer warning.
+- Commit `8f6acd556e9cb43f06ae4f635dcef65ca3a78b72` fixes confirmation prompt line breaks.
+- This fixes the Android file-save size gate and makes terminal UI feedback visible. It does **not** solve the larger live 128-preset acquisition/source-manager gap above.
+- Protected features remain untouched: existing single Export logic, import, NAM, User/Third Party IR, Collection IR, MIDI mappings and device write paths.
