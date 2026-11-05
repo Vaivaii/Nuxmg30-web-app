@@ -39,8 +39,8 @@ function sceneSteps(record, program) {
 /**
  * Build the QuickTone MG-30 Gen2 Import All transaction observed in
  * importallpreset.pcapng. Input records must already be parsed and validated.
- * This function deliberately does not parse file bytes or relax the strict
- * single-record parser; all-file record/resource parsing is a separate gate.
+ * This function deliberately accepts only records returned by the dedicated
+ * all-file parser; it never changes the strict single-preset parser.
  */
 export function buildMG30AllPresetImportPlan(records) {
   if (!Array.isArray(records) || records.length !== PRESET_COUNT) {
