@@ -121,3 +121,15 @@ No import, live sync, NAM, User/Third Party IR, Collection IR, MIDI mapping, or 
 - APK extracted from that exact artifact: `MG30-Studio-Export-All-debug.apk`, size 4,581,560 bytes; SHA-256 `18ac30d404c7542373678fb9ded7aad41006cf62e9f1c2aa4e5db41d52574b37`.
 - This verifies automated protocol regression tests and Android packaging for this commit. It does **not** establish a physical MG-30 / Android device test of the Export All button. The device-side test remains: select a valid local 128-record All Patch file, run Export All with pedal disconnected, and verify the downloaded file is exactly 1,267,456 bytes and reparses to 128 records.
 - No changes were made to importer, live sync, NAM, User/Third Party IR, Collection IR, MIDI mappings, or USB-MIDI bridge during the build verification.
+
+
+## Export All Android save-dialog overlay fix (2026-11-05)
+
+User reported that Export All appeared stuck on the shared modal titled "Export in progress" with a USB disconnect warning. Root cause was identified in the status observer in `www/preset-library-ui.js`: it deliberately closes the shared progress dialog before opening Android's native Documents picker only when status contains "memilih lokasi penyimpanan" or "file manager android". Export All previously set only a generic "Menyimpan … byte" status, so the observer misclassified the local-only serialization/save hand-off as an active USB transfer and left the overlay open.
+
+Fix:
+- Commit `c8b13a615efa70b2fe5d6d860d6fa14aa9710826` changes only `www/mg30-preset-export.js`.
+- Export All now sets the same native-picker hand-off status phrase used by the known single-preset export path: it says the 128-record local file is ready and Android File Manager is opening.
+- This causes the existing observer to close the web progress overlay before the native save picker. It does not add USB, MIDI, SysEx, readback, or pedal calls.
+- No change to `preset-library-ui.js`, importer, NAM, either IR path, MIDI mapping, or live sync.
+- A fresh Android build and regression test run is required for this follow-up commit. Device validation of the save picker remains pending.
