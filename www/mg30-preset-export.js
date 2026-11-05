@@ -27,119 +27,16 @@ async function readSingleWithManagerCache(bridge, program, onProgress = () => {}
     ...options,
     programOverride: program
   });
-  presetManagerCache.store(program, readback, {
-    source: options.source || (Number(options.sceneReadCommand) === 0x0B ? 'QuickTone-manager-readback' : 'MG30-live-readback')
-  });
+  presetManagerCache.store(program, readback, { source: 'MG30-live-readback' });
   return { readback, cacheHit: false };
-}
-
-let managerSyncPromise = null;
-let pendingManagerSyncAfterStartup = false;
-let managerStartupGatePromise = null;
-let resolveManagerStartupGate = null;
-
-/**
- * QuickTone populates its indexed preset manager during connection sync, then
- * Export All only serializes the already-filled manager. Warm the same app
- * session cache here using explicit 0B/00 -> 0B/02 slot reads, 09/00 resource
- * discovery and conditional 10/00 + 11/00 data reads. No Program Change is sent.
- */
-async function syncPresetManagerCacheOnConnect(bridge = window.MG30PresetExportBridge) {
-  if (pendingManagerSyncAfterStartup && managerStartupGatePromise) {
-    return await managerStartupGatePromise;
-  }
-  if (!bridge?.isConnected?.()) return false;
-  ensurePresetManagerSession(bridge);
-  const initial = presetManagerCache.getStatus();
-  if (initial.complete) return true;
-  if (managerSyncPromise) return managerSyncPromise;
-
-  const generation = presetManagerCache.getSessionGeneration();
-  managerSyncPromise = (async () => {
-    let completedAtStart = initial.freshCount;
-    try {
-      const programs = presetManagerCache.getMissingPrograms();
-      for (let offset = 0; offset < programs.length; offset++) {
-        if (!bridge.isConnected?.() || presetManagerCache.getSessionGeneration() !== generation) {
-          throw new Error('Koneksi USB-MIDI berubah saat sinkronisasi manager berlangsung.');
-        }
-        const program = programs[offset];
-        if (presetManagerCache.hasFresh(program)) continue;
-        setStatus('Sinkronisasi bank QuickTone · preset ' + slotLabel(program) +
-          ' · ' + (completedAtStart + offset + 1) + '/128 · cache sesi sedang diisi.');
-        await readSingleWithManagerCache(bridge, program, progress => {
-          const phase = progress?.phase || 'Membaca manager preset';
-          setStatus('Sinkronisasi bank QuickTone · preset ' + slotLabel(program) +
-            ' · ' + phase + (progress?.detail ? ' · ' + progress.detail : ''));
-        }, {
-          allowMissingResource: true,
-          deferPollingRestart: true,
-          sceneReadCommand: 0x0B,
-          source: 'QuickTone-connection-manager-sync'
-        });
-      }
-      const status = presetManagerCache.getStatus();
-      if (!status.complete) throw new Error('Cache manager baru berisi ' + status.freshCount + '/128 preset.');
-      setStatus('Sinkronisasi bank selesai · 128/128 preset · Export All siap disimpan dari cache.', 'ok');
-      window.dispatchEvent(new CustomEvent('mg30-preset-manager-sync-complete', { detail: status }));
-      return true;
-    } catch (error) {
-      setStatus('Sinkronisasi manager belum lengkap · ' + presetManagerCache.getStatus().freshCount +
-        '/128 preset. ' + (error?.message || error), 'warn');
-      window.dispatchEvent(new CustomEvent('mg30-preset-manager-sync-incomplete', {
-        detail: { status: presetManagerCache.getStatus(), error: error?.message || String(error) }
-      }));
-      return false;
-    } finally {
-      managerSyncPromise = null;
-      if (bridge.isConnected?.()) bridge.resumePolling?.();
-    }
-  })();
-  return managerSyncPromise;
-}
-
-function schedulePresetManagerSync(bridge = window.MG30PresetExportBridge) {
-  if (!bridge?.isConnected?.()) return;
-  ensurePresetManagerSession(bridge);
-  // Android's connection flow immediately scans NAM labels, then IR Collection.
-  // Do not share USB-MIDI with those transfers; wait for their completion event.
-  const nativeStartupSync = Boolean(window.NUXNativeMidi?.available &&
-    window.NUXNAMTransfer?.readMG30NAMSlotNames);
-  if (nativeStartupSync && !presetManagerCache.getStatus().complete) {
-    if (!pendingManagerSyncAfterStartup) {
-      pendingManagerSyncAfterStartup = true;
-      managerStartupGatePromise = new Promise(resolve => { resolveManagerStartupGate = resolve; });
-    }
-    setStatus('USB-MIDI terhubung · menunggu sinkronisasi nama NAM dan IR Collection selesai sebelum membaca manager preset.');
-    return;
-  }
-  void syncPresetManagerCacheOnConnect(bridge);
 }
 
 window.addEventListener('mg30-midi-connected', () => {
   presetManagerCache.beginSession('mg30-usb-session');
-  // index.html dispatches this only after the active buffer read is complete.
-  schedulePresetManagerSync(window.MG30PresetExportBridge);
 });
 window.addEventListener('mg30-midi-connection-state', event => {
-  if (event?.detail?.connected === false) {
-    pendingManagerSyncAfterStartup = false;
-    resolveManagerStartupGate?.(false);
-    resolveManagerStartupGate = null;
-    managerStartupGatePromise = null;
-    presetManagerCache.endSession('USB-MIDI disconnected');
-  } else if (event?.detail?.connected === true) {
-    presetManagerCache.beginSession('mg30-usb-session');
-    schedulePresetManagerSync(window.MG30PresetExportBridge);
-  }
-});
-window.addEventListener('mg30-ir-collection-sync-complete', () => {
-  if (!pendingManagerSyncAfterStartup) return;
-  pendingManagerSyncAfterStartup = false;
-  const syncPromise = syncPresetManagerCacheOnConnect(window.MG30PresetExportBridge);
-  resolveManagerStartupGate?.(syncPromise);
-  resolveManagerStartupGate = null;
-  managerStartupGatePromise = null;
+  if (event?.detail?.connected === false) presetManagerCache.endSession('USB-MIDI disconnected');
+  else if (event?.detail?.connected === true) presetManagerCache.beginSession('mg30-usb-session');
 });
 window.addEventListener('mg30-native-midi-state', event => {
   if (event?.detail?.connected === false) presetManagerCache.endSession('Native USB-MIDI disconnected');
@@ -245,14 +142,14 @@ async function exportAllPresets() {
 
   ensurePresetManagerSession(bridge);
   const initialCacheStatus = presetManagerCache.getStatus();
-  setStatus('Export All · menyiapkan manager preset ' + initialCacheStatus.freshCount +
-    '/128 dari sinkronisasi USB-MIDI…');
-  if (managerSyncPromise) await managerSyncPromise;
-  else if (!presetManagerCache.getStatus().complete) await syncPresetManagerCacheOnConnect(bridge);
+  setStatus('Export All · cache tersedia ' + initialCacheStatus.freshCount +
+    '/128 · slot kosong/kedaluwarsa akan dibaca dari pedal.');
   const records = [];
   const resourcePrograms = [];
+  const originalProgram = Number(bridge.getTargetProgram?.());
   let cacheHits = 0;
   let liveReadbacks = 0;
+  let changedProgram = false;
   try {
   for (let program = 0; program < 128; program++) {
     const label = slotLabel(program);
@@ -261,15 +158,16 @@ async function exportAllPresets() {
       cacheHits += 1;
       setStatus('Export All · preset ' + label + ' · memakai cache ' + cacheHits + '/128…');
     } else {
-      setStatus('Export All · melengkapi cache preset ' + label + ' · ' + (program + 1) + '/128…');
+      setStatus('Export All · memilih preset ' + label + ' · ' + (program + 1) + '/128…');
+      await bridge.selectProgramForRead(program);
+      changedProgram = true;
+      setStatus('Export All · membaca preset ' + label + ' · ' + (program + 1) + '/128…');
       const cachedRead = await readSingleWithManagerCache(bridge, program, progress => {
-        const phase = progress?.phase || 'Membaca manager preset';
+        const phase = progress?.phase || 'Membaca perangkat';
         setStatus('Export All · preset ' + label + ' · ' + (program + 1) + '/128 · ' + phase);
       }, {
         allowMissingResource: true,
-        deferPollingRestart: true,
-        sceneReadCommand: 0x0B,
-        source: 'QuickTone-manager-readback'
+        deferPollingRestart: true
       });
       readback = cachedRead.readback;
       liveReadbacks += 1;
@@ -347,8 +245,10 @@ async function exportAllPresets() {
     liveReadbacks
   };
   } finally {
-    // 0B/00 indexed reads do not change the active pedal program; no restore is needed.
-    if (bridge.isConnected?.()) bridge.resumePolling?.();
+    // Restore the original active program only if a cache miss switched the pedal.
+    if (changedProgram && Number.isInteger(originalProgram) && originalProgram >= 0 && originalProgram < 128) {
+      try { await bridge.selectProgramForRead(originalProgram); } catch (_) {}
+    }
   }
 }
 
