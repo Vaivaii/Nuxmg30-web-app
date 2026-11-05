@@ -170,15 +170,18 @@ function initPresetLibraryUI() {
 
   function reflectExportStatus() {
     if (!exportStatus) return;
-    // Export All is a local serialization + Android save-picker operation,
-    // not a USB transfer. Do not display the shared USB progress overlay for
-    // any status emitted during that flow. Keep an active Import overlay intact.
-    if (window.MG30LocalPresetExportActive === true) {
-      if (feedbackDialog?.dataset.owner !== 'import') closeExportFeedback();
-      return;
-    }
     const text = String(exportStatus.textContent || '').trim();
     if (!text || feedbackDialog?.dataset.owner === 'import') return;
+    // Export All is a local serialization + Android save-picker operation,
+    // not a USB transfer. Suppress only its intermediate progress statuses.
+    // Final success/error/cancel feedback must remain visible to the user.
+    if (window.MG30LocalPresetExportActive === true) {
+      if (feedbackDialog?.dataset.owner !== 'import') closeExportFeedback();
+      const isTerminal = exportStatus.classList.contains('ok') ||
+        exportStatus.classList.contains('warn') ||
+        /dibatalkan|gagal/i.test(text);
+      if (!isTerminal) return;
+    }
     const cancelled = /dibatalkan/i.test(text);
     const failed = exportStatus.classList.contains('warn') || /gagal|tidak valid|belum terhubung/i.test(text);
     const succeeded = exportStatus.classList.contains('ok') || /file tersimpan:/i.test(text);
