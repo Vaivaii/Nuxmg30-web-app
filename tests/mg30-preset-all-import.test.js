@@ -78,7 +78,9 @@ test('Import All plan rejects missing, reordered, or unexpected resource records
   [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
   assert.throws(() => buildMG30AllPresetImportPlan(reordered), /Urutan record/);
   const missingResource = records.map((record, i) => i === 91 ? makeRecord(i, false) : record);
-  assert.throws(() => buildMG30AllPresetImportPlan(missingResource), /27 preset/);
+  const fewerResourcesPlan = buildMG30AllPresetImportPlan(missingResource);
+  assert.equal(fewerResourcesPlan.resourcePrograms.length, 26);
+  assert.equal(fewerResourcesPlan.totalFrames, 2337);
 });
 
 test('scene payloads retain all three 71-word scene parts for every preset', () => {
