@@ -297,3 +297,12 @@ New revision:
 - Destination readback byte count + CRC32 check remains mandatory; JS only accepts an explicit matching byte count.
 
 Do not yet claim this has fixed the user's device: no physical device test after this revision exists. Regression tests and syntax checks passed in Actions run #546; Android Gradle build is still running at note creation. Next: complete build, install this revision, export once, and report the exact native storage error or verified 1,267,456-byte output.
+
+
+### Persistent SAF staging build result (2026-11-05)
+
+- GitHub Actions run #546: `42019264487`, source commit `ab6d31a7a13c95d90397a4a949d77a3f413cd09b`, conclusion **success**.
+- Dependencies, Android initializer syntax validation, protocol regression tests, Capacitor Android generation, Gradle `assembleDebug`, and artifact upload all succeeded.
+- Artifact ID `13410972032`, archive size 4,207,501 bytes, SHA-256 `5ef48cedda79a5928b469ec3afc083d43fab89d3686e3611c1af7262adf61fb0`.
+- Extracted APK size 4,584,908 bytes, SHA-256 `1b28477e4d23a924200e96f60514defbbc1a5c3b6c0fc586be64a5b5d07cb6e2`.
+- This only confirms packaging and automated checks. It does not yet prove the SAF callback works on the user's Android device. The user must repeat export with this exact APK and verify saved document imports as 1,267,456 bytes / 128 records. If it still fails, capture the new native error text; current code should reject and attempt to delete an empty destination instead of reporting a false success.
