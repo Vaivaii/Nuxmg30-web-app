@@ -47,7 +47,7 @@ test('Import All plan matches the captured 128-preset Gen2 transaction', () => {
   assert.equal(counts.get('15/01'), 1);
 });
 
-test('resource-bearing preset uses the 2×program resource handle seen in QuickTone capture', () => {
+test('resource-bearing preset encodes the program address with the existing QuickTone uint16 packing', () => {
   const records = Array.from({length:128}, (_, program) => makeRecord(program, resourcePrograms.has(program)));
   const plan = buildMG30AllPresetImportPlan(records);
   const firstWaveForProgram91 = plan.steps.find(step =>
