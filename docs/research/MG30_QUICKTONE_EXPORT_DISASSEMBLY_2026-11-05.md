@@ -164,3 +164,38 @@ This is a manager/resource processing and record-refresh path, but its relations
 - Confirmed: 6C/00 invokes manager/resource helpers and refreshes a serialized record, but its underlying resource acquisition trigger is not yet identified.
 - Not confirmed: the outbound request commands and payloads that cause the 19/03 and 18/03 replies; whether 6C/00 is a completion signal or a readback trigger; how 10/11 waveform/curve data is obtained in this QuickTone path; and how the manager's resource-presence flag is set.
 - No application source code, firmware communication, NAM transfer, IR User/Third Party import, IR Collection logic, MIDI mapping, or Import All transaction was changed in this analysis.
+
+
+## Follow-up: resource-metadata query frame 12/01 and packed 13/02 response (2026-11-05)
+
+Additional disassembly around the response callbacks found a concrete manager metadata query that had not been documented:
+
+### 12/01 query builder — VA 0x004A8410
+
+- Builds a Gen2 SysEx frame with command bytes 12/01 (word 0x0112 in the little-endian immediate).
+- Reads the current manager/controller byte through helper VA 0x004B2180 and places it in the query payload.
+- Reads the manager field at object offset +0x644, adds 8, and passes that value as the request's indexed/length argument to transport helper VA 0x00B0E360.
+- Uses the manager global at 0x0B8D9718 and the transport object at +0x74.
+- The callback at VA 0x004A8650 accepts response 12/03. This confirms the request/response pair is 12/01 -> 12/03, not a 19/03 or 18/03 pair.
+
+The exact meaning of the +0x644 field and the helper's indexed/length argument remains unresolved. This query is associated with the manager's per-slot metadata state, but should not yet be named an IR waveform or curve request.
+
+### Packed descriptor response 13/02 — VA 0x004A8340
+
+A separate callback at VA 0x004A8340 accepts response command 13/02 and writes response bytes into a manager-owned descriptor at offsets +0x7A through +0x82:
+
+- Response bytes +6, +7, +8 are copied directly to +0x7A, +0x7B, +0x7C.
+- Bytes +9 and +10 are combined into a packed nibble/flag field at +0x7D.
+- Bytes +11 and +12 are combined similarly into +0x7E.
+- Bytes +13, +14, +15, +16, +17 are copied to +0x7F through +0x82.
+- It then calls manager helpers VA 0x004B3B40 and a callback.
+
+This is a packed descriptor/metadata response, not direct evidence of sample payload. It may be relevant to resource-format/type selection, but the semantic mapping of these bytes is still unproven.
+
+### Correction to command-family interpretation
+
+The response handler at VA 0x004A8340 explicitly checks 13/02. Do not associate it with the 19/03 dispatcher branch simply because the earlier branch was adjacent in the same dispatcher. The request builder at VA 0x004A8410 is 12/01 and its paired response validator at VA 0x004A8650 checks 12/03. These are separate command families.
+
+### Updated boundary
+
+We now have one confirmed additional manager query pair (12/01 -> 12/03) and one confirmed packed descriptor response handler (13/02). The 19/03 and 18/03 branches still update manager records, but their request builders and exact field semantics have not been identified. No waveform/curve payload acquisition routine has yet been proven in this QuickTone export-manager path. No application code or device communication was changed.
