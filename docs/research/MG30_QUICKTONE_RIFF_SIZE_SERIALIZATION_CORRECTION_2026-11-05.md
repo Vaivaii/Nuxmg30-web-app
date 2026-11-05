@@ -360,3 +360,8 @@ Regression tests added in `tests/ir-transfer.test.js`:
 - Collection 6A/6C/6B mapping remains unchanged.
 
 No NAM, MIDI mapping, preset import/export, Collection command mapping, or Android native USB-MIDI code was changed. This is static-analysis and source-level test coverage only; a real pedal transfer/readback has not yet been performed. Build status must be recorded separately after CI/build execution.
+
+
+## Scope correction — 2026-11-05
+
+The active project objective is **Export All Preset**, not User/Third Party IR import. Single Preset import, All Preset import, and Custom IR import through Collection had already been reported working by the user. The temporary changes made on 2026-11-05 to `www/ir-transfer.js` (48 kHz-only validation, disabling resampling, and changing the User parameter from 71 to 1), the accompanying User-IR regression test file, and the workflow trigger comment were reverted/removed as out of scope. The prior IR import behavior is restored; no further edits to the IR import paths are authorized unless specifically requested. Preserve Collection, NAM, and MIDI behavior. Resume work on All Preset export only.
