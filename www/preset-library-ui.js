@@ -205,7 +205,9 @@ function initPresetLibraryUI() {
     }
     if (failed) {
       const title = /belum terhubung/i.test(text) ? 'MG-30 belum terhubung' : 'Export gagal';
-      showExportFeedback(title, '', 'error', 0, 1900);
+      // Keep the actual protocol/readback error visible. A blank error dialog
+      // hides the failing slot/phase and makes field diagnosis impossible.
+      showExportFeedback(title, text, 'error', 0, 0);
       return;
     }
 
