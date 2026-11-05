@@ -213,6 +213,10 @@ public class MG30MidiPlugin extends Plugin {
         }
     }
 
+    private static boolean isSupportedPatchSize(int length) {
+        return length == 0x26AE || length == 0x135700;
+    }
+
     @PluginMethod
     public void savePatch(PluginCall call) {
         String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
@@ -221,14 +225,17 @@ public class MG30MidiPlugin extends Plugin {
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
 
         String base64 = call.getString("base64", "");
-        if (base64.isEmpty() || base64.length() > 1024 * 1024) {
-            call.reject("Data preset kosong atau melebihi batas aman untuk penyimpanan.");
+        // A single-preset file is 0x26AE bytes. Export All is a 128-record
+        // bank at 0x135700 bytes, whose Base64 representation is about 1.69 MB.
+        // Allow both exact Gen2 sizes while keeping a bounded bridge payload.
+        if (base64.isEmpty() || base64.length() > 2 * 1024 * 1024) {
+            call.reject("Data preset kosong atau melebihi batas aman penyimpanan (2 MB Base64).");
             return;
         }
         try {
             byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
-            if (bytes.length != 0x26AE) {
-                call.reject("Ukuran file .mg30patch tidak sesuai format Gen2 single-preset.");
+            if (!isSupportedPatchSize(bytes.length)) {
+                call.reject("Ukuran file .mg30patch tidak cocok: hanya single-preset 0x26AE atau All Preset 0x135700 yang didukung.");
                 return;
             }
 
@@ -264,8 +271,8 @@ public class MG30MidiPlugin extends Plugin {
         String base64 = call.getString("base64", "");
         try {
             byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
-            if (bytes.length != 0x26AE) {
-                call.reject("Ukuran file .mg30patch tidak sesuai format Gen2 single-preset.");
+            if (!isSupportedPatchSize(bytes.length)) {
+                call.reject("Ukuran file .mg30patch tidak cocok: hanya single-preset 0x26AE atau All Preset 0x135700 yang didukung.");
                 return;
             }
             try (java.io.OutputStream output = getContext().getContentResolver().openOutputStream(uri, "w")) {
