@@ -199,3 +199,56 @@ The response handler at VA 0x004A8340 explicitly checks 13/02. Do not associate 
 ### Updated boundary
 
 We now have one confirmed additional manager query pair (12/01 -> 12/03) and one confirmed packed descriptor response handler (13/02). The 19/03 and 18/03 branches still update manager records, but their request builders and exact field semantics have not been identified. No waveform/curve payload acquisition routine has yet been proven in this QuickTone export-manager path. No application code or device communication was changed.
+
+
+## Follow-up: outbound 18/19 metadata writes and 61/01 block transfer (2026-11-05)
+
+The adjacent request builders and ACK validators resolve the outbound side of two previously observed response families and expose a generic block-transfer routine.
+
+### 18/01 -> 18/03 metadata exchange
+
+- Request builder VA 0x004A8AF0 obtains a four-byte manager record through VA 0x004B4E50.
+- It constructs command 18/01 and copies those four bytes into the request payload.
+- It sends through the transport object at global 0x0B8D9714, using transport helper 0x00B0E360 with timeout argument 1,000 ms.
+- Its response validator VA 0x004A8C70 accepts 18/03.
+- The inbound dispatcher branch 18/03 copies response bytes +8..+11 back into the same four-byte manager record.
+
+This is a manager metadata write/echo-style exchange. It is not evidence of an IR name or audio read operation.
+
+### 19/01 -> 19/03 metadata exchange
+
+- Request builder VA 0x004A8E20 obtains an eight-byte manager record through VA 0x004B4E20.
+- It constructs command 19/01 and copies all eight bytes into the request payload.
+- It sends through the same transport helper with a 1,000 ms timeout.
+- Response validator VA 0x004A8FC0 accepts 19/03.
+- The inbound dispatcher branch 19/03 copies response bytes +8..+12 into a five-byte subrange of the manager record at offsets +3..+7. The remaining request bytes are not copied back by this handler.
+
+The outbound 19/01 request and inbound 19/03 response are therefore paired. Exact field semantics remain unknown.
+
+### 13/00 -> 13/02 descriptor exchange (correction/clarification)
+
+- Request builder VA 0x004A8220 constructs command 13/00, with a seven-byte transport payload argument and 1,000 ms timeout.
+- Its callback VA 0x004A8340 validates response 13/02 and copies descriptor bytes into manager offsets +0x7A..+0x82, including two packed low-bit flags.
+- This is distinct from the 12/01 -> 12/03 exchange described above. Both are real separate query/response pairs.
+
+### Generic 61/01 block sender and 61/03 acknowledgements
+
+Function VA 0x004A8800 accepts a byte buffer and a length, then iterates over it in 0x80-byte (128-byte) blocks:
+
+1. Copies 128 source bytes into a local block.
+2. Treats them as 64 little-endian 16-bit words.
+3. Converts each 16-bit word into three 7-bit-safe bytes (high two bits, next seven bits, low seven bits), producing 192 packed bytes.
+4. Builds a SysEx command 61/01 frame and sends it with transport helper 0x00B0E360, passing 0xCD as the transport payload/frame-length argument and a 1,000 ms timeout.
+5. Advances the source offset by 128 bytes and repeats until the caller-supplied length is consumed.
+
+The matching response callback VA 0x004A8A80 accepts 61/03. It advances the transfer object's progress offset by 128 bytes for each accepted response. Response status byte +6 equal to 2 schedules the next block; status 3 schedules the completion callback.
+
+This is a confirmed generic chunked binary upload path with 7-bit packing and per-block ACK pacing. Its exact application-level data type is not yet proven. It could be a resource/sample transfer, but it must not be labeled IR waveform or curve without correlating the caller, source buffer construction, and manager resource object.
+
+### What is now established vs unresolved
+
+- Confirmed metadata exchanges: 18/01 -> 18/03 (4-byte record), 19/01 -> 19/03 (8-byte request record, 5-byte response copy), 12/01 -> 12/03, and 13/00 -> 13/02.
+- Confirmed generic bulk sender: 61/01 uses 128-byte source blocks, packs 64 words into 192 7-bit bytes, and waits for 61/03 status 2/3 before continuing/completing.
+- Not confirmed: whether the 61/01 caller is used for the 27 IR-bearing preset resources during QuickTone manager population, what data format is supplied, or whether a separate 61/00/61/02 readback path exists.
+- The next target is the caller/xref of VA 0x004A8800 and the code that allocates/fills its source buffer. Trace that source to the manager's per-preset object and compare it with the known 0x26AE record's 2,048 float32 samples and 600 curve values.
+- No app source code or device communication was changed. Existing Import All, Single Import/Export, NAM, User/Third Party IR, Collection, and MIDI mapping remain untouched.
