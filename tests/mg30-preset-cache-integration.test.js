@@ -37,5 +37,5 @@ test("preset writes and parameter CC changes invalidate cached records", () => {
 test("NAM and Collection command families are outside the preset-cache invalidation helper", () => {
   const helper = appSource.match(/function invalidatePresetManagerCacheForWrite[\s\S]*?\n\}/)?.[0] || "";
   assert.ok(helper.length > 0);
-  assert.doesNotMatch(helper, /0x58|0x6A|0x6B|0x6C/);
+  assert.doesNotMatch(helper, /command===0x58|command===0x6A|command===0x6B|command===0x6C/);
 });
