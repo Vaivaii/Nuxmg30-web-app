@@ -167,7 +167,54 @@ if (Capacitor.isNativePlatform()) {
       return Array.isArray(result?.devices) ? result.devices : [];
     },
     async savePatch(options = {}) {
-      return NativeMidi.savePatch(options);
+      const bytes = options.bytes instanceof Uint8Array
+        ? options.bytes
+        : (options.bytes instanceof ArrayBuffer ? new Uint8Array(options.bytes) : null);
+      if (!bytes || !bytes.length) {
+        throw new Error('Payload file patch tidak tersedia sebagai Uint8Array.');
+      }
+      if (bytes.length !== 0x26AE && bytes.length !== 0x135700) {
+        throw new Error('Ukuran file patch tidak cocok: ' + bytes.length + ' byte.');
+      }
+      const fileName = String(options.fileName || 'MG30_Preset.mg30patch');
+      const chunkBytes = 48 * 1024;
+      const toBase64 = chunk => {
+        let binary = '';
+        for (let index = 0; index < chunk.length; index++) {
+          binary += String.fromCharCode(chunk[index]);
+        }
+        return btoa(binary);
+      };
+
+      const session = await NativeMidi.beginPatchExport({
+        fileName,
+        expectedBytes: bytes.length,
+      });
+      const transferId = session?.transferId;
+      if (!transferId) throw new Error('Android tidak memberikan ID transfer file patch.');
+      let finalized = false;
+      try {
+        for (let offset = 0; offset < bytes.length; offset += chunkBytes) {
+          const chunk = bytes.subarray(offset, Math.min(offset + chunkBytes, bytes.length));
+          const ack = await NativeMidi.writePatchExportChunk({
+            transferId,
+            offset,
+            base64: toBase64(chunk),
+          });
+          const expectedReceived = offset + chunk.length;
+          if (Number(ack?.receivedBytes) !== expectedReceived) {
+            throw new Error('ACK chunk tidak cocok: staging menerima ' +
+              Number(ack?.receivedBytes || 0) + ' dari ' + expectedReceived + ' byte.');
+          }
+        }
+        const result = await NativeMidi.finishPatchExport({ transferId, fileName });
+        finalized = true;
+        return result;
+      } finally {
+        if (!finalized) {
+          try { await NativeMidi.abortPatchExport({ transferId }); } catch (_) {}
+        }
+      }
     },
   };
   window.dispatchEvent(new CustomEvent('mg30-native-midi-ready'));
