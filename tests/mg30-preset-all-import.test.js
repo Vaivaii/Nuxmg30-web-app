@@ -89,3 +89,22 @@ test('scene payloads retain all three 71-word scene parts for every preset', () 
   assert.deepEqual(scenes.slice(0,3).map(step => [step.program,step.index]), [[0,0],[0,1],[0,2]]);
   assert.deepEqual(scenes.slice(-3).map(step => [step.program,step.index]), [[127,0],[127,1],[127,2]]);
 });
+
+
+test('Import All supports bank-dependent resource counts instead of fixing the sample bank at 27', () => {
+  const allWithResources = Array.from({length:128}, (_, program) => makeRecord(program, true));
+  const allResourcePlan = buildMG30AllPresetImportPlan(allWithResources);
+  assert.equal(allResourcePlan.resourcePrograms.length, 128);
+  assert.equal(allResourcePlan.totalFrames, 9987);
+  assert.equal(allResourcePlan.steps.length, 9987);
+  assert.equal(allResourcePlan.steps.filter(step => step.kind === 'ir-name').length, 128);
+  assert.equal(allResourcePlan.steps.filter(step => step.kind === 'ir-waveform').length, 128 * 64);
+  assert.equal(allResourcePlan.steps.filter(step => step.kind === 'ir-curve').length, 128 * 10);
+  assert.equal(allResourcePlan.steps.filter(step => step.kind === 'preset-scene').length, 384);
+
+  const noResources = Array.from({length:128}, (_, program) => makeRecord(program, false));
+  const noResourcePlan = buildMG30AllPresetImportPlan(noResources);
+  assert.equal(noResourcePlan.resourcePrograms.length, 0);
+  assert.equal(noResourcePlan.totalFrames, 387);
+  assert.equal(noResourcePlan.steps.length, 387);
+});
