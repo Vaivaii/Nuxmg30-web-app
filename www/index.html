@@ -933,7 +933,8 @@ const MIDI_PARAM_CC=[
   [70,71], // S/R: CC 70-71
   [72] // VOL: Patch Level / Volume CC 72
 ];
-const MIDI_GAP=45;
+const MIDI_GAP=45,EXPORT_ALL_MIDI_GAP=22,EXPORT_PROGRAM_SETTLE_MS=25;
+let exportAllFastMidiMode=false;
 const KNOB_SLOTS=[[11,13,14],[16,17,18,19],[21,22,23,24,25,26],[28,29,30,31,32,33,34,35],[37,38,39,40,41,42,43,44,45,46,47,48],[50,51,52,53],[55,56,57,58,59,60],[62,63,64,65,66,67,68,69],[71,72,73,74],[76,77,78,79,80,81],[83,84],[]];
 const PARAMETER_MAX={
   bright:1, boost:1, updown:1, minor:1, chfl:1, chvib:1, restore:1,
@@ -989,7 +990,7 @@ function parameterValueForControl(blockIndex,state,modelIndex,control){
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function updateUsbConnectButton(){const button=$('connectMidi');if(!button)return;button.classList.toggle('is-connected',!!midiConnected);button.classList.toggle('is-connecting',!!midiConnectPending);button.setAttribute('aria-pressed',String(!!midiConnected));button.setAttribute('aria-label',midiConnected?'USB-MIDI MG-30 terhubung':(midiConnectPending?'Menghubungkan USB-MIDI MG-30':'Hubungkan NUX MG-30 melalui USB-MIDI'));button.title=midiConnected?'MG-30 terhubung · USB-MIDI':(midiConnectPending?'Menghubungkan ke MG-30…':'MG-30 belum terhubung · ketuk untuk menyambungkan');const label=$('usbHeaderStatus');if(label){label.textContent=midiConnected?'Terhubung':(midiConnectPending?'Menghubungkan…':'Terputus');label.classList.toggle('is-connected',!!midiConnected);label.classList.toggle('is-connecting',!!midiConnectPending)}}
 function setDeviceStatus(message){const el=$('deviceStatus');if(el)el.textContent=message;const op=$('operationStatus');if(op)op.textContent=message;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(message&&message.length<58?message:'Belum terhubung · ketuk ikon USB untuk menghubungkan');const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);updateUsbConnectButton()}
-function enqueueMidi(fn){const run=async()=>{const wait=MIDI_GAP-(performance.now()-lastMidiSend);if(wait>0)await delay(wait);const out=await fn();lastMidiSend=performance.now();return out};const p=midiChain.then(run);midiChain=p.catch(()=>{});return p}
+function enqueueMidi(fn){const run=async()=>{const gap=exportAllFastMidiMode?EXPORT_ALL_MIDI_GAP:MIDI_GAP;const wait=gap-(performance.now()-lastMidiSend);if(wait>0)await delay(wait);const out=await fn();lastMidiSend=performance.now();return out};const p=midiChain.then(run);midiChain=p.catch(()=>{});return p}
 function invalidatePresetManagerCacheForWrite(data){
  const cache=window.MG30PresetManagerCache;
  if(!cache)return;
@@ -3415,6 +3416,7 @@ window.MG30PresetExportBridge=Object.freeze({
  getTargetProgram:()=>targetSlot,
  getTargetLabel:()=>slotName(targetSlot),
  resumePolling:()=>startHardwareStatePolling(),
+ setExportFastMode(enabled){if(enabled&&!midiConnected)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');exportAllFastMidiMode=Boolean(enabled);return exportAllFastMidiMode},
  async selectProgramForRead(program){
   const requested=Number(program);
   if(!Number.isInteger(requested)||requested<0||requested>127)throw new Error('Slot untuk readback tidak valid.');
@@ -3424,7 +3426,8 @@ window.MG30PresetExportBridge=Object.freeze({
   const sent=await midiSend([0xC0,requested]);
   if(!sent)throw new Error('Program Change ke slot '+slotName(requested)+' tidak terkirim.');
   await flushMidi();
-  await delay(360);
+  // The following indexed 0C/00 read is response-gated; keep only a short settle.
+  await delay(EXPORT_PROGRAM_SETTLE_MS);
   return true;
  },
  async readSingle(onProgress=()=>{},options={}){

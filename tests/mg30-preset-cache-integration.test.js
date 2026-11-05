@@ -80,3 +80,27 @@ test("Import and Export dropdowns preserve the existing single/all action IDs", 
   assert.match(appSource, /id="presetExportAllStart"/);
   assert.match(presetLibrarySource, /closeActionMenus/);
 });
+
+
+test("Export All uses per-slot RAM cache before selecting or reading the pedal", () => {
+  const loop = exportSource.match(/for \(let program = 0; program < 128; program\+\+\) \{[\s\S]*?records\.push\(record\);/)?.[0] || "";
+  assert.ok(loop.length > 0);
+  assert.ok(loop.indexOf("presetManagerCache.get(program)") < loop.indexOf("bridge.selectProgramForRead(program)"));
+  assert.ok(loop.indexOf("presetManagerCache.get(program)") < loop.indexOf("readSingleWithManagerCache(bridge, program"));
+  assert.match(loop, /if \(readback\) \{[\s\S]*?cacheHits \+= 1/);
+});
+
+test("Export All fast MIDI pacing is scoped to the bulk export operation", () => {
+  assert.match(appSource, /EXPORT_ALL_MIDI_GAP=22/);
+  assert.match(appSource, /EXPORT_PROGRAM_SETTLE_MS=25/);
+  assert.match(appSource, /exportAllFastMidiMode\?EXPORT_ALL_MIDI_GAP:MIDI_GAP/);
+  assert.match(appSource, /setExportFastMode\(enabled\)/);
+  assert.match(exportSource, /bridge\.setExportFastMode\(true\)/);
+  assert.match(exportSource, /if \(fastModeEnabled\) bridge\.setExportFastMode\(false\)/);
+});
+
+test("scene read requests remain response-gated by matching SysEx replies", () => {
+  assert.match(appSource, /const pending=waitForSysEx\(match,timeout\)/);
+  assert.match(appSource, /return await pending/);
+  assert.match(appSource, /0x0C&&b\[4\]===0x02&&b\[5\]===program&&b\[6\]===part/);
+});

@@ -153,7 +153,13 @@ async function exportAllPresets() {
   let cacheHits = 0;
   let liveReadbacks = 0;
   let changedProgram = false;
+  let fastModeEnabled = false;
   try {
+    if (typeof bridge.setExportFastMode !== 'function') {
+      throw new Error('Mode transfer cepat Export All tidak tersedia pada bridge USB-MIDI.');
+    }
+    bridge.setExportFastMode(true);
+    fastModeEnabled = true;
   for (let program = 0; program < 128; program++) {
     const label = slotLabel(program);
     let readback = presetManagerCache.get(program);
@@ -248,9 +254,14 @@ async function exportAllPresets() {
     liveReadbacks
   };
   } finally {
-    // Restore the original active program only if a cache miss switched the pedal.
-    if (changedProgram && Number.isInteger(originalProgram) && originalProgram >= 0 && originalProgram < 128) {
-      try { await bridge.selectProgramForRead(originalProgram); } catch (_) {}
+    try {
+      // Restore the original active program only if a cache miss switched the pedal.
+      if (changedProgram && Number.isInteger(originalProgram) && originalProgram >= 0 && originalProgram < 128) {
+        try { await bridge.selectProgramForRead(originalProgram); } catch (_) {}
+      }
+    } finally {
+      // Never leave 22 ms MIDI pacing enabled outside Export All.
+      if (fastModeEnabled) bridge.setExportFastMode(false);
     }
   }
 }
