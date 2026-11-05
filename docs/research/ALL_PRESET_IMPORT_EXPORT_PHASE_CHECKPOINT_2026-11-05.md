@@ -627,3 +627,32 @@ This is automated test/build verification, **not** yet physical-device validatio
 5. Verify NAM import, User/Third Party IR import, Collection IR import and existing MIDI/CC controls remain operational.
 
 If the cache warm-up fails or stalls, capture the exact status/error text and diagnostics before retrying. Do not change firmware, MIDI mappings, NAM, or Collection settings during this test.
+## Freeze recovery: revert automatic 0B/00 manager warm-up (5 November 2026)
+
+User reported the app froze after connecting USB-MIDI on Build #576 (`ad666179ba0df90a17ef173481026c84dfd8cc49`).
+
+Protocol review found the just-added scene selector was based on an incorrect interpretation of QuickTone's disassembly:
+- The QuickTone disassembly says a received `0B/02` response selects/identifies a preset and schedules the scene-read callback.
+- That callback sends three `0C/00` requests and expects three `0C/02` scene replies. Therefore `0B/02` is not itself the indexed scene reply family.
+- Build #576 instead sent `0B/00` for each scene and expected `0B/02` with a scene index. This was not supported by the recovered call sequence and likely stalled the new startup sync.
+
+Recovery action:
+- Reverted the automatic connect-time manager warm-up and the speculative `0B/00` scene selector.
+- Restored the stable Build #565 source for `www/index.html`, `www/mg30-preset-format.js`, `www/mg30-preset-manager-cache.js`, `www/mg30-preset-export.js`, `www/ir-transfer.js`, and the two preset-cache tests.
+- This restores the previously tested `0C/00` scene read path and removes automatic 128-slot sync on connect.
+- Preserved the confirmed sentinel fix for exact metadata value `--------`, the 41 valid resource-bearing records in the supplied Studio file, the 3,462-frame Import All plan, and all prior successful chunked APK-save work.
+- No NAM packet/protocol, User/Third Party IR frames, Collection 6A/6B/6C mapping, MIDI/CC mapping, preset import write bytes, or USB device selection code was changed by the rollback.
+
+### Freeze recovery Build #585
+
+- Source commit: `70447bf67ccce474734f1fdf61d99b791b267e9d`.
+- GitHub Actions run #585: `42067134751`, conclusion **success**.
+- Regression tests: **262 passed, 0 failed**.
+- Android initializer validation, Capacitor generation and Gradle build passed. Gradle reported `BUILD SUCCESSFUL in 1m 6s`.
+- Artifact ID: `13432939649`; ZIP size 4,213,771 bytes; artifact SHA-256 `d5bbbba70b3f2372d6b97c0e019da059afa017018f4d20a4bc8d94792e3a47b2`.
+- Extracted APK: `/mnt/data/MG30-Studio-Freeze-Recovery.apk`, 4,590,892 bytes; SHA-256 `e344b73619e40a042649503f33cc6235deeb32a45d5fdf365fa8aeb16177a558`.
+- ZIP integrity test passed; the archive contains `app-debug.apk` only.
+
+### Physical test
+
+Install the Freeze Recovery APK instead of Build #576 to restore the last stable connection behavior and preserve the Import All sentinel fix. The first Export All in a cold session may still read missing slots individually; the failed automatic cache warm-up is deliberately disabled. Do not claim the no-per-preset scan target is complete. The correct QuickTone trigger/request sequence and safe timing must be established from the recovered call graph/capture before another connect-time sync experiment.
