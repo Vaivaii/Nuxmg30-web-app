@@ -532,3 +532,43 @@ Safety / next steps:
 - Request the exact MG30 Studio-exported `.mg30patch` file. Ideally also obtain the QuickTone-exported All Preset file from the same unchanged pedal bank, or confirm whether the two screenshots selected the exact same binary. Compare all 128 record markers, resource names, scene bytes and file hashes.
 - Only after correlating the app's markers with the QuickTone 27-index fixture and the resource-presence predicate should Export All detection be corrected. Keep the dynamic planner, but gate it on a verified marker list; don't replace the 27 constant with an unconditional 128 interpretation.
 - No source or APK change was made in response to these screenshots. NAM, User/Third Party IR transfer, Collection 6A/6B/6C mapping, and existing MIDI/CC mappings remain untouched.
+
+
+## Direct binary comparison: MG30 Studio export vs QuickTone All Patch (5 November 2026)
+
+User supplied two files and identified their order:
+1. Studio: `MG30_All_Preset (1).mg30patch`, size 1,267,456 bytes, SHA-256 `a37e87028a75da1a2dd2ef1f4042d8e72c881fec963e63d2f1366a2ef55ac463`.
+2. QuickTone: `MG30AllPatch.mg30patch`, size 1,267,456 bytes, SHA-256 `ea502ba24001d363c21950ed676bf77271026ac30ced4d10241168e10fe0b22a`.
+
+Both files have the expected 128 × 0x26AE record size and sequential ordinals. Direct byte inspection used marker offset +0x1AE, 32-byte IR name +0x1B2, 2,048 Float32 samples +0x1FE and 600 UInt16 curve values +0x21FE.
+
+### Studio file marker / resource analysis
+
+- Studio's resource marker is incorrectly `1` for all 128 records.
+- Exactly 87 of those 128 records contain the literal 8-byte name `--------`.
+- Every one of those 87 placeholder records has the same non-resource readback pattern: 2,047 waveform samples are zero, the final sample is 1.0, and all 600 curve values are 152. This is not a meaningful attached IR payload. The exporter had mistaken the non-empty placeholder string for a real resource name, then issued unnecessary 10/00 and 11/00 reads and serialized marker 1.
+- The other 41 Studio records have real printable resource names, 2,048 finite Float32 samples, and 600 curve values in the valid 0–305 range. These must be preserved as resource-bearing records unless a separate bank comparison disproves them.
+- The 41 actual resource indices are: `0,1,2,3,6,7,8,9,10,11,12,13,14,15,17,22,25,27,31,54,55,57,58,60,70,71,75,80,81,82,83,91,108,109,110,111,112,114,115,118,122`.
+- The 14 real, valid resource entries present in Studio but absent from the supplied QuickTone file are `25,54,55,57,58,60,70,71,75,108,112,114,118,122`. They contain nonzero, finite waveform data and valid curves. Do not discard these 14 merely to force the old QuickTone sample count of 27; the files may represent different pedal-bank states.
+
+### Exact common-data comparison
+
+- The 27 QuickTone marker-1 resource records have exactly matching resource names, waveform bytes and curve bytes in the Studio file: **27/27 exact**.
+- Their scene bytes match at 26/27 indices; the only exception is program 82.
+- Across all 128 records, scene bytes differ only at indices 72, 73, 74, 75 and 82. Each of those five records has exactly three differing bytes total: one differing byte in each of its three scene payloads.
+- These 5 scene deltas and the 14 added resources show that the two files are not byte-identical bank snapshots. The exact date/state difference is not established. Keep the 14 valid Studio resources.
+
+### Root cause and code correction
+
+- `www/mg30-preset-read.js` previously used `Boolean(resourceName)` after decoding 09/02 metadata. The literal `--------` therefore evaluated as `true` even though it is QuickTone's no-resource placeholder.
+- Updated the parser to normalize the exact `--------` sentinel to `resourceName: ''` and `hasResource: false`; ordinary real names remain unchanged. Strict Single Export still rejects resource-free slots; Export All allows them and marks them resourceMarker 0.
+- Updated the 09/02 readback branch in `www/index.html` to use the explicit `metadata.hasResource` boolean. For a placeholder/no-resource slot it now returns marker 0 and exits before issuing any 10/00 or 11/00 waveform/curve reads.
+- Added parser regression tests for empty metadata, the exact eight-hyphen placeholder, and a different real hyphenated name; added a bridge integration assertion for explicit `hasResource` gating.
+- The dynamic Import All planner remains intentionally bank-dependent. For the exact Studio file as uploaded, after correcting the 87 false markers, the proper resource group count is 41 and expected plan length is `387 + 41 × 75 = 3,462` frames. The old QuickTone file remains 27 resources / 2,412 frames. A blanket hard-coded 27 or 128 is incorrect.
+- No changes to NAM, User/Third Party IR write packet format, Collection 6A/6B/6C behavior, MIDI/CC mapping, or captured All Import frame encoding/order.
+
+### Validation status
+
+- Parser source and regression tests have been committed to `feature/all-preset-import-export` (commits `86c5c38d57bd3bdf93033a67451d35bfeb1ffee5`, `bdc029e7f0c6a348c060824cd40bc1eb7bb729b9`, `0a15ae047899c24c097cf2d3dd9d3c9f3e0a1955`, and `e110bd6e01eedfadfabdda7d83ea38ebbdf5bf92`).
+- Build #563 passed JS/protocol tests but its Gradle step failed on a remote Gradle distribution HTTP 504, unrelated to source compilation. Build #564 is running for the final combined commit.
+- No physical device import of the corrected 41-resource file has been verified. The user should not start another Import All until the corrected APK is installed and the device bank is backed up. The expected progress total for this Studio file should be 3,462, not 9,987.
