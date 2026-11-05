@@ -92,17 +92,41 @@ async function syncPresetManagerCacheOnConnect(bridge = window.MG30PresetExportB
   return managerSyncPromise;
 }
 
+let pendingManagerSyncAfterStartup = false;
+
+function schedulePresetManagerSync(bridge = window.MG30PresetExportBridge) {
+  if (!bridge?.isConnected?.()) return;
+  ensurePresetManagerSession(bridge);
+  // Android's connection flow immediately scans NAM labels, then IR Collection.
+  // Do not share USB-MIDI with those transfers; wait for their completion event.
+  const nativeStartupSync = Boolean(window.NUXNativeMidi?.available &&
+    window.NUXNAMTransfer?.readMG30NAMSlotNames);
+  if (nativeStartupSync && !presetManagerCache.getStatus().complete) {
+    pendingManagerSyncAfterStartup = true;
+    setStatus('USB-MIDI terhubung · menunggu sinkronisasi nama NAM dan IR Collection selesai sebelum membaca manager preset.');
+    return;
+  }
+  void syncPresetManagerCacheOnConnect(bridge);
+}
+
 window.addEventListener('mg30-midi-connected', () => {
   presetManagerCache.beginSession('mg30-usb-session');
   // index.html dispatches this only after the active buffer read is complete.
-  void syncPresetManagerCacheOnConnect(window.MG30PresetExportBridge);
+  schedulePresetManagerSync(window.MG30PresetExportBridge);
 });
 window.addEventListener('mg30-midi-connection-state', event => {
-  if (event?.detail?.connected === false) presetManagerCache.endSession('USB-MIDI disconnected');
-  else if (event?.detail?.connected === true) {
+  if (event?.detail?.connected === false) {
+    pendingManagerSyncAfterStartup = false;
+    presetManagerCache.endSession('USB-MIDI disconnected');
+  } else if (event?.detail?.connected === true) {
     presetManagerCache.beginSession('mg30-usb-session');
-    void syncPresetManagerCacheOnConnect(window.MG30PresetExportBridge);
+    schedulePresetManagerSync(window.MG30PresetExportBridge);
   }
+});
+window.addEventListener('mg30-ir-collection-sync-complete', () => {
+  if (!pendingManagerSyncAfterStartup) return;
+  pendingManagerSyncAfterStartup = false;
+  void syncPresetManagerCacheOnConnect(window.MG30PresetExportBridge);
 });
 window.addEventListener('mg30-native-midi-state', event => {
   if (event?.detail?.connected === false) presetManagerCache.endSession('Native USB-MIDI disconnected');
