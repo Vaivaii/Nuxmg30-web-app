@@ -172,8 +172,11 @@ async function exportAllPresets() {
   }
 
   const filename = 'MG30_All_Preset.mg30patch';
-  setStatus('128 record selesai disusun dari memori lokal. Menyimpan ' +
-    bytes.length.toLocaleString('id-ID') + ' byte…');
+  // Close the shared web progress overlay before invoking Android's native
+  // Documents picker. preset-library-ui.js watches for this exact hand-off
+  // phrase; without it the generic overlay remains above the native picker.
+  setStatus('Export All selesai disusun dari memori lokal (' +
+    bytes.length.toLocaleString('id-ID') + ' byte). Memilih lokasi penyimpanan di File manager Android…');
   const saved = await savePatch(bytes, filename);
   if (saved?.cancelled) {
     setStatus('Penyimpanan Export All dibatalkan. Tidak ada data yang dikirim ke pedal.', 'warn');
