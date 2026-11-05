@@ -384,3 +384,44 @@ Implemented on \`feature/all-preset-import-export\` after auditing the differenc
 - After all 75 ACKs succeed for \`plan.target === 'user'\`, the uploader now emits an internal \`mg30-user-ir-write-complete\` event. The preset cache listens and conservatively marks every cached preset slot stale.
 - Collection transfers (6A/6C/6B) do not emit this User event and do not invalidate preset snapshots through this new hook. Packet bytes, ACK expectations, request order and the existing User/Collection transfer implementation remain unchanged.
 - Added an integration assertion for the User-versus-Collection event distinction. This is cache-freshness bookkeeping only; it does not change either IR protocol path or the Collection slot mapping.
+
+## Read-through preset manager cache — Build #551 passed (5 November 2026)
+
+### Source and CI
+
+- Working branch: \`feature/all-preset-import-export\`.
+- Application source commit: \`9d8c12ea79082a27fb9c3cc5f8939ca3dfecc8e9\`.
+- GitHub Actions run **#551**: \`42027102597\`; conclusion **success**.
+- Protocol regression suite: **253/253 passed, 0 failed**.
+- Android initializer syntax validation: passed.
+- Capacitor Android project generation / USB audio plugin registration: passed.
+- Gradle \`assembleDebug\`: **BUILD SUCCESSFUL** (1m 28s).
+- Artifact upload: passed.
+
+### APK artifact verification
+
+- Artifact ID: \`13414237907\`.
+- ZIP size: **4,211,213 bytes**.
+- ZIP SHA-256: \`cebcd7d07973bfd75f23c65f64c2064cdd7a18b16b7705652dede76c6993aa5b\`.
+- Extracted APK: **4,587,704 bytes**.
+- APK SHA-256: \`666feea50d665fd16eaaf626f61d9573cd5331cbaebdf3db198ba99412dd482e\`.
+- Downloaded artifact ZIP and extracted APK both pass ZIP integrity testing.
+- Packaged Android web bundle inspection confirms the cache manager and User IR completion event are present (\`MG30PresetManagerCache\`, \`cacheHits\`, \`mg30-user-ir-write-complete\`, and the marker-0/no-resource guard).
+
+### Manual device validation still required
+
+This build is CI- and package-verified only. It has not been confirmed installed or tested on the user's original MG-30 Gen2 FW 6.0.x.
+
+- Install Build #551 and connect the pedal.
+- Export one resource-bearing slot twice in the same app/USB session. The first export should populate the cache through the existing readback; the second should show the session-cache status and avoid another readback.
+- Run Export All. On the first run it reads missing/stale slots and warms the 128-slot cache. Run Export All again without changing presets or uploading User IR: it should report 128 cache hits and should not cycle the pedal through Program Changes.
+- Change a preset parameter or save a preset to the pedal, then export that slot again; the stale entry must be read back again.
+- Complete a User / Third Party IR upload, then export again; the cache must be re-read. Collection IR import/use must remain on its separate path and must not emit the User-IR cache invalidation event.
+- Disconnect/reconnect USB-MIDI or restart the app. The session cache must be empty again; no prior-session snapshot may be reused.
+
+### Scope / safety boundary
+
+- The cache is intentionally a read-through session manager, not yet a full reproduction of QuickTone's automatic connection-time manager synchronization. No automatic 128-slot preset switching/readback is started when connecting.
+- First Export All in a fresh session may still read all slots that have not already been cached by Export Single. Later Export All can serialize from the 128 fresh cached records.
+- No NAM protocol, User/Third Party IR frame bytes, IR Collection packet mapping, MIDI/CC mapping, Signal Chain protocol, preset import packet ordering, or native USB-MIDI transport behavior was changed. The only IR-uploader addition emits an internal completion event after all 75 User-path ACKs succeed; Collection does not emit that event.
+- Do not describe cache speed or hardware behavior as physically validated until the user's on-device test above is completed.
