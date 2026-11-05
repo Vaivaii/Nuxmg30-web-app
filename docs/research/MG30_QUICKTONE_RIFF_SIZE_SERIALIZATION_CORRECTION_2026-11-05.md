@@ -304,3 +304,32 @@ The observed All Preset `bits/sample` and `data size` fields are metadata retain
 
 ### Implementation rule
 For All Preset parsing, always treat the fixed waveform region as 2048 float32 samples based on the record layout; do not decode it as PCM24/PCM32 according to the embedded WAVE `bits/sample` field. Preserve the raw 44-byte header separately as metadata. For standalone exported WAV files, use the explicit QuickTone PCM24 conversion behavior. Do not change User/Third Party protocol, NAM, Collection, Import All, or MIDI mappings.
+
+
+## Continuation: exact cache read/write direction and All Preset restore path
+
+Re-disassembled `0x004B4F80`, `0x004B50A0`, `0x004B5180`, and their callers. This resolves the cache direction unambiguously and corrects a prior reversed description.
+
+### Cache key/path
+`0x004B5480` builds the archive key from the literal prefix `NUX/MG30/`, the resource index converted to text, and the suffix `.bin`. It does not add an `IR/` subdirectory. Example shape: `NUX/MG30/<index>.bin`.
+
+### Correct function roles
+- `0x004B4F80` = cache READ: constructs the key, opens the archive entry, reads exactly `0x2504` bytes into a buffer, and returns the resource object. Its caller at `0x004A569E` then uses the object for a resource manager update.
+- `0x004B50A0` = cache WRITE: constructs the same key, opens/creates the archive entry, and writes exactly `0x2504` bytes from the supplied object.
+- `0x004B5180` = All Preset record -> cache object restore: copies the record's header/name/waveform/curve into an in-memory resource object and calls `0x004B50A0` to persist it.
+- `0x004B5480` = key/path construction only; not waveform conversion and not object serialization logic.
+
+### Live resource update path
+At `0x004A569E`, QuickTone calls cache READ `0x004B4F80` for the selected resource index, combines that resource object with update data, then calls cache WRITE `0x004B50A0` at `0x004A5708`. This confirms that normal resource updates preserve/replace a fixed-size cache object rather than generating a WAVE file on each update.
+
+### Export conversion is a separate operation
+The method at `0x004B0770` creates a conventional WAV output stream and calls `0x0084E110` to initialize a PCM24/48 kHz WAVE header. It then reads float32 samples from the resource object at offsets indexed from `+0x60`, scales/clamps them to signed 24-bit, and writes three bytes per sample. This is an explicit resource-object -> standalone PCM24 WAV export conversion, not evidence of how the user's source WAV is initially imported.
+
+### Important correction to conversational claim
+The disassembly reviewed here proves the standalone WAV EXPORT path and the cache paths. It does not yet identify the UI's source-WAV IMPORT reader method. Therefore do not claim that `0x004B0770` is the source WAV import routine. Source WAV import still needs its own call-graph trace from the file chooser/audio reader to the `10/01`, `09/01`, and `11/01` send stages.
+
+### Practical consequence
+- Cache records are fixed-size internal objects with 2048 float32 samples and 600 uint16 curve values, plus separately retained header bytes.
+- All Preset load copies the record's raw header into the object and writes the object to `NUX/MG30/<index>.bin`.
+- Standalone WAV export converts internal float32 to PCM24.
+- No code change is justified yet for the app's Third Party/User importer. Preserve the verified `09/10/11` protocol and all NAM, Collection, Import All, and MIDI behavior.
