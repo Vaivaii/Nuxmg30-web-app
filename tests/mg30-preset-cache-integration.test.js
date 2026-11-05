@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const exportSource = await readFile(new URL("../www/mg30-preset-export.js", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../www/index.html", import.meta.url), "utf8");
+const irTransferSource = await readFile(new URL("../www/ir-transfer.js", import.meta.url), "utf8");
 
 test("Export Single checks the session manager before invoking live readback", () => {
   assert.match(exportSource, /async function readSingleWithManagerCache/);
@@ -43,4 +44,12 @@ test("NAM and Collection command families are outside the preset-cache invalidat
 
 test("the direct Save-to-device helper invalidates cache after its 0B/01 and 07/01 writes", () => {
   assert.ok(appSource.includes("midiOutput.send(frame);invalidatePresetManagerCacheForWrite(frame)"));
+});
+
+
+test("successful User IR upload invalidates preset cache, while Collection transfer does not", () => {
+  assert.match(irTransferSource, /plan\.target==='user'[^;]*mg30-user-ir-write-complete/);
+  assert.match(irTransferSource, /target==='collection'\?/);
+  assert.match(exportSource, /mg30-user-ir-write-complete/);
+  assert.match(exportSource, /invalidateAll\('User IR upload selesai/);
 });

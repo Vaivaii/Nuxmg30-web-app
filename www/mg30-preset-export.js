@@ -41,6 +41,9 @@ window.addEventListener('mg30-midi-connection-state', event => {
 window.addEventListener('mg30-native-midi-state', event => {
   if (event?.detail?.connected === false) presetManagerCache.endSession('Native USB-MIDI disconnected');
 });
+window.addEventListener('mg30-user-ir-write-complete', event => {
+  presetManagerCache.invalidateAll('User IR upload selesai; readback preset perlu diperbarui');
+});
 
 
 const $ = id => document.getElementById(id);

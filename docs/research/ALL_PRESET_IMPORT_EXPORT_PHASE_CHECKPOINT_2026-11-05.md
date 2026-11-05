@@ -376,3 +376,11 @@ Implemented on \`feature/all-preset-import-export\` after auditing the differenc
 - The cache invalidation helper is now called with the exact frame immediately after each of those existing sends. Frame bytes, order, ACK handling and readback verification are unchanged; the affected preset entry is only marked stale.
 - Export Single explicitly rejects a cached marker-0/no-resource entry with a clear User IR resource message before invoking the existing serializer. The resource-bearing Single Export path and device readback implementation remain unchanged.
 - Added an integration assertion for invalidation in the direct Save-to-device path. This correction changes no NAM, User/Third Party transfer packet, Collection command, MIDI/CC mapping, or USB-MIDI transport behavior.
+
+
+### Follow-up freshness correction — direct User IR transfer path (2026-11-05)
+
+- The verified User / Third Party IR uploader in \`www/ir-transfer.js\` sends its 75 frames through \`conn.output.send()\`, not the editor's central \`midiSend()\` function. Therefore the previously added outgoing-09/10/11 invalidation hook did not observe that separate path.
+- After all 75 ACKs succeed for \`plan.target === 'user'\`, the uploader now emits an internal \`mg30-user-ir-write-complete\` event. The preset cache listens and conservatively marks every cached preset slot stale.
+- Collection transfers (6A/6C/6B) do not emit this User event and do not invalidate preset snapshots through this new hook. Packet bytes, ACK expectations, request order and the existing User/Collection transfer implementation remain unchanged.
+- Added an integration assertion for the User-versus-Collection event distinction. This is cache-freshness bookkeeping only; it does not change either IR protocol path or the Collection slot mapping.
