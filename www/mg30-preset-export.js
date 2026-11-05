@@ -2,7 +2,8 @@ import {
   buildMG30SinglePresetPatchFromReplies,
   buildMG30AllPresetPatch,
   parseMG30AllPresetPatch,
-  fitMG30QuickToneIRName
+  fitMG30QuickToneIRName,
+  decodeMG30PresetSceneReply
 } from './mg30-preset-format.js';
 import { MG30PresetReadFormat } from './mg30-preset-read.js';
 
@@ -73,136 +74,117 @@ async function savePatch(bytes, filename) {
   downloadPatch(bytes, filename);
   return { saved: true, native: false, fileName: filename, bytes: bytes.length };
 }
-let localAllPresetMemory = null;
 let allExportBusy = false;
 
-function asBytes(input) {
-  if (input instanceof Uint8Array) return input;
-  if (input instanceof ArrayBuffer) return new Uint8Array(input);
-  if (ArrayBuffer.isView(input)) {
-    return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
-  }
-  return null;
-}
-
-function localAllPresetSource() {
-  const source = window.MG30AllPresetMemory || localAllPresetMemory;
-  if (!source) return null;
-  if (Array.isArray(source.records) && source.records.length === 128) {
-    return { records: source.records, sourceName: source.sourceName || 'memori lokal' };
-  }
-  if (Array.isArray(source) && source.length === 128) {
-    return { records: source, sourceName: 'memori lokal' };
-  }
-  const raw = asBytes(source.bytes ?? source.rawBytes ?? source);
-  if (raw) {
-    const parsed = parseMG30AllPresetPatch(raw);
-    return { records: parsed.records, sourceName: source.sourceName || 'memori lokal' };
-  }
-  return null;
-}
-
-async function cacheLocalAllPresetFile(file) {
-  const allButton = $('presetExportAllStart');
-  localAllPresetMemory = null;
-  if (window.MG30AllPresetMemory?.sourceName) window.MG30AllPresetMemory = null;
-  if (allButton) allButton.disabled = true;
-  if (!file) return;
-  try {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const parsed = parseMG30AllPresetPatch(bytes);
-    localAllPresetMemory = {
-      sourceName: file.name || 'MG30AllPatch.mg30patch',
-      bytes,
-      records: parsed.records,
-      byteLength: parsed.byteLength
-    };
-    // Export All reads this local cache only. It does not access the MIDI bridge.
-    window.MG30AllPresetMemory = localAllPresetMemory;
-    if (allButton) {
-      allButton.disabled = false;
-      allButton.textContent = 'Export All · 128 Preset';
-      allButton.title = 'Ekspor dari file All Preset yang sudah divalidasi dan disimpan di memori lokal aplikasi.';
-    }
-  } catch (_) {
-    // A single-preset file or a non-patch file is not an Export All source.
-    localAllPresetMemory = null;
-    if (allButton) allButton.disabled = true;
-  }
-}
-
 /**
- * Build and download the 128-record .mg30patch from local application memory.
- * No MIDI connection, readSingle(), SysEx request, or pedal access is used.
+ * Read the live 128-slot Gen2 bank using the same read-only per-preset
+ * readback core as Export Single, then package the 128 records in one file.
+ * Presets without an attached User IR are valid and keep a zeroed resource area.
  */
 async function exportAllPresets() {
-  // Export All is deliberately a local serializer. Do not call the MIDI bridge,
-  // readSingle(), readPresetParts(), or any SysEx helper from this function.
-  const source = localAllPresetSource();
-  if (!source) {
-    throw new Error('Data All Preset belum ada di memori lokal. Pilih file 128-preset .mg30patch melalui tombol Import All terlebih dahulu; operasi ini tidak membaca preset dari pedal.');
+  const bridge = window.MG30PresetExportBridge;
+  if (!bridge?.isConnected?.()) {
+    throw new Error('Hubungkan MG-30 melalui USB-MIDI sebelum Export All. Export All membaca bank aktif secara read-only.');
   }
 
   const confirmed = window.confirm(
     'EXPORT ALL PRESET\n\n' +
-    'Sumber: ' + source.sourceName + '\n' +
-    'Isi file: 128 preset (01A–32D), 3 scene per preset.\n' +
-    'Nama file: MG30_All_Preset.mg30patch\n' +
-    'Ukuran hasil: 1.267.456 byte.\n\n' +
-    'File akan dibuat dari data lokal yang sudah dipilih sebelumnya. ' +
-    'Operasi ini TIDAK membaca atau mengirim data melalui USB-MIDI/SysEx dan tidak mengubah pedal.\n\n' +
-    'Lanjutkan dan pilih lokasi penyimpanan?'
+    'MG30 Studio akan membaca 128 preset dari MG-30 (01A–32D), termasuk tiga scene setiap preset. ' +
+    'Metadata resource akan diperiksa; waveform dan curve hanya dibaca untuk preset yang memiliki IR.\n\n' +
+    'Setelah semua record lengkap, aplikasi menyimpan satu file MG30_All_Preset.mg30patch (0x135700 byte).\n\n' +
+    'Operasi ini hanya membaca melalui USB-MIDI/SysEx. Tidak ada preset, NAM, User IR, atau Collection yang ditulis atau diubah.\n\n' +
+    'Lanjutkan membaca seluruh bank?'
   );
   if (!confirmed) {
-    setStatus('Export All dibatalkan. Data lokal dan pedal tidak diubah.', 'warn');
+    setStatus('Export All dibatalkan. Tidak ada data yang ditulis ke MG-30.', 'warn');
     return { saved: false, cancelled: true };
   }
 
-  if (!Array.isArray(source.records) || source.records.length !== 128) {
-    throw new Error('Sumber lokal Export All harus berisi tepat 128 record preset.');
-  }
-  for (let ordinal = 0; ordinal < 128; ordinal++) {
-    const record = source.records[ordinal];
-    if (!record || Number(record.recordOrdinal) !== ordinal ||
-        !Array.isArray(record.scenes) || record.scenes.length !== 3) {
-      throw new Error('Memori lokal tidak lengkap/berurutan pada preset ' + ordinal + '. Export dibatalkan.');
+  const records = [];
+  const resourcePrograms = [];
+  for (let program = 0; program < 128; program++) {
+    const label = slotLabel(program);
+    setStatus('Export All · membaca preset ' + label + ' · ' + (program + 1) + '/128…');
+    const readback = await bridge.readSingle(progress => {
+      const phase = progress?.phase || 'Membaca perangkat';
+      // Keep the global 128-slot progress as the final fraction in the status
+      // so the shared progress dialog does not confuse per-preset phases with
+      // overall bank progress.
+      setStatus('Export All · preset ' + label + ' · ' + (program + 1) + '/128 · ' + phase);
+    }, {
+      programOverride: program,
+      allowMissingResource: true,
+      deferPollingRestart: true
+    });
+
+    if (!Array.isArray(readback.sceneReplies) || readback.sceneReplies.length !== 3) {
+      throw new Error('Preset ' + label + ' tidak menghasilkan tiga balasan scene lengkap.');
     }
+    const scenes = readback.sceneReplies.map((reply, sceneIndex) =>
+      decodeMG30PresetSceneReply(reply, program, sceneIndex)
+    );
+    const marker = Number(readback.resourceMarker);
+    if (marker !== 0 && marker !== 1) {
+      throw new Error('Status resource preset ' + label + ' tidak dapat dipastikan. Export All dihentikan.');
+    }
+
+    const record = {
+      recordOrdinal: program,
+      scenes,
+      resourceMarker: marker,
+      hasResource: marker === 1
+    };
+    if (marker === 1) {
+      if (!readback.resourceName ||
+          !(readback.samples instanceof Float32Array) || readback.samples.length !== 2048 ||
+          !(readback.curve instanceof Uint16Array) || readback.curve.length !== 600) {
+        throw new Error('Readback resource preset ' + label + ' tidak lengkap. Tidak membuat file bank parsial.');
+      }
+      record.resourceName = readback.resourceName;
+      record.samples = readback.samples;
+      record.curve = readback.curve;
+      resourcePrograms.push(program);
+    }
+    records.push(record);
   }
 
-  // buildMG30AllPresetPatch writes one 0x26AE record per slot. Parsed local
-  // records retain rawRecord, preserving each original RIFF/WAVE header and
-  // opaque padding; newly-created resource records get padded name/header
-  // fields from the format serializer.
-  const bytes = buildMG30AllPresetPatch(source.records);
+  if (records.length !== 128) {
+    throw new Error('Export All berhenti sebelum 128 record berhasil dibaca.');
+  }
+
+  setStatus('128 preset selesai dibaca. Menyusun satu file bank…');
+  const bytes = buildMG30AllPresetPatch(records);
   if (!(bytes instanceof Uint8Array) || bytes.length !== 0x135700) {
-    throw new Error('Buffer Export All harus tepat 0x135700 byte (128 × 0x26AE).');
+    throw new Error('Ukuran hasil Export All harus tepat 0x135700 byte (128 × 0x26AE).');
   }
 
-  // Validate the completed binary before opening the save dialog.
   const verified = parseMG30AllPresetPatch(bytes);
-  if (verified.records.length !== 128 ||
-      verified.byteLength !== 0x135700 ||
-      verified.resourcePrograms.length !== 27) {
-    throw new Error('Validasi hasil serialisasi All Preset gagal (128 record / 27 resource IR).');
+  if (verified.records.length !== 128 || verified.byteLength !== 0x135700 ||
+      verified.resourcePrograms.length !== resourcePrograms.length) {
+    throw new Error('Validasi akhir file bank gagal. File tidak disimpan.');
   }
 
   const filename = 'MG30_All_Preset.mg30patch';
-  // Close the shared web progress overlay before invoking Android's native
-  // Documents picker. preset-library-ui.js watches for this exact hand-off
-  // phrase; without it the generic overlay remains above the native picker.
-  setStatus('Export All selesai disusun dari memori lokal (' +
-    bytes.length.toLocaleString('id-ID') + ' byte). Memilih lokasi penyimpanan di File manager Android…');
+  setStatus('128 preset tervalidasi · ' + resourcePrograms.length +
+    ' preset memiliki resource IR · ' + bytes.length.toLocaleString('id-ID') +
+    ' byte. Memilih lokasi penyimpanan di File manager Android…');
   const saved = await savePatch(bytes, filename);
   if (saved?.cancelled) {
-    setStatus('Penyimpanan Export All dibatalkan. Tidak ada data yang dikirim ke pedal.', 'warn');
+    setStatus('Penyimpanan Export All dibatalkan. Tidak ada data yang ditulis ke MG-30.', 'warn');
     return { saved: false, cancelled: true, bytes: bytes.length };
   }
-  if (!saved?.saved) throw new Error('Penyimpanan file Export All tidak dikonfirmasi.');
+  if (!saved?.saved) throw new Error('Android tidak mengonfirmasi penyimpanan file Export All.');
+
   setStatus('Export All berhasil: ' + (saved.fileName || filename) + ' · ' +
     Number(saved.bytes || bytes.length).toLocaleString('id-ID') +
-    ' byte · 128 preset · 27 resource IR. Sumber: ' + source.sourceName +
-    '. Tidak ada perintah MIDI/SysEx yang dikirim.', 'ok');
-  return { saved: true, fileName: saved.fileName || filename, bytes: bytes.length };
+    ' byte · 128 preset · ' + resourcePrograms.length +
+    ' resource IR. Pembacaan selesai tanpa menulis data ke MG-30.', 'ok');
+  return {
+    saved: true,
+    fileName: saved.fileName || filename,
+    bytes: bytes.length,
+    resourcePrograms
+  };
 }
 
 window.MG30PresetExportAll = exportAllPresets;
@@ -303,37 +285,26 @@ function init() {
   const allButton = $('presetExportAllStart');
   if (allButton && allButton.dataset.initialized !== '1') {
     allButton.dataset.initialized = '1';
-    allButton.disabled = !localAllPresetSource();
+    allButton.disabled = false;
+    allButton.textContent = 'Export All · 128 Preset';
+    allButton.title = 'Baca bank aktif MG-30 (read-only), lalu simpan 128 preset sebagai satu file.';
     allButton.addEventListener('click', async () => {
       if (allExportBusy) return;
       allExportBusy = true;
-      // Export All is a local file operation. Explicitly suppress the shared
-      // USB-transfer feedback modal for the complete confirm/build/save flow.
-      window.MG30LocalPresetExportActive = true;
       allButton.disabled = true;
-      const priorLabel = allButton.textContent;
-      allButton.textContent = 'Menyusun 128 preset…';
+      allButton.textContent = 'Membaca bank…';
+      const bridge = window.MG30PresetExportBridge;
       try {
         await exportAllPresets();
       } catch (error) {
         setStatus('Export All gagal: ' + (error?.message || String(error)) +
-          ' Tidak ada perintah MIDI/SysEx yang dikirim.', 'warn');
+          ' Tidak ada perintah tulis yang dikirim ke MG-30.', 'warn');
       } finally {
         allExportBusy = false;
-        allButton.disabled = !localAllPresetSource();
-        allButton.textContent = localAllPresetSource() ? 'Export All · 128 Preset' : priorLabel;
-        // Let the status observer process the final state while the local-export
-        // suppression flag is still set; no device-transfer dialog is needed.
-        window.setTimeout(() => { window.MG30LocalPresetExportActive = false; }, 0);
+        allButton.disabled = false;
+        allButton.textContent = 'Export All · 128 Preset';
+        bridge?.resumePolling?.();
       }
-    });
-  }
-
-  const allPatchInput = $('presetImportFile');
-  if (allPatchInput && allPatchInput.dataset.exportAllCacheAttached !== '1') {
-    allPatchInput.dataset.exportAllCacheAttached = '1';
-    allPatchInput.addEventListener('change', () => {
-      void cacheLocalAllPresetFile(allPatchInput.files?.[0] || null);
     });
   }
 
