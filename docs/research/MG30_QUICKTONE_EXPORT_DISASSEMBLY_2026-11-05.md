@@ -319,3 +319,26 @@ The caller at VA 0x004ABF3C occurs in a per-record conversion/processing path th
 4. Preserve the current single-preset capture-derived 10/01 and 11/01 implementation assumptions; compare exact frame offsets/counts against presetimport.pcapng before changing app code.
 5. The 10/01 path uses 32-sample source blocks; the 11/01 path uses 64-value blocks. Do not conflate these block units with packet totals without checking the packed payload layout.
 6. No application source code, APK, NAM transfer, IR User/Third Party import, Collection logic, Import All transaction, or MIDI mapping was changed.
+
+
+## Correction: exact 10/01 block width verified from machine instructions (2026-11-05)
+
+A re-read of the complete machine-code loop at VA 0x004AA700 corrects one detail in the preceding summary: the 10/01 sender does **not** gather only eight float32 samples per frame. It gathers 32 float32 samples (128 source bytes) per frame.
+
+- The source index is a 16-bit counter. The copy loop increments its local word index by 8 and repeats until 0x20 (32), loading eight DWORDs per iteration. This copies 32 DWORD values = 32 float32 samples = 128 bytes.
+- The staging block is 0x80 bytes. The packing loop consumes 0x40 (64) little-endian uint16 words and emits 3 bytes for each word, for 192 packed data bytes.
+- The frame header is command 10/01, the parameter byte and a 16-bit encoded offset. The offset begins at 0 and advances by 0x20 (32) each frame.
+- The outer loop ends when the offset reaches 0x800 (2,048). Therefore 2,048 / 32 = 64 frames. Each complete SysEx frame is 205 bytes, matching the User capture.
+- The callback at 0x004AAA10 accepts 10/03.
+
+This is consistent with the app's existing builder: each waveform packet serializes 64 uint16 words from 32 float32 values, uses offset frameIndex × 32, and emits a 205-byte SysEx frame. The apparent difference between 32 float32 samples and 64 uint16 words is expected because each float32 occupies two 16-bit words.
+
+### 11/01 curve packet cross-check
+
+The machine-code loop at VA 0x004AAA40 copies exactly 64 uint16 values from the supplied curve pointer into a 0x80-byte staging buffer, then packs those 64 words into 192 bytes. Its offset/index advances in 0x40-value (64-word) units. Ten 205-byte frames cover 640 transfer words; the known preset record and capture establish 600 meaningful curve values, with 40 trailing transfer words in the final frame. The app builder's 640-word staging array zero-fills those 40 trailing words rather than reproducing QuickTone's stale stack/memory tail. That remains the deliberate safer behavior documented in the second-capture validation; do not change it without device-side acceptance evidence.
+
+### Cross-check against the supplied User capture and current app code
+
+The project capture analysis reports the same externally visible structure: 64 × 10/01 frames (205 bytes), offsets 0..2016 by 32, 10 × 11/01 frames (205 bytes), offsets 0..576 by 64, and corresponding 10/03 and 11/03 acknowledgements. The current `www/mg30-preset-format.js` builder constructs 64 waveform bodies and 10 curve bodies with the same word counts, offset progression and 7-bit packing; the full preset import plan orders name, waveform, curve, then three scene frames (78 total). This is consistent with the earlier QuickTone single-preset capture contract.
+
+Boundary: this confirms the sender's byte/word/block geometry and its match to the already capture-grounded app builder. It does not by itself prove a physical Import All or Export All round-trip, the manager's 12/13/18/19 metadata meanings, or the device acceptance of the zero-filled final curve tail. No application source or APK was changed.
