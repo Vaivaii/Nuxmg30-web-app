@@ -133,3 +133,12 @@ Fix:
 - This causes the existing observer to close the web progress overlay before the native save picker. It does not add USB, MIDI, SysEx, readback, or pedal calls.
 - No change to `preset-library-ui.js`, importer, NAM, either IR path, MIDI mapping, or live sync.
 - A fresh Android build and regression test run is required for this follow-up commit. Device validation of the save picker remains pending.
+
+
+### Overlay fix build result (2026-11-05)
+
+- GitHub Actions run #526: `41992369598`, source commit `c8b13a615efa70b2fe5d6d860d6fa14aa9710826`, conclusion **success**.
+- `npm test`, initializer syntax validation, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact `MG30-Studio-debug-APK`, ID `13398672524`, archive size 4,203,524 bytes, SHA-256 `e2be729b9f4713e06cb68bfe321154d269c84bfb52c47ed96ad014dd824c931f`.
+- Extracted `app-debug.apk` size 4,581,548 bytes, SHA-256 `02b438b0a1c65352131aea75ac3e7c22183a7863bd687c7cc2636268a5954844`.
+- The user-facing overlay root cause and fix are documented above. This build has not yet been confirmed installed or exercised on the user's Android phone. The remaining verification is to install this APK, repeat Export All, confirm the native File Manager save picker appears, then verify the saved output is exactly 1,267,456 bytes / 128 records.
