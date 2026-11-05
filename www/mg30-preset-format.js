@@ -188,10 +188,103 @@ export function buildMG30SinglePresetImportPlan(parsed, targetProgram) {
   return { targetProgram: target, sourceRecordOrdinal: parsed.recordOrdinal, resourceName: parsed.resourceName, steps, totalFrames: 78 };
 }
 
+
+/**
+ * Parse the 128-record original MG-30 Gen2 QuickTone all-preset container.
+ * Resource marker 1 means the record owns an associated User/Third Party IR.
+ * The all-file sample includes one resource record whose RIFF signature is
+ * nonstandard (program 91), although the Import All capture still transfers
+ * its resource. Therefore this parser validates the fixed internal float32
+ * sample and 600-word curve regions rather than requiring a RIFF signature.
+ * The strict single-preset parser above intentionally remains unchanged.
+ */
+export function parseMG30AllPresetPatch(input) {
+  const source = bytesOf(input);
+  if (source.length !== ALL_FILE_SIZE) {
+    throw new Error('Ukuran All Preset .mg30patch harus tepat ' + ALL_FILE_SIZE + ' byte; diterima ' + source.length + '.');
+  }
+
+  const records = [];
+  const resourcePrograms = [];
+  for (let ordinal = 0; ordinal < 128; ordinal++) {
+    const start = ordinal * RECORD_SIZE;
+    const recordBytes = source.subarray(start, start + RECORD_SIZE);
+    const view = new DataView(recordBytes.buffer, recordBytes.byteOffset, recordBytes.byteLength);
+    const recordOrdinal = view.getUint32(0, true);
+    if (recordOrdinal !== ordinal) {
+      throw new Error('Indeks record All Preset tidak berurutan pada posisi ' + ordinal + ' (nilai ' + recordOrdinal + ').');
+    }
+
+    const scenes = [];
+    for (let scene = 0; scene < 3; scene++) {
+      const sceneStart = SCENE_OFFSET + scene * SCENE_BYTES;
+      const raw = recordBytes.slice(sceneStart, sceneStart + SCENE_BYTES);
+      if (raw.length !== SCENE_BYTES || sceneStart + SCENE_BYTES > RESOURCE_MARKER_OFFSET) {
+        throw new Error('Data scene terpotong pada preset ' + ordinal + ', scene ' + scene + '.');
+      }
+      const sceneView = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+      const words = new Uint16Array(71);
+      for (let i = 0; i < words.length; i++) words[i] = sceneView.getUint16(i * 2, true);
+      scenes.push({ index: scene, raw, words });
+    }
+
+    const resourceMarker = view.getUint32(RESOURCE_MARKER_OFFSET, true);
+    if (resourceMarker !== 0 && resourceMarker !== 1) {
+      throw new Error('Penanda resource preset ' + ordinal + ' harus 0 atau 1.');
+    }
+
+    const record = { recordOrdinal, scenes, resourceMarker, hasResource: resourceMarker === 1 };
+    if (resourceMarker === 1) {
+      const resourceName = decodeAsciiField(recordBytes.subarray(RESOURCE_NAME_OFFSET, RESOURCE_NAME_OFFSET + 32)).trim();
+      if (!resourceName) throw new Error('Nama resource IR kosong pada preset ' + ordinal + '.');
+
+      const rawSamples = new Uint8Array(2048 * 4);
+      rawSamples.set(recordBytes.subarray(FLOAT_DATA_OFFSET, FLOAT_DATA_END), 0);
+      rawSamples.set(recordBytes.subarray(FLOAT_TAIL_OFFSET, FLOAT_TAIL_END), 0x1800);
+      const sampleView = new DataView(rawSamples.buffer);
+      const samples = new Float32Array(2048);
+      for (let i = 0; i < samples.length; i++) {
+        const value = sampleView.getFloat32(i * 4, true);
+        if (!Number.isFinite(value)) {
+          throw new Error('Float32 resource tidak valid pada preset ' + ordinal + ', sampel ' + i + '.');
+        }
+        samples[i] = value;
+      }
+
+      const curveBytes = recordBytes.subarray(CURVE_OFFSET, RECORD_SIZE);
+      if (curveBytes.length !== 1200) throw new Error('Panjang tabel kurva resource tidak cocok pada preset ' + ordinal + '.');
+      const curveView = new DataView(recordBytes.buffer, recordBytes.byteOffset + CURVE_OFFSET, curveBytes.length);
+      const curve = new Uint16Array(600);
+      for (let i = 0; i < curve.length; i++) {
+        const value = curveView.getUint16(i * 2, true);
+        if (value > 305) throw new Error('Nilai kurva IR di luar rentang pada preset ' + ordinal + ', indeks ' + i + '.');
+        curve[i] = value;
+      }
+
+      record.resourceName = resourceName;
+      record.samples = samples;
+      record.curve = curve;
+      resourcePrograms.push(ordinal);
+    }
+    records.push(record);
+  }
+
+  if (resourcePrograms.length !== 27) {
+    throw new Error('Sampel All Preset Gen2 yang dianalisis memiliki 27 resource IR; ditemukan ' + resourcePrograms.length + '. Batch ditolak.');
+  }
+  return {
+    format: 'NUX MG-30 Gen2 all preset .mg30patch',
+    records,
+    resourcePrograms,
+    byteLength: source.length,
+  };
+}
+
 export const MG30PresetFormat = Object.freeze({
   SINGLE_RECORD_BYTES: RECORD_SIZE,
   ALL_RECORDS_BYTES: ALL_FILE_SIZE,
   parseSingle: parseMG30SinglePresetPatch,
+  parseAll: parseMG30AllPresetPatch,
   buildImportPlan: buildMG30SinglePresetImportPlan,
   decodeSceneReply: decodeMG30PresetSceneReply,
   buildSinglePatch: buildMG30SinglePresetPatch,
