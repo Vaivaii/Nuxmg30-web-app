@@ -31,5 +31,23 @@ No changes to preset import/export, NAM, User/Third Party IR, IR Collection, MID
 ## Validation
 
 - Added source regression tests for compact breakpoints, icon-only markup, distinct serial/parallel diagrams, live SVG refresh, and unchanged 0D command/ACK behavior.
-- GitHub Actions / Android build result: pending.
-- Physical MG-30 visual check is still required after APK installation.
+## Build #607 verification
+
+- Final application source commit: `8959e5374fd7254626636eddfd9ddf1438e42642` on `feature/post-effects-parallel-routing`.
+- GitHub Actions run #607: `42095439332`, conclusion **success**: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42095439332
+- Regression tests: **278 passed, 0 failed**.
+- Android initializer syntax validation and Capacitor Android/plugin generation passed.
+- Gradle `assembleDebug`: **success**.
+- Artifact ID: `13447342403`; ZIP size **4,216,512 bytes**; ZIP SHA-256 `b797849ccf727abfffc3b5274b5d81441a45cca58b49e1b55d534811baa2395c`.
+- Extracted APK: **4,594,912 bytes**; SHA-256 `8941fd9dcb795de1673d408e33d5cf75374699993e4fe1bb2d22f3e6950f2c77`.
+- ZIP integrity test passed; APK archive structure was inspected. The packaged `assets/public/index.html` contains the compact responsive routing-card rules and live SVG refresh function, with the old visible routing captions absent.
+
+## Remaining physical-device check
+
+Install Build #607 on the original MG-30 Gen2 firmware 6.0.x and confirm:
+1. MOD–DELAY and DELAY–REVERB routing cards have the same compact footprint as the effect cards on the phone.
+2. The cards display only the routing icon (no visible relation title, SERIAL/PARALLEL text, or helper text).
+3. Toggling Serial ↔ Parallel updates the matching icon after the device ACK; the other pair retains its independent state.
+4. Existing block reorder still keeps each routing icon attached to the corresponding pair.
+
+No physical pedal test has been performed in this build session. The verified source/build is complete; the on-device visual and mode-switch confirmation remains pending.

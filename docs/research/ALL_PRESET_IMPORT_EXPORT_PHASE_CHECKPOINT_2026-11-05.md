@@ -796,3 +796,18 @@ Prefer one capture per single toggle, with USB capture running before the toggle
 - No application source code changed from this capture analysis.
 - Do not infer that `0x02` / `0x03` is a globally stored preset field until persistence/readback is checked.
 - Do not modify NAM, User/Third Party IR, IR Collection, MIDI mappings, USB-MIDI bridge, or existing Signal Chain reorder behavior while researching this routing parameter.
+
+## Signal Chain routing card refinement — Build #607 (6 November 2026)
+
+- User feedback: the two post-EFX routing cards were oversized and visually noisy; only a compact icon was requested, with no visible SERIAL/PARALLEL captions or helper copy. The mode icon also did not update when the routing mode changed.
+- Branch: `feature/post-effects-parallel-routing`. Application source commit `8959e5374fd7254626636eddfd9ddf1438e42642`.
+- Routing cards now match the regular compact effect-card footprint at each responsive breakpoint: 68×78 CSS px desktop, 62×73 mobile, and 59×70 on screens ≤390 px.
+- Visible text was removed. Accessible relation/mode text remains on each button via `aria-label` and `title`.
+- Replaced generic arrows with compact signal-path SVGs inspired by NUX routing diagrams: two blocks in a serial path, or two branches that merge for parallel.
+- `renderSignalChainRoutingControls()` refreshes the icon SVG from the latest mode value obtained by the existing `0D/00 → 0D/02` read or verified `0D/02` ACK. The two independent routing bits and packet payload/ACK checks are unchanged.
+- GitHub Actions Build #607: run `42095439332`, success; **278/278 tests passed**, Android initializer and Capacitor generation passed, Gradle `assembleDebug` passed, artifact upload passed.
+- Artifact ID `13447342403`; ZIP size 4,216,512 bytes and SHA-256 `b797849ccf727abfffc3b5274b5d81441a45cca58b49e1b55d534811baa2395c`. APK size 4,594,912 bytes; SHA-256 `8941fd9dcb795de1673d408e33d5cf75374699993e4fe1bb2d22f3e6950f2c77`.
+- ZIP and APK archive integrity checks passed. Packaged HTML contains the new compact sizing and dynamic icon renderer; old visible mode captions/helper copy are absent.
+- Physical confirmation remains pending on the original MG-30 Gen2 FW 6.0.x. Do not claim the handset test has passed until the user installs Build #607.
+- No NAM, User/Third Party IR, Collection IR, MIDI/CC mapping, preset import/export, USB-MIDI bridge, or 0D routing packet/protocol behavior was modified.
+- Detailed note: `docs/research/SIGNAL_CHAIN_ROUTING_CARD_UI_2026-11-06.md`.
