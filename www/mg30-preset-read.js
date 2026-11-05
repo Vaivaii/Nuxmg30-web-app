@@ -64,7 +64,7 @@ export function buildMG30UserIRCurveReadRequest(resourceIndex, curveOffset) {
   return buildDataReadRequest(0x11, resourceIndex, curveOffset);
 }
 
-export function parseMG30UserIRMetadataReadReply(input, expectedIndex) {
+export function parseMG30UserIRMetadataReadReply(input, expectedIndex, options = {}) {
   const body = input instanceof Uint8Array ? input : Uint8Array.from(input || []);
   const index = assertIndex(expectedIndex, 'Indeks resource IR');
   if (body.length !== 60 || body[0] !== 0x43 || body[1] !== 0x58 || body[2] !== 0x70 ||
@@ -81,8 +81,16 @@ export function parseMG30UserIRMetadataReadReply(input, expectedIndex) {
     if (byte < 0x20 || byte > 0x7E) throw new Error('Nama resource IR berisi karakter non-ASCII.');
   }
   const resourceName = String.fromCharCode(...nameBytes).trim();
-  if (!resourceName) throw new Error('Resource IR pada indeks ' + index + ' tidak memiliki nama yang dapat diekspor.');
-  return { resourceIndex: index, resourceName, crc, metadata };
+  if (!resourceName && options.allowEmptyResource !== true) {
+    throw new Error('Resource IR pada indeks ' + index + ' tidak memiliki nama yang dapat diekspor.');
+  }
+  return {
+    resourceIndex: index,
+    resourceName,
+    hasResource: Boolean(resourceName),
+    crc,
+    metadata
+  };
 }
 
 export function inspectMG30UserIRDataReadReply(input, command) {
