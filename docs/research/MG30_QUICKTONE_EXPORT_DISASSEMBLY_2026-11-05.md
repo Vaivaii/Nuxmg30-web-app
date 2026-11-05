@@ -276,3 +276,46 @@ Accordingly:
 3. The original 61/01 transfer mechanics remain valid as a generic sender description; the application-level meaning is now resolved for the observed caller.
 4. Continue tracing the 12/01, 13/00, 18/01 and 19/01 metadata exchanges and the manager resource fields for the actual 10/11 waveform/curve acquisition path. Do not infer that those metadata pairs carry waveform data.
 5. No app source, APK, device communication, NAM path, IR User/Third Party import, Collection logic, Import All, or MIDI mapping was changed.
+
+
+## Follow-up: actual 10/01 waveform and 11/01 curve senders identified (2026-11-05)
+
+The search for the actual resource transfer path found two separate routines adjacent to the metadata handlers. These are distinct from the generic 61/01 image sender.
+
+### 10/01 sender — VA 0x004AA700
+
+- Builds a SysEx command word 0x0110, i.e. command bytes 10/01.
+- Receives a one-byte preset/program index and a pointer to 32-bit source samples.
+- Iterates a 0x800-element source range (2,048 samples), advancing the source index by 0x20 (32) for each request.
+- For each transfer frame, it gathers eight 32-bit source values into a 32-byte staging block, converts the values into 7-bit-safe packed data, and sends through transport helper VA 0x00B0E360 with the 0xCD frame argument and 1,000 ms timeout pattern.
+- The callback validator VA 0x004AAA10 accepts response 10/03.
+- The frame carries the current preset index and a block/offset field. Exact header-byte semantics still need comparison against the packet capture.
+
+### 11/01 sender — VA 0x004AAA40
+
+- Builds a SysEx command word 0x0111, i.e. command bytes 11/01.
+- Receives a one-byte preset/program index, a pointer to 16-bit source values, and a mode/flag argument.
+- Gathers 64 16-bit values per frame and packs them into 7-bit-safe bytes.
+- Its callback validator VA 0x004AAA10 accepts response 11/03.
+- The caller advances through this source in 0x40-value blocks. The outer loop compares the accumulated value offset with manager object field +0x670, so the total count is manager-controlled. The project capture and known preset record show a 600-value curve, but the static code's exact count source still needs mapping to that field.
+
+### Call-site correlation with the MG30 preset record
+
+Two callsites pass pointers that line up with the recovered record layout:
+
+- VA 0x004ABF3C calls 10/01 with source pointer record + 0x1FE.
+- VA 0x004ABF4D calls 11/01 with source pointer record + 0x21FE and mode/flag 1.
+- VA 0x004AC29B and VA 0x004AC2AC repeat the same pair with the same record-relative offsets.
+
+The project's established record layout places the 2,048 float32 samples at offset 0x1FE and the 600-value curve at offset 0x21FE. This is a direct address-level match between QuickTone's 10/01 and 11/01 senders and the audio/curve regions in the known preset record.
+
+The caller at VA 0x004ABF3C occurs in a per-record conversion/processing path that also calls VA 0x004A9940 before sending the two resource regions, then calls VA 0x004A74A0 to process the base/scene region and VA 0x004B5180 to refresh the manager object. A second caller at VA 0x004AC29B follows a closely related path after checking the resource marker at +0x1AE and processing the resource name at +0x1B2. The full higher-level trigger still needs naming, but the resource-bearing record flow is now proven.
+
+### Corrected conclusions
+
+1. The actual QuickTone preset resource upload path is 10/01 for the 2,048-sample waveform and 11/01 for curve values; responses are 10/03 and 11/03.
+2. This is separate from 61/01, whose traced direct caller is an 800×480 raster image transfer.
+3. The resource offsets passed by QuickTone match the project's known record layout exactly: waveform +0x1FE, curve +0x21FE.
+4. Preserve the current single-preset capture-derived 10/01 and 11/01 implementation assumptions; compare exact frame offsets/counts against presetimport.pcapng before changing app code.
+5. The 10/01 path uses 32-sample source blocks; the 11/01 path uses 64-value blocks. Do not conflate these block units with packet totals without checking the packed payload layout.
+6. No application source code, APK, NAM transfer, IR User/Third Party import, Collection logic, Import All transaction, or MIDI mapping was changed.
