@@ -62,14 +62,22 @@ async function savePatch(bytes, filename) {
     if (typeof nativeBridge.savePatch !== 'function') {
       throw new Error('Dialog File manager Android belum tersedia. Perbarui aplikasi MG30 Studio ke versi terbaru.');
     }
-    return {
-      ...(await nativeBridge.savePatch({
-        fileName: filename,
-        mimeType: 'application/octet-stream',
-        base64: bytesToBase64(bytes)
-      })),
-      native: true
-    };
+    const result = await nativeBridge.savePatch({
+      fileName: filename,
+      mimeType: 'application/octet-stream',
+      base64: bytesToBase64(bytes)
+    });
+    if (result?.cancelled) return { ...result, native: true };
+    if (result?.saved !== true) {
+      throw new Error('Android belum mengonfirmasi file tersimpan.');
+    }
+    const actualBytes = Number(result.bytes);
+    if (!Number.isSafeInteger(actualBytes) || actualBytes !== bytes.length) {
+      throw new Error('Verifikasi ukuran file Android gagal: tertulis ' +
+        (Number.isFinite(actualBytes) ? actualBytes : 0) + ' dari ' +
+        bytes.length + ' byte. File kosong/tidak lengkap tidak dianggap berhasil.');
+    }
+    return { ...result, native: true };
   }
   downloadPatch(bytes, filename);
   return { saved: true, native: false, fileName: filename, bytes: bytes.length };
