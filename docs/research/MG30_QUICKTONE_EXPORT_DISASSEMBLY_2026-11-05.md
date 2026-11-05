@@ -531,3 +531,45 @@ The apparent split of the waveform in the parser is only a record-layout detail:
 Do not create a second, independent IR readback parser for Export All. Reuse the existing single-export readback/assembly primitives after a per-preset enumeration layer is proven. Keep the current Export Single path untouched. Before claiming byte-level equivalence, obtain a capture containing the complete `09/02`, `10/02`, and `11/02` replies during QuickTone synchronization, or compare an app-generated single record against a QuickTone-exported single record from the same unchanged pedal preset.
 
 No application source, APK, NAM path, User/Third Party import, Collection protocol, Import All behavior, or MIDI mapping was changed by this cross-check.
+
+
+## Empirical record round-trip against supplied QuickTone All Preset file (2026-11-05)
+
+A local structural round-trip was run against `/mnt/data/MG30AllPatch.mg30patch` (1,267,456 bytes; 128 records × `0x26AE`). For each of the 27 records whose resource marker is 1, the record was reconstructed using the same field policy as `buildMG30SinglePresetPatch`: ordinal, 3 scene blocks, marker, NUL-terminated name, fixed RIFF/WAVE header, contiguous 2,048 little-endian float32 samples, and 600 little-endian uint16 curve values.
+
+### Byte comparison results
+
+- 27/27 resource-bearing records were reconstructed.
+- Scene bytes: **0 differences across all 27**.
+- Waveform bytes (+`0x1FE`, 8,192 bytes): **0 differences across all 27**.
+- Curve bytes (+`0x21FE`, 1,200 bytes): **0 differences across all 27**.
+- Differences were isolated to the name terminator/padding and RIFF/WAVE header fields:
+  - 14/27 records matched the current serializer byte-for-byte.
+  - 8/27 differed by 7 bytes.
+  - 3/27 differed by 6 bytes.
+  - 1/27 differed by 1 byte.
+  - preset ordinal 91 differed by 18 bytes and has a nonstandard RIFF/WAVE region.
+
+This is strong validation of the app's record offsets and little-endian float32/curve serialization for the All Preset sample. It is not a hardware readback validation: the source values originate from QuickTone's already-exported All Preset record, not from the app's live 10/02 and 11/02 replies.
+
+### Newly identified RIFF/WAVE compatibility gap
+
+The 26 standard RIFF records do not all use the same header variant:
+
+| QuickTone header variant | Count | Header fields |
+|---|---:|---|
+| 24-bit PCM-style | 15 | RIFF size `0x1824`, data size `0x1800`, byte rate 144000, block align 3, bits/sample 24 |
+| 32-bit PCM-style | 11 | RIFF size `0x2024`, data size `0x2000`, byte rate 192000, block align 4, bits/sample 32 |
+| Nonstandard | 1 (ordinal 91) | RIFF/WAVE signature absent/overwritten |
+
+The current single-preset parser `parseMG30SinglePresetPatch` strictly accepts only the 24-bit header variant (`0x1824`, data `0x1800`, 144000 byte rate, 3-byte alignment, 24 bits). Therefore it will reject a QuickTone All Preset resource record carrying the 32-bit header variant if that record is extracted as a standalone single file. The current serializer `buildMG30SinglePresetPatch` always emits the 24-bit header variant. The 11 records with 32-bit headers are ordinals 3, 6, 9, 80, 81, 82, 83, 109, 110, 111 and 115. Ordinal 91 is anomalous and must remain separately handled.
+
+A further observed one-byte name difference occurs at ordinal 27: QuickTone retains `0xF7` at the last byte of the 32-byte name field, whereas the current serializer zero-pads the field. Several other records differ in the RIFF header but not in the name. This is not evidence that the IR name should be sent differently to the pedal; it is a file-record serialization detail.
+
+### Implication / safe decision
+
+1. Do not change the live Export Single path yet. Its fixed 24-bit header may match the specific single-preset variant it was designed and tested against, but the supplied All Preset file proves that QuickTone's 128-record export can contain 24-bit, 32-bit and one anomalous header forms.
+2. Do not loosen the strict single parser globally. The 32-bit and ordinal-91 records need explicit format handling and test fixtures first.
+3. For a future Export All implementation, the safest design is to retain the current single readback core for scenes/waveform/curve, but add a separate record serializer that preserves or deliberately reconstructs the correct per-record header variant. Do not silently normalize every resource to 24-bit.
+4. A true byte-for-byte comparison of MG30 Studio Export Single against QuickTone Export Single still requires the QuickTone single-preset file for the same unchanged preset. That exact counterpart is not among the supplied files. The current test compares reconstructed single-record serialization against the corresponding record embedded in QuickTone's All Preset file.
+5. No app source, APK, firmware/device state, NAM feature, User/Third Party import, Collection flow, Import All transaction, or MIDI mapping was changed.
