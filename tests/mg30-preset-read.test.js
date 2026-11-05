@@ -67,6 +67,15 @@ test('metadata reply validates index and extracts the resource name', () => {
   assert.throws(() => parseMG30UserIRMetadataReadReply(reply, 8), /tidak cocok/);
 });
 
+test('metadata reply can explicitly identify a preset with no attached IR resource', () => {
+  const reply = makeMetadataReply(12, '');
+  assert.throws(() => parseMG30UserIRMetadataReadReply(reply, 12), /tidak memiliki nama/);
+  const parsed = parseMG30UserIRMetadataReadReply(reply, 12, { allowEmptyResource: true });
+  assert.equal(parsed.resourceName, '');
+  assert.equal(parsed.hasResource, false);
+  assert.equal(parsed.resourceIndex, 12);
+});
+
 test('wave and curve replies treat the first decoded word as an opaque tag and validate offset', () => {
   const wave = makeDataReply(0x10, 256, 32, Array.from({length:32}, (_,i)=>(32+i)/2048), 'float32');
   const waveHeader = inspectMG30UserIRDataReadReply(wave, 0x10);
