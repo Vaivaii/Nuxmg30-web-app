@@ -456,3 +456,15 @@ Validation status:
 - The change has been committed to the working branch and awaits GitHub Actions results.
 - No claim of physical Android SAF success is made yet. After CI succeeds, the resulting APK must still be tested on the user's phone; success must report exactly 1,267,456 bytes and a non-empty CRC32. Then import that exact file and verify the All Preset parser sees 128 records.
 - If the next device test still yields 0 bytes, capture the complete Export All status/error text. The chunk ACKs and native staging guard will now distinguish payload transfer/staging failure from final SAF destination write/readback failure.
+
+
+### Chunked native patch export — Build #555 passed (5 November 2026)
+
+- CI source commit: `27c79da61280496907a1326acacfbe733f2b396d` (chunked native transfer plus regression test).
+- GitHub Actions run #555: `42033156927`, conclusion **success**.
+- Regression tests: **256 passed, 0 failed**.
+- Android initializer syntax, Capacitor Android generation, Gradle `assembleDebug`, and APK artifact upload all succeeded. Gradle reported `BUILD SUCCESSFUL`.
+- Artifact ID: `13417650787`; ZIP size 4,213,392 bytes; ZIP SHA-256 `c4e9b0dce4b585c8b6041af5c4406a21cdb02ff0c8157df81c80237089019e38`.
+- Extracted APK: 4,590,444 bytes; SHA-256 `6d5d1280865ccf6ad4618528efc30d4b3df3749c4594d7150511db02fc0f87e2`.
+- Downloaded ZIP passed `unzip -t`; extracted APK exists and matches the build artifact.
+- This build result is CI/package validation only. The new chunked file transfer has not yet been physically tested on the user's Android device. Acceptance criteria remain: Export All status reports 1,267,456 bytes, Android's verified file has the same byte count and CRC32, and Import All parses 128 records.
