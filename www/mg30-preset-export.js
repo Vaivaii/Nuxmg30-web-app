@@ -146,7 +146,7 @@ async function exportAllPresets() {
   const confirmed = window.confirm(
     'EXPORT ALL PRESET\n\n' +
     'Sumber: ' + source.sourceName + '\n' +
-    'Isi file: 128 preset (01A–32D), 3 scene per preset.\\n' +
+    'Isi file: 128 preset (01A–32D), 3 scene per preset.\n' +
     'Nama file: MG30_All_Preset.mg30patch\n' +
     'Ukuran hasil: 1.267.456 byte.\n\n' +
     'File akan dibuat dari data lokal yang sudah dipilih sebelumnya. ' +
