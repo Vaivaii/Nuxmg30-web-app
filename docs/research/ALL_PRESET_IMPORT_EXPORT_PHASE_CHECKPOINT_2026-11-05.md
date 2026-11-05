@@ -224,3 +224,17 @@ Build:
 - `npm test`, Android initializer syntax check, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload all passed.
 - Artifact `MG30-Studio-debug-APK`, ID `13402311452`, ZIP size 4,204,122 bytes; SHA-256 `174b52e6733e345ecc7c34f2c10a170cc185095d887515e741c1848ac309f940`.
 - Extracted APK: `MG30-Studio-Live-Export-All-debug.apk`, size 4,582,016 bytes; SHA-256 `9e6a37d2263d80732b6563bef0da89e08172cf0493eba7e23ce6a153fdbb80e1`.
+
+
+## User device test failure and error visibility fix (2026-11-05)
+
+User installed the live Export All build and reported it fails immediately. Screenshot shows only a generic "Export failed" modal with an empty progress track; no actual failure text is visible.
+
+Inspection:
+- `reflectExportStatus()` in `www/preset-library-ui.js` intentionally passed an empty note to `showExportFeedback()` for every error. The detailed error remained in `#presetExportStatus` behind the modal, so the UI hid the only useful diagnosis.
+- The screenshot alone does not identify whether failure is at the initial connection/busy gate, first 0C/00 scene, 09/00 metadata response, IR waveform/curve, or final serialization. Do not claim root cause is confirmed yet.
+
+Fix:
+- Commit `2e1148690f250040a9663140e998d846a798e222` changes the error modal to show the actual status text in its note and remain visible until acknowledged/closed. This should expose exact slot, phase, timeout, or parser error on the next run.
+- Build #539 is pending at checkpoint creation.
+- Next hardware test: capture the exact full error note. If it says an operation is already active, investigate bridge busy flags; if it identifies 0C/00 or 09/02, compare raw reply shape against the existing working Single Export trace; if it identifies 10/02 or 11/02, compare data block offsets and response tags. Do not alter MIDI mapping, NAM, User/Third Party IR, Collection IR, or import/write paths.
