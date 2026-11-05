@@ -506,3 +506,29 @@ Validation status:
 - Extracted APK size 4,590,868 bytes; SHA-256 `7dc9c7c1fd1a20ef1476f46a0fe7ee0eab01779031f8d13cf2d806842c26421d`.
 - Downloaded ZIP passed `unzip -t`. APK bundle inspection confirms the compiled Web assets contain the dynamic resource count and `387 + 75 × N` plan calculation.
 - This is CI/package verification only. No physical Import All transfer has yet been tested after removal of the 27-resource/2,412-frame gate.
+
+
+## Physical report: frame-count mismatch between MG30 Studio and QuickTone Import All (5 November 2026)
+
+User supplied two screenshots of Import All in progress:
+- MG30 Studio screenshot: `Waveform IR · 230/9.987 frame diakui perangkat.`
+- QuickTone screenshot: `Waveform IR · 38/2.412 frame diakui perangkat.`
+
+The frame totals exactly match the two transaction shapes:
+- `2,412 = 387 + 27 × 75`: the captured QuickTone bank with 27 resource-bearing presets, 384 scene writes and 3 control frames.
+- `9,987 = 387 + 128 × 75`: the newly generalized app transaction treats all 128 records as resource-bearing.
+
+This proves the app and QuickTone are planning different resource-group counts. It does not by itself prove the screenshots imported the same exact `.mg30patch` binary or the same bank. If the same file was selected in both, the difference is a serious discrepancy requiring binary comparison before another destructive import attempt.
+
+Important evidence:
+- `docs/research/MG30_IMPORT_ALL_PRESET_USB_CAPTURE_2026-11-05.md` shows the captured Import All sends exactly 27 `09/01` records at program indices `0,1,2,3,6,7,8,9,10,11,12,13,14,15,17,22,27,31,80,81,82,83,91,109,110,111,115`, then 64 waveform + 10 curve frames per resource, followed by 384 scene writes.
+- The supplied original QuickTone All Preset fixture was validated as 128 records with marker distribution 101 = 0 and 27 = 1.
+- QuickTone disassembly section `preset-wide 09/00 name scan and sync order` confirms a 09/02 response is followed by a manager resource-presence test; only when that test succeeds does QuickTone start 10/00 and 11/00 reads. Thus the app's current simpler rule (non-empty parsed 09/02 name => resource marker 1) is not yet proven equivalent to QuickTone's presence test.
+- The dynamic 128-resource planner was added to remove a hard-coded fixture limit, but this physical result now shows its input resource count must itself be validated. Do not treat all 128 markers as correct merely because the parser and planner can process them.
+
+Safety / next steps:
+- Do not initiate another Import All until the app-exported `.mg30patch` is inspected. Import All is destructive and the 9,987-frame plan would write 128 User/Third Party IR resource indices as well as all 384 scenes.
+- Do not abruptly unplug USB during an active transaction; let the current device operation become stable before making another change.
+- Request the exact MG30 Studio-exported `.mg30patch` file. Ideally also obtain the QuickTone-exported All Preset file from the same unchanged pedal bank, or confirm whether the two screenshots selected the exact same binary. Compare all 128 record markers, resource names, scene bytes and file hashes.
+- Only after correlating the app's markers with the QuickTone 27-index fixture and the resource-presence predicate should Export All detection be corrected. Keep the dynamic planner, but gate it on a verified marker list; don't replace the 27 constant with an unconditional 128 interpretation.
+- No source or APK change was made in response to these screenshots. NAM, User/Third Party IR transfer, Collection 6A/6B/6C mapping, and existing MIDI/CC mappings remain untouched.
