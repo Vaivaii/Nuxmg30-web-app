@@ -3467,7 +3467,7 @@ window.MG30PresetExportBridge=Object.freeze({
    const metadata=readFormat.parseMetadataReply(Uint8Array.from(metadataBody),program,{allowEmptyResource:allowMissingResource});
    onProgress({phase:'Membaca metadata IR',completed:1,total:1,detail:metadata.resourceName||'Tidak ada resource IR'});
 
-   if(!metadata.resourceName){
+   if(metadata.hasResource!==true){
     if(!allowMissingResource)throw new Error('Preset '+slotName(program)+' tidak memiliki resource IR untuk Export Single.');
     exportTrace.status='complete';
     exportTrace.finishedAt=new Date().toISOString();
