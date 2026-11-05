@@ -69,3 +69,26 @@ The All Preset capture also includes a `75` setup exchange and a `15` final exch
 ## Conclusion
 
 This capture is sufficient to establish the major All Preset import protocol shape: 128 presets × 3 scene writes, plus 27 per-preset IR/resource metadata groups, each with 64 waveform frames and 10 curve frames, bracketed by `75` and `15` control exchanges. It is not yet sufficient to safely ship a production All Preset importer. Next work should decode the 27 resource groups and frame offsets against the known `MG30AllPatch.mg30patch` binary, then implement a separate planner and add offline golden tests before any pedal write.
+
+
+## Binary fixture validation — original MG30AllPatch.mg30patch (2026-11-05)
+
+The user re-uploaded the exact all-preset file previously analyzed. The bytes match the prior sample exactly:
+
+- Size: 1,267,456 bytes (0x135700).
+- SHA-256: ea502ba24001d363c21950ed676bf77271026ac30ced4d10241168e10fe0b22a.
+- 128 records × 0x26AE bytes; no trailing bytes.
+- Resource marker distribution: 101 records = 0, 27 records = 1.
+- The 27 resource-bearing record ordinals are: 0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 22, 27, 31, 80, 81, 82, 83, 91, 109, 110, 111, 115.
+- All 128 ordinals are sequential and each record contains three complete 142-byte scene records.
+- All 27 resource names decode as printable ASCII.
+- All 27 resource payloads decode to 2,048 finite float32 samples and 600 uint16 curve values; all curve values are within 0–305.
+- Ordinal 91 has a nonstandard/zero RIFF signature, but its resource arrays and name remain structurally readable. The All parser intentionally does not require a RIFF signature for marked records.
+
+### Planner ordering correction
+
+Review against the packet sequence showed the planner must not interleave one preset's resource transfer with its scene writes. The observed capture completes all 27 resource groups first (each: 09/01, 64 × 10/01, 10 × 11/01), then writes all 384 scene records in program/scene order, followed by 15/01 and the closing 75/01 exchange.
+
+Commit b63e90c743d84e1e3d8ce68733ae42c29a87adc9 corrects www/mg30-preset-all-import.js to collect the 384 scene steps separately and append them only after all 27 resource groups. Commit 9eed04ab3433ed80a54434289ac61b6aeaaae99f adds regression assertions for the phase boundary and ascending scene order.
+
+The actual binary fixture was validated by direct byte inspection in this session. The repository's complete Node test suite, Android build, and physical hardware import have not yet been run in this session. Do not treat the current branch as ready for a destructive full-bank pedal test until those checks pass.
