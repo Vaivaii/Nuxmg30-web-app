@@ -196,3 +196,31 @@ Fix:
 - Commit `8f6acd556e9cb43f06ae4f635dcef65ca3a78b72` fixes confirmation prompt line breaks.
 - This fixes the Android file-save size gate and makes terminal UI feedback visible. It does **not** solve the larger live 128-preset acquisition/source-manager gap above.
 - Protected features remain untouched: existing single Export logic, import, NAM, User/Third Party IR, Collection IR, MIDI mappings and device write paths.
+
+
+## Live bank Export All readback implementation (2026-11-05)
+
+The previous local-file cache approach has been superseded. Export All now uses the live MG-30 read-only readback path rather than re-saving a file selected in Import All.
+
+Implementation:
+- Commit `cc9317b7897f9a6f0df5e86050594b23f68b6098` changes Export All to prompt immediately, enumerate program indices 0–127 (01A–32D), and call the existing `MG30PresetExportBridge.readSingle()` readback core for each program with an explicit `programOverride`.
+- The readback core still issues only read requests: three `0C/00` scene reads, one `09/00` resource metadata query, and—only when the returned resource name is non-empty—64 `10/00` waveform reads and 10 `11/00` curve reads. No preset/IR write command is used.
+- The reader now accepts an explicit `allowMissingResource` option for bank enumeration. Empty `09/02` resource names are treated as marker-0 records and do not trigger waveform/curve reads; this leaves the resource portion zero-filled.
+- `decodeMG30PresetSceneReply` converts all three scene responses to the 142-byte record representation. The 128 records are serialized by `buildMG30AllPresetPatch()` into exactly `0x135700` bytes, reparsed, and only then passed to native Android `savePatch()`.
+- The batch disables hardware-state polling restarts between individual records and resumes polling after the batch ends. Existing Export Single default behavior is unchanged.
+- Commit `0cad63520e108d8bb7476d580be135b98c3e4ba1` adds explicit parser support for empty resource names only when requested by the bank reader.
+- Commit `4e9917c2056ba4e746da02b3e5631a269538661b` removes the sample-specific fixed count of 27 resource records from generic All Patch parse/serialize. The supplied fixture still tests 27, but a live bank may contain a different count.
+- Tests added: empty 09/02 metadata/no-resource parsing; All Patch serialization with one resource and zero resources. Existing fixture tests still validate the 128-record / 27-resource example and preserve original RIFF variants when raw records are available.
+- Import All file selection no longer supplies the Export All source. The export now requires the connected MG-30 and reads the current bank.
+
+Remaining hardware validation and caveats:
+- No physical MG-30 Gen2 FW 6.0.x run of this 128-slot live export has been performed yet. The new assumption that an empty name field in a valid 09/02 reply means marker 0 must be checked on an actual resource-free preset. If the device returns another descriptor form, the operation fails closed before saving rather than inventing resource data.
+- Fresh live-read resource records currently use the same standard 24-bit RIFF/WAVE header as the existing working Single Export serializer. The supplied All Patch fixture includes both 24-bit and 32-bit header variants; byte-for-byte preservation of those variants from live hardware remains unproven. Original parsed raw records still preserve their exact RIFF variants.
+- The batch is read-only, but it is a long 128-slot operation. Keep USB connected and the app open until completion. It must never be confused with Import All or send the existing 10/01, 09/01, 11/01 writer sequence.
+- All protected paths remain untouched: Import Single/All, NAM, User/Third Party IR write, Collection IR (6A/6B/6C), MIDI mappings, and the preset write/save pipeline.
+
+Build:
+- GitHub Actions run #538: `41999978561`, source commit `8337cc4a91d8ad23e94d712a30dbee508a95a92d`, conclusion **success**.
+- `npm test`, Android initializer syntax check, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact `MG30-Studio-debug-APK`, ID `13402311452`, ZIP size 4,204,122 bytes; SHA-256 `174b52e6733e345ecc7c34f2c10a170cc185095d887515e741c1848ac309f940`.
+- Extracted APK: `MG30-Studio-Live-Export-All-debug.apk`, size 4,582,016 bytes; SHA-256 `9e6a37d2263d80732b6563bef0da89e08172cf0493eba7e23ce6a153fdbb80e1`.
