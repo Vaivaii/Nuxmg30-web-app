@@ -80,14 +80,20 @@ export function parseMG30UserIRMetadataReadReply(input, expectedIndex, options =
   for (const byte of nameBytes) {
     if (byte < 0x20 || byte > 0x7E) throw new Error('Nama resource IR berisi karakter non-ASCII.');
   }
-  const resourceName = String.fromCharCode(...nameBytes).trim();
-  if (!resourceName && options.allowEmptyResource !== true) {
+  const decodedName = String.fromCharCode(...nameBytes).trim();
+  // QuickTone / MG-30 returns eight hyphens ("--------") for a preset
+  // without an attached User/Third Party resource. This is a placeholder,
+  // not an IR name. Treat it exactly like an empty name so Export All skips
+  // the 64 waveform + 10 curve readback requests for that slot.
+  const hasResource = Boolean(decodedName) && decodedName !== '--------';
+  const resourceName = hasResource ? decodedName : '';
+  if (!hasResource && options.allowEmptyResource !== true) {
     throw new Error('Resource IR pada indeks ' + index + ' tidak memiliki nama yang dapat diekspor.');
   }
   return {
     resourceIndex: index,
     resourceName,
-    hasResource: Boolean(resourceName),
+    hasResource,
     crc,
     metadata
   };
