@@ -101,3 +101,8 @@ The user reports the Import All operation completed. The app status shown in the
 ## Next phase: Export All Preset
 
 The current implementation supports read-only export of one selected preset (three scenes plus resource metadata/waveform/curve). Export All is not yet implemented. The all-preset import capture does not establish the inverse read protocol or QuickTone's all-export transaction. Next required evidence: a separate USBPcap capture of QuickTone v2.6.7.16 performing Export All on the original MG-30 Gen2 FW 6.0.x. Export is read-only and does not overwrite the pedal. Capture must include the full transaction from before pressing Export All until QuickTone finishes saving the all-preset file. Preserve the capture and exported .mg30patch as paired golden fixtures. Do not assume the import packet sequence can simply be reversed.
+
+
+## Export All capture attempt — exportallpre.pcapng (2026-11-05)
+
+User supplied `exportallpre.pcapng` for the Export All investigation. The capture is only 2,880 bytes and contains 22 Enhanced Packet Blocks. It shows USB enumeration / descriptor control traffic and does not contain the bulk endpoint data transfer sequence needed to reconstruct the 128-preset export. Treat this as an incomplete/incorrect capture, not evidence that Export All itself failed. No Export All protocol assumptions or code changes should be made from this file. Request a new capture with the correct USBPcap root-hub interface active before pressing Export All, and keep capture running until QuickTone finishes writing the resulting `.mg30patch` file.
