@@ -251,3 +251,20 @@ Code review found a concrete difference from QuickTone's recovered sync sequence
 - Export All now selects each slot before invoking the unchanged Single Export readback routine; after success or failure, it attempts to restore the originally selected program. This changes only the active program selection, not stored preset contents. It does not use any preset/IR write SysEx.
 - Commits: `984b1b9feed515d4ddd8a19e2f3e13c925406270` (bridge selection method), `299086e6b37397fda3b2a2b2a2c4ea9c3e4929b2` (select each slot before readback and restore).
 - Build #541 is in progress at checkpoint creation. This is a reasoned correction from the protocol/disassembly evidence, not yet confirmed on physical hardware. If the next device run still times out, next change must expose request label + slot and compare exact response matcher to a known-good Single Export trace; do not loosen response validation or change MIDI mappings.
+
+
+## User report: Export All scan finishes but saved file is 0 bytes (2026-11-05)
+
+User tested the live-bank Export All build. The pedal visibly stepped through presets one by one, then the process ended. The user selected `MG30_All_Preset.mg30patch` for Import All and the app rejected it with: `Ukuran All Preset .mg30patch harus tepat 1267456 byte; diterima 0.` Screenshot also showed USB-MIDI disconnected after the attempt. This is consistent with an empty destination document; it does not prove the readback records themselves were valid or invalid.
+
+Native save inspection:
+- `savePatch()` decoded and validated the 1,267,456-byte Base64 payload before opening `ACTION_CREATE_DOCUMENT`.
+- The callback `savePatchResult()` re-read the large Base64 string from `PluginCall` after the system document picker had been open, then wrote it to the URI. Although it should work in a normal callback lifecycle, this leaves the large payload dependent on the retained PluginCall across an Android activity transition and did not verify destination contents.
+- The old callback reported `bytes.length` as saved without opening the target URI to read it back. The app could therefore report success based on the in-memory buffer rather than a verified physical document.
+
+Changes:
+- Commit `6ef5838e09956ebd7630fb554619578728788ae7` stages decoded preset bytes to an app-cache temporary file before opening Android's document picker and writes from that staging file in the activity callback. It then reopens the destination URI, counts bytes and computes CRC32 against staging before returning success. Cancellation/failure removes the temporary file.
+- Commit `ad705f8afeb61ebcc62e862c5ced5d26005ac15b` fixes Java multi-catch compile hierarchy in the staging path.
+- Commit `fa08c88dbce358bc08464a865c29855817db7a76` makes the JS save bridge reject success unless Android confirms exactly the expected byte count.
+- No changes to Import All parser, single-export readback protocol, import/write commands, NAM, User/Third Party IR, Collection IR, or MIDI mappings.
+- Build #544 is pending at time of note creation. Required verification: Android compile; install latest APK; run Export All; verify successful status reports 1,267,456 bytes and CRC32; then choose that file in Import All and confirm parser receives 1,267,456 bytes / 128 records. Device-side confirmation remains pending.
