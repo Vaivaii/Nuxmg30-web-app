@@ -572,3 +572,15 @@ Both files have the expected 128 × 0x26AE record size and sequential ordinals. 
 - Parser source and regression tests have been committed to `feature/all-preset-import-export` (commits `86c5c38d57bd3bdf93033a67451d35bfeb1ffee5`, `bdc029e7f0c6a348c060824cd40bc1eb7bb729b9`, `0a15ae047899c24c097cf2d3dd9d3c9f3e0a1955`, and `e110bd6e01eedfadfabdda7d83ea38ebbdf5bf92`).
 - Build #563 passed JS/protocol tests but its Gradle step failed on a remote Gradle distribution HTTP 504, unrelated to source compilation. Build #564 is running for the final combined commit.
 - No physical device import of the corrected 41-resource file has been verified. The user should not start another Import All until the corrected APK is installed and the device bank is backed up. The expected progress total for this Studio file should be 3,462, not 9,987.
+
+
+### No-resource placeholder fix — Build #565 passed (5 November 2026)
+
+- GitHub Actions run #565: `42045775697`, source commit `e110bd6e01eedfadfabdda7d83ea38ebbdf5bf92`, conclusion **success**.
+- Regression tests: **262 passed, 0 failed**.
+- Android initializer syntax validation and Capacitor generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m 34s`; artifact upload succeeded.
+- Artifact ID `13425335342`; ZIP size 4,213,770 bytes; ZIP SHA-256 `8f48a25bb03fe6b9684cdbd5637dbad4e8e7bac140acae2713938cffb770cb4c`.
+- Extracted APK size 4,590,892 bytes; SHA-256 `f4d9a02845e568bfec377bb0742f3fd397969bd398e4a086a80a64a25a093c2c`.
+- Downloaded artifact passed `unzip -t` and contained exactly `app-debug.apk`; extracted APK exists in `/mnt/data/MG30-Studio-No-IR-Sentinel-Fix.apk`.
+- A corrected copy of the user's Studio export was also generated for test reuse: `/mnt/data/MG30_Studio_Export_Corrected_41_IR.mg30patch`, 1,267,456 bytes, SHA-256 `a537ccd806a4671353cf16d337cda85f45a0637138d20f4157af8fada0a8742c`. It changes only the marker and resource section of the 87 exact `--------` placeholders, setting marker 0 and zeroing the resource area. It preserves all 384 scene payloads and all 41 resource-bearing records byte-for-byte.
+- The corrected bank contains 41 resource groups and plans 3,462 frames. This is a file-level correction and regression/build validation; no physical pedal import of the corrected 41-resource bank has yet been confirmed.
