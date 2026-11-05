@@ -462,8 +462,8 @@ export function decodeMG30PresetSceneReply(input, expectedProgram, expectedPart)
   if(!Number.isInteger(expectedPart)||expectedPart<0||expectedPart>2)
     throw new Error('Indeks scene tidak valid (0–2).');
   if(body.length!==220||body[0]!==0x43||body[1]!==0x58||body[2]!==0x70||
-     (body[3]!==0x0B&&body[3]!==0x0C)||body[4]!==0x02||body[5]!==expectedProgram||body[6]!==expectedPart)
-    throw new Error('Header/panjang balasan 0B/02 atau 0C/02 tidak cocok dengan preset dan scene yang diminta.');
+     body[3]!==0x0C||body[4]!==0x02||body[5]!==expectedProgram||body[6]!==expectedPart)
+    throw new Error('Header/panjang balasan 0C/02 tidak cocok dengan preset dan scene yang diminta.');
   const words=new Uint16Array(71),raw=new Uint8Array(SCENE_BYTES),view=new DataView(raw.buffer);
   for(let i=0;i<words.length;i++){
     words[i]=decodeWord16(body,7+i*3);

@@ -31,26 +31,6 @@ async function readSingleWithManagerCache(bridge, program, onProgress = () => {}
   return { readback, cacheHit: false };
 }
 
-/**
- * Existing Preset Manager scan calls this after it receives the slot's 0B/02
- * part-0 response. Reuse that reply, read only parts 1–2, then read 09/02 and
- * conditionally the 10/02 waveform and 11/02 curve data into the same session
- * cache. There is no second 128-slot scan and no Program Change.
- */
-window.MG30PresetManagerCaptureScanSlot = async function(program, sceneReply0, onProgress = () => {}) {
-  const bridge = window.MG30PresetExportBridge;
-  if (!bridge?.isConnected?.()) throw new Error('MG-30 terputus saat sinkronisasi Preset Manager.');
-  const cached = presetManagerCache.get(program);
-  if (cached) return { readback: cached, cacheHit: true };
-  return readSingleWithManagerCache(bridge, program, onProgress, {
-    allowMissingResource: true,
-    deferPollingRestart: true,
-    sceneReadCommand: 0x0B,
-    initialSceneReply0: sceneReply0,
-    source: 'PresetManager-existing-name-scan'
-  });
-};
-
 window.addEventListener('mg30-midi-connected', () => {
   presetManagerCache.beginSession('mg30-usb-session');
 });
@@ -94,7 +74,10 @@ function updateTarget() {
   const target = $('presetExportTarget');
   const button = $('presetExportStart');
   if (target) target.textContent = 'Sumber: ' + label;
-  if (button && !button.disabled) button.textContent = 'Ekspor ' + label + ' sebagai .mg30patch';
+  if (button && !button.disabled) {
+    button.textContent = 'Export Single';
+    button.title = 'Ekspor ' + label + ' sebagai .mg30patch';
+  }
 }
 function downloadPatch(bytes, filename) {
   const blob = new Blob([bytes], { type: 'application/octet-stream' });

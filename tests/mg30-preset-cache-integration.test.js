@@ -5,7 +5,6 @@ import { readFile } from "node:fs/promises";
 const exportSource = await readFile(new URL("../www/mg30-preset-export.js", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../www/index.html", import.meta.url), "utf8");
 const irTransferSource = await readFile(new URL("../www/ir-transfer.js", import.meta.url), "utf8");
-const presetLibrarySource = await readFile(new URL("../www/preset-library-ui.js", import.meta.url), "utf8");
 
 test("Export Single checks the session manager before invoking live readback", () => {
   assert.match(exportSource, /async function readSingleWithManagerCache/);
@@ -61,18 +60,23 @@ test("Export All readback uses explicit metadata hasResource flag so placeholder
   assert.match(exportSource, /allowMissingResource: true/);
 });
 
-test("existing Preset Manager scan reuses its 0B/02 scene-zero reply to populate Export All cache", () => {
-  assert.match(presetLibrarySource, /return \{ name: readPresetName\(body\), sceneReply0: Uint8Array\.from\(body\) \}/);
-  assert.match(presetLibrarySource, /window\.MG30PresetManagerCaptureScanSlot/);
-  assert.match(presetLibrarySource, /await captureSlot\(program, stored\.sceneReply0/);
-  assert.match(exportSource, /initialSceneReply0: sceneReply0/);
-  assert.match(appSource, /reusedPresetManagerScene0=true/);
-  assert.match(appSource, /for\(let part=sceneReplies\.length;part<3;part\+\+\)/);
-  assert.match(exportSource, /source: 'PresetManager-existing-name-scan'/);
+
+const presetLibrarySource = await readFile(new URL("../www/preset-library-ui.js", import.meta.url), "utf8");
+
+test("Preset Manager sync is name-only and does not warm the full export cache", () => {
+  assert.match(presetLibrarySource, /return readPresetName\(body\)/);
+  assert.match(presetLibrarySource, /Object\.keys\(names\)\.length >= 128/);
+  assert.doesNotMatch(presetLibrarySource, /MG30PresetManagerCaptureScanSlot|MG30PresetManagerCache|MG30NativeStartupSyncComplete/);
 });
 
-test("full Preset Manager cache scan waits for Android NAM and Collection startup sync", () => {
-  assert.match(presetLibrarySource, /MG30NativeStartupSyncComplete !== true/);
-  assert.match(presetLibrarySource, /mg30-ir-collection-sync-complete/);
-  assert.match(irTransferSource, /mg30-nam-sync-complete',async[\s\S]*?await syncCollectionFromDevice[\s\S]*?MG30NativeStartupSyncComplete=true/);
+test("Import and Export dropdowns preserve the existing single/all action IDs", () => {
+  assert.match(appSource, /id="presetImportMenuToggle"/);
+  assert.match(appSource, /id="presetImportMenuDropdown"/);
+  assert.match(appSource, /id="presetImportChoose"/);
+  assert.match(appSource, /id="presetImportAllChoose"/);
+  assert.match(appSource, /id="presetExportMenuToggle"/);
+  assert.match(appSource, /id="presetExportMenuDropdown"/);
+  assert.match(appSource, /id="presetExportStart"/);
+  assert.match(appSource, /id="presetExportAllStart"/);
+  assert.match(presetLibrarySource, /closeActionMenus/);
 });

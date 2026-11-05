@@ -63,10 +63,9 @@ function readPresetName(body) {
   return name.trimEnd();
 }
 
-function activeDeviceOperation(ignoreManagerSync = false) {
+function activeDeviceOperation() {
   if (window.MG30PresetManagerBusy || window.MG30PresetImportBusy ||
-      window.MG30PresetExportBusy || window.MG30IRTransferBusy ||
-      (window.MG30PresetManagerSyncBusy && !ignoreManagerSync)) return true;
+      window.MG30PresetExportBusy || window.MG30IRTransferBusy) return true;
   if ($('readNamSlotsBtn')?.dataset.busy === '1') return true;
   if ($('copySceneToggle')?.disabled ||
       [...document.querySelectorAll('#sceneButtons button')].some(button => button.disabled) ||
@@ -91,6 +90,40 @@ function initPresetLibraryUI() {
   const feedbackNote = $('presetImportProgressNote');
   if (!page || !cards || page.dataset.cardUiReady === '1') return;
   page.dataset.cardUiReady = '1';
+
+  // Compact Import / Export dropdowns; keep the established action IDs and handlers.
+  const actionMenus = [
+    { toggle: $('presetImportMenuToggle'), menu: $('presetImportMenuDropdown') },
+    { toggle: $('presetExportMenuToggle'), menu: $('presetExportMenuDropdown') }
+  ].filter(item => item.toggle && item.menu);
+
+  function closeActionMenus() {
+    for (const item of actionMenus) {
+      item.menu.hidden = true;
+      item.toggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  for (const item of actionMenus) {
+    item.toggle.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const shouldOpen = item.menu.hidden;
+      closeActionMenus();
+      item.menu.hidden = !shouldOpen;
+      item.toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    });
+    item.menu.addEventListener('click', event => {
+      if (event.target.closest('button')) closeActionMenus();
+    });
+  }
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.preset-action-menu')) closeActionMenus();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeActionMenus();
+  });
 
   let names = loadNameCache();
   let scanPromise = null;
@@ -587,12 +620,12 @@ function initPresetLibraryUI() {
 
   async function readStoredName(program) {
     if (typeof window.readSysExPart !== 'function') throw new Error('Preset slot reader is unavailable.');
-    // Keep the exact 0B/02 scene-0 reply: it contains the name and becomes
-    // the first scene in the complete Export All cache record.
+    // 0B/00 is the existing read-only stored-preset path already used by device read-back.
+    // Read one scene part only; this does not send Program Change or write to the pedal.
     for (let attempt = 0; attempt < 2; attempt++) {
       const body = await window.readSysExPart(0x0b, program, 0);
       if (Number(body?.[5]) !== program || Number(body?.[6]) !== 0) continue;
-      return { name: readPresetName(body), sceneReply0: Uint8Array.from(body) };
+      return readPresetName(body);
     }
     throw new Error('The response for slot ' + slotLabel(program) + ' did not match the request.');
   }
@@ -608,18 +641,8 @@ function initPresetLibraryUI() {
 
   async function scanMissingNames() {
     if (scanPromise) return scanPromise;
+    if (Object.keys(names).length >= 128) return;
     const bridge = window.MG30PresetExportBridge;
-    const exportCache = window.MG30PresetManagerCache;
-    const captureSlot = window.MG30PresetManagerCaptureScanSlot;
-    const canWarmExportCache = Boolean(exportCache && typeof captureSlot === 'function');
-    const nativeStartupPending = Boolean(window.NUXNativeMidi?.available &&
-      window.NUXNAMTransfer?.readMG30NAMSlotNames &&
-      window.MG30NativeStartupSyncComplete !== true);
-    if (nativeStartupPending) {
-      if (scanStatus) scanStatus.textContent = 'Menunggu sinkronisasi NAM dan IR Collection selesai…';
-      return;
-    }
-    if (!canWarmExportCache && Object.keys(names).length >= 128) return;
     if (!bridge?.isConnected?.()) {
       showScanToast('ditunda');
       return;
@@ -630,83 +653,33 @@ function initPresetLibraryUI() {
     }
 
     scanPromise = (async () => {
-      let completedNames = Object.keys(names).length;
-      let completedCache = exportCache?.getStatus?.().freshCount || 0;
+      let completed = Object.keys(names).length;
       let deferred = false;
-      let pollingWasStopped = false;
       try {
-        window.MG30PresetManagerSyncBusy = true;
-        if (typeof window.stopHardwareStatePolling === 'function') {
-          window.stopHardwareStatePolling();
-          pollingWasStopped = true;
-        }
         for (let program = 0; program < 128; program++) {
-          const nameExists = Object.prototype.hasOwnProperty.call(names, program);
-          const cached = exportCache?.get?.(program) || null;
-          if (cached) {
-            if (!nameExists) {
-              names[program] = readPresetName(cached.sceneReplies[0]);
-              completedNames++;
-            }
-            continue;
-          }
-          if (nameExists && !canWarmExportCache) continue;
-          if (activeDeviceOperation(true)) {
+          if (Object.prototype.hasOwnProperty.call(names, program)) continue;
+          if (activeDeviceOperation()) {
             deferred = true;
-            throw new Error('Sinkronisasi ditunda karena operasi perangkat lain dimulai.');
+            throw new Error('Pembacaan ditunda karena operasi perangkat lain dimulai.');
           }
-
-          const label = slotLabel(program);
-          if (scanStatus) {
-            scanStatus.textContent = canWarmExportCache
-              ? 'Sinkronisasi Preset Manager · ' + label + ' · cache lengkap ' + completedCache + '/128'
-              : 'Membaca nama preset · ' + label;
-          }
-          const stored = await readStoredName(program);
-          names[program] = stored.name;
-          if (!nameExists) completedNames++;
-
-          if (canWarmExportCache) {
-            await captureSlot(program, stored.sceneReply0, progress => {
-              const phase = progress?.phase || 'Melengkapi data preset';
-              const part = Number(progress?.completed) || 0;
-              const total = Number(progress?.total) || 0;
-              if (scanStatus) {
-                scanStatus.textContent = 'Preset Manager · ' + label + ' · ' + phase +
-                  (total ? ' · ' + part + '/' + total : '');
-              }
-            });
-            completedCache = exportCache.getStatus().freshCount;
-          }
-
-          if (completedNames % 4 === 0 || program === 127) {
+          const name = await readStoredName(program);
+          names[program] = name;
+          completed++;
+          if (completed % 4 === 0 || completed === 128) {
             try { localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names)); } catch {}
             renderCards();
           }
         }
         try { localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names)); } catch {}
         renderCards();
-        if (canWarmExportCache) {
-          const status = exportCache.getStatus();
-          if (!status.complete) throw new Error('Cache manager lengkap ' + status.freshCount + '/128 preset; ekspor belum boleh dianggap siap.');
-          if (scanStatus) scanStatus.textContent = 'Preset Manager tersinkron · 128/128 preset · cache Export All siap.';
-        } else if (scanStatus) {
-          scanStatus.textContent = 'Daftar nama preset tersinkron.';
-        }
         showScanToast('selesai');
       } catch (error) {
         try { localStorage.setItem(NAME_CACHE_KEY, JSON.stringify(names)); } catch {}
-        console.warn('[Preset Library] Manager scan stopped:', error);
-        if (scanStatus) scanStatus.textContent = 'Sinkronisasi tertunda · cache ' +
-          (exportCache?.getStatus?.().freshCount || 0) + '/128 · ' + (error?.message || String(error));
+        console.warn('[Preset Library] Name scan stopped:', error);
         renderCards();
-        showScanToast(deferred || activeDeviceOperation(true) ? 'ditunda' : 'gagal');
+        showScanToast(deferred || activeDeviceOperation() ? 'ditunda' : 'gagal');
       } finally {
-        window.MG30PresetManagerSyncBusy = false;
         scanPromise = null;
-        if (pollingWasStopped && typeof window.startHardwareStatePolling === 'function') {
-          window.startHardwareStatePolling();
-        }
       }
     })();
     return scanPromise;
@@ -714,9 +687,6 @@ function initPresetLibraryUI() {
 
   // When a device connects while Presets is already open, start the deferred name scan.
   window.addEventListener('mg30-midi-connected', () => {
-    if (!page.classList.contains('hidden')) void scanMissingNames();
-  });
-  window.addEventListener('mg30-ir-collection-sync-complete', () => {
     if (!page.classList.contains('hidden')) void scanMissingNames();
   });
 
