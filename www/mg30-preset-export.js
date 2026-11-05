@@ -131,12 +131,11 @@ async function exportAllPresets() {
   }
 
   const confirmed = window.confirm(
-    'EXPORT ALL PRESET\n\n' +
-    'MG30 Studio akan membaca 128 preset dari MG-30 (01A–32D), termasuk tiga scene setiap preset. ' +
-    'Metadata resource akan diperiksa; waveform dan curve hanya dibaca untuk preset yang memiliki IR.\n\n' +
-    'Setelah semua record lengkap, aplikasi menyimpan satu file MG30_All_Preset.mg30patch (0x135700 byte).\n\n' +
-    'Operasi ini hanya membaca melalui USB-MIDI/SysEx. Tidak ada preset, NAM, User IR, atau Collection yang ditulis atau diubah.\n\n' +
-    'Lanjutkan membaca seluruh bank?'
+    'EXPORT ALL PRESETS\n\n' +
+    'MG30 Studio will read all 128 presets from the MG-30 (01A–32D), including all three scenes for each preset. Resource metadata will be checked; waveform and curve data will only be read for presets that contain an IR.\n\n' +
+    'Once every record has been read and validated, the app will save one file: MG30_All_Preset.mg30patch (0x135700 bytes).\n\n' +
+    'This is a read-only operation over USB-MIDI/SysEx. No presets, NAM profiles, User IR data, or IR Collection data will be written to or changed on the pedal.\n\n' +
+    'Continue reading the entire bank?'
   );
   if (!confirmed) {
     setStatus('Export All dibatalkan. Tidak ada data yang ditulis ke MG-30.', 'warn');

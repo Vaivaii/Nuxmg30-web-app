@@ -6,11 +6,13 @@ import {
   prepareMG30SaveAsParts,
   createMG30PresetSlotBackup,
 } from "./preset-library-operations.js";
+import { App } from "@capacitor/app";
 
 const $ = id => document.getElementById(id);
 const SLOT_BACKUP_KEY_PREFIX = "mg30-preset-slot-backup-v1-";
 const NAME_CACHE_KEY = 'mg30-preset-library-card-names-v1';
 const SLOT_LETTERS = 'ABCD';
+const EXPORT_FAILURE_AUTO_CLOSE_MS = 6500;
 
 function slotLabel(program) {
   const slot = Math.max(0, Math.min(127, Number(program) || 0));
@@ -128,6 +130,8 @@ function initPresetLibraryUI() {
   let names = loadNameCache();
   let scanPromise = null;
   let exportFeedbackTimer = null;
+  let nativeFeedbackBackListener = null;
+  let nativeFeedbackBackListenerPending = false;
 
   // Keep only Preset Manager fixed between the sticky app header and fixed bottom navigation.
   // This isolates its card scrolling from the shared NAM & IR / other-tab document scroll.
@@ -173,9 +177,56 @@ function initPresetLibraryUI() {
 
   function closeExportFeedback() {
     if (!feedbackDialog || feedbackDialog.dataset.owner !== 'export') return;
+    if (exportFeedbackTimer) window.clearTimeout(exportFeedbackTimer);
+    exportFeedbackTimer = null;
     if (feedbackDialog.open && typeof feedbackDialog.close === 'function') feedbackDialog.close();
     else feedbackDialog.removeAttribute('open');
     delete feedbackDialog.dataset.owner;
+  }
+
+  function detachNativeFeedbackBackListener() {
+    if (!nativeFeedbackBackListener) return;
+    const listener = nativeFeedbackBackListener;
+    nativeFeedbackBackListener = null;
+    void listener.remove();
+  }
+
+  async function attachNativeFeedbackBackListener() {
+    if (!feedbackDialog || !window.Capacitor?.isNativePlatform?.() ||
+        nativeFeedbackBackListener || nativeFeedbackBackListenerPending) return;
+    nativeFeedbackBackListenerPending = true;
+    try {
+      const listener = await App.addListener('backButton', () => {
+        if (!feedbackDialog?.open) return;
+        // Keep the app and dialog in place while a transfer is active.
+        if (feedbackDialog.dataset.state === 'loading') return;
+        if (feedbackDialog.dataset.owner === 'export') closeExportFeedback();
+        else feedbackDialog.close();
+      });
+      if (feedbackDialog.open) nativeFeedbackBackListener = listener;
+      else await listener.remove();
+    } catch (error) {
+      console.warn('[MG30] Unable to attach Android Back handler for preset feedback.', error);
+    } finally {
+      nativeFeedbackBackListenerPending = false;
+    }
+  }
+
+  if (feedbackDialog) {
+    const feedbackDialogObserver = new MutationObserver(() => {
+      if (feedbackDialog.open) void attachNativeFeedbackBackListener();
+      else detachNativeFeedbackBackListener();
+    });
+    feedbackDialogObserver.observe(feedbackDialog, {
+      attributes: true,
+      attributeFilter: ['open']
+    });
+    feedbackDialog.addEventListener('close', () => {
+      if (exportFeedbackTimer) window.clearTimeout(exportFeedbackTimer);
+      exportFeedbackTimer = null;
+      if (feedbackDialog.dataset.owner === 'export') delete feedbackDialog.dataset.owner;
+      detachNativeFeedbackBackListener();
+    });
   }
 
   function showExportFeedback(title, note, state, percent, autoCloseMs = 0, indeterminate = false) {
@@ -241,7 +292,7 @@ function initPresetLibraryUI() {
       const title = /belum terhubung/i.test(text) ? 'MG-30 belum terhubung' : 'Export gagal';
       // Keep the actual protocol/readback error visible. A blank error dialog
       // hides the failing slot/phase and makes field diagnosis impossible.
-      showExportFeedback(title, text, 'error', 0, 0);
+      showExportFeedback(title, text, 'error', 0, EXPORT_FAILURE_AUTO_CLOSE_MS);
       return;
     }
 

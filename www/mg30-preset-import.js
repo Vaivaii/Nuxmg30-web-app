@@ -3,6 +3,7 @@ import { buildMG30AllPresetImportPlan } from './mg30-preset-all-import.js';
 
 const $ = id => document.getElementById(id);
 const fmt = n => new Intl.NumberFormat('id-ID').format(n) + ' byte';
+const FAILURE_FEEDBACK_AUTO_CLOSE_MS = 5000;
 
 function slotLabel(program) {
   const slot = Math.max(0, Math.min(127, Number(program) || 0));
@@ -106,8 +107,16 @@ function init() {
   }
 
   progressDialog?.addEventListener('cancel', event => {
-    // Keep the progress overlay open while the import is running and until its result auto-closes.
-    event.preventDefault();
+    // Do not dismiss an active USB transfer. Once it reaches a terminal state,
+    // allow Escape / Android Back to close the result dialog immediately.
+    const operationInProgress = progressDialog.dataset.state === 'loading' &&
+      (progressDialog.dataset.owner === 'import' || progressDialog.dataset.owner === 'export');
+    if (operationInProgress) event.preventDefault();
+  });
+  progressDialog?.addEventListener('close', () => {
+    if (progressCloseTimer) window.clearTimeout(progressCloseTimer);
+    progressCloseTimer = null;
+    if (progressDialog.dataset.owner === 'import') delete progressDialog.dataset.owner;
   });
   const refreshTarget = () => {
     if (selectedTargetProgram === null) {
@@ -226,7 +235,7 @@ function init() {
       targetLabel.textContent = 'Pilih slot tujuan dengan mengetuk kartu preset di bawah.';
     } catch (error) {
       message(error?.message || 'Import All gagal.', 'warn');
-      finishProgressDialog('error', 'Import All gagal', 'Bank mungkin terisi sebagian. Jangan lepas USB sebelum perangkat stabil.', progressCompleted, 3500);
+      finishProgressDialog('error', 'Import All gagal', 'Bank mungkin terisi sebagian. Jangan lepas USB sebelum perangkat stabil.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
     } finally {
       lock(false);
       progressTotal = 78;
@@ -292,7 +301,7 @@ function init() {
       refreshTarget();
     } catch {
       message('');
-      finishProgressDialog('error', 'Import gagal', 'Periksa koneksi perangkat.', progressCompleted, 2100);
+      finishProgressDialog('error', 'Import gagal', 'Periksa koneksi perangkat.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
     } finally {
       lock(false);
     }
