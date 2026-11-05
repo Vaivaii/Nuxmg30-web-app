@@ -980,7 +980,29 @@ const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function updateUsbConnectButton(){const button=$('connectMidi');if(!button)return;button.classList.toggle('is-connected',!!midiConnected);button.classList.toggle('is-connecting',!!midiConnectPending);button.setAttribute('aria-pressed',String(!!midiConnected));button.setAttribute('aria-label',midiConnected?'USB-MIDI MG-30 terhubung':(midiConnectPending?'Menghubungkan USB-MIDI MG-30':'Hubungkan NUX MG-30 melalui USB-MIDI'));button.title=midiConnected?'MG-30 terhubung · USB-MIDI':(midiConnectPending?'Menghubungkan ke MG-30…':'MG-30 belum terhubung · ketuk untuk menyambungkan');const label=$('usbHeaderStatus');if(label){label.textContent=midiConnected?'Terhubung':(midiConnectPending?'Menghubungkan…':'Terputus');label.classList.toggle('is-connected',!!midiConnected);label.classList.toggle('is-connecting',!!midiConnectPending)}}
 function setDeviceStatus(message){const el=$('deviceStatus');if(el)el.textContent=message;const op=$('operationStatus');if(op)op.textContent=message;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(message&&message.length<58?message:'Belum terhubung · ketuk ikon USB untuk menghubungkan');const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);updateUsbConnectButton()}
 function enqueueMidi(fn){const run=async()=>{const wait=MIDI_GAP-(performance.now()-lastMidiSend);if(wait>0)await delay(wait);const out=await fn();lastMidiSend=performance.now();return out};const p=midiChain.then(run);midiChain=p.catch(()=>{});return p}
-function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);return true})}
+function invalidatePresetManagerCacheForWrite(data){
+ const cache=window.MG30PresetManagerCache;
+ if(!cache)return;
+ const bytes=Array.from(data||[]);
+ if(bytes[0]===0xB0&&bytes.length>=3){
+  if((bytes[1]&0x7F)!==80)cache.invalidate(targetSlot,"Parameter atau switch blok mengubah preset aktif");
+  return;
+ }
+ if(bytes[0]!==0xF0||bytes.length<8||bytes[1]!==0x43||bytes[2]!==0x58||bytes[3]!==0x70)return;
+ const command=bytes[4],action=bytes[5];
+ if(action!==0x01)return;
+ if(command===0x09||command===0x10||command===0x11){
+  cache.invalidateAll("Perubahan resource IR memerlukan readback ulang sebelum export");
+ }else if(command===0x0B||command===0x0C||command===0x07){
+  const program=Number(bytes[6]);
+  if(Number.isInteger(program)&&program>=0&&program<128){
+   cache.invalidate(program,"Perintah tulis preset MG-30 mengubah data scene");
+  }
+ }else if(command===0x0D||command===0x13){
+  cache.invalidate(targetSlot,"Signal Chain atau CTRL mengubah preset aktif");
+ }
+}
+function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);invalidatePresetManagerCacheForWrite(data);return true})}
 function sendCC(cc,value){if(presetImportBusy||presetExportBusy||!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
 async function flushCC(){try{while(pendingCC.size){const batch=[...pendingCC.entries()];pendingCC.clear();for(const [cc,value] of batch)await midiSend([0xB0,cc,value])}}finally{flushingCC=false;if(pendingCC.size){flushingCC=true;flushCC()}}}
 async function flushMidi(){while(flushingCC||pendingCC.size)await delay(10);await midiChain}
@@ -1010,7 +1032,7 @@ function syncIncomingBlockSwitch(cc,rawValue){
  if(!Number.isInteger(index)||index<0||index>10||!BLOCKS[index]||!states[index])return;
  const modelNumber=value&0x3F;
  const modelIndex=deviceModelIndex(index,modelNumber);
- if(modelIndex>=0){states[index].model=modelIndex;states[index].on=(value&0x40)===0}
+ if(modelIndex>=0){states[index].model=modelIndex;states[index].on=(value&0x40)===0;window.MG30PresetManagerCache?.invalidate(targetSlot,'Block switch berubah dari pedal')}
  scheduleHardwareUiRefresh();
 }
 function syncIncomingParameterCC(cc,rawValue){
@@ -1026,6 +1048,7 @@ function syncIncomingParameterCC(cc,rawValue){
   if(discrete&&!control.choices?.some(choice=>choice.value===next))return;
   if(state.values[param]===next)return;
   state.values[param]=next;
+  window.MG30PresetManagerCache?.invalidate(targetSlot,'Parameter berubah dari kontrol pedal');
   if(index===selected){
     const switchControl=discrete?control:null;
     if(switchControl){
@@ -1363,7 +1386,7 @@ async function connectMG30(options={}){
     midiInput.onmidimessage=handleMG30MidiMessage;
     midiAccess.onstatechange=()=>{
      const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
-     midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
+     midiConnected=ok;window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
      setDeviceStatus(ok?'Terhubung via USB-MIDI Android':'Perangkat MIDI terputus');
     };
     setDeviceStatus('Terhubung via USB-MIDI Android. Membaca preset aktif…');
@@ -1407,7 +1430,7 @@ async function connectMG30(options={}){
    midiInput.onmidimessage=handleMG30MidiMessage;
    midiAccess.onstatechange=()=>{
     const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
-    midiConnected=ok;if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
+    midiConnected=ok;window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
     setDeviceStatus(ok?'Terhubung':'Perangkat terputus');
    };
    setDeviceStatus('Terhubung. Membaca preset aktif…');

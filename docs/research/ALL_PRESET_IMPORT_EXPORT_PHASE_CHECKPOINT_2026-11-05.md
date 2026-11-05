@@ -335,3 +335,36 @@ The user observed that Export Single appears fast and may also be wrapping alrea
 - A future QuickTone-like implementation should investigate a deliberate preset-manager/cache populated during connection synchronization, track completeness and freshness per slot, and serialize from that verified cache when Export is requested.
 - Keep the known-good Export Single readback path intact while designing/testing the cache path. A safe migration can add cache-backed export only after the cache is proven complete and fresh, with the current live readback retained as fallback.
 - This is a documentation/research update only. No source code, protocol command, NAM, User/Third Party IR, Collection IR, MIDI mapping, preset write/import path, or APK was changed by this audit.
+
+## Read-through preset manager cache — implementation checkpoint (2026-11-05)
+
+Implemented on \`feature/all-preset-import-export\` after auditing the difference between QuickTone's pre-populated manager and MG30 Studio's on-demand readback.
+
+### Cache model
+
+- Added \`www/mg30-preset-manager-cache.js\`, a session-scoped 128-slot cache. It accepts only a complete readback: three correctly indexed 0C/02 scene replies, plus either an explicit marker-0/no-resource state or a marker-1 resource with a name, 2,048 finite Float32 samples and 600 in-range UInt16 curve values.
+- Entries are marked \`fresh\` or \`stale\`. The manager reports fresh/stale/missing counts, returns an ordered full bank only when all 128 slots are fresh, and deep-copies typed arrays on storage and retrieval.
+- Cache is memory-only and scoped to the current USB-MIDI connection session. A new session/disconnect clears the entries; no prior-session data can silently be exported.
+- This is a read-through cache, not yet a byte-for-byte clone of QuickTone's complete background connection manager. The recovered QuickTone scheduler's upstream 0B/02 trigger/pacing and all accompanying metadata/resource acquisition must be proven before automatically scanning all slots on connection.
+
+### Export behavior
+
+- Export Single now prefers a fresh cached slot. On a cache miss/stale slot it uses the existing proven \`MG30PresetExportBridge.readSingle()\` path, then stores the complete readback. A slot without IR remains ineligible for Export Single, as before.
+- Export All reuses every fresh entry and reads only missing/stale slots through the existing read-only bridge. Successful slots are cached immediately, so an interrupted first scan can resume from previously completed slots on the next attempt.
+- Export All switches the pedal program only for cache misses and restores the original program only if it needed to switch. If all 128 slots are fresh, it does not cycle the pedal through its programs.
+- Final bank serialization, the 128-record/0x135700 size gate, parser validation and Android SAF file verification remain unchanged.
+
+### Freshness invalidation
+
+- Outgoing non-scene-select CC parameter/block changes stale the active slot; CC80 scene selection does not because the cache contains all three scenes.
+- Preset scene writes (0B/01, 0C/01, 07/01) and Signal Chain/CTRL writes (0D/01, 13/01) stale the affected active/target slot.
+- User IR resource writes (09/01, 10/01, 11/01) conservatively invalidate the whole cache because the exact resource-to-preset association is not assumed. NAM command family 58 and Collection families 6A/6B/6C are not included in the preset-cache invalidation helper.
+- Physical block/parameter feedback invalidates the active slot. Web MIDI and native Android disconnect state clears the session cache.
+- No MIDI/CC identifiers, SysEx packet builders, NAM transfer commands, Collection mapping, or USB-MIDI device-selection code was changed.
+
+### Automated tests and remaining validation
+
+- Added unit tests for 128-slot completeness, marker-0 records, resource-bearing records, scene/header validation, deep-copy isolation, targeted/bank invalidation and session reset.
+- Added integration assertions that Export Single/All use the cache-first path and connection/write invalidation hooks remain connected.
+- No automatic 128-slot scan is started on connect. The first Export All still reads uncached slots and warms the cache incrementally. Reproducing QuickTone's connection-time manager population without an unproven trigger or disruptive Program Changes remains a separate research item.
+- No physical-device/export-speed claim is made until the new APK is installed and exercised on original MG-30 Gen2 FW 6.0.x.

@@ -6,8 +6,42 @@ import {
   decodeMG30PresetSceneReply
 } from './mg30-preset-format.js';
 import { MG30PresetReadFormat } from './mg30-preset-read.js';
+import { createMG30PresetManagerCache } from './mg30-preset-manager-cache.js';
 
 window.MG30PresetReadFormat = MG30PresetReadFormat;
+
+const presetManagerCache = createMG30PresetManagerCache();
+window.MG30PresetManagerCache = presetManagerCache;
+
+function ensurePresetManagerSession(bridge) {
+  if (bridge?.isConnected?.() && !presetManagerCache.isSessionActive()) {
+    presetManagerCache.beginSession('mg30-usb-session');
+  }
+}
+
+async function readSingleWithManagerCache(bridge, program, onProgress = () => {}, options = {}) {
+  ensurePresetManagerSession(bridge);
+  const cached = presetManagerCache.get(program);
+  if (cached) return { readback: cached, cacheHit: true };
+  const readback = await bridge.readSingle(onProgress, {
+    ...options,
+    programOverride: program
+  });
+  presetManagerCache.store(program, readback, { source: 'MG30-live-readback' });
+  return { readback, cacheHit: false };
+}
+
+window.addEventListener('mg30-midi-connected', () => {
+  presetManagerCache.beginSession('mg30-usb-session');
+});
+window.addEventListener('mg30-midi-connection-state', event => {
+  if (event?.detail?.connected === false) presetManagerCache.endSession('USB-MIDI disconnected');
+  else if (event?.detail?.connected === true) presetManagerCache.beginSession('mg30-usb-session');
+});
+window.addEventListener('mg30-native-midi-state', event => {
+  if (event?.detail?.connected === false) presetManagerCache.endSession('Native USB-MIDI disconnected');
+});
+
 
 const $ = id => document.getElementById(id);
 function slotLabel(program) {
@@ -108,29 +142,38 @@ async function exportAllPresets() {
     return { saved: false, cancelled: true };
   }
 
+  ensurePresetManagerSession(bridge);
+  const initialCacheStatus = presetManagerCache.getStatus();
+  setStatus('Export All · cache tersedia ' + initialCacheStatus.freshCount +
+    '/128 · slot kosong/kedaluwarsa akan dibaca dari pedal.');
   const records = [];
   const resourcePrograms = [];
   const originalProgram = Number(bridge.getTargetProgram?.());
+  let cacheHits = 0;
+  let liveReadbacks = 0;
+  let changedProgram = false;
   try {
   for (let program = 0; program < 128; program++) {
     const label = slotLabel(program);
-    setStatus('Export All · memilih preset ' + label + ' · ' + (program + 1) + '/128…');
-    // MG-30 returns the same readback replies as Single Export for the
-    // currently selected hardware program. Select each slot first, then use
-    // the unchanged read-only Single Export request/parser sequence.
-    await bridge.selectProgramForRead(program);
-    setStatus('Export All · membaca preset ' + label + ' · ' + (program + 1) + '/128…');
-    const readback = await bridge.readSingle(progress => {
-      const phase = progress?.phase || 'Membaca perangkat';
-      // Keep the global 128-slot progress as the final fraction in the status
-      // so the shared progress dialog does not confuse per-preset phases with
-      // overall bank progress.
-      setStatus('Export All · preset ' + label + ' · ' + (program + 1) + '/128 · ' + phase);
-    }, {
-      programOverride: program,
-      allowMissingResource: true,
-      deferPollingRestart: true
-    });
+    let readback = presetManagerCache.get(program);
+    if (readback) {
+      cacheHits += 1;
+      setStatus('Export All · preset ' + label + ' · memakai cache ' + cacheHits + '/128…');
+    } else {
+      setStatus('Export All · memilih preset ' + label + ' · ' + (program + 1) + '/128…');
+      await bridge.selectProgramForRead(program);
+      changedProgram = true;
+      setStatus('Export All · membaca preset ' + label + ' · ' + (program + 1) + '/128…');
+      const cachedRead = await readSingleWithManagerCache(bridge, program, progress => {
+        const phase = progress?.phase || 'Membaca perangkat';
+        setStatus('Export All · preset ' + label + ' · ' + (program + 1) + '/128 · ' + phase);
+      }, {
+        allowMissingResource: true,
+        deferPollingRestart: true
+      });
+      readback = cachedRead.readback;
+      liveReadbacks += 1;
+    }
 
     if (!Array.isArray(readback.sceneReplies) || readback.sceneReplies.length !== 3) {
       throw new Error('Preset ' + label + ' tidak menghasilkan tiga balasan scene lengkap.');
@@ -193,16 +236,19 @@ async function exportAllPresets() {
   setStatus('Export All berhasil: ' + (saved.fileName || filename) + ' · ' +
     Number(saved.bytes || bytes.length).toLocaleString('id-ID') +
     ' byte · 128 preset · ' + resourcePrograms.length +
-    ' resource IR. Pembacaan selesai tanpa menulis data ke MG-30.', 'ok');
+    ' resource IR · ' + cacheHits + ' dari cache · ' + liveReadbacks +
+    ' dibaca langsung. Cache sesi lengkap; tidak ada data yang ditulis ke MG-30.', 'ok');
   return {
     saved: true,
     fileName: saved.fileName || filename,
     bytes: bytes.length,
-    resourcePrograms
+    resourcePrograms,
+    cacheHits,
+    liveReadbacks
   };
   } finally {
-    // Restore the user's original active program after the read-only scan.
-    if (Number.isInteger(originalProgram) && originalProgram >= 0 && originalProgram < 128) {
+    // Restore the original active program only if a cache miss switched the pedal.
+    if (changedProgram && Number.isInteger(originalProgram) && originalProgram >= 0 && originalProgram < 128) {
       try { await bridge.selectProgramForRead(originalProgram); } catch (_) {}
     }
   }
@@ -257,13 +303,15 @@ function init() {
     if (diagnosticsDetails) diagnosticsDetails.hidden = true;
     setStatus('Memulai pembacaan preset ' + label + '…');
     try {
-      const source = await api.readSingle(progress => {
+      const cachedRead = await readSingleWithManagerCache(api, program, progress => {
         const completed = Number(progress?.completed) || 0;
         const total = Number(progress?.total) || 0;
         const phase = progress?.phase || 'Membaca perangkat';
         const detail = progress?.detail ? ' · ' + progress.detail : '';
         setStatus(phase + (total ? ' · ' + completed + '/' + total : '') + detail);
       });
+      const source = cachedRead.readback;
+      if (cachedRead.cacheHit) setStatus('Preset ' + label + ' menggunakan cache readback sesi USB-MIDI.');
       // QuickTone-compatible fixed field: preserve the first 16 ASCII bytes.
       // This changes only the name stored in the file, never the device's IR metadata.
       const exportResourceName = fitMG30QuickToneIRName(source.resourceName);
