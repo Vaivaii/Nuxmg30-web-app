@@ -170,6 +170,13 @@ function initPresetLibraryUI() {
 
   function reflectExportStatus() {
     if (!exportStatus) return;
+    // Export All is a local serialization + Android save-picker operation,
+    // not a USB transfer. Do not display the shared USB progress overlay for
+    // any status emitted during that flow. Keep an active Import overlay intact.
+    if (window.MG30LocalPresetExportActive === true) {
+      if (feedbackDialog?.dataset.owner !== 'import') closeExportFeedback();
+      return;
+    }
     const text = String(exportStatus.textContent || '').trim();
     if (!text || feedbackDialog?.dataset.owner === 'import') return;
     const cancelled = /dibatalkan/i.test(text);
