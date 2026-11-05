@@ -750,3 +750,16 @@ No NAM packets, IR User/Third Party/Collection transfer mappings, Import All tra
 GitHub Actions Build #594 failed after commit `d325183634f2b08f8cd9039cb085a4e1fb390a3a`. Source comparison found that `tests/mg30-preset-cache.test.js` still contained the Build #593-only test "cache accepts existing Preset Manager 0B/02 scene reads as complete scene records". The restored cache validator correctly accepts only the stable 0C/02 scene replies. The stale 0B/02 test therefore fails and must be removed by restoring the stable test file. Other dropdown/name-only integration tests remain in place.
 
 CI and APK validation must be repeated after that test correction. No physical hardware validation of the dropdown build has occurred yet.
+
+## Preset Import/Export feedback dialog UX — Build #598 (6 November 2026)
+
+- User requested the Export All confirmation in English and automatic dismissal of Import/Export failure popups, including Android Back support after the operation has finished.
+- Export All confirmation copy is now English; it still states 128 presets / three scenes, conditional IR reads, output file geometry and read-only USB-MIDI/SysEx behavior.
+- Export error popup preserves the diagnostic text and auto-closes after 6.5 seconds. Import Single and Import All error dialogs auto-close after 5 seconds.
+- Shared dialog prevents Back/Escape only during active Import/Export loading. Terminal dialogs may be dismissed by Back/Escape. A Capacitor Android `App.addListener('backButton')` listener exists only while this shared dialog is open and is removed when the dialog closes, preserving ordinary app Back handling after dismissal.
+- Source commit: `5be6df794a75f95c780e17a27085b60182f84aae`; regression test assertion correction commit: `cb556f014ef2d9e27c5ef8b5d87a45eacff0fa78`.
+- GitHub Actions Build #598: run `42083190120`, success. **272/272 tests passed**, Android initializer validation and Capacitor generation passed, Gradle `assembleDebug` passed, APK upload passed.
+- Artifact ID `13441402404`; ZIP size 4,214,691 bytes, SHA-256 `4c6e6886ed02b4b640840e2e224be29ab78e6efc39ccbb9f63c06d07a9f5cd5a`. Extracted APK size 4,592,340 bytes, SHA-256 `f9b6f76e2630bf4f27aed6ff073d985c30427252dbe7f564b057a246691554e6`.
+- ZIP/APK integrity passed; packaged JS contains the English confirmation and Android Back handler. Physical phone confirmation remains pending: inspect English wording, 6.5-second Export failure timeout, 5-second Import failure timeout, immediate Back dismissal after terminal result, and Back protection during active transfer.
+- No preset/IR/NAM transfer protocol, Import All planner, Export All readback/cache/pacing, User/Third Party IR, Collection 6A/6B/6C, MIDI/CC mappings, USB-MIDI selection, Copy Scene, Signal Chain, or CTRL/EXP logic was changed.
+- Detailed note: `docs/research/MG30_PRESET_FEEDBACK_DIALOG_FIX_2026-11-06.md`.
