@@ -238,3 +238,16 @@ Fix:
 - Commit `2e1148690f250040a9663140e998d846a798e222` changes the error modal to show the actual status text in its note and remain visible until acknowledged/closed. This should expose exact slot, phase, timeout, or parser error on the next run.
 - Build #539 is pending at checkpoint creation.
 - Next hardware test: capture the exact full error note. If it says an operation is already active, investigate bridge busy flags; if it identifies 0C/00 or 09/02, compare raw reply shape against the existing working Single Export trace; if it identifies 10/02 or 11/02, compare data block offsets and response tags. Do not alter MIDI mapping, NAM, User/Third Party IR, Collection IR, or import/write paths.
+
+
+## Follow-up: Export All SysEx timeout and slot-selection correction (2026-11-05)
+
+User supplied the diagnostic screenshot. The exact message is: `Export All gagal: No response SysEx dari MG-30`. This proves the export aborts while waiting for a matching device response, before bank serialization or Android file save. It does not identify the exact first request because the generic `waitForSysEx` error discarded the request label.
+
+Code review found a concrete difference from QuickTone's recovered sync sequence:
+- QuickTone's manager synchronization does not simply issue `0C/00` for arbitrary program numbers. The recovered sequence receives/establishes the selected preset index through `0B/02`, then sends three sequential `0C/00` scene reads for that selected preset. See the disassembly note section "preset-wide 09/00 name scan and sync order".
+- The first live Export All implementation looped `readSingle(programOverride=N)` without first selecting N on the pedal. Export Single uses the currently selected hardware preset, so this did not faithfully reproduce the selection boundary. A mismatch can cause the `0C/02` matcher to wait forever.
+- Added `MG30PresetExportBridge.selectProgramForRead(program)`: sends read-only MIDI Program Change `0xC0, program`, flushes the queue, and waits 360 ms, matching the app's existing `selectHardwareSlot()` settling delay.
+- Export All now selects each slot before invoking the unchanged Single Export readback routine; after success or failure, it attempts to restore the originally selected program. This changes only the active program selection, not stored preset contents. It does not use any preset/IR write SysEx.
+- Commits: `984b1b9feed515d4ddd8a19e2f3e13c925406270` (bridge selection method), `299086e6b37397fda3b2a2b2a2c4ea9c3e4929b2` (select each slot before readback and restore).
+- Build #541 is in progress at checkpoint creation. This is a reasoned correction from the protocol/disassembly evidence, not yet confirmed on physical hardware. If the next device run still times out, next change must expose request label + slot and compare exact response matcher to a known-good Single Export trace; do not loosen response validation or change MIDI mappings.
