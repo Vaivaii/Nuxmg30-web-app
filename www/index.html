@@ -2850,8 +2850,15 @@ function renderChain(){
   const b=BLOCKS[i];
   const handle=chainEditMode?'<span class="drag-handle" aria-hidden="true">⠿ MOVE</span>':'';
   const block='<button type="button" class="block '+(i===selected?'selected ':'')+(!states[i].on?'off':'')+'" data-i="'+i+'" aria-label="'+escapeHtml(b.id+' '+modelDisplayLabel(b.id,b.models[states[i].model]))+'">'+handle+'<span class="symbol">'+renderBlockIcon(b.id)+'</span><b>'+b.id+'</b><small>'+escapeHtml(modelDisplayLabel(b.id,b.models[states[i].model]))+'</small><small>'+(states[i].on?'● ON':'○ OFF')+'</small></button>';
-  return block+(i===6?routingCard(1,'MOD → DLY'):'')+(i===7?routingCard(2,'DLY → RVB'):'');
+  return block+(i===6?routingCard(1,'MOD → DELAY'):'')+(i===7?routingCard(2,'DELAY → REVERB'):'');
  }).join('');
+ // Keep each routing card visually attached to its anchor block, including drag previews.
+ const initialRanks=new Map(order.map((id,index)=>[id,index]));
+ holder.querySelectorAll('.block[data-i]').forEach(el=>{el.style.order=String((initialRanks.get(Number(el.dataset.i))??0)*2)});
+ holder.querySelectorAll('.routing-card[data-routing-bit]').forEach(el=>{
+  const anchor=Number(el.dataset.routingBit)===1?6:7;
+  el.style.order=String(((initialRanks.get(anchor)??0)*2)+1);
+ });
  let drag=null;
  const clearMarks=()=>holder.querySelectorAll('.block').forEach(el=>{
   el.classList.remove('drop-target','dragging');
@@ -2871,7 +2878,11 @@ function renderChain(){
   drag.previewOrder=next.slice();
   const rank=new Map(next.map((id,index)=>[id,index]));
   holder.querySelectorAll('.block[data-i]').forEach(el=>{
-   el.style.order=String(rank.get(Number(el.dataset.i))??Number(el.dataset.i));
+   el.style.order=String((rank.get(Number(el.dataset.i))??Number(el.dataset.i))*2);
+  });
+  holder.querySelectorAll('.routing-card[data-routing-bit]').forEach(el=>{
+   const anchor=Number(el.dataset.routingBit)===1?6:7;
+   el.style.order=String(((rank.get(anchor)??anchor)*2)+1);
   });
  };
  const updateDropTarget=(x,y)=>{
