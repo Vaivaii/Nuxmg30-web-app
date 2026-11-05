@@ -45,6 +45,21 @@ test('Import All plan matches the captured 128-preset Gen2 transaction', () => {
   assert.equal(counts.get('0b/01'), 384);
   assert.equal(counts.get('75/01'), 2);
   assert.equal(counts.get('15/01'), 1);
+
+  // Captured QuickTone ordering: setup, all 27 complete IR groups, all
+  // 384 scene writes, final 15 exchange, then the closing 75 exchange.
+  const sceneStart = 1 + 27 * 75;
+  assert.equal(plan.steps[1].kind, 'ir-name');
+  assert.equal(plan.steps[1].program, undefined);
+  assert.equal(plan.steps[1].body[5], 0);
+  assert.equal(plan.steps[sceneStart].kind, 'preset-scene');
+  assert.deepEqual(
+    plan.steps.slice(sceneStart, sceneStart + 6).map(step => [step.program, step.index]),
+    [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]]
+  );
+  assert.equal(plan.steps[sceneStart - 1].kind, 'ir-curve');
+  assert.equal(plan.steps.at(-2).kind, 'all-import-finish');
+  assert.equal(plan.steps.at(-1).kind, 'all-import-close');
 });
 
 test('resource-bearing preset encodes the program address with the existing QuickTone uint16 packing', () => {
