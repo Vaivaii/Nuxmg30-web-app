@@ -30,7 +30,7 @@ function validateReadback(program, source) {
   source.sceneReplies.forEach((reply, sceneIndex) => {
     if (!(reply instanceof Uint8Array) || reply.length !== SCENE_REPLY_BYTES ||
         reply[0] !== 0x43 || reply[1] !== 0x58 || reply[2] !== 0x70 ||
-        (reply[3] !== 0x0B && reply[3] !== 0x0C) || reply[4] !== 0x02 ||
+        reply[3] !== 0x0C || reply[4] !== 0x02 ||
         reply[5] !== program || reply[6] !== sceneIndex) {
       throw new Error("Balasan Scene " + (sceneIndex + 1) + " tidak cocok untuk slot " + program + ".");
     }
