@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildMG30SinglePresetPatch,
+  buildMG30AllPresetPatch,
   parseMG30SinglePresetPatch,
   parseMG30AllPresetPatch,
   buildMG30SinglePresetImportPlan,
@@ -144,4 +145,70 @@ test('all-preset parser rejects wrong size, reordered ordinals, invalid markers 
   const invalidCurve = allBytes.slice();
   new DataView(invalidCurve.buffer).setUint16(0x21FE, 306, true);
   assert.throws(() => parseMG30AllPresetPatch(invalidCurve), /Nilai kurva/);
+});
+
+
+const allResourcePrograms = new Set([0,1,2,3,6,7,8,9,10,11,12,13,14,15,17,22,27,31,80,81,82,83,91,109,110,111,115]);
+
+function makeAllPresetRecords() {
+  return Array.from({ length: 128 }, (_, program) => {
+    const scenes = Array.from({ length: 3 }, (_, index) => ({
+      index,
+      words: Uint16Array.from({ length: 71 }, (_, word) => (program + index + word) & 0xffff),
+    }));
+    if (!allResourcePrograms.has(program)) {
+      return { recordOrdinal: program, resourceMarker: 0, hasResource: false, scenes };
+    }
+    return {
+      recordOrdinal: program,
+      resourceMarker: 1,
+      hasResource: true,
+      scenes,
+      resourceName: 'IR_' + program,
+      samples: Float32Array.from({ length: 2048 }, (_, i) => Math.fround((i - 1024) / 2048)),
+      curve: Uint16Array.from({ length: 600 }, (_, i) => i % 306),
+    };
+  });
+}
+
+test('Export All serializes 128 local Gen2 records into exactly 0x135700 bytes', () => {
+  const bytes = buildMG30AllPresetPatch(makeAllPresetRecords());
+  assert.equal(bytes.length, 0x135700);
+  assert.equal(bytes.length, 128 * 0x26AE);
+
+  const parsed = parseMG30AllPresetPatch(bytes);
+  assert.equal(parsed.records.length, 128);
+  assert.deepEqual(parsed.resourcePrograms, [...allResourcePrograms]);
+
+  const recordBase = 0 * 0x26AE;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const name = bytes.subarray(recordBase + 0x1B2, recordBase + 0x1D2);
+  assert.equal(String.fromCharCode(...name).split('\\0')[0], 'IR_0');
+  assert.deepEqual(Array.from(bytes.subarray(recordBase + 0x1D2, recordBase + 0x1D6)), [0x52,0x49,0x46,0x46]);
+  assert.equal(view.getUint32(recordBase + 0x1D2 + 4, true), 0x1824);
+  assert.deepEqual(Array.from(bytes.subarray(recordBase + 0x1D2 + 8, recordBase + 0x1D2 + 12)), [0x57,0x41,0x56,0x45]);
+  assert.equal(view.getFloat32(recordBase + 0x1FE, true), Math.fround(-0.5));
+  assert.equal(view.getUint16(recordBase + 0x21FE, true), 0);
+  assert.equal(view.getUint32(4 * 0x26AE + 0x1AE, true), 0);
+  assert.equal(bytes.subarray(4 * 0x26AE + 0x1B2, 5 * 0x26AE).every(value => value === 0), true);
+});
+
+test('Export All preserves original RIFF header variants and opaque record bytes from local All Patch memory', () => {
+  const original = buildMG30AllPresetPatch(makeAllPresetRecords());
+  const mixed = original.slice();
+  const record3 = 3 * 0x26AE;
+  const header32 = Uint8Array.from([
+    0x52,0x49,0x46,0x46,0x24,0x20,0,0,0x57,0x41,0x56,0x45,
+    0x66,0x6d,0x74,0x20,16,0,0,0,1,0,1,0,0x80,0xbb,0,0,
+    0,0xee,2,0,4,0,32,0,0x64,0x61,0x74,0x61,0,0x20,0,0
+  ]);
+  mixed.set(header32, record3 + 0x1D2);
+  const record91 = 91 * 0x26AE;
+  const anomaly = new Uint8Array(44);
+  anomaly.set([0,0,0,0,0x24,0x18,0,0,0,0,0,0], 0);
+  mixed.set(anomaly, record91 + 0x1D2);
+
+  const parsed = parseMG30AllPresetPatch(mixed);
+  const rebuilt = buildMG30AllPresetPatch(parsed.records);
+  assert.deepEqual(rebuilt, mixed);
 });
