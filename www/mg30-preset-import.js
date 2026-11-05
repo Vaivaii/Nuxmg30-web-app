@@ -1,4 +1,5 @@
-import { parseMG30SinglePresetPatch, buildMG30SinglePresetImportPlan } from './mg30-preset-format.js';
+import { parseMG30SinglePresetPatch, parseMG30AllPresetPatch, buildMG30SinglePresetImportPlan } from './mg30-preset-format.js';
+import { buildMG30AllPresetImportPlan } from './mg30-preset-all-import.js';
 
 const $ = id => document.getElementById(id);
 const fmt = n => new Intl.NumberFormat('id-ID').format(n) + ' byte';
@@ -11,6 +12,8 @@ function slotLabel(program) {
 function init() {
   const input = $('presetImportFile');
   const choose = $('presetImportChoose');
+  const allChoose = $('presetImportAllChoose');
+  const allRun = $('presetImportAllRun');
   const info = $('presetImportFileInfo');
   const status = $('presetImportStatus');
   const targetLabel = $('presetImportTarget');
@@ -21,9 +24,12 @@ function init() {
   const progressFill = $('presetImportProgressFill');
   const progressNote = $('presetImportProgressNote');
   const progressReady = Boolean(progressDialog && progressTitle && progressTrack && progressFill && progressNote);
-  if (!input || !choose || !info || !status || !targetLabel || !importBar) return;
+  if (!input || !choose || !allChoose || !allRun || !info || !status || !targetLabel || !importBar) return;
 
   let parsed = null;
+  let parsedAll = null;
+  let importMode = 'single';
+  let progressTotal = 78;
   let file = null;
   let busy = false;
   let selectedTargetProgram = null;
@@ -55,7 +61,7 @@ function init() {
     if (!progressReady) return;
     progressDialog.dataset.owner = 'import';
     progressDialog.dataset.state = 'loading';
-    progressTitle.textContent = 'Import sedang berlangsung';
+    progressTitle.textContent = progressTotal === 2412 ? 'Import All sedang berlangsung' : 'Import sedang berlangsung';
     progressTrack.classList.remove('is-indeterminate');
     progressTrack.setAttribute('aria-valuenow', '0');
     progressFill.style.width = '0%';
@@ -67,12 +73,17 @@ function init() {
   }
 
   function updateProgressDialog(progress) {
-    const completed = Math.max(0, Math.min(78, Number(progress?.completed) || 0));
+    const completed = Math.max(0, Math.min(progressTotal, Number(progress?.completed) || 0));
     progressCompleted = completed;
     if (progressReady) {
       progressTrack.classList.remove('is-indeterminate');
-      progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / 78 * 100)));
-      progressFill.style.width = (completed / 78 * 100) + '%';
+      progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / progressTotal * 100)));
+      progressFill.style.width = (completed / progressTotal * 100) + '%';
+      if (progress?.phase === 'Verifikasi readback') {
+        progressNote.textContent = 'Memverifikasi preset ' + (progress.verifiedPrograms || 0) + '/128 (' + (progress.verifiedScenes || 0) + '/384 scene)…';
+      } else if (progress?.phase) {
+        progressNote.textContent = progress.phase + ' · ' + completed.toLocaleString('id-ID') + '/' + progressTotal.toLocaleString('id-ID') + ' frame diakui perangkat.';
+      }
     }
   }
 
@@ -84,8 +95,8 @@ function init() {
     progressDialog.dataset.state = state;
     progressTitle.textContent = title;
     progressTrack.classList.remove('is-indeterminate');
-    progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / 78 * 100)));
-    progressFill.style.width = (completed / 78 * 100) + '%';
+    progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / progressTotal * 100)));
+    progressFill.style.width = (completed / progressTotal * 100) + '%';
     progressNote.textContent = note;
     if (progressCloseTimer) window.clearTimeout(progressCloseTimer);
     progressCloseTimer = window.setTimeout(() => {
@@ -110,15 +121,33 @@ function init() {
     busy = value;
     input.disabled = value;
     choose.disabled = value;
+    allChoose.disabled = value;
+    allRun.disabled = value;
   };
 
   choose.addEventListener('click', () => {
-    if (!busy) input.click();
+    if (!busy) {
+      importMode = 'single';
+      parsedAll = null;
+      allRun.classList.add('hidden');
+      input.click();
+    }
+  });
+
+  allChoose.addEventListener('click', () => {
+    if (!busy) {
+      importMode = 'all';
+      parsed = null;
+      allRun.classList.add('hidden');
+      input.click();
+    }
   });
 
   input.addEventListener('change', async () => {
     file = input.files?.[0] || null;
     parsed = null;
+    parsedAll = null;
+    allRun.classList.add('hidden');
     selectedTargetProgram = null;
     refreshTarget();
 
@@ -135,13 +164,72 @@ function init() {
     message('Memeriksa struktur .mg30patch…');
 
     try {
-      parsed = parseMG30SinglePresetPatch(new Uint8Array(await file.arrayBuffer()));
-      info.textContent = file.name;
-      targetLabel.textContent = 'Pilih slot tujuan.';
-      message('');
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (importMode === 'all') {
+        parsedAll = parseMG30AllPresetPatch(bytes);
+        info.textContent = file.name;
+        targetLabel.textContent = '128 preset siap diimpor · 27 preset membawa resource IR.';
+        allRun.classList.remove('hidden');
+        message('File All Preset valid. Menekan tombol di bawah akan menimpa seluruh bank 128 preset.', 'warn');
+      } else {
+        parsed = parseMG30SinglePresetPatch(bytes);
+        info.textContent = file.name;
+        targetLabel.textContent = 'Pilih slot tujuan.';
+        message('');
+      }
     } catch (error) {
       parsed = null;
+      parsedAll = null;
+      allRun.classList.add('hidden');
       message(error?.message || 'File .mg30patch tidak valid.', 'warn');
+    }
+  });
+
+
+  allRun.addEventListener('click', async () => {
+    if (busy || !parsedAll || !file) return;
+    const bridge = api();
+    if (!bridge?.isConnected?.()) {
+      message('File All Preset valid. Hubungkan MG-30 melalui USB-MIDI sebelum memulai.', 'warn');
+      return;
+    }
+    let plan;
+    try {
+      plan = buildMG30AllPresetImportPlan(parsedAll.records);
+    } catch (error) {
+      message(error?.message || 'Rencana Import All tidak valid.', 'warn');
+      return;
+    }
+    const confirmed = window.confirm(
+      'PERINGATAN: IMPORT ALL PRESET\n\n' +
+      'File ' + file.name + ' akan menulis ulang SELURUH 128 preset (slot 01A–32D) pada MG-30. ' +
+      'Sebanyak ' + plan.resourcePrograms.length + ' preset juga mengirim resource IR melalui jalur User / Third Party.\n\n' +
+      'Proses tidak dapat dibatalkan setelah pengiriman dimulai. Jika kabel terlepas atau transfer gagal, bank dapat tertinggal dalam kondisi sebagian terisi. ' +
+      'Pastikan kamu memiliki backup lengkap dan pedal menggunakan firmware MG-30 Gen2 6.0.x (bukan MKII).\n\n' +
+      'Lanjutkan menimpa seluruh 128 preset?'
+    );
+    if (!confirmed) return;
+
+    progressTotal = 2412;
+    lock(true);
+    openProgressDialog();
+    try {
+      await bridge.importAll(plan, updateProgressDialog);
+      message('Import All selesai: 128 preset dan 384 scene telah diverifikasi.', 'ok');
+      finishProgressDialog('success', 'Import All selesai', '128 preset / 384 scene lolos readback.', 2412, 1800);
+      input.value = '';
+      file = null;
+      parsedAll = null;
+      info.textContent = '';
+      importBar.classList.remove('has-file');
+      allRun.classList.add('hidden');
+      targetLabel.textContent = 'Pilih slot tujuan dengan mengetuk kartu preset di bawah.';
+    } catch (error) {
+      message(error?.message || 'Import All gagal.', 'warn');
+      finishProgressDialog('error', 'Import All gagal', 'Bank mungkin terisi sebagian. Jangan lepas USB sebelum perangkat stabil.', progressCompleted, 3500);
+    } finally {
+      lock(false);
+      progressTotal = 78;
     }
   });
 
@@ -197,6 +285,7 @@ function init() {
       input.value = '';
       file = null;
       parsed = null;
+      parsedAll = null;
       selectedTargetProgram = null;
       info.textContent = '';
       importBar.classList.remove('has-file');
