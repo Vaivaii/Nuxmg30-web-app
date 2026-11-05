@@ -274,3 +274,12 @@ Build follow-up:
 - Initial build #544 failed only at Java compilation because the refactored Activity callback used `safeName` without declaring it in callback scope.
 - Commit `bf92ce7eaac6cddb5b2c1d76335a2eff1b9166db` restores filename sanitization/declaration within `savePatchResult()`.
 - Build #545 for that correction is queued. No APK from the failed #544 run is valid or should be delivered.
+
+
+### Zero-byte save verification build result (2026-11-05)
+
+- Build #545 GitHub Actions run: `42017030301`, commit `bf92ce7eaac6cddb5b2c1d76335a2eff1b9166db`, conclusion **success**.
+- Regression tests, Android initializer syntax, Capacitor generation, Gradle `assembleDebug`, and artifact upload all succeeded.
+- Artifact ID `13410450214`, ZIP size 4,207,198 bytes, SHA-256 `86464a681dabf8dc614639609e3ec8349b37f90d2b551007240e42899449931e`.
+- Extracted APK path `MG30-Studio-ZeroByte-Guard.apk`, size 4,584,696 bytes, SHA-256 `9f05bd330f16149125e21ca897ebec29776dc39fa2373a2d498068f5a04dba9a`.
+- This verifies build and automated test only. Physical Android SAF write/readback verification and MG-30 all-bank export/import round-trip are still pending user device testing.
