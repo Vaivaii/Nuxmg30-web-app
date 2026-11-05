@@ -2,14 +2,19 @@ const RECORD_SIZE = 0x26AE;
 const ALL_FILE_SIZE = 128 * RECORD_SIZE;
 const SCENE_OFFSET = 4;
 const SCENE_BYTES = 142;
-const RESOURCE_MARKER_OFFSET = 0x1AE;
-const RESOURCE_NAME_OFFSET = 0x1B2;
-const RIFF_OFFSET = 0x1D2;
-const FLOAT_DATA_OFFSET = 0x1FE;
-const FLOAT_DATA_END = 0x19FE;
-const FLOAT_TAIL_OFFSET = 0x19FE;
-const FLOAT_TAIL_END = 0x21FE;
-const CURVE_OFFSET = 0x21FE;
+
+// Resource offsets in the QuickTone record are relative to the resource
+// section at 0x1AA (immediately after the 3 × 142-byte scene payload).
+// Thus name/header/waveform/curve are local offsets 0x08/0x28/0x54/0x2054.
+const RESOURCE_SECTION_OFFSET = 0x1AA;
+const RESOURCE_MARKER_OFFSET = RESOURCE_SECTION_OFFSET + 0x04;
+const RESOURCE_NAME_OFFSET = RESOURCE_SECTION_OFFSET + 0x08;
+const RIFF_OFFSET = RESOURCE_SECTION_OFFSET + 0x28;
+const FLOAT_DATA_OFFSET = RESOURCE_SECTION_OFFSET + 0x54;
+const FLOAT_DATA_END = FLOAT_DATA_OFFSET + 0x1800;
+const FLOAT_TAIL_OFFSET = FLOAT_DATA_END;
+const FLOAT_TAIL_END = FLOAT_TAIL_OFFSET + 0x0800;
+const CURVE_OFFSET = RESOURCE_SECTION_OFFSET + 0x2054;
 
 function bytesOf(input) {
   if (input instanceof Uint8Array) return input;
@@ -233,7 +238,15 @@ export function parseMG30AllPresetPatch(input) {
       throw new Error('Penanda resource preset ' + ordinal + ' harus 0 atau 1.');
     }
 
-    const record = { recordOrdinal, scenes, resourceMarker, hasResource: resourceMarker === 1 };
+    const record = {
+      recordOrdinal,
+      scenes,
+      resourceMarker,
+      hasResource: resourceMarker === 1,
+      // Keep the exact local record bytes so re-export preserves QuickTone's
+      // per-record RIFF header variants and opaque padding fields.
+      rawRecord: recordBytes.slice(),
+    };
     if (resourceMarker === 1) {
       const resourceName = decodeAsciiField(recordBytes.subarray(RESOURCE_NAME_OFFSET, RESOURCE_NAME_OFFSET + 32)).trim();
       if (!resourceName) throw new Error('Nama resource IR kosong pada preset ' + ordinal + '.');
@@ -280,11 +293,148 @@ export function parseMG30AllPresetPatch(input) {
   };
 }
 
+/**
+ * Serialize 128 local MG-30 Gen2 records into one QuickTone All Preset file.
+ * Parsed records carry rawRecord so RIFF header variants (including the
+ * unusual resource record at ordinal 91) and opaque bytes remain unchanged.
+ * Fresh in-memory records are serialized with a zero-padded 32-byte name and
+ * the standard 24-bit RIFF/WAVE header used by the validated single-record
+ * serializer.
+ */
+export function buildMG30AllPresetPatch(records) {
+  if (!Array.isArray(records) || records.length !== 128) {
+    throw new Error('Export All membutuhkan tepat 128 record preset lokal.');
+  }
+
+  const output = new Uint8Array(ALL_FILE_SIZE);
+  let resourceCount = 0;
+
+  const makeDefaultRiffHeader = () => {
+    const header = new Uint8Array(44);
+    const view = new DataView(header.buffer);
+    header.set([0x52,0x49,0x46,0x46], 0);
+    view.setUint32(4, 0x1824, true);
+    header.set([0x57,0x41,0x56,0x45], 8);
+    header.set([0x66,0x6D,0x74,0x20], 12);
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, 48000, true);
+    view.setUint32(28, 144000, true);
+    view.setUint16(32, 3, true);
+    view.setUint16(34, 24, true);
+    header.set([0x64,0x61,0x74,0x61], 36);
+    view.setUint32(40, 0x1800, true);
+    return header;
+  };
+
+  for (let ordinal = 0; ordinal < 128; ordinal++) {
+    const record = records[ordinal];
+    if (!record || Number(record.recordOrdinal) !== ordinal) {
+      throw new Error('Urutan record Export All tidak valid pada preset ' + ordinal + '.');
+    }
+
+    const original = record.rawRecord ?? record.recordBytes ?? null;
+    const chunk = original ? bytesOf(original).slice() : new Uint8Array(RECORD_SIZE);
+    if (chunk.length !== RECORD_SIZE) {
+      throw new Error('Record lokal ' + ordinal + ' harus berukuran 0x26AE byte.');
+    }
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    view.setUint32(0, ordinal, true);
+
+    if (!Array.isArray(record.scenes) || record.scenes.length !== 3) {
+      throw new Error('Preset ' + ordinal + ' harus memiliki tiga scene.');
+    }
+    for (let sceneIndex = 0; sceneIndex < 3; sceneIndex++) {
+      const scene = record.scenes[sceneIndex];
+      const sceneOffset = SCENE_OFFSET + sceneIndex * SCENE_BYTES;
+      if (scene?.raw) {
+        const rawScene = bytesOf(scene.raw);
+        if (rawScene.length !== SCENE_BYTES) {
+          throw new Error('Raw scene ' + sceneIndex + ' pada preset ' + ordinal + ' harus 142 byte.');
+        }
+        chunk.set(rawScene, sceneOffset);
+      } else {
+        const words = scene?.words;
+        if (!(words instanceof Uint16Array) || words.length !== 71) {
+          throw new Error('Scene ' + sceneIndex + ' pada preset ' + ordinal + ' harus berisi 71 word uint16.');
+        }
+        for (let word = 0; word < 71; word++) {
+          view.setUint16(sceneOffset + word * 2, words[word], true);
+        }
+      }
+    }
+
+    const markerValue = record.resourceMarker ??
+      (record.hasResource === true || record.samples ? 1 : 0);
+    const marker = Number(markerValue);
+    if (marker !== 0 && marker !== 1) {
+      throw new Error('Penanda resource preset ' + ordinal + ' harus 0 atau 1.');
+    }
+    view.setUint32(RESOURCE_MARKER_OFFSET, marker, true);
+
+    if (marker === 0) {
+      // A preset without a resource has a zero-filled resource section.
+      chunk.fill(0, RESOURCE_MARKER_OFFSET + 4, RECORD_SIZE);
+    } else {
+      resourceCount++;
+      const fittedName = fitMG30QuickToneIRName(record.resourceName);
+      const nameBytes = new TextEncoder().encode(fittedName);
+      const paddedName = new Uint8Array(32);
+      paddedName.set(nameBytes);
+      chunk.set(paddedName, RESOURCE_NAME_OFFSET);
+
+      const suppliedHeader = record.riffHeader ?? record.waveHeader ?? null;
+      if (suppliedHeader) {
+        const headerBytes = bytesOf(suppliedHeader);
+        if (headerBytes.length !== 44) {
+          throw new Error('Header RIFF preset ' + ordinal + ' harus tepat 44 byte.');
+        }
+        chunk.set(headerBytes, RIFF_OFFSET);
+      } else if (!original) {
+        chunk.set(makeDefaultRiffHeader(), RIFF_OFFSET);
+      }
+
+      if (!(record.samples instanceof Float32Array) || record.samples.length !== 2048) {
+        throw new Error('Preset ' + ordinal + ' membutuhkan 2.048 sampel Float32 lokal.');
+      }
+      for (let sample = 0; sample < 2048; sample++) {
+        if (!Number.isFinite(record.samples[sample])) {
+          throw new Error('Sampel Float32 preset ' + ordinal + ' tidak valid pada indeks ' + sample + '.');
+        }
+        view.setFloat32(FLOAT_DATA_OFFSET + sample * 4, record.samples[sample], true);
+      }
+
+      if (!(record.curve instanceof Uint16Array) || record.curve.length !== 600) {
+        throw new Error('Preset ' + ordinal + ' membutuhkan 600 nilai kurva uint16 lokal.');
+      }
+      for (let point = 0; point < 600; point++) {
+        const value = record.curve[point];
+        if (value > 305) {
+          throw new Error('Nilai kurva preset ' + ordinal + ' di luar rentang pada indeks ' + point + '.');
+        }
+        view.setUint16(CURVE_OFFSET + point * 2, value, true);
+      }
+    }
+
+    output.set(chunk, ordinal * RECORD_SIZE);
+  }
+
+  if (resourceCount !== 27) {
+    throw new Error('Sampel All Preset Gen2 yang tervalidasi memiliki 27 resource IR; ditemukan ' + resourceCount + '. Export dibatalkan.');
+  }
+  if (output.length !== 0x135700) {
+    throw new Error('Ukuran file hasil Export All tidak cocok dengan 0x135700 byte.');
+  }
+  return output;
+}
+
 export const MG30PresetFormat = Object.freeze({
   SINGLE_RECORD_BYTES: RECORD_SIZE,
   ALL_RECORDS_BYTES: ALL_FILE_SIZE,
   parseSingle: parseMG30SinglePresetPatch,
   parseAll: parseMG30AllPresetPatch,
+  buildAllPatch: buildMG30AllPresetPatch,
   buildImportPlan: buildMG30SinglePresetImportPlan,
   decodeSceneReply: decodeMG30PresetSceneReply,
   buildSinglePatch: buildMG30SinglePresetPatch,
