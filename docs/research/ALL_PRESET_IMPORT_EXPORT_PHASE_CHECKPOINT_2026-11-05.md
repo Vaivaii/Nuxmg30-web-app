@@ -728,3 +728,25 @@ User correctly pointed out that Preset Manager already performs a USB connection
 - Then tap Export All in the same USB session. Expected result: `128 dari cache` and `0 dibaca langsung`, 1,267,456-byte file, and the correct resource count for the actual bank.
 - Also test a subsequent Export All without disconnect: it should not re-read the bank. Then verify NAM, User/Third Party IR import, Collection IR import/use, preset selection and MIDI/CC controls.
 - If scan fails, preserve the last visible phase/status and `window.MG30PresetExportLastDiagnostics` before retrying. Do not disconnect during active readback. Do not change firmware or mappings.
+
+## Follow-up rollback: restore name-only Preset Manager sync (6 November 2026)
+
+User physically tested Build #593 and reported that the integrated Preset Manager full-cache synchronization was too slow, failed to finish, and interfered with tapping preset cards. Decision: suspend the optimization and return to the known name-only synchronization behavior.
+
+Commit `d325183634f2b08f8cd9039cb085a4e1fb390a3a` on `feature/all-preset-import-export` restores the pre-integration implementations of:
+- `www/preset-library-ui.js`: the scanner reads only scene part 0 to obtain names, skips work when 128 names are already cached, and does not fill the full export cache.
+- `www/mg30-preset-manager-cache.js`, `www/mg30-preset-format.js`, and `www/ir-transfer.js`: restored to the stable versions from the Freeze Recovery baseline, so no 0B/02 cache validation or startup sync coordination remains.
+- Existing Export Single / Export All cache remains read-through and is populated only when the user explicitly runs an export. Export All reads misses individually on demand.
+
+The same commit adds two compact dropdowns in Preset Manager:
+- Import → Import Single / Import All.
+- Export → Export Single / Export All.
+The original action IDs/handlers are retained. Dropdowns close after selecting an action, an outside click, or Escape.
+
+No NAM packets, IR User/Third Party/Collection transfer mappings, Import All transfer planner, or MIDI/CC mappings were intentionally changed. Build #593 full-cache startup behavior is superseded and must not be used as the baseline.
+
+### Build #594 failure and diagnosis
+
+GitHub Actions Build #594 failed after commit `d325183634f2b08f8cd9039cb085a4e1fb390a3a`. Source comparison found that `tests/mg30-preset-cache.test.js` still contained the Build #593-only test "cache accepts existing Preset Manager 0B/02 scene reads as complete scene records". The restored cache validator correctly accepts only the stable 0C/02 scene replies. The stale 0B/02 test therefore fails and must be removed by restoring the stable test file. Other dropdown/name-only integration tests remain in place.
+
+CI and APK validation must be repeated after that test correction. No physical hardware validation of the dropdown build has occurred yet.

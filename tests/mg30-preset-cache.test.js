@@ -155,13 +155,3 @@ test("disconnect clears all cached records", () => {
   assert.equal(cache.getStatus().freshCount, 0);
   assert.equal(cache.getStatus().missingCount, 128);
 });
-
-test("cache accepts existing Preset Manager 0B/02 scene reads as complete scene records", () => {
-  const cache = createMG30PresetManagerCache();
-  cache.beginSession();
-  const readback = makeReadback(41, false);
-  for (const reply of readback.sceneReplies) reply[3] = 0x0B;
-  cache.store(41, readback, { source: "PresetManager-existing-name-scan" });
-  assert.equal(cache.get(41).sceneReplies[0][3], 0x0B);
-  assert.equal(cache.getStatus().freshCount, 1);
-});
