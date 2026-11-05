@@ -572,7 +572,10 @@ function initUI(){
   return {...second,stable:true,readRounds:2};
  }
  syncButton.addEventListener('click',()=>void syncCollectionFromDevice());
- window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
+ window.addEventListener('mg30-nam-sync-complete',async()=>{
+  try{await syncCollectionFromDevice({silent:true})}
+  finally{window.dispatchEvent(new CustomEvent('mg30-ir-collection-sync-complete'))}
+ });
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
  async function processImport(blob,target){
   if(busy)return;
