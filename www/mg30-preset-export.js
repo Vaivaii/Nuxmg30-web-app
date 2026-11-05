@@ -34,6 +34,9 @@ async function readSingleWithManagerCache(bridge, program, onProgress = () => {}
 }
 
 let managerSyncPromise = null;
+let pendingManagerSyncAfterStartup = false;
+let managerStartupGatePromise = null;
+let resolveManagerStartupGate = null;
 
 /**
  * QuickTone populates its indexed preset manager during connection sync, then
@@ -42,6 +45,9 @@ let managerSyncPromise = null;
  * discovery and conditional 10/00 + 11/00 data reads. No Program Change is sent.
  */
 async function syncPresetManagerCacheOnConnect(bridge = window.MG30PresetExportBridge) {
+  if (pendingManagerSyncAfterStartup && managerStartupGatePromise) {
+    return await managerStartupGatePromise;
+  }
   if (!bridge?.isConnected?.()) return false;
   ensurePresetManagerSession(bridge);
   const initial = presetManagerCache.getStatus();
@@ -92,8 +98,6 @@ async function syncPresetManagerCacheOnConnect(bridge = window.MG30PresetExportB
   return managerSyncPromise;
 }
 
-let pendingManagerSyncAfterStartup = false;
-
 function schedulePresetManagerSync(bridge = window.MG30PresetExportBridge) {
   if (!bridge?.isConnected?.()) return;
   ensurePresetManagerSession(bridge);
@@ -102,7 +106,10 @@ function schedulePresetManagerSync(bridge = window.MG30PresetExportBridge) {
   const nativeStartupSync = Boolean(window.NUXNativeMidi?.available &&
     window.NUXNAMTransfer?.readMG30NAMSlotNames);
   if (nativeStartupSync && !presetManagerCache.getStatus().complete) {
-    pendingManagerSyncAfterStartup = true;
+    if (!pendingManagerSyncAfterStartup) {
+      pendingManagerSyncAfterStartup = true;
+      managerStartupGatePromise = new Promise(resolve => { resolveManagerStartupGate = resolve; });
+    }
     setStatus('USB-MIDI terhubung · menunggu sinkronisasi nama NAM dan IR Collection selesai sebelum membaca manager preset.');
     return;
   }
@@ -117,6 +124,9 @@ window.addEventListener('mg30-midi-connected', () => {
 window.addEventListener('mg30-midi-connection-state', event => {
   if (event?.detail?.connected === false) {
     pendingManagerSyncAfterStartup = false;
+    resolveManagerStartupGate?.(false);
+    resolveManagerStartupGate = null;
+    managerStartupGatePromise = null;
     presetManagerCache.endSession('USB-MIDI disconnected');
   } else if (event?.detail?.connected === true) {
     presetManagerCache.beginSession('mg30-usb-session');
@@ -126,7 +136,10 @@ window.addEventListener('mg30-midi-connection-state', event => {
 window.addEventListener('mg30-ir-collection-sync-complete', () => {
   if (!pendingManagerSyncAfterStartup) return;
   pendingManagerSyncAfterStartup = false;
-  void syncPresetManagerCacheOnConnect(window.MG30PresetExportBridge);
+  const syncPromise = syncPresetManagerCacheOnConnect(window.MG30PresetExportBridge);
+  resolveManagerStartupGate?.(syncPromise);
+  resolveManagerStartupGate = null;
+  managerStartupGatePromise = null;
 });
 window.addEventListener('mg30-native-midi-state', event => {
   if (event?.detail?.connected === false) presetManagerCache.endSession('Native USB-MIDI disconnected');
