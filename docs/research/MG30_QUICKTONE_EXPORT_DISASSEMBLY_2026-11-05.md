@@ -252,3 +252,27 @@ This is a confirmed generic chunked binary upload path with 7-bit packing and pe
 - Not confirmed: whether the 61/01 caller is used for the 27 IR-bearing preset resources during QuickTone manager population, what data format is supplied, or whether a separate 61/00/61/02 readback path exists.
 - The next target is the caller/xref of VA 0x004A8800 and the code that allocates/fills its source buffer. Trace that source to the manager's per-preset object and compare it with the known 0x26AE record's 2,048 float32 samples and 600 curve values.
 - No app source code or device communication was changed. Existing Import All, Single Import/Export, NAM, User/Third Party IR, Collection, and MIDI mapping remain untouched.
+
+
+
+## Follow-up: 61/01 caller traced to 800×480 image upload, not IR (2026-11-05)
+
+A direct-call xref search for VA 0x004A8800 found one direct call in the inspected executable:
+
+- Caller callsite: VA 0x0056CE55.
+- Immediately before the call, the caller loads width from `[ebx]`, height from `[ebx+2]`, multiplies them, doubles the result, and passes the byte count plus source pointer `ebx+4` to 0x004A8800.
+- In the same caller routine, the image descriptor is explicitly initialized with `0x01E00320`, which is little-endian width 0x0320 (800) and height 0x01E0 (480).
+- The preceding pixel-processing loop runs 0x320 (800) columns for 0x1E0 (480) rows. It reads source pixel components and packs each pixel into a 16-bit value before the buffer is handed to the 61/01 sender.
+- Thus the source buffer passed to 0x004A8800 is a 16-bit-per-pixel raster image buffer. For the explicit 800×480 descriptor, its byte count is 800 × 480 × 2 = 768,000 bytes.
+
+### Corrected interpretation
+
+The previously documented 61/01 routine is indeed a generic 128-byte block sender, but its only direct caller found by the xref search is an image/raster path. The caller's dimensions, row/column loops, pixel conversion and 2-byte-per-pixel length calculation identify this particular 61/01 use as an 800×480 image upload, not an IR waveform or curve transfer.
+
+Accordingly:
+
+1. Do not use this 61/01 caller as evidence for IR import/export or for the manager's 27 resource-bearing presets.
+2. Remove 61/01 from the active candidate list for the missing IR waveform/curve path unless a distinct indirect caller or separate callsite is later demonstrated.
+3. The original 61/01 transfer mechanics remain valid as a generic sender description; the application-level meaning is now resolved for the observed caller.
+4. Continue tracing the 12/01, 13/00, 18/01 and 19/01 metadata exchanges and the manager resource fields for the actual 10/11 waveform/curve acquisition path. Do not infer that those metadata pairs carry waveform data.
+5. No app source, APK, device communication, NAM path, IR User/Third Party import, Collection logic, Import All, or MIDI mapping was changed.
