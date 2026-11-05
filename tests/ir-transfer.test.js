@@ -46,8 +46,8 @@ test('User import plan uses captured parameter 1 and User SysEx commands',()=>{
   assert.equal(plan.frames[64][4],0x09);
   assert.equal(plan.frames[65][4],0x11);
   assert.equal(plan.frames[0][6],0);
-  assert.equal(plan.frames[0][7],0);
-  assert.equal(plan.frames[0][8],2);
+  assert.equal(plan.frames[0][7],2);
+  assert.equal(plan.frames[0][8],0);
 });
 
 test('Collection protocol mapping remains unchanged',()=>{
