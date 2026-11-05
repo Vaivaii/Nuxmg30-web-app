@@ -1,3 +1,4 @@
+# Rebuild after verified QuickTone WAV import parity changes.
 name: Build MG30 Studio Android APK
 
 on:
