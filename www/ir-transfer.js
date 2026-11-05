@@ -1,5 +1,5 @@
 // NUX MG-30 Gen 2 IR transfer.
-// Android build trigger: QuickTone import parity regression suite is included in this revision. User 10/09/11 is hardware-tested; Collection 6A/6C/6B remains experimental.
+User 10/09/11 is hardware-tested; Collection 6A/6C/6B remains experimental.
 // The WAV payload generator is shared; Collection audio acceptance has not yet been verified on hardware.
 const PREFIX=[0xF0,0x43,0x58,0x70], N=2048, FFT=16384, W=600, H=305, SENT=-99999, f32=Math.fround;
 const bytesOf=x=>x instanceof Uint8Array?x:x instanceof ArrayBuffer?new Uint8Array(x):ArrayBuffer.isView(x)?new Uint8Array(x.buffer,x.byteOffset,x.byteLength):(()=>{throw Error('Data byte Invalid WAV file.')})();
@@ -48,15 +48,15 @@ export function readMG30IRWav(input){
  if(!fmt||dp<0)throw Error('Chunk fmt/data tidak ditemukan dalam WAV.');
  const supportedFormat=[1,3].includes(fmt.format);
  const supportedBits=[8,16,24,32].includes(fmt.bits)&&(fmt.format!==3||fmt.bits===32);
- const supportedRate=fmt.rate===48000;
+ const supportedRate=Number.isFinite(fmt.rate)&&fmt.rate>=8000&&fmt.rate<=192000;
  if(!supportedFormat||!supportedRate||![1,2].includes(fmt.channels)||!supportedBits){
-  throw Error('Format WAV tidak didukung. Terdeteksi: format '+fmt.format+', '+fmt.channels+' kanal, '+fmt.rate+' Hz, '+fmt.bits+' bit. QuickTone MG-30 Gen2 mensyaratkan sample rate tepat 48 kHz; dukungan: PCM 8/16/24/32-bit atau Float32, mono/stereo.');
+  throw Error('Format WAV tidak didukung. Terdeteksi: format '+fmt.format+', '+fmt.channels+' kanal, '+fmt.rate+' Hz, '+fmt.bits+' bit. Dukungan: PCM 8/16/24/32-bit atau Float32, mono/stereo, sample rate 8–192 kHz.');
  }
  const bps=fmt.bits/8;
  if(fmt.align!==fmt.channels*bps||!fmt.align||ds%fmt.align)throw Error('Struktur WAV tidak konsisten: blockAlign atau ukuran data tidak cocok dengan kanal/bit-depth.');
  const count=ds/fmt.align;
- const targetCount=count;
- if(count<N)throw Error('WAV terlalu pendek. Pada 48 kHz tersedia '+count+' frame; dibutuhkan sedikitnya '+N+' frame.');
+ const targetCount=Math.round(count*48000/fmt.rate);
+ if(count<=0||targetCount<N)throw Error('WAV terlalu pendek. Setelah dikonversi ke 48 kHz tersedia sekitar '+targetCount+' frame; dibutuhkan sedikitnya '+N+' frame.');
  const mono=new Float32Array(count);
  for(let i=0;i<count;i++){
   // QuickTone's second known stereo capture matches the FIRST (left) channel,
@@ -73,7 +73,7 @@ export function readMG30IRWav(input){
  }
  // The observed MG-30 import path consumes 2048 float32 samples. Normalize the
  // first 2048 frames to the 48 kHz clock used by the matching QuickTone capture.
- const samples=mono.slice(0,N); // QuickTone reads the first 2048 frames at 48 kHz; it does not resample.
+ const samples=resampleMonoTo48k(mono,fmt.rate,N);
  return{
   samples,count,rate:fmt.rate,channels:fmt.channels,format:fmt.format,bits:fmt.bits,
   normalizedRate:48000,normalizedFrames:targetCount,
@@ -585,7 +585,7 @@ function initUI(){
   setBusy(true);setMessage(statusNode,'Memvalidasi WAV…');userButton.querySelector('strong').textContent='Memvalidasi WAV…';
   try{
    const wav=readMG30IRWav(await blob.arrayBuffer());
-   const parameter=target.type==='collection'?slot-1:1; // Captured QuickTone User/Third Party import uses parameter 1.
+   const parameter=target.type==='collection'?slot-1:71;
    const plan=buildMG30IRTransferPlan({samples:wav.samples,fileName,irName:name,parameter,target:target.type});
    const commands=target.type==='collection'?{waveform:0x6A,name:0x6C,curve:0x6B}:{waveform:0x10,name:0x09,curve:0x11};
    const p=plan.parameter,enc=enc16(p),wf=plan.frames[0],nf=plan.frames[64],cf=plan.frames[65];
