@@ -308,6 +308,10 @@ public class MG30MidiPlugin extends Plugin {
     @ActivityCallback
     private void savePatchResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
+        String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
+        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
+        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
         String callbackId = call.getCallbackId();
         File staged = callbackId == null ? null : pendingPatchFiles.remove(callbackId);
         try {
