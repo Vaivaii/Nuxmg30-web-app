@@ -16,7 +16,8 @@ test("Export Single checks the session manager before invoking live readback", (
 test("Export All reuses fresh cache entries and reads only misses or stale slots", () => {
   assert.match(exportSource, /let readback = presetManagerCache\.get\(program\)/);
   assert.match(exportSource, /cacheHits \+= 1/);
-  assert.match(exportSource, /await bridge\.selectProgramForRead\(program\)/);
+  assert.match(exportSource, /sceneReadCommand: 0x0B/);
+  assert.doesNotMatch(exportSource, /await bridge\.selectProgramForRead\(program\)/);
   assert.match(exportSource, /readSingleWithManagerCache\(bridge, program/);
   assert.match(exportSource, /changedProgram/);
 });
@@ -58,4 +59,15 @@ test("successful User IR upload invalidates preset cache, while Collection trans
 test("Export All readback uses explicit metadata hasResource flag so placeholder names skip waveform and curve reads", () => {
   assert.match(appSource, /if\(metadata\.hasResource!==true\)/);
   assert.match(exportSource, /allowMissingResource: true/);
+});
+
+
+test("Export All manager cache is warmed after connection using QuickTone 0B/00 indexed reads", () => {
+  assert.match(exportSource, /syncPresetManagerCacheOnConnect/);
+  assert.match(exportSource, /mg30-midi-connected'[\s\S]*?syncPresetManagerCacheOnConnect/);
+  assert.match(exportSource, /source: 'QuickTone-connection-manager-sync'/);
+  assert.match(exportSource, /sceneReadCommand: 0x0B/);
+  assert.match(appSource, /sceneCommand=Number\(options\?\.sceneReadCommand\)===0x0B\?0x0B:0x0C/);
+  assert.match(appSource, /sceneCommand\.toString\(16\)/);
+  assert.doesNotMatch(exportSource, /selectProgramForRead\(program\)/);
 });
