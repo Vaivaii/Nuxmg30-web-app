@@ -268,3 +268,9 @@ Changes:
 - Commit `fa08c88dbce358bc08464a865c29855817db7a76` makes the JS save bridge reject success unless Android confirms exactly the expected byte count.
 - No changes to Import All parser, single-export readback protocol, import/write commands, NAM, User/Third Party IR, Collection IR, or MIDI mappings.
 - Build #544 is pending at time of note creation. Required verification: Android compile; install latest APK; run Export All; verify successful status reports 1,267,456 bytes and CRC32; then choose that file in Import All and confirm parser receives 1,267,456 bytes / 128 records. Device-side confirmation remains pending.
+
+
+Build follow-up:
+- Initial build #544 failed only at Java compilation because the refactored Activity callback used `safeName` without declaring it in callback scope.
+- Commit `bf92ce7eaac6cddb5b2c1d76335a2eff1b9166db` restores filename sanitization/declaration within `savePatchResult()`.
+- Build #545 for that correction is queued. No APK from the failed #544 run is valid or should be delivered.
