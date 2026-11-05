@@ -149,3 +149,38 @@ There are now three confirmed construction paths:
 3. Legacy All Preset conversion: converts 128 × 0x2590 input records into 128 × 0x26AE modern records, writing WAVE structural identifiers and PCM format tag during conversion; exact bit-depth provenance remains unresolved.
 
 No app source/APK, NAM, User/Third Party, Collection, Import All, or MIDI mapping was changed.
+
+
+## Follow-up: legacy converter numeric WAVE fields do not explain 32-bit records
+
+A direct instruction-level recheck of 0x004B5A20 and its header initializer 0x004B0230 narrows the legacy conversion path further.
+
+### Header initialization performed by 0x004B0230
+
+For each of 128 output records, 0x004B0230:
+- calls helper 0x004B02F0 to initialize the three scene structures;
+- writes RIFF at record +0x1D2;
+- writes WAVE at +0x1DA;
+- writes fmt at +0x1DE;
+- writes fmt chunk length 0x10 at +0x1E2;
+- writes PCM format tag 1 at +0x1E6;
+- writes data at +0x1F6.
+
+It does not write the numeric WAVE fields: RIFF size, channel count, sample rate, byte rate, block align, bits/sample or data size.
+
+### Legacy converter buffer behavior
+
+At 0x004B5A20:
+- allocates 0x12C800 bytes and clears the entire intermediate buffer;
+- initializes 128 WAVE structures using the marker-only initializer above;
+- allocates and clears the 0x135700-byte output;
+- converts the three scenes and copies 0x2000 waveform bytes and 600 curve WORDs per record;
+- advances source by 0x2590 and destination by 0x26AE.
+
+Because the output is cleared before marker initialization and the converter does not populate the numeric WAVE fields, this inspected legacy conversion route does not supply the 24-bit or 32-bit numeric header values seen in the modern All Preset sample. The 32-bit records therefore cannot be attributed to this converter based on the recovered code.
+
+### Consequence
+
+The legacy converter is a structural/scene/audio/curve conversion route, not a proven origin of the mixed numeric WAVE header variants. The 32-bit record provenance remains unresolved. Keep the earlier safe rule: preserve raw per-record headers for modern All Preset files; do not infer a 32-bit live readback header.
+
+No application source/APK, NAM, User/Third Party, Collection, Import All or MIDI mapping was changed.
