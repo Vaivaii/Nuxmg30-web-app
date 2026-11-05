@@ -59,7 +59,7 @@ function decodeAsciiField(bytes) {
 export function parseMG30SinglePresetPatch(input) {
   const b = bytesOf(input);
   if (b.length === ALL_FILE_SIZE) {
-    throw new Error('File ini berisi 128 preset sekaligus. Import batch 128 preset belum diaktifkan; pilih file single-preset .mg30patch.');
+    throw new Error('File ini berisi 128 preset sekaligus. Gunakan tombol Import All untuk file 128 preset; jalur Import ini hanya menerima satu preset.');
   }
   if (b.length !== RECORD_SIZE) {
     throw new Error('Ukuran single-preset .mg30patch tidak cocok: ' + b.length + ' byte; format tervalidasi berukuran ' + RECORD_SIZE + ' byte.');
