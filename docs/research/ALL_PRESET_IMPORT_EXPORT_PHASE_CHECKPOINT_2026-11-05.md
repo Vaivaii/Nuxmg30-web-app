@@ -656,3 +656,27 @@ Recovery action:
 ### Physical test
 
 Install the Freeze Recovery APK instead of Build #576 to restore the last stable connection behavior and preserve the Import All sentinel fix. The first Export All in a cold session may still read missing slots individually; the failed automatic cache warm-up is deliberately disabled. Do not claim the no-per-preset scan target is complete. The correct QuickTone trigger/request sequence and safe timing must be established from the recovered call graph/capture before another connect-time sync experiment.
+## Clarification: existing Preset Manager auto-sync vs full Export cache (5 November 2026)
+
+User correctly pointed out that MG30 Studio already synchronizes Preset Manager automatically when USB is connected. Source review of `www/preset-library-ui.js` shows this is a real, existing scan; the previous export-cache work failed to reuse it and treated the export cache as an independent subsystem.
+
+Exact behavior of the existing scan:
+- `scanMissingNames()` loops preset indices 0–127, skipping only indices whose names are already present in `localStorage` under `mg30-preset-library-card-names-v1`.
+- For each missing index it calls `readStoredName(program)`.
+- `readStoredName(program)` sends only `window.readSysExPart(0x0b, program, 0)`, verifies that the reply's program index and part index 0 match, then extracts the 16-character preset name from the packed scene data.
+- The scan persists the name map to localStorage every four records and after completion. It does not retain the complete 220-byte reply in a preset export cache.
+- The scan is triggered on `mg30-midi-connected` only when Presets page is currently visible, and also when the user opens the Presets page. The card list can therefore appear fully synchronized while only names are cached.
+
+Why this is not yet a full Export All cache:
+- One `0B/02` part-0 response supplies the preset name and one scene payload only.
+- All-Preset serialization needs three scene records for each of 128 slots, plus the `09/02` resource descriptor, and when a real resource is present the 64 waveform blocks and 10 curve blocks.
+- The name scan does not fetch scene parts 1 and 2, does not establish the per-slot resource marker through the Export All reader, and does not populate waveform/curve arrays. Therefore the name cache cannot be passed to `buildMG30AllPresetPatch()`.
+- The separate `MG30PresetManagerCache` in `www/mg30-preset-manager-cache.js` is session-scoped and stores full readback records, but its connect listeners merely begin an empty session; it is not subscribed to the existing Preset Manager name scan and is filled only by Export Single / Export All readbacks.
+
+Correction to the prior implementation approach:
+- The Build #576 attempt added an independent connect-time scanner instead of extending/reusing the existing Preset Manager scan. The user experienced an app freeze on connection. The automatic scanner was rolled back in Build #585.
+- Future work should make the existing Preset Manager scan the single coordinator: when it reads each slot's part 0/name, retain that exact validated reply in the same session cache, then obtain only missing parts 1/2 plus resource metadata/data under one serialized USB-MIDI queue. Avoid adding a second independent 128-slot loop.
+- Do not assume the visible 128 preset names imply complete 128-record data is already cached. Do not re-read the same part-0 request if it can be safely reused.
+- Before implementation, inspect and test scan concurrency: app connection readActiveBuffer, NAM name scan, Collection two-pass sync, Preset Manager name scan, hardware status polling, and any pending import/export. Only one routine may own the MIDI response queue at a time.
+
+User target remains: reuse the already-running Preset Manager connection scan; no freeze; after a complete manager sync, Export All should serialize from a full cache without repeating all 128 preset reads. Keep the validated single-export path, NAM, Collection mapping and MIDI/CC mappings unchanged.
