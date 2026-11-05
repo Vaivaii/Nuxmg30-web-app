@@ -5,10 +5,12 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 
 test('Post-EFX routing exposes two independent controls', () => {
-  assert.match(html, /data-routing-bit="1"/);
-  assert.match(html, /data-routing-bit="2"/);
-  assert.match(html, /MOD → DELAY/);
-  assert.match(html, /DELAY → REVERB/);
+  assert.match(html, /data-routing-bit="\+bit\+"/);
+  assert.match(html, /routingCard\(1,'MOD → DELAY'\)/);
+  assert.match(html, /routingCard\(2,'DELAY → REVERB'\)/);
+  assert.match(html, /class="routing-card /);
+  assert.match(html, /routing-mode-label/);
+  assert.doesNotMatch(html, /id="chainRoutingControls"/);
 });
 
 test('Routing mode is decoded as two independent bits', () => {
