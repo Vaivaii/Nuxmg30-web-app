@@ -3272,6 +3272,78 @@ window.MG30PresetImportBridge=Object.freeze({
    window.dispatchEvent(new CustomEvent('mg30-preset-import-target-changed'));
   }
  }
+ ,
+ async importAll(plan,onProgress=()=>{}){
+  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
+  if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
+  if(!plan||plan.steps?.length!==2412||plan.totalFrames!==2412||plan.presetCount!==128||plan.resourcePrograms?.length!==27)throw new Error('Rencana Import All tidak cocok dengan capture Gen2 yang tervalidasi.');
+  presetImportBusy=true;window.MG30PresetImportBusy=true;sceneSwitchPending=true;
+  let acknowledged=0,currentStep=null,verifiedPrograms=0;
+  const expectedByProgram=new Map();
+  for(const step of plan.steps){
+   if(step.kind==='preset-scene'){
+    if(!expectedByProgram.has(step.program))expectedByProgram.set(step.program,[]);
+    expectedByProgram.get(step.program)[step.index]=step.body.slice(7);
+   }
+  }
+  try{
+   setDeviceStatus('Import All: menunggu transaksi perangkat sebelumnya…');
+   if(activeBufferReadPromise)await activeBufferReadPromise.catch(()=>{});
+   if(sceneStatusReadPromise)await sceneStatusReadPromise.catch(()=>{});
+   while(hardwareSyncBusy)await delay(10);
+   await flushMidi();
+   hardwareSyncBusy=true;
+   for(let i=0;i<plan.steps.length;i++){
+    currentStep=plan.steps[i];
+    const replyAction=Number.isInteger(currentStep.replyAction)?currentStep.replyAction:0x03;
+    const ackPromise=waitForSysEx(b=>{
+     if(b[0]!==0x43||b[1]!==0x58||b[2]!==0x70||b[3]!==currentStep.command||b[4]!==replyAction)return false;
+     if(currentStep.kind==='preset-scene')return b[5]===currentStep.program&&b[6]===currentStep.index;
+     if(currentStep.kind==='all-import-open'||currentStep.kind==='all-import-close')return b[5]===currentStep.program;
+     if(currentStep.kind==='all-import-finish')return b[5]===0x7F&&b[6]===0x03;
+     return true;
+    },3500);
+    let sent=false;
+    try{sent=await midiFrame(Array.from(currentStep.body))}
+    catch(error){ackPromise.catch(()=>{});throw error}
+    if(!sent){ackPromise.catch(()=>{});throw new Error('Frame '+(i+1)+'/2412 tidak terkirim.')}
+    const ack=await ackPromise;
+    if(Number.isInteger(currentStep.expectedStatus)){
+     const status=currentStep.kind==='preset-scene'?ack[7]:ack[5];
+     if(status!==currentStep.expectedStatus)throw new Error('ACK '+currentStep.kind+' program '+(currentStep.program??'')+' berstatus '+status+', seharusnya '+currentStep.expectedStatus+'.');
+    }
+    acknowledged++;
+    const phase=currentStep.kind==='all-import-open'?'Membuka sesi':currentStep.kind==='all-import-finish'?'Menutup bank':currentStep.kind==='all-import-close'?'Mengakhiri sesi':currentStep.kind==='ir-name'?'Nama IR':currentStep.kind==='ir-waveform'?'Waveform IR':currentStep.kind==='ir-curve'?'Kurva IR':'Scene preset';
+    onProgress({completed:acknowledged,total:2412,phase,step:currentStep,ackStatus:ack[5]});
+   }
+
+   setDeviceStatus('2.412 ACK diterima. Memverifikasi readback 128 preset / 384 scene…');
+   for(let program=0;program<128;program++){
+    const expected=expectedByProgram.get(program);
+    if(!expected||expected.length!==3)throw new Error('Payload pembanding tiga scene tidak tersedia untuk program '+program+'.');
+    const replies=await readPresetParts(0x0B,program);
+    for(let part=0;part<3;part++){
+     const reply=replies[part],wanted=expected[part];
+     if(!reply||reply[3]!==0x0B||reply[4]!==0x02||reply[5]!==program||reply[6]!==part)throw new Error('Header readback program '+program+' scene '+part+' tidak cocok.');
+     const actual=reply.slice(7);
+     if(actual.length!==wanted.length||actual.some((value,index)=>value!==wanted[index]))throw new Error('Readback berbeda pada program '+program+' scene '+part+'.');
+    }
+    verifiedPrograms++;
+    onProgress({completed:acknowledged,total:2412,phase:'Verifikasi readback',verifiedPrograms,verifiedScenes:verifiedPrograms*3});
+   }
+   setDeviceStatus('Import All selesai · 2.412 ACK · 128 preset / 384 scene lolos readback.');
+   toast('128 preset berhasil diimpor dan diverifikasi');
+   return {success:true,framesAcknowledged:acknowledged,verifiedPrograms,verifiedScenes:verifiedPrograms*3,resourcePrograms:plan.resourcePrograms};
+  }catch(error){
+   const detail='Berhenti setelah '+acknowledged+'/2412 ACK'+(currentStep?' pada '+currentStep.kind+(Number.isInteger(currentStep.program)?' program '+currentStep.program:''):'')+'. '+(error?.message||String(error));
+   setDeviceStatus('IMPORT ALL GAGAL: '+detail+' Bank mungkin terisi sebagian; jangan putuskan USB sebelum perangkat stabil.');
+   throw new Error(detail);
+  }finally{
+   hardwareSyncBusy=false;sceneSwitchPending=false;presetImportBusy=false;window.MG30PresetImportBusy=false;
+   renderSceneButtons();
+   window.dispatchEvent(new CustomEvent('mg30-preset-import-target-changed'));
+  }
+ }
 });
 
 
