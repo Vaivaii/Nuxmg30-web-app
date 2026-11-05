@@ -584,3 +584,46 @@ Both files have the expected 128 × 0x26AE record size and sequential ordinals. 
 - Downloaded artifact passed `unzip -t` and contained exactly `app-debug.apk`; extracted APK exists in `/mnt/data/MG30-Studio-No-IR-Sentinel-Fix.apk`.
 - A corrected copy of the user's Studio export was also generated for test reuse: `/mnt/data/MG30_Studio_Export_Corrected_41_IR.mg30patch`, 1,267,456 bytes, SHA-256 `a537ccd806a4671353cf16d337cda85f45a0637138d20f4157af8fada0a8742c`. It changes only the marker and resource section of the 87 exact `--------` placeholders, setting marker 0 and zeroing the resource area. It preserves all 384 scene payloads and all 41 resource-bearing records byte-for-byte.
 - The corrected bank contains 41 resource groups and plans 3,462 frames. This is a file-level correction and regression/build validation; no physical pedal import of the corrected 41-resource bank has yet been confirmed.
+
+## QuickTone preset-manager connection synchronization — Build #576 passed (5 November 2026)
+
+User tested the prior Export All build and reported that it still scanned the pedal from the first preset one by one. The user confirmed Import All now succeeds, with the corrected Studio bank showing **3,462 acknowledged frames**.
+
+### Root cause and revised architecture
+
+- The prior cache was a read-through cache only: it began empty on USB connection, and Export All filled it by calling the live Single Export read path for missing slots. This made Export All visibly walk the bank from the first preset.
+- QuickTone 2.6.7.16 disassembly shows a separate upstream preset-manager synchronization routine. It fills the in-memory manager by indexed scene/resource reads; the Export All click handler serializes the already-populated manager rather than initiating the bank acquisition itself.
+- MG30 Studio now warms its session-scoped 128-slot manager cache after USB connection. The scene request selector is explicitly `0B/00`, expecting indexed `0B/02` replies for each of the three scenes. The existing readback routine then performs resource metadata discovery and only reads waveform/curve for resource-bearing slots. The target slot is carried in the indexed SysEx request; no Program Change loop is used.
+- Export All now waits for this manager synchronization and then serializes fresh cached records. If a slot is still missing/stale, it is completed with the same indexed `0B/00` read path, not by selecting the preset on the pedal. Export Single retains its established `0C/00` path.
+- The decoder/cache validation now accepts both validated `0B/02` manager replies and `0C/02` Single Export replies, while still checking exact slot index, scene index, response length and all 3 scene records.
+- The manager cache remains session-only and is cleared on disconnect. Existing cache invalidation for preset writes, parameter/block changes and successful User/Third Party IR upload remains active.
+
+### Android startup sequencing / protected paths
+
+- Android connection startup also reads NAM slot names and automatically synchronizes the 24 IR Collection slots. Starting 128-preset synchronization concurrently would risk interleaving USB-MIDI requests.
+- The Android manager warm-up is therefore gated until the NAM name scan and subsequent Collection sync complete. Export All waits on the same gate if the user taps it during startup.
+- The Collection completion signal is internal coordination only; Collection packet bytes, 6A/6B/6C mapping and transfer behavior are unchanged.
+- No NAM transfer commands, NAM model mapping, User/Third Party IR frame bytes, Collection transfer mapping, MIDI/CC mapping, preset import write frames, or USB-MIDI selection code were changed. No Program Change is emitted by the new indexed preset-manager read path.
+- Original MG-30 Gen2 firmware 6.0.x remains the target; no MKII assumptions are introduced.
+
+### Build #576 verification
+
+- Branch: `feature/all-preset-import-export`
+- Source commit: `ad666179ba0df90a17ef173481026c84dfd8cc49`
+- GitHub Actions run #576: `42064909061`, conclusion **success**.
+- Protocol/regression tests: **265 passed, 0 failed**.
+- Android initializer syntax validation and Capacitor Android generation passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 40s**.
+- Artifact: `MG30-Studio-debug-APK`, ID `13433057079`, ZIP size 4,214,376 bytes, SHA-256 `64d704b4b077fa648dfc1c24686e10709347601c30234be356f0ce5b0585b989`.
+- Extracted APK: `MG30-Studio-ExportAll-debug.apk`, size 4,591,856 bytes, SHA-256 `9af87cb57e48f375f798009100f8904857cf65323026f2e7038e98c073194240`. The artifact ZIP passed `unzip -t`.
+
+### Physical test still required
+
+This is automated test/build verification, **not** yet physical-device validation of the new 0B/00 indexed manager synchronization. Install the Build #576 APK and test on the original MG-30 Gen2 FW 6.0.x:
+1. Connect USB-MIDI and allow NAM name scan and Collection sync to finish.
+2. Confirm the preset-manager status progresses through indexed bank synchronization and reaches 128/128.
+3. Tap Export All. It should serialize from the completed manager cache, report 128 cache hits / 0 live readbacks, and should not start another 01A-to-32D scan.
+4. Confirm the saved All Preset file is 1,267,456 bytes and reparses as 128 records. Compare the 41-resource bank count where applicable.
+5. Verify NAM import, User/Third Party IR import, Collection IR import and existing MIDI/CC controls remain operational.
+
+If the cache warm-up fails or stalls, capture the exact status/error text and diagnostics before retrying. Do not change firmware, MIDI mappings, NAM, or Collection settings during this test.
