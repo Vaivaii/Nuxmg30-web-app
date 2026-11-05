@@ -29,8 +29,8 @@ Branch base: `cb67623cd275640fc891768ec3dc64c4cfa9758a` (`feature/amp-knob-label
 - The source contains the read-only IR read parser (`09/00`, `10/00`, `11/00`), scene readback, serializer, Export UI, and diagnostic instrumentation.
 - The export path is read-only and must never generate a partial file on missing/mismatched responses.
 - Earlier physical export testing on slot 04A reported a `10/02` reply with opaque tag 0 / offset 0 that did not match the awaited offset; export safely aborted and reported no writes to the pedal.
-- The current user's Build #508 installation is confirmed, but no new export test result has yet been reported after that installation. The known offset/readback issue must be re-tested with diagnostics before claiming export works.
-- The offline serializer reproduced the supplied 9,902-byte single-preset sample byte-for-byte; this is not a physical export validation.
+- User has now explicitly confirmed that **single-preset export succeeds on the installed app/device**. Treat physical single-preset export as validated and complete; do not ask the user to repeat it.
+- The offline serializer also reproduced the supplied 9,902-byte single-preset sample byte-for-byte. Preserve this path as the known-good baseline; avoid unnecessary changes while implementing batch export.
 
 ### All-preset file format
 
@@ -45,7 +45,7 @@ Branch base: `cb67623cd275640fc891768ec3dc64c4cfa9758a` (`feature/amp-knob-label
 
 1. **All-preset import:** no dedicated QuickTone USBPcap capture of importing `MG30AllPatch.mg30patch` is present in the current Project attachments. Need capture of the full batch import to establish whether all 128 records are processed, how empty/resource records are handled, destination mapping, transaction ordering, progress and failure behavior.
 2. **All-preset export:** no validated 128-record hardware readback/export workflow has been completed. Need determine QuickTone's batch export/cache behavior and safely generalize readback/serialization without assuming that one record's resource layout covers every record variant.
-3. **Single-preset export:** re-test Build #508 read-only diagnostics. Do not confuse this with all-preset export.
+3. **Single-preset export:** complete and user-confirmed successful. No further test is needed unless a regression appears. Keep its implementation isolated from the new batch workflow.
 
 ## Next evidence request / controlled test
 
@@ -67,7 +67,7 @@ Do not modify or regress:
 - USB-MIDI/native Android bridge.
 - Existing preset synchronization, Copy Scene and Save-to-device writer (including its `07/01` finalization/readback contract).
 - Signal Chain and CTRL/EXP behavior.
-- The known-good single-preset importer.
+- The known-good single-preset importer and user-confirmed successful single-preset exporter.
 
 ## Work status
 
