@@ -27,10 +27,16 @@ import org.json.JSONException;
 import androidx.activity.result.ActivityResult;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.CRC32;
 
 @CapacitorPlugin(name = "MG30Midi")
 public class MG30MidiPlugin extends Plugin {
@@ -43,6 +49,8 @@ public class MG30MidiPlugin extends Plugin {
     private String activeDeviceName = "";
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private MidiManager.DeviceCallback deviceCallback;
+    // Stage large patch payloads on disk while Android's document picker is open.
+    private final Map<String, File> pendingPatchFiles = new ConcurrentHashMap<>();
 
     @Override
     public void load() {
@@ -217,6 +225,31 @@ public class MG30MidiPlugin extends Plugin {
         return length == 0x26AE || length == 0x135700;
     }
 
+    private static long crc32(File file) throws IOException {
+        CRC32 crc = new CRC32();
+        byte[] buffer = new byte[64 * 1024];
+        try (InputStream input = new FileInputStream(file)) {
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                crc.update(buffer, 0, count);
+            }
+        }
+        return crc.getValue();
+    }
+
+    private static long copyAndCount(InputStream input, OutputStream output, CRC32 crc) throws IOException {
+        byte[] buffer = new byte[64 * 1024];
+        long total = 0;
+        int count;
+        while ((count = input.read(buffer)) != -1) {
+            if (count == 0) continue;
+            output.write(buffer, 0, count);
+            if (crc != null) crc.update(buffer, 0, count);
+            total += count;
+        }
+        return total;
+    }
+
     @PluginMethod
     public void savePatch(PluginCall call) {
         String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
@@ -225,19 +258,39 @@ public class MG30MidiPlugin extends Plugin {
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
 
         String base64 = call.getString("base64", "");
-        // A single-preset file is 0x26AE bytes. Export All is a 128-record
-        // bank at 0x135700 bytes, whose Base64 representation is about 1.69 MB.
-        // Allow both exact Gen2 sizes while keeping a bounded bridge payload.
         if (base64.isEmpty() || base64.length() > 2 * 1024 * 1024) {
             call.reject("Data preset kosong atau melebihi batas aman penyimpanan (2 MB Base64).");
             return;
         }
+        File staged = null;
         try {
             byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
             if (!isSupportedPatchSize(bytes.length)) {
                 call.reject("Ukuran file .mg30patch tidak cocok: hanya single-preset 0x26AE atau All Preset 0x135700 yang didukung.");
                 return;
             }
+
+            // Do not keep a ~1.7 MB Base64 PluginCall payload as the only source
+            // while ACTION_CREATE_DOCUMENT is in the foreground. Stage it first.
+            File stagingDirectory = new File(getContext().getCacheDir(), "mg30-patch-export");
+            if (!stagingDirectory.exists() && !stagingDirectory.mkdirs()) {
+                throw new IOException("Folder staging export tidak dapat dibuat.");
+            }
+            staged = File.createTempFile("mg30-export-", ".tmp", stagingDirectory);
+            try (FileOutputStream output = new FileOutputStream(staged)) {
+                output.write(bytes);
+                output.flush();
+                output.getFD().sync();
+            }
+            if (staged.length() != bytes.length) {
+                throw new IOException("Staging hanya menulis " + staged.length() + " dari " + bytes.length + " byte.");
+            }
+
+            String callbackId = call.getCallbackId();
+            if (callbackId == null || callbackId.isEmpty()) {
+                throw new IOException("ID callback penyimpanan Android tidak tersedia.");
+            }
+            pendingPatchFiles.put(callbackId, staged);
 
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -245,40 +298,65 @@ public class MG30MidiPlugin extends Plugin {
             intent.putExtra(Intent.EXTRA_TITLE, safeName);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             startActivityForResult(call, intent, "savePatchResult");
-        } catch (IllegalArgumentException error) {
-            call.reject("Data file preset tidak valid: " + error.getMessage());
+        } catch (IllegalArgumentException | IOException | RuntimeException error) {
+            if (staged != null) staged.delete();
+            pendingPatchFiles.remove(call.getCallbackId());
+            call.reject("Gagal menyiapkan file export melalui File manager Android: " + error.getMessage());
         }
     }
 
     @ActivityCallback
     private void savePatchResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
-        if (result == null || result.getResultCode() != Activity.RESULT_OK ||
-            result.getData() == null || result.getData().getData() == null) {
-            JSObject cancelled = new JSObject();
-            cancelled.put("saved", false);
-            cancelled.put("cancelled", true);
-            call.resolve(cancelled);
-            return;
-        }
-
-        Uri uri = result.getData().getData();
-        String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
-        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
-        if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
-        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
-
-        String base64 = call.getString("base64", "");
+        String callbackId = call.getCallbackId();
+        File staged = callbackId == null ? null : pendingPatchFiles.remove(callbackId);
         try {
-            byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
-            if (!isSupportedPatchSize(bytes.length)) {
-                call.reject("Ukuran file .mg30patch tidak cocok: hanya single-preset 0x26AE atau All Preset 0x135700 yang didukung.");
+            if (result == null || result.getResultCode() != Activity.RESULT_OK ||
+                result.getData() == null || result.getData().getData() == null) {
+                JSObject cancelled = new JSObject();
+                cancelled.put("saved", false);
+                cancelled.put("cancelled", true);
+                call.resolve(cancelled);
                 return;
             }
-            try (java.io.OutputStream output = getContext().getContentResolver().openOutputStream(uri, "w")) {
+            if (staged == null || !staged.isFile()) {
+                throw new IOException("Payload staging export hilang setelah File manager ditutup.");
+            }
+
+            Uri uri = result.getData().getData();
+            long expectedBytes = staged.length();
+            if (!isSupportedPatchSize((int) expectedBytes)) {
+                throw new IOException("Ukuran staging bukan format MG-30 yang didukung: " + expectedBytes + " byte.");
+            }
+            long expectedCrc = crc32(staged);
+
+            try (InputStream input = new FileInputStream(staged);
+                 OutputStream output = getContext().getContentResolver().openOutputStream(uri, "wt")) {
                 if (output == null) throw new IOException("Android tidak dapat membuka lokasi file yang dipilih.");
-                output.write(bytes);
+                long written = copyAndCount(input, output, null);
                 output.flush();
+                if (written != expectedBytes) {
+                    throw new IOException("Penyalinan berhenti pada " + written + " dari " + expectedBytes + " byte.");
+                }
+            }
+
+            // Re-open the destination: never report success based only on the
+            // length of the in-memory buffer or on OutputStream.write returning.
+            CRC32 destinationCrc = new CRC32();
+            long verifiedBytes;
+            try (InputStream verify = getContext().getContentResolver().openInputStream(uri)) {
+                if (verify == null) throw new IOException("File tujuan tidak dapat dibaca ulang untuk verifikasi.");
+                verifiedBytes = copyAndCount(verify, new java.io.OutputStream() {
+                    @Override public void write(int value) { destinationCrc.update(value); }
+                    @Override public void write(byte[] buffer, int offset, int length) {
+                        destinationCrc.update(buffer, offset, length);
+                    }
+                }, null);
+            }
+            if (verifiedBytes != expectedBytes || destinationCrc.getValue() != expectedCrc) {
+                throw new IOException("Verifikasi file tujuan gagal: terbaca " + verifiedBytes +
+                    " byte, seharusnya " + expectedBytes + " byte; CRC32 " +
+                    Long.toHexString(destinationCrc.getValue()) + " tidak cocok dengan staging.");
             }
 
             String displayName = safeName;
@@ -294,12 +372,15 @@ public class MG30MidiPlugin extends Plugin {
             JSObject saved = new JSObject();
             saved.put("saved", true);
             saved.put("fileName", displayName);
-            saved.put("bytes", bytes.length);
+            saved.put("bytes", verifiedBytes);
+            saved.put("crc32", Long.toHexString(destinationCrc.getValue()));
             saved.put("uri", uri.toString());
-            saved.put("storage", "android-system-file-picker");
+            saved.put("storage", "android-system-file-picker-verified");
             call.resolve(saved);
-        } catch (IllegalArgumentException | IOException error) {
-            call.reject("Gagal menyimpan file melalui File manager Android: " + error.getMessage());
+        } catch (IOException | IllegalArgumentException error) {
+            call.reject("Gagal menyimpan/verifikasi file melalui File manager Android: " + error.getMessage());
+        } finally {
+            if (staged != null && staged.exists()) staged.delete();
         }
     }
 
