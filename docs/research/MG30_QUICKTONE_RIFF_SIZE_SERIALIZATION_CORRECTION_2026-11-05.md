@@ -333,3 +333,30 @@ The disassembly reviewed here proves the standalone WAV EXPORT path and the cach
 - All Preset load copies the record's raw header into the object and writes the object to `NUX/MG30/<index>.bin`.
 - Standalone WAV export converts internal float32 to PCM24.
 - No code change is justified yet for the app's Third Party/User importer. Preserve the verified `09/10/11` protocol and all NAM, Collection, Import All, and MIDI behavior.
+
+
+## WAV source import callback — follow-up disassembly (2026-11-05)
+
+Static analysis resumed in QuickTone.exe around 0x004A9FD0, 0x004AA4A0, 0x004AA290 and 0x004AA700.
+
+- 0x004A9FD0 is the source WAV import callback. It creates/uses the audio reader, prepares a float audio buffer, and calls the WAV-to-resource conversion helper at 0x004AA4A0.
+- 0x004AA4A0 checks the reader sample-rate field against the 48,000 Hz constant before reading samples. This is a strict equality check, not a general resampling path.
+- The reader call requests 0x800 (2,048) samples into a one-channel float buffer. The imported channel is the first channel; stereo averaging is not performed.
+- The conversion helper copies the read float samples into a 0x2000-byte (2,048 × float32) waveform buffer in reverse sample order. The existing MG30 Studio importer already reverses samples when creating wire waveform frames, so that reversal must remain exactly once in the final wire representation.
+- 0x004AA290 analyzes the FFT result over bins 136..1023, tracking minimum and maximum magnitude-squared values and deriving a gain factor. This is the basis of the app's existing gain calculation; do not replace it with peak normalization.
+- 0x004AA700 builds the 11/01 curve-transfer frames from 600 uint16 values. The surrounding path confirms curve transfer is separate from waveform transfer.
+
+### Evidence-backed application corrections
+
+The captured User/Third Party import in `MG30_IR_User_vs_Collection_Capture_Analysis.md` uses parameter **1** for all three User commands (10/01, 09/01, 11/01). The app's current `processImport` had drifted to parameter 71. Corrected it to parameter 1. This does not assert that parameter 1 is a physical slot number; it matches the known-good User capture.
+
+The WAV parser previously silently resampled 8–192 kHz sources to 48 kHz. QuickTone's source import callback rejects sample rates other than exactly 48 kHz, so the app now rejects non-48 kHz files rather than sending samples transformed by an unobserved resampler. It continues to accept PCM 8/16/24/32-bit and Float32 mono/stereo WAV, uses the first channel, and takes the first 2,048 frames. WAVs shorter than 2,048 frames are rejected.
+
+Regression tests added in `tests/ir-transfer.test.js`:
+- 48 kHz stereo input uses the first channel and first 2,048 frames.
+- 44.1 kHz is rejected (no implicit resampling).
+- fewer than 2,048 frames are rejected.
+- User plan uses parameter 1 and 10/09/11 commands.
+- Collection 6A/6C/6B mapping remains unchanged.
+
+No NAM, MIDI mapping, preset import/export, Collection command mapping, or Android native USB-MIDI code was changed. This is static-analysis and source-level test coverage only; a real pedal transfer/readback has not yet been performed. Build status must be recorded separately after CI/build execution.
