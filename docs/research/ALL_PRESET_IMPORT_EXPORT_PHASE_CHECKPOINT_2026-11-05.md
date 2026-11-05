@@ -680,3 +680,51 @@ Correction to the prior implementation approach:
 - Before implementation, inspect and test scan concurrency: app connection readActiveBuffer, NAM name scan, Collection two-pass sync, Preset Manager name scan, hardware status polling, and any pending import/export. Only one routine may own the MIDI response queue at a time.
 
 User target remains: reuse the already-running Preset Manager connection scan; no freeze; after a complete manager sync, Export All should serialize from a full cache without repeating all 128 preset reads. Keep the validated single-export path, NAM, Collection mapping and MIDI/CC mappings unchanged.
+## Reuse existing Preset Manager auto-sync for full Export All cache — Build #593 (5 November 2026)
+
+User correctly pointed out that Preset Manager already performs a USB connection/name synchronization. Source review found `scanMissingNames()` queried `0B/00` for each slot's part 0, decoded only the preset name, and persisted the name dictionary in `mg30-preset-library-card-names-v1`. It discarded the raw 220-byte `0B/02` response and skipped scanning once all 128 names were in localStorage. That was why the separate Export cache remained empty despite the visible Preset Manager list being fully populated.
+
+### Implementation
+
+- `readStoredName(program)` now returns both the decoded name and an exact byte copy of the already received 220-byte `0B/02` part-0 response.
+- The existing `scanMissingNames()` loop is now the single manager-sync coordinator. It no longer skips a slot merely because its name exists in localStorage; it skips only slots already present as fresh complete records in `MG30PresetManagerCache`.
+- After receiving part 0, the scan calls `window.MG30PresetManagerCaptureScanSlot(program, sceneReply0, progress)`. This is a hook supplied by `mg30-preset-export.js`, not a second 128-slot loop.
+- The export readback bridge validates and reuses the exact part-0 reply. It requests only stored scene parts 1 and 2 via `0B/00 -> 0B/02`, then reads `09/00 -> 09/02` resource metadata. For an actual resource it reads the 64 waveform blocks (`10/00`) and 10 curve blocks (`11/00`); for the exact `--------` no-resource sentinel it skips these 74 data reads.
+- Scene decoding and cache validation now accept the two supported stored-scene `0B/02` replies as well as the established Single Export `0C/02` replies. Strict program index, scene index, 220-byte length, record completeness, marker, waveform, and curve validations remain in force.
+- The scanner can now resume full-cache population when all names were already persisted from an older app version. It reads part 0 only when a slot is missing/stale in the session cache, reuses already fresh complete records, and derives a missing displayed name from a cached part-0 reply.
+- `readSysExPart()` now matches response program index as well as scene part and length, preventing a response for a different slot from being consumed as the requested slot's part 0.
+- During the combined scan, hardware state polling is stopped and a manager-sync busy flag blocks overlapping Preset Manager operations. The scanner reports per-slot/phase progress and restarts hardware polling in `finally`.
+
+### Android startup sequencing
+
+- On Android, connection startup marks the manager scan as pending while the existing NAM name scan runs.
+- The existing NAM-complete listener now awaits the existing 24-slot Collection synchronization and then dispatches an internal `mg30-ir-collection-sync-complete` event. The Preset Manager scan starts only after this event (or when the user subsequently opens the Preset Manager page).
+- This is event sequencing only. NAM commands, NAM slot/model mapping, Collection 6A/6B/6C packet bytes, two-pass metadata/CRC verification, Collection slot mapping, User/Third Party 09/10/11 transfer bytes, and existing MIDI/CC mapping are unchanged.
+- The prior Build #576 speculative separate connect-time scanner remains reverted. The current change extends the one existing Preset Manager scan rather than starting a competing 128-slot scan.
+
+### Expected runtime
+
+- The first complete manager sync reads 128 part-0 replies once each, two additional stored scene replies per slot, and the resource descriptor per slot. Only actual resource-bearing presets trigger waveform/curve reads.
+- For the user's compared Studio bank with 41 valid resource entries, the added resource data portion is 41 × 74 = 3,034 read requests, in addition to scene and metadata requests. This is a one-time session acquisition and may take noticeably longer than the old name-only scan; UI progress is displayed while it runs.
+- When `MG30PresetManagerCache` reaches 128/128 fresh entries, Export All should serialize from cache and report 128 cache hits / 0 direct readbacks. No repeated slot scan should occur when Export All is pressed in that same USB session.
+- Cache is intentionally memory-only/session-scoped. Disconnect clears the complete manager snapshot; on the next connection Preset Manager must synchronize again. If all names remain in localStorage, the app still fills missing full records rather than treating names as a complete export cache.
+- If Preset Manager was hidden at USB connection, opening the Preset Manager page starts/resumes this same scan. Android waits for NAM and Collection startup work first.
+
+### Build #593 verification
+
+- Source commit: `26f2ddeb4ac1b8037a1d5c29a5c598d7d8b20fb4` on `feature/all-preset-import-export`.
+- GitHub Actions run #593: `42070576283`, conclusion **success**.
+- Protocol regression tests: **265 passed, 0 failed**.
+- Android initializer validation, Capacitor generation and Gradle `assembleDebug` passed. Gradle reported `BUILD SUCCESSFUL in 1m 33s`.
+- Artifact ID `13436456010`; ZIP size 4,214,495 bytes; SHA-256 `3bab6bb0a4cf05b66d91cb123f6794600830e2b344222e7806ebcc852074f998`.
+- Extracted APK size 4,592,096 bytes; SHA-256 `a979d07f02a87e0290b93864196014739e6b5800642fda154c33a61028210b99`.
+- Downloaded ZIP passed `unzip -t` and contains exactly `app-debug.apk`.
+
+### Physical-device validation still required
+
+- No claim is made that the integrated full-cache sync is already proven on the physical pedal; only CI tests/build are verified.
+- Install the Build #593 APK on the original MG-30 Gen2 FW 6.0.x. Connect USB, allow NAM and Collection startup sync to finish, then open Preset Manager if it is not already visible.
+- Wait until the Preset Manager status shows `128/128 preset` and `cache Export All siap`. For a bank with 41 resource-bearing slots, waveform/curve reads occur only for those 41 slots. The app must remain responsive while the scan progresses.
+- Then tap Export All in the same USB session. Expected result: `128 dari cache` and `0 dibaca langsung`, 1,267,456-byte file, and the correct resource count for the actual bank.
+- Also test a subsequent Export All without disconnect: it should not re-read the bank. Then verify NAM, User/Third Party IR import, Collection IR import/use, preset selection and MIDI/CC controls.
+- If scan fails, preserve the last visible phase/status and `window.MG30PresetExportLastDiagnostics` before retrying. Do not disconnect during active readback. Do not change firmware or mappings.
