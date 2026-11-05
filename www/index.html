@@ -3366,6 +3366,18 @@ window.MG30PresetExportBridge=Object.freeze({
  getTargetProgram:()=>targetSlot,
  getTargetLabel:()=>slotName(targetSlot),
  resumePolling:()=>startHardwareStatePolling(),
+ async selectProgramForRead(program){
+  const requested=Number(program);
+  if(!Number.isInteger(requested)||requested<0||requested>127)throw new Error('Slot untuk readback tidak valid.');
+  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
+  if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung.');
+  suppressProgramChangeUntil=performance.now()+1600;
+  const sent=await midiSend([0xC0,requested]);
+  if(!sent)throw new Error('Program Change ke slot '+slotName(requested)+' tidak terkirim.');
+  await flushMidi();
+  await delay(360);
+  return true;
+ },
  async readSingle(onProgress=()=>{},options={}){
   if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
   if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy||ctrlEditorBusy||sceneSwitchPending||copySceneBusy)throw new Error('Operasi perangkat lain sedang berlangsung. Coba lagi setelah selesai.');
