@@ -3442,13 +3442,18 @@ window.MG30PresetExportBridge=Object.freeze({
   const traceHex=bytes=>Array.from(bytes||[],value=>Number(value).toString(16).padStart(2,'0')).join(' ').toUpperCase();
   window.MG30PresetExportLastDiagnostics=exportTrace;
   try{
+   // QuickTone fills its preset manager using explicit 0B/00 per-slot/per-scene
+   // reads. Unlike the legacy 0C/00 path, this does not require a Program Change
+   // and does not change the active sound while the bank is synchronized.
+   const sceneCommand=Number(options?.sceneReadCommand)===0x0B?0x0B:0x0C;
+   exportTrace.sceneReadCommand=sceneCommand;
    const sceneReplies=[];
    for(let part=0;part<3;part++){
     onProgress({phase:'Membaca preset scene',completed:part,total:3,detail:'Scene '+(part+1)+'/3'});
     const body=await requestPresetExportFrame(
-     Uint8Array.from([0xF0,0x43,0x58,0x70,0x0C,0x00,program,part,0,0,0,0,0,0xF7]),
-     b=>b.length===220&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x0C&&b[4]===0x02&&b[5]===program&&b[6]===part,
-     '0C/00 scene '+part
+     Uint8Array.from([0xF0,0x43,0x58,0x70,sceneCommand,0x00,program,part,0,0,0,0,0,0xF7]),
+     b=>b.length===220&&b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===sceneCommand&&b[4]===0x02&&b[5]===program&&b[6]===part,
+     sceneCommand.toString(16).toUpperCase().padStart(2,'0')+'/00 scene '+part
     );
     sceneReplies.push(Uint8Array.from(body));
     onProgress({phase:'Membaca preset scene',completed:part+1,total:3,detail:'Scene '+(part+1)+'/3 terbaca'});
