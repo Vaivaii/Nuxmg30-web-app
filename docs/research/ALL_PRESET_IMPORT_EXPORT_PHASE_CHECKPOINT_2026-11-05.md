@@ -142,3 +142,25 @@ Fix:
 - Artifact `MG30-Studio-debug-APK`, ID `13398672524`, archive size 4,203,524 bytes, SHA-256 `e2be729b9f4713e06cb68bfe321154d269c84bfb52c47ed96ad014dd824c931f`.
 - Extracted `app-debug.apk` size 4,581,548 bytes, SHA-256 `02b438b0a1c65352131aea75ac3e7c22183a7863bd687c7cc2636268a5954844`.
 - The user-facing overlay root cause and fix are documented above. This build has not yet been confirmed installed or exercised on the user's Android phone. The remaining verification is to install this APK, repeat Export All, confirm the native File Manager save picker appears, then verify the saved output is exactly 1,267,456 bytes / 128 records.
+
+
+## Follow-up: Export All confirmation and progress-overlay suppression (2026-11-05)
+
+User clarified the observed behavior: Export All did not show the native confirmation dialog that Single Export shows before launching Android File Manager; after a delay it displayed the generic "Export in progress" modal with the USB disconnect warning.
+
+Investigation:
+- The modal is produced by `reflectExportStatus()` in `www/preset-library-ui.js`, using a MutationObserver on `#presetExportStatus`; it is not evidence of active MIDI traffic.
+- The Android save operation is `NUXNativeMidi.savePatch()`, mapped to native `ACTION_CREATE_DOCUMENT` in `native-android/MG30MidiPlugin.java`, just like the Single Export save path.
+- The previous text-only hand-off signal was insufficient, so it was replaced with an explicit local-export state flag.
+
+Code changes:
+- Commit `6d7f3321979ec6b43e4b47a4693ca9aec4760b1f` adds a confirmation prompt before building/saving Export All. The prompt identifies the source file, 128 presets (01A–32D), 3 scenes each, output filename and size, and explicitly states there is no USB-MIDI/SysEx communication or pedal write.
+- Commit `64fec17dca3938eedbc889ed39d5b8508948a067` makes `preset-library-ui.js` suppress the shared USB-transfer overlay while `window.MG30LocalPresetExportActive` is true. The state spans confirmation, local serialization, and native save picker; it does not close or override an Import-owned progress dialog.
+- Export All remains strictly local. No MIDI/SysEx/readback calls were introduced. Single Export code remains separate. No importer, NAM, User/Third Party IR, Collection IR, MIDI mapping, or USB bridge code was modified.
+
+Build verification:
+- GitHub Actions run #528: `41993885630`, source commit `64fec17dca3938eedbc889ed39d5b8508948a067`, conclusion **success**.
+- `npm test`, Android initializer syntax check, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact: `MG30-Studio-debug-APK`, ID `13399187356`, ZIP size 4,203,797 bytes; SHA-256 `b0a894078018f510b1726db3236af26213d57b04b669a9b3a8970d696c5fac22`.
+- Extracted APK: `MG30-Studio-Export-All-Confirm-Fix.apk`, size 4,581,768 bytes; SHA-256 `81888c6bd2da2b841c4b522a7c9ecbae8a776126b399fe077d4d80a04260cd74`.
+- User still needs to install this latest APK and confirm: (1) confirmation appears first, (2) tapping OK opens Android File Manager without the USB progress overlay, (3) saved file is 1,267,456 bytes and reparses to 128 records. This last device-side validation remains pending.
