@@ -71,3 +71,11 @@ test("Export All manager cache is warmed after connection using QuickTone 0B/00 
   assert.match(appSource, /sceneCommand\.toString\(16\)/);
   assert.doesNotMatch(exportSource, /selectProgramForRead\(program\)/);
 });
+
+
+test("Android preset manager warm-up waits for NAM name scan and Collection sync", () => {
+  assert.match(exportSource, /nativeStartupSync/);
+  assert.match(exportSource, /pendingManagerSyncAfterStartup = true/);
+  assert.match(exportSource, /mg30-ir-collection-sync-complete/);
+  assert.match(irTransferSource, /mg30-nam-sync-complete',async[\s\S]*?await syncCollectionFromDevice[\s\S]*?mg30-ir-collection-sync-complete/);
+});
