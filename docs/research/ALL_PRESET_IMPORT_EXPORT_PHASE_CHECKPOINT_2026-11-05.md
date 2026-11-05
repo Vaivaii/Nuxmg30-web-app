@@ -283,3 +283,17 @@ Build follow-up:
 - Artifact ID `13410450214`, ZIP size 4,207,198 bytes, SHA-256 `86464a681dabf8dc614639609e3ec8349b37f90d2b551007240e42899449931e`.
 - Extracted APK path `MG30-Studio-ZeroByte-Guard.apk`, size 4,584,696 bytes, SHA-256 `9f05bd330f16149125e21ca897ebec29776dc39fa2373a2d498068f5a04dba9a`.
 - This verifies build and automated test only. Physical Android SAF write/readback verification and MG-30 all-bank export/import round-trip are still pending user device testing.
+
+
+## Continued report: generated All Patch still has 0 bytes; persistent SAF staging revision (2026-11-05)
+
+User reports that after installing the ZeroByte Guard build and repeating export, the output file still remains 0 bytes. This means the previous cache staging + post-write verification change did not resolve the physical Android storage handoff on the user's device.
+
+New revision:
+- Commit `ab6d31a7a13c95d90397a4a949d77a3f413cd09b` moves staging from the reclaimable cache directory to persistent app-private `files/mg30-patch-export/`.
+- The staging path is derived from the PluginCall callback ID, so the ActivityCallback can reconstruct it if the plugin's in-memory map is lost while Android's Documents UI is foregrounded. The existing map remains a fast path.
+- The SAF output mode is standardized to `"w"`.
+- If copying/verifying the SAF destination fails after ACTION_CREATE_DOCUMENT created a document, the callback attempts `DocumentsContract.deleteDocument()` to remove the empty/partial file, then rejects the plugin call.
+- Destination readback byte count + CRC32 check remains mandatory; JS only accepts an explicit matching byte count.
+
+Do not yet claim this has fixed the user's device: no physical device test after this revision exists. Regression tests and syntax checks passed in Actions run #546; Android Gradle build is still running at note creation. Next: complete build, install this revision, export once, and report the exact native storage error or verified 1,267,456-byte output.
