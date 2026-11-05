@@ -194,6 +194,28 @@ test('Export All serializes 128 local Gen2 records into exactly 0x135700 bytes',
   assert.equal(bytes.subarray(4 * 0x26AE + 0x1B2, 5 * 0x26AE).every(value => value === 0), true);
 });
 
+test('Export All accepts a live bank with a variable number of resource-bearing presets', () => {
+  const records = makeAllPresetRecords();
+  for (let program = 1; program < 128; program++) {
+    records[program].resourceMarker = 0;
+    records[program].hasResource = false;
+  }
+  const oneResourceBank = buildMG30AllPresetPatch(records);
+  const parsedOne = parseMG30AllPresetPatch(oneResourceBank);
+  assert.equal(parsedOne.records.length, 128);
+  assert.deepEqual(parsedOne.resourcePrograms, [0]);
+
+  for (let program = 0; program < 128; program++) {
+    records[program].resourceMarker = 0;
+    records[program].hasResource = false;
+  }
+  const noResourceBank = buildMG30AllPresetPatch(records);
+  const parsedNone = parseMG30AllPresetPatch(noResourceBank);
+  assert.equal(parsedNone.records.length, 128);
+  assert.deepEqual(parsedNone.resourcePrograms, []);
+  assert.equal(noResourceBank.length, 0x135700);
+});
+
 test('Export All preserves original RIFF header variants and opaque record bytes from local All Patch memory', () => {
   const original = buildMG30AllPresetPatch(makeAllPresetRecords());
   const mixed = original.slice();
