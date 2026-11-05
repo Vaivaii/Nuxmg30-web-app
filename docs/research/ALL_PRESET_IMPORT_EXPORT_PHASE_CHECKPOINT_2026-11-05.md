@@ -468,3 +468,30 @@ Validation status:
 - Extracted APK: 4,590,444 bytes; SHA-256 `6d5d1280865ccf6ad4618528efc30d4b3df3749c4594d7150511db02fc0f87e2`.
 - Downloaded ZIP passed `unzip -t`; extracted APK exists and matches the build artifact.
 - This build result is CI/package validation only. The new chunked file transfer has not yet been physically tested on the user's Android device. Acceptance criteria remain: Export All status reports 1,267,456 bytes, Android's verified file has the same byte count and CRC32, and Import All parses 128 records.
+
+
+## Import All: remove sample-bank 27-resource limit (5 November 2026)
+
+User tested the chunked Export All build. The export file was recognized by Import All, but the UI rejected starting the transfer with: `Capture QuickTone menunjukkan 27 preset dengan resource IR; file ini memiliki 128. Batch ditolak sebelum perangkat disentuh.` The UI simultaneously displayed `128 preset siap diimpor · 27 preset membawa resource IR`; that displayed 27 was hard-coded and not the parsed count.
+
+Source audit confirmed three fixed sample-bank assumptions:
+- `www/mg30-preset-all-import.js` rejected resource counts other than 27, even though `parseMG30AllPresetPatch()` already records actual resource markers and its comment describes the count as bank-dependent.
+- `www/index.html` native `importAll()` independently required exactly 2,412 steps and 27 resource groups.
+- `www/mg30-preset-import.js` displayed a fixed 27-resource label and a fixed 2,412-frame progress total.
+
+Changes:
+- Import-plan frame count is now computed as `387 + 75 × actual resource-program count`: 3 session open/finish/close frames, one 75-frame 09/10/11 transaction for each resource-marked preset, and 384 scene writes.
+- The sample bank with 27 resources remains exactly 2,412 frames; the user's reported 128-resource count plans for 9,987 frames.
+- Native bridge validation now checks the actual resource index list (unique, sorted, 0–127), matching 09/01 count, 64 waveform frames and 10 curve frames per resource, exactly 384 scene writes, expected total length, and first/last transaction markers. It no longer assumes 27 groups or 2,412 frames.
+- Progress/error denominators and completion ACK messages now use the computed plan total.
+- The UI reports `parsedAll.resourcePrograms.length` rather than a literal 27 and uses the actual plan length for the progress dialog.
+- Tests retain the original 27-resource capture fixture and add 26-, 0-, and 128-resource plan checks, plus native bridge/UI dynamic accounting assertions.
+
+Protocol interpretation / caution:
+- The supplied QuickTone Import All capture demonstrates one 75-frame resource group (09/01 + 64 × 10/01 + 10 × 11/01) repeated for each of the 27 resource-marked records, followed by all 384 scene writes and the final control frames. The updated implementation generalizes that same captured per-resource group sequence to the actual number of records parsed from the file; it does not change any frame bytes or reorder the phases.
+- The 128-resource extension is logically consistent with the parser's 0–127 resource index range, but it has not yet been physically validated against original MG-30 Gen2 FW 6.0.x. A run with 128 IR groups is significantly longer and writes all 128 User/Third Party resource indices as well as all 384 scenes. The user must ensure a full backup and confirm the device firmware before proceeding. Do not test this against a valuable bank without a restorable backup.
+- No NAM path, Collection 6A/6B/6C mapping, existing MIDI/CC mapping, single-preset import, or User/Third Party IR packet bytes were modified.
+
+Validation status:
+- Source changes and regression tests have been committed to `feature/all-preset-import-export`; the latest Actions build outcome is still pending at the time of this checkpoint.
+- Physical Import All has not yet been tested after this change. Do not claim success until all ACKs and 128 × 3 scene readbacks pass on the original Gen2 pedal.
