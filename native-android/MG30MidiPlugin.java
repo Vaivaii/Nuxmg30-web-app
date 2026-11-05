@@ -298,7 +298,7 @@ public class MG30MidiPlugin extends Plugin {
             intent.putExtra(Intent.EXTRA_TITLE, safeName);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             startActivityForResult(call, intent, "savePatchResult");
-        } catch (IllegalArgumentException | IOException | RuntimeException error) {
+        } catch (IOException | RuntimeException error) {
             if (staged != null) staged.delete();
             pendingPatchFiles.remove(call.getCallbackId());
             call.reject("Gagal menyiapkan file export melalui File manager Android: " + error.getMessage());
