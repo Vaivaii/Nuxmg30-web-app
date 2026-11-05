@@ -53,3 +53,9 @@ test("successful User IR upload invalidates preset cache, while Collection trans
   assert.match(exportSource, /mg30-user-ir-write-complete/);
   assert.match(exportSource, /invalidateAll\('User IR upload selesai/);
 });
+
+
+test("Export All readback uses explicit metadata hasResource flag so placeholder names skip waveform and curve reads", () => {
+  assert.match(appSource, /if\(metadata\.hasResource!==true\)/);
+  assert.match(exportSource, /allowMissingResource: true/);
+});
