@@ -486,3 +486,48 @@ The caller's surrounding code validates connection/setup state before invoking t
 4. The manager preset count +0x640 is used as the loop bound in this scan; the known MG-30 all-bank sample has 128 records. The exact UI/connection state that establishes this count should be kept in mind before assuming 128 is universal.
 5. No actual `10/02` or `11/02` frames are present in `exportallpre.pcapng`; a dedicated connection-sync capture is still required to validate runtime packet bytes and decoded sample ordering.
 6. No app source, APK, device communication, NAM, User/Third Party import, Collection, Import All or MIDI mapping was changed.
+
+
+## Cross-check: QuickTone readback vs MG30 Studio Export Single (2026-11-05)
+
+The recovered QuickTone readback path was compared directly with the application's existing single-preset export implementation in `www/mg30-preset-read.js`, `www/mg30-preset-export.js`, and `www/mg30-preset-format.js`. This is the correct baseline for any future Export All work.
+
+### Protocol geometry — match
+
+| Item | QuickTone disassembly | MG30 Studio single export | Result |
+|---|---|---|---|
+| Resource descriptor | `09/00 → 09/02`, one query per preset index | `buildMG30UserIRMetadataReadRequest`, parser for `09/02` | Command family matches |
+| Waveform request | `10/00`, offsets 0..2016 step 32 | `buildMG30UserIRWaveReadRequest`, 64 requests | Match |
+| Waveform reply | `10/02`, decode 0x84 bytes; offset then 32 DWORD samples | `inspectMG30UserIRDataReadReply` decodes 132 bytes; parser reads offset at decoded +2 and 32 float32 at +4 | Match in byte/word geometry |
+| Curve request | `11/00`, offsets 0..576 step 64 for 600 values | `buildMG30UserIRCurveReadRequest`, 10 requests | Match |
+| Curve reply | `11/02`, decode 0x84 bytes; offset then up to 64 WORD values | parser reads offset at decoded +2 and 64 uint16 at +4; assembly clips final block to 24 meaningful values | Match in geometry and 600-value bound |
+| Scene read | existing scene manager/read path | three `0C/02` replies decoded into 3 × 71 uint16 words | The app serializer's scene reply contract matches the known read-side protocol |
+| Output | QuickTone serializes one manager record, stride `0x26AE` | `buildMG30SinglePresetPatchFromReplies` returns exactly `0x26AE` bytes | Match |
+
+### Record layout — direct address match
+
+The app serializer writes the same resource regions identified in QuickTone's sender/record code:
+
+- record ordinal: +`0x000`;
+- three scenes: +`0x004`, each 142 bytes;
+- resource marker: +`0x1AE`;
+- resource name: +`0x1B2`, 32 bytes;
+- RIFF/WAVE header: +`0x1D2`;
+- 2,048 float32 samples: +`0x1FE` through +`0x21FD` (8,192 bytes);
+- 600 uint16 curve values: +`0x21FE` through end of the `0x26AE` record (1,200 bytes).
+
+The apparent split of the waveform in the parser is only a record-layout detail: 1,536 samples occupy +`0x1FE`..+`0x19FD`, and the remaining 512 occupy +`0x19FE`..+`0x21FD`. The serializer writes all 2,048 float32 values contiguously beginning at +`0x1FE`, which is byte-for-byte the same region.
+
+### Important caveats / remaining validation
+
+1. This comparison confirms request/reply sizes, offsets, decoded data widths, record offsets and serializer layout. It does **not** prove actual hardware `10/02` or `11/02` payloads have been decoded byte-for-byte correctly, because the supplied `exportallpre.pcapng` contains no such response frames.
+2. The read parser deliberately treats the first decoded uint16 in `10/02`/`11/02` as an opaque reply tag and takes the second uint16 as offset. That agrees with the inspected QuickTone copy loop, but a complete USB bulk IN capture is still needed to verify the parser against real reply bytes.
+3. The curve parser keeps only 600 meaningful values from 640 transferred words. QuickTone's final block copy is bounded by the live manager count (+`0x670`), while its completion sentinel is offset 576. Keep this behavior distinct from the import-side final 40-word tail.
+4. The single export UI truncates the resource name to the QuickTone file field limit before serialization. This is file-format compatibility behavior; it does not change the pedal's stored name.
+5. Export Single requires an attached IR resource and exactly three scene replies. The current single-export path is therefore the best tested architectural template for batch export, but Export All must add safe per-preset resource-marker gating and batch assembly without changing the existing single-export path.
+
+### Decision
+
+Do not create a second, independent IR readback parser for Export All. Reuse the existing single-export readback/assembly primitives after a per-preset enumeration layer is proven. Keep the current Export Single path untouched. Before claiming byte-level equivalence, obtain a capture containing the complete `09/02`, `10/02`, and `11/02` replies during QuickTone synchronization, or compare an app-generated single record against a QuickTone-exported single record from the same unchanged pedal preset.
+
+No application source, APK, NAM path, User/Third Party import, Collection protocol, Import All behavior, or MIDI mapping was changed by this cross-check.
