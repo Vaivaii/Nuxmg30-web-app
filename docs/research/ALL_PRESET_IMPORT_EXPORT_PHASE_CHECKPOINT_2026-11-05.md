@@ -338,18 +338,18 @@ The user observed that Export Single appears fast and may also be wrapping alrea
 
 ## Read-through preset manager cache — implementation checkpoint (2026-11-05)
 
-Implemented on \`feature/all-preset-import-export\` after auditing the difference between QuickTone's pre-populated manager and MG30 Studio's on-demand readback.
+Implemented on `feature/all-preset-import-export` after auditing the difference between QuickTone's pre-populated manager and MG30 Studio's on-demand readback.
 
 ### Cache model
 
-- Added \`www/mg30-preset-manager-cache.js\`, a session-scoped 128-slot cache. It accepts only a complete readback: three correctly indexed 0C/02 scene replies, plus either an explicit marker-0/no-resource state or a marker-1 resource with a name, 2,048 finite Float32 samples and 600 in-range UInt16 curve values.
-- Entries are marked \`fresh\` or \`stale\`. The manager reports fresh/stale/missing counts, returns an ordered full bank only when all 128 slots are fresh, and deep-copies typed arrays on storage and retrieval.
+- Added `www/mg30-preset-manager-cache.js`, a session-scoped 128-slot cache. It accepts only a complete readback: three correctly indexed 0C/02 scene replies, plus either an explicit marker-0/no-resource state or a marker-1 resource with a name, 2,048 finite Float32 samples and 600 in-range UInt16 curve values.
+- Entries are marked `fresh` or `stale`. The manager reports fresh/stale/missing counts, returns an ordered full bank only when all 128 slots are fresh, and deep-copies typed arrays on storage and retrieval.
 - Cache is memory-only and scoped to the current USB-MIDI connection session. A new session/disconnect clears the entries; no prior-session data can silently be exported.
 - This is a read-through cache, not yet a byte-for-byte clone of QuickTone's complete background connection manager. The recovered QuickTone scheduler's upstream 0B/02 trigger/pacing and all accompanying metadata/resource acquisition must be proven before automatically scanning all slots on connection.
 
 ### Export behavior
 
-- Export Single now prefers a fresh cached slot. On a cache miss/stale slot it uses the existing proven \`MG30PresetExportBridge.readSingle()\` path, then stores the complete readback. A slot without IR remains ineligible for Export Single, as before.
+- Export Single now prefers a fresh cached slot. On a cache miss/stale slot it uses the existing proven `MG30PresetExportBridge.readSingle()` path, then stores the complete readback. A slot without IR remains ineligible for Export Single, as before.
 - Export All reuses every fresh entry and reads only missing/stale slots through the existing read-only bridge. Successful slots are cached immediately, so an interrupted first scan can resume from previously completed slots on the next attempt.
 - Export All switches the pedal program only for cache misses and restores the original program only if it needed to switch. If all 128 slots are fresh, it does not cycle the pedal through its programs.
 - Final bank serialization, the 128-record/0x135700 size gate, parser validation and Android SAF file verification remain unchanged.
@@ -372,7 +372,7 @@ Implemented on \`feature/all-preset-import-export\` after auditing the differenc
 
 ### Follow-up safety correction — legacy direct Save-to-device path (2026-11-05)
 
-- Static search found \`writeHardwarePreset()\` sends its captured \`0B/01\` scene frames and final \`07/01\` command directly through \`midiOutput.send()\`, outside the central \`midiSend()\` queue.
+- Static search found `writeHardwarePreset()` sends its captured `0B/01` scene frames and final `07/01` command directly through `midiOutput.send()`, outside the central `midiSend()` queue.
 - The cache invalidation helper is now called with the exact frame immediately after each of those existing sends. Frame bytes, order, ACK handling and readback verification are unchanged; the affected preset entry is only marked stale.
 - Export Single explicitly rejects a cached marker-0/no-resource entry with a clear User IR resource message before invoking the existing serializer. The resource-bearing Single Export path and device readback implementation remain unchanged.
 - Added an integration assertion for invalidation in the direct Save-to-device path. This correction changes no NAM, User/Third Party transfer packet, Collection command, MIDI/CC mapping, or USB-MIDI transport behavior.
@@ -380,8 +380,8 @@ Implemented on \`feature/all-preset-import-export\` after auditing the differenc
 
 ### Follow-up freshness correction — direct User IR transfer path (2026-11-05)
 
-- The verified User / Third Party IR uploader in \`www/ir-transfer.js\` sends its 75 frames through \`conn.output.send()\`, not the editor's central \`midiSend()\` function. Therefore the previously added outgoing-09/10/11 invalidation hook did not observe that separate path.
-- After all 75 ACKs succeed for \`plan.target === 'user'\`, the uploader now emits an internal \`mg30-user-ir-write-complete\` event. The preset cache listens and conservatively marks every cached preset slot stale.
+- The verified User / Third Party IR uploader in `www/ir-transfer.js` sends its 75 frames through `conn.output.send()`, not the editor's central `midiSend()` function. Therefore the previously added outgoing-09/10/11 invalidation hook did not observe that separate path.
+- After all 75 ACKs succeed for `plan.target === 'user'`, the uploader now emits an internal `mg30-user-ir-write-complete` event. The preset cache listens and conservatively marks every cached preset slot stale.
 - Collection transfers (6A/6C/6B) do not emit this User event and do not invalidate preset snapshots through this new hook. Packet bytes, ACK expectations, request order and the existing User/Collection transfer implementation remain unchanged.
 - Added an integration assertion for the User-versus-Collection event distinction. This is cache-freshness bookkeeping only; it does not change either IR protocol path or the Collection slot mapping.
 
@@ -389,24 +389,24 @@ Implemented on \`feature/all-preset-import-export\` after auditing the differenc
 
 ### Source and CI
 
-- Working branch: \`feature/all-preset-import-export\`.
-- Application source commit: \`9d8c12ea79082a27fb9c3cc5f8939ca3dfecc8e9\`.
-- GitHub Actions run **#551**: \`42027102597\`; conclusion **success**.
+- Working branch: `feature/all-preset-import-export`.
+- Application source commit: `9d8c12ea79082a27fb9c3cc5f8939ca3dfecc8e9`.
+- GitHub Actions run **#551**: `42027102597`; conclusion **success**.
 - Protocol regression suite: **253/253 passed, 0 failed**.
 - Android initializer syntax validation: passed.
 - Capacitor Android project generation / USB audio plugin registration: passed.
-- Gradle \`assembleDebug\`: **BUILD SUCCESSFUL** (1m 28s).
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** (1m 28s).
 - Artifact upload: passed.
 
 ### APK artifact verification
 
-- Artifact ID: \`13414237907\`.
+- Artifact ID: `13414237907`.
 - ZIP size: **4,211,213 bytes**.
-- ZIP SHA-256: \`cebcd7d07973bfd75f23c65f64c2064cdd7a18b16b7705652dede76c6993aa5b\`.
+- ZIP SHA-256: `cebcd7d07973bfd75f23c65f64c2064cdd7a18b16b7705652dede76c6993aa5b`.
 - Extracted APK: **4,587,704 bytes**.
-- APK SHA-256: \`666feea50d665fd16eaaf626f61d9573cd5331cbaebdf3db198ba99412dd482e\`.
+- APK SHA-256: `666feea50d665fd16eaaf626f61d9573cd5331cbaebdf3db198ba99412dd482e`.
 - Downloaded artifact ZIP and extracted APK both pass ZIP integrity testing.
-- Packaged Android web bundle inspection confirms the cache manager and User IR completion event are present (\`MG30PresetManagerCache\`, \`cacheHits\`, \`mg30-user-ir-write-complete\`, and the marker-0/no-resource guard).
+- Packaged Android web bundle inspection confirms the cache manager and User IR completion event are present (`MG30PresetManagerCache`, `cacheHits`, `mg30-user-ir-write-complete`, and the marker-0/no-resource guard).
 
 ### Manual device validation still required
 
