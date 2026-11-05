@@ -5,7 +5,7 @@ import { createMG30PresetManagerCache } from "../www/mg30-preset-manager-cache.j
 function makeReadback(program, resource = false) {
   const sceneReplies = Array.from({ length: 3 }, (_, scene) => {
     const reply = new Uint8Array(220);
-    reply.set([0x43, 0x58, 0x70, 0x0C, 0x02, program, scene]);
+    reply.set([0x43, 0x58, 0x70, 0x0B, 0x02, program, scene]);
     return reply;
   });
   return {
@@ -154,4 +154,14 @@ test("disconnect clears all cached records", () => {
   assert.equal(cache.getStatus().active, false);
   assert.equal(cache.getStatus().freshCount, 0);
   assert.equal(cache.getStatus().missingCount, 128);
+});
+
+
+test("cache accepts QuickTone manager 0B/02 scene readbacks without a Program Change", () => {
+  const cache = createMG30PresetManagerCache();
+  cache.beginSession();
+  const readback = makeReadback(37, true);
+  assert.ok(readback.sceneReplies.every(reply => reply[3] === 0x0B && reply[4] === 0x02));
+  cache.store(37, readback, { source: "QuickTone-manager-readback" });
+  assert.equal(cache.get(37).sceneReplies[2][3], 0x0B);
 });
