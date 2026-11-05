@@ -88,11 +88,6 @@ function downloadPatch(bytes, filename) {
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
-function bytesToBase64(bytes) {
-  let binary = '';
-  for (let index = 0; index < bytes.length; index++) binary += String.fromCharCode(bytes[index]);
-  return btoa(binary);
-}
 async function savePatch(bytes, filename) {
   const nativeBridge = window.NUXNativeMidi;
   if (nativeBridge?.available === true) {
@@ -102,7 +97,7 @@ async function savePatch(bytes, filename) {
     const result = await nativeBridge.savePatch({
       fileName: filename,
       mimeType: 'application/octet-stream',
-      base64: bytesToBase64(bytes)
+      bytes
     });
     if (result?.cancelled) return { ...result, native: true };
     if (result?.saved !== true) {
