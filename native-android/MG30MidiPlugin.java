@@ -272,11 +272,20 @@ public class MG30MidiPlugin extends Plugin {
 
             // Do not keep a ~1.7 MB Base64 PluginCall payload as the only source
             // while ACTION_CREATE_DOCUMENT is in the foreground. Stage it first.
-            File stagingDirectory = new File(getContext().getCacheDir(), "mg30-patch-export");
+            // Use persistent app-private files, not cache: Android may reclaim
+            // cache while ACTION_CREATE_DOCUMENT is foregrounded. Derive the
+            // exact staging path from the saved PluginCall callback ID so it
+            // survives plugin/activity recreation.
+            String callbackId = call.getCallbackId();
+            if (callbackId == null || callbackId.isEmpty()) {
+                throw new IOException("ID callback penyimpanan Android tidak tersedia.");
+            }
+            File stagingDirectory = new File(getContext().getFilesDir(), "mg30-patch-export");
             if (!stagingDirectory.exists() && !stagingDirectory.mkdirs()) {
                 throw new IOException("Folder staging export tidak dapat dibuat.");
             }
-            staged = File.createTempFile("mg30-export-", ".tmp", stagingDirectory);
+            String safeCallbackId = callbackId.replaceAll("[^A-Za-z0-9_-]", "_");
+            staged = new File(stagingDirectory, safeCallbackId + ".mg30patch.tmp");
             try (FileOutputStream output = new FileOutputStream(staged)) {
                 output.write(bytes);
                 output.flush();
@@ -286,10 +295,6 @@ public class MG30MidiPlugin extends Plugin {
                 throw new IOException("Staging hanya menulis " + staged.length() + " dari " + bytes.length + " byte.");
             }
 
-            String callbackId = call.getCallbackId();
-            if (callbackId == null || callbackId.isEmpty()) {
-                throw new IOException("ID callback penyimpanan Android tidak tersedia.");
-            }
             pendingPatchFiles.put(callbackId, staged);
 
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -314,6 +319,11 @@ public class MG30MidiPlugin extends Plugin {
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
         String callbackId = call.getCallbackId();
         File staged = callbackId == null ? null : pendingPatchFiles.remove(callbackId);
+        if (staged == null && callbackId != null) {
+            String safeCallbackId = callbackId.replaceAll("[^A-Za-z0-9_-]", "_");
+            staged = new File(new File(getContext().getFilesDir(), "mg30-patch-export"),
+                safeCallbackId + ".mg30patch.tmp");
+        }
         try {
             if (result == null || result.getResultCode() != Activity.RESULT_OK ||
                 result.getData() == null || result.getData().getData() == null) {
@@ -335,7 +345,7 @@ public class MG30MidiPlugin extends Plugin {
             long expectedCrc = crc32(staged);
 
             try (InputStream input = new FileInputStream(staged);
-                 OutputStream output = getContext().getContentResolver().openOutputStream(uri, "wt")) {
+                 OutputStream output = getContext().getContentResolver().openOutputStream(uri, "w")) {
                 if (output == null) throw new IOException("Android tidak dapat membuka lokasi file yang dipilih.");
                 long written = copyAndCount(input, output, null);
                 output.flush();
@@ -382,6 +392,15 @@ public class MG30MidiPlugin extends Plugin {
             saved.put("storage", "android-system-file-picker-verified");
             call.resolve(saved);
         } catch (IOException | IllegalArgumentException error) {
+            // ACTION_CREATE_DOCUMENT creates the destination before this
+            // callback writes it. Remove that empty/partial document on failure.
+            if (result != null && result.getData() != null && result.getData().getData() != null) {
+                try {
+                    android.provider.DocumentsContract.deleteDocument(
+                        getContext().getContentResolver(), result.getData().getData()
+                    );
+                } catch (Exception ignored) {}
+            }
             call.reject("Gagal menyimpan/verifikasi file melalui File manager Android: " + error.getMessage());
         } finally {
             if (staged != null && staged.exists()) staged.delete();
