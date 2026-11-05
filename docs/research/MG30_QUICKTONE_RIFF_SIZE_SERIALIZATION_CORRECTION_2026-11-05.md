@@ -266,3 +266,41 @@ The apparent 24-bit vs 32-bit split in All Preset is not evidence that the user'
 
 ### Safety consequence
 Do not add PCM32 source import as a requirement and do not blindly reinterpret all 32-bit records as signed integer PCM. Any reader that encounters these records must distinguish the payload semantics, not merely trust the WAVE format tag. For the app's verified User/Third Party transfer, continue using the existing 24-bit conversion path and `09/10/11` protocol. No app source or device behavior changed in this investigation.
+
+
+## Major correction: complete 0x2000-byte waveform area is float32 for BOTH header variants
+
+A fresh byte-level scan examined the full fixed waveform area `record +0x1FE .. +0x21FD` (0x2000 bytes) for every resource-bearing standard-WAVE record, rather than limiting inspection to the WAVE header's declared `data` size.
+
+### Empirical result
+- All 26 standard-WAVE resource records (15 with 24-bit header fields and 11 with 32-bit header fields) decode as exactly 2048 finite IEEE-754 little-endian float32 samples across the complete 0x2000-byte waveform area.
+- This is true even for the 24-bit-header records whose WAVE `data` chunk declares only 0x1800 bytes. Their remaining 0x800 bytes are not padding: they continue the float32 sample array.
+- Exact waveform duplicates cross header classes: ordinal 1 (24-bit header) and ordinal 3 (32-bit header) have byte-identical 0x2000-byte float arrays; likewise 6/9, 7/10, 80/82, 81/83, 109/110, and 27/115. This demonstrates that the header bit-depth field does not describe the physical sample representation stored in the All Preset record's fixed waveform area.
+
+### Serialized object layout recovered
+The resource block in each modern All Preset record begins at `record +0x1AA` and is exactly `0x2504` bytes through the end of the `0x26AE` record:
+- `+0x00..+0x07` record/resource prefix;
+- `+0x08..+0x27` 32-byte resource name;
+- `+0x28..+0x53` 44-byte RIFF/WAVE header;
+- `+0x54..+0x2053` 0x2000-byte float32 waveform array (2048 samples);
+- `+0x2054..+0x2503` 600 uint16 curve values (0x4B0 bytes).
+This exact arithmetic is `8 + 32 + 44 + 8192 + 1200 = 0x2504`. The on-disk resource block is therefore a fixed internal object layout, not a conventional self-contained WAV file whose `data` chunk can be trusted to delimit the following stored bytes.
+
+### Corrected understanding of serializer helpers
+- `0x004B50A0` is the archive/stream write wrapper for this 0x2504-byte resource object. It reads the resource index byte, asks `0x004B5480` to construct the corresponding archive key/path, then writes the 0x2504-byte object through the stream abstraction.
+- `0x004B5480` is a string/key construction helper used by the archive path; it is NOT a sample-format conversion routine. Earlier notes describing it as object conversion should be disregarded.
+- `0x004B5180` is the corresponding read/load wrapper: it reads the 0x2504-byte block and restores name, header, 0x2000 waveform bytes, and 600 curve words to the resource object.
+
+### Confirmed export conversion path
+The class method beginning at `0x004B0770` builds a conventional WAVE output from the internal float32 resource:
+- `0x004B08F0` initializes RIFF/WAVE/fmt/data fields and calls `0x0084E110`;
+- `0x0084E110` explicitly declares mono PCM 24-bit, 48 kHz, block align 3, byte rate 144000, data size 0x1800, RIFF size 0x1824;
+- the conversion loop reads float32 samples from the internal object, multiplies by a scale constant, converts to signed integer, clamps to `[-8388608, 8388607]`, and writes exactly 3 bytes per sample;
+- the loop emits 2048 samples, yielding a true 6144-byte PCM24 WAVE data chunk.
+The 0x2000-byte float32 internal buffer is therefore converted to a 0x1800-byte PCM24 WAVE payload for this export path.
+
+### Consequence and provenance
+The observed All Preset `bits/sample` and `data size` fields are metadata retained alongside a fixed 2048-sample float32 internal waveform; they do not describe the physical encoding of the stored waveform bytes. The 24-bit versus 32-bit header variants likely originate from preserved source/header metadata or another resource creation path, but the exact setter of these header bytes is not yet located. It is now ruled out that the 32-bit-header records contain PCM integer32 samples in their stored waveform region.
+
+### Implementation rule
+For All Preset parsing, always treat the fixed waveform region as 2048 float32 samples based on the record layout; do not decode it as PCM24/PCM32 according to the embedded WAVE `bits/sample` field. Preserve the raw 44-byte header separately as metadata. For standalone exported WAV files, use the explicit QuickTone PCM24 conversion behavior. Do not change User/Third Party protocol, NAM, Collection, Import All, or MIDI mappings.
