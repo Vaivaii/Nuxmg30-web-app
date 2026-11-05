@@ -342,3 +342,75 @@ The machine-code loop at VA 0x004AAA40 copies exactly 64 uint16 values from the 
 The project capture analysis reports the same externally visible structure: 64 × 10/01 frames (205 bytes), offsets 0..2016 by 32, 10 × 11/01 frames (205 bytes), offsets 0..576 by 64, and corresponding 10/03 and 11/03 acknowledgements. The current `www/mg30-preset-format.js` builder constructs 64 waveform bodies and 10 curve bodies with the same word counts, offset progression and 7-bit packing; the full preset import plan orders name, waveform, curve, then three scene frames (78 total). This is consistent with the earlier QuickTone single-preset capture contract.
 
 Boundary: this confirms the sender's byte/word/block geometry and its match to the already capture-grounded app builder. It does not by itself prove a physical Import All or Export All round-trip, the manager's 12/13/18/19 metadata meanings, or the device acceptance of the zero-filled final curve tail. No application source or APK was changed.
+
+
+## Follow-up: QuickTone preset resource readback path recovered (2026-11-05)
+
+A new disassembly pass recovered the read-side counterpart for the preset resource senders. This resolves the most important outstanding question for Export All: QuickTone does request waveform and curve data from the pedal and stores the returned data in its manager/resource object.
+
+### Resource readback is initiated after IR-name response 09/02
+
+In the handler at VA 0x004A9730, QuickTone accepts response 09/02, decodes the resource name and looks up/updates the selected preset's resource object. When the resource is present, the handler invokes:
+
+- VA 0x004AB340 with the selected preset index and mode argument 0.
+- VA 0x004AAEA0 with the selected preset index.
+
+These calls are direct xrefs from the 09/02 resource-name response path. This is strong evidence that resource readback follows the per-preset metadata/name read, rather than being part of the Export All file-save click itself.
+
+### Waveform read request — VA 0x004AB340; response handler — VA 0x004AB510
+
+The request routine:
+
+- Initializes a 0x2000-byte destination region at its resource object +0x60.
+- Builds command 10/00.
+- Loops a 16-bit offset from 0 to below 0x800, advancing by 0x20 (32) each iteration: 64 requests total.
+- Places the selected preset index and current offset in the request payload.
+- Sends each request with a 1,000 ms timeout and registers response handler VA 0x004AB510.
+
+The response handler:
+
+- Accepts only 10/02.
+- Decodes 0x84 bytes from the response payload.
+- Reads the returned offset word and uses it to place the decoded 32-bit sample data into the resource object's waveform region.
+- Handles the terminal offset 0x7E0 (2016) as completion of the 2,048-sample waveform read.
+- On completion, releases the pending request callback/state.
+
+The buffer size 0x2000 is exactly 2,048 × 4 bytes, matching the float32 waveform region in the known `.mg30patch` record. The 32-unit request offset progression also matches the import-side 10/01 sender's 32-sample blocks.
+
+### Curve read request — VA 0x004AAEA0; response handler — VA 0x004AB090
+
+The request routine:
+
+- Reads the curve-value count from manager field +0x670.
+- Allocates/clears a destination buffer at resource object +0x2060 with byte size 2 × that count.
+- Builds command 11/00.
+- Loops the curve offset from 0, advancing by 0x40 (64) values per request until it reaches the manager's +0x670 count.
+- Sends each request with a 1,000 ms timeout and registers response handler VA 0x004AB090.
+
+The response handler:
+
+- Accepts only 11/02.
+- Decodes the returned 0x84-byte payload and reads its 16-bit offset.
+- Copies up to 64 16-bit values into resource object +0x2060 + offset×2, bounded by manager field +0x670.
+- The observed capture's 600-value curve corresponds to offsets 0, 64, ..., 576; the last response contributes only the remaining 24 values to the bounded 600-value destination.
+- When the terminal offset 0x240 (576) arrives, the handler proceeds to finalize the resource object. It builds a RIFF/WAVE container and copies the already-read 0x2000-byte waveform region into the audio data area, then calls the manager resource-refresh helper VA 0x004B50A0.
+
+This ties the waveform and curve readbacks together in the resource manager: waveform is held as 2,048 float32 samples (8,192 bytes), while curve data is held as 600 16-bit values (1,200 bytes in the observed preset format). The WAVE finalization uses the waveform region; the curve buffer is retained alongside it as separate resource metadata/data.
+
+### End-to-end QuickTone readback sequence (confirmed at the inspected callsites)
+
+1. Preset selection/readback populates the three scene records through the existing 0B/02 -> 0C/00 -> 0C/02 flow.
+2. QuickTone obtains the IR/resource name through the 09/00 request and 09/02 response path.
+3. When a resource is present, the 09/02 handler calls 10/00 readback (64 blocks, offsets 0..2016 by 32) and 11/00 readback (10 blocks for the 600-value curve, offsets 0..576 by 64).
+4. The 10/02 handler places waveform samples into the 0x2000-byte resource buffer.
+5. The 11/02 handler places curve values into the bounded 600-value curve buffer, then finalizes the resource/WAVE object and refreshes the manager.
+6. Export All later serializes the already-populated manager objects into 128 × 0x26AE records.
+
+### Implementation implications and safety boundary
+
+- We now have static-code evidence for the missing readback command pair: 10/00 -> 10/02 and 11/00 -> 11/02. These are read requests and are distinct from import writes 10/01 and 11/01.
+- The waveform and curve readback packet geometry matches the capture-derived import geometry and known `.mg30patch` resource regions.
+- The 09/02 response handler appears to gate resource reads on the resource object's presence; do not issue 10/00 or 11/00 for marker-0 presets.
+- The app should not be modified based on this disassembly alone. Before implementation, compare actual 10/02 and 11/02 response bytes, decoded offsets, sample ordering and completion behavior against a dedicated readback capture or an existing complete device-export capture. The supplied `exportallpre.pcapng` is very short and does not by itself establish a complete resource-read transaction.
+- Preserve the existing capture-validated 10/01, 09/01, 11/01 User/Third Party import path. Do not change Collection's 6A/6C/6B protocol, NAM, MIDI mappings, or the existing Import All transaction.
+- No application source code, APK, or device communication was changed in this analysis.
