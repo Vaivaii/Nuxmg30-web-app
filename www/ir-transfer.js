@@ -1,4 +1,5 @@
-// NUX MG-30 Gen 2 IR transfer. User 10/09/11 is hardware-tested; Collection 6A/6C/6B remains experimental.
+// NUX MG-30 Gen 2 IR transfer.
+// Android build trigger: QuickTone import parity regression suite is included in this revision. User 10/09/11 is hardware-tested; Collection 6A/6C/6B remains experimental.
 // The WAV payload generator is shared; Collection audio acceptance has not yet been verified on hardware.
 const PREFIX=[0xF0,0x43,0x58,0x70], N=2048, FFT=16384, W=600, H=305, SENT=-99999, f32=Math.fround;
 const bytesOf=x=>x instanceof Uint8Array?x:x instanceof ArrayBuffer?new Uint8Array(x):ArrayBuffer.isView(x)?new Uint8Array(x.buffer,x.byteOffset,x.byteLength):(()=>{throw Error('Data byte Invalid WAV file.')})();
