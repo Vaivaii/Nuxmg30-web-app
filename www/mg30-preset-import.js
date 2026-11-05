@@ -61,7 +61,7 @@ function init() {
     if (!progressReady) return;
     progressDialog.dataset.owner = 'import';
     progressDialog.dataset.state = 'loading';
-    progressTitle.textContent = progressTotal === 2412 ? 'Import All sedang berlangsung' : 'Import sedang berlangsung';
+    progressTitle.textContent = importMode === 'all' ? 'Import All sedang berlangsung' : 'Import sedang berlangsung';
     progressTrack.classList.remove('is-indeterminate');
     progressTrack.setAttribute('aria-valuenow', '0');
     progressFill.style.width = '0%';
@@ -168,7 +168,7 @@ function init() {
       if (importMode === 'all') {
         parsedAll = parseMG30AllPresetPatch(bytes);
         info.textContent = file.name;
-        targetLabel.textContent = '128 preset siap diimpor · 27 preset membawa resource IR.';
+        targetLabel.textContent = parsedAll.records.length.toLocaleString('id-ID') + ' preset siap diimpor · ' + parsedAll.resourcePrograms.length.toLocaleString('id-ID') + ' preset membawa resource IR.';
         allRun.classList.remove('hidden');
         message('File All Preset valid. Menekan tombol di bawah akan menimpa seluruh bank 128 preset.', 'warn');
       } else {
@@ -210,13 +210,13 @@ function init() {
     );
     if (!confirmed) return;
 
-    progressTotal = 2412;
+    progressTotal = plan.totalFrames;
     lock(true);
     openProgressDialog();
     try {
       await bridge.importAll(plan, updateProgressDialog);
       message('Import All selesai: 128 preset dan 384 scene telah diverifikasi.', 'ok');
-      finishProgressDialog('success', 'Import All selesai', '128 preset / 384 scene lolos readback.', 2412, 1800);
+      finishProgressDialog('success', 'Import All selesai', '128 preset / 384 scene lolos readback.', plan.totalFrames, 1800);
       input.value = '';
       file = null;
       parsedAll = null;
