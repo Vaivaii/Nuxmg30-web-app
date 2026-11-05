@@ -306,3 +306,32 @@ Do not yet claim this has fixed the user's device: no physical device test after
 - Artifact ID `13410972032`, archive size 4,207,501 bytes, SHA-256 `5ef48cedda79a5928b469ec3afc083d43fab89d3686e3611c1af7262adf61fb0`.
 - Extracted APK size 4,584,908 bytes, SHA-256 `1b28477e4d23a924200e96f60514defbbc1a5c3b6c0fc586be64a5b5d07cb6e2`.
 - This only confirms packaging and automated checks. It does not yet prove the SAF callback works on the user's Android device. The user must repeat export with this exact APK and verify saved document imports as 1,267,456 bytes / 128 records. If it still fails, capture the new native error text; current code should reject and attempt to delete an empty destination instead of reporting a false success.
+
+## Source audit: MG30 Studio Export Single versus QuickTone manager cache (2026-11-05)
+
+The user observed that Export Single appears fast and may also be wrapping already-available preset data. The current source was checked directly before drawing a conclusion.
+
+### Confirmed MG30 Studio Export Single behavior on this branch
+
+- The Export Single button in `www/mg30-preset-export.js` calls `api.readSingle()` when the user starts the export. Only after that promise returns does it call `buildMG30SinglePresetPatchFromReplies()` and `savePatch()`.
+- The `MG30PresetExportBridge.readSingle()` implementation is embedded in `www/index.html`. It performs fresh device read requests during the export operation:
+  1. Three sequential `0C/00` scene reads, matched to `0C/02` replies.
+  2. One `09/00` resource metadata request, matched to `09/02`.
+  3. For a resource-bearing preset, 64 `10/00` waveform requests and 10 `11/00` curve requests, matched by returned offsets in `10/02` and `11/02`.
+  4. It assembles the live replies, returns the scene/resource data, and only then does the Export UI serialize a 0x26AE-byte single record and open the Android save flow.
+- The single-export path therefore is **not currently a cache-only export**. The fast user-visible completion is not evidence by itself that the readback is omitted; the code explicitly issues the read requests on each Export Single action.
+- Export Single requires an attached IR resource; the optional empty-resource handling is enabled specifically by the Export All bank reader, not by the normal single-export button.
+
+### Difference from QuickTone
+
+- Recovered QuickTone Export All click routine serializes its already-populated preset manager; its export-button handler does not itself initiate device reads.
+- QuickTone's manager is populated earlier by the connection/synchronization path. The recovered per-preset readback and resource-presence scan are upstream from the Export All click.
+- MG30 Studio currently starts its single-preset readback on demand from the Export button. Its current Export All then loops this same readback primitive across 128 slots.
+- Both flows share the Gen2 record format/serialization model, but **the source/lifecycle of their data differs**: QuickTone manager cache versus MG30 Studio on-demand device readback.
+
+### Engineering decision / next direction
+
+- Do not infer a cache hit from export speed alone. If desired, time-stamp request dispatch and replies during a successful Export Single run; the existing `MG30PresetExportLastDiagnostics` trace records per-request and total elapsed timing.
+- A future QuickTone-like implementation should investigate a deliberate preset-manager/cache populated during connection synchronization, track completeness and freshness per slot, and serialize from that verified cache when Export is requested.
+- Keep the known-good Export Single readback path intact while designing/testing the cache path. A safe migration can add cache-backed export only after the cache is proven complete and fresh, with the current live readback retained as fallback.
+- This is a documentation/research update only. No source code, protocol command, NAM, User/Third Party IR, Collection IR, MIDI mapping, preset write/import path, or APK was changed by this audit.
