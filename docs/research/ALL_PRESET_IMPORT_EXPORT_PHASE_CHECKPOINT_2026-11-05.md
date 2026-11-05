@@ -763,3 +763,36 @@ CI and APK validation must be repeated after that test correction. No physical h
 - ZIP/APK integrity passed; packaged JS contains the English confirmation and Android Back handler. Physical phone confirmation remains pending: inspect English wording, 6.5-second Export failure timeout, 5-second Import failure timeout, immediate Back dismissal after terminal result, and Back protection during active transfer.
 - No preset/IR/NAM transfer protocol, Import All planner, Export All readback/cache/pacing, User/Third Party IR, Collection 6A/6B/6C, MIDI/CC mappings, USB-MIDI selection, Copy Scene, Signal Chain, or CTRL/EXP logic was changed.
 - Detailed note: `docs/research/MG30_PRESET_FEEDBACK_DIALOG_FIX_2026-11-06.md`.
+
+
+## Signal-chain Serial / Parallel capture analysis (6 November 2026)
+
+Target remains original NUX MG-30 Gen2 firmware 6.0.x, not MKII. User supplied two USBPcap captures:
+- `seriallchain.pcapng` — reported Serial state.
+- `pararelchain.pcapng` — reported Parallel state.
+
+### Capture structure and observed delta
+
+- Both captures contain 22 Enhanced Packet Blocks and the same USB interface/link type (USBPcap, link type 249), with matching enumeration/setup structure.
+- The only meaningful payload difference is in the final SysEx parameter value; the other packet-byte differences are USB timestamps/metadata.
+- Reconstructed SysEx payload (USB-MIDI event packets reassembled):
+  - Serial capture: `F0 43 58 04 70 0D 01 00 01 0A 09 0B 06 07 08 06 02 F7`
+  - Parallel capture: `F0 43 58 04 70 0D 01 00 01 0A 09 0B 06 07 08 06 03 F7`
+- Thus the final parameter byte changes from `0x02` (Serial) to `0x03` (Parallel). This is direct capture evidence that the pedal receives a SysEx parameter change for the mode.
+- The captures do not by themselves identify which adjacency relation was selected (MOD–DLY or DLY–RVB), whether the same parameter applies to both links, or the complete routing graph. Do not implement yet from this pair alone.
+
+### Required next controlled captures
+
+Ask the user to identify the exact UI/device selection used for these two captures. Then capture each relation independently while keeping all other state unchanged:
+1. MOD–DLY = Serial, DLY–RVB = Serial.
+2. MOD–DLY = Parallel, DLY–RVB = Serial.
+3. MOD–DLY = Serial, DLY–RVB = Parallel.
+4. MOD–DLY = Parallel, DLY–RVB = Parallel.
+
+Prefer one capture per single toggle, with USB capture running before the toggle and ending after the device has acknowledged/applied it. Keep preset, selected blocks, effect models, scene and all other parameters unchanged. If the MG-30 exposes only a single toggle for the three post-effects, document that exact interaction; the current two-file pair cannot establish per-link independence.
+
+### Implementation guardrails
+
+- No application source code changed from this capture analysis.
+- Do not infer that `0x02` / `0x03` is a globally stored preset field until persistence/readback is checked.
+- Do not modify NAM, User/Third Party IR, IR Collection, MIDI mappings, USB-MIDI bridge, or existing Signal Chain reorder behavior while researching this routing parameter.
