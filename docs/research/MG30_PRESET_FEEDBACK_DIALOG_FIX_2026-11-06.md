@@ -26,5 +26,25 @@ No transfer or device protocol was changed. No changes to Import All frame order
 
 ## Validation
 
-- Source-level regression tests and GitHub Actions result: pending for the commit that adds this change.
-- No physical pedal operation is required to validate dialog dismissal; actual Android Back behavior still needs a brief handset confirmation after installation.
+## Build #598 verification
+
+- Final source commit: `cb556f014ef2d9e27c5ef8b5d87a45eacff0fa78` on `feature/all-preset-import-export`.
+- GitHub Actions run #598: `42083190120`, conclusion **success**: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42083190120
+- Regression tests: **272 passed, 0 failed**.
+- Android initializer syntax check and Capacitor Android/plugin generation passed.
+- Gradle `assembleDebug`: **success**.
+- Artifact ID: `13441402404`; ZIP size **4,214,691 bytes**; ZIP SHA-256 `4c6e6886ed02b4b640840e2e224be29ab78e6efc39ccbb9f63c06d07a9f5cd5a`.
+- Extracted APK size **4,592,340 bytes**; APK SHA-256 `f9b6f76e2630bf4f27aed6ff073d985c30427252dbe7f564b057a246691554e6`.
+- ZIP and APK integrity checks passed. Packaged JavaScript was inspected: it contains the English Export All prompt, the Android `backButton` listener, 6.5-second Export failure timeout, and 5-second Import failure timeout.
+- The first CI attempt (#597) stopped at the regression-test step because of an invalid regular-expression literal in the new test file. The test was rewritten with literal string assertions; the final Build #598 includes that correction and passed all 272 tests.
+
+## Remaining physical-device confirmation
+
+Install the Build #598 APK on the original MG-30 Gen2 firmware 6.0.x and confirm:
+1. Export All confirmation appears in English.
+2. On an Export failure, the error dialog closes automatically after about 6.5 seconds; Android Back closes it immediately.
+3. On Import Single / Import All failure, the result dialog closes automatically after about 5 seconds; Android Back closes it immediately.
+4. Pressing Android Back during an active Import/Export does not dismiss the active-transfer dialog or terminate the app.
+5. After a result dialog closes, ordinary Android Back behavior on the rest of the app remains unchanged.
+
+No MG-30 transfer sequence or physical preset/IR data was changed by this UI fix.
