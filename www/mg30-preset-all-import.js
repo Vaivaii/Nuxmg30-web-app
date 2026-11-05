@@ -48,6 +48,7 @@ export function buildMG30AllPresetImportPlan(records) {
   }
 
   const resourcePrograms = [];
+  const sceneGroups = [];
   const steps = [{
     kind: 'all-import-open',
     command: 0x75,
@@ -73,13 +74,17 @@ export function buildMG30AllPresetImportPlan(records) {
       throw new Error('Penanda resource preset ' + program + ' tidak valid.');
     }
 
-    steps.push(...sceneSteps(record, program));
+    sceneGroups.push(...sceneSteps(record, program));
   }
 
   if (resourcePrograms.length !== RESOURCE_PRESET_COUNT) {
     throw new Error('Capture QuickTone menunjukkan 27 preset dengan resource IR; file ini memiliki ' +
       resourcePrograms.length + '. Batch ditolak sebelum perangkat disentuh.');
   }
+
+  // QuickTone completes all 27 resource groups before writing any of the
+  // 384 scene records. Preserve that captured phase ordering exactly.
+  steps.push(...sceneGroups);
 
   steps.push({
     kind: 'all-import-finish',
