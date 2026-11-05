@@ -143,6 +143,21 @@ async function exportAllPresets() {
     throw new Error('Data All Preset belum ada di memori lokal. Pilih file 128-preset .mg30patch melalui tombol Import All terlebih dahulu; operasi ini tidak membaca preset dari pedal.');
   }
 
+  const confirmed = window.confirm(
+    'EXPORT ALL PRESET\\n\\n' +
+    'Sumber: ' + source.sourceName + '\\n' +
+    'Isi file: 128 preset (01A–32D), 3 scene per preset.\\n' +
+    'Nama file: MG30_All_Preset.mg30patch\\n' +
+    'Ukuran hasil: 1.267.456 byte.\\n\\n' +
+    'File akan dibuat dari data lokal yang sudah dipilih sebelumnya. ' +
+    'Operasi ini TIDAK membaca atau mengirim data melalui USB-MIDI/SysEx dan tidak mengubah pedal.\\n\\n' +
+    'Lanjutkan dan pilih lokasi penyimpanan?'
+  );
+  if (!confirmed) {
+    setStatus('Export All dibatalkan. Data lokal dan pedal tidak diubah.', 'warn');
+    return { saved: false, cancelled: true };
+  }
+
   if (!Array.isArray(source.records) || source.records.length !== 128) {
     throw new Error('Sumber lokal Export All harus berisi tepat 128 record preset.');
   }
@@ -292,6 +307,9 @@ function init() {
     allButton.addEventListener('click', async () => {
       if (allExportBusy) return;
       allExportBusy = true;
+      // Export All is a local file operation. Explicitly suppress the shared
+      // USB-transfer feedback modal for the complete confirm/build/save flow.
+      window.MG30LocalPresetExportActive = true;
       allButton.disabled = true;
       const priorLabel = allButton.textContent;
       allButton.textContent = 'Menyusun 128 preset…';
@@ -304,6 +322,9 @@ function init() {
         allExportBusy = false;
         allButton.disabled = !localAllPresetSource();
         allButton.textContent = localAllPresetSource() ? 'Export All · 128 Preset' : priorLabel;
+        // Let the status observer process the final state while the local-export
+        // suppression flag is still set; no device-transfer dialog is needed.
+        window.setTimeout(() => { window.MG30LocalPresetExportActive = false; }, 0);
       }
     });
   }
