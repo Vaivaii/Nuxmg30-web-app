@@ -282,9 +282,8 @@ export function parseMG30AllPresetPatch(input) {
     records.push(record);
   }
 
-  if (resourcePrograms.length !== 27) {
-    throw new Error('Sampel All Preset Gen2 yang dianalisis memiliki 27 resource IR; ditemukan ' + resourcePrograms.length + '. Batch ditolak.');
-  }
+  // Resource count is bank-dependent. The supplied factory-bank fixture has
+  // 27 resource records, but a live user's bank may contain a different count.
   return {
     format: 'NUX MG-30 Gen2 all preset .mg30patch',
     records,
@@ -420,9 +419,8 @@ export function buildMG30AllPresetPatch(records) {
     output.set(chunk, ordinal * RECORD_SIZE);
   }
 
-  if (resourceCount !== 27) {
-    throw new Error('Sampel All Preset Gen2 yang tervalidasi memiliki 27 resource IR; ditemukan ' + resourceCount + '. Export dibatalkan.');
-  }
+  // Do not hard-code the fixture's 27-resource inventory: a live bank can
+  // legitimately have a different number of resource-bearing presets.
   if (output.length !== 0x135700) {
     throw new Error('Ukuran file hasil Export All tidak cocok dengan 0x135700 byte.');
   }
