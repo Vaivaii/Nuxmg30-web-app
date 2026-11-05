@@ -42,5 +42,5 @@ test("NAM and Collection command families are outside the preset-cache invalidat
 
 
 test("the direct Save-to-device helper invalidates cache after its 0B/01 and 07/01 writes", () => {
-  assert.match(appSource, /midiOutput\\.send\\(frame\\);invalidatePresetManagerCacheForWrite\\(frame\\)/);
+  assert.ok(appSource.includes("midiOutput.send(frame);invalidatePresetManagerCacheForWrite(frame)"));
 });
