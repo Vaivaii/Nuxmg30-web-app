@@ -242,3 +242,27 @@ Updated interpretation:
 - The 32-bit A/D and D/A converter specification does not imply that source IR WAV files should be 32-bit.
 
 Next investigation should compare a known 24-bit source IR against the exact corresponding resource after QuickTone import/export, then inspect the point at which the record's WAVE header changes. Do not force 32-bit conversion, change the Third Party/User `09/10/11` protocol, or alter NAM, Collection, Import All, or MIDI mappings without evidence.
+
+
+## Breakthrough: the 32-bit All Preset payloads are float32 data, not ordinary integer PCM32
+
+Re-examined the actual All Preset records at `MG30AllPatch.mg30patch`, using record stride `0x26AE`, WAVE header offset `+0x1D2`, and data offset `+0x1FE`.
+
+### Byte-level result
+The 11 records previously labeled “32-bit WAVE” (ordinals 3, 6, 9, 80, 81, 82, 83, 109, 110, 111, 115) have:
+- WAVE format tag `1` (nominal PCM), one channel, 48 kHz;
+- block align 4, bits/sample 32;
+- data size `0x2000` = 8192 bytes = 2048 DWORDs.
+
+Crucially, interpreting the 8192-byte data region as little-endian IEEE-754 float32 yields 2048 finite, smooth audio-like samples in every one of the 11 records. Measured ranges are plausible normalized waveform amplitudes (examples: ordinal 3 `-0.09364..0.28246`, ordinal 80 `-0.04204..0.22972`, ordinal 111 `-0.73576..0.92906`). This is strong evidence the payload is float32 sample data, not conventional signed integer PCM32, despite the WAVE fmt tag being 1. The records appear to carry a float32 payload under a PCM32-looking WAVE header (mislabeled/nonstandard WAVE wrapper).
+
+### Matching QuickTone conversion path
+Function `0x004B08F0` constructs a WAVE wrapper by writing RIFF/WAVE/fmt, PCM format tag 1, and then calling the fixed 24-bit initializer `0x0084E110`. Its conversion loop reads float32 values (`movss` from a sample buffer), multiplies by a scale constant, clamps to `[-0x800000, 0x7FFFFF]`, and writes exactly 3 bytes per sample. This is a direct float32-to-signed-24-bit conversion path.
+
+Function `0x0084E110` initializes mono 48 kHz 24-bit PCM with data length `0x1800` (2048 × 3) and RIFF size `0x1824`. It is called by both `0x004AB27C` and `0x004B0983`.
+
+### Interpretation
+The apparent 24-bit vs 32-bit split in All Preset is not evidence that the user's IR source WAV files are 32-bit. The 32-bit records' data are float32 arrays; QuickTone has a separate explicit conversion path that wraps float samples as 24-bit PCM for WAVE output. This is consistent with a float32 internal resource representation and a 24-bit exported/transport WAVE representation, though the exact origin of each float32 All Preset record and why its fmt tag remains PCM=1 still require caller-level tracing.
+
+### Safety consequence
+Do not add PCM32 source import as a requirement and do not blindly reinterpret all 32-bit records as signed integer PCM. Any reader that encounters these records must distinguish the payload semantics, not merely trust the WAVE format tag. For the app's verified User/Third Party transfer, continue using the existing 24-bit conversion path and `09/10/11` protocol. No app source or device behavior changed in this investigation.
