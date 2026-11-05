@@ -19,7 +19,7 @@ test("Export All reuses fresh cache entries and reads only misses or stale slots
   assert.match(exportSource, /sceneReadCommand: 0x0B/);
   assert.doesNotMatch(exportSource, /await bridge\.selectProgramForRead\(program\)/);
   assert.match(exportSource, /readSingleWithManagerCache\(bridge, program/);
-  assert.match(exportSource, /changedProgram/);
+  assert.doesNotMatch(exportSource, /changedProgram/);
 });
 
 test("cache session starts on app connection and resets after disconnect", () => {
