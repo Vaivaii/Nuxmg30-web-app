@@ -930,7 +930,7 @@ const MIC_POSITION_OPTIONS = ['CENTER','MIDDLE','EDGE'];
 
 const $=id=>document.getElementById(id);
 
-let midiAccess=null, midiInput=null, midiOutput=null, midiConnected=false, midiConnectPending=false, lastMidiSend=0, midiChain=Promise.resolve(), pendingCC=new Map(), flushingCC=false, suppressProgramChangeUntil=0, signalChainRoutingMode=null, signalChainRoutingBusy=false;
+let midiAccess=null, midiInput=null, midiOutput=null, midiConnected=false, midiConnectPending=false, lastMidiSend=0, midiChain=Promise.resolve(), pendingCC=new Map(), flushingCC=false, suppressProgramChangeUntil=0, signalChainRoutingMode=null, signalChainRoutingBusy=false, signalChainRoutingOrder=null;
 const MIDI_SW=[0,1,2,3,4,5,6,7,8,9,10,null];
 /* Default MG-30 CC map. The fourth compressor control is CC90; all other CCs are explicit. */
 const MIDI_PARAM_CC=[
@@ -1125,7 +1125,7 @@ async function readSignalChainRoutingMode(){
  if(order.length!==12||order.some(v=>!Number.isInteger(v)||v<0||v>11)||new Set(order).size!==12)
   throw new Error('Daftar urutan pada respons routing tidak valid; mode tidak diubah.');
  if(!Number.isInteger(mode)||mode<0||mode>3)throw new Error('Nilai routing MG-30 di luar rentang 0–3.');
- signalChainRoutingMode=mode;renderSignalChainRoutingControls();return mode;
+ signalChainRoutingMode=mode;signalChainRoutingOrder=order.slice();renderSignalChainRoutingControls();return mode;
 }
 async function writeSignalChainRoutingMode(nextMode){
  const mode=Number(nextMode);
@@ -1136,7 +1136,7 @@ async function writeSignalChainRoutingMode(nextMode){
    throw new Error('Perangkat sedang menjalankan operasi lain. Coba lagi setelah selesai.');
   signalChainRoutingBusy=true;renderSignalChainRoutingControls();
   try{
-   const currentOrder=Array.isArray(chainOrder)?chainOrder.slice():[];
+   const currentOrder=Array.isArray(signalChainRoutingOrder)?signalChainRoutingOrder.slice():(Array.isArray(chainOrder)?chainOrder.slice():[]);
    if(currentOrder.length!==12||new Set(currentOrder).size!==12||currentOrder.some(v=>!Number.isInteger(v)||v<0||v>11))
     throw new Error('Urutan Signal Chain lokal tidak valid; routing tidak dikirim.');
    await flushMidi();
@@ -1161,7 +1161,7 @@ document.addEventListener('click',async event=>{
  if(bit!==1&&bit!==2)return;
  button.disabled=true;
  try{
-  const current=Number.isInteger(signalChainRoutingMode)?signalChainRoutingMode:await readSignalChainRoutingMode();
+  const current=await readSignalChainRoutingMode();
   await writeSignalChainRoutingMode(current^bit);
  }catch(error){
   setDeviceStatus('Perubahan routing gagal: '+(error?.message||String(error)));
