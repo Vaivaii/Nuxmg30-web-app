@@ -76,6 +76,22 @@ test('metadata reply can explicitly identify a preset with no attached IR resour
   assert.equal(parsed.resourceIndex, 12);
 });
 
+test('QuickTone eight-hyphen metadata placeholder is treated as no attached IR resource', () => {
+  const reply = makeMetadataReply(4, '--------');
+  assert.throws(() => parseMG30UserIRMetadataReadReply(reply, 4), /tidak memiliki nama/);
+  const parsed = parseMG30UserIRMetadataReadReply(reply, 4, { allowEmptyResource: true });
+  assert.equal(parsed.resourceName, '');
+  assert.equal(parsed.hasResource, false);
+  assert.equal(parsed.resourceIndex, 4);
+});
+
+test('a real hyphenated IR name other than the exact QuickTone placeholder remains valid', () => {
+  const reply = makeMetadataReply(5, '--IR--');
+  const parsed = parseMG30UserIRMetadataReadReply(reply, 5, { allowEmptyResource: true });
+  assert.equal(parsed.resourceName, '--IR--');
+  assert.equal(parsed.hasResource, true);
+});
+
 test('wave and curve replies treat the first decoded word as an opaque tag and validate offset', () => {
   const wave = makeDataReply(0x10, 256, 32, Array.from({length:32}, (_,i)=>(32+i)/2048), 'float32');
   const waveHeader = inspectMG30UserIRDataReadReply(wave, 0x10);
