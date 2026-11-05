@@ -102,8 +102,15 @@ async function exportAllPresets() {
 
   const records = [];
   const resourcePrograms = [];
+  const originalProgram = Number(bridge.getTargetProgram?.());
+  try {
   for (let program = 0; program < 128; program++) {
     const label = slotLabel(program);
+    setStatus('Export All · memilih preset ' + label + ' · ' + (program + 1) + '/128…');
+    // MG-30 returns the same readback replies as Single Export for the
+    // currently selected hardware program. Select each slot first, then use
+    // the unchanged read-only Single Export request/parser sequence.
+    await bridge.selectProgramForRead(program);
     setStatus('Export All · membaca preset ' + label + ' · ' + (program + 1) + '/128…');
     const readback = await bridge.readSingle(progress => {
       const phase = progress?.phase || 'Membaca perangkat';
@@ -185,6 +192,12 @@ async function exportAllPresets() {
     bytes: bytes.length,
     resourcePrograms
   };
+  } finally {
+    // Restore the user's original active program after the read-only scan.
+    if (Number.isInteger(originalProgram) && originalProgram >= 0 && originalProgram < 128) {
+      try { await bridge.selectProgramForRead(originalProgram); } catch (_) {}
+    }
+  }
 }
 
 window.MG30PresetExportAll = exportAllPresets;
