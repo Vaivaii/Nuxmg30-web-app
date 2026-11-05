@@ -19,6 +19,7 @@ on:
       - feature/amp-knob-label-correction
       - feature/amp-knob-label-correction-artwork
       - feature/all-preset-import-export
+      - feature/post-effects-parallel-routing
     paths:
       - 'www/**'
       - 'tests/**'
