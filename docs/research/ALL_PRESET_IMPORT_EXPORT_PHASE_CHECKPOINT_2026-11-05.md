@@ -110,3 +110,14 @@ Code update:
 - Serializer behavior preserves each parsed record's `rawRecord`, including original RIFF header variants and opaque bytes; resource names are zero-padded and fresh resource records receive the standard RIFF/WAVE header. Non-resource records have their resource section zero-filled.
 
 No import, live sync, NAM, User/Third Party IR, Collection IR, MIDI mapping, or native USB-MIDI code was changed. No APK build or physical-device Export All test has been performed in this update. Next step is to run the repository test/build workflow and then test local-file Export All without a connected pedal.
+
+
+## Build and automated verification (2026-11-05)
+
+- GitHub Actions run: `41982880283` (run #525), branch `feature/all-preset-import-export`, source commit `36cd504fc17c4fd9c6c49ec665666ab92b65c127`.
+- Workflow result: **success**. All steps completed: dependency installation, Android initializer syntax check, `npm test`, Capacitor Android initialization, Gradle `assembleDebug`, and artifact upload.
+- Gradle output: `BUILD SUCCESSFUL`; 183 actionable tasks executed.
+- Downloaded build artifact: `MG30-Studio-debug-APK`, artifact ID `13394567976`, archive size 4,203,537 bytes; SHA-256 `0ad14040000df9b8508ae7bb534796bdca8e0ea05f3f37b76a3f8e2d606cf4df`.
+- APK extracted from that exact artifact: `MG30-Studio-Export-All-debug.apk`, size 4,581,560 bytes; SHA-256 `18ac30d404c7542373678fb9ded7aad41006cf62e9f1c2aa4e5db41d52574b37`.
+- This verifies automated protocol regression tests and Android packaging for this commit. It does **not** establish a physical MG-30 / Android device test of the Export All button. The device-side test remains: select a valid local 128-record All Patch file, run Export All with pedal disconnected, and verify the downloaded file is exactly 1,267,456 bytes and reparses to 128 records.
+- No changes were made to importer, live sync, NAM, User/Third Party IR, Collection IR, MIDI mappings, or USB-MIDI bridge during the build verification.
