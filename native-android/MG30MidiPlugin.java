@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
 
@@ -49,8 +50,23 @@ public class MG30MidiPlugin extends Plugin {
     private String activeDeviceName = "";
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private MidiManager.DeviceCallback deviceCallback;
-    // Stage large patch payloads on disk while Android's document picker is open.
+    // Stage patch exports on disk while Android's document picker is open.
     private final Map<String, File> pendingPatchFiles = new ConcurrentHashMap<>();
+    private static final int PATCH_EXPORT_CHUNK_LIMIT = 64 * 1024;
+
+    private static final class PatchTransfer {
+        final File file;
+        final int expectedBytes;
+        int receivedBytes;
+
+        PatchTransfer(File file, int expectedBytes) {
+            this.file = file;
+            this.expectedBytes = expectedBytes;
+            this.receivedBytes = 0;
+        }
+    }
+
+    private final Map<String, PatchTransfer> pendingPatchTransfers = new ConcurrentHashMap<>();
 
     @Override
     public void load() {
@@ -224,6 +240,165 @@ public class MG30MidiPlugin extends Plugin {
     private static boolean isSupportedPatchSize(int length) {
         return length == 0x26AE || length == 0x135700;
     }
+    private static String safePatchName(String requestedName) {
+        String safeName = new File(requestedName == null ? "MG30_Preset.mg30patch" : requestedName)
+            .getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
+        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
+        return safeName;
+    }
+
+    private File patchExportDirectory() throws IOException {
+        File directory = new File(getContext().getFilesDir(), "mg30-patch-export");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Folder staging export tidak dapat dibuat.");
+        }
+        return directory;
+    }
+
+    /**
+     * Start a bounded native transfer. Large All-Preset Base64 data is sent in
+     * small sequential chunks instead of one multi-megabyte Capacitor message.
+     */
+    @PluginMethod
+    public void beginPatchExport(PluginCall call) {
+        Integer expectedValue = call.getInt("expectedBytes");
+        int expectedBytes = expectedValue == null ? 0 : expectedValue;
+        if (!isSupportedPatchSize(expectedBytes)) {
+            call.reject("Ukuran patch transfer tidak didukung: " + expectedBytes + " byte.");
+            return;
+        }
+        try {
+            File staged = new File(patchExportDirectory(), "transfer-" + UUID.randomUUID() + ".tmp");
+            try (FileOutputStream output = new FileOutputStream(staged, false)) {
+                output.flush();
+                output.getFD().sync();
+            }
+            String transferId = UUID.randomUUID().toString();
+            pendingPatchTransfers.put(transferId, new PatchTransfer(staged, expectedBytes));
+            JSObject result = new JSObject();
+            result.put("transferId", transferId);
+            result.put("expectedBytes", expectedBytes);
+            result.put("maxChunkBytes", PATCH_EXPORT_CHUNK_LIMIT);
+            call.resolve(result);
+        } catch (IOException | RuntimeException error) {
+            call.reject("Gagal memulai transfer file patch: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void writePatchExportChunk(PluginCall call) {
+        String transferId = call.getString("transferId", "");
+        Integer offsetValue = call.getInt("offset");
+        String base64 = call.getString("base64", "");
+        PatchTransfer transfer = pendingPatchTransfers.get(transferId);
+        if (transfer == null) {
+            call.reject("Sesi transfer patch tidak ditemukan atau sudah berakhir.");
+            return;
+        }
+        if (offsetValue == null || base64.isEmpty() || base64.length() > 96 * 1024) {
+            call.reject("Chunk patch kosong atau melebihi batas aman.");
+            return;
+        }
+        try {
+            byte[] chunk = Base64.decode(base64, Base64.DEFAULT);
+            synchronized (transfer) {
+                if (offsetValue != transfer.receivedBytes) {
+                    call.reject("Offset chunk tidak berurutan: diterima " + offsetValue +
+                        ", diharapkan " + transfer.receivedBytes + ".");
+                    return;
+                }
+                if (chunk.length == 0 || chunk.length > PATCH_EXPORT_CHUNK_LIMIT ||
+                    transfer.receivedBytes + chunk.length > transfer.expectedBytes) {
+                    call.reject("Ukuran chunk patch di luar batas transfer.");
+                    return;
+                }
+                try (FileOutputStream output = new FileOutputStream(transfer.file, true)) {
+                    output.write(chunk);
+                    output.flush();
+                }
+                transfer.receivedBytes += chunk.length;
+                JSObject result = new JSObject();
+                result.put("receivedBytes", transfer.receivedBytes);
+                result.put("expectedBytes", transfer.expectedBytes);
+                call.resolve(result);
+            }
+        } catch (IOException | IllegalArgumentException error) {
+            call.reject("Gagal menulis chunk patch pada offset " + offsetValue + ": " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void abortPatchExport(PluginCall call) {
+        String transferId = call.getString("transferId", "");
+        PatchTransfer transfer = pendingPatchTransfers.remove(transferId);
+        if (transfer != null && transfer.file.exists()) transfer.file.delete();
+        JSObject result = new JSObject();
+        result.put("aborted", true);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void finishPatchExport(PluginCall call) {
+        String transferId = call.getString("transferId", "");
+        String safeName = safePatchName(call.getString("fileName", "MG30_Preset.mg30patch"));
+        PatchTransfer transfer = pendingPatchTransfers.get(transferId);
+        if (transfer == null) {
+            call.reject("Sesi transfer patch tidak ditemukan saat finalisasi.");
+            return;
+        }
+        File finalStage = null;
+        String callbackId = call.getCallbackId();
+        try {
+            synchronized (transfer) {
+                if (transfer.receivedBytes != transfer.expectedBytes ||
+                    !transfer.file.isFile() || transfer.file.length() != transfer.expectedBytes) {
+                    throw new IOException("Staging menerima " + transfer.receivedBytes + " dari " +
+                        transfer.expectedBytes + " byte; file fisik " + transfer.file.length() + " byte.");
+                }
+                try (FileOutputStream sync = new FileOutputStream(transfer.file, true)) {
+                    sync.getFD().sync();
+                }
+            }
+            if (callbackId == null || callbackId.isEmpty()) {
+                throw new IOException("ID callback penyimpanan Android tidak tersedia.");
+            }
+            String safeCallbackId = callbackId.replaceAll("[^A-Za-z0-9_-]", "_");
+            finalStage = new File(patchExportDirectory(), safeCallbackId + ".mg30patch.tmp");
+            if (finalStage.exists() && !finalStage.delete()) {
+                throw new IOException("Staging callback sebelumnya tidak dapat dibersihkan.");
+            }
+            if (!transfer.file.renameTo(finalStage)) {
+                try (InputStream input = new FileInputStream(transfer.file);
+                     FileOutputStream output = new FileOutputStream(finalStage, false)) {
+                    long copied = copyAndCount(input, output, null);
+                    output.flush();
+                    output.getFD().sync();
+                    if (copied != transfer.expectedBytes) {
+                        throw new IOException("Pemindahan staging berhenti pada " + copied + " byte.");
+                    }
+                }
+                if (!transfer.file.delete()) transfer.file.deleteOnExit();
+            }
+            pendingPatchFiles.put(callbackId, finalStage);
+            pendingPatchTransfers.remove(transferId);
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/octet-stream");
+            intent.putExtra(Intent.EXTRA_TITLE, safeName);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            startActivityForResult(call, intent, "savePatchResult");
+        } catch (IOException | RuntimeException error) {
+            pendingPatchTransfers.remove(transferId);
+            if (transfer.file.exists()) transfer.file.delete();
+            if (finalStage != null && finalStage.exists()) finalStage.delete();
+            if (callbackId != null) pendingPatchFiles.remove(callbackId);
+            call.reject("Gagal menyiapkan file patch untuk File manager: " + error.getMessage());
+        }
+    }
+
+
 
     private static long crc32(File file) throws IOException {
         CRC32 crc = new CRC32();
@@ -252,10 +427,7 @@ public class MG30MidiPlugin extends Plugin {
 
     @PluginMethod
     public void savePatch(PluginCall call) {
-        String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
-        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
-        if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
-        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
+        String safeName = safePatchName(call.getString("fileName", "MG30_Preset.mg30patch"));
 
         String base64 = call.getString("base64", "");
         if (base64.isEmpty() || base64.length() > 2 * 1024 * 1024) {
