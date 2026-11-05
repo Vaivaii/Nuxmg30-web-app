@@ -93,3 +93,20 @@ Important distinction:
 - The sample bytes are documented and analyzed, but the raw binary is not currently listed among this Project conversation's mounted attachments. The existing analysis is enough to continue format/protocol work; if a future byte-for-byte fixture test requires the original binary bytes and no archived artifact is accessible, ask only then—not now.
 - The missing critical evidence is the QuickTone all-preset import USBPcap capture and the corresponding full transaction/mapping, not the all-preset file itself.
 - No all-preset writes are allowed until record-to-destination mapping, marker-0 behavior, marker-1 WAVE variants, ordinal 91, transaction ordering and rollback/failure behavior are validated.
+
+
+## User correction and Export All implementation update (2026-11-05, resumed)
+
+The user explicitly clarified that **QuickTone Export All does not send MIDI/SysEx to the pedal**. Export All must serialize the 128-record local All Patch/memory only. Do not investigate export-time USB-MIDI traffic or call any device readback routine as part of Export All.
+
+The supplied local fixture `MG30AllPatch.mg30patch` was materialized and confirmed at exactly `0x135700` bytes (1,267,456), containing 128 records of `0x26AE` bytes. Its record inventory includes the known 27 resource-bearing records, 26 standard RIFF/WAVE headers and the anomalous record 91. The byte offsets are represented in the serializer as a resource section at `0x1AA`: name at record offset `0x1B2` (32 bytes), RIFF/WAVE header at `0x1D2` (44 bytes), Float32 waveform at `0x1FE` (2,048 samples / 8,192 bytes), and curve at `0x21FE` (600 uint16 / 1,200 bytes).
+
+Current app boundary: the editor's active state is a single editable draft, not a complete 128-preset binary bank. The app therefore keeps the validated All Patch selected through the Import All file picker in `window.MG30AllPresetMemory` / module memory. Export All uses that local 128-record source; it does not synthesize 128 records from the one active editor draft.
+
+Code update:
+- Commit `36cd504fc17c4fd9c6c49ec665666ab92b65c127` hardens `exportAllPresets()` in `www/mg30-preset-export.js`.
+- The function explicitly validates 128 sequential local records and 3 scenes per record, serializes via `buildMG30AllPresetPatch()`, checks output size `0x135700`, reparses the result and verifies 128 records / 27 resource records before saving.
+- The function contains no call to `readSingle()`, MIDI bridge, SysEx, live sync, or pedal access. Single-preset Export remains a separate unchanged path.
+- Serializer behavior preserves each parsed record's `rawRecord`, including original RIFF header variants and opaque bytes; resource names are zero-padded and fresh resource records receive the standard RIFF/WAVE header. Non-resource records have their resource section zero-filled.
+
+No import, live sync, NAM, User/Third Party IR, Collection IR, MIDI mapping, or native USB-MIDI code was changed. No APK build or physical-device Export All test has been performed in this update. Next step is to run the repository test/build workflow and then test local-file Export All without a connected pedal.
