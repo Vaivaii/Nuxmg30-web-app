@@ -1,4 +1,9 @@
-import { buildMG30SinglePresetPatchFromReplies, fitMG30QuickToneIRName } from './mg30-preset-format.js';
+import {
+  buildMG30SinglePresetPatchFromReplies,
+  buildMG30AllPresetPatch,
+  parseMG30AllPresetPatch,
+  fitMG30QuickToneIRName
+} from './mg30-preset-format.js';
 import { MG30PresetReadFormat } from './mg30-preset-read.js';
 
 window.MG30PresetReadFormat = MG30PresetReadFormat;
@@ -68,6 +73,101 @@ async function savePatch(bytes, filename) {
   downloadPatch(bytes, filename);
   return { saved: true, native: false, fileName: filename, bytes: bytes.length };
 }
+let localAllPresetMemory = null;
+let allExportBusy = false;
+
+function asBytes(input) {
+  if (input instanceof Uint8Array) return input;
+  if (input instanceof ArrayBuffer) return new Uint8Array(input);
+  if (ArrayBuffer.isView(input)) {
+    return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+  }
+  return null;
+}
+
+function localAllPresetSource() {
+  const source = window.MG30AllPresetMemory || localAllPresetMemory;
+  if (!source) return null;
+  if (Array.isArray(source.records) && source.records.length === 128) {
+    return { records: source.records, sourceName: source.sourceName || 'memori lokal' };
+  }
+  if (Array.isArray(source) && source.length === 128) {
+    return { records: source, sourceName: 'memori lokal' };
+  }
+  const raw = asBytes(source.bytes ?? source.rawBytes ?? source);
+  if (raw) {
+    const parsed = parseMG30AllPresetPatch(raw);
+    return { records: parsed.records, sourceName: source.sourceName || 'memori lokal' };
+  }
+  return null;
+}
+
+async function cacheLocalAllPresetFile(file) {
+  const allButton = $('presetExportAllStart');
+  localAllPresetMemory = null;
+  if (window.MG30AllPresetMemory?.sourceName) window.MG30AllPresetMemory = null;
+  if (allButton) allButton.disabled = true;
+  if (!file) return;
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const parsed = parseMG30AllPresetPatch(bytes);
+    localAllPresetMemory = {
+      sourceName: file.name || 'MG30AllPatch.mg30patch',
+      bytes,
+      records: parsed.records,
+      byteLength: parsed.byteLength
+    };
+    // Export All reads this local cache only. It does not access the MIDI bridge.
+    window.MG30AllPresetMemory = localAllPresetMemory;
+    if (allButton) {
+      allButton.disabled = false;
+      allButton.textContent = 'Export All · 128 Preset';
+      allButton.title = 'Ekspor dari file All Preset yang sudah divalidasi dan disimpan di memori lokal aplikasi.';
+    }
+  } catch (_) {
+    // A single-preset file or a non-patch file is not an Export All source.
+    localAllPresetMemory = null;
+    if (allButton) allButton.disabled = true;
+  }
+}
+
+/**
+ * Build and download the 128-record .mg30patch from local application memory.
+ * No MIDI connection, readSingle(), SysEx request, or pedal access is used.
+ */
+async function exportAllPresets() {
+  const source = localAllPresetSource();
+  if (!source) {
+    throw new Error('Data All Preset belum ada di memori lokal. Pilih file 128-preset .mg30patch melalui tombol Import All terlebih dahulu; operasi ini tidak membaca preset dari pedal.');
+  }
+
+  const bytes = buildMG30AllPresetPatch(source.records);
+  if (!(bytes instanceof Uint8Array) || bytes.length !== 0x135700) {
+    throw new Error('Buffer Export All harus tepat 0x135700 byte (128 × 0x26AE).');
+  }
+  const verified = parseMG30AllPresetPatch(bytes);
+  if (verified.records.length !== 128 || verified.byteLength !== 0x135700) {
+    throw new Error('Validasi hasil serialisasi All Preset gagal.');
+  }
+
+  const filename = 'MG30_All_Preset.mg30patch';
+  setStatus('128 record selesai disusun dari memori lokal. Menyimpan ' +
+    bytes.length.toLocaleString('id-ID') + ' byte…');
+  const saved = await savePatch(bytes, filename);
+  if (saved?.cancelled) {
+    setStatus('Penyimpanan Export All dibatalkan. Tidak ada data yang dikirim ke pedal.', 'warn');
+    return { saved: false, cancelled: true, bytes: bytes.length };
+  }
+  if (!saved?.saved) throw new Error('Penyimpanan file Export All tidak dikonfirmasi.');
+  setStatus('Export All berhasil: ' + (saved.fileName || filename) + ' · ' +
+    Number(saved.bytes || bytes.length).toLocaleString('id-ID') +
+    ' byte · 128 preset · 27 resource IR. Sumber: ' + source.sourceName +
+    '. Tidak ada perintah MIDI/SysEx yang dikirim.', 'ok');
+  return { saved: true, fileName: saved.fileName || filename, bytes: bytes.length };
+}
+
+window.MG30PresetExportAll = exportAllPresets;
+
 function init() {
   const button = $('presetExportStart');
   if (!button || button.dataset.initialized === '1') return;
@@ -161,6 +261,37 @@ function init() {
       updateTarget();
     }
   });
+  const allButton = $('presetExportAllStart');
+  if (allButton && allButton.dataset.initialized !== '1') {
+    allButton.dataset.initialized = '1';
+    allButton.disabled = !localAllPresetSource();
+    allButton.addEventListener('click', async () => {
+      if (allExportBusy) return;
+      allExportBusy = true;
+      allButton.disabled = true;
+      const priorLabel = allButton.textContent;
+      allButton.textContent = 'Menyusun 128 preset…';
+      try {
+        await exportAllPresets();
+      } catch (error) {
+        setStatus('Export All gagal: ' + (error?.message || String(error)) +
+          ' Tidak ada perintah MIDI/SysEx yang dikirim.', 'warn');
+      } finally {
+        allExportBusy = false;
+        allButton.disabled = !localAllPresetSource();
+        allButton.textContent = localAllPresetSource() ? 'Export All · 128 Preset' : priorLabel;
+      }
+    });
+  }
+
+  const allPatchInput = $('presetImportFile');
+  if (allPatchInput && allPatchInput.dataset.exportAllCacheAttached !== '1') {
+    allPatchInput.dataset.exportAllCacheAttached = '1';
+    allPatchInput.addEventListener('change', () => {
+      void cacheLocalAllPresetFile(allPatchInput.files?.[0] || null);
+    });
+  }
+
   window.addEventListener('mg30-active-preset-changed', updateTarget);
   window.addEventListener('mg30-preset-import-target-changed', updateTarget);
   updateTarget();
