@@ -495,3 +495,14 @@ Protocol interpretation / caution:
 Validation status:
 - Source changes and regression tests have been committed to `feature/all-preset-import-export`; the latest Actions build outcome is still pending at the time of this checkpoint.
 - Physical Import All has not yet been tested after this change. Do not claim success until all ACKs and 128 × 3 scene readbacks pass on the original Gen2 pedal.
+
+
+### Dynamic Import All — Build #561 passed (5 November 2026)
+
+- GitHub Actions run #561: `42038396891`, source commit `0ddf7b92dd91a0d4b81adf0c64eb8a24dec0d7d8`, conclusion **success**.
+- Regression tests: **259 passed, 0 failed**.
+- Android initializer validation and Capacitor generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL` in 1m 49s; artifact upload succeeded.
+- Artifact ID `13419318026`; ZIP size 4,213,753 bytes; SHA-256 `f63e52bcd373a8ff6be5c05a2152ebca71a3d06c29e05673039250ddebde8645`.
+- Extracted APK size 4,590,868 bytes; SHA-256 `7dc9c7c1fd1a20ef1476f46a0fe7ee0eab01779031f8d13cf2d806842c26421d`.
+- Downloaded ZIP passed `unzip -t`. APK bundle inspection confirms the compiled Web assets contain the dynamic resource count and `387 + 75 × N` plan calculation.
+- This is CI/package verification only. No physical Import All transfer has yet been tested after removal of the 27-resource/2,412-frame gate.
