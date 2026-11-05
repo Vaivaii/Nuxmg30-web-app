@@ -51,10 +51,9 @@ test('resource-bearing preset uses the 2×program resource handle seen in QuickT
   const records = Array.from({length:128}, (_, program) => makeRecord(program, resourcePrograms.has(program)));
   const plan = buildMG30AllPresetImportPlan(records);
   const firstWaveForProgram91 = plan.steps.find(step =>
-    step.kind === 'ir-waveform' && step.body[7] === 0x6e && step.body[8] === 0);
+    step.kind === 'ir-waveform' && step.body[5] === 0x01 && step.body[6] === 0x36 && step.body[7] === 0);
   assert.ok(firstWaveForProgram91);
-  assert.equal(firstWaveForProgram91.body[6], 0);
-  assert.equal(firstWaveForProgram91.body[7], 0x6e); // 2 × 91
+  assert.deepEqual(Array.from(firstWaveForProgram91.body.slice(5,8)), [0x01,0x36,0x00]); // encodeWord16(91)
 });
 
 test('Import All plan rejects missing, reordered, or unexpected resource records before sending', () => {
