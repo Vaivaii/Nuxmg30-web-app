@@ -145,7 +145,7 @@ test('Editor artwork SVGs have explicit bounded widths instead of intrinsic auto
 
 
 test('bundled mobile Editor stylesheet keeps the full model frame and caption rail above short-screen clamps',()=>{
-  const marker='/* Final mobile Editor model frame + caption rail.';
+  const marker='/* Final compact mobile Editor layout:';
   const start=css.lastIndexOf(marker);
   assert.ok(start>=0,'missing final bundled Editor frame override');
   assert.ok(start>css.lastIndexOf('height:clamp(92px,13dvh,118px)'), 'final override must follow the short-screen clamp');
@@ -180,7 +180,7 @@ test('AMP and IR renderers always include their category label and Based on valu
 });
 
 test('Editor Scenes remain bottom-anchored inside the fixed card with the approved touch targets',()=>{
-  const marker='/* Final mobile Editor model frame + caption rail.';
+  const marker='/* Final compact mobile Editor layout:';
   const start=css.lastIndexOf(marker);
   assert.ok(start>=0);
   const rules=css.slice(start);
