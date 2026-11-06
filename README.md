@@ -39,11 +39,15 @@ When a signed release is published:
 4. A first signed release may require uninstalling a previously installed debug-signed build before installation. Back up anything needed first.
 5. Future signed updates must use the same release key.
 
+## License and privacy
+
+The current Android release-preparation source branch is licensed under [GNU GPL-3.0-only](https://github.com/Vaivaii/Nuxmg30-web-app/blob/release/community-prep-v2/LICENSE). This default-branch landing page does not mean the older application source on `main` has been synchronized; use the release-preparation branch for the current Android source.
+
+A source-audited [privacy notice](https://github.com/Vaivaii/Nuxmg30-web-app/blob/release/community-prep-v2/PRIVACY.md) and preliminary [third-party dependency license inventory](https://github.com/Vaivaii/Nuxmg30-web-app/blob/release/community-prep-v2/THIRD_PARTY_NOTICES.md) are available. Final APK, manifest, dependency and asset checks remain release gates.
+
 ## Project documentation
 
 See the [Community Release Guide](https://github.com/Vaivaii/Nuxmg30-web-app/blob/release/community-prep-v2/COMMUNITY_RELEASE_GUIDE.md) and [Public Release Checklist](https://github.com/Vaivaii/Nuxmg30-web-app/blob/release/community-prep-v2/PUBLIC_RELEASE_CHECKLIST.md).
-
-A source-code license and public privacy notice have not yet been added. Their review is part of the release gate.
 
 ## Independence and trademarks
 
