@@ -3835,3 +3835,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Scene strip is pushed to the bottom of the fixed Editor card with `margin-top:auto`; card bottom padding is 16px, Scene top separation 12px, and touch targets are 64px tall. Editor viewport remains locked; no scrolling added.
 - Only `www/index.html`, UI regression tests, workflow branch allowlist, and this checklist are changed. No header, dock, tab animation, Studio behavior, NAM, IR transfer/Collection, preset, Signal Chain, USB-MIDI or MIDI/CC mapping code changed.
 - Regression tests now assert fixed stage/visual dimensions, independent unclipped caption, all category widths, Scene bottom anchoring, button dimensions and locked Editor viewport. Build #647 pending.
+
+## Build #647 successful and APK payload inspected — 6 November 2026
+
+- GitHub Actions run `42238533614`, Build #647, branch `feature/editor-fixed-model-frame-scene-anchor`, source commit `efd10044824b40a934ad5d0a79471dbfeb602304`, conclusion `success`.
+- Regression suite: **304 passed, 0 failed**. Android initializer syntax passed, Capacitor Android generation passed, Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m 32s`, and artifact upload passed.
+- Artifact `MG30-Studio-debug-APK`, ID `13514985115`, ZIP size 4,225,659 bytes, SHA-256 `66b91eb40fec50a5c2f3945b6d0e392e087da557951d3a1302cd6bf9b34c07ed`.
+- Extracted APK `app-debug.apk`: 4,602,672 bytes, SHA-256 `1557ac264be662a586e7cd41c2704b09ace5f98df368171b2ceb72d00373c6b3`. ZIP archive and APK ZIP structure integrity checks passed.
+- APK payload check: `assets/public/index.html` contains the final fixed-frame block with 198px total visual unit (142px artwork + 56px caption), 182px short-screen unit (126px + 56px), independent visible caption rail, Scene bottom anchoring, 64px Scene button targets and 16px card bottom padding. Bundled CSS retains image fit/overflow and Editor fixed viewport rules.
+- Build #647 is a CI-verified debug APK with archive and packaged-payload inspection. Physical-device visual confirmation remains pending; do not state the user has installed this APK.
+- Source changes are limited to Editor model artwork/Scene presentation, regression tests, workflow branch allowlist, and project notes. NAM, custom IR/User/Third Party import, IR Collection, presets, Signal Chain, USB-MIDI and MIDI/CC mappings were not changed.
