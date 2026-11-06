@@ -3941,3 +3941,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Toast handling stays exactly as accepted: preset/NAM/IR sync scopes only.
 - No hardware protocol, USB-MIDI, NAM/IR transfer, preset payload, Signal Chain, MIDI mapping, or card layout dimensions changed.
 - Validation required: full 307+ test regression suite, Vite production, Capacitor generation, Gradle assembleDebug, and packaged APK inspection for badge visible + caption chip hidden + Based on preserved.
+
+
+### Build #663 — Keep artwork IMAGE badge; hide only overlapping caption chip — 7 November 2026
+
+- User clarified the desired final state: keep the IMAGE badge on top of the AMP/EFX artwork; hide only the small IMAGE text chip in the caption row where it overlaps the Based on attribution. The Based on line must remain visible.
+- Implemented only a targeted caption-chip gate for AMP/EFX models whose origin is IMAGE. Restored the artwork badge. Kept the Based on markup unconditional. The long IMAGE disclaimer remains hidden for these AMP/EFX models as agreed in the immediately preceding request.
+- Restored normal modelDisplayLabel behavior, so the displayed model name remains the source-defined name; no renaming of the underlying model records.
+- Toast behavior is unchanged: only explicit preset, NAM, and IR synchronization scopes are allowed to display floating toast.
+- No hardware/protocol logic, NAM/IR transfer payloads, IR User/Third Party/Collection, preset import/export payloads, Signal Chain, USB-MIDI, MIDI/CC mappings, or editor layout dimensions changed.
+- Source tested: commit `b989727c3bfbe7700e4e3a617cd7143056688e58` on `fix/editor-model-caption-visibility`.
+- GitHub Actions run #663 / `42258403823`: **SUCCESS**. Regression suite: 307 passed, 0 failed. Android initializer syntax, Vite production build (637 ms), Capacitor Android generation, Gradle `assembleDebug` (BUILD SUCCESSFUL in 1m 11s), and artifact upload all passed.
+- Artifact ID `13522839411`; ZIP size 4,225,965 bytes; ZIP SHA-256 `c95477872436041a6df33d82b484d8d6685f573b6fe097f834fdf2eb5b67f04d`.
+- Extracted APK size 4,602,856 bytes; APK SHA-256 `dc9a63173abc4343a5b093ad41bb97cd08ae6591ac343a7b3337b1cea8928a89`.
+- ZIP integrity and APK ZIP integrity passed. Packaged APK inspection confirmed the AMP/EFX caption chip is conditional on `hideImageCaptionChip`, the artwork badge text remains `IMAGE`, the Based on row is unconditional, and the long disclaimer remains hidden for those AMP/EFX IMAGE models.
+- This is source/build/package verification; user physical installation verification remains pending.
