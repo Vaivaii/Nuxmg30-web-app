@@ -3643,3 +3643,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Artifact ID `13482471528`; ZIP SHA-256 `b64dadbcb5a628334917e4e25aed31220402488df512fb0bbafb54d7249ecedf`.
 - Extracted APK: 4,596,328 bytes; SHA-256 `c757d6222fb5dd17ad75e7d4a6a3818db908bd26ffc90486d01ca92a763e0156`.
 - APK inspection confirmed Record 0–100/default50; Playback 0–150/default100; Playback wire byte baseline raw100 and upper endpoint raw127. Physical pedal level response still awaits the user's test.
+
+
+## Playback Level +3 dB discrepancy — follow-up after Build #628
+
+- User tested Build #628 and reports the hardware PLAY Level reaches only approximately +3 dB at app UI 150.
+- Do not treat this as proven hardware maximum. A standard MG-30 owner manual documents both REC and PLAY levels as -12/+12 dB; exact mapping for original MG-30 Gen 2 firmware 6.0.x remains to be verified.
+- Supplied `playlevel.pcapng` varies frame offset 0x1F from 0x68 to 0x7A, while adjacent offset 0x1E stays 0x00. No supplied sample exceeds raw 127.
+- Investigate whether Playback is a 14-bit split field at offsets 0x1E/0x1F. This is only a hypothesis until a QuickTone capture above raw 127 confirms it.
+- No source code changes in this follow-up. Do not alter the now-confirmed Record Level 0–100/default 50 path.

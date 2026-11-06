@@ -148,3 +148,16 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Extracted APK: `app-debug.apk`, 4,596,328 bytes; SHA-256 `c757d6222fb5dd17ad75e7d4a6a3818db908bd26ffc90486d01ca92a763e0156`.
 - ZIP integrity passed. The packaged APK was inspected: Record slider 0–100/default 50/readout /100; Playback slider 0–150/default 100/readout /150; full 46-byte `14/01` template retains raw 50 at offset `0x1D` and raw 100 at `0x1F`; Playback uses the 7-bit mapping UI 100–150 → raw 100–127; `14/03` ACK handling remains packaged.
 - The APK passed package/file and embedded asset checks. Physical-device output-level verification is still required; this CI inspection cannot verify the analog dB response.
+
+
+## Physical Playback Level report and protocol re-evaluation (after Build #628)
+
+- User installed/tested Build #628 and reported that moving Playback Level to UI 150 still changes the MG-30 USB Playback Level only to approximately +3 dB.
+- This disproves the prior assumption that UI 150 / raw 127 has already been proven to represent the full hardware range. Do not declare +3 dB the hardware maximum.
+- Reinspection of `playlevel.pcapng`: the complete 14/01 frames change the byte at absolute frame offset `0x1F` through `0x68`, `0x70`, `0x76`, `0x7A` (104, 112, 118, 122). The immediately preceding byte at offset `0x1E` remains `0x00` in the supplied samples. This capture set never exercises a Playback value greater than 127.
+- Reinspection of `reclevel.pcapng`: Record Level changes at offset `0x1D` through `0x34`, `0x37`, `0x3A`, `0x3C`; the surrounding fields remain unchanged. This matches the user's separate physical confirmation that Record 50→100 reaches +12 dB.
+- New hypothesis to validate, not implementation evidence: Playback may use a 14-bit value split across SysEx data bytes `0x1E` (MSB/high 7 bits) and `0x1F` (LSB/low 7 bits). Because all supplied Playback samples stay below 128, the high byte remains zero and the existing captures cannot distinguish a 14-bit field from a single-byte field.
+- A standard MG-30 owner manual search result documents USB Audio Settings REC Level and PLAY Level as `-12 / +12 dB` (manual is not a firmware-6.0.x-specific protocol appendix). Therefore +3 dB at the app endpoint is a discrepancy to investigate, not an established device ceiling.
+- Build #628's current mapping remains a provisional UI convention: UI 0–100 -> raw 0–100; UI 100–150 -> raw 100–127 at offset `0x1F`. Do not extend or change it blindly.
+- Required next evidence: a QuickTone 2.6.7.16 USB capture at Playback Level above 127 (ideally the UI maximum), recording the displayed QuickTone value and MG-30 dB readout, while keeping all other settings fixed. Compare offsets `0x1E` and `0x1F`. If both bytes change as a 14-bit pair, update only Playback encoding and tests; otherwise examine the device's returned state/display path before changing the sender.
+- No application source changes made in this re-evaluation. Preserve Record Level's confirmed implementation, Loopback, ACK queue, NAM, User/Third Party IR, Collection IR, preset, Signal Chain, and all MIDI mappings.
