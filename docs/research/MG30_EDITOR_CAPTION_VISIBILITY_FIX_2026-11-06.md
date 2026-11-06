@@ -96,3 +96,18 @@ The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 
 - Toast behavior is already accepted by the user and is unchanged: default/no-scope toast is suppressed; only explicit preset, NAM and IR sync scopes remain active.
 - This is a markup conditional only. No protocols, transfer payloads, hardware state, layout dimensions, Signal Chain, preset data, NAM/IR paths, USB-MIDI or MIDI mapping are changed.
 - Regression/build validation for this correction is pending.
+
+
+## Verified correction — remove IMAGE disclaimer only, retain Based on — Run #660 — 6 November 2026
+
+- User clarified only the long IMAGE disclaimer must disappear on IMAGE-based AMP and EFX/pedal; the Based on line must remain. The correction now leaves the Based on row unconditional, restores the IMAGE origin chip beside category and keeps the IMAGE badge on the artwork.
+- Only the `.model-origin-note` disclaimer is empty for IMAGE origin on AMP/EFX. Other categories and GEN2 notices retain their previous behavior.
+- Toast logic was not changed in this correction. Its existing scope gate remains: only `preset`, `nam`, `ir` show a floating toast; default/unscoped toast calls remain suppressed.
+- Branch: `fix/editor-model-caption-visibility`.
+- Source commit built by successful GitHub Actions run #660: `b616beca8b730e11d8604cdca73e0a81692ad1d8`.
+- Run ID: `42254827958`; result **success**. Regression suite: 307 passed, 0 failed. Android initializer syntax, Vite, Capacitor, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID `13521971775`; ZIP size 4,225,941 bytes; ZIP SHA-256 `143e58d04ee346bdb1b0a059b76214f1b37b3a3890676042951497a0697e122f`.
+- APK size 4,602,840 bytes; APK SHA-256 `c31f78888d1f303a8d766b879e6b4163dbc752bda5daf312b95d316371374cd1`.
+- ZIP integrity, APK internal ZIP integrity, packaged HTML renderer check, Based on row presence, IMAGE origin chip and artwork badge presence, disclaimer gate, and toast allowlist checks all passed.
+- No hardware protocol, NAM/IR data transfer, preset payload, Signal Chain, USB-MIDI, MIDI mapping or layout dimension changes in this correction.
+- Physical confirmation of the revised Based on display on the user's MG-30 Studio installation remains pending.
