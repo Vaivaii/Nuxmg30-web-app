@@ -8,59 +8,87 @@ Repository: `Vaivaii/Nuxmg30-web-app`
 
 - Development source branch: `fix/global-english-android-back`
 - Source HEAD: `b67a3196fba5191741399fc8bcb79c7d5a5babfb`
-- Latest successful CI: Build #669, run `42270761593`
+- Latest successful CI evidence available when this preparation began: Build #669, run `42270761593`
 - Build #669: 310 tests passed / 0 failed; Android initializer syntax validation passed; Capacitor Android generation passed; Gradle `assembleDebug` succeeded; debug artifact uploaded.
-- Build #669 is not proof of physical MG-30 testing or a signed public APK.
-- No GitHub Releases existed at the time of preparation.
-- Repository default branch is `main`; its source is stale relative to the active development branch. Do not merge branches blindly.
-- The former `release/community-prep` branch is stale/diverged from the active source and its release workflow pinned Build #663. Do not use it as the new baseline.
+- Build #669 is not a signed public APK.
+- The repository default branch is `main`; its source is stale relative to the active Android app source. Do not merge branches blindly.
+- The old `release/community-prep` branch is stale/diverged and must not be used.
 
 ## Release preparation branch
 
 Created `release/community-prep-v2` directly from immutable Build #669 source commit `b67a3196fba5191741399fc8bcb79c7d5a5babfb`.
 
-Preparation-only changes on this branch:
-- Added `.github/workflows/community-release.yml` for a signed release candidate.
-- Updated `COMMUNITY_RELEASE_GUIDE.md` to pin the Build #669 source.
-- Added `PUBLIC_RELEASE_CHECKLIST.md`.
-- Replaced the stale prototype README with a truthful Community Edition overview and limitations.
-- Recorded the owner's GPL-3.0-only selection and added the canonical LICENSE text.
-- Added a source-audited privacy notice and preliminary direct npm dependency license inventory.
-- Added a manual GitHub Actions lockfile bootstrap workflow. The signed release workflow now requires a committed lockfile, uses `npm ci`, and checks out the exact workflow-dispatch commit; it remains blocked until the bootstrap workflow is run and its commit is pushed.
-- Added `CONTRIBUTING.md` with GPL contribution terms, target hardware scope, protected protocol areas, test expectations and safe issue-reporting guidance.
-- Audited privacy-relevant source paths: TONE3000 OAuth/API tokens in WebView localStorage, optional YouTube API key and embed, local preset/NAM/IR settings, USB-MIDI, native audio recording and export. The Android initializer adds RECORD_AUDIO; camera implementation/permission is not confirmed in this source audit.
-- No application runtime source, NAM, IR, MIDI mapping, USB-MIDI, preset, Signal Chain, or hardware protocol code was changed.
+Preparation changes on this branch are limited to release documentation and GitHub Actions workflow files. The application runtime/protocol code is unchanged from the selected Build #669 source baseline. Protected areas include NAM, User/Third Party IR, IR Collection, MIDI mapping, USB-MIDI, presets, Signal Chain and device communication.
 
-The release workflow:
-- checks out immutable commit `b67a3196fba5191741399fc8bcb79c7d5a5babfb`;
-- runs `npm install`, initializer syntax validation, and `npm test`;
-- requires four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`;
+The branch contains:
+- `.github/workflows/community-release.yml` for a signed release candidate;
+- `.github/workflows/prepare-lockfile.yml` for a manually dispatched npm lockfile bootstrap;
+- `PUBLIC_RELEASE_CHECKLIST.md`;
+- `COMMUNITY_RELEASE_GUIDE.md`;
+- `LICENSE` (canonical GPL-3.0-only text);
+- `PRIVACY.md`;
+- `THIRD_PARTY_NOTICES.md`;
+- `CONTRIBUTING.md`;
+- updated Community Edition README and this research record.
+
+No application runtime or protocol source changes were made as part of release preparation.
+
+## Owner decision: open-source model
+
+The owner selected **GPL-3.0-only** on 7 November 2026. The canonical GPL-3.0-only `LICENSE` file has been committed. This records the intended source license; it does not establish that third-party dependencies or bundled assets are relicensed. Their individual terms and the project's authority over first-party code still require review.
+
+## Owner confirmation: physical feature QA complete
+
+On 7 November 2026, the owner explicitly confirmed: **all MG30 Studio features are functioning and all feature tests have been completed on the device**.
+
+The confirmation includes Import All and Export All, superseding the earlier provisional notes that reported an Import All readback mismatch at program 72 / scene 0 and an unvalidated Export All path. It also supersedes earlier pending status for Playback Level. The confirmed feature scope includes:
+- NAM loading and transfer;
+- Custom IR User/Third Party import;
+- IR Collection import/use;
+- MIDI/CC mapping and USB-MIDI;
+- preset selection, Single Import/Export and Import All/Export All;
+- Signal Chain, scenes, CTRL/EXP;
+- USB audio loopback, Record Level and Playback Level.
+
+This is owner-reported physical QA confirmation. The exact APK filename/build number/source SHA-256 used for the physical test was not supplied in the confirmation. Capture that identity in the release evidence before publication. Do not misstate this confirmation as proof that the signed release APK has already been built or installed.
+
+## Privacy and dependency audit
+
+- `PRIVACY.md` is a source-audited draft. It records TONE3000 OAuth/API token handling in WebView localStorage, optional YouTube API key storage and API requests, YouTube embed behavior, local preset/NAM/IR settings, USB-MIDI, audio recording/export and diagnostic sharing.
+- Final generated Android manifest, signed APK and observed network behavior still need verification, especially camera implementation/permission and the handling of OAuth tokens/API keys in localStorage.
+- `THIRD_PARTY_NOTICES.md` is a preliminary direct npm dependency license inventory. A complete npm/Gradle transitive dependency and bundled-asset audit remains outstanding because no lockfile/SBOM has been committed yet.
+- Review NUX/Cherub marks, bundled artwork and third-party assets before broad public distribution.
+
+## Release workflow and remaining gates
+
+The signed release workflow:
+- runs only from `release/community-prep-v2`;
+- checks out the exact workflow-dispatch commit;
+- requires `package-lock.json` and uses `npm ci`;
+- runs `npm test` and Android initializer syntax validation;
+- requires four owner-configured secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`;
 - generates the Capacitor Android project and builds `assembleRelease`;
-- verifies APK signature, package ID `com.vaivaii.mg30studio`, and SHA-256;
+- verifies APK signature, package ID `com.vaivaii.mg30studio` and SHA-256;
 - uploads an audit artifact;
-- creates a GitHub Release only when explicitly requested, and then creates it as draft + prerelease, never automatically public/latest.
+- creates a GitHub Release only when explicitly requested, and then only as draft + prerelease, never public/latest.
 
-## Owner decision recorded: open-source model
+Still outstanding:
+1. Run the manual lockfile workflow and confirm `package-lock.json` is committed. It has not been run; the file is absent.
+2. Owner creates and backs up the permanent PKCS#12 keystore locally, then configures the four GitHub Actions secrets. Never send the keystore or passwords in chat.
+3. Run the signed candidate workflow and inspect its tests, generated manifest, APK permissions, signature, package identity and checksum.
+4. Install the signed APK on a clean Android device. A signed APK normally cannot update an existing debug-signed app with the same package ID; back up app data and uninstall the debug build if needed. Keep the same permanent signing key for future updates.
+5. Record the exact physically tested APK/source identity, and separately smoke-test the signed candidate.
+6. Complete transitive dependency, artwork/font/asset, privacy and trademark reviews; prepare final installation/update/troubleshooting instructions.
+7. Publish only after all checklist gates are complete. No public or draft release should be created automatically.
 
-The owner selected **GPL-3.0-only** on 7 November 2026. A canonical GPL-3.0-only `LICENSE` file sourced from the SPDX license-list text has been committed to this branch. This records the project's intended source license. It does not establish that third-party dependencies or bundled assets are relicensed; their individual terms and the project's authority over first-party code still require review.
+## Current repository status at this record
 
-## Release blockers / owner decisions
+- Release-preparation branch: `release/community-prep-v2`.
+- The latest release-preparation documentation commits record the owner's completed feature QA confirmation.
+- The application runtime/protocol source remains unchanged by the documentation updates.
+- No `package-lock.json` is committed; the bootstrap workflow has not been run.
+- No signed APK has been built in this release-preparation sequence; signing secrets have not been read.
+- No tag or GitHub Release has been created.
+- The default `main` branch is a README-only landing page and does not contain the current Android app source. Do not merge branches without a deliberate reconciliation plan.
 
-1. The four signing secrets have not been confirmed as configured. The keystore must be created and backed up by the owner; never send it or its passwords in chat.
-2. GPL-3.0-only has been selected and LICENSE added; review dependency/asset licensing and confirm all first-party code can be licensed by the project.
-3. A draft `PRIVACY.md` now documents observed source behavior. Final APK/manifest/network verification remains required, especially camera permission/implementation and the unencrypted WebView localStorage handling of OAuth tokens and API key.
-4. Physical hardware QA of the exact Build #669 candidate is not documented. Test original Gen 2 firmware 6.0.x and protect NAM, User/Third Party IR, IR Collection, MIDI/CC mappings, USB-MIDI, presets and Signal Chain.
-5. Import All has a documented program 72 / scene 0 readback mismatch; Export All end-to-end remains unvalidated. Do not market either as fully verified.
-6. First signed APK will have a different certificate from the installed debug APK. The user may need to back up app data, uninstall the debug build, then install the signed build. Keep the same release key for all future updates and increment versionCode after the first release.
-7. Review NUX/Cherub marks, bundled artwork and third-party assets before broad public distribution.
-8. The GitHub default branch remains `main` and is not synchronized with the current Android app source. Its README-only landing page now links to the GPL-3.0-only LICENSE, privacy notice, third-party notice inventory, and current Android release-prep branch; no application source was merged into main. Do not merge branches without a deliberate reconciliation plan.
-9. No `package-lock.json` exists in the current source tree. A preliminary direct dependency license inventory exists, but transitive npm/Gradle dependencies and bundled assets remain unaudited. A lockfile bootstrap workflow is prepared but has not yet been run; there is still no committed `package-lock.json`. Generate a lockfile and use deterministic `npm ci` before final public build; the current candidate workflow follows existing CI's `npm install` behavior.
-
-## Current status
-
-- Release-preparation branch HEAD: `3078f519c514b7250564ec0c8a223bd1c7bbc1c1`.
-- Default `main` HEAD: `e67d52663ca1f9ffadd70875d03c254edc99e930` (README-only update; application source not merged).
-- Compared with Build #669 source commit, the release-preparation branch changes only documentation and two GitHub Actions workflow files; no application runtime or protocol source files differ.
-- The branch currently has zero Actions runs and the repository has zero GitHub Releases.
-
-GPL-3.0-only selection and the canonical LICENSE file are recorded in the release-prep README, guide, checklist and this research note. The source-audited privacy notice, preliminary direct dependency license inventory and contributor guide are present. The deterministic lockfile workflow is prepared but has not been run, so no `package-lock.json` is committed yet. The signed release workflow requires the lockfile and uses `npm ci`, so it will stop until that prerequisite exists. No signed APK was built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. Functional app code remains unchanged.
+The physical feature QA gate is now recorded as complete based on the owner's explicit confirmation. Release engineering, signed-candidate verification and legal/privacy publication gates remain open.
