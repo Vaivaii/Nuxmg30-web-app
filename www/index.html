@@ -1024,6 +1024,25 @@ function invalidatePresetManagerCacheForWrite(data){
  }
 }
 function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);invalidatePresetManagerCacheForWrite(data);return true})}
+const MG30_LEVEL_SYSEX_HEADER=[0xF0,0x43,0x58,0x70,0x14,0x02]; // candidate action; not capture-verified
+function sendMg30SysEx(payloadArray){
+ const payload=Array.from(payloadArray||[],value=>Number(value)&0x7F);
+ return midiSend([...MG30_LEVEL_SYSEX_HEADER,...payload,0xF7]);
+}
+function setLoopback(enable){return sendMg30SysEx([enable?0x01:0x11]);}
+function setRecLevel(value){
+ const v=Math.max(0,Math.min(100,Number(value)||0));
+ return sendMg30SysEx([Math.round(0x34+(v/100)*0x08)]);
+}
+function setPlayLevel(value){
+ const v=Math.max(0,Math.min(100,Number(value)||0));
+ return sendMg30SysEx([0x00,Math.round(0x68+(v/100)*0x12),0x01]);
+}
+window.sendMg30SysEx=sendMg30SysEx;
+window.setLoopback=setLoopback;
+window.setRecLevel=setRecLevel;
+window.setPlayLevel=setPlayLevel;
+
 function sendCC(cc,value){if(presetImportBusy||presetExportBusy||!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
 async function flushCC(){try{while(pendingCC.size){const batch=[...pendingCC.entries()];pendingCC.clear();for(const [cc,value] of batch)await midiSend([0xB0,cc,value])}}finally{flushingCC=false;if(pendingCC.size){flushingCC=true;flushCC()}}}
 async function flushMidi(){while(flushingCC||pendingCC.size)await delay(10);await midiChain}
