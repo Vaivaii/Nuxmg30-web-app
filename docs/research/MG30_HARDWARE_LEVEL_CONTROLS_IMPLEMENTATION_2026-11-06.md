@@ -107,3 +107,18 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - No NAM, IR User/Third Party/Collection, preset, signal-chain, USB-MIDI transport, or unrelated MIDI/CC mapping code was changed.
 - Added regression coverage for both slider bounds/defaults, dynamic readouts, and the retained frame-template bytes.
 - Validation on this commit is pending GitHub Actions. User should physically test Record Level and Playback Level independently on original MG-30 Gen 2 firmware 6.0.x; compare default raw 50 and maximum raw 100, and report actual level/dB response.
+
+
+## Build #627 — shared 0–100 slider range (2026-11-06)
+
+- Source commit: `f2e8c6b4695873dfaae3be3cb14de6e96bde5456`.
+- GitHub Actions run #627: [42172104155](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42172104155) — **completed / success**.
+- Protocol regression tests: **285 passed, 0 failed**.
+- Android initializer syntax validation passed.
+- Capacitor Android generation and USB audio plugin installation passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `13481806990`.
+- Artifact ZIP: 4,217,600 bytes; SHA-256 `9fa35836cbed355ef3e880bb1bb99f9232aea436fd13989ffe6bb0bfe314b269`.
+- Extracted APK: `app-debug.apk`, 4,596,160 bytes; SHA-256 `505a88ad2d6ff8ce41677e661a4c4fb40fa4bb76a49cc76e1e5de0dc2ab6962`.
+- ZIP integrity check passed; archive contains exactly one `app-debug.apk`. APK file type recognized as Android package. Packaged web assets were inspected: both dynamically-created sliders show `min=0`, `max=100`, `step=1`, `value=50`; readouts show `50 / 100` and update against `/ 100`. The packaged 46-byte hardware frame has raw 50 at offsets `0x1D` and `0x1F`. The packaged sender clamps direct raw slider values to 0–100.
+- Physical-device test of the new Playback Level default/maximum and Record Level cap remains required. CI/packaged APK inspection does not emulate the pedal's analog level response.

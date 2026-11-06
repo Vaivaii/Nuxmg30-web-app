@@ -3616,3 +3616,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - The app's retained 46-byte `14/01` frame template now initializes Record and Playback Level bytes at 50, with comments/documents distinguishing this user-directed baseline from the previous QuickTone capture baseline of Playback 100.
 - Preserved the existing 14/01 full-frame validation, Record offset 0x1D, Playback offset 0x1F, Loopback offset 0x20 and 0x11/0x01 polarity, serialized write queue, 14/03 ACK handling, and all unrelated communication paths.
 - Added regression tests; await CI/Gradle artifact result. Physical verification of Playback max 100 and both default values remains required. This is slider-only scope; no NAM, custom IR, Collection IR, preset, MIDI mapping or Signal Chain changes.
+
+
+## Build #627 — Hardware Level shared slider range (6 November 2026)
+
+- User confirmed Build #626 was installed and supplied a screenshot showing both level controls exceeding the desired operating range.
+- Updated both Record Level and Playback Level sliders to min 0, max 100, default 50, step 1.
+- Build #627 passed 285 regression tests and Gradle `assembleDebug`; Capacitor generation and artifact upload succeeded.
+- Artifact ID: `13481806990`; ZIP SHA-256: `9fa35836cbed355ef3e880bb1bb99f9232aea436fd13989ffe6bb0bfe314b269`.
+- Extracted APK size: 4,596,160 bytes; SHA-256: `505a88ad2d6ff8ce41677e661a4c4fb40fa4bb76a49cc76e1e5de0dc2ab6962`.
+- Packaged APK was inspected; both controls and their raw frame defaults are 50/100. Await user's hardware response for separate Record/Playback tests.
