@@ -3737,3 +3737,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Startup regression added. CI #634 passed 288/288 tests; Gradle assembleDebug succeeded.
 - Artifact ID 13491353644. APK SHA-256: `f4dfd0477cc03a8256f799dda37943942eb292efb6311cc8f4f2d4c7ddcbabdb`.
 - APK asset inspection confirms hidden-before-relocation/reveal-after-append ordering. Cold-start physical retest pending. No transfer/protocol behavior changed.
+
+
+## Editor Dynamic Parameter Dock — 6 November 2026
+
+- New separate branch `feature/editor-dynamic-parameter-dock`, based on latest Build #634 documentation head `f80858213a06a219b14b827101e2693a2a4b44c4`.
+- Implements a fixed model dock above bottom navigation. The centered title displays active block type and model; left/right arrows continue to use the existing model change callbacks. The old "MODEL" label is removed.
+- Tapping the centered title slides the parameter sheet upward; tapping it again, tapping the backdrop, pressing Escape, or navigating away closes it. The dock header stays fixed above bottom navigation while parameter controls scroll inside the sheet.
+- Reuses the existing `#knobs` renderer and callbacks; does not clone the controls or alter MIDI parameter logic.
+- Build and regression results pending.
