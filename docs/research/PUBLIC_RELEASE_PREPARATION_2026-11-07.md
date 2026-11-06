@@ -92,3 +92,12 @@ Still outstanding:
 - The default `main` branch is a README-only landing page and does not contain the current Android app source. Do not merge branches without a deliberate reconciliation plan.
 
 The physical feature QA gate is now recorded as complete based on the owner's explicit confirmation. Release engineering, signed-candidate verification and legal/privacy publication gates remain open.
+
+
+## Workflow visibility correction — 7 November 2026
+
+The owner reported that the GitHub Actions link for the lockfile workflow displayed “Not found / This workflow does not exist.” Investigation confirmed that `.github/workflows/prepare-lockfile.yml` existed on `release/community-prep-v2` but not on the repository default branch `main`. GitHub requires a `workflow_dispatch` workflow file to exist on the default branch for it to be dispatchable. The lockfile workflow has therefore also been registered on `main`, while its job-level guard still permits execution only when the selected ref is `release/community-prep-v2`.
+
+The default branch also contained an older `community-release.yml` that pinned Build #663 and could publish a public/latest release automatically. That unsafe legacy workflow was replaced on `main` with the guarded signed-candidate workflow from `release/community-prep-v2`: it only runs from the release-preparation branch, requires the committed lockfile and owner-managed signing secrets, and creates a draft prerelease only when explicitly requested. No public release is created by default.
+
+These default-branch changes affect workflow registration/safety only; they do not merge application source into `main` or alter app runtime/protocol code. The owner should now open the Actions page, select the lockfile workflow, choose branch `release/community-prep-v2`, and dispatch it. The workflow has not yet been run and no lockfile has been generated.
