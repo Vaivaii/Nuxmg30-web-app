@@ -8,7 +8,7 @@ It is not developed, endorsed or supported by NUX.
 
 ## Download
 
-Public releases will be published on [GitHub Releases](https://github.com/Vaivaii/Nuxmg30-web-app/releases) after the signed APK, installation and hardware validation gates are complete.
+Public releases will be published on [GitHub Releases](https://github.com/Vaivaii/Nuxmg30-web-app/releases) after the signed APK, installation and release-validation gates are complete.
 
 Do not install debug workflow artifacts as public releases. The first signed community APK may require uninstalling a previously installed debug build because Android treats different signing certificates as different app identities.
 
@@ -21,9 +21,11 @@ Do not install debug workflow artifacts as public releases. The first signed com
 
 ## Feature and validation status
 
-The app includes editor and Signal Chain controls, USB-MIDI integration, NAM and custom IR workflows, preset management and studio/audio features. Feature-level hardware validation is not uniform.
+The owner has confirmed that **all MG30 Studio features are functioning on the target physical pedal**, including NAM, Custom IR User/Third Party, IR Collection, MIDI/CC mapping, USB-MIDI, preset operations (Single Import/Export and Import All/Export All), Signal Chain, scenes, CTRL/EXP, and USB audio loopback with Record/Playback levels.
 
-Import All and Export All remain under validation. Import All may overwrite the pedal's 128-preset bank; make a complete backup before using any bulk-write function. Do not treat automated CI tests as proof of hardware compatibility.
+This is owner-reported physical feature QA. The exact APK/build identity used for that test still needs to be attached to the release evidence. It does not mean that a signed public-release APK has already been built or installed.
+
+Import All can write the full 128-preset bank; make a complete backup before using any bulk-write function. Do not treat automated CI tests as proof of hardware compatibility.
 
 Consult the release notes and known limitations for the exact build before installation.
 
@@ -46,7 +48,9 @@ Future community updates must be signed with the same release key. Do not uninst
 
 ## Project status
 
-The current release candidate baseline is Build #669. CI passed 310 automated tests and the Android debug packaging workflow. This does not mean that every feature has passed physical-device testing. See `COMMUNITY_RELEASE_GUIDE.md`, `PUBLIC_RELEASE_CHECKLIST.md`, [Privacy Notice](PRIVACY.md), [Third-Party Notices](THIRD_PARTY_NOTICES.md), and [Contributing](CONTRIBUTING.md).
+The release-preparation branch uses Build #669 as the application source baseline. CI passed 310 automated tests and the Android debug packaging workflow. The owner has separately confirmed physical feature QA for all features; the exact physically tested build identity still needs to be recorded. The signed release candidate must still pass reproducible dependency installation, signed packaging, APK permission/privacy review and clean-device installation checks.
+
+See `COMMUNITY_RELEASE_GUIDE.md`, `PUBLIC_RELEASE_CHECKLIST.md`, [Privacy Notice](PRIVACY.md), [Third-Party Notices](THIRD_PARTY_NOTICES.md), and [Contributing](CONTRIBUTING.md).
 
 ## Independence and trademarks
 
