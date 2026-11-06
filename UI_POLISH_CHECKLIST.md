@@ -3776,3 +3776,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Added gear category classes. Non-AMP SVG viewport dimensions reduced instead of CSS transform: standard pedal 55%, cabinet 44%, expression/Wah 48%, FX loop 52%. AMP renderer and scale unchanged.
 - Stylesheet cache token `stable-ui-1`. No NAM, IR transfer, Collection, preset, Signal Chain, USB-MIDI or MIDI/CC mapping code changed.
 - Regression suite and Build #642 pending; physical device validation remains required.
+
+- Build #642 reached the test suite and reported 2 stale stylesheet-cache assertions still expecting `motion-lite-3` (297/299 passed). Updated the NAM/TONE3000 and shared UI tests to expect the restored stable stylesheet token `stable-ui-1`. Runtime code unchanged by this test correction; Build #643 is the rerun.
