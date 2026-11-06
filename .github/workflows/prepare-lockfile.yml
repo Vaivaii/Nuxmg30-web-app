@@ -1,0 +1,54 @@
+name: Prepare deterministic npm lockfile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mg30-lockfile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  lockfile:
+    name: Generate, validate and commit package-lock.json
+    if: github.ref == 'refs/heads/release/community-prep-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout release preparation branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate lockfile from the declared package manifest
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Validate clean reproducible installation
+        run: |
+          set -euo pipefail
+          test -s package-lock.json
+          npm ci
+          npm test
+
+      - name: Commit lockfile to the release preparation branch
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json is already current; no commit required."
+            exit 0
+          fi
+          git commit -m "build: add deterministic npm lockfile"
+          git push origin "HEAD:$BRANCH_NAME"
