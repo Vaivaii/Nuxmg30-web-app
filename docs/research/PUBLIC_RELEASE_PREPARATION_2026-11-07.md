@@ -25,6 +25,8 @@ Preparation-only changes on this branch:
 - Added `PUBLIC_RELEASE_CHECKLIST.md`.
 - Replaced the stale prototype README with a truthful Community Edition overview and limitations.
 - Recorded the owner's GPL-3.0-only selection and added the canonical LICENSE text.
+- Added a source-audited privacy notice and preliminary direct npm dependency license inventory.
+- Audited privacy-relevant source paths: TONE3000 OAuth/API tokens in WebView localStorage, optional YouTube API key and embed, local preset/NAM/IR settings, USB-MIDI, native audio recording and export. The Android initializer adds RECORD_AUDIO; camera implementation/permission is not confirmed in this source audit.
 - No application runtime source, NAM, IR, MIDI mapping, USB-MIDI, preset, Signal Chain, or hardware protocol code was changed.
 
 The release workflow:
@@ -44,13 +46,13 @@ The owner selected **GPL-3.0-only** on 7 November 2026. A canonical GPL-3.0-only
 
 1. The four signing secrets have not been confirmed as configured. The keystore must be created and backed up by the owner; never send it or its passwords in chat.
 2. GPL-3.0-only has been selected and LICENSE added; review dependency/asset licensing and confirm all first-party code can be licensed by the project.
-3. No public privacy notice was found. Review OAuth, network/API integrations, local storage, permissions and diagnostics before publishing a privacy promise.
+3. A draft `PRIVACY.md` now documents observed source behavior. Final APK/manifest/network verification remains required, especially camera permission/implementation and the unencrypted WebView localStorage handling of OAuth tokens and API key.
 4. Physical hardware QA of the exact Build #669 candidate is not documented. Test original Gen 2 firmware 6.0.x and protect NAM, User/Third Party IR, IR Collection, MIDI/CC mappings, USB-MIDI, presets and Signal Chain.
 5. Import All has a documented program 72 / scene 0 readback mismatch; Export All end-to-end remains unvalidated. Do not market either as fully verified.
 6. First signed APK will have a different certificate from the installed debug APK. The user may need to back up app data, uninstall the debug build, then install the signed build. Keep the same release key for all future updates and increment versionCode after the first release.
 7. Review NUX/Cherub marks, bundled artwork and third-party assets before broad public distribution.
 8. The GitHub default branch remains `main` and is not synchronized with the current Android app source. Its README has now been replaced with a release-status landing page that links to the current Android source/release-prep branch; no application source was merged into main. Do not merge branches without a deliberate reconciliation plan.
-9. No `package-lock.json` exists in the current source tree. Add a lockfile and use deterministic `npm ci` before the final public build; the current candidate workflow follows the existing CI's `npm install` behavior.
+9. No `package-lock.json` exists in the current source tree. A preliminary direct dependency license inventory exists, but transitive npm/Gradle dependencies and bundled assets remain unaudited. Generate a lockfile and use deterministic `npm ci` before final public build; the current candidate workflow follows existing CI's `npm install` behavior.
 
 ## Current status
 
