@@ -3671,3 +3671,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Playback sender now writes both bytes atomically. UI retains 0–150/default 100, mapped UI 150 to raw 201. UI 100 remains raw 100 (00/64); UI 125 maps to raw 151 (01/17).
 - Record remains 0–100/default 50 writing only 0x1D. Loopback, frame size, queue and ACK unchanged.
 - Regression tests updated. Awaiting CI run and APK validation.
+
+
+## Build #631 Playback 14-bit correction verified — 6 November 2026
+
+- CI passed: 286/286 regression tests; Gradle debug APK built successfully.
+- Inspected packaged APK WebView asset and confirmed high/low Playback bytes are present at offsets 0x1E/0x1F.
+- Artifact ID 13486040971; APK SHA-256 `71d304310bcdce86ecf737ac72d6091184acf723900f611b507b0e8ad94749d2`.
+- UI 100 -> 00 64; UI 125 -> 01 17; UI 150 -> 01 49 (captured +12 dB).
+- Record Level and Loopback unchanged. Physical-device validation still pending.

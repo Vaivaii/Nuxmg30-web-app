@@ -189,3 +189,15 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Playback writes now update both offsets atomically in the same complete 46-byte `14/01` frame: high seven bits at `0x1E`, low seven bits at `0x1F`. Both bytes are masked to 7-bit MIDI data values.
 - Record Level remains unchanged and confirmed: raw 0–100, default 50, only offset `0x1D`. Loopback `0x20`, complete frame guard, serial write queue, matching `14/03` ACK wait and the ordinary MIDI queue are untouched.
 - Added capture-backed regression coverage for the pair, the default, and the UI 100 / 125 / 150 conversions. No NAM, IR User/Third Party/Collection, preset, MIDI/CC mapping, Signal Chain, or USB audio code changed.
+
+
+## Build #631 completed and APK inspected (2026-11-06)
+
+- Commit `866a3a978b6f712ed88e9d2f52caa328e71c96a8` on `feature/studio-hardware-level-controls`.
+- GitHub Actions run #631: success. Protocol regression tests: 286 passed, 0 failed. Android Capacitor project generation: success. Gradle debug APK: `BUILD SUCCESSFUL`.
+- Artifact: `MG30-Studio-debug-APK` (artifact ID `13486040971`), archive size 4,217,950 bytes. APK extracted from artifact: `app-debug.apk`, 4,596,468 bytes.
+- APK SHA-256: `71d304310bcdce86ecf737ac72d6091184acf723900f611b507b0e8ad94749d2`.
+- Inspected the packaged `assets/public/index.html` from inside the APK. It contains the new `normalizeMg30PlaybackSlider`, `updateMg30PlaybackValue`, paired writes at offsets `0x1E` and `0x1F`, and `setPlayLevel` routing to the paired updater. This verifies the 14-bit fix is actually packaged in the APK, not only present in the source tree.
+- Playback mapping: UI 100 -> raw 100 -> bytes `00 64`; UI 125 -> raw 151 -> `01 17`; UI 150 -> raw 201 -> `01 49` (captured +12 dB endpoint).
+- Record Level remains only offset `0x1D`, default 50; Loopback remains offset `0x20`. No NAM, IR User/Third Party/Collection, preset, MIDI/CC mapping, or USB audio code was modified.
+- Important validation boundary: CI and APK package-content inspection passed. A physical test writing Playback Level to the actual MG-30 and observing +12 dB has not yet been performed in this session; ask user to install and test the APK on the original MG-30 Gen 2 firmware 6.0.x.
