@@ -3765,3 +3765,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Device page copy is English at source. Dynamic toast, Device status and native audio status render through the English translator before display.
 - **Permanent rule:** every new or changed user-facing application string must be English by default across all tabs, toast notifications, dialogs, statuses, tooltips, placeholders, accessibility labels and generated UI. Do not add Indonesian UI copy. Retained legacy Indonesian strings require tested English dictionary mappings.
 - Build and physical verification pending.
+
+
+## Stable Editor UI restoration — 6 November 2026
+
+- User rejected Build #641: Editor header/visual hierarchy regressed, non-AMP artwork remains too large/cropped, gradient glitch persists and Studio dock visibly shifts.
+- Branch `feature/editor-stable-ui-artwork-fit` is based directly on known-good Build #637 source commit `aa0dcd9d1f5e31ee3a501bb518038bfbf09c023d`, not on rejected Build #641.
+- Restored exact Build #637 `www/index.html`, `www/ui-redesign.css` navigation rules and `www/studio-daw.js` behavior. This restores previous Editor header markup, main-tab fade, Studio/DAW opacity-only panel entrance, fixed dock measurement and original deferred correction. Horizontal slide helper and synchronous dock pre-positioning are removed.
+- Retained content-sized parameter sheet only: natural height, 64dvh/580px cap (66dvh/560px on narrow phones), internal scroll for large knob groups.
+- Added gear category classes. Non-AMP SVG viewport dimensions reduced instead of CSS transform: standard pedal 55%, cabinet 44%, expression/Wah 48%, FX loop 52%. AMP renderer and scale unchanged.
+- Stylesheet cache token `stable-ui-1`. No NAM, IR transfer, Collection, preset, Signal Chain, USB-MIDI or MIDI/CC mapping code changed.
+- Regression suite and Build #642 pending; physical device validation remains required.

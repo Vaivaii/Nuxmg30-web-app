@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 const studioCss = readFileSync(new URL('../www/studio-daw.css', import.meta.url), 'utf8');
+const studioJs = readFileSync(new URL('../www/studio-daw.js', import.meta.url), 'utf8');
 const irTransfer = readFileSync(new URL('../www/ir-transfer.js', import.meta.url), 'utf8');
 
 test('app-wide motion layer provides short entrances for every main app tab', () => {
@@ -81,4 +82,21 @@ test('Editor viewport is fixed and the parameter sheet uses transform-only anima
   assert.match(css, /transform \.4s cubic-bezier\(\.22, 1, \.36, 1\)/);
   assert.doesNotMatch(css, /transition:max-height/);
   assert.match(css, /#page-editor:not\(\.hidden\)\s*\{[\s\S]*?overflow: hidden !important/);
+});
+
+test('stable main tabs and Studio panels use prior opacity-only transitions',()=>{
+ assert.ok(css.includes('body>.app>section[id^="page-"]:not(.hidden){animation:mg30-page-enter .18s ease-out both}'));
+ assert.ok(css.includes('@keyframes mg30-studio-panel-fade{from{opacity:0}to{opacity:1}}'));
+ assert.ok(!html.includes('function playHorizontalSlide(node,offset)'));
+ assert.ok(!studioJs.includes('MG30PlayHorizontalSlide'));
+ assert.ok(studioJs.includes('window.requestAnimationFrame(syncStudioPinnedControls)'));
+ assert.ok(studioCss.includes('position:fixed!important'));
+});
+test('non-AMP artwork is reduced by sizing the SVG viewport; AMP stays unchanged',()=>{
+ assert.ok(html.includes('const artClass=block.id==="AMP"?"gear-art-amp"'));
+ for(const width of ['55%','44%','48%','52%'])assert.ok(html.includes('width:'+width+'!important'));
+});
+test('parameter panel follows content height with a maximum scroll height',()=>{
+ assert.ok(css.includes('height:auto!important;min-height:0!important;max-height:min(64dvh,580px)!important'));
+ assert.ok(css.includes('overflow-y:auto!important'));
 });

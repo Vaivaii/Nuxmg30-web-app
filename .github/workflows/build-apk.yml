@@ -22,6 +22,7 @@ on:
       - feature/post-effects-parallel-routing
       - feature/studio-hardware-level-controls
       - feature/editor-dynamic-parameter-dock
+      - feature/editor-stable-ui-artwork-fit
     paths:
       - 'www/**'
       - 'tests/**'
