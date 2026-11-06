@@ -21,6 +21,7 @@ on:
       - feature/all-preset-import-export
       - feature/post-effects-parallel-routing
       - feature/studio-hardware-level-controls
+      - feature/editor-dynamic-parameter-dock
     paths:
       - 'www/**'
       - 'tests/**'
