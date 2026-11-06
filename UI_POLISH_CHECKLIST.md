@@ -3746,3 +3746,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Tapping the centered title slides the parameter sheet upward; tapping it again, tapping the backdrop, pressing Escape, or navigating away closes it. The dock header stays fixed above bottom navigation while parameter controls scroll inside the sheet.
 - Reuses the existing `#knobs` renderer and callbacks; does not clone the controls or alter MIDI parameter logic.
 - Build and regression results pending.
+
+
+## Build #635 — Editor Dynamic Bottom Dock (6 November 2026)
+
+- Separate branch: `feature/editor-dynamic-parameter-dock`, created from the latest post-Build #634 project head. The original hardware-level branch is unchanged.
+- New dock is fixed directly above bottom navigation. The visible `MODEL` label is removed; active block category and model name are centered with previous/next buttons at the sides.
+- Tapping the centered title expands the parameter sheet upward while the dock header stays pinned; tapping again, backdrop, Escape, or page navigation closes it. Parameter content scrolls inside the sheet.
+- Reuses the original single `#knobs` renderer and callbacks; no MIDI parameter code or protocol path changed.
+- Build #635 CI passed: 292 tests, 0 failures; Gradle successful. APK artifact ID `13494729470`, extracted APK SHA-256 `2ad74b5df02852b320e35f48bd4cae8924f2360c6446c206d182eb06fb0d21a5`.
+- Package integrity and bundled HTML/CSS structure were inspected. Physical UI verification remains pending.
