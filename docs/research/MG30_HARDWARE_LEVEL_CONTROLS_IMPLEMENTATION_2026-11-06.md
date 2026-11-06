@@ -84,3 +84,12 @@ The QuickTone baseline frame itself stores Record Level `0x32` (decimal 50) at o
 Loopback remains unchanged at offset `0x20` (`0x11` ON / `0x01` OFF). The full 46-byte frame, serialized write queue, and `14/03` ACK wait are also unchanged. The visible warning note remains removed.
 
 This fixes the previously unsupported slider scaling assumption. The full physical minimum/maximum semantics and dB calibration are still not established from the available captures; the device must be tested with the new raw-value UI.
+
+
+## Raw slider build validation (2026-11-06)
+
+- CI run: [42170109676](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42170109676) — **284 tests passed, 0 failed**; Android project generation and Gradle APK build succeeded.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `13480737550`.
+- APK copied from the verified artifact to `MG30-Studio-Raw-Level-Slider-Build.apk`.
+- SHA-256: `5c7356ca5a1969f650c6e485146de34ef905d35ee3e26e5f0a138fc076c4f33d`.
+- Physical test remains required. This build changes slider encoding based on the QuickTone baseline and capture raw values; no code can confirm the analog/digital level response without the MG-30 connected.
