@@ -2739,4 +2739,3 @@
 .daw-hardware-level-row label{display:flex;justify-content:space-between;gap:8px}
 .daw-hardware-level-row input{width:100%;accent-color:#c5f36b}
 .daw-hardware-level-row input:disabled,.daw-hardware-toggle input:disabled{opacity:.55}
-.daw-hardware-protocol-note{margin:0;padding:9px 10px;border:1px solid #55452a;border-radius:8px;background:#211c12;color:#c9b98e;line-height:1.5}
