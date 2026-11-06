@@ -69,3 +69,18 @@ Android APK build is run by GitHub Actions on this branch. Physical device ackno
 - Built artifact: `MG30-Studio-debug-APK`, run artifact ID `13479985711`.
 - APK SHA-256: `ce3842a3d26b15de1c6b32d9a2f76bb448a199604a2d01e09f2b57a4025e81d0`.
 - The slider values and audible response still need confirmation on the physical MG-30. The raw samples establish the edited bytes and observed values, but not a dB calibration or proven full hardware range.
+
+
+## Slider calibration correction after physical test report (2026-11-06)
+
+The previous app build still did not move the physical sliders. Reinspection of the raw packet bytes showed a flaw in the previous application mapping: the code treated the smallest/largest values seen in the short capture as if they were the UI slider endpoints, interpolating 0–100 to `0x34..0x3C` and `0x68..0x7A`. The captures do not establish those endpoints.
+
+The QuickTone baseline frame itself stores Record Level `0x32` (decimal 50) at offset `0x1D` and Playback Level `0x64` (decimal 100) at offset `0x1F`. The captures then show the fields carrying values such as Record `0x34/0x37/0x3A/0x3C` and Playback `0x68/0x70/0x76/0x7A`. These match direct raw numeric values rather than the previous invented interpolation.
+
+**Correction:** the UI sliders now expose the raw 7-bit SysEx data-byte domain `0..127` and send the chosen integer unchanged:
+- Record Level: offset `0x1D`, default raw `50 (0x32)`.
+- Playback Level: offset `0x1F`, default raw `100 (0x64)`.
+
+Loopback remains unchanged at offset `0x20` (`0x11` ON / `0x01` OFF). The full 46-byte frame, serialized write queue, and `14/03` ACK wait are also unchanged. The visible warning note remains removed.
+
+This fixes the previously unsupported slider scaling assumption. The full physical minimum/maximum semantics and dB calibration are still not established from the available captures; the device must be tested with the new raw-value UI.
