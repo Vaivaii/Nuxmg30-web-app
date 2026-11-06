@@ -708,7 +708,6 @@ test('Track Input Routing uses the standard Track Settings card palette and Engl
     'Four fixed tracks.',
     'USB Input 1/2 and Wet Sync 3/4 are separate paths.',
     'Input 1 = mono',
-    'No measurement yet.',
     'Phone loopback uses the USB Input 1–2 recording path',
   ]) {
     assert.ok(daw.includes(value), 'missing English Track Input Routing copy: ' + value);
