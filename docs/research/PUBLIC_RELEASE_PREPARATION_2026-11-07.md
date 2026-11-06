@@ -191,3 +191,20 @@ Run #8, Attempt 2: [42292044547](https://github.com/Vaivaii/Nuxmg30-web-app/acti
 - Corrected the signature matcher on `release/community-prep-v2` to require the actual V2 certificate SHA-256 digest line and a 64-character hexadecimal digest. Fix commit: `89ffbd7db7fa9992712c3e7f83cd0b917dac6b7a`.
 - Next: dispatch the signed candidate workflow from the updated release branch with tag `v1.0.0-community.1` and `create_draft_release=false`. Verify signature, package ID, checksum and uploaded artifact. Do not publish a release yet.
 - No app runtime or protocol source changed. NAM, User/Third Party IR, IR Collection, MIDI mappings, USB-MIDI and device communication remain untouched.
+
+
+## Signed community candidate run #9 — successful build, verification and artifact upload — 7 November 2026
+
+Run #9: [42293560406](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42293560406), branch `release/community-prep-v2`, source/workflow commit `47d4c4783728366ef9eff428338da592c46507c1`.
+- Overall GitHub Actions conclusion: **success**.
+- `npm ci` succeeded and regression suite passed **310/310 tests**.
+- PKCS#12 keystore Base64 decode, password and alias validation passed.
+- Android project generation and release signing configuration passed.
+- `assembleRelease`: **BUILD SUCCESSFUL**.
+- APK signature verification passed; V2 signer certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package identity verified: `com.vaivaii.mg30studio`, versionCode `1`, versionName `1.0.0-community.1`.
+- SHA-256 checksum file generated and included in the artifact.
+- Artifact upload succeeded: `MG30-Studio-Community-Signed-Candidate`, artifact ID `13540567982`, size 3,237,665 bytes, expires 4 February 2027.
+- Optional GitHub draft release step was skipped (input remained false); no draft or public release was created.
+- Next gate is owner download and installation/smoke test of this exact signed candidate on Android and MG-30 hardware, after backing up data. Because it uses a permanent release key, a debug-signed app with the same package ID may need to be uninstalled before installation; preserve/export app data first. Record exact tested artifact identity. Complete outstanding dependency/license, privacy, trademark/artwork and release-documentation reviews before any public release.
+- No application runtime/protocol source changed in this run. NAM, custom IR, IR Collection, MIDI mappings, USB-MIDI, presets and device communication remain untouched.
