@@ -4,10 +4,10 @@
 - [ ] Owner creates and securely backs up the permanent PKCS#12 release keystore.
 - [ ] Four GitHub Actions signing secrets are configured.
 - [ ] Run signed candidate workflow from `release/community-prep-v2`.
-- [ ] 310+ regression tests (or updated suite) pass.
+- [ ] 310+ regression tests (or updated suite) pass on the release candidate.
 - [ ] Run Actions → Prepare deterministic npm lockfile on `release/community-prep-v2`; confirm `package-lock.json` is committed.
 - [x] Configure signed release workflow to require `package-lock.json` and use deterministic `npm ci`.
-- [ ] Capacitor Android generation and Gradle `assembleRelease` pass.
+- [ ] Capacitor Android generation and Gradle `assembleRelease` pass on the release candidate.
 - [ ] `apksigner verify` passes; record signer certificate SHA-256.
 - [ ] Android package ID is `com.vaivaii.mg30studio`.
 - [ ] SHA-256 checksum matches the downloaded APK.
@@ -16,17 +16,19 @@
 - [ ] Set a versionCode greater than 1 for any later update.
 
 ## Original MG-30 Gen 2 physical QA
-- [ ] Test on original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
-- [ ] Verify USB-MIDI connect/disconnect and ordinary control response.
-- [ ] Verify NAM loading and device transfer without regression.
-- [ ] Verify IR User/Third Party import.
-- [ ] Verify IR Collection import/use.
-- [ ] Verify MIDI/CC mappings and existing working controls.
-- [ ] Verify preset selection, Single Import and Single Export.
-- [ ] Verify Signal Chain reorder and Serial/Parallel state.
-- [ ] Verify scenes, CTRL/EXP and Loopback/Record/Playback levels.
-- [ ] Test startup, Android Back, dialogs, rotation/responsive layouts.
-- [ ] Keep Import All / Export All labeled experimental until their outstanding validation is closed.
+- [x] Owner confirms feature testing on original NUX MG-30 Gen 2 firmware 6.0.x (not MKII).
+- [x] USB-MIDI connect/disconnect and ordinary control response.
+- [x] NAM loading and device transfer without regression.
+- [x] IR User/Third Party import.
+- [x] IR Collection import/use.
+- [x] MIDI/CC mappings and existing working controls.
+- [x] Preset selection, Single Import and Single Export.
+- [x] Import All and Export All; owner confirms both now work end-to-end.
+- [x] Signal Chain reorder and Serial/Parallel state.
+- [x] Scenes, CTRL/EXP and Loopback/Record/Playback levels.
+- [ ] Startup, Android Back, dialogs, rotation/responsive layouts.
+- [x] Owner confirms all MG30 Studio features are functioning; this supersedes earlier notes that marked Import All, Export All or Playback Level as unverified.
+- [ ] Record exact physically tested APK/source SHA-256 in the release evidence once identified.
 - [ ] Back up the full pedal bank before any destructive import test.
 
 ## Public-facing material and legal/privacy
@@ -45,7 +47,11 @@
 
 ## Publication gate
 - [ ] All release-engineering checks complete.
-- [ ] Physical QA is documented by the owner.
-- [ ] Privacy/legal documentation is present.
+- [x] Physical feature QA confirmation received from the owner; exact candidate build identity still needs to be attached to the release record.
+- [ ] Privacy/legal documentation is complete.
 - [ ] Draft release reviewed and approved.
 - [ ] Only then publish the GitHub Release and announce the download link.
+
+## Physical QA evidence note
+
+On 7 November 2026, the owner explicitly confirmed that all MG30 Studio features have been tested and are functioning on the target pedal, including Import All and Export All. This is owner-reported physical-test confirmation. The exact APK filename, build number and source SHA-256 used for that test were not supplied in the confirmation, so they must be captured before the public release is approved. This note supersedes earlier provisional limitations in this checklist and the older research record; it does not imply that the signed public-release APK has already been built or installed.
