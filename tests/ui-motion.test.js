@@ -201,7 +201,7 @@ test('IMAGE-based AMP and EFX keep category labels but suppress overlapping desc
   assert.ok(renderer.includes('const hideImageDescription=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX")'));
   assert.ok(renderer.includes("captionOriginChip=hideImageDescription?'':originChip"));
   assert.ok(renderer.includes("(hideImageDescription?'':'<div class=\"gear-copy-meta\">"));
-  assert.ok(renderer.includes("origin==="IMAGE"&&!hideImageDescription"));
+  assert.ok(renderer.includes('origin===\"IMAGE\"&&!hideImageDescription'));
   assert.ok(renderer.includes("'+category"));
   assert.ok(renderer.includes("'+artBadge+'</div>"));
 });
