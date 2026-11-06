@@ -130,8 +130,6 @@ function initPresetLibraryUI() {
   let names = loadNameCache();
   let scanPromise = null;
   let exportFeedbackTimer = null;
-  let nativeFeedbackBackListener = null;
-  let nativeFeedbackBackListenerPending = false;
 
   // Keep only Preset Manager fixed between the sticky app header and fixed bottom navigation.
   // This isolates its card scrolling from the shared NAM & IR / other-tab document scroll.
@@ -184,48 +182,52 @@ function initPresetLibraryUI() {
     delete feedbackDialog.dataset.owner;
   }
 
-  function detachNativeFeedbackBackListener() {
-    if (!nativeFeedbackBackListener) return;
-    const listener = nativeFeedbackBackListener;
-    nativeFeedbackBackListener = null;
-    void listener.remove();
-  }
+  // Register one app-wide Android Back handler. Without an application handler,
+  // Capacitor may navigate the WebView history instead of exiting the activity.
+  async function handleAndroidBackButton() {
+    const transferActive = Boolean(
+      window.MG30PresetManagerBusy ||
+      window.MG30PresetImportBusy ||
+      window.MG30PresetExportBusy ||
+      window.MG30IRTransferBusy
+    );
+    if (transferActive) return;
 
-  async function attachNativeFeedbackBackListener() {
-    if (!feedbackDialog || !window.Capacitor?.isNativePlatform?.() ||
-        nativeFeedbackBackListener || nativeFeedbackBackListenerPending) return;
-    nativeFeedbackBackListenerPending = true;
+    const openDialogs = Array.from(document.querySelectorAll('dialog[open]'));
+    const topDialog = openDialogs.length ? openDialogs[openDialogs.length - 1] : null;
+    if (topDialog) {
+      // Never dismiss a progress dialog while a write/transfer is active.
+      if (topDialog.dataset.state === 'loading' || topDialog.dataset.owner === 'import') return;
+      if (topDialog === feedbackDialog && topDialog.dataset.owner === 'export') {
+        closeExportFeedback();
+      } else if (typeof topDialog.close === 'function') {
+        topDialog.close();
+      } else {
+        topDialog.removeAttribute('open');
+      }
+      return;
+    }
+
     try {
-      const listener = await App.addListener('backButton', () => {
-        if (!feedbackDialog?.open) return;
-        // Keep the app and dialog in place while a transfer is active.
-        if (feedbackDialog.dataset.state === 'loading') return;
-        if (feedbackDialog.dataset.owner === 'export') closeExportFeedback();
-        else feedbackDialog.close();
-      });
-      if (feedbackDialog.open) nativeFeedbackBackListener = listener;
-      else await listener.remove();
+      await App.exitApp();
     } catch (error) {
-      console.warn('[MG30] Unable to attach Android Back handler for preset feedback.', error);
-    } finally {
-      nativeFeedbackBackListenerPending = false;
+      console.warn('[MG30] Unable to exit MG30 Studio from Android Back.', error);
     }
   }
 
+  if (window.Capacitor?.isNativePlatform?.()) {
+    App.addListener('backButton', () => {
+      void handleAndroidBackButton();
+    }).catch(error => {
+      console.warn('[MG30] Unable to register the Android Back handler.', error);
+    });
+  }
+
   if (feedbackDialog) {
-    const feedbackDialogObserver = new MutationObserver(() => {
-      if (feedbackDialog.open) void attachNativeFeedbackBackListener();
-      else detachNativeFeedbackBackListener();
-    });
-    feedbackDialogObserver.observe(feedbackDialog, {
-      attributes: true,
-      attributeFilter: ['open']
-    });
     feedbackDialog.addEventListener('close', () => {
       if (exportFeedbackTimer) window.clearTimeout(exportFeedbackTimer);
       exportFeedbackTimer = null;
       if (feedbackDialog.dataset.owner === 'export') delete feedbackDialog.dataset.owner;
-      detachNativeFeedbackBackListener();
     });
   }
 

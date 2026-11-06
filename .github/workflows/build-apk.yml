@@ -27,6 +27,7 @@ on:
       - feature/editor-dock-stack-and-svg-sizing-fix
       - feature/editor-fixed-model-frame-scene-anchor
       - fix/editor-model-caption-visibility
+      - fix/global-english-android-back
     paths:
       - 'www/**'
       - 'tests/**'

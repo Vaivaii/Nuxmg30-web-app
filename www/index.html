@@ -1678,7 +1678,6 @@ async function selectHardwareSlot(prog,fromDevice=false){
   setDeviceStatus('Membaca model, parameter, dan chain preset '+slotName()+'…');
   const name=await readActiveBuffer({program:targetSlot});
   setDeviceStatus('Sinkronisasi selesai: '+slotName()+(name?' · '+name:''));
-  toast('Preset '+slotName()+' dibaca ke aplikasi',1900,'preset');
  }catch(error){
   setDeviceStatus('Preset '+slotName()+' dipilih, pembacaan state gagal: '+error.message);
   toast('Gagal sinkron preset: '+error.message,1900,'preset');

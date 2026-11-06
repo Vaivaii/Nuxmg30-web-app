@@ -34,11 +34,18 @@ test('Dialog Back / Escape is blocked only while an Import or Export transfer is
   assert.ok(importSource.includes("progressDialog?.addEventListener('close'"));
 });
 
-test('Android Back dismisses a terminal feedback dialog and listener exists only while it is open', () => {
+test('Android Back dismisses transient dialogs and exits the app when no dialog is open', () => {
   assert.ok(presetLibrarySource.includes("App.addListener('backButton'"));
-  assert.ok(presetLibrarySource.includes("if (feedbackDialog.dataset.state === 'loading') return;"));
-  assert.ok(presetLibrarySource.includes("if (feedbackDialog.dataset.owner === 'export') closeExportFeedback();"));
-  assert.ok(presetLibrarySource.includes('else feedbackDialog.close();'));
-  assert.ok(presetLibrarySource.includes('feedbackDialogObserver.observe(feedbackDialog'));
-  assert.ok(presetLibrarySource.includes('else detachNativeFeedbackBackListener();'));
+  assert.ok(presetLibrarySource.includes("App.exitApp()"));
+  assert.ok(presetLibrarySource.includes("document.querySelectorAll('dialog[open]')"));
+  assert.ok(presetLibrarySource.includes("window.MG30PresetImportBusy"));
+  assert.ok(presetLibrarySource.includes("window.MG30PresetExportBusy"));
+  assert.ok(presetLibrarySource.includes("window.MG30IRTransferBusy"));
+  assert.ok(presetLibrarySource.includes("window.MG30PresetManagerBusy"));
+  assert.ok(presetLibrarySource.includes("topDialog.dataset.state === 'loading'"));
+  assert.ok(presetLibrarySource.includes("topDialog.dataset.owner === 'import'"));
+  assert.ok(presetLibrarySource.includes("topDialog.dataset.owner === 'export'"));
+  assert.ok(presetLibrarySource.includes("feedbackDialog.addEventListener('close'"));
+  assert.ok(!presetLibrarySource.includes('attachNativeFeedbackBackListener'));
+  assert.ok(!presetLibrarySource.includes('feedbackDialogObserver'));
 });

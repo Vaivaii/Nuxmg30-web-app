@@ -50,3 +50,31 @@ test('Native audio status strings pass through the English translator', async ()
   assert.match(main, /Sample rate not reported by Android/);
   assert.match(main, /Channel count not reported/);
 });
+
+test('Global English copy covers all remaining visible Indonesian interface labels and Import All feedback', async () => {
+  const english = await read('../www/english-ui.js');
+  const html = await read('../www/index.html');
+  const root = { nodeType: 1, querySelectorAll: () => [], matches: () => false, closest: () => null,
+    hasAttribute: () => false, getAttribute: () => null };
+  const window = {};
+  class MutationObserver { observe() {} }
+  const document = { documentElement: root, createTreeWalker: () => ({ nextNode: () => false }) };
+  runInNewContext(english, { window, document, MutationObserver, NodeFilter: { SHOW_TEXT: 4 } });
+  const translate = window.MG30EnglishUI.translate;
+  const cases = new Map([
+    ['Mendukung .nam (JSON SlimmableContainer) dan .namb A2-Lite 1.871 bobot', 'Supports .nam (JSON SlimmableContainer) and .namb A2-Lite (1,871 weights).'],
+    ['WAV RIFF, mono/stereo. PCM 8/16/24/32-bit atau Float32; 8–192 kHz akan dikonversi ke 48 kHz. Stereo memakai kanal kiri.', 'WAV RIFF, mono/stereo. PCM 8/16/24/32-bit or Float32; 8–192 kHz files are converted to 48 kHz. Stereo uses the left channel.'],
+    ['Aktifkan atau bypass blok', 'Enable or bypass block'],
+    ['Tutup panel parameter', 'Close parameter panel'],
+    ['Buka atau tutup parameter model', 'Open or close model parameters'],
+    ['Tutup panel CTRL', 'Close CTRL panel'],
+    ['Import All gagal', 'Import All failed'],
+    ['Bank mungkin terisi sebagian. Jangan lepas USB sebelum perangkat stabil.', 'The bank may be partially populated. Do not disconnect USB until the device is stable.'],
+    ['File All Preset valid. Hubungkan MG-30 melalui USB-MIDI sebelum memulai.', 'The All Preset file is valid. Connect the MG-30 via USB-MIDI before starting.'],
+    ['Rencana Import All tidak valid.', 'The Import All plan is invalid.'],
+    ['Import All selesai: 128 preset dan 384 scene telah diverifikasi.', 'Import All complete: all 128 presets and 384 scenes have been verified.']
+  ]);
+  for (const [source, expected] of cases) assert.equal(translate(source), expected, source);
+  assert.match(html, /<html lang="en">/);
+  assert.doesNotMatch(html, /toast\\('Preset '\\+slotName\\(\\)\\+' dibaca ke aplikasi'/);
+});
