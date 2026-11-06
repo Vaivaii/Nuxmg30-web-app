@@ -2,7 +2,7 @@
 
 MG30 Studio is an independent Android companion application for the **original NUX MG-30 Gen 2 running firmware 6.0.x**. It is not intended for the MG-30 MKII.
 
-The planned distribution channel is a free Community Edition with an **open-source source-code distribution model**: the project intends to allow studying, modifying and redistributing the source under a recognized open-source license. The exact license text has not yet been selected or committed. Until a LICENSE file is present, do not assume that source reuse, modification or redistribution is already granted.
+The planned distribution channel is a free Community Edition. The application source code is licensed under **GNU General Public License v3.0 only (GPL-3.0-only)**. See [LICENSE](LICENSE). Modified versions and redistributed copies of covered code must comply with GPL-3.0. Third-party components and assets retain their own license terms.
 
 It is not developed, endorsed or supported by NUX.
 
