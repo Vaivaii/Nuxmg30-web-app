@@ -150,3 +150,15 @@ Run #5: [42291146581](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42
 - Validation failed because `ANDROID_KEY_ALIAS` did not exactly match that entry. No private material or secret values were logged.
 - Next action: update only GitHub Actions secret `ANDROID_KEY_ALIAS` to the exact string `mg30studio-release` (no quotes, no leading/trailing spaces). Keep Base64/password/private-key password unchanged.
 - All 310/310 regression tests passed; Android build steps skipped. No app runtime or protocol files changed.
+
+
+## Signed candidate run #6 — keystore fixed; Gradle lifecycle issue — 7 November 2026
+
+Run #6: [42291360173](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42291360173), commit `0a7bc8bdc5bfdc99094c7d92060d54185c2fa488`.
+- Keystore Base64 decode, store password, alias, and key entry validation all passed.
+- Android project generation passed.
+- Failure moved to `assembleRelease`: init script tried to create a signing config during `gradle.projectsEvaluated`, after AGP had finalized/used signing configs. Exact error: "It is too late to add new signing configs. They have already been used to configure this project. Consider moving this call to finalizeDsl or during evaluation."
+- Updated `.github/workflows/community-release.yml` on `release/community-prep-v2` and `main` to register a `plugins.withId("com.android.application")` callback in `gradle.beforeProject` and configure signing/version in Android Components `finalizeDsl`. This follows the AGP lifecycle requested by the error.
+- Branch commit after fix: `39763041ae5e6cee56eebb0c21eee72751217c3d`; main commit: `b9247037125684134002052726145251d93746a6`.
+- No app runtime source, NAM/IR/MIDI/preset/USB protocol code changed. Secrets were not changed. 310/310 tests passed before Android generation in Run #6.
+- Next: run community-release workflow again from `release/community-prep-v2`, same tag `v1.0.0-community.1`, `create_draft_release=false`. Inspect Gradle build and signature verification. Do not claim APK ready until artifact exists and signing checks pass.
