@@ -23,7 +23,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Validate release tag
+      - name: Validate release branch and tag
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$REF_NAME" != "release/community-prep-v2" ]]; then
+            echo "Run this workflow only from release/community-prep-v2."
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+-community\\.[0-9]+$ ]]; then
+            echo "Invalid community release tag: $RELEASE_TAG"
+            exit 1
+          fi
+
+      - name: Validate release tag (legacy duplicate removed)
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
@@ -33,10 +48,10 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout immutable Build 669 source
+      - name: Checkout exact release-preparation commit
         uses: actions/checkout@v4
         with:
-          ref: b67a3196fba5191741399fc8bcb79c7d5a5babfb
+          ref: ${{ github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -49,9 +64,10 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install dependencies and run regression suite
+      - name: Install exact locked dependencies and run regression suite
         run: |
-          npm install
+          test -s package-lock.json || { echo 'package-lock.json is required; run Prepare deterministic npm lockfile first.'; exit 1; }
+          npm ci
           node --check scripts/init-android.mjs
           npm test
 
@@ -148,7 +164,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag }}
-          target_commitish: b67a3196fba5191741399fc8bcb79c7d5a5babfb
+          target_commitish: ${{ github.sha }}
           name: MG30 Studio ${{ inputs.release_tag }} — Community Edition
           draft: true
           prerelease: true
@@ -156,7 +172,7 @@ jobs:
           body: |
             MG30 Studio Community Edition for the original NUX MG-30 Gen 2, firmware 6.0.x.
 
-            This is a signed release candidate built from source commit b67a3196fba5191741399fc8bcb79c7d5a5babfb (Build #669). It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
+            This is a signed release candidate built from exact source commit ${{ github.sha }} on release/community-prep-v2. The application code baseline is Build #669; release-preparation documentation and the deterministic dependency lockfile are included in the checked-out source. It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
 
             Verify the SHA-256 checksum before installation. Review the compatibility and known-limitations notes before using device-write operations.
 
