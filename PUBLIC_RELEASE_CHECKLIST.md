@@ -34,7 +34,8 @@
 - [ ] Review dependency licenses and confirm all bundled artwork, fonts and other assets can be distributed under their respective terms.
 - [x] Update the default-branch README landing page with truthful release status and links to the Android source/release-prep branch (README-only change; no application source merged to main).
 - [x] Prepare the Android-app README on the release-prep branch with compatibility, installation, safety and known-limitations information.
-- [ ] Add a privacy notice based on an audit of network access, OAuth, integrations, local data, permissions and diagnostics.
+- [x] Draft `PRIVACY.md` from source inspection (TONE3000, YouTube, localStorage, USB-MIDI, audio and diagnostics).
+- [ ] Verify privacy notice against the final generated Android manifest, APK and observed network behavior; resolve camera feature/permission uncertainty.
 - [ ] Review NUX name/logo and other third-party artwork/marks; retain non-affiliation notice.
 - [ ] Prepare installation, update, troubleshooting and backup instructions.
 - [ ] Prepare release notes and known-issues section.
