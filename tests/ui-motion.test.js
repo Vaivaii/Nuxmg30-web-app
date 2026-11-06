@@ -210,7 +210,7 @@ test('IMAGE-based AMP and EFX hide every IMAGE marker while retaining category a
   const displayEnd=html.indexOf('\nfunction getModelBasis',displayStart);
   const display=html.slice(displayStart,displayEnd);
   assert.ok(display.includes('if(origin==="IMAGE"&&(blockId==="AMP"||blockId==="EFX"))return getModelBaseName(name);'));
-  assert.ok(renderer.includes("'+artBadge+'</div>"));
+  assert.ok(renderer.includes("'+renderGearSvg(block.id,name)+artBadge+'</div>"));
   assert.ok(!renderer.includes('IMAGE</span>')&&!renderer.includes('Based on: IMAGE'));
 });
 test('floating toast is suppressed by default and opt-in only for preset, NAM and IR synchronization',()=>{
