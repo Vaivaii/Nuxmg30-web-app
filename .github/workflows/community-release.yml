@@ -137,6 +137,11 @@ jobs:
           echo "MG30_SIGNING_INIT=$RUNNER_TEMP/mg30-community-signing.init.gradle" >> "$GITHUB_ENV"
 
       - name: Build signed release APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease -I "$MG30_SIGNING_INIT"
