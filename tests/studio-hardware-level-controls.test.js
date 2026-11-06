@@ -16,7 +16,9 @@ test('MG-30 hardware controls use the captured complete 14/01 frame', () => {
 test('captured control fields are isolated at their verified SysEx offsets', () => {
   assert.match(index, /updateMg30HardwareField\(0x20, enable \? 0x11 : 0x01, 'USB Loopback'\)/);
   assert.match(index, /updateMg30HardwareField\(0x1D, raw, 'Record Level'\)/);
-  assert.match(index, /frame\[0x1E\] = \(value >> 7\) & 0x7F/);\n  assert.match(index, /frame\[0x1F\] = value & 0x7F/);\n  assert.match(index, /updateMg30PlaybackValue\(raw14Bit\)/);
+  assert.match(index, /frame\[0x1E\] = \(value >> 7\) & 0x7F/);
+  assert.match(index, /frame\[0x1F\] = value & 0x7F/);
+  assert.match(index, /updateMg30PlaybackValue\(raw14Bit\)/);
   assert.match(index, /frame\[offset\] = Number\(rawValue\) & 0x7F/);
 });
 
@@ -51,7 +53,8 @@ test('Record stays 0-100 default 50; Playback is 0-150 default 100 with 14-bit m
   assert.ok(frame, 'complete 14/01 frame template exists');
   const bytes = [...frame[1].matchAll(/0x[0-9a-f]+/gi)].map(([hex]) => Number.parseInt(hex, 16));
   assert.equal(bytes[0x1D], 50, 'Record Level frame baseline is raw 50');
-  assert.equal(bytes[0x1E], 0, 'Playback high 7-bit byte starts at zero');\n  assert.equal(bytes[0x1F], 100, 'Playback low 7-bit byte is raw 100');
+  assert.equal(bytes[0x1E], 0, 'Playback high 7-bit byte starts at zero');
+  assert.equal(bytes[0x1F], 100, 'Playback low 7-bit byte is raw 100');
   assert.match(daw, /dawHardwareRecordLevel[^\n]*min="0"[^\n]*max="100"[^\n]*value="50"/);
   assert.match(daw, /dawHardwarePlaybackLevel[^\n]*min="0"[^\n]*max="150"[^\n]*value="100"/);
 });
