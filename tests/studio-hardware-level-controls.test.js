@@ -25,7 +25,11 @@ test('Track Settings controls are enabled and report device ACK or errors', () =
   assert.ok(daw.includes('window.setLoopback(loopback.checked)'));
   assert.ok(daw.includes('window.setRecLevel(record.value)'));
   assert.ok(daw.includes('window.setPlayLevel(playback.value)'));
-  assert.ok(daw.includes('ACK MG-30 14/03 diterima'));
+  assert.ok(daw.includes('device acknowledgement was not confirmed'));
+  assert.ok(daw.includes('setStatus(label + \' updated on MG-30.\', \'ok\')'));
+  assert.ok(!daw.includes('daw-hardware-protocol-note'));
+  assert.ok(!daw.includes('candidate WRITE'));
   assert.doesNotMatch(daw, /Controls are locked pending verified/);
+  assert.match(daw, /data-hardware-levels/);
   assert.doesNotMatch(daw, /candidateBound/);
 });
