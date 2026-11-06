@@ -3728,3 +3728,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Cause: `#ir-import-content` lived outside the page containers and was visible until the late `mergeNamAndIr()` script relocated it beneath hidden `#page-nam`.
 - Fix: render the standalone fragment hidden in initial markup; reveal it only after it is moved into `#page-nam`. Editor stays the initial page, and the IR UI still appears when NAM & IR is intentionally opened.
 - Added startup regression coverage. No IR/NAM transfer/protocol or other feature behavior changed.
+
+
+## Build #634 — startup Third Party IR flash fixed (6 November 2026)
+
+- Diagnosed user video: Third Party/User IR form flashed during launch because `#ir-import-content` was visible outside page containers until the late `mergeNamAndIr()` script moved it into hidden `#page-nam`.
+- Fix keeps the IR fragment hidden in static markup; relocation into NAM & IR happens first, and the script reveals the child only after append. Editor stays initial page.
+- Startup regression added. CI #634 passed 288/288 tests; Gradle assembleDebug succeeded.
+- Artifact ID 13491353644. APK SHA-256: `f4dfd0477cc03a8256f799dda37943942eb292efb6311cc8f4f2d4c7ddcbabdb`.
+- APK asset inspection confirms hidden-before-relocation/reveal-after-append ordering. Cold-start physical retest pending. No transfer/protocol behavior changed.

@@ -272,3 +272,18 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Fix: static markup now gives `#ir-import-content` the `hidden` class from the start. The merge script removes that class only after appending the fragment into `#page-nam`. Since `#page-nam` itself starts hidden and the Editor is the initial active page, the IR import form can no longer appear during startup; it remains available when the user opens NAM & IR.
 - Added a regression test asserting hidden initial markup, relocation into the hidden NAM page, and removal of the hidden class only after the append.
 - No transfer logic, imported WAV processing, Third Party/User IR mapping, IR Collection routing, NAM code, MIDI mapping, preset logic, startup Editor state, or hardware protocol has been changed.
+
+
+## Build #634 — startup IR flash fix verified (2026-11-06)
+
+- Source commit: `e83260dd6ad7145537f2d1425db7d24d2eaf6fc8` on `feature/studio-hardware-level-controls`.
+- Screen recording `1001012404.mp4` shows the IR import screen rendered at approximately 2.60 seconds, then replaced by Editor at approximately 2.75 seconds. The screenshot `1001012405.jpg` confirms the flashed content is the Third Party/User IR form.
+- Root cause: `#ir-import-content` was static visible markup outside the `#page-*` containers. A large inline `mergeNamAndIr()` script near the end of `index.html` later moved it into the initially hidden `#page-nam`, allowing an intermediate first paint before relocation.
+- Fix: add `hidden` to the IR fragment in initial markup, then remove the class only after `namPage.appendChild(irContent)`. It remains inside the hidden NAM page and becomes visible only when the user selects NAM & IR.
+- Added startup regression asserting the initial hidden state, relocation, reveal ordering and initial Editor/NAM page states.
+- GitHub Actions #634: [42196147234](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42196147234) — completed success. Regression tests **288 passed / 0 failed**. Android initializer validation, Capacitor project generation, USB audio plugin setup, Gradle `assembleDebug`, and artifact upload passed.
+- Artifact ID `13491353644`, ZIP size 4,217,994 bytes, SHA-256 `627dba13d6033a2ff8c6a93e4bc6860bca7129851bb59a37d3cc61ffc7cf5fa6`.
+- Extracted APK `app-debug.apk`: 4,596,504 bytes; SHA-256 `f4dfd0477cc03a8256f799dda37943942eb292efb6311cc8f4f2d4c7ddcbabdb`.
+- ZIP integrity passed. Inspected `assets/public/index.html` inside the APK: IR fragment begins hidden; merge appends it under `#page-nam`; hidden is removed after append; Editor nav is statically active; NAM page starts hidden.
+- No IR/NAM transfer behavior, waveform/curve payload, Third Party/User/Collection mapping, NAM logic, USB-MIDI, preset, signal-chain, or hardware-level behavior changed. Only initial visibility and relocation order changed.
+- Physical cold-start retest after installing Build #634 remains pending. This build is a debug APK, not a signed community release APK.
