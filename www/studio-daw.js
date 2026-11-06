@@ -675,7 +675,8 @@ function renderHardwareLevelPanel() {
       '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>USB loopback and MG-30 recording/playback hardware levels.</p></div></div>' +
       '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Route MG-30 playback back to the USB recording input.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
       '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" step="1" value="50"></div>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">100 / 150</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="150" step="1" value="100"></div>';
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">100 / 150</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="150" step="1" value="100"></div>' +
+      '<small id="dawHardwarePlaybackTx" aria-live="polite" style="display:block;margin-top:7px;opacity:.78;overflow-wrap:anywhere">Android USB-MIDI OUT diagnostic: waiting for Playback write.</small>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
     else host.appendChild(panel);
@@ -688,6 +689,20 @@ function renderHardwareLevelPanel() {
   const reportWrite = (label, operation) => {
     Promise.resolve(operation).then(result => {
       if (result?.acknowledged === true) {
+        if (label.startsWith('Playback Level')) {
+          const diagnostic = $('dawHardwarePlaybackTx');
+          const tx = result.transport;
+          if (diagnostic && tx?.nativeHex) {
+            const hex = tx.nativeHex.match(/.{2}/g) || [];
+            diagnostic.textContent = 'Android MidiInputPort.send(): ' + tx.bytes + ' bytes; OUT 0x1E/0x1F = ' +
+              (hex[30] || '--') + ' ' + (hex[31] || '--') +
+              '; frame echo ' + (tx.nativeEchoMatches ? 'matches' : 'DIFFERS') + '; device ACK 14/03 received.';
+          } else if (diagnostic && tx?.dataHex) {
+            const hex = tx.dataHex.match(/.{2}/g) || [];
+            diagnostic.textContent = 'Prepared MIDI frame: ' + tx.bytes + ' bytes; 0x1E/0x1F = ' +
+              (hex[30] || '--') + ' ' + (hex[31] || '--') + '; native byte echo unavailable.';
+          }
+        }
         setStatus(label + ' updated on MG-30.', 'ok');
       } else {
         setStatus(label + ' sent; device acknowledgement was not confirmed.', 'warn');

@@ -1023,7 +1023,25 @@ function invalidatePresetManagerCacheForWrite(data){
   cache.invalidate(targetSlot,"Signal Chain atau CTRL mengubah preset aktif");
  }
 }
-function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);invalidatePresetManagerCacheForWrite(data);return true})}
+function midiSend(data,onDispatch){
+ if(!midiOutput||!midiConnected)return Promise.resolve(false);
+ return enqueueMidi(async()=>{
+  if(typeof onDispatch==='function')onDispatch(performance.now());
+  const nativeResult=await midiOutput.send(data);
+  const bytes=Array.from(data||[],value=>Number(value)&0xFF);
+  if(bytes.length===46&&bytes[0]===0xF0&&bytes[1]===0x43&&bytes[2]===0x58&&bytes[3]===0x70&&bytes[4]===0x14&&bytes[5]===0x01){
+   const dataHex=bytes.map(value=>value.toString(16).padStart(2,'0')).join('').toUpperCase();
+   window.MG30LastHardwareSend={
+    bytes:Number(nativeResult?.bytes)||bytes.length,
+    dataHex,
+    nativeHex:typeof nativeResult?.sysexHex==='string'?nativeResult.sysexHex:null,
+    nativeEchoMatches:typeof nativeResult?.sysexHex==='string'&&nativeResult.sysexHex===dataHex
+   };
+  }
+  invalidatePresetManagerCacheForWrite(data);
+  return true;
+ })
+}
 // Captured from QuickTone MG-30 Gen 2 firmware 6.0.x. This is a complete
 // 46-byte 14/01 hardware-state write frame, not a short parameter payload.
 // Baseline for this user-requested slider preset: Loopback OFF, Record Level raw 50, Playback Level raw 100.
@@ -1087,7 +1105,7 @@ function queueMg30HardwareFrame(frame, controlLabel) {
     throw new Error('Perintah 14/01 tidak terkirim.');
    }
    await ackPromise;
-   return { control: controlLabel, acknowledged: true, response: '14/03' };
+   return { control: controlLabel, acknowledged: true, response: '14/03', transport: window.MG30LastHardwareSend || null };
   } catch (error) {
    if (ackPromise) ackPromise.catch(() => {});
    throw new Error(controlLabel + ' gagal: ' + (error?.message || 'ACK 14/03 tidak diterima.'));

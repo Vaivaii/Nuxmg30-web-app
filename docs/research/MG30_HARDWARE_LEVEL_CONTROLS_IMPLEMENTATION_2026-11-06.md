@@ -216,3 +216,12 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Therefore do not increase the UI max/raw value beyond 201 or change byte order based on this failure alone. The app's current pair interpretation may still be wrong, or the capture's `01 49` may not actually represent the pedal's +12 dB setting.
 - Next controlled evidence: verify that during the exact `playbackmax.pcapng` capture the MG-30's own PLAY LEVEL readout showed +12 dB, not only that QuickTone's slider was at its rightmost position. If that capture already was at pedal +12 dB, then collect a diagnostic of the Android app's outgoing 46-byte frame at UI 150 (or an equivalent direct frame log) and compare it byte-for-byte with QuickTone's final `14/01` frame. Do not alter Record Level offset `0x1D`, Loopback offset `0x20`, ACK queue, NAM, IR User/Third Party/Collection, presets, Signal Chain, or MIDI mappings.
 - No source code changed after the user-reported Build #631 physical failure. Do not treat #631 as accepted for Playback Level until the actual device reaches +12 dB.
+
+
+## Build #632 preparation — native Playback frame transmission diagnostics (2026-11-06)
+
+- After the user confirmed Build #631 still displayed only +3 dB despite the +12 dB QuickTone capture, a full 46-byte comparison was performed.
+- The final QuickTone `playbackmax.pcapng` frame and Build #631's template are identical at every offset except the Playback pair `0x1E/0x1F). At UI 150, the app's intended frame is byte-for-byte identical to the QuickTone maximum frame (pair `01 49`).
+- The remaining unverified point is the runtime Android USB-MIDI send path. The Android Capacitor plugin now returns a hex echo of the exact 46-byte `14/01` array passed to `MidiInputPort.send()`. The app stores that receipt and Track Settings shows the transmitted pair plus whether native hex matches the JavaScript frame and the matching `14/03` ACK.
+- This is diagnostic-only: no outgoing MIDI payload bytes, Playback scaling, field offsets, Record Level, Loopback, queue order, ACK matching, NAM, IR transfer, preset, Signal Chain, MIDI mapping or USB audio behavior is changed.
+- The Android echo confirms bytes passed to the native MidiInputPort API; it is not a passive USB bus capture. If the echo shows `01 49` and ACK but the pedal remains +3 dB, the next investigation must compare the host USB endpoint payload or test the exact QuickTone frame without modifying other state.

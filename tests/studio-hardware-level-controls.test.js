@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const index = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 const daw = readFileSync(new URL('../www/studio-daw.js', import.meta.url), 'utf8');
+const nativeMidi = readFileSync(new URL('../native-android/MG30MidiPlugin.java', import.meta.url), 'utf8');
 
 test('MG-30 hardware controls use the captured complete 14/01 frame', () => {
   assert.match(index, /MG30_HARDWARE_FRAME_TEMPLATE\s*=\s*Object\.freeze\(\[/);
@@ -79,4 +80,16 @@ test('Playback Level uses captured 14-bit pair and maps UI maximum 150 to raw 20
   assert.deepEqual(split(map(125)), [1, 23]);
   assert.equal(map(150), 201);
   assert.deepEqual(split(map(150)), [1, 73]);
+});
+
+
+test('Android native MIDI send echoes the exact 46-byte 14/01 frame passed to MidiInputPort', () => {
+  assert.match(nativeMidi, /port\.send\(bytes, 0, bytes\.length, 0L\)/);
+  assert.match(nativeMidi, /result\.put\("sysexHex", bytesToHex\(bytes\)\)/);
+  assert.match(nativeMidi, /private static String bytesToHex\(byte\[\] bytes\)/);
+  assert.match(index, /const nativeResult=await midiOutput\.send\(data\)/);
+  assert.match(index, /nativeEchoMatches:typeof nativeResult\?\.sysexHex==='string'&&nativeResult\.sysexHex===dataHex/);
+  assert.match(index, /transport: window\.MG30LastHardwareSend \|\| null/);
+  assert.match(daw, /Android MidiInputPort\.send\(\): /);
+  assert.match(daw, /OUT 0x1E\/0x1F = /);
 });

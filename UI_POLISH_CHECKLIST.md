@@ -3689,3 +3689,10 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Build #631 packaged source constructs raw201 as `01 49` at those offsets. Static bundle inspection is not proof of actual Android USB OUT bytes or device readback. The ACK is not level readback.
 - No further source change or APK build should be made until the relationship between capture endpoint `01 49` and the pedal's actual +12 dB display is confirmed, then Android output frame is compared.
 - Record remains confirmed at 0–100/default50. Leave it unchanged.
+
+
+## Build #632 preparation — Android Playback transmission byte diagnostics
+
+- Full-frame comparison found Build #631 intended frame matches QuickTone +12 dB frame except the two Playback field bytes, which are set to the same `01 49` at UI 150.
+- Added a native Java echo for the 46-byte `14/01` frame passed into `MidiInputPort.send()`, with Track Settings display of offsets 0x1E/0x1F, native-vs-JS byte equality, and ACK 14/03.
+- No protocol or control value changed; Record, Loopback, NAM, IR, preset, MIDI mappings and DAW paths are untouched. Await CI and physical diagnostic.
