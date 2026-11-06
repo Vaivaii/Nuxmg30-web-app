@@ -4,7 +4,7 @@
 
 - Product: MG30 Studio
 - Channel: free Community Edition
-- Source distribution model: open source; exact license selection and LICENSE file remain pending
+- Source license: GNU General Public License v3.0 only (GPL-3.0-only); canonical LICENSE file committed
 - Target: original NUX MG-30 Gen 2, firmware 6.0.x; not MG-30 MKII
 - Android application ID: `com.vaivaii.mg30studio`
 - Candidate tag: `v1.0.0-community.1`
@@ -15,13 +15,7 @@ The release workflow checks out this immutable source commit. It does not build 
 
 ## Open-source licensing decision
 
-The owner selected the **open-source distribution model**. This authorizes the project preparation to proceed on the assumption that the repository will carry a recognized open-source license, but it does not identify the exact license.
-
-Do not add a guessed LICENSE file or claim that redistribution rights are already in effect. The remaining owner decision is the license family:
-- **MIT**: permissive; downstream forks and modified distributions can remain proprietary, subject to the license notice and conditions.
-- **GPL-3.0-only**: copyleft; distributed derivative works must provide corresponding source under GPL-3.0 terms, subject to its conditions.
-
-The license must be chosen before accepting outside contributions or advertising source reuse rights. Also review third-party dependencies, artwork, fonts, logos and any copied/vendor assets separately; the project's license cannot automatically relicense third-party material.
+The owner selected **GPL-3.0-only** on 7 November 2026. The repository now includes the canonical GNU GPL version 3 license text in `LICENSE` (SPDX identifier: `GPL-3.0-only`). This is a strong copyleft license: distribution of covered modified versions is subject to GPLv3 terms, including corresponding-source obligations. The license does not automatically relicense third-party dependencies, fonts, artwork, logos or vendor assets; audit those separately before distribution.
 
 ## Current release workflow
 
@@ -77,6 +71,6 @@ The application ID is `com.vaivaii.mg30studio`. The first signed release uses ve
 
 ## Repository housekeeping
 
-The public source distribution model is now selected as open source, but the exact license and `LICENSE` file remain release blockers.
+The source license is now selected and the `LICENSE` file is present. Remaining legal review includes confirming the project has authority to license all first-party code and auditing third-party dependencies and bundled assets.
 
 A public privacy notice is also required before broad distribution. Review the app's network/API integrations, OAuth flow, permissions, local storage and any diagnostics before making privacy promises. Do not publish a privacy statement based on assumptions; inspect the actual app and generated Android manifest first.
