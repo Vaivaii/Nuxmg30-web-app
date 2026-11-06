@@ -3787,3 +3787,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Inspected the APK payload: main-tab WAAPI helper is present in the packaged HTML; gear-stage responsive sizing, 92% gear scale, bottom-anchored Scenes and parameter dock z-index are present in packaged CSS; Studio/DAW horizontal motion helper is present in packaged JS.
 - This is a successful CI build and packaged-payload inspection, not a physical-device screenshot/60 Hz frame-time test. User should verify the visual composition and perceived smoothness on the phone.
 - No NAM, IR User/Third Party, IR Collection, preset, signal-chain, device communication, or MIDI/CC mapping code was changed.
+
+## Build #639 follow-up — artwork hierarchy, content-sized parameter sheet, tab transition and Studio dock — 6 November 2026
+
+- User installed Build #639 and provided a screenshot plus a 28.19-second screen recording. Confirmed follow-up: non-AMP graphics (floor pedals, speaker cabinet IR, and VOL/WAH expression units) remain oversized; NAM/IR and Device tab entry show a brief gradient glitch; Studio DAW dock visibly shifts into position after opening Studio; parameter sheet remains too tall when only three knobs are present.
+- Follow-up work is isolated on `feature/editor-artwork-panel-nav-refinement`, based on the latest Build #639 project branch commit `3335db00611aea57d65d94808e84f98c6dc8f1b2`. Earlier branch and Build #639 remain unchanged.
+- Editor gear wrapper now identifies AMP, IR cabinet, VOL/WAH expression pedal, FX loop, and regular effect pedal independently. Presentation scale: AMP 0.92 (preserved), regular pedals 0.80, IR cabinet 0.78, expression pedal 0.72, FX loop 0.84. SVG generation, model identity, parameter mappings, scene data, and MIDI handlers are untouched.
+- Parameter sheet now uses natural content height with a 64dvh/580px cap (66dvh/560px on narrow phones). Small knob sets therefore stay compact; long sets retain internal scrolling.
+- Mobile radial gradient is moved from the moving-page reveal area onto the stationary app shell to prevent a gradient strip/flash at NAM/IR and Device transitions.
+- Studio dock alignment is measured synchronously before `showPage('studio')` reveals the page. The prior deferred requestAnimationFrame dock reposition is removed to prevent a visible drop after tab entry.
+- No NAM, User/Third Party IR transfer, IR Collection transfer, preset import/export, Signal Chain behavior, USB-MIDI, MIDI/CC mapping, or native audio code was changed.
+- Automated regression and new Build #640 pending. Device-level video validation remains pending after installation.

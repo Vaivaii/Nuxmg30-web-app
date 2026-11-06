@@ -23,6 +23,7 @@ on:
       - feature/studio-hardware-level-controls
       - feature/editor-dynamic-parameter-dock
       - feature/editor-fluid-motion-polish
+      - feature/editor-artwork-panel-nav-refinement
     paths:
       - 'www/**'
       - 'tests/**'

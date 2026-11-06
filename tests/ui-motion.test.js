@@ -109,3 +109,33 @@ test('Editor viewport is fixed and the parameter sheet uses transform-only anima
   assert.doesNotMatch(css, /transition:max-height/);
   assert.match(css, /#page-editor:not\(\.hidden\)\s*\{[\s\S]*?overflow: hidden !important/);
 });
+
+
+test('non-AMP gear artwork uses separate visual scale classes', () => {
+  assert.ok(html.includes('const artClass=block.id==="AMP"?"gear-art-amp"'));
+  assert.ok(html.includes('"IR"?"gear-art-cabinet"'));
+  assert.ok(html.includes('"WAH"?"gear-art-expression"'));
+  assert.ok(css.includes('.gear-art.gear-art-amp .gear-svg'));
+  assert.ok(css.includes('transform:scale(.80) !important'));
+  assert.ok(css.includes('transform:scale(.78) !important'));
+  assert.ok(css.includes('transform:scale(.72) !important'));
+  assert.ok(css.includes('transform:scale(.84) !important'));
+});
+
+test('parameter sheet height follows its contents and only caps long knob sets', () => {
+  assert.ok(css.includes('height:auto !important;'));
+  assert.ok(css.includes('min-height:0 !important;'));
+  assert.ok(css.includes('max-height:min(64dvh,580px) !important;'));
+  assert.ok(css.includes('.editor-parameter-panel .knobs {'));
+  assert.ok(!css.includes('height: min(62dvh, 580px); min-height: 180px;'));
+});
+
+test('moving pages reveal a stable app-shell gradient rather than the body gradient', () => {
+  assert.ok(css.includes('body > .app {\n    background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),#0b1012 !important;'));
+});
+
+test('Studio dock is positioned synchronously before Studio is made visible', () => {
+  assert.ok(html.includes("if(p==='studio')window.MG30SyncStudioPinnedControls?.();"));
+  assert.ok(studioJs.includes('window.MG30SyncStudioPinnedControls = syncStudioPinnedControls;'));
+  assert.ok(!studioJs.includes('window.requestAnimationFrame(syncStudioPinnedControls)'));
+});

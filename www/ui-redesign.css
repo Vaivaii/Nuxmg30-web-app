@@ -2888,3 +2888,63 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
     max-height:136px !important;
   }
 }
+
+
+/* Keep the page gradient on the stationary mobile app shell, not behind the
+   translated scroll panels. This avoids a brief gradient flash at tab edges. */
+@media (max-width:720px) {
+  body > .app {
+    background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),#0b1012 !important;
+    background-repeat:no-repeat !important;
+  }
+}
+
+/* Gear-specific scale hierarchy. AMP keeps its approved proportion; cabinets,
+   floor pedals, and expression/wah units get smaller independent silhouettes. */
+@media (max-width:720px) {
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art.gear-art-amp .gear-svg {
+    transform:scale(.92) !important;
+    transform-origin:center center !important;
+  }
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art.gear-art-pedal .gear-svg {
+    transform:scale(.80) !important;
+    transform-origin:center center !important;
+  }
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art.gear-art-cabinet .gear-svg {
+    transform:scale(.78) !important;
+    transform-origin:center center !important;
+  }
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art.gear-art-expression .gear-svg {
+    transform:scale(.72) !important;
+    transform-origin:center center !important;
+  }
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art.gear-art-loop .gear-svg {
+    transform:scale(.84) !important;
+    transform-origin:center center !important;
+  }
+}
+
+/* Content-sized parameter sheet. Its natural height follows the actual number
+   of knobs/rows; only large parameter sets reach the viewport scroll limit. */
+.editor-parameter-panel {
+  height:auto !important;
+  min-height:0 !important;
+  max-height:min(64dvh,580px) !important;
+}
+.editor-parameter-dock.is-expanded .editor-parameter-panel {
+  height:auto !important;
+  min-height:0 !important;
+  max-height:min(64dvh,580px) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+}
+.editor-parameter-panel .knobs {
+  align-content:start;
+  min-height:0 !important;
+}
+@media(max-width:390px) {
+  .editor-parameter-panel,
+  .editor-parameter-dock.is-expanded .editor-parameter-panel {
+    max-height:min(66dvh,560px) !important;
+  }
+}

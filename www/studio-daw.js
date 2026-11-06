@@ -2351,6 +2351,7 @@ function syncStudioPinnedControls() {
     : Math.ceil((appNav.offsetHeight || 64) + 16);
   dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px');
 }
+window.MG30SyncStudioPinnedControls = syncStudioPinnedControls;
 
 function setDawPage(page) {
   const selected = ['timeline', 'mixer', 'track-settings'].includes(page) ? page : 'timeline';
@@ -2417,11 +2418,6 @@ function bindEvents() {
   mountTrackInputRoutingPanel();
   renderOutputRoutingPanel();
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
-  document.querySelector('.nav')?.addEventListener('click', (event) => {
-    if (event.target.closest('button[data-page="studio"]')) {
-      window.requestAnimationFrame(syncStudioPinnedControls);
-    }
-  });
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
     button.addEventListener('click', () => setStudioMode(button.dataset.studioMode));
   });

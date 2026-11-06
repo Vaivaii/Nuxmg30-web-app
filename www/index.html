@@ -2938,7 +2938,8 @@ function renderModelVisual(){
  const irSlotBadge=collectionIRSlot?'<span class="gear-art-badge is-ir-slot" aria-label="IR '+String(collectionIRSlot).padStart(2,'0')+'" title="Collection IR slot '+String(collectionIRSlot).padStart(2,'0')+'">IR '+String(collectionIRSlot).padStart(2,'0')+'</span>':'';
  const artBadge=artBadgeText?'<span class="gear-art-badge '+artBadgeClass+'" aria-label="'+artBadgeText+'">'+artBadgeText+'</span>':irSlotBadge;
  const originNote=origin==="IMAGE"?'Model audio berbasis IMAGE/capture menurut katalog QuickTone. Visual di kartu ini hanya ilustrasi UI, bukan gambar model capture. Verifikasi pilihan di perangkat sebelum menyimpan preset.':origin==="GEN2"?'Efek tambahan pada katalog QuickTone GEN2. ID dan parameter hardware perlu diuji.':'';
- holder.innerHTML='<div class="gear-visual vector-visual"><div class="gear-art">'+renderGearSvg(block.id,name)+artBadge+'</div><div class="gear-copy"><div class="gear-copy-head"><span class="gear-type">'+category+'</span>'+originChip+'</div><div class="gear-copy-meta"><small class="based-on"><b>Based on:</b><span>'+escapeHtml(basis)+'</span></small></div>'+(originNote?'<div class="model-origin-note">'+escapeHtml(originNote)+'</div>':'')+'</div></div>';
+ const artClass=block.id==="AMP"?"gear-art-amp":block.id==="IR"?"gear-art-cabinet":block.id==="VOL"||block.id==="WAH"?"gear-art-expression":block.id==="S/R"?"gear-art-loop":"gear-art-pedal";
+ holder.innerHTML='<div class="gear-visual vector-visual"><div class="gear-art '+artClass+'">'+renderGearSvg(block.id,name)+artBadge+'</div><div class="gear-copy"><div class="gear-copy-head"><span class="gear-type">'+category+'</span>'+originChip+'</div><div class="gear-copy-meta"><small class="based-on"><b>Based on:</b><span>'+escapeHtml(basis)+'</span></small></div>'+(originNote?'<div class="model-origin-note">'+escapeHtml(originNote)+'</div>':'')+'</div></div>';
 }
 function renderBlockIcon(blockId){
  const shapes={
@@ -3276,6 +3277,7 @@ function playHorizontalSlide(node,offset){
 }
 window.MG30PlayHorizontalSlide=playHorizontalSlide;
 function showPage(p){
+ if(p==='studio')window.MG30SyncStudioPinnedControls?.();
  const pageList=[...document.querySelectorAll('.app>section[id^="page-"]')];
  const currentPage=pageList.find(page=>!page.classList.contains('hidden'));
  const targetPage=$('page-'+p);
