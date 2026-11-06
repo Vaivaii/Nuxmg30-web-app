@@ -674,14 +674,34 @@ function renderHardwareLevelPanel() {
     panel.className = 'daw-settings-section daw-output-routing-card daw-hardware-levels-card';
     panel.dataset.dawHardwareLevels = 'true';
     panel.innerHTML =
-      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Loopback and USB recording/playback levels.</p></div></div>' +
-      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Route MG-30 playback back to the USB recording input.</small></span><input type="checkbox" id="dawHardwareLoopback" disabled></label>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">—</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="127" value="64" disabled></div>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">—</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="127" value="64" disabled></div>' +
-      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">Controls are locked pending verified MG-30 Gen 2 firmware 6.0.x write commands. Existing MIDI, NAM, and IR transfer paths are not modified.</p>';
+      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Local UI test for Loopback and USB recording/playback levels.</p></div></div>' +
+      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>UI preview only; does not change the pedal.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">64 / 127</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="127" value="64"></div>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">64 / 127</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="127" value="64"></div>' +
+      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">TEST MODE — these controls update this screen only. No SysEx/MIDI is sent to the MG-30, so pedal settings will not change. Hardware write protocol for Gen 2 firmware 6.0.x is still unverified. NAM, IR, and MIDI mappings remain untouched.</p>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
     else host.appendChild(panel);
+  }
+  const loopback = $('dawHardwareLoopback');
+  const record = $('dawHardwareRecordLevel');
+  const playback = $('dawHardwarePlaybackLevel');
+  const recordReadout = $('dawHardwareRecordReadout');
+  const playbackReadout = $('dawHardwarePlaybackReadout');
+  if (record && recordReadout && !record.dataset.previewBound) {
+    record.addEventListener('input', () => { recordReadout.textContent = record.value + ' / 127'; });
+    record.dataset.previewBound = 'true';
+  }
+  if (playback && playbackReadout && !playback.dataset.previewBound) {
+    playback.addEventListener('input', () => { playbackReadout.textContent = playback.value + ' / 127'; });
+    playback.dataset.previewBound = 'true';
+  }
+  if (loopback && !loopback.dataset.previewBound) {
+    loopback.addEventListener('change', () => {
+      const note = panel.querySelector('.daw-hardware-protocol-note');
+      if (note) note.textContent = 'TEST MODE — UI state: Loopback ' + (loopback.checked ? 'ON' : 'OFF') + '. This is only a visual preview; no command was sent to the pedal.';
+    });
+    loopback.dataset.previewBound = 'true';
   }
 }
 
