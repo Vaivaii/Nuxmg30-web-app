@@ -3696,3 +3696,11 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Full-frame comparison found Build #631 intended frame matches QuickTone +12 dB frame except the two Playback field bytes, which are set to the same `01 49` at UI 150.
 - Added a native Java echo for the 46-byte `14/01` frame passed into `MidiInputPort.send()`, with Track Settings display of offsets 0x1E/0x1F, native-vs-JS byte equality, and ACK 14/03.
 - No protocol or control value changed; Record, Loopback, NAM, IR, preset, MIDI mappings and DAW paths are untouched. Await CI and physical diagnostic.
+
+
+## Build #632 — native Playback OUT-byte diagnostic (6 November 2026)
+
+- CI #632 passed: 287 regression tests, 0 failures; Android project generation and Gradle `assembleDebug` passed.
+- Artifact ID `13488109760`; extracted APK SHA-256 `70581af246c7c028330d67b4079bfc65573c127e573ba49d39981182d4212af1`.
+- Android native plugin echoes the 46-byte 14/01 array passed to `MidiInputPort.send()`; UI displays Playback offsets 0x1E/0x1F, native-vs-JS equality and 14/03 ACK.
+- Diagnostic receipt is not a bus capture; no outbound MIDI bytes or mappings have changed. Physical diagnostic test pending.

@@ -225,3 +225,18 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - The remaining unverified point is the runtime Android USB-MIDI send path. The Android Capacitor plugin now returns a hex echo of the exact 46-byte `14/01` array passed to `MidiInputPort.send()`. The app stores that receipt and Track Settings shows the transmitted pair plus whether native hex matches the JavaScript frame and the matching `14/03` ACK.
 - This is diagnostic-only: no outgoing MIDI payload bytes, Playback scaling, field offsets, Record Level, Loopback, queue order, ACK matching, NAM, IR transfer, preset, Signal Chain, MIDI mapping or USB audio behavior is changed.
 - The Android echo confirms bytes passed to the native MidiInputPort API; it is not a passive USB bus capture. If the echo shows `01 49` and ACK but the pedal remains +3 dB, the next investigation must compare the host USB endpoint payload or test the exact QuickTone frame without modifying other state.
+
+
+## Build #632 — native USB-MIDI frame receipt diagnostic (2026-11-06)
+
+- Source commit: `2b0ca86170aec90826bce34f1bc5796a060f2a06`.
+- GitHub Actions run #632: [42188567291](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42188567291) — **completed / success**.
+- Regression tests: **287 passed, 0 failed**. Android initializer validation, Capacitor Android generation and USB audio plugin installation passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 29s**. Artifact ID `13488109760`.
+- Artifact ZIP: 4,219,111 bytes; SHA-256 `bf35d59c8b62cb8a90bc8bdf4728f6b4cdc69aea5c92795aeb7f012a9cf8f86d`.
+- Extracted APK: 4,597,412 bytes; SHA-256 `70581af246c7c028330d67b4079bfc65573c127e573ba49d39981182d4212af1`.
+- APK archive integrity passed; Android package recognized. Packaged JS includes the Playback transmission diagnostic line and native echo comparison. Packaged DEX includes the Java native Sysex-hex encoder and result field.
+- New diagnostic behavior: for a 46-byte `14/01` message, Java returns the exact hex byte array passed to Android `MidiInputPort.send()`. JavaScript compares the native echo with the pre-bridge frame and Track Settings displays the Playback bytes at offsets `0x1E/0x1F`, equality status, byte count and matching ACK `14/03`.
+- This receipt verifies the exact buffer submitted to `MidiInputPort.send()`; it is not a passive USB bus capture. It does not modify the outgoing packet.
+- No changes to Playback 14-bit mapping, Record Level, Loopback, MIDI queue, ACK filter, NAM, IR User/Third Party/Collection, preset, Signal Chain, MIDI/CC mapping or DAW audio paths.
+- User physical test pending: install diagnostic APK, move Playback to 150, then report the displayed `OUT 0x1E/0x1F` pair and whether the native echo says `matches` or `DIFFERS`. Expected at UI 150 is `01 49`; if correct with ACK but device still displays +3 dB, further investigation must focus on USB bus/device interpretation rather than slider math.
