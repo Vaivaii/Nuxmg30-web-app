@@ -811,3 +811,10 @@ Prefer one capture per single toggle, with USB capture running before the toggle
 - Physical confirmation remains pending on the original MG-30 Gen2 FW 6.0.x. Do not claim the handset test has passed until the user installs Build #607.
 - No NAM, User/Third Party IR, Collection IR, MIDI/CC mapping, preset import/export, USB-MIDI bridge, or 0D routing packet/protocol behavior was modified.
 - Detailed note: `docs/research/SIGNAL_CHAIN_ROUTING_CARD_UI_2026-11-06.md`.
+
+## Physical confirmation — Build #607 (6 November 2026)
+
+- User has now confirmed **"Sudah berhasil"** after the APK installation/test.
+- The compact routing-card UI change is accepted; the previously pending physical-device validation for this change is closed.
+- Preserve the existing MG-30 Gen2 firmware 6.0.x target and keep NAM, User/Third Party IR, Collection IR, MIDI/CC mappings, preset import/export, and USB-MIDI protocol unchanged.
+- Detailed record: `docs/research/SIGNAL_CHAIN_ROUTING_CARD_UI_2026-11-06.md`.

@@ -51,3 +51,10 @@ Install Build #607 on the original MG-30 Gen2 firmware 6.0.x and confirm:
 4. Existing block reorder still keeps each routing icon attached to the corresponding pair.
 
 No physical pedal test has been performed in this build session. The verified source/build is complete; the on-device visual and mode-switch confirmation remains pending.
+
+## User confirmation — physical install/test successful (6 November 2026)
+
+- User confirmed: **"Sudah berhasil"** after installing/testing Build #607.
+- Treat the compact Signal Chain routing-card fix as accepted by the user.
+- The user confirmation closes the previously pending physical-device check for this UI change.
+- No new protocol claims beyond the user's success confirmation; retain the verified scope: compact responsive cards, icon-only display, and Serial/Parallel SVG refresh from device mode state.
