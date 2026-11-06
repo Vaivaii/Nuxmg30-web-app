@@ -46,7 +46,7 @@ Future community updates must be signed with the same release key. Do not uninst
 
 ## Project status
 
-The current release candidate baseline is Build #669. CI passed 310 automated tests and the Android debug packaging workflow. This does not mean that every feature has passed physical-device testing. See `COMMUNITY_RELEASE_GUIDE.md` and `PUBLIC_RELEASE_CHECKLIST.md`.
+The current release candidate baseline is Build #669. CI passed 310 automated tests and the Android debug packaging workflow. This does not mean that every feature has passed physical-device testing. See `COMMUNITY_RELEASE_GUIDE.md`, `PUBLIC_RELEASE_CHECKLIST.md`, [Privacy Notice](PRIVACY.md), and [Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
 ## Independence and trademarks
 
