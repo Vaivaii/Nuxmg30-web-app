@@ -115,3 +115,16 @@ The owner dispatched **Prepare deterministic npm lockfile** successfully from `r
 - Lockfile blob SHA: `63fdf2c900a1be3e98f990d704d13f46fa2f65bf`.
 
 The lockfile gate is now complete. The next release-engineering gate is owner-managed Android signing: create and securely back up a PKCS#12 keystore locally, then configure the four repository Actions secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`). Do not send the keystore or any secret values in chat.
+
+
+## Signed candidate run #3 — keystore validation narrowed down — 7 November 2026
+
+Run #3: [42290046239](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42290046239), commit `e78b93c8bee09985a0818758c9c092ce28b28c45`.
+- Branch/tag validation and checkout succeeded.
+- `npm ci` succeeded; 310/310 tests passed, 0 failed.
+- The release job failed in `Prepare and validate release keystore`; Android project generation and APK build were skipped.
+- The step's log does not expose whether the failure was the keystore store password or the alias check because the original workflow suppressed `keytool` diagnostics.
+- User locally confirmed that the PKCS#12 file decodes from its Base64 representation byte-for-byte (`cmp` reports `BASE64 VALID`). Clipboard-get is not responsive in Termux, but `termux-clipboard-set` eventually returned to the shell prompt.
+- Updated the release workflow on both `main` and `release/community-prep-v2` to strip Base64 whitespace, report decode success, test keystore opening separately from alias matching, and print only safe keytool diagnostics/alias metadata. No secret values or private key material are logged.
+- Next run will distinguish an incorrect `ANDROID_KEYSTORE_PASSWORD` from an incorrect `ANDROID_KEY_ALIAS`. The user created the key with alias `mg30studio-release`; if the store password is accepted, verify the alias Secret is exactly that value. Since the user pressed Enter for the private-key password, `ANDROID_KEY_PASSWORD` should equal the keystore password.
+- No app runtime source or protocol code was changed. No APK has been produced yet.
