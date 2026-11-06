@@ -3894,3 +3894,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Default toast calls now return without displaying. Only explicit `preset`, `nam`, and `ir` synchronization calls display.
 - No changes to original MG-30 Gen 2 6.0.x hardware protocol, NAM/IR transfer data, preset payloads, signal chain/MIDI/CC mappings, or USB-MIDI behavior.
 - User should install Build #653 and visually confirm IMAGE-based AMP and EFX caption rails are clean and that only preset/NAM/IR sync notifications appear.
+
+
+## Clarification correction — retain Based on for IMAGE AMP/EFX — 6 November 2026
+
+- User clarified that only the long IMAGE disclaimer should be removed from IMAGE-based AMP and EFX/pedal cards. The Based on line must remain visible.
+- Restore the Based on row unconditionally and restore the IMAGE origin chip beside the category label. Keep the existing IMAGE badge on the artwork.
+- Suppress only the verbose `.model-origin-note` disclaimer when `origin === "IMAGE"` and block is AMP or EFX. All other blocks, including IR, and GEN2 origin notes retain their previous behavior.
+- Toast behavior is already accepted by the user and is unchanged: default/no-scope toast is suppressed; only explicit preset, NAM and IR sync scopes remain active.
+- This is a markup conditional only. No protocols, transfer payloads, hardware state, layout dimensions, Signal Chain, preset data, NAM/IR paths, USB-MIDI or MIDI mapping are changed.
+- Regression/build validation for this correction is pending.

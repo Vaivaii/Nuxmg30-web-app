@@ -194,18 +194,18 @@ test('Editor Scenes remain bottom-anchored inside the fixed card with the approv
 });
 
 
-test('IMAGE-based AMP and EFX keep category labels but suppress overlapping description captions',()=>{
+test('IMAGE-based AMP and EFX suppress only the disclaimer while retaining Based on and origin labels',()=>{
   const start=html.indexOf('function renderModelVisual(){');
   const end=html.indexOf('\nfunction renderBlockIcon',start);
   const renderer=html.slice(start,end);
-  assert.ok(renderer.includes('const hideImageDescription=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX")'));
-  assert.ok(renderer.includes("captionOriginChip=hideImageDescription?'':originChip"));
-  assert.ok(renderer.includes("(hideImageDescription?'':'<div class=\"gear-copy-meta\">"));
-  assert.ok(renderer.includes('origin===\"IMAGE\"&&!hideImageDescription'));
-  assert.ok(renderer.includes("'+category"));
-  assert.ok(renderer.includes(`+artBadge+'</div>`));
+  assert.ok(renderer.includes('const hideImageDisclaimer=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX")'));
+  assert.ok(renderer.includes('origin==="IMAGE"&&!hideImageDisclaimer'));
+  assert.ok(renderer.includes("'+category+'</span>'+originChip+'</div><div class=\"gear-copy-meta\">"));
+  assert.ok(renderer.includes('<b>Based on:</b><span>'+escapeHtml(basis)'));
+  assert.ok(renderer.includes("'+artBadge+'</div>"));
+  assert.ok(renderer.includes("'<div class=\"model-origin-note\">'+escapeHtml(originNote)"));
+  assert.ok(!renderer.includes("hideImageDisclaimer?'':'<div class=\"gear-copy-meta\">"),'Based on must not be gated by IMAGE disclaimer condition');
 });
-
 test('floating toast is suppressed by default and opt-in only for preset, NAM and IR synchronization',()=>{
   assert.ok(html.includes("function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;"));
   assert.match(html,/toast\('Preset tersimpan; urutan signal chain diverifikasi',1900,'preset'\)/);
