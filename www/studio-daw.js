@@ -2258,20 +2258,11 @@ function mountTrackInputRoutingPanel() {
       <p>Four fixed tracks. USB Input 1/2 and Wet Sync 3/4 are separate paths. Input 3/4 is not automatically the phone's playback loopback.</p>
     </div>
     <div class="daw-input-routing-list" id="dawTrackInputRoutingList"></div>
-    <div class="daw-usb-diagnostic">
-      <strong>Raw USB input diagnostic · 4 channels</strong>
-      <p>Record all four raw USB input channels simultaneously to identify which channels carry audio. Diagnostic recordings are not added to any track; the original file is available in Quick Takes for export.</p>
-      <button type="button" id="dawUsbDiagnosticButton" class="daw-tool-btn">START RAW USB 1–4 TEST</button>
-      <div id="dawUsbDiagnosticResult" class="daw-usb-diagnostic-result" aria-live="polite">No measurement yet.</div>
-    </div>
     <small class="daw-input-routing-note">Input 1 = mono · Inputs 1–2 = stereo + host loopback mix when Routing Mode is Normal and Loopback is ON · Inputs 3–4 = Wet Sync (Dry Out mode). Phone loopback uses the USB Input 1–2 recording path, not a separate USB bus. To keep backing tracks separate, use Audio file / Import; separation of guitar and playback while Loopback is ON has not been verified.</small>
   `;
   host.insertBefore(panel, projectSettings);
   syncTrackInputRoutingPanel();
-  renderUsbDiagnosticButton();
-  host.addEventListener('click', (event) => {
-    if (event.target.closest('#dawUsbDiagnosticButton')) void toggleRawUsbDiagnostic();
-  });
+  // Raw USB diagnostic panel removed from the user-facing Track Settings UI.
   host.addEventListener('change', (event) => {
     const select = event.target.closest('[data-track-input-route]');
     if (!select) return;
