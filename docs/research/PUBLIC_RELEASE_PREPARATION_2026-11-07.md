@@ -101,3 +101,17 @@ The owner reported that the GitHub Actions link for the lockfile workflow displa
 The default branch also contained an older `community-release.yml` that pinned Build #663 and could publish a public/latest release automatically. That unsafe legacy workflow was replaced on `main` with the guarded signed-candidate workflow from `release/community-prep-v2`: it only runs from the release-preparation branch, requires the committed lockfile and owner-managed signing secrets, and creates a draft prerelease only when explicitly requested. No public release is created by default.
 
 These default-branch changes affect workflow registration/safety only; they do not merge application source into `main` or alter app runtime/protocol code. The owner should now open the Actions page, select the lockfile workflow, choose branch `release/community-prep-v2`, and dispatch it. The workflow has not yet been run and no lockfile has been generated.
+
+
+## Lockfile workflow completed — 7 November 2026
+
+The owner dispatched **Prepare deterministic npm lockfile** successfully from `release/community-prep-v2`.
+- GitHub Actions run: [#1 — run 42282822194](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42282822194)
+- Job conclusion: success.
+- Lockfile generation: success.
+- Reproducible clean install using `npm ci`: success.
+- Regression suite using `npm test`: success.
+- Commit of `package-lock.json` to the release-preparation branch: success.
+- Lockfile blob SHA: `63fdf2c900a1be3e98f990d704d13f46fa2f65bf`.
+
+The lockfile gate is now complete. The next release-engineering gate is owner-managed Android signing: create and securely back up a PKCS#12 keystore locally, then configure the four repository Actions secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`). Do not send the keystore or any secret values in chat.
