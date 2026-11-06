@@ -3865,7 +3865,7 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 ### Build #652 — Editor Scene layout fit verification — 6 November 2026
 
 - Final source commit used by CI: `6cbc499fe208ae03e31d3bebae4fc69bede7f972` on `fix/editor-model-caption-visibility`.
-- GitHub Actions run `42250261456` completed **success**: 305 passed, 0 failed; Android initializer syntax, Vite production build (774? no—see run log: 1.08s), Capacitor Android generation, Gradle `assembleDebug` and artifact upload all passed.
+- GitHub Actions run `42250261456` completed **success**: 305 passed, 0 failed; Android initializer syntax, Vite production build (1.08s), Capacitor Android generation, Gradle `assembleDebug` and artifact upload all passed.
 - Artifact ID: `13521260234`; ZIP size 4,225,778 bytes; ZIP SHA-256 `3b569ffb607546316a8e6be39a9d0c494abf88a6b7d6e8c74cb1cb53df73e93b`.
 - Extracted APK size 4,602,740 bytes; APK SHA-256 `6072daca080046fb1fc9cacafe7b394a51250b2e11a61de25a951c10565d08f2`.
 - ZIP integrity and APK ZIP/payload integrity passed.
@@ -3914,3 +3914,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Other block types, IR, NAM badge, and GEN2 labels remain unchanged.
 - Toast policy is untouched and remains sync-only for preset/NAM/IR.
 - Required validation: complete test suite, Vite production build, Capacitor, Gradle APK, and packaged JS inspection to confirm no IMAGE markers in rendered AMP/EFX UI while Based on is retained.
+
+
+### Build #662 — Remove all visible IMAGE markers, retain Based on — 6 November 2026
+
+- User's latest screenshot confirmed the disclaimer had been removed but IMAGE labels still appeared as artwork badge, caption chip, and model-name suffixes. User requested to remove the IMAGE words and leave Based on.
+- For AMP/EFX models internally marked `· IMAGE`, the Editor presentation now suppresses both the artwork IMAGE badge and origin chip. The category and Based on row remain.
+- `modelDisplayLabel` returns the base model name for AMP/EFX IMAGE variants, so the IMAGE suffix is also omitted from the Editor model selector, quick selector, signal-chain card and selected-model dock. Underlying `BLOCKS[].models` values are unchanged and still retain the marker for internal matching/artwork reference.
+- The long IMAGE disclaimer remains suppressed for these same AMP/EFX cases. Other blocks, IR, NAM badge, and GEN2 labels are unchanged.
+- Toast implementation/policy was not changed; the previously verified preset/NAM/IR-only scope remains.
+- GitHub Actions Run #662: `42256902003`, source commit `472dbe290d468a82ba3f6d4308fcfb90d77b6a61`, **SUCCESS**.
+- Tests: 307 passed, 0 failed. Android initializer syntax, Vite production build (1.04s), Capacitor Android generation, Gradle `assembleDebug` (BUILD SUCCESSFUL in 1m 33s), and artifact upload passed.
+- Artifact ID `13522852896`; ZIP size 4,225,984 bytes; ZIP SHA-256 `21e50782d8fc08021341f57c745e286e7e00321e8a0bf49be41dcc38ab1b4bc4`.
+- Extracted APK size 4,602,872 bytes; APK SHA-256 `d9497fc00aca15b51be7006b6f1c9f05de5331c0dd34d0d8840923474d9183fb`.
+- ZIP integrity and APK ZIP integrity passed. Inspection of the APK's packaged `assets/public/index.html` confirmed: AMP/EFX IMAGE gate; suppressed art badge/chip; base name used for visible selector/chain/dock labels; unconditional Based on markup; disclaimer gate; toast scope allowlist.
+- No hardware protocol, NAM/IR data transfer, preset payload, signal-chain logic, USB-MIDI, or MIDI/CC mapping changes.
