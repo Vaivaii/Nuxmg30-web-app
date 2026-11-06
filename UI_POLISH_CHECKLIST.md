@@ -3823,3 +3823,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Build #645 pending; physical verification still required after install.
 
 - Build #645 stopped before APK because one pre-existing card-proportion test still expected the superseded SVG height percentages (301/302 passed). That test now checks the values that must remain invariant—116px/105px stage and 46px Scene cards—while a separate new test validates the replacement explicit SVG width bounds. Runtime source is unchanged by this correction; Build #646 reruns the full suite and APK build.
+
+## Build #646 validation, APK payload inspection — 6 November 2026
+
+- User's Build #644 screenshot showed AMP artwork still too wide and the parameter sheet painting above both the fixed model dock and bottom navigation.
+- Root causes addressed in this branch: mobile stacking values were backdrop z-index 61, dock z-index 72, nav z-index 60; model dock header was unpositioned while the parameter sheet was absolute. The entire dock now sits at z-index 59, backdrop 58, nav 60; inside the isolated dock, model header is positioned at z-index 2 and parameter sheet at z-index 1.
+- Artwork sizing changed from `width:auto` to explicit SVG viewport widths (with `height:100%` and `object-fit:contain`): AMP 62%, standard pedal 30%, cabinet IR 54%, Volume/Wah 34%, FX Loop 40%. The 116px/105px gear stage and 46px Scene card dimensions are unchanged.
+- GitHub Actions run `42233133100`, Build #646, source commit `10cff1827a42b08a66f08039269bc369cec804d6`, completed successfully.
+- Regression suite: **302 passed, 0 failed**. Android initializer syntax passed; Capacitor generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m 27s`; artifact upload passed.
+- Artifact `MG30-Studio-debug-APK`, ID `13509852771`, ZIP size 4,224,345 bytes, ZIP SHA-256 `cf9e2c8c83f99a3a62380da9cd403afac02e7c4ed369ae6ce09fb9f2364bfaab`.
+- Extracted `app-debug.apk`: 4,601,612 bytes, SHA-256 `20f55fd2de5d9403229d9deb575765eda404fd5cc2f8f9662589745f1dc355cb`. ZIP archive integrity and APK ZIP structure checks passed.
+- APK payload verified: `assets/public/index.html` includes final Editor proportion override with explicit AMP 62% and pedal 30% widths; bundled `assets/public/assets/index-BpANE3jI.css` includes backdrop 58, dock 59, model header 2, parameter panel 1, and navigation 60. This confirms the intended rules survive the production Vite asset packaging and are present in the APK.
+- This is a CI-tested, assembled and payload-inspected debug APK. It is not yet physically installed by the user. On-device confirmation of actual visual paint order and full pedal/amp proportions remains required.
+- No NAM, custom IR/User/Third Party transfer, IR Collection, presets, Signal Chain, USB-MIDI or MIDI/CC protocol code was changed.
