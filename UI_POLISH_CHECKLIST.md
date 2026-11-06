@@ -3872,3 +3872,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Packaged asset inspection passed: Vite HTML references the hashed production CSS; the generated CSS includes 168px/154px total visual frame, 112px/98px artwork frame, 56px caption, 6px caption inset, category-specific artwork widths (AMP 62%, pedal 36%, cabinet 60%, expression 40%, FX loop 46%), bottom-anchored Scene row and 64px Scene targets. The bundled HTML retains AMPLIFIER, SPEAKER CABINET and Based on markup. Vite removes the source query token when it consolidates CSS into a hashed asset; this is expected, and the production HTML references that hashed asset.
 - The source and APK were not changed to touch NAM, IR User/Third Party, IR Collection, preset transfer, Signal Chain, USB-MIDI or MIDI/CC mapping.
 - Physical visual confirmation of the full Scene row on the user's phone remains pending. CI and bundled asset inspection have passed; do not claim device-level visual confirmation before the user checks this build.
+
+
+## User-requested final cleanup — IMAGE captions and toast scope (6 November 2026)
+
+- User confirmed Build #652 on the physical Android device: all three Scene cards are visible, artwork sizing/layout is good, USB-MIDI connected, and preset name readback is working.
+- New screenshot issue: IMAGE-based AMP and EFX/pedal show overlapping descriptive text. Keep the category label and IMAGE badge on the artwork; suppress the caption-rail origin chip, Based on row and IMAGE disclaimer only when `origin === "IMAGE"` and block is AMP or EFX. Do not suppress captions for other block types or GEN2/NAM/IR.
+- Toast policy: default `toast(...)` calls are now no-ops. Toast is rendered only when explicitly scoped to `preset`, `nam`, or `ir`, representing device synchronization/readback/import operations. Local draft actions, scene changes/copy, signal-chain edits, connection prompts, validation hints, clipboard, favorites, and other incidental feedback no longer open a toast. IR Collection synchronization explicitly uses scope `ir`.
+- Preserve status-panel messages and native progress dialogs; this change only gates the floating toast.
+- Keep original MG-30 GEN2 6.0.x protocol behavior, NAM transfer, IR User/Third Party and Collection transfer, preset import/export, USB-MIDI, and MIDI/CC mappings unchanged.
+- Required verification: full regression suite, Vite build, Capacitor generation, Gradle APK build, then inspect packaged JS/CSS to ensure IMAGE captions are suppressed and toast scope gate is bundled.
