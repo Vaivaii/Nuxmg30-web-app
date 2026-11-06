@@ -49,7 +49,7 @@ test('reduced-motion preference disables app-wide motion', () => {
 });
 
 test('shared stylesheet cache token is bumped for the motion layer', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-2'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-3'));
   assert.ok(!html.includes('ui-redesign.css?v=stable-ui-1'));
 });
 
@@ -150,9 +150,9 @@ test('bundled mobile Editor stylesheet keeps the full model frame and caption ra
   assert.ok(start>=0,'missing final bundled Editor frame override');
   assert.ok(start>css.lastIndexOf('height:clamp(92px,13dvh,118px)'), 'final override must follow the short-screen clamp');
   const rules=css.slice(start);
-  assert.match(rules,/body > \.app > #page-editor > \.editor > \.main-editor-card #modelVisual\.model-visual-stage\s*\{[^}]*height:198px!important/s);
+  assert.match(rules,/body > \.app > #page-editor > \.editor > \.main-editor-card #modelVisual\.model-visual-stage\s*\{[^}]*height:168px!important/s);
   assert.match(rules,/body > \.app > #page-editor > \.editor > \.main-editor-card #modelVisual\.model-visual-stage\s*\{[^}]*overflow:visible!important/s);
-  assert.match(rules,/\.gear-art\s*\{[^}]*height:142px!important/s);
+  assert.match(rules,/\.gear-art\s*\{[^}]*height:112px!important/s);
   assert.match(rules,/\.gear-copy\s*\{[^}]*height:56px!important/s);
   assert.match(rules,/\.gear-copy-head\s*\{[^}]*visibility:visible!important/s);
   assert.match(rules,/\.gear-copy \.gear-type\s*\{[^}]*visibility:visible!important/s);
@@ -160,12 +160,12 @@ test('bundled mobile Editor stylesheet keeps the full model frame and caption ra
   assert.match(rules,/\.gear-copy \.based-on\s*\{[^}]*display:flex!important/s);
   assert.match(rules,/\.gear-copy \.based-on\s*\{[^}]*max-height:none!important/s);
   assert.match(rules,/gear-art-amp \.gear-svg\s*\{[^}]*width:62%!important/s);
-  assert.match(rules,/gear-art-pedal \.gear-svg\s*\{[^}]*width:30%!important/s);
-  assert.match(rules,/gear-art-cabinet \.gear-svg\s*\{[^}]*width:54%!important/s);
-  assert.match(rules,/gear-art-expression \.gear-svg\s*\{[^}]*width:34%!important/s);
+  assert.match(rules,/gear-art-pedal \.gear-svg\s*\{[^}]*width:36%!important/s);
+  assert.match(rules,/gear-art-cabinet \.gear-svg\s*\{[^}]*width:60%!important/s);
+  assert.match(rules,/gear-art-expression \.gear-svg\s*\{[^}]*width:46%!important/s);
   assert.match(rules,/gear-art-loop \.gear-svg\s*\{[^}]*width:40%!important/s);
-  assert.match(rules,/max-height:780px\)\s*\{[\s\S]*?height:182px!important/s);
-  assert.match(rules,/\.gear-art\s*\{[^}]*height:126px!important/s);
+  assert.match(rules,/max-height:780px\)\s*\{[\s\S]*?height:154px!important/s);
+  assert.match(rules,/\.gear-art\s*\{[^}]*height:98px!important/s);
   assert.ok(!html.includes('id="editor-fixed-model-frame-scene-anchor"'), 'old override must not remain in inline HTML');
 });
 
@@ -185,9 +185,9 @@ test('Editor Scenes remain bottom-anchored inside the fixed card with the approv
   assert.ok(start>=0);
   const rules=css.slice(start);
   assert.match(rules,/\.scene-bar\s*\{[^}]*margin:auto 0 0!important/s);
-  assert.match(rules,/\.scene-bar\s*\{[^}]*padding:12px 0 2px!important/s);
+  assert.match(rules,/\.scene-bar\s*\{[^}]*padding:10px 0 2px!important/s);
   assert.match(rules,/\.scene-button\s*\{[^}]*min-height:64px!important/s);
-  assert.match(rules,/\.main-editor-card\s*\{[^}]*padding-bottom:16px!important/s);
+  assert.match(rules,/\.main-editor-card\s*\{[^}]*padding-bottom:12px!important/s);
   assert.ok(css.includes('body > .app > #page-editor > .editor'));
   assert.ok(css.includes('overflow: hidden !important'));
 });

@@ -34,3 +34,21 @@ No changes to NAM, IR User/Third Party, IR Collection, Import/Export Presets, Si
 ## Validation
 
 Pending: full Node regression suite, Android initializer syntax, Vite production build, Capacitor generation, Gradle `assembleDebug`, and inspection of the packaged CSS/HTML inside the resulting APK. The physical device must be checked for both AMP and IR category/Based on captions after installation.
+
+
+## Follow-up layout fit — user screenshot after caption repair (6 November 2026)
+
+The user confirmed category and Based on captions are visible, then reported:
+- Scene cards are clipped at the bottom of the fixed Editor card.
+- Non-AMP artwork should be slightly larger.
+- Category caption is too close to the artwork frame.
+
+Adjustment:
+- Normal mobile model visual unit: 168px total = 112px artwork + 56px caption.
+- Short mobile unit (viewport height ≤780px): 154px total = 98px artwork + 56px caption.
+- Caption rail gains 6px top inset; caption height and visibility remain unchanged.
+- Non-AMP width bounds increase: pedal 36%, cabinet 60%, expression 40%, FX loop 46%. AMP remains 62%.
+- Scene cards retain their full 64px touch target and bottom anchoring; separator spacing is tightened modestly.
+- CSS cache token changes from `stable-ui-2` to `stable-ui-3`.
+
+The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 tests and the Android build. This layout follow-up must independently pass the complete suite/build and packaged APK inspection before distribution.

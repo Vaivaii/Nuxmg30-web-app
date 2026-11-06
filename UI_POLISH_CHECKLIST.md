@@ -3847,3 +3847,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Added regression coverage for CSS bundle ordering, both AMP and IR category text, the Based on markup, and the short-screen dimensions.
 - New isolated branch: `fix/editor-model-caption-visibility`, based directly on Build #647 source commit `efd10044824b40a934ad5d0a79471dbfeb602304`. NAM, IR transfer protocols, preset transfer, Signal Chain, USB-MIDI and MIDI mapping code are not changed.
 - Validation: pending CI test run, production bundle, Gradle APK build and packaged-APK inspection. Do not install or distribute this candidate until all checks pass.
+
+
+## Editor card spacing and complete Scene row — 6 November 2026
+
+- User physically verified the Build #647 caption repair: category and Based on captions are now visible. New feedback: Scene cards are still clipped at the lower edge, non-AMP artwork should be slightly larger, and category text needs more distance from the artwork frame.
+- Root cause of the remaining clipping: the fixed artwork + caption unit was 182px on short phones (126px artwork + 56px caption), leaving insufficient vertical room for the full Scene row inside the locked mobile Editor card.
+- New layout: 168px visual unit on regular mobile (112px artwork + 56px caption); 154px on short mobile screens (98px artwork + 56px caption). Caption height remains unchanged so category and Based on text are not sacrificed.
+- Add 6px top inset within the caption rail so the category label has a deliberate gap below the artwork frame.
+- Increase non-AMP SVG width bounds moderately: standard pedal 30→36%, IR cabinet 54→60%, Volume/Wah 34→40%, FX loop 40→46%. AMP remains 62%. Artwork remains contained in its frame.
+- Keep all three Scene cards in one row, bottom-anchored, at the existing 64px minimum touch height. Tighten separator spacing slightly to improve fit.
+- Stylesheet cache token advances to `stable-ui-3`. Regression tests enforce normal/short-screen frame budgets, image widths, caption inset and Scene row dimensions.
+- Caption-repair Build run `42247914706` passed: 305/305 tests, Vite production build, Capacitor generation, Gradle `assembleDebug` and artifact upload.
+- No changes to NAM, IR User/Third Party, IR Collection, preset import/export, Signal Chain, USB-MIDI or MIDI/CC mappings. This layout follow-up requires its own complete CI run and packaged APK inspection.
