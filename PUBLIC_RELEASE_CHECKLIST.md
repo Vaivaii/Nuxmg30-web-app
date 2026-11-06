@@ -29,10 +29,12 @@
 - [ ] Back up the full pedal bank before any destructive import test.
 
 ## Public-facing material and legal/privacy
-- [ ] Reconcile the public README on the repository default branch (`main`) with the Android application; this preparation branch README is not yet the default-branch landing page.
-- [ ] Update the public README to describe the actual Android application, target and limitations.
-- [ ] Add a privacy notice covering network access, OAuth, integrations, local data and diagnostics.
-- [ ] Choose and add a source-code LICENSE; review all third-party dependencies and assets.
+- [x] Select the open-source distribution model (owner decision recorded 7 November 2026).
+- [ ] Select the exact open-source license (MIT vs GPL-3.0 or another approved license) and add the matching LICENSE text.
+- [ ] Review dependency licenses and confirm all bundled artwork, fonts and other assets can be distributed under their respective terms.
+- [x] Update the default-branch README landing page with truthful release status and links to the Android source/release-prep branch (README-only change; no application source merged to main).
+- [x] Prepare the Android-app README on the release-prep branch with compatibility, installation, safety and known-limitations information.
+- [ ] Add a privacy notice based on an audit of network access, OAuth, integrations, local data, permissions and diagnostics.
 - [ ] Review NUX name/logo and other third-party artwork/marks; retain non-affiliation notice.
 - [ ] Prepare installation, update, troubleshooting and backup instructions.
 - [ ] Prepare release notes and known-issues section.
