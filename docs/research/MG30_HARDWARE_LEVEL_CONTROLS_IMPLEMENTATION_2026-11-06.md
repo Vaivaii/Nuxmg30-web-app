@@ -122,3 +122,14 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Extracted APK: `app-debug.apk`, 4,596,160 bytes; SHA-256 `505a88ad2d6ff8ce41677e661a4c4fb40fa4bb76a49cc76e1e5de0dc2ab6962`.
 - ZIP integrity check passed; archive contains exactly one `app-debug.apk`. APK file type recognized as Android package. Packaged web assets were inspected: both dynamically-created sliders show `min=0`, `max=100`, `step=1`, `value=50`; readouts show `50 / 100` and update against `/ 100`. The packaged 46-byte hardware frame has raw 50 at offsets `0x1D` and `0x1F`. The packaged sender clamps direct raw slider values to 0–100.
 - Physical-device test of the new Playback Level default/maximum and Record Level cap remains required. CI/packaged APK inspection does not emulate the pedal's analog level response.
+
+
+## Playback Level default/range correction after Build #627 feedback (2026-11-06)
+
+- User corrected the previous assumption: Playback Level default must be 100; Record Level remains correct at default 50 / maximum 100.
+- Playback UI now uses min 0, max 150, step 1, default 100, with a /150 readout. Record UI remains 0–100 / default 50 / /100.
+- The captured 14/01 message uses 7-bit MIDI data bytes. Playback UI values 0–100 map directly to raw 0–100; UI values 100–150 map to raw 100–127. UI 100 therefore sends the captured raw default 100, and UI 150 sends raw 127. This is an app UI scaling convention, not a dB calibration claim.
+- The full 46-byte frame template retains Record raw 50 at offset 0x1D and Playback raw 100 at offset 0x1F.
+- Playback writes only offset 0x1F; Record writes only offset 0x1D; Loopback offset 0x20, complete-frame validation, serialized write queue, and 14/03 acknowledgement remain unchanged.
+- Added regression coverage for the asymmetric ranges and Playback conversion endpoints. Hardware audible/dB response still requires confirmation on original MG-30 Gen 2 firmware 6.0.x.
+- No NAM, IR User/Third Party/Collection, preset, MIDI/CC mapping, Signal Chain, or DAW audio protocol code changed.

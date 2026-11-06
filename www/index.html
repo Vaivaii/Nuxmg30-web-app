@@ -1026,11 +1026,11 @@ function invalidatePresetManagerCacheForWrite(data){
 function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);invalidatePresetManagerCacheForWrite(data);return true})}
 // Captured from QuickTone MG-30 Gen 2 firmware 6.0.x. This is a complete
 // 46-byte 14/01 hardware-state write frame, not a short parameter payload.
-// Baseline for this user-requested slider preset: Loopback OFF, Record Level raw 50, Playback Level raw 50.
+// Baseline for this user-requested slider preset: Loopback OFF, Record Level raw 50, Playback Level raw 100.
 const MG30_HARDWARE_FRAME_TEMPLATE = Object.freeze([
   0xF0,0x43,0x58,0x70,0x14,0x01,0x00,0x00,0x32,0x00,0x64,0x2C,
   0x00,0x02,0x00,0x00,0x08,0x34,0x02,0x53,0x55,0x00,0x00,0x31,
-  0x00,0x64,0x32,0x00,0x58,0x32,0x00,0x32,0x01,0x00,0x64,0x00,
+  0x00,0x64,0x32,0x00,0x58,0x32,0x00,0x64,0x01,0x00,0x64,0x00,
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xF7
 ]);
 let mg30HardwareFrameState = Array.from(MG30_HARDWARE_FRAME_TEMPLATE);
@@ -1041,6 +1041,13 @@ function normalizeMg30HardwareSlider(value) {
  if (!Number.isFinite(number)) throw new Error('Nilai slider MG-30 tidak valid.');
  // 14/01 stores each slider directly as a 7-bit SysEx data byte.
  return Math.round(Math.max(0, Math.min(100, number)));
+}
+function normalizeMg30PlaybackSlider(value) {
+ const number = Number(value);
+ if (!Number.isFinite(number)) throw new Error('Nilai Playback Level MG-30 tidak valid.');
+ const uiValue = Math.round(Math.max(0, Math.min(150, number)));
+ // Keep captured default 100 as raw 100; UI 100..150 spans the remaining 7-bit raw range 100..127.
+ return uiValue <= 100 ? uiValue : Math.round(100 + ((uiValue - 100) * 27 / 50));
 }
 function sendMg30SysEx(frameArray) {
  const frame = Array.from(frameArray || [], value => Number(value) & 0xFF);
@@ -1094,8 +1101,8 @@ function setRecLevel(value) {
  return updateMg30HardwareField(0x1D, raw, 'Record Level');
 }
 function setPlayLevel(value) {
- const raw = normalizeMg30HardwareSlider(value);
- // Capture values track the raw slider value directly (e.g. 0x68, 0x70, 0x76, 0x7A).
+ const raw = normalizeMg30PlaybackSlider(value);
+ // UI 100..150 maps to the remaining 7-bit raw range 100..127.
  return updateMg30HardwareField(0x1F, raw, 'Playback Level');
 }
 window.sendMg30SysEx = sendMg30SysEx;

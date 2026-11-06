@@ -37,21 +37,34 @@ test('Track Settings controls are enabled and report device ACK or errors', () =
 test('sliders send the raw 7-bit values rather than interpolating across observed capture samples', () => {
   assert.match(index, /Math\.min\(100, number\)/);
   assert.match(index, /const raw = normalizeMg30HardwareSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1D, raw, 'Record Level'\)/);
-  assert.match(index, /const raw = normalizeMg30HardwareSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1F, raw, 'Playback Level'\)/);
+  assert.match(index, /const raw = normalizeMg30PlaybackSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1F, raw, 'Playback Level'\)/);
   assert.doesNotMatch(index, /0x34 \+ \(normalized \/ 100\)/);
   assert.doesNotMatch(index, /0x68 \+ \(normalized \/ 100\)/);
   assert.match(daw, /dawHardwareRecordLevel[^\n]*max="100"[^\n]*value="50"/);
-  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*max="100"[^\n]*value="50"/);
+  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*min="0"[^\n]*max="150"[^\n]*value="100"/);
   assert.match(daw, /recordReadout\.textContent = record\.value \+ ' \/ 100'/);
-  assert.match(daw, /playbackReadout\.textContent = playback\.value \+ ' \/ 100'/);
+  assert.match(daw, /playbackReadout\.textContent = playback\.value \+ ' \/ 150'/);
 });
 
-test('both hardware level sliders share the requested 0-100 raw range and default 50', () => {
+test('Record stays 0-100 default 50; Playback is 0-150 default 100 with 7-bit mapping', () => {
   const frame = index.match(/const MG30_HARDWARE_FRAME_TEMPLATE = Object\.freeze\(\[([\s\S]*?)\]\);/);
   assert.ok(frame, 'complete 14/01 frame template exists');
   const bytes = [...frame[1].matchAll(/0x[0-9a-f]+/gi)].map(([hex]) => Number.parseInt(hex, 16));
   assert.equal(bytes[0x1D], 50, 'Record Level frame baseline is raw 50');
-  assert.equal(bytes[0x1F], 50, 'Playback Level frame baseline follows the requested raw 50');
+  assert.equal(bytes[0x1F], 100, 'Playback Level frame baseline is raw 100');
   assert.match(daw, /dawHardwareRecordLevel[^\n]*min="0"[^\n]*max="100"[^\n]*value="50"/);
-  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*min="0"[^\n]*max="100"[^\n]*value="50"/);
+  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*min="0"[^\n]*max="150"[^\n]*value="100"/);
+});
+
+test('Playback Level preserves raw default 100 and maps UI maximum 150 to raw 127', () => {
+  assert.match(index, /function normalizeMg30PlaybackSlider\(value\)/);
+  assert.match(index, /uiValue <= 100 \? uiValue : Math\.round\(100 \+ \(\(uiValue - 100\) \* 27 \/ 50\)\)/);
+  assert.match(index, /normalizeMg30PlaybackSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1F, raw, 'Playback Level'\)/);
+  const frame = index.match(/const MG30_HARDWARE_FRAME_TEMPLATE = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  const bytes = [...frame[1].matchAll(/0x[0-9a-f]+/gi)].map(([hex]) => Number.parseInt(hex, 16));
+  assert.equal(bytes[0x1F], 100);
+  const map = (v) => { const n = Math.round(Math.max(0, Math.min(150, Number(v)))); return n <= 100 ? n : Math.round(100 + ((n - 100) * 27 / 50)); };
+  assert.equal(map(0), 0);
+  assert.equal(map(100), 100);
+  assert.equal(map(150), 127);
 });

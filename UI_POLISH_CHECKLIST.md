@@ -3626,3 +3626,11 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Artifact ID: `13481806990`; ZIP SHA-256: `9fa35836cbed355ef3e880bb1bb99f9232aea436fd13989ffe6bb0bfe314b269`.
 - Extracted APK size: 4,596,160 bytes; SHA-256: `505a88ad2d6ff8ce41677e661a4c4fb40fa4bb76a49cc76e1e5de0dc2ab6962`.
 - Packaged APK was inspected; both controls and their raw frame defaults are 50/100. Await user's hardware response for separate Record/Playback tests.
+
+
+## Playback Level default and slider ceiling correction — 6 November 2026
+
+- User corrected Build #627's Playback default: it is 100. Record Level settings from Build #627 were correct and remain 0–100 / default 50.
+- Playback UI revised to 0–150 / default 100. Since the captured SysEx data byte is 7-bit, UI values 0–100 map directly to raw 0–100 and UI values 100–150 map to raw 100–127. Thus the requested displayed default sends raw 100 and slider maximum sends raw 127.
+- Frame baseline: Record offset 0x1D remains raw 50; Playback offset 0x1F is restored to raw 100; Loopback offset 0x20 unchanged.
+- Regression tests cover Record unchanged range/default, Playback requested range/default, template bytes, and raw endpoints. Build and physical test status will be recorded below.
