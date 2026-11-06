@@ -118,6 +118,7 @@ if (existsSync(stylesPath)) {
       '<item name="android:navigationBarColor">#0b1012</item>',
       '<item name="android:windowLightStatusBar">false</item>',
       '<item name="android:windowLightNavigationBar">false</item>',
+      '<item name="android:windowDisablePreview">true</item>',
       '<item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>'
     ]) {
       const itemName = item.match(/name="([^"]+)"/)[1];
