@@ -55,7 +55,9 @@ The app contains links to external service documentation and developer-console p
 
 When you connect a compatible original NUX MG-30 Gen 2 over USB, the app communicates with the connected device through Android USB-MIDI/native MIDI functionality. Preset, parameter, NAM and IR transfers are intended to take place between the app and the connected pedal. The inspected implementation does not show these USB-MIDI messages being sent to an MG30 Studio-operated server.
 
-Only connect hardware you trust. Back up pedal presets before bulk writes. Import All and Export All remain under validation and should not be treated as fully verified.
+The owner has confirmed that all MG30 Studio device features, including Import All and Export All, are functioning on the target physical pedal. Bulk import can write the full 128-preset bank; back up pedal presets before any bulk write.
+
+Only connect hardware you trust. Stop if the app reports a protocol mismatch or incomplete acknowledgement, and preserve diagnostics before retrying.
 
 ## 5. Microphone and audio recording
 
