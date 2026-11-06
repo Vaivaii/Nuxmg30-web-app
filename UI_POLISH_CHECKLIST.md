@@ -3799,3 +3799,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Restore Scene card minimum height to 46px and original compact type sizing; anchor Scene strip at the lower edge of the existing main card so the removed in-card model-stepper space is visually balanced by the fixed dock below.
 - Keep the Editor page, internal editor flex area and main card overflow locked; do not add page scrolling. No header, navigation animation, Studio dock or hardware/communication code is changed.
 - Add a regression test covering gear sizing, Scene card dimensions, final style order, and the fixed non-scrollable Editor viewport. Build #644 pending.
+
+## Build #644 validation and APK inspection — 6 November 2026
+
+- Workflow run: `42230033475`, Build #644, branch `feature/editor-card-proportions-with-dock`, source commit `0dd99abf90b840753df21af145a02078c941ea8a`, conclusion `success`.
+- Test result: **300 passed, 0 failed**. Android initializer check passed; Capacitor Android generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m 6s`; artifact upload passed.
+- Artifact: `MG30-Studio-debug-APK`, ID `13508985245`, ZIP size 4,224,222 bytes, ZIP SHA-256 `57f1323e5c08401ba1461a98575cca0d50f4dc934e43ecec886a29f913cf369f`.
+- Extracted APK: `app-debug.apk`, size 4,601,504 bytes, SHA-256 `1dd768dc409ace7a1618cb5a695f968a04788989db53c8fa5b49401c66f45048`. ZIP integrity and APK ZIP structure passed.
+- Verified packaged HTML/CSS: final `editor-card-proportions-override` is packaged after existing Editor styles; gear SVG height ratios AMP 76%, pedal 74%, cabinet 70%, Wah/Volume 64%, FX loop 70%; stage 116px default / 105px at narrow/short screens; Scene min-height 46px and bottom-anchor margin are packaged. Mobile fixed Editor viewport / overflow lock is present. Horizontal slide helper is absent; stable Build #643 transition and Studio dock source were left untouched.
+- No changes were made to NAM, IR transfer/Collection, preset transfer, Signal Chain, USB-MIDI, hardware protocol, or MIDI/CC mappings.
+- Build #644 is a CI-verified debug APK with archive/payload inspection. Final physical-device confirmation of proportions versus the supplied screenshot and that Editor cannot scroll remains with the user after installation.
