@@ -673,33 +673,33 @@
       </div>
     </form>
   </dialog>
-</section><section id="page-device" class="hidden"><div class="hero"><div><div class="eyebrow">DEVICE</div><h2>Device & Settings</h2><p>Status koneksi, kontrol MIDI, dan keamanan data.</p></div></div><div class="panel studio-connect-card device-usb-audio-card">
+</section><section id="page-device" class="hidden"><div class="hero"><div><div class="eyebrow">DEVICE</div><h2>Device & Settings</h2><p>Connection status, MIDI controls, and data security.</p></div></div><div class="panel studio-connect-card device-usb-audio-card">
     <div class="studio-connect-row">
-      <div class="studio-connect-copy"><span class="studio-overline">USB AUDIO · ANDROID</span><strong>NUX MG-30</strong><small id="guitarTrackMeta">Belum diuji · pemeriksaan otomatis saat Hubungkan</small></div>
-      <button class="btn primary studio-test-btn" id="audioCheckBtn" type="button" aria-label="Tes koneksi USB audio">↻ Tes USB</button>
+      <div class="studio-connect-copy"><span class="studio-overline">USB AUDIO · ANDROID</span><strong>NUX MG-30</strong><small id="guitarTrackMeta">Not tested · automatic check when connected</small></div>
+      <button class="btn primary studio-test-btn" id="audioCheckBtn" type="button" aria-label="Test USB audio connection">↻ Test USB</button>
     </div>
-    <div id="audioEngineBadge" class="hidden">BELUM DITES</div>
-    <div id="audioStatus" class="studio-inline-status" role="status" aria-live="polite">Tes USB berjalan otomatis saat koneksi berhasil. Kamu juga bisa menjalankan tes ulang dari sini.</div>
+    <div id="audioEngineBadge" class="hidden">NOT TESTED</div>
+    <div id="audioStatus" class="studio-inline-status" role="status" aria-live="polite">The USB test runs automatically after a successful connection. You can also run it again here.</div>
     <details class="studio-device-details">
-      <summary>Detail perangkat & format USB</summary>
-      <div id="audioDeviceList" class="audio-device-list"><div class="studio-empty">Detail akan muncul setelah pemeriksaan.</div></div>
+      <summary>Device & USB Format Details</summary>
+      <div id="audioDeviceList" class="audio-device-list"><div class="studio-empty">Details will appear after the check.</div></div>
     </details>
   </div>
-    <div class="panel"><div class="panel-head"><div><h3>Status koneksi</h3><p>Web MIDI memerlukan browser dan hardware yang kompatibel.</p></div><span class="chip">SAFE MODE</span></div><div class="switch-row"><span>Koneksi perangkat</span><span id="deviceStatus" class="chip">Belum terhubung</span></div><div class="switch-row"><span>Browser Web MIDI API</span><span id="midiSupport" class="chip">Memeriksa…</span></div><div class="switch-row"><span>USB MIDI hardware</span><span class="chip">Belum diuji</span></div><div class="switch-row"><span>SysEx read / write</span><span id="sysexStatus" class="chip">Menunggu koneksi</span></div><button class="btn primary" id="connectMidiDevice">Hubungkan / pilih ulang perangkat</button> <button class="btn" id="readBuffer">Baca buffer aktif</button><button class="btn" id="checkMidi">Periksa dukungan browser</button><button class="btn backup-link" id="goBackup">▣ Backup & Restore</button><div class="notice"><b>Important:</b> Android Chrome does not always expose Web MIDI/USB-MIDI in the way this app requires. Testing on this page does not guarantee compatibility with the NUX MG-30 (original Gen 2). The protocol reference targets the latest original Gen 2 firmware (6.0.x), not the MKII. It is based on reverse engineering and is not official documentation.</div></div><div class="panel device-youtube-api-panel">
+    <div class="panel"><div class="panel-head"><div><h3>Connection Status</h3><p>Web MIDI requires a compatible browser and hardware.</p></div><span class="chip">SAFE MODE</span></div><div class="switch-row"><span>Device Connection</span><span id="deviceStatus" class="chip">Not connected</span></div><div class="switch-row"><span>Browser Web MIDI API</span><span id="midiSupport" class="chip">Checking…</span></div><div class="switch-row"><span>USB MIDI Hardware</span><span class="chip">Not tested</span></div><div class="switch-row"><span>SysEx read / write</span><span id="sysexStatus" class="chip">Waiting for connection</span></div><button class="btn primary" id="connectMidiDevice">Connect / Reselect Device</button> <button class="btn" id="readBuffer">Read Active Buffer</button><button class="btn" id="checkMidi">Check Browser Support</button><button class="btn backup-link" id="goBackup">▣ Backup & Restore</button><div class="notice"><b>Important:</b> Android Chrome does not always expose Web MIDI/USB-MIDI in the way this app requires. Testing on this page does not guarantee compatibility with the NUX MG-30 (original Gen 2). The protocol reference targets the latest original Gen 2 firmware (6.0.x), not the MKII. It is based on reverse engineering and is not official documentation.</div></div><div class="panel device-youtube-api-panel">
   <div class="panel-head">
-    <div><h3>YouTube Data API</h3><p>Kunci API untuk pencarian lagu di tab Studio. Key disimpan hanya di perangkat ini.</p></div>
-    <span id="youtubeKeyStatus" class="studio-youtube-key-status">API key belum disetel</span>
+    <div><h3>YouTube Data API</h3><p>API key for song searches in the Studio tab. The key is stored only on this device.</p></div>
+    <span id="youtubeKeyStatus" class="studio-youtube-key-status">API key not set</span>
   </div>
-  <div class="device-youtube-api-actions"><button class="btn primary studio-api-toggle" id="youtubeApiToggle" type="button" aria-expanded="false">Atur API key</button></div>
+  <div class="device-youtube-api-actions"><button class="btn primary studio-api-toggle" id="youtubeApiToggle" type="button" aria-expanded="false">Configure API Key</button></div>
   <div id="youtubeApiSettings" class="studio-api-settings hidden">
     <label for="youtubeApiKeyInput">YouTube Data API v3 key</label>
-    <input id="youtubeApiKeyInput" type="password" autocomplete="off" placeholder="Tempel API key Google Cloud…">
+    <input id="youtubeApiKeyInput" type="password" autocomplete="off" placeholder="Paste your Google Cloud API key…">
     <div class="studio-api-actions">
-      <button class="btn primary" id="youtubeApiSaveBtn" type="button">Simpan</button>
-      <button class="btn" id="youtubeApiClearBtn" type="button">Hapus</button>
+      <button class="btn primary" id="youtubeApiSaveBtn" type="button">Save</button>
+      <button class="btn" id="youtubeApiClearBtn" type="button">Delete</button>
       <button class="btn" id="youtubeApiConsoleBtn" type="button">Google Cloud ↗</button>
     </div>
-    <p>Aktifkan YouTube Data API v3. Key disimpan di penyimpanan lokal aplikasi.</p>
+    <p>Enable YouTube Data API v3. The key is stored in the app's local storage.</p>
   </div>
 </div>
 <div id="tone3000SettingsMount"></div></section>
@@ -1014,7 +1014,8 @@ function parameterValueForControl(blockIndex,state,modelIndex,control){
 }
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function updateUsbConnectButton(){const button=$('connectMidi');if(!button)return;button.classList.toggle('is-connected',!!midiConnected);button.classList.toggle('is-connecting',!!midiConnectPending);button.setAttribute('aria-pressed',String(!!midiConnected));button.setAttribute('aria-label',midiConnected?'USB-MIDI MG-30 terhubung':(midiConnectPending?'Menghubungkan USB-MIDI MG-30':'Hubungkan NUX MG-30 melalui USB-MIDI'));button.title=midiConnected?'MG-30 terhubung · USB-MIDI':(midiConnectPending?'Menghubungkan ke MG-30…':'MG-30 belum terhubung · ketuk untuk menyambungkan');const label=$('usbHeaderStatus');if(label){label.textContent=midiConnected?'Terhubung':(midiConnectPending?'Menghubungkan…':'Terputus');label.classList.toggle('is-connected',!!midiConnected);label.classList.toggle('is-connecting',!!midiConnectPending)}}
-function setDeviceStatus(message){const el=$('deviceStatus');if(el)el.textContent=message;const op=$('operationStatus');if(op)op.textContent=message;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(message&&message.length<58?message:'Belum terhubung · ketuk ikon USB untuk menghubungkan');const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);updateUsbConnectButton();renderSignalChainRoutingControls()}
+function appEnglishText(value){const source=String(value??'');return window.MG30EnglishUI?.translate?.(source)??source}
+function setDeviceStatus(message){const copy=appEnglishText(message);const el=$('deviceStatus');if(el)el.textContent=copy;const op=$('operationStatus');if(op)op.textContent=copy;const statusText=$('connectionStatusText');if(statusText)statusText.textContent=midiConnected?'Connected · USB MIDI':(copy&&copy.length<58?copy:appEnglishText('Belum terhubung · ketuk ikon USB untuk menghubungkan'));const orb=$('deviceOrb');if(orb)orb.classList.toggle('connected',!!midiConnected);const strip=$('connectionStrip');if(strip)strip.classList.toggle('is-connected',!!midiConnected);updateUsbConnectButton();renderSignalChainRoutingControls()}
 function enqueueMidi(fn){const run=async()=>{const gap=exportAllFastMidiMode?EXPORT_ALL_MIDI_GAP:MIDI_GAP;const wait=gap-(performance.now()-lastMidiSend);if(wait>0)await delay(wait);const out=await fn();lastMidiSend=performance.now();return out};const p=midiChain.then(run);midiChain=p.catch(()=>{});return p}
 function invalidatePresetManagerCacheForWrite(data){
  const cache=window.MG30PresetManagerCache;
@@ -1706,13 +1707,13 @@ function changeSelectedModel(delta){
  }
 }
 function persist(){localStorage.setItem('mg30-presets',JSON.stringify(presets));localStorage.setItem('mg30-draft',JSON.stringify({name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex,targetSlot,chainOrder}));notifyActivePresetChanged();}
-function toast(s,duration=1900){const el=$('toast');if(!el)return;el.textContent=s;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
+function toast(s,duration=1900){const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
 
 function renderHardwarePreset(){
  const slot=$('hardwarePresetSlot'),name=$('hardwarePresetName'),source=$('hardwarePresetSource'),fav=$('favoritePresetBtn');
  if(slot)slot.textContent=slotName();
  if(name)name.textContent=hardwarePresetNameLoaded&&hardwarePresetName?hardwarePresetName:(midiConnected?'Preset name not read yet':'Connect to read preset');
- if(source)source.textContent=hardwarePresetNameLoaded?'Nama dibaca dari pedal · MG-30 GEN2':(midiConnected?'Terhubung · nama hardware belum terbaca':'Nama preset asli tampil setelah sinkronisasi');
+ if(source)source.textContent=hardwarePresetNameLoaded?'Name read from pedal · MG-30 GEN2':(midiConnected?'Connected · hardware name not read':'Original preset name appears after synchronization');
  if(fav){const isFav=favoriteSlots.has(targetSlot);fav.textContent=isFav?'★':'☆';fav.classList.toggle('active',isFav);fav.setAttribute('aria-label',isFav?'Hapus dari favorit':'Tandai favorit')}
 }
 function renderSceneButtons(){

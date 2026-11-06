@@ -33,11 +33,23 @@ test('Dock expands upward, scrolls its own parameter content, and collapses from
   assert.ok(css.includes('.editor-parameter-dock{'));
   assert.ok(css.includes('position:fixed'));
   assert.ok(css.includes('overflow-y:auto'));
-  assert.ok(css.includes('transition:max-height .32s'));
+  assert.ok(css.includes('transform: translate3d(0, calc(100% + 8px), 0)'));
+  assert.ok(css.includes('transition: transform .4s cubic-bezier(.22, 1, .36, 1)'));
+  assert.ok(!css.includes('transition:max-height'));
 });
 
 test('Dock is hidden off the Editor page and the parameter panel closes on page navigation', () => {
   assert.ok(html.includes("dock.classList.toggle('hidden',p!=='editor')"));
   assert.ok(html.includes("if(p!=='editor')setEditorParameterDockExpanded(false)"));
   assert.ok(html.includes("setEditorParameterDockExpanded(false)"));
+});
+
+
+test('Editor viewport is fixed without vertical page scrolling and has compact responsive cards', () => {
+  assert.match(css, /body > \.app > #page-editor:not\(\.hidden\)\s*\{[\s\S]*?overflow: hidden !important/);
+  assert.match(css, /body > \.app > #page-editor > \.hardware-preset-card/);
+  assert.match(css, /body > \.app > #page-editor > \.signal-chain-panel/);
+  assert.match(css, /body > \.app > #page-editor > \.editor/);
+  assert.match(css, /@media \(max-width: 720px\) and \(max-height: 780px\)/);
+  assert.match(css, /body > \.app > #page-editor:not\(\.hidden\)::after\s*\{\s*display: none/);
 });

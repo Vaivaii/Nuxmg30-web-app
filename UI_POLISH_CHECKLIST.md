@@ -3756,3 +3756,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Reuses the original single `#knobs` renderer and callbacks; no MIDI parameter code or protocol path changed.
 - Build #635 CI passed: 292 tests, 0 failures; Gradle successful. APK artifact ID `13494729470`, extracted APK SHA-256 `2ad74b5df02852b320e35f48bd4cae8924f2360c6446c206d182eb06fb0d21a5`.
 - Package integrity and bundled HTML/CSS structure were inspected. Physical UI verification remains pending.
+
+
+## Editor viewport lock, smooth dock motion, and English-only UI policy — 6 November 2026
+
+- Editor is fixed on mobile with no vertical page scroll. Header, preset card, signal chain and main editor remain in place. Responsive card padding/artwork is compacted; signal chain retains horizontal scrolling. Other tabs keep their own scrolling.
+- Parameter sheet uses fixed responsive height and `translate3d`/opacity/visibility animation, not max-height or padding interpolation. The Editor page has a subtle slide/fade entrance. Reduced-motion remains respected.
+- Device page copy is English at source. Dynamic toast, Device status and native audio status render through the English translator before display.
+- **Permanent rule:** every new or changed user-facing application string must be English by default across all tabs, toast notifications, dialogs, statuses, tooltips, placeholders, accessibility labels and generated UI. Do not add Indonesian UI copy. Retained legacy Indonesian strings require tested English dictionary mappings.
+- Build and physical verification pending.

@@ -73,3 +73,12 @@ test('NAM and TONE3000 panes use opacity-only entrance to preserve mobile width 
   assert.ok(css.includes('.nam-ir-tools-stage { min-width: 0; }'));
   assert.ok(css.includes('.nam-ir-tool-pane:not([hidden]) { display: block; min-width: 0; margin-top: 7px; }'));
 });
+
+
+test('Editor viewport is fixed and the parameter sheet uses transform-only animation', () => {
+  assert.match(css, /editor-parameter-panel\s*\{[\s\S]*?position: absolute !important/);
+  assert.match(css, /transform: translate3d\(0, calc\(100% \+ 8px\), 0\)/);
+  assert.match(css, /transform \.4s cubic-bezier\(\.22, 1, \.36, 1\)/);
+  assert.doesNotMatch(css, /transition:max-height/);
+  assert.match(css, /#page-editor:not\(\.hidden\)\s*\{[\s\S]*?overflow: hidden !important/);
+});

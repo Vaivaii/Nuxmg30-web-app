@@ -32,3 +32,15 @@
 - Interaction: tap centered title to expand the parameter sheet upward; tap it again, backdrop, Escape, or navigate away to collapse. The dock header remains fixed directly above bottom navigation. Panel scrolling is internal.
 - Scope is Editor UI layout only. No USB-MIDI packet, parameter encoder, Record/Playback hardware level mapping, NAM, Third Party/User IR, IR Collection, preset format, scene behavior, signal-chain order, MIDI/CC mapping, or USB audio source was modified.
 - Physical Android UI test remains pending. In particular verify dock stacking/height on the user's phone, arrows while expanded, parameter dial gestures/scroll, and navigation to/from NAM & IR/Presets/Studio/Device.
+
+
+## Editor viewport, fluid dock motion, and English-only UI policy (2026-11-06)
+
+- The Build #635 screenshot showed the Editor page still scrolling vertically, allowing the preset header to move out of view. The root cause was the shared mobile tab rule `overflow-y:auto` plus the Editor's legacy bottom padding.
+- Only `#page-editor` is now locked on mobile with `overflow:hidden`; the other tabs keep their existing independent scroll behavior. Editor is a flex column with compact header, preset card, signal-chain card and main editor card. Signal chain keeps horizontal scrolling. Model artwork and scenes use responsive compact dimensions, including a short-screen breakpoint.
+- Dock sheet no longer animates `max-height` or padding. It has a fixed responsive height and expands/collapses using `translate3d`, opacity and visibility; its content scrolls internally. Backdrop opacity transitions independently. Editor page has a short slide/fade entrance. `prefers-reduced-motion` is respected.
+- Device page source labels are now English. Dynamic toast and Device status functions call `window.MG30EnglishUI.translate()` before rendering; native audio statuses use the same English translator. Missing translations were added for Device, signal-chain, preset/scene, NAM, IR, import and export messages.
+- **Permanent product-language rule:** all new or edited user-facing app copy must be English by default, across static labels, status text, toast notifications, dialogs/alerts/confirm prompts, tooltips, placeholders, accessibility labels, and dynamically generated content on every tab. Do not introduce Indonesian UI copy. If legacy Indonesian source strings are retained for translation compatibility, they must have a tested English dictionary mapping in `www/english-ui.js`. Internal code comments and research notes are not UI copy.
+- Regression tests execute the English translator for dynamic Device/toast strings and guard the fixed Editor viewport and transform-only dock animation.
+- No USB-MIDI payloads, parameter callbacks, NAM transfer, Third Party/User IR, IR Collection, preset format, signal-chain order, MIDI/CC mappings or hardware dB mappings changed.
+- Build and APK inspection pending.
