@@ -581,6 +581,7 @@ function renderProject() {
   renderMixer();
   renderInspector();
   renderOutputRoutingPanel();
+  renderHardwareLevelPanel();
   if ($('dawTimelineInfo')) $('dawTimelineInfo').textContent = project.tracks.length + ' tracks · ' + metrics.bars + ' bars · 48 kHz / 24-bit';
   updatePlayheadReadout();
   updateTransport();
@@ -660,6 +661,30 @@ function renderOutputRoutingPanel() {
       : 'Phone / Android default output selected.';
   }
 }
+
+// Hardware monitoring controls are intentionally read-only until the MG-30
+// write protocol has been validated against a real device capture. Never send
+// guessed SysEx frames from these controls.
+function renderHardwareLevelPanel() {
+  const host = $('dawTrackSettingsPage');
+  if (!host) return;
+  let panel = host.querySelector('[data-daw-hardware-levels]');
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.className = 'daw-settings-section daw-output-routing-card daw-hardware-levels-card';
+    panel.dataset.dawHardwareLevels = 'true';
+    panel.innerHTML =
+      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Loopback and USB recording/playback levels.</p></div></div>' +
+      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Route MG-30 playback back to the USB recording input.</small></span><input type="checkbox" id="dawHardwareLoopback" disabled></label>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">—</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="127" value="64" disabled></div>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">—</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="127" value="64" disabled></div>' +
+      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">Controls are locked pending verified MG-30 Gen 2 firmware 6.0.x write commands. Existing MIDI, NAM, and IR transfer paths are not modified.</p>';
+    const outputPanel = host.querySelector('[data-daw-output-routing]');
+    if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
+    else host.appendChild(panel);
+  }
+}
+
 function formatClock(seconds) {
   const total = Math.max(0, Number(seconds) || 0);
   const minutes = Math.floor(total / 60);
