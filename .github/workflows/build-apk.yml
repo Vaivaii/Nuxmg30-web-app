@@ -26,6 +26,7 @@ on:
       - feature/editor-card-proportions-with-dock
       - feature/editor-dock-stack-and-svg-sizing-fix
       - feature/editor-fixed-model-frame-scene-anchor
+      - fix/editor-model-caption-visibility
     paths:
       - 'www/**'
       - 'tests/**'

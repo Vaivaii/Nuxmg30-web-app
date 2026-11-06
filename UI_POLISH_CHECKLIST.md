@@ -3835,3 +3835,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Scene strip is pushed to the bottom of the fixed Editor card with `margin-top:auto`; card bottom padding is 16px, Scene top separation 12px, and touch targets are 64px tall. Editor viewport remains locked; no scrolling added.
 - Only `www/index.html`, UI regression tests, workflow branch allowlist, and this checklist are changed. No header, dock, tab animation, Studio behavior, NAM, IR transfer/Collection, preset, Signal Chain, USB-MIDI or MIDI/CC mapping code changed.
 - Regression tests now assert fixed stage/visual dimensions, independent unclipped caption, all category widths, Scene bottom anchoring, button dimensions and locked Editor viewport. Build #647 pending.
+
+
+## Restore AMP / Speaker Cabinet captions in the bundled Android CSS — 6 November 2026
+
+- User installed Build #647 and reported that the text beneath AMP and IR artwork was missing: the AMP "Based on" line was absent and IR did not show the "SPEAKER CABINET" category or its "Based on" line.
+- Both supplied screenshots show the artwork and Scene cards rendering; the failure is isolated to the caption rail below the artwork, not the model name or hardware state.
+- APK inspection established the Vite production bundle places the combined external stylesheet after the inline styles in `index.html`. The Build #647 fixed-frame rules were kept only in an inline `<style>` block, so later mobile rules from `ui-redesign.css` could override the model visual height (including the short-screen 92–118px clamp). That clipped the caption rail. The source-only cascade had hidden this packaging-order defect.
+- Correction: move the canonical shared artwork-frame/caption/Scene rules to the end of `www/ui-redesign.css`, after the conflicting screen-height rules, remove the duplicate inline override, and bump the stylesheet token to `stable-ui-2`.
+- The final stylesheet explicitly reserves the complete 198px (or 182px on short screens) visual unit: fixed artwork frame plus a visible 56px caption rail. Category and Based on elements are explicitly visible; Based on may wrap instead of being line-clamped out. Scene cards remain bottom-anchored with 64px touch targets.
+- Added regression coverage for CSS bundle ordering, both AMP and IR category text, the Based on markup, and the short-screen dimensions.
+- New isolated branch: `fix/editor-model-caption-visibility`, based directly on Build #647 source commit `efd10044824b40a934ad5d0a79471dbfeb602304`. NAM, IR transfer protocols, preset transfer, Signal Chain, USB-MIDI and MIDI mapping code are not changed.
+- Validation: pending CI test run, production bundle, Gradle APK build and packaged-APK inspection. Do not install or distribute this candidate until all checks pass.
