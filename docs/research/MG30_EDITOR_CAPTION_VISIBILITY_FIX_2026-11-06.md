@@ -111,3 +111,13 @@ The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 
 - ZIP integrity, APK internal ZIP integrity, packaged HTML renderer check, Based on row presence, IMAGE origin chip and artwork badge presence, disclaimer gate, and toast allowlist checks all passed.
 - No hardware protocol, NAM/IR data transfer, preset payload, Signal Chain, USB-MIDI, MIDI mapping or layout dimension changes in this correction.
 - Physical confirmation of the revised Based on display on the user's MG-30 Studio installation remains pending.
+
+
+## IMAGE marker cleanup in AMP/EFX editor labels — 6 November 2026
+
+- User verified Build #660 and clarified that the remaining visible word "IMAGE" must also be removed, while retaining only the Based on attribution beneath the artwork.
+- For AMP and EFX models whose internal origin is IMAGE, suppress the IMAGE origin chip and IMAGE artwork badge, hide the long disclaimer, and keep category and Based on row.
+- Normalize only the rendered model label for AMP/EFX IMAGE variants to the base model name in the Editor selector, signal-chain card, selected-model dock and accessibility label. The underlying `BLOCKS[].models` strings remain unchanged (still carry the internal `· IMAGE` marker), so model indexes, matching, preset state and transfer behavior do not change.
+- Other block types, IR, NAM badge, and GEN2 labels remain unchanged.
+- Toast policy is untouched and remains sync-only for preset/NAM/IR.
+- Required validation: complete test suite, Vite production build, Capacitor, Gradle APK, and packaged JS inspection to confirm no IMAGE markers in rendered AMP/EFX UI while Based on is retained.

@@ -3904,3 +3904,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Toast behavior is already accepted by the user and is unchanged: default/no-scope toast is suppressed; only explicit preset, NAM and IR sync scopes remain active.
 - This is a markup conditional only. No protocols, transfer payloads, hardware state, layout dimensions, Signal Chain, preset data, NAM/IR paths, USB-MIDI or MIDI mapping are changed.
 - Regression/build validation for this correction is pending.
+
+
+## IMAGE marker cleanup in AMP/EFX editor labels — 6 November 2026
+
+- User verified Build #660 and clarified that the remaining visible word "IMAGE" must also be removed, while retaining only the Based on attribution beneath the artwork.
+- For AMP and EFX models whose internal origin is IMAGE, suppress the IMAGE origin chip and IMAGE artwork badge, hide the long disclaimer, and keep category and Based on row.
+- Normalize only the rendered model label for AMP/EFX IMAGE variants to the base model name in the Editor selector, signal-chain card, selected-model dock and accessibility label. The underlying `BLOCKS[].models` strings remain unchanged (still carry the internal `· IMAGE` marker), so model indexes, matching, preset state and transfer behavior do not change.
+- Other block types, IR, NAM badge, and GEN2 labels remain unchanged.
+- Toast policy is untouched and remains sync-only for preset/NAM/IR.
+- Required validation: complete test suite, Vite production build, Capacitor, Gradle APK, and packaged JS inspection to confirm no IMAGE markers in rendered AMP/EFX UI while Based on is retained.
