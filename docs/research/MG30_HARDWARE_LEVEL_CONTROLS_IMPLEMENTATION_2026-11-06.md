@@ -133,3 +133,18 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Playback writes only offset 0x1F; Record writes only offset 0x1D; Loopback offset 0x20, complete-frame validation, serialized write queue, and 14/03 acknowledgement remain unchanged.
 - Added regression coverage for the asymmetric ranges and Playback conversion endpoints. Hardware audible/dB response still requires confirmation on original MG-30 Gen 2 firmware 6.0.x.
 - No NAM, IR User/Third Party/Collection, preset, MIDI/CC mapping, Signal Chain, or DAW audio protocol code changed.
+
+
+## Build #628 — Playback Level default 100 / maximum 150 (2026-11-06)
+
+- Source commit: `00e603ee074ac921e34d4eed08490885ce3a042c`.
+- GitHub Actions run #628: [42173992569](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42173992569) — **completed / success**.
+- Protocol regression tests: **286 passed, 0 failed**.
+- Android initializer syntax validation passed.
+- Capacitor Android project generation and USB audio plugin installation passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 31s**.
+- Artifact: `MG30-Studio-debug-APK`, ID `13482471528`.
+- Artifact ZIP: 4,217,762 bytes; SHA-256 `b64dadbcb5a628334917e4e25aed31220402488df512fb0bbafb54d7249ecedf`.
+- Extracted APK: `app-debug.apk`, 4,596,328 bytes; SHA-256 `c757d6222fb5dd17ad75e7d4a6a3818db908bd26ffc90486d01ca92a763e0156`.
+- ZIP integrity passed. The packaged APK was inspected: Record slider 0–100/default 50/readout /100; Playback slider 0–150/default 100/readout /150; full 46-byte `14/01` template retains raw 50 at offset `0x1D` and raw 100 at `0x1F`; Playback uses the 7-bit mapping UI 100–150 → raw 100–127; `14/03` ACK handling remains packaged.
+- The APK passed package/file and embedded asset checks. Physical-device output-level verification is still required; this CI inspection cannot verify the analog dB response.

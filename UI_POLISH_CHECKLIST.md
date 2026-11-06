@@ -3634,3 +3634,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Playback UI revised to 0–150 / default 100. Since the captured SysEx data byte is 7-bit, UI values 0–100 map directly to raw 0–100 and UI values 100–150 map to raw 100–127. Thus the requested displayed default sends raw 100 and slider maximum sends raw 127.
 - Frame baseline: Record offset 0x1D remains raw 50; Playback offset 0x1F is restored to raw 100; Loopback offset 0x20 unchanged.
 - Regression tests cover Record unchanged range/default, Playback requested range/default, template bytes, and raw endpoints. Build and physical test status will be recorded below.
+
+
+## Build #628 — Playback Level corrected default and range (6 November 2026)
+
+- User corrected Playback Level default to 100 and requested maximum 150. Record Level from Build #627 was correct and remains unchanged at 0–100 / default 50.
+- Build #628: 286 tests passed, 0 failed; Android initialization, Capacitor generation, Gradle `assembleDebug`, and artifact upload all succeeded.
+- Artifact ID `13482471528`; ZIP SHA-256 `b64dadbcb5a628334917e4e25aed31220402488df512fb0bbafb54d7249ecedf`.
+- Extracted APK: 4,596,328 bytes; SHA-256 `c757d6222fb5dd17ad75e7d4a6a3818db908bd26ffc90486d01ca92a763e0156`.
+- APK inspection confirmed Record 0–100/default50; Playback 0–150/default100; Playback wire byte baseline raw100 and upper endpoint raw127. Physical pedal level response still awaits the user's test.
