@@ -30,6 +30,6 @@ test('Track Settings controls are enabled and report device ACK or errors', () =
   assert.ok(!daw.includes('daw-hardware-protocol-note'));
   assert.ok(!daw.includes('candidate WRITE'));
   assert.doesNotMatch(daw, /Controls are locked pending verified/);
-  assert.match(daw, /data-hardware-levels/);
+  assert.ok(daw.includes('step="1" value="50"'));
   assert.doesNotMatch(daw, /candidateBound/);
 });
