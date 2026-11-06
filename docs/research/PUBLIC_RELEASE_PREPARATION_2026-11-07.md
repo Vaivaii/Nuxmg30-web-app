@@ -27,6 +27,7 @@ Preparation-only changes on this branch:
 - Recorded the owner's GPL-3.0-only selection and added the canonical LICENSE text.
 - Added a source-audited privacy notice and preliminary direct npm dependency license inventory.
 - Added a manual GitHub Actions lockfile bootstrap workflow. The signed release workflow now requires a committed lockfile, uses `npm ci`, and checks out the exact workflow-dispatch commit; it remains blocked until the bootstrap workflow is run and its commit is pushed.
+- Added `CONTRIBUTING.md` with GPL contribution terms, target hardware scope, protected protocol areas, test expectations and safe issue-reporting guidance.
 - Audited privacy-relevant source paths: TONE3000 OAuth/API tokens in WebView localStorage, optional YouTube API key and embed, local preset/NAM/IR settings, USB-MIDI, native audio recording and export. The Android initializer adds RECORD_AUDIO; camera implementation/permission is not confirmed in this source audit.
 - No application runtime source, NAM, IR, MIDI mapping, USB-MIDI, preset, Signal Chain, or hardware protocol code was changed.
 
