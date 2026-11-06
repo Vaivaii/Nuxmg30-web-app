@@ -26,6 +26,7 @@ Preparation-only changes on this branch:
 - Replaced the stale prototype README with a truthful Community Edition overview and limitations.
 - Recorded the owner's GPL-3.0-only selection and added the canonical LICENSE text.
 - Added a source-audited privacy notice and preliminary direct npm dependency license inventory.
+- Added a manual GitHub Actions lockfile bootstrap workflow. The signed release workflow now requires a committed lockfile, uses `npm ci`, and checks out the exact workflow-dispatch commit; it remains blocked until the bootstrap workflow is run and its commit is pushed.
 - Audited privacy-relevant source paths: TONE3000 OAuth/API tokens in WebView localStorage, optional YouTube API key and embed, local preset/NAM/IR settings, USB-MIDI, native audio recording and export. The Android initializer adds RECORD_AUDIO; camera implementation/permission is not confirmed in this source audit.
 - No application runtime source, NAM, IR, MIDI mapping, USB-MIDI, preset, Signal Chain, or hardware protocol code was changed.
 
@@ -52,8 +53,8 @@ The owner selected **GPL-3.0-only** on 7 November 2026. A canonical GPL-3.0-only
 6. First signed APK will have a different certificate from the installed debug APK. The user may need to back up app data, uninstall the debug build, then install the signed build. Keep the same release key for all future updates and increment versionCode after the first release.
 7. Review NUX/Cherub marks, bundled artwork and third-party assets before broad public distribution.
 8. The GitHub default branch remains `main` and is not synchronized with the current Android app source. Its README has now been replaced with a release-status landing page that links to the current Android source/release-prep branch; no application source was merged into main. Do not merge branches without a deliberate reconciliation plan.
-9. No `package-lock.json` exists in the current source tree. A preliminary direct dependency license inventory exists, but transitive npm/Gradle dependencies and bundled assets remain unaudited. Generate a lockfile and use deterministic `npm ci` before final public build; the current candidate workflow follows existing CI's `npm install` behavior.
+9. No `package-lock.json` exists in the current source tree. A preliminary direct dependency license inventory exists, but transitive npm/Gradle dependencies and bundled assets remain unaudited. A lockfile bootstrap workflow is prepared but has not yet been run; there is still no committed `package-lock.json`. Generate a lockfile and use deterministic `npm ci` before final public build; the current candidate workflow follows existing CI's `npm install` behavior.
 
 ## Current status
 
-GPL-3.0-only selection and the canonical LICENSE file are recorded in the release-prep README, guide, checklist and this research note. No signed APK was built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. The source branch and functional app code remain unchanged.
+GPL-3.0-only selection and the canonical LICENSE file are recorded in the release-prep README, guide, checklist and this research note. No lockfile workflow was run, no `package-lock.json` has been committed, no signed APK was built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. The source branch and functional app code remain unchanged.
