@@ -263,3 +263,12 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Extracted APK: 4,596,492 bytes; SHA-256 `bbc79a6855518934053729e66bead29014348a3040e774d0ea12952aea0c1f22`. ZIP/APK integrity passed. APK bundle inspected: both slider bounds/defaults and live dB readout logic are present; temporary diagnostic text/echo is absent.
 - Workflow produces a debug APK only (`assembleDebug`), not a signed release APK. A production distribution build requires a release signing configuration/keystore before Play Store or signed sideload distribution.
 - No changes to NAM, IR User/Third Party/Collection, preset, MIDI/CC mappings, Signal Chain, Loopback offset, or USB audio routing.
+
+
+## Startup UI flash fix — Third Party IR fragment relocation (2026-11-06)
+
+- User supplied a 5.48-second cold-start screen recording. At ~2.60s, the Third Party/User IR import form appears while the Editor nav remains selected; by ~2.75s it is replaced by the Tone Editor. This was a genuine first-paint flash, not merely a stale screenshot.
+- Root cause in `www/index.html`: `#ir-import-content` was statically placed outside all `#page-*` containers and had no hidden class. The bottom-of-document inline `mergeNamAndIr()` script later moved this fragment under the initially hidden `#page-nam`. The browser could paint the standalone IR fragment before the late relocation script ran.
+- Fix: static markup now gives `#ir-import-content` the `hidden` class from the start. The merge script removes that class only after appending the fragment into `#page-nam`. Since `#page-nam` itself starts hidden and the Editor is the initial active page, the IR import form can no longer appear during startup; it remains available when the user opens NAM & IR.
+- Added a regression test asserting hidden initial markup, relocation into the hidden NAM page, and removal of the hidden class only after the append.
+- No transfer logic, imported WAV processing, Third Party/User IR mapping, IR Collection routing, NAM code, MIDI mapping, preset logic, startup Editor state, or hardware protocol has been changed.

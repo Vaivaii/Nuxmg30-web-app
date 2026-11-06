@@ -3720,3 +3720,11 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Temporary diagnostic box and Java hex echo removed.
 - Build #633 successful: 287 tests; Gradle assembleDebug successful; APK inspected. APK SHA-256 `bbc79a6855518934053729e66bead29014348a3040e774d0ea12952aea0c1f22`.
 - This workflow creates a debug APK, not a signed production release package.
+
+
+## Startup flash fix — Third Party/User IR fragment (6 November 2026)
+
+- Screen recording showed the Third Party/User IR form briefly displayed at ~2.60s during cold start, then replaced by Editor at ~2.75s.
+- Cause: `#ir-import-content` lived outside the page containers and was visible until the late `mergeNamAndIr()` script relocated it beneath hidden `#page-nam`.
+- Fix: render the standalone fragment hidden in initial markup; reveal it only after it is moved into `#page-nam`. Editor stays the initial page, and the IR UI still appears when NAM & IR is intentionally opened.
+- Added startup regression coverage. No IR/NAM transfer/protocol or other feature behavior changed.
