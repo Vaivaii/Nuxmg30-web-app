@@ -3809,3 +3809,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Verified packaged HTML/CSS: final `editor-card-proportions-override` is packaged after existing Editor styles; gear SVG height ratios AMP 76%, pedal 74%, cabinet 70%, Wah/Volume 64%, FX loop 70%; stage 116px default / 105px at narrow/short screens; Scene min-height 46px and bottom-anchor margin are packaged. Mobile fixed Editor viewport / overflow lock is present. Horizontal slide helper is absent; stable Build #643 transition and Studio dock source were left untouched.
 - No changes were made to NAM, IR transfer/Collection, preset transfer, Signal Chain, USB-MIDI, hardware protocol, or MIDI/CC mappings.
 - Build #644 is a CI-verified debug APK with archive/payload inspection. Final physical-device confirmation of proportions versus the supplied screenshot and that Editor cannot scroll remains with the user after installation.
+
+
+## Build #645 follow-up — correct dock stacking and explicit SVG bounds — 6 November 2026
+
+- User tested Build #644 and reported no visible artwork size reduction; parameter sheet still slides above the model dock and bottom navigation.
+- Root cause of the panel layering issue: `.editor-parameter-dock` had `z-index:72` and `.editor-dock-backdrop` had `z-index:61`, while mobile bottom nav is `z-index:60`. This places the whole dock/backdrop above the nav. The model header was also an unpositioned sibling, so the absolutely positioned parameter sheet could paint over it.
+- Final stacking override now sets backdrop 58, whole dock 59, bottom navigation 60. Within the isolated dock: parameter sheet z-index 1 and model header z-index 2 with `position:relative`. The panel therefore rises behind its model header and the entire dock remains below the bottom navigation.
+- Root cause of the artwork sizing issue: `width:auto` did not reliably bound SVG artwork in Android WebView because the SVG retains intrinsic sizing from its viewBox/default replaced-element sizing. The card's 116px/105px stage and Scene card dimensions remain unchanged; SVGs now use explicit width bounds and `height:100%` with `object-fit:contain` to preserve their viewBox ratio.
+- Explicit SVG widths: AMP 62%, standard pedal 30%, IR cabinet 54%, Volume/Wah 34%, FX loop 40%. This targets a visibly smaller complete graphic inside the same stage, without cropping or changing the stage.
+- Added regression tests for the exact z-index ordering and explicit SVG widths; tests assert the previous invalid `width:auto` behavior is absent from the final Editor card style.
+- This change is strictly UI CSS/markup and test coverage. It does not change NAM, custom IR transfer, Collection IR, preset logic, Signal Chain, USB-MIDI, hardware communication, MIDI IDs or CC mappings.
+- Build #645 pending; physical verification still required after install.

@@ -2862,3 +2862,27 @@ body > .app > #page-editor:not(.hidden) {
 .editor-parameter-dock.is-expanded .editor-parameter-panel{height:auto!important;min-height:0!important;max-height:min(64dvh,580px)!important;overflow-x:hidden!important;overflow-y:auto!important}
 .editor-parameter-panel .knobs{align-content:start;min-height:0!important}
 @media(max-width:390px){.editor-parameter-panel,.editor-parameter-dock.is-expanded .editor-parameter-panel{max-height:min(66dvh,560px)!important}}
+
+
+/* Final dock stacking order: backdrop < parameter dock < bottom navigation.
+   Inside the dock, the model header must paint above the rising parameter sheet. */
+.editor-dock-backdrop {
+  z-index:58 !important;
+}
+.editor-parameter-dock {
+  z-index:59 !important;
+  isolation:isolate !important;
+}
+.editor-parameter-dock .editor-parameter-panel {
+  position:absolute !important;
+  z-index:1 !important;
+}
+.editor-parameter-dock .editor-model-dock {
+  position:relative !important;
+  z-index:2 !important;
+}
+@media(max-width:720px) {
+  .nav {
+    z-index:60 !important;
+  }
+}

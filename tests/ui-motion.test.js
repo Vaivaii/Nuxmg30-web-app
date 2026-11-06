@@ -116,3 +116,30 @@ test('Editor dock restores pre-dock gear and Scene card proportions without chan
   assert.ok(css.includes('body > .app > #page-editor > .editor'));
   assert.ok(!html.includes('function playHorizontalSlide(node,offset)'));
 });
+
+
+test('Editor dock stack is behind bottom navigation and model header is above parameter sheet', () => {
+  const layerStart = css.lastIndexOf('/* Final dock stacking order:');
+  assert.ok(layerStart >= 0, 'missing final dock stacking override');
+  const layerRules = css.slice(layerStart);
+  assert.match(layerRules, /\.editor-dock-backdrop\s*\{[^}]*z-index:\s*58\s*!important/s);
+  assert.match(layerRules, /\.editor-parameter-dock\s*\{[^}]*z-index:\s*59\s*!important/s);
+  assert.match(layerRules, /\.editor-parameter-panel\s*\{[^}]*z-index:\s*1\s*!important/s);
+  assert.match(layerRules, /\.editor-model-dock\s*\{[^}]*z-index:\s*2\s*!important/s);
+  assert.match(layerRules, /\.nav\s*\{[^}]*z-index:\s*60\s*!important/s);
+  assert.ok(html.indexOf('id="editorParameterPanel"') > html.indexOf('id="editorParameterDock"'));
+  assert.ok(html.indexOf('class="editor-model-dock"') > html.indexOf('id="editorParameterPanel"'));
+});
+
+test('Editor artwork SVGs have explicit bounded widths instead of intrinsic auto width', () => {
+  const start = html.indexOf('<style id="editor-card-proportions-override">');
+  const end = html.indexOf('</style>', start);
+  assert.ok(start >= 0 && end > start);
+  const stageRules = html.slice(start, end);
+  assert.match(stageRules, /gear-art-amp \.gear-svg\s*\{[^}]*width:62%!important;[^}]*height:100%!important/s);
+  assert.match(stageRules, /gear-art-pedal \.gear-svg\s*\{[^}]*width:30%!important;[^}]*height:100%!important/s);
+  assert.match(stageRules, /gear-art-cabinet \.gear-svg\s*\{[^}]*width:54%!important;[^}]*height:100%!important/s);
+  assert.match(stageRules, /gear-art-expression \.gear-svg\s*\{[^}]*width:34%!important;[^}]*height:100%!important/s);
+  assert.match(stageRules, /gear-art-loop \.gear-svg\s*\{[^}]*width:40%!important;[^}]*height:100%!important/s);
+  assert.doesNotMatch(stageRules, /gear-art-(?:amp|pedal|cabinet|expression|loop) \.gear-svg\s*\{[^}]*width:auto!important/s);
+});
