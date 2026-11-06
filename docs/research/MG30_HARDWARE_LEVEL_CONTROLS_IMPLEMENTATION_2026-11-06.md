@@ -161,3 +161,17 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Build #628's current mapping remains a provisional UI convention: UI 0–100 -> raw 0–100; UI 100–150 -> raw 100–127 at offset `0x1F`. Do not extend or change it blindly.
 - Required next evidence: a QuickTone 2.6.7.16 USB capture at Playback Level above 127 (ideally the UI maximum), recording the displayed QuickTone value and MG-30 dB readout, while keeping all other settings fixed. Compare offsets `0x1E` and `0x1F`. If both bytes change as a 14-bit pair, update only Playback encoding and tests; otherwise examine the device's returned state/display path before changing the sender.
 - No application source changes made in this re-evaluation. Preserve Record Level's confirmed implementation, Loopback, ACK queue, NAM, User/Third Party IR, Collection IR, preset, Signal Chain, and all MIDI mappings.
+
+
+## User confirmation: Playback Level hardware has +12 dB maximum; Build #628 reaches only +3 dB
+
+- User clarified that the approximately +3 dB result is read on the MG-30 device itself, while the device's actual PLAY LEVEL maximum is +12 dB. Therefore +3 dB is not the hardware ceiling; Build #628's present Playback representation/wire value is insufficient.
+- This increases confidence in investigating Playback as a 14-bit / two-7-bit-byte value, but it does not yet prove the parameter encoding or byte order.
+- Re-decoded the supplied USBPcap captures directly:
+  - `playlevel.pcapng`: five host 14/01 frames; four unique states. At frame offsets `0x1E/0x1F`, observed pairs are `00/68`, `00/70`, `00/76`, `00/7A` (decimal low-byte samples 104, 112, 118, 122). Record offset `0x1D` remains `0x3C`.
+  - `reclevel.pcapng`: five host 14/01 frames; four unique states. Record offset `0x1D` changes `0x34`, `0x37`, `0x3A`, `0x3C`; adjacent offsets `0x1E/0x1F` remain `00/64`.
+- Because every captured Playback sample has `0x1E=0`, the old captures cannot prove whether `0x1E/0x1F` are a 14-bit pair, nor determine the order/packing. A low-byte-first interpretation is plausible because the changing value sits at `0x1F` and the adjacent `0x1E` could be the upper seven bits; this remains a hypothesis, not an instruction to implement.
+- Build #628 currently sends only one raw 7-bit Playback value to offset `0x1F`, and leaves `0x1E=0`. The user's +3 dB device observation is consistent with a truncated/incorrect field width, but does not by itself prove the 14-bit theory.
+- Record Level remains confirmed and must not change: UI 0–100, default 50, writes offset `0x1D`; user reports this reaches +12 dB.
+- Required discriminating capture: in QuickTone 2.6.7.16, hold all other hardware state fixed and set device PLAY LEVEL at its displayed +12 dB maximum; capture USB OUT and IN for the corresponding `14/01` request and `14/03` ACK. Ideally include one intermediate point as well. Check whether offset `0x1E` becomes nonzero and whether `0x1F` wraps/changes, then infer byte order and scale only from those captured values.
+- No application source changed in this investigation. Do not send speculative 14-bit values, and do not touch Record Level, Loopback, NAM, IR User/Third Party, IR Collection, preset, MIDI mapping, Signal Chain, or USB-MIDI transport.

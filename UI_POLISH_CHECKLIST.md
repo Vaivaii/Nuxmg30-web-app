@@ -3652,3 +3652,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Supplied `playlevel.pcapng` varies frame offset 0x1F from 0x68 to 0x7A, while adjacent offset 0x1E stays 0x00. No supplied sample exceeds raw 127.
 - Investigate whether Playback is a 14-bit split field at offsets 0x1E/0x1F. This is only a hypothesis until a QuickTone capture above raw 127 confirms it.
 - No source code changes in this follow-up. Do not alter the now-confirmed Record Level 0–100/default 50 path.
+
+
+## Playback Level 14-bit investigation — device +12 dB maximum confirmed (6 November 2026)
+
+- User confirms approximately +3 dB at Build #628's Playback maximum is measured on the pedal itself, while the pedal's actual PLAY LEVEL maximum is +12 dB. Thus +3 dB is not the device ceiling.
+- Old Play capture pairs at offsets 0x1E/0x1F: 00/68, 00/70, 00/76, 00/7A. Old Record capture changes only offset 0x1D; Play pair remains 00/64.
+- A two-byte 14-bit Playback field is now a stronger hypothesis, but byte order and parameter packing remain unproven because old Playback captures never change offset 0x1E.
+- Next evidence: QuickTone 2.6.7.16 capture at actual device PLAY LEVEL +12 dB maximum (preferably also one intermediate level), both USB OUT and IN, keeping other settings unchanged. Verify the 0x1E/0x1F pair before changing code.
+- Do not modify Record Level, confirmed at 0–100 / default 50 and +12 dB on the pedal.
