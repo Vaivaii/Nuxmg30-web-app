@@ -80,9 +80,29 @@ jobs:
               exit 1
             fi
           done
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mg30-studio-community.p12"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > "$RUNNER_TEMP/mg30-studio-community.p12"
           test -s "$RUNNER_TEMP/mg30-studio-community.p12"
-          keytool -list -keystore "$RUNNER_TEMP/mg30-studio-community.p12" -storetype PKCS12 -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "Keystore Base64 decoded successfully."
+
+          if ! keytool -list -keystore "$RUNNER_TEMP/mg30-studio-community.p12" -storetype PKCS12 -storepass "$ANDROID_KEYSTORE_PASSWORD" > "$RUNNER_TEMP/mg30-keystore-list.txt" 2> "$RUNNER_TEMP/mg30-keystore-error.txt"; then
+            echo "::error::Keystore file decoded, but it could not be opened. Check ANDROID_KEYSTORE_PASSWORD."
+            cat "$RUNNER_TEMP/mg30-keystore-error.txt"
+            exit 1
+          fi
+          echo "Keystore password accepted."
+          if ! grep -Fq "$ANDROID_KEY_ALIAS" "$RUNNER_TEMP/mg30-keystore-list.txt"; then
+            echo "::error::Keystore opened, but ANDROID_KEY_ALIAS does not match an entry in this keystore."
+            echo "Aliases found (no passwords or key material):"
+            sed -n 's/^[[:space:]]*\([^,]*\),.*/  - \1/p' "$RUNNER_TEMP/mg30-keystore-list.txt"
+            exit 1
+          fi
+          echo "Keystore alias found."
+          if ! keytool -list -keystore "$RUNNER_TEMP/mg30-studio-community.p12" -storetype PKCS12 -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null 2> "$RUNNER_TEMP/mg30-alias-error.txt"; then
+            echo "::error::The selected keystore entry could not be read. Check the alias and PKCS12 entry."
+            cat "$RUNNER_TEMP/mg30-alias-error.txt"
+            exit 1
+          fi
+          echo "Keystore and alias validation passed."
           echo "MG30_KEYSTORE_PATH=$RUNNER_TEMP/mg30-studio-community.p12" >> "$GITHUB_ENV"
 
       - name: Generate Android project
