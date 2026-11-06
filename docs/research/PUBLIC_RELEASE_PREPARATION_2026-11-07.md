@@ -128,3 +128,14 @@ Run #3: [42290046239](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42
 - Updated the release workflow on both `main` and `release/community-prep-v2` to strip Base64 whitespace, report decode success, test keystore opening separately from alias matching, and print only safe keytool diagnostics/alias metadata. No secret values or private key material are logged.
 - Next run will distinguish an incorrect `ANDROID_KEYSTORE_PASSWORD` from an incorrect `ANDROID_KEY_ALIAS`. The user created the key with alias `mg30studio-release`; if the store password is accepted, verify the alias Secret is exactly that value. Since the user pressed Enter for the private-key password, `ANDROID_KEY_PASSWORD` should equal the keystore password.
 - No app runtime source or protocol code was changed. No APK has been produced yet.
+
+
+## Signed candidate run #4 — definitive keystore password failure — 7 November 2026
+
+Run #4: [42290372459](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42290372459), commit `8f940440f1039bb86ad738bdd1c4af810dc7abb7`.
+- `npm ci` and all 310/310 regression tests passed.
+- Base64 decoding passed in the runner and produced a non-empty PKCS#12 file.
+- The first `keytool -list` invocation, which opens the PKCS#12 using `ANDROID_KEYSTORE_PASSWORD`, failed. Workflow emitted: "Keystore file decoded, but it could not be opened. Check ANDROID_KEYSTORE_PASSWORD."
+- Alias check was never reached. This is not an alias diagnosis.
+- Next action: user must validate the local .p12 with the exact store password and then update only the GitHub Actions secret `ANDROID_KEYSTORE_PASSWORD` to the exact same value. Never ask the user to send the password in chat. Do not regenerate the keystore or alter alias until local validation proves the password works.
+- No Android project generation or APK build occurred. No app runtime source/protocol changes.
