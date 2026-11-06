@@ -5,7 +5,7 @@
 - [ ] Four GitHub Actions signing secrets are configured.
 - [ ] Run signed candidate workflow from `release/community-prep-v2`.
 - [ ] 310+ regression tests (or updated suite) pass on the release candidate.
-- [ ] Run Actions → Prepare deterministic npm lockfile on `release/community-prep-v2`; confirm `package-lock.json` is committed.
+- [x] Run Actions → Prepare deterministic npm lockfile on `release/community-prep-v2`; `package-lock.json` committed and `npm ci` plus `npm test` passed (run #1, 7 Nov 2026).
 - [x] Configure signed release workflow to require `package-lock.json` and use deterministic `npm ci`.
 - [ ] Capacitor Android generation and Gradle `assembleRelease` pass on the release candidate.
 - [ ] `apksigner verify` passes; record signer certificate SHA-256.
