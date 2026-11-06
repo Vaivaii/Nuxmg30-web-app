@@ -2,7 +2,7 @@
 
 MG30 Studio is an independent Android companion application for the **original NUX MG-30 Gen 2 running firmware 6.0.x**. It is not intended for the MG-30 MKII.
 
-The project is distributed free for community use. It is not developed, endorsed or supported by NUX.
+The planned distribution channel is a free Community Edition for community use. It is not developed, endorsed or supported by NUX.
 
 ## Download
 
