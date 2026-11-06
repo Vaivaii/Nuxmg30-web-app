@@ -1,0 +1,51 @@
+# MG30 Studio — Public Release Preparation Record
+
+Date: 7 November 2026
+Target: Original NUX MG-30 Gen 2, firmware 6.0.x (not MKII)
+Repository: `Vaivaii/Nuxmg30-web-app`
+
+## Baseline recovered
+
+- Development source branch: `fix/global-english-android-back`
+- Source HEAD: `b67a3196fba5191741399fc8bcb79c7d5a5babfb`
+- Latest successful CI: Build #669, run `42270761593`
+- Build #669: 310 tests passed / 0 failed; Android initializer syntax validation passed; Capacitor Android generation passed; Gradle `assembleDebug` succeeded; debug artifact uploaded.
+- Build #669 is not proof of physical MG-30 testing or a signed public APK.
+- No GitHub Releases existed at the time of preparation.
+- Repository default branch is `main`; its source is stale relative to the active development branch. Do not merge branches blindly.
+- The former `release/community-prep` branch is stale/diverged from the active source and its release workflow pinned Build #663. Do not use it as the new baseline.
+
+## Release preparation branch
+
+Created `release/community-prep-v2` directly from immutable Build #669 source commit `b67a3196fba5191741399fc8bcb79c7d5a5babfb`.
+
+Preparation-only changes on this branch:
+- Added `.github/workflows/community-release.yml` for a signed release candidate.
+- Updated `COMMUNITY_RELEASE_GUIDE.md` to pin the Build #669 source.
+- Added `PUBLIC_RELEASE_CHECKLIST.md`.
+- Replaced the stale prototype README with a truthful Community Edition overview and limitations.
+- No application runtime source, NAM, IR, MIDI mapping, USB-MIDI, preset, Signal Chain, or hardware protocol code was changed.
+
+The release workflow:
+- checks out immutable commit `b67a3196fba5191741399fc8bcb79c7d5a5babfb`;
+- runs `npm install`, initializer syntax validation, and `npm test`;
+- requires four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`;
+- generates the Capacitor Android project and builds `assembleRelease`;
+- verifies APK signature, package ID `com.vaivaii.mg30studio`, and SHA-256;
+- uploads an audit artifact;
+- creates a GitHub Release only when explicitly requested, and then creates it as draft + prerelease, never automatically public/latest.
+
+## Release blockers / owner decisions
+
+1. The four signing secrets have not been confirmed as configured. The keystore must be created and backed up by the owner; never send it or its passwords in chat.
+2. The repository has no LICENSE file. The owner must choose the source-code license before inviting contributions or implying source redistribution/modification rights.
+3. No public privacy notice was found. Review OAuth, network/API integrations, local storage, permissions and diagnostics before publishing a privacy promise.
+4. Physical hardware QA of the exact Build #669 candidate is not documented. Test original Gen 2 firmware 6.0.x and protect NAM, User/Third Party IR, IR Collection, MIDI/CC mappings, USB-MIDI, presets and Signal Chain.
+5. Import All has a documented program 72 / scene 0 readback mismatch; Export All end-to-end remains unvalidated. Do not market either as fully verified.
+6. First signed APK will have a different certificate from the installed debug APK. The user may need to back up app data, uninstall the debug build, then install the signed build. Keep the same release key for all future updates and increment versionCode after the first release.
+7. Review NUX/Cherub marks, bundled artwork and third-party assets before broad public distribution.
+8. The GitHub default branch remains `main` and is not synchronized with the current Android app source. The release-prep branch must not be merged into main without a deliberate reconciliation plan.
+
+## Current status
+
+Preparation branch and documentation/workflow are in place. No signed APK has been built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. The source branch and functional app code remain unchanged.
