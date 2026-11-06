@@ -5,6 +5,7 @@
 - [ ] Four GitHub Actions signing secrets are configured.
 - [ ] Run signed candidate workflow from `release/community-prep-v2`.
 - [ ] 310+ regression tests (or updated suite) pass.
+- [ ] Add and commit a lockfile; switch release workflow to deterministic `npm ci` before the public build (current repository has no package-lock.json).
 - [ ] Capacitor Android generation and Gradle `assembleRelease` pass.
 - [ ] `apksigner verify` passes; record signer certificate SHA-256.
 - [ ] Android package ID is `com.vaivaii.mg30studio`.
@@ -28,6 +29,7 @@
 - [ ] Back up the full pedal bank before any destructive import test.
 
 ## Public-facing material and legal/privacy
+- [ ] Reconcile the public README on the repository default branch (`main`) with the Android application; this preparation branch README is not yet the default-branch landing page.
 - [ ] Update the public README to describe the actual Android application, target and limitations.
 - [ ] Add a privacy notice covering network access, OAuth, integrations, local data and diagnostics.
 - [ ] Choose and add a source-code LICENSE; review all third-party dependencies and assets.
