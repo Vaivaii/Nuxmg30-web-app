@@ -54,3 +54,18 @@ The UI slider uses a 0–100 normalized value. The wire conversion maps that nor
 
 Automated regression test: `tests/studio-hardware-level-controls.test.js`.
 Android APK build is run by GitHub Actions on this branch. Physical device acknowledgement and audible level response still require testing with the user's MG-30 connected; CI cannot emulate the pedal.
+
+
+## Follow-up: sliders and UI cleanup (2026-11-06)
+
+- User confirmed USB Loopback works on the physical MG-30. Its existing wire value mapping (`0x11` ON / `0x01` OFF) was preserved.
+- Record Level and Playback Level remain separate writes in the same complete 46-byte frame:
+  - Record Level edits only offset `0x1D`, mapping the 0–100 UI slider linearly over observed raw values `0x34..0x3C`.
+  - Playback Level edits only offset `0x1F`, mapping the 0–100 UI slider linearly over observed raw values `0x68..0x7A`.
+- The frame-state copy preserves the most recent Loopback and other slider value in subsequent writes; writes remain serialized and wait for `14 03` ACK.
+- Removed the visible amber/red protocol explanation box from Track Settings. ACK/error feedback now goes to the existing visually hidden `dawStatus` live region.
+- Set slider step to 1; input changes are debounced by 220 ms so dragging sends the final position instead of flooding the MIDI queue.
+- CI run: [42167226773](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42167226773) — **283 tests passed, 0 failed; Android project generation and Gradle APK build succeeded**.
+- Built artifact: `MG30-Studio-debug-APK`, run artifact ID `13479985711`.
+- APK SHA-256: `ce3842a3d26b15de1c6b32d9a2f76bb448a199604a2d01e09f2b57a4025e81d0`.
+- The slider values and audible response still need confirmation on the physical MG-30. The raw samples establish the edited bytes and observed values, but not a dB calibration or proven full hardware range.
