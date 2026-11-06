@@ -3661,3 +3661,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - A two-byte 14-bit Playback field is now a stronger hypothesis, but byte order and parameter packing remain unproven because old Playback captures never change offset 0x1E.
 - Next evidence: QuickTone 2.6.7.16 capture at actual device PLAY LEVEL +12 dB maximum (preferably also one intermediate level), both USB OUT and IN, keeping other settings unchanged. Verify the 0x1E/0x1F pair before changing code.
 - Do not modify Record Level, confirmed at 0–100 / default 50 and +12 dB on the pedal.
+
+
+## Playbackmax capture confirms 14-bit Playback Level — 6 November 2026
+
+- Decoded `playbackmax.pcapng`: 9 host `14/01` writes and 9 matching device `14/03` ACKs.
+- Hardware Playback data is a 14-bit value split into two 7-bit SysEx bytes: high at offset 0x1E, low at offset 0x1F. Captured pairs are 01/0B, 01/17, 01/1D, 01/33, 01/47, and 01/49; final +12 dB is combined raw 201 / bytes 01 49.
+- Prior `playlevel.pcapng` ended at 00/7A (122), supporting the transition across the 7-bit boundary to 01/0B (139).
+- Playback sender now writes both bytes atomically. UI retains 0–150/default 100, mapped UI 150 to raw 201. UI 100 remains raw 100 (00/64); UI 125 maps to raw 151 (01/17).
+- Record remains 0–100/default 50 writing only 0x1D. Loopback, frame size, queue and ACK unchanged.
+- Regression tests updated. Awaiting CI run and APK validation.

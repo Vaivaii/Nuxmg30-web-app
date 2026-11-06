@@ -175,3 +175,17 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Record Level remains confirmed and must not change: UI 0–100, default 50, writes offset `0x1D`; user reports this reaches +12 dB.
 - Required discriminating capture: in QuickTone 2.6.7.16, hold all other hardware state fixed and set device PLAY LEVEL at its displayed +12 dB maximum; capture USB OUT and IN for the corresponding `14/01` request and `14/03` ACK. Ideally include one intermediate point as well. Check whether offset `0x1E` becomes nonzero and whether `0x1F` wraps/changes, then infer byte order and scale only from those captured values.
 - No application source changed in this investigation. Do not send speculative 14-bit values, and do not touch Record Level, Loopback, NAM, IR User/Third Party, IR Collection, preset, MIDI mapping, Signal Chain, or USB-MIDI transport.
+
+
+## Playbackmax capture decoded — confirmed 14-bit pair (2026-11-06)
+
+- User supplied `playbackmax.pcapng` and confirmed the physical MG-30 PLAY LEVEL maximum is +12 dB.
+- Decoded 9 USB OUT SysEx `14/01` writes and 9 matching USB IN `14/03` acknowledgements. All nine writes were acknowledged.
+- Every decoded 46-byte frame leaves Record Level at offset `0x1D` = `0x32` (50), and Loopback at offset `0x20` = `0x01`. The Playback field is a pair at offsets `0x1E/0x1F`.
+- Captured Playback pairs (high 7-bit byte / low 7-bit byte): `01/0B`, `01/17`, `01/1D`, `01/33`, `01/47`, `01/49`; the last three frames repeat `01/49`.
+- Combine the pair as `(high7 << 7) | low7`: decimal values `139, 151, 157, 179, 199, 201`. The final +12 dB device maximum in this capture is raw 14-bit `201 = 0x00C9`, encoded in the two MIDI data bytes as `01 49`.
+- Cross-capture boundary evidence: earlier `playlevel.pcapng` reaches pair `00/7A` = 122; new `playbackmax.pcapng` starts at `01/0B` = 139. The upper 7-bit byte increases from 0 to 1 as the lower byte wraps below 0x7F. This establishes the high/low 7-bit pair encoding and explains why Build #628 (which only changed `0x1F`, leaving `0x1E=0`) topped out around +3 dB.
+- Playback application correction: retain UI range 0–150 and default 100. Map UI 0–100 directly to raw 0–100; map UI 100–150 linearly to raw 100–201. At the requested default 100, frame bytes are `00 64`; at UI 125, bytes are `01 17`; at UI 150 (+12 dB captured maximum), bytes are `01 49`.
+- Playback writes now update both offsets atomically in the same complete 46-byte `14/01` frame: high seven bits at `0x1E`, low seven bits at `0x1F`. Both bytes are masked to 7-bit MIDI data values.
+- Record Level remains unchanged and confirmed: raw 0–100, default 50, only offset `0x1D`. Loopback `0x20`, complete frame guard, serial write queue, matching `14/03` ACK wait and the ordinary MIDI queue are untouched.
+- Added capture-backed regression coverage for the pair, the default, and the UI 100 / 125 / 150 conversions. No NAM, IR User/Third Party/Collection, preset, MIDI/CC mapping, Signal Chain, or USB audio code changed.

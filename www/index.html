@@ -1046,8 +1046,20 @@ function normalizeMg30PlaybackSlider(value) {
  const number = Number(value);
  if (!Number.isFinite(number)) throw new Error('Nilai Playback Level MG-30 tidak valid.');
  const uiValue = Math.round(Math.max(0, Math.min(150, number)));
- // Keep captured default 100 as raw 100; UI 100..150 spans the remaining 7-bit raw range 100..127.
- return uiValue <= 100 ? uiValue : Math.round(100 + ((uiValue - 100) * 27 / 50));
+ // Preserve the captured raw default 100; UI 100..150 maps to captured max raw 201.
+ return uiValue <= 100 ? uiValue : Math.round(100 + ((uiValue - 100) * 101 / 50));
+}
+function updateMg30PlaybackValue(raw14Bit) {
+ const value = Math.round(Number(raw14Bit));
+ if (!Number.isFinite(value) || value < 0 || value > 0x3FFF) {
+  throw new Error('Nilai 14-bit Playback Level MG-30 tidak valid.');
+ }
+ const frame = mg30HardwareFrameState.slice();
+ // USB-MIDI SysEx stores the 14-bit value as two 7-bit bytes: high at 0x1E, low at 0x1F.
+ frame[0x1E] = (value >> 7) & 0x7F;
+ frame[0x1F] = value & 0x7F;
+ mg30HardwareFrameState = frame.slice();
+ return queueMg30HardwareFrame(frame, 'Playback Level');
 }
 function sendMg30SysEx(frameArray) {
  const frame = Array.from(frameArray || [], value => Number(value) & 0xFF);
@@ -1101,9 +1113,8 @@ function setRecLevel(value) {
  return updateMg30HardwareField(0x1D, raw, 'Record Level');
 }
 function setPlayLevel(value) {
- const raw = normalizeMg30PlaybackSlider(value);
- // UI 100..150 maps to the remaining 7-bit raw range 100..127.
- return updateMg30HardwareField(0x1F, raw, 'Playback Level');
+ const raw14Bit = normalizeMg30PlaybackSlider(value);
+ return updateMg30PlaybackValue(raw14Bit);
 }
 window.sendMg30SysEx = sendMg30SysEx;
 window.setLoopback = setLoopback;

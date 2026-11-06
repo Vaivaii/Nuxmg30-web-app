@@ -56,15 +56,24 @@ test('Record stays 0-100 default 50; Playback is 0-150 default 100 with 7-bit ma
   assert.match(daw, /dawHardwarePlaybackLevel[^\n]*min="0"[^\n]*max="150"[^\n]*value="100"/);
 });
 
-test('Playback Level preserves raw default 100 and maps UI maximum 150 to raw 127', () => {
+test('Playback Level uses captured 14-bit pair and maps UI maximum 150 to raw 201', () => {
   assert.match(index, /function normalizeMg30PlaybackSlider\(value\)/);
-  assert.match(index, /uiValue <= 100 \? uiValue : Math\.round\(100 \+ \(\(uiValue - 100\) \* 27 \/ 50\)\)/);
-  assert.match(index, /normalizeMg30PlaybackSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1F, raw, 'Playback Level'\)/);
+  assert.match(index, /uiValue <= 100 \? uiValue : Math\.round\(100 \+ \(\(uiValue - 100\) \* 101 \/ 50\)\)/);
+  assert.match(index, /function updateMg30PlaybackValue\(raw14Bit\)/);
+  assert.match(index, /frame\[0x1E\] = \(value >> 7\) & 0x7F/);
+  assert.match(index, /frame\[0x1F\] = value & 0x7F/);
+  assert.match(index, /updateMg30PlaybackValue\(raw14Bit\)/);
   const frame = index.match(/const MG30_HARDWARE_FRAME_TEMPLATE = Object\.freeze\(\[([\s\S]*?)\]\);/);
   const bytes = [...frame[1].matchAll(/0x[0-9a-f]+/gi)].map(([hex]) => Number.parseInt(hex, 16));
-  assert.equal(bytes[0x1F], 100);
-  const map = (v) => { const n = Math.round(Math.max(0, Math.min(150, Number(v)))); return n <= 100 ? n : Math.round(100 + ((n - 100) * 27 / 50)); };
-  assert.equal(map(0), 0);
+  assert.equal(bytes[0x1D], 50, 'Record Level baseline remains raw 50');
+  assert.equal(bytes[0x1E], 0, 'Playback high 7-bit byte defaults to zero');
+  assert.equal(bytes[0x1F], 100, 'Playback low 7-bit byte defaults to raw 100');
+  const map = (v) => { const n = Math.round(Math.max(0, Math.min(150, Number(v)))); return n <= 100 ? n : Math.round(100 + ((n - 100) * 101 / 50)); };
+  const split = (v) => [(v >> 7) & 0x7F, v & 0x7F];
   assert.equal(map(100), 100);
-  assert.equal(map(150), 127);
+  assert.deepEqual(split(map(100)), [0, 100]);
+  assert.equal(map(125), 151);
+  assert.deepEqual(split(map(125)), [1, 23]);
+  assert.equal(map(150), 201);
+  assert.deepEqual(split(map(150)), [1, 73]);
 });
