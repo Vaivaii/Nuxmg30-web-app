@@ -256,7 +256,104 @@
 .routing-card:focus-visible{outline:2px solid #a5d36b;outline-offset:2px}
 @media(max-width:720px){.routing-card{flex:0 0 62px;width:62px;min-width:62px;max-width:62px;height:73px;min-height:73px;max-height:73px;padding:6px 5px;border-radius:10px}}
 @media(max-width:390px){.routing-card{flex:0 0 59px;width:59px;min-width:59px;max-width:59px;height:70px;min-height:70px;max-height:70px;padding:6px 4px;border-radius:10px}}
-</style></head>
+</style>
+<style id="editor-card-proportions-override">
+/* Match the pre-dock Editor card proportions while keeping the dock fixed.
+   The stage stays natural-height; only its contained gear SVG is reduced. */
+@media(max-width:720px){
+  #page-editor .main-editor-card #modelVisual.model-visual-stage{
+    display:block!important;
+    flex:0 0 auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    margin:0 0 8px!important;
+  }
+  #page-editor .main-editor-card #modelVisual .gear-art{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex:0 0 auto!important;
+    width:100%!important;
+    height:116px!important;
+    min-height:116px!important;
+    max-height:116px!important;
+    margin:0!important;
+    padding:5px 12px!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+  #page-editor .main-editor-card #modelVisual .gear-art.gear-art-amp .gear-svg{
+    width:auto!important;
+    height:76%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    object-fit:contain!important;
+  }
+  #page-editor .main-editor-card #modelVisual .gear-art.gear-art-pedal .gear-svg{
+    width:auto!important;
+    height:74%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    object-fit:contain!important;
+  }
+  #page-editor .main-editor-card #modelVisual .gear-art.gear-art-cabinet .gear-svg{
+    width:auto!important;
+    height:70%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    object-fit:contain!important;
+  }
+  #page-editor .main-editor-card #modelVisual .gear-art.gear-art-expression .gear-svg{
+    width:auto!important;
+    height:64%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    object-fit:contain!important;
+  }
+  #page-editor .main-editor-card #modelVisual .gear-art.gear-art-loop .gear-svg{
+    width:auto!important;
+    height:70%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    object-fit:contain!important;
+  }
+  #page-editor .main-editor-card .scene-bar{
+    flex:0 0 auto!important;
+    margin:auto 0 0!important;
+    padding:12px 0 0!important;
+  }
+  #page-editor .main-editor-card .scene-button{
+    min-height:46px!important;
+    padding:7px 8px!important;
+    gap:2px!important;
+  }
+  #page-editor .main-editor-card .scene-button strong{font-size:10px!important}
+  #page-editor .main-editor-card .scene-button small{font-size:8px!important}
+}
+@media(max-width:720px) and (max-height:780px){
+  #page-editor .main-editor-card #modelVisual .gear-art{
+    height:105px!important;
+    min-height:105px!important;
+    max-height:105px!important;
+    padding:4px 8px!important;
+  }
+  #page-editor .main-editor-card .scene-button{min-height:46px!important}
+}
+</style>
+</head>
 <body><div class="app">
 <header class="top"><div class="brand"><div class="logo" aria-label="NUX"><img src="./assets/nux-logo-white.svg" alt="NUX"></div><div><h1>MG-30 <span class="gen2-label">GEN2</span></h1><p>MOBILE EDITOR</p></div></div><div class="actions"><div class="usb-header-status" aria-live="polite"><strong>USB MIDI</strong><small id="usbHeaderStatus">Terputus</small></div><button class="btn usb-connect-btn" id="connectMidi" type="button" title="USB-MIDI terputus" aria-label="Hubungkan NUX MG-30 melalui USB-MIDI" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13"/><path d="m9 6 3-3 3 3"/><path d="M12 10H8l-2 2v3"/><path d="M12 12h4l2 2v1"/><path d="M12 16v4"/><path d="M10 20h4"/><circle cx="6" cy="17" r="1.5"/><rect x="16.5" y="15.5" width="3" height="3" rx=".5"/></svg></button><button class="btn" id="resetBtn">Reset</button></div></header>
 <nav class="nav" aria-label="Navigasi utama">

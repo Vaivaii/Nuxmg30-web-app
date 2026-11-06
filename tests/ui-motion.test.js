@@ -100,3 +100,19 @@ test('parameter panel follows content height with a maximum scroll height',()=>{
  assert.ok(css.includes('height:auto!important;min-height:0!important;max-height:min(64dvh,580px)!important'));
  assert.ok(css.includes('overflow-y:auto!important'));
 });
+
+test('Editor dock restores pre-dock gear and Scene card proportions without changing the fixed viewport',()=>{
+  assert.ok(html.includes('<style id="editor-card-proportions-override">'));
+  assert.ok(html.includes('height:116px!important;'));
+  assert.ok(html.includes('height:105px!important;'));
+  assert.ok(html.includes('height:76%!important;'));
+  assert.ok(html.includes('height:74%!important;'));
+  assert.ok(html.includes('height:70%!important;'));
+  assert.ok(html.includes('height:64%!important;'));
+  assert.ok(html.includes('margin:auto 0 0!important;'));
+  assert.ok(html.includes('min-height:46px!important;'));
+  assert.ok(css.includes('body > .app > #page-editor:not(.hidden)'));
+  assert.ok(css.includes('overflow: hidden !important'));
+  assert.ok(css.includes('body > .app > #page-editor > .editor'));
+  assert.ok(!html.includes('function playHorizontalSlide(node,offset)'));
+});

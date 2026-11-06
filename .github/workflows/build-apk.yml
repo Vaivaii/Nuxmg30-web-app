@@ -23,6 +23,7 @@ on:
       - feature/studio-hardware-level-controls
       - feature/editor-dynamic-parameter-dock
       - feature/editor-stable-ui-artwork-fit
+      - feature/editor-card-proportions-with-dock
     paths:
       - 'www/**'
       - 'tests/**'

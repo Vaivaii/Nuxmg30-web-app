@@ -3788,3 +3788,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Packaged asset inspection confirmed: stable page fade and Studio opacity-only transitions are present; horizontal slide helper is absent; original Studio dock measurement and deferred `requestAnimationFrame` correction are present; non-AMP category SVG width limits are embedded in the packaged index; dynamic parameter sheet cap is present in bundled CSS.
 - Build #643 is a CI-successful debug APK and asset inspection, not yet physically installed or validated on the user's phone. User verification remains necessary for Editor header appearance, pedal/cabinet/wah full visibility, absence of gradient glitch, and Studio dock placement.
 - Build #641 branch remains unchanged. No NAM, IR, preset, Signal Chain, USB-MIDI or MIDI/CC mapping implementation was changed.
+
+
+## Editor card proportions with fixed model dock — 6 November 2026
+
+- User supplied two visual references: current restored Build #643 (first image) and pre-dock Editor layout (second image). Request: preserve the original pre-dock AMP/pedal and Scene-card proportions while keeping the newer fixed model dock. The Editor viewport must remain fixed and non-scrollable. Changes are limited to the Editor artwork/Scene card presentation; do not change the header, tab transitions, Studio dock behavior, signal chain, NAM/IR, presets or MIDI.
+- New branch: `feature/editor-card-proportions-with-dock`, based on stable Build #643 branch HEAD `204bafd8a507d86c88c382566e62a4de360cb37f`.
+- Prior SVG size rules were placed before later inline Editor styles and lost the cascade to a later `width:100%!important`. The new final head style block is intentionally placed after all prior inline styles so it wins.
+- Restore natural stage height and the pre-dock stage heights: 116px default and 105px on short/narrow screens. SVGs remain contained and preserve aspect ratio with per-category height ratios: AMP 76%, standard pedal 74%, cabinet IR 70%, volume/Wah 64%, FX loop 70%.
+- Restore Scene card minimum height to 46px and original compact type sizing; anchor Scene strip at the lower edge of the existing main card so the removed in-card model-stepper space is visually balanced by the fixed dock below.
+- Keep the Editor page, internal editor flex area and main card overflow locked; do not add page scrolling. No header, navigation animation, Studio dock or hardware/communication code is changed.
+- Add a regression test covering gear sizing, Scene card dimensions, final style order, and the fixed non-scrollable Editor viewport. Build #644 pending.
