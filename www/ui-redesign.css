@@ -2417,16 +2417,12 @@ html,body{background:#0b1012}
 @keyframes mg30-popup-enter{from{opacity:0;transform:translate3d(0,4px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
 @keyframes mg30-toast-enter{from{opacity:0;transform:translate(-50%,9px) scale(.985)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 
-/* Main app tabs: fade only, so sticky/fixed descendants keep their geometry. */
-body>.app>section[id^="page-"]:not(.hidden){animation:mg30-page-enter .18s ease-out both}
-
-/* Internal page changes: small opacity/vertical reveal for newly selected panels. */
-/* Studio mode and DAW panels contain the viewport-fixed transport dock.
-   Never apply transform to these ancestors: WebView would rebase the dock to the
-   animated panel instead of the viewport. Keep their entrance opacity-only. */
-@keyframes mg30-studio-panel-fade{from{opacity:0}to{opacity:1}}
-#page-studio [data-studio-mode-panel]:not(.hidden),
-#page-studio [data-daw-page-panel]:not(.hidden){animation:mg30-studio-panel-fade .16s ease-out both}
+/* Horizontal navigation is driven by the Web Animations API.
+   Animate Studio content panels, not #page-studio: its fixed DAW dock must
+   remain attached to the viewport. */
+body>.app>section[id^="page-"]:not(.hidden){animation:none}
+#page-studio [data-studio-mode-panel]:not([hidden]),
+#page-studio [data-daw-page-panel]:not([hidden]){animation:none}
 @keyframes mg30-nam-pane-fade{from{opacity:0}to{opacity:1}}
 #page-nam .nam-ir-tool-pane:not([hidden]){animation:mg30-nam-pane-fade .16s ease-out both}
 
@@ -2812,13 +2808,7 @@ dialog[open]::backdrop{animation:mg30-backdrop-enter .16s ease-out both}
   body > .app > #page-editor .main-editor-card #modelVisual { height: clamp(92px, 13dvh, 118px) !important; min-height: 90px !important; max-height: 118px !important; }
   body > .app > #page-editor .main-editor-card .scene-button { min-height: 40px !important; padding: 5px 6px !important; }
 }
-@keyframes mg30-editor-page-slide-in {
-  from { opacity: 0; transform: translate3d(0, 12px, 0); }
-  to { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-body > .app > #page-editor:not(.hidden) {
-  animation: mg30-editor-page-slide-in .28s cubic-bezier(.22, 1, .36, 1) both !important;
-}
+
 
 /* 60 Hz-friendly dock motion: only transform and opacity are animated. */
 .editor-parameter-dock { isolation: isolate; }
@@ -2852,7 +2842,49 @@ body > .app > #page-editor:not(.hidden) {
   .editor-parameter-dock.is-expanded .editor-parameter-panel { padding: 8px 10px 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  body > .app > #page-editor:not(.hidden), .editor-parameter-panel, .editor-dock-backdrop {
+  .editor-parameter-panel, .editor-dock-backdrop {
     animation: none !important; transition: none !important;
+  }
+}
+
+
+/* Editor refinement after Build #637.
+   The sheet sits behind its fixed dock header and the bottom navigation. */
+.editor-dock-backdrop { z-index:58; }
+.editor-parameter-dock { z-index:59; isolation:isolate; }
+.editor-parameter-panel { z-index:1; }
+.editor-model-dock { position:relative; z-index:2; }
+
+/* A taller gear stage reveals more of the amp head while a slight SVG scale
+   reduction gives every amp/pedal illustration comfortable breathing room.
+   Anchor Scenes at the lower edge so the previous blank area is consumed. */
+@media (max-width:720px) {
+  body > .app > #page-editor .main-editor-card #modelVisual {
+    flex:0 1 auto !important;
+    height:clamp(136px,18dvh,172px) !important;
+    min-height:132px !important;
+    max-height:172px !important;
+    margin-bottom:0 !important;
+  }
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art {
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+  }
+  body > .app > #page-editor .main-editor-card #modelVisual .gear-art .gear-svg {
+    transform:scale(.92) !important;
+    transform-origin:center center !important;
+  }
+  body > .app > #page-editor .main-editor-card .scene-bar {
+    margin-top:auto !important;
+    margin-bottom:0 !important;
+    padding-top:12px !important;
+  }
+}
+@media (max-width:720px) and (max-height:780px) {
+  body > .app > #page-editor .main-editor-card #modelVisual {
+    height:clamp(112px,16dvh,136px) !important;
+    min-height:108px !important;
+    max-height:136px !important;
   }
 }

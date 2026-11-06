@@ -2354,13 +2354,17 @@ function syncStudioPinnedControls() {
 
 function setDawPage(page) {
   const selected = ['timeline', 'mixer', 'track-settings'].includes(page) ? page : 'timeline';
-  selectedDawPage = selected;
   const workspace = $('studio-daw-workspace');
+  const previous = workspace?.querySelector('[data-daw-page].active')?.dataset.dawPage || selectedDawPage;
+  const pageOrder = ['timeline', 'mixer', 'track-settings'];
+  const offset = pageOrder.indexOf(selected) >= pageOrder.indexOf(previous) ? 26 : -26;
+  selectedDawPage = selected;
   workspace?.querySelectorAll('[data-daw-page-panel]').forEach((panel) => {
     const active = panel.dataset.dawPagePanel === selected;
     panel.hidden = !active;
     panel.setAttribute('aria-hidden', String(!active));
     panel.style.setProperty('display', active ? 'flex' : 'none', 'important');
+    if (active && previous !== selected) window.MG30PlayHorizontalSlide?.(panel, offset);
   });
   workspace?.querySelectorAll('[data-daw-page]').forEach((button) => {
     const active = button.dataset.dawPage === selected;
@@ -2379,12 +2383,15 @@ function setDawPage(page) {
 
 function setStudioMode(mode) {
   const selected = ['jam', 'record', 'daw'].includes(mode) ? mode : 'daw';
+  const studio = $('page-studio');
+  const previous = studio?.querySelector('[data-studio-mode].active')?.dataset.studioMode;
+  const modeOrder = ['jam', 'record', 'daw'];
+  const offset = modeOrder.indexOf(selected) >= modeOrder.indexOf(previous) ? 26 : -26;
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
     const active = button.dataset.studioMode === selected;
     button.classList.toggle('active', active);
     button.setAttribute('aria-selected', String(active));
   });
-  const studio = $('page-studio');
   studio?.querySelectorAll(':scope > [data-studio-mode-panel]').forEach((panel) => {
     const active = panel.dataset.studioModePanel === selected;
     panel.hidden = !active;
@@ -2392,6 +2399,7 @@ function setStudioMode(mode) {
     // The DAW workspace uses an explicit flex layout; keep its display state
     // scoped to Studio so page rules cannot leak into Jam or Record.
     panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'flex' : 'block') : 'none', 'important');
+    if (active && previous && previous !== selected) window.MG30PlayHorizontalSlide?.(panel, offset);
   });
   try { localStorage.setItem('mg30-studio-last-mode', selected); } catch (_) {}
   syncStudioPinnedControls();

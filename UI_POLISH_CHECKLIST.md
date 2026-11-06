@@ -3765,3 +3765,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Device page copy is English at source. Dynamic toast, Device status and native audio status render through the English translator before display.
 - **Permanent rule:** every new or changed user-facing application string must be English by default across all tabs, toast notifications, dialogs, statuses, tooltips, placeholders, accessibility labels and generated UI. Do not add Indonesian UI copy. Retained legacy Indonesian strings require tested English dictionary mappings.
 - Build and physical verification pending.
+
+## Editor layout and fluid navigation refinement — 6 November 2026
+
+- User installed Build #637 and supplied screenshots of the Editor idle state and the expanded parameter dock. Requested: move Scenes lower to reduce unused space beneath them and reveal more of amp artwork; scale amp/pedal/other gear illustrations down slightly; keep the parameter sheet behind the fixed dock header and bottom navigation; change main-tab, Studio mode (Jam/Record/DAW), and DAW page (Timeline/Mixer/Track Settings) navigation to horizontal, fluid 60 Hz-friendly motion.
+- Work is isolated on `feature/editor-fluid-motion-polish`, based on Build #637 source HEAD `aa0dcd9d1f5e31ee3a501bb518038bfbf09c023d`. The Build #637 branch remains unchanged.
+- Editor artwork stage is increased responsively; the gear SVG is scaled to 92%; the Scenes section is bottom-anchored inside the existing Editor card. Existing model visual renderer and scene handlers are retained.
+- Parameter layer order is corrected: backdrop z-index 58, parameter dock z-index 59, bottom navigation remains above at z-index 60; parameter sheet is z-index 1 and dock header z-index 2 within the dock's isolated stacking context.
+- Main app pages use directional Web Animations API slides. Studio header and active mode content animate without transforming `#page-studio`, which owns the fixed DAW transport dock. Studio mode and DAW page panels reuse the same animation helper; the fixed transport dock remains a sibling and stays pinned to the viewport.
+- Motion animates only `transform` and `opacity` for 240 ms with a compositor-friendly easing curve. The helper respects `prefers-reduced-motion`. No height, margin, or layout properties are interpolated.
+- This change is presentation-only: no NAM, User/Third Party IR, IR Collection, preset transfer, Signal Chain protocol, USB-MIDI, parameter IDs, MIDI/CC mappings, or hardware level fields are modified.
+- Automated regression checks and Build #638 are pending; physical phone validation of the new appearance/motion remains separate.

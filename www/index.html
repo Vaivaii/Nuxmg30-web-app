@@ -172,7 +172,7 @@
 #connectMidi.usb-connect-btn.is-connecting{color:var(--lime);border-color:#849e4b;animation:mg30-usb-pulse .75s ease-in-out infinite alternate}
 @keyframes mg30-usb-pulse{from{opacity:.48}to{opacity:1}}
 @media(max-width:390px){.usb-header-status{min-width:64px}.usb-header-status strong,.usb-header-status small{font-size:9px}#connectMidi.usb-connect-btn{width:40px;height:40px;min-width:40px;min-height:40px;border-radius:11px}}
-</style><link rel="stylesheet" href="ui-redesign.css?v=motion-lite-3"><link rel="stylesheet" href="preset-library-ui.css?v=card-v1"><style id="gear-visual-compact-override">
+</style><link rel="stylesheet" href="ui-redesign.css?v=editor-fluid-1"><link rel="stylesheet" href="preset-library-ui.css?v=card-v1"><style id="gear-visual-compact-override">
 /* Higher-specificity local override: make every gear illustration visibly more compact. */
 #page-editor #modelVisual .gear-visual .gear-art{
   height:160px!important;
@@ -3262,9 +3262,37 @@ document.addEventListener('keydown',event=>{
   setEditorParameterDockExpanded(false);
  }
 });
+function playHorizontalSlide(node,offset){
+ if(!node||typeof node.animate!=='function')return;
+ if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
+ node.getAnimations?.().forEach(animation=>animation.cancel());
+ node.animate(
+  [
+   {opacity:.78,transform:'translate3d('+offset+'px,0,0)'},
+   {opacity:1,transform:'translate3d(0,0,0)'}
+  ],
+  {duration:240,easing:'cubic-bezier(.22,1,.36,1)',fill:'none'}
+ );
+}
+window.MG30PlayHorizontalSlide=playHorizontalSlide;
 function showPage(p){
+ const pageList=[...document.querySelectorAll('.app>section[id^="page-"]')];
+ const currentPage=pageList.find(page=>!page.classList.contains('hidden'));
+ const targetPage=$('page-'+p);
+ const currentIndex=pageList.indexOf(currentPage);
+ const targetIndex=pageList.indexOf(targetPage);
+ const offset=(currentIndex<0||targetIndex>=currentIndex)?28:-28;
  document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+ if(targetPage&&currentPage!==targetPage){
+  if(p==='studio'){
+   playHorizontalSlide(targetPage.querySelector('.studio-fixed-header'),offset);
+   const activePanel=targetPage.querySelector(':scope > [data-studio-mode-panel]:not([hidden])');
+   playHorizontalSlide(activePanel,offset);
+  }else{
+   playHorizontalSlide(targetPage,offset);
+  }
+ }
  const dock=$('editorParameterDock');
  if(dock)dock.classList.toggle('hidden',p!=='editor');
  if(p!=='editor')setEditorParameterDockExpanded(false);
