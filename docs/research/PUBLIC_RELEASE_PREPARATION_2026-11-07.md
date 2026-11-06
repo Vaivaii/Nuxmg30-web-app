@@ -139,3 +139,14 @@ Run #4: [42290372459](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42
 - Alias check was never reached. This is not an alias diagnosis.
 - Next action: user must validate the local .p12 with the exact store password and then update only the GitHub Actions secret `ANDROID_KEYSTORE_PASSWORD` to the exact same value. Never ask the user to send the password in chat. Do not regenerate the keystore or alter alias until local validation proves the password works.
 - No Android project generation or APK build occurred. No app runtime source/protocol changes.
+
+
+## Signed candidate run #5 — alias secret mismatch — 7 November 2026
+
+Run #5: [42291146581](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42291146581), commit `7bf60df16bea53812c1562a72eb0c344e493e4b3`.
+- Base64 decoding passed.
+- PKCS#12 opened successfully with `ANDROID_KEYSTORE_PASSWORD` ("Keystore password accepted.").
+- Workflow enumerated the keystore alias as exactly `mg30studio-release`.
+- Validation failed because `ANDROID_KEY_ALIAS` did not exactly match that entry. No private material or secret values were logged.
+- Next action: update only GitHub Actions secret `ANDROID_KEY_ALIAS` to the exact string `mg30studio-release` (no quotes, no leading/trailing spaces). Keep Base64/password/private-key password unchanged.
+- All 310/310 regression tests passed; Android build steps skipped. No app runtime or protocol files changed.
