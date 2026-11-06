@@ -3778,3 +3778,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Automated regression checks and Build #638 are pending; physical phone validation of the new appearance/motion remains separate.
 
 - Build #638 was rejected by two stale regression assertions: one still expected the previous `motion-lite-3` stylesheet cache token and one still expected fade-only tab entrance. Both assertions were updated to the new `editor-fluid-1` cache token and horizontal WAAPI navigation contract; Build #639 is the corrected rerun.
+
+## Build #639 validation — 6 November 2026
+- Corrected CI run: GitHub Actions run `42216720607`, Build #639, commit `a3ae0fee6a25def0bcded151cf741042ee2ee2d7`, completed successfully.
+- Protocol regression suite: **299 tests passed, 0 failed**. Android initializer syntax check passed; Capacitor Android generation passed; Gradle `assembleDebug` completed with `BUILD SUCCESSFUL`; APK artifact upload completed.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `13500933742`, ZIP size 4,224,252 bytes. ZIP SHA-256: `b8dad56ef2f7a9b4b9a99cf27599bb6d30d4b2900e8f3bc6385434a136530221`.
+- Extracted APK: `MG30-Studio-Build-639.apk`, 4,601,520 bytes. APK SHA-256: `f7e71769ff2cd29356426523a3859f330f2c5cd82e1e41598387142e37a2dbc5`. ZIP integrity and APK ZIP structure checks passed.
+- Inspected the APK payload: main-tab WAAPI helper is present in the packaged HTML; gear-stage responsive sizing, 92% gear scale, bottom-anchored Scenes and parameter dock z-index are present in packaged CSS; Studio/DAW horizontal motion helper is present in packaged JS.
+- This is a successful CI build and packaged-payload inspection, not a physical-device screenshot/60 Hz frame-time test. User should verify the visual composition and perceived smoothness on the phone.
+- No NAM, IR User/Third Party, IR Collection, preset, signal-chain, device communication, or MIDI/CC mapping code was changed.
