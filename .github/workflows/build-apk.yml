@@ -20,6 +20,7 @@ on:
       - feature/amp-knob-label-correction-artwork
       - feature/all-preset-import-export
       - feature/post-effects-parallel-routing
+      - feature/studio-hardware-level-controls
     paths:
       - 'www/**'
       - 'tests/**'
