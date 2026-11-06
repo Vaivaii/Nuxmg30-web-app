@@ -33,3 +33,15 @@ test('Track Settings controls are enabled and report device ACK or errors', () =
   assert.ok(daw.includes('step="1" value="50"'));
   assert.doesNotMatch(daw, /candidateBound/);
 });
+
+test('sliders send the raw 7-bit values rather than interpolating across observed capture samples', () => {
+  assert.match(index, /Math\.min\(0x7F, number\)/);
+  assert.match(index, /const raw = normalizeMg30HardwareSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1D, raw, 'Record Level'\)/);
+  assert.match(index, /const raw = normalizeMg30HardwareSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1F, raw, 'Playback Level'\)/);
+  assert.doesNotMatch(index, /0x34 \+ \(normalized \/ 100\)/);
+  assert.doesNotMatch(index, /0x68 \+ \(normalized \/ 100\)/);
+  assert.match(daw, /dawHardwareRecordLevel[^\n]*max="127"[^\n]*value="50"/);
+  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*max="127"[^\n]*value="100"/);
+  assert.match(daw, /recordReadout\.textContent = record\.value \+ ' \/ 127'/);
+  assert.match(daw, /playbackReadout\.textContent = playback\.value \+ ' \/ 127'/);
+});
