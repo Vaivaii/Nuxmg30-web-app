@@ -502,7 +502,7 @@ function initUI(){
  }
  async function syncCollectionFromDevice({connection=null,slotIndices=null,silent=false}={}){
   if(busy||syncBusy)return;
-  if(!window.NUXNativeMidi?.available){if(typeof window.toast==='function')window.toast('Collection sync requires the Android APK and a USB OTG connection.',2600);return}
+  if(!window.NUXNativeMidi?.available){if(typeof window.toast==='function')window.toast('Collection sync requires the Android APK and a USB OTG connection.',2600,'ir');return}
   const indices=Array.isArray(slotIndices)?slotIndices:Array.from({length:24},(_,i)=>i);
   const rounds=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
   const errors=[Array(indices.length).fill(null),Array(indices.length).fill(null)];
@@ -530,7 +530,7 @@ function initUI(){
     }
     for(const idx of indices)updateSlotCard(idx+1,slotCache.get(idx+1)||null);
     renderSlotCount();
-    if(typeof window.toast==='function')window.toast('Collection sync stopped: no valid slot responses. Check USB and retry.',2600);
+    if(typeof window.toast==='function')window.toast('Collection sync stopped: no valid slot responses. Check USB and retry.',2600,'ir');
     return;
    }
    deviceSlots.clear();
@@ -557,8 +557,8 @@ function initUI(){
    const detail='Two-pass sync complete: '+success+'/'+indices.length+' slot stabil · '+empty+' empty · '+failed+' failed/unstable.'+(firstErrors.length?' Rincian: '+firstErrors.join(' | '):'');
    setMessage(collectionStatus,detail,failed?'warn':'ok');
    if(success===indices.length)window.dispatchEvent(new CustomEvent('mg30-collection-synced',{detail:{slots:[...deviceSlots.values()]}}));
-    if(typeof window.toast==='function')window.toast(failed?'Collection sync: '+success+'/'+indices.length+' stable slots · '+failed+' failed.':'Collection synced · '+success+'/'+indices.length+' stable slots · '+empty+' empty.',2600);
-  }catch(error){if(typeof window.toast==='function')window.toast('Collection sync failed: '+(error?.message||String(error)),2800)}
+    if(typeof window.toast==='function')window.toast(failed?'Collection sync: '+success+'/'+indices.length+' stable slots · '+failed+' failed.':'Collection synced · '+success+'/'+indices.length+' stable slots · '+empty+' empty.',2600,'ir');
+  }catch(error){if(typeof window.toast==='function')window.toast('Collection sync failed: '+(error?.message||String(error)),2800,'ir')}
   finally{syncBusy=false;setBusy(false);syncButton.textContent='Sync';syncButton.removeAttribute('aria-busy');renderSlotCount()}
  }
  async function readCollectionSlotStable(connection,slotIndex){
