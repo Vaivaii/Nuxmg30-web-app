@@ -674,8 +674,8 @@ function renderHardwareLevelPanel() {
     panel.innerHTML =
       '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>USB loopback and MG-30 recording/playback hardware levels.</p></div></div>' +
       '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Route MG-30 playback back to the USB recording input.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 127</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="127" step="1" value="50"></div>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">100 / 127</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="127" step="1" value="100"></div>';
+      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" step="1" value="50"></div>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">50 / 100</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" step="1" value="50"></div>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
     else host.appendChild(panel);
@@ -699,7 +699,7 @@ function renderHardwareLevelPanel() {
   if (record && recordReadout && !record.dataset.hardwareBound) {
     let timer = null;
     record.addEventListener('input', () => {
-      recordReadout.textContent = record.value + ' / 127';
+      recordReadout.textContent = record.value + ' / 100';
       clearTimeout(timer);
       timer = setTimeout(() => {
         if (typeof window.setRecLevel === 'function') {
@@ -712,7 +712,7 @@ function renderHardwareLevelPanel() {
   if (playback && playbackReadout && !playback.dataset.hardwareBound) {
     let timer = null;
     playback.addEventListener('input', () => {
-      playbackReadout.textContent = playback.value + ' / 127';
+      playbackReadout.textContent = playback.value + ' / 100';
       clearTimeout(timer);
       timer = setTimeout(() => {
         if (typeof window.setPlayLevel === 'function') {

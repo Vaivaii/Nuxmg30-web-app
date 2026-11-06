@@ -35,13 +35,23 @@ test('Track Settings controls are enabled and report device ACK or errors', () =
 });
 
 test('sliders send the raw 7-bit values rather than interpolating across observed capture samples', () => {
-  assert.match(index, /Math\.min\(0x7F, number\)/);
+  assert.match(index, /Math\.min\(100, number\)/);
   assert.match(index, /const raw = normalizeMg30HardwareSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1D, raw, 'Record Level'\)/);
   assert.match(index, /const raw = normalizeMg30HardwareSlider\(value\);[\s\S]*?updateMg30HardwareField\(0x1F, raw, 'Playback Level'\)/);
   assert.doesNotMatch(index, /0x34 \+ \(normalized \/ 100\)/);
   assert.doesNotMatch(index, /0x68 \+ \(normalized \/ 100\)/);
-  assert.match(daw, /dawHardwareRecordLevel[^\n]*max="127"[^\n]*value="50"/);
-  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*max="127"[^\n]*value="100"/);
-  assert.match(daw, /recordReadout\.textContent = record\.value \+ ' \/ 127'/);
-  assert.match(daw, /playbackReadout\.textContent = playback\.value \+ ' \/ 127'/);
+  assert.match(daw, /dawHardwareRecordLevel[^\n]*max="100"[^\n]*value="50"/);
+  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*max="100"[^\n]*value="50"/);
+  assert.match(daw, /recordReadout\.textContent = record\.value \+ ' \/ 100'/);
+  assert.match(daw, /playbackReadout\.textContent = playback\.value \+ ' \/ 100'/);
+});
+
+test('both hardware level sliders share the requested 0-100 raw range and default 50', () => {
+  const frame = index.match(/const MG30_HARDWARE_FRAME_TEMPLATE = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  assert.ok(frame, 'complete 14/01 frame template exists');
+  const bytes = [...frame[1].matchAll(/0x[0-9a-f]+/gi)].map(([hex]) => Number.parseInt(hex, 16));
+  assert.equal(bytes[0x1D], 50, 'Record Level frame baseline is raw 50');
+  assert.equal(bytes[0x1F], 50, 'Playback Level frame baseline follows the requested raw 50');
+  assert.match(daw, /dawHardwareRecordLevel[^\n]*min="0"[^\n]*max="100"[^\n]*value="50"/);
+  assert.match(daw, /dawHardwarePlaybackLevel[^\n]*min="0"[^\n]*max="100"[^\n]*value="50"/);
 });

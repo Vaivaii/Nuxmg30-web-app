@@ -93,3 +93,17 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - APK copied from the verified artifact to `MG30-Studio-Raw-Level-Slider-Build.apk`.
 - SHA-256: `5c7356ca5a1969f650c6e485146de34ef905d35ee3e26e5f0a138fc076c4f33d`.
 - Physical test remains required. This build changes slider encoding based on the QuickTone baseline and capture raw values; no code can confirm the analog/digital level response without the MG-30 connected.
+
+
+## User physical install feedback and shared 0–100 slider correction (2026-11-06)
+
+- User confirmed Build #626 has been installed on the Android phone and supplied a Track Settings screenshot.
+- The installed UI showed Record Level at 100/127 and Playback Level at 127/127. User reports Record Level reaches the device's +12 dB ceiling by raw 100, so exposing values through 127 is excessive for that control.
+- Playback Level at raw 127 produced only about +3 dB on the user's device. User's working hypothesis is that its default should also be raw 50, with maximum 100. This Playback Level endpoint/default is a user-directed calibration target and still requires another physical check; it is not claimed as a newly proven QuickTone factory default.
+- UI correction requested and applied: both sliders now use min 0, max 100, step 1, default 50, and readouts use `/ 100`.
+- The wire conversion now clamps the directly-written raw 7-bit value to 0–100. No interpolation/scaling curve has been introduced.
+- The complete 46-byte `14/01` frame template now starts both Record and Playback Level at raw 50, matching the requested UI baseline. This intentionally supersedes the earlier captured-frame Playback baseline of raw 100 for the app's retained state template; physical response after this change must be checked.
+- Preserved: Record offset `0x1D`, Playback offset `0x1F`, Loopback offset `0x20` and its `0x11` ON / `0x01` OFF mapping, complete-frame validation, serialized hardware-write queue, and matching `14/03` ACK handling.
+- No NAM, IR User/Third Party/Collection, preset, signal-chain, USB-MIDI transport, or unrelated MIDI/CC mapping code was changed.
+- Added regression coverage for both slider bounds/defaults, dynamic readouts, and the retained frame-template bytes.
+- Validation on this commit is pending GitHub Actions. User should physically test Record Level and Playback Level independently on original MG-30 Gen 2 firmware 6.0.x; compare default raw 50 and maximum raw 100, and report actual level/dB response.

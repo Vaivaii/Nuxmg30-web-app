@@ -3606,3 +3606,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Scope remains endpoint discovery only. No AudioTrack DI playback, processed return capture, full-duplex validation or routing-mode changes are implemented.
 - **Physical device validation pending:** user must install Build #352 and run PERIKSA USB OUT with the original MG-30 Gen 2 connected; record endpoint names, IDs, types, sample rates, channel counts and encodings. Build/packaging validation does not prove that audio streams to/from the pedal.
 - Protected NAM, custom IR User/Third Party, IR Collection, MIDI mapping, USB-MIDI, preset and Signal Chain implementations remain unchanged by the USB output discovery code.
+
+
+## Hardware Level slider range correction — 6 November 2026
+
+- User confirmed Build #626 is installed and supplied a screenshot showing Record Level 100/127 and Playback Level 127/127.
+- User-reported device behavior: Record Level reaches +12 dB by raw value 100; the previous 0–127 UI therefore exposed an excessive range. Playback Level at raw 127 produced about +3 dB; user requested trying a shared default of 50 and maximum of 100 for both sliders.
+- On `feature/studio-hardware-level-controls`, both UI sliders now use 0–100, default 50, step 1; displayed readouts use `/ 100`. Raw wire values remain direct integers (no invented interpolation).
+- The app's retained 46-byte `14/01` frame template now initializes Record and Playback Level bytes at 50, with comments/documents distinguishing this user-directed baseline from the previous QuickTone capture baseline of Playback 100.
+- Preserved the existing 14/01 full-frame validation, Record offset 0x1D, Playback offset 0x1F, Loopback offset 0x20 and 0x11/0x01 polarity, serialized write queue, 14/03 ACK handling, and all unrelated communication paths.
+- Added regression tests; await CI/Gradle artifact result. Physical verification of Playback max 100 and both default values remains required. This is slider-only scope; no NAM, custom IR, Collection IR, preset, MIDI mapping or Signal Chain changes.

@@ -1026,11 +1026,11 @@ function invalidatePresetManagerCacheForWrite(data){
 function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);invalidatePresetManagerCacheForWrite(data);return true})}
 // Captured from QuickTone MG-30 Gen 2 firmware 6.0.x. This is a complete
 // 46-byte 14/01 hardware-state write frame, not a short parameter payload.
-// Baseline: Loopback OFF, Record Level raw 50, Playback Level raw 100.
+// Baseline for this user-requested slider preset: Loopback OFF, Record Level raw 50, Playback Level raw 50.
 const MG30_HARDWARE_FRAME_TEMPLATE = Object.freeze([
   0xF0,0x43,0x58,0x70,0x14,0x01,0x00,0x00,0x32,0x00,0x64,0x2C,
   0x00,0x02,0x00,0x00,0x08,0x34,0x02,0x53,0x55,0x00,0x00,0x31,
-  0x00,0x64,0x32,0x00,0x58,0x32,0x00,0x64,0x01,0x00,0x64,0x00,
+  0x00,0x64,0x32,0x00,0x58,0x32,0x00,0x32,0x01,0x00,0x64,0x00,
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xF7
 ]);
 let mg30HardwareFrameState = Array.from(MG30_HARDWARE_FRAME_TEMPLATE);
@@ -1040,7 +1040,7 @@ function normalizeMg30HardwareSlider(value) {
  const number = Number(value);
  if (!Number.isFinite(number)) throw new Error('Nilai slider MG-30 tidak valid.');
  // 14/01 stores each slider directly as a 7-bit SysEx data byte.
- return Math.round(Math.max(0, Math.min(0x7F, number)));
+ return Math.round(Math.max(0, Math.min(100, number)));
 }
 function sendMg30SysEx(frameArray) {
  const frame = Array.from(frameArray || [], value => Number(value) & 0xFF);
