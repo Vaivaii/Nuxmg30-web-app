@@ -28,3 +28,10 @@ No changes are made to NAM transfer/protocol code, IR transfer/import paths or C
 - Extended central English dictionary coverage to dynamic IR transfer errors, Collection status labels, preset readback feedback, Export All/Single status, IR name metadata, and NAM model validation errors.
 - Corrected the dynamic IR Collection error prefix handling so the translated message retains the complete original error detail.
 - Added regression cases for these dynamic messages.
+
+## CTRL readback subtitle removal — 2026-11-07
+
+- Removed only the successful-readback summary line (`Readback berhasil · Multi … · CTRL1 … · CTRL2 …`) from the CTRL/EXP panel.
+- On a successful read, the status element is cleared. Existing warning, read-in-progress, and save/verification feedback remains available.
+- No edits were made to `MG30CtrlBridge`, USB-MIDI, SysEx 13 00 / 13 01 / 13 02 / 13 03 handling, CTRL payload bytes, expression range values, or MIDI mapping.
+- Added a focused regression test for silent successful readback and preservation of existing read/write bridge calls.

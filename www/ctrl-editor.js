@@ -255,14 +255,8 @@ function loadState(state) {
   draftState = cloneState(state);
   markClean();
   renderAll();
-  const b = draftState.bytes;
-  setStatus(
-    "Readback berhasil · Multi " + b[0].toString(16).padStart(2, "0").toUpperCase() +
-    " · T " + b[1] + " · R " + b[2] +
-    " · CTRL1 " + b[3] + "/" + b[4] +
-    " · CTRL2 " + b[5] + "/" + b[6] + ".",
-    "ok"
-  );
+  // Successful readback is intentionally silent; protocol state and data remain unchanged.
+  setStatus("");
 }
 async function readFromPedal() {
   const bridge = window.MG30CtrlBridge;
