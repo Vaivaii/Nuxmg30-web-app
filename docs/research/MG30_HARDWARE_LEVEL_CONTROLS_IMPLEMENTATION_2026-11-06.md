@@ -201,3 +201,18 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Playback mapping: UI 100 -> raw 100 -> bytes `00 64`; UI 125 -> raw 151 -> `01 17`; UI 150 -> raw 201 -> `01 49` (captured +12 dB endpoint).
 - Record Level remains only offset `0x1D`, default 50; Loopback remains offset `0x20`. No NAM, IR User/Third Party/Collection, preset, MIDI/CC mapping, or USB audio code was modified.
 - Important validation boundary: CI and APK package-content inspection passed. A physical test writing Playback Level to the actual MG-30 and observing +12 dB has not yet been performed in this session; ask user to install and test the APK on the original MG-30 Gen 2 firmware 6.0.x.
+
+
+## Physical validation failure — Build #631 still reports +3 dB (2026-11-06)
+
+- User installed Build #631 and reports Playback Level still reaches only approximately +3 dB on the MG-30, despite moving the app slider to its maximum (150). Thus Build #631 is **not hardware-validated** and the +12 dB target remains unresolved.
+- Re-audited the raw `playbackmax.pcapng` USBPcap frames with corrected USBPcap endpoint parsing and USB-MIDI CIN reassembly:
+  - 9 host OUT SysEx writes `F0 43 58 70 14 01 ... F7`, each followed by 9 device IN `14/03` ACK responses.
+  - In the 46-byte SysEx, playback pair is at zero-based offsets `0x1E/0x1F`: `01 0B`, `01 17`, `01 1D`, `01 33`, `01 47`, `01 49`; the final `01 49` repeats for the last three writes.
+  - Record offset `0x1D` remains `0x32`; Loopback offset `0x20` remains `0x01`; all other frame bytes match the app's captured baseline template.
+  - Combining the pair as `(high7 << 7) | low7` gives 139, 151, 157, 179, 199, 201. The pcap itself contains no dB/GUI annotation proving that `01 49` corresponds to the pedal's +12 dB display; that semantic link was inferred from the file name/selection procedure and must now be revalidated.
+- Audited the Build #631 packaged APK `assets/public/index.html`: `setPlayLevel` calls `normalizeMg30PlaybackSlider`, then `updateMg30PlaybackValue`; this writes `frame[0x1E]=(value>>7)&0x7F` and `frame[0x1F]=value&0x7F` into the complete 46-byte `14/01` frame. UI 150 computes raw 201 = bytes `01 49`. The APK hash remains `71d304310bcdce86ecf737ac72d6091184acf723900f611b507b0e8ad94749d2`.
+- Important distinction: packaged source verifies the intended frame is constructed, but no USBPcap capture of the Android app's actual USB OUT transfer is available. A successful `14/03` ACK only confirms the device acknowledged the command; it is not a parameter readback or proof that the displayed PLAY LEVEL reached +12 dB.
+- Therefore do not increase the UI max/raw value beyond 201 or change byte order based on this failure alone. The app's current pair interpretation may still be wrong, or the capture's `01 49` may not actually represent the pedal's +12 dB setting.
+- Next controlled evidence: verify that during the exact `playbackmax.pcapng` capture the MG-30's own PLAY LEVEL readout showed +12 dB, not only that QuickTone's slider was at its rightmost position. If that capture already was at pedal +12 dB, then collect a diagnostic of the Android app's outgoing 46-byte frame at UI 150 (or an equivalent direct frame log) and compare it byte-for-byte with QuickTone's final `14/01` frame. Do not alter Record Level offset `0x1D`, Loopback offset `0x20`, ACK queue, NAM, IR User/Third Party/Collection, presets, Signal Chain, or MIDI mappings.
+- No source code changed after the user-reported Build #631 physical failure. Do not treat #631 as accepted for Playback Level until the actual device reaches +12 dB.

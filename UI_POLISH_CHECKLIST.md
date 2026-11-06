@@ -3680,3 +3680,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Artifact ID 13486040971; APK SHA-256 `71d304310bcdce86ecf737ac72d6091184acf723900f611b507b0e8ad94749d2`.
 - UI 100 -> 00 64; UI 125 -> 01 17; UI 150 -> 01 49 (captured +12 dB).
 - Record Level and Loopback unchanged. Physical-device validation still pending.
+
+
+## Build #631 physical test: Playback remains at +3 dB — 6 November 2026
+
+- User installed Build #631 and confirmed Playback Level still reaches only about +3 dB at app maximum 150. Physical validation failed; +12 dB not achieved.
+- Re-audit confirms `playbackmax.pcapng` contains 9 host `14/01` writes and 9 ACKs; observed pair at offsets 0x1E/0x1F increases to `01 49` (raw 201).
+- Build #631 packaged source constructs raw201 as `01 49` at those offsets. Static bundle inspection is not proof of actual Android USB OUT bytes or device readback. The ACK is not level readback.
+- No further source change or APK build should be made until the relationship between capture endpoint `01 49` and the pedal's actual +12 dB display is confirmed, then Android output frame is compared.
+- Record remains confirmed at 0–100/default50. Leave it unchanged.
