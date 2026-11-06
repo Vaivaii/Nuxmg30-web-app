@@ -162,3 +162,17 @@ Run #6: [42291360173](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42
 - Branch commit after fix: `39763041ae5e6cee56eebb0c21eee72751217c3d`; main commit: `b9247037125684134002052726145251d93746a6`.
 - No app runtime source, NAM/IR/MIDI/preset/USB protocol code changed. Secrets were not changed. 310/310 tests passed before Android generation in Run #6.
 - Next: run community-release workflow again from `release/community-prep-v2`, same tag `v1.0.0-community.1`, `create_draft_release=false`. Inspect Gradle build and signature verification. Do not claim APK ready until artifact exists and signing checks pass.
+
+
+## Signed candidate run #7 — Gradle signing lifecycle fixed; environment scope issue — 7 November 2026
+
+Run #7: [42291743508](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42291743508), commit `979a5a68117937734f805e01b67b46fff2cfd9a5`.
+- 310/310 tests passed.
+- Keystore Base64, password, alias and private-key entry validation passed.
+- Android project generation and signing configuration step passed.
+- Previous AGP lifecycle error was resolved by configuring in `androidComponents.finalizeDsl`.
+- Build then failed at init script line 14: `Cannot invoke method replaceFirst() on null object`. Root cause: Gradle init script reads `RELEASE_TAG` when Gradle runs, but that environment variable was only scoped to the earlier workflow step that writes the init script; step-level environment does not persist to the later Gradle build step.
+- Updated `Build signed release APK` step on both `release/community-prep-v2` and `main` to pass `RELEASE_TAG` and the three signing secrets explicitly to the Gradle process. This also ensures the Gradle init script can access signing values when executed.
+- Release branch fix commit: `8ffdff060afe50250fb81746608ba322c39f4eab`; main: `304af06b910d2d9c00aac0e33fa40d35c38e1e48`.
+- No app runtime/protocol code changed.
+- Next: rerun signed candidate from release branch with same tag and draft=false; verify assembleRelease, apksigner, package ID, SHA-256 and artifact.
