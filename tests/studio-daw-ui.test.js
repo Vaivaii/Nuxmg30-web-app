@@ -707,7 +707,7 @@ test('Track Input Routing uses the standard Track Settings card palette and Engl
   for (const value of [
     'Four fixed tracks.',
     'USB Input 1/2 and Wet Sync 3/4 are separate paths.',
-    'Record all four raw USB input channels simultaneously',
+    'Input 1 = mono',
     'No measurement yet.',
     'Phone loopback uses the USB Input 1–2 recording path',
   ]) {
