@@ -136,3 +136,15 @@ The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 
 - Extracted APK size 4,602,872 bytes; APK SHA-256 `d9497fc00aca15b51be7006b6f1c9f05de5331c0dd34d0d8840923474d9183fb`.
 - ZIP integrity and APK ZIP integrity passed. Inspection of the APK's packaged `assets/public/index.html` confirmed: AMP/EFX IMAGE gate; suppressed art badge/chip; base name used for visible selector/chain/dock labels; unconditional Based on markup; disclaimer gate; toast scope allowlist.
 - No hardware protocol, NAM/IR data transfer, preset payload, signal-chain logic, USB-MIDI, or MIDI/CC mapping changes.
+
+
+## Clarification — keep artwork IMAGE badge, hide only caption IMAGE chip — 7 November 2026
+
+- User clarified the artwork badge labelled IMAGE must remain visible. Only the small IMAGE chip in the caption row directly below the artwork, which overlaps the Based on line, should be hidden.
+- Restored the IMAGE badge on the artwork for AMP/EFX IMAGE models.
+- Only the caption-row origin chip is suppressed for AMP/EFX IMAGE. The category label and Based on line remain visible.
+- The long disclaimer remains suppressed for AMP/EFX IMAGE, consistent with the previous correction.
+- Reverted normalization of visible model labels; the original model names (including their internal display suffix where shown in selectors/chain/dock) remain unchanged. Internal `BLOCKS[].models` data has never been changed.
+- Toast handling stays exactly as accepted: preset/NAM/IR sync scopes only.
+- No hardware protocol, USB-MIDI, NAM/IR transfer, preset payload, Signal Chain, MIDI mapping, or card layout dimensions changed.
+- Validation required: full 307+ test regression suite, Vite production, Capacitor generation, Gradle assembleDebug, and packaged APK inspection for badge visible + caption chip hidden + Based on preserved.

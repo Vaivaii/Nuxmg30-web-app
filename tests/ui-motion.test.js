@@ -194,24 +194,24 @@ test('Editor Scenes remain bottom-anchored inside the fixed card with the approv
 });
 
 
-test('IMAGE-based AMP and EFX hide every IMAGE marker while retaining category and Based on',()=>{
+test('IMAGE-based AMP and EFX keep artwork badge and Based on, but hide only caption IMAGE chip and disclaimer',()=>{
   const start=html.indexOf('function renderModelVisual(){');
   const end=html.indexOf('\nfunction renderBlockIcon',start);
   const renderer=html.slice(start,end);
-  assert.ok(renderer.includes('const hideImageLabels=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX")'));
-  assert.ok(renderer.includes('const hideImageDisclaimer=hideImageLabels'));
-  assert.ok(renderer.includes('origin&&!hideImageLabels?'));
-  assert.ok(renderer.includes('origin==="IMAGE"&&!hideImageLabels?\'IMAGE\''));
+  assert.ok(renderer.includes('const hideImageCaptionChip=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX")'));
+  assert.ok(renderer.includes('const hideImageDisclaimer=hideImageCaptionChip'));
+  assert.ok(renderer.includes('origin&&!hideImageCaptionChip?'));
+  assert.ok(renderer.includes('const artBadgeText=isNamAmp?\'NAM\':origin==="IMAGE"?\'IMAGE\':\'\';'));
   assert.ok(renderer.includes("'+category+'</span>'+originChip+'</div><div class=\"gear-copy-meta\">"));
   assert.ok(renderer.includes(`<b>Based on:</b><span>'+escapeHtml(basis)+'`));
-  assert.ok(renderer.includes('origin==="IMAGE"&&!hideImageLabels)return getModelBaseName(name)')===false,
-    'display labels are normalized in modelDisplayLabel, outside renderer');
+  assert.ok(renderer.includes("'+renderGearSvg(block.id,name)+artBadge+'</div>"));
+  assert.ok(renderer.includes("originNote=origin===\"IMAGE\"&&!hideImageDisclaimer?"));
+  assert.ok(!renderer.includes('hideImageCaptionChip?\'\':\'IMAGE\''));
   const displayStart=html.indexOf('function modelDisplayLabel(');
   const displayEnd=html.indexOf('\nfunction getModelBasis',displayStart);
   const display=html.slice(displayStart,displayEnd);
-  assert.ok(display.includes('if(origin==="IMAGE"&&(blockId==="AMP"||blockId==="EFX"))return getModelBaseName(name);'));
-  assert.ok(renderer.includes("'+renderGearSvg(block.id,name)+artBadge+'</div>"));
-  assert.ok(!renderer.includes('IMAGE</span>')&&!renderer.includes('Based on: IMAGE'));
+  assert.ok(!display.includes('return getModelBaseName(name)'));
+  assert.ok(html.includes('MODEL_BASED_ON'));
 });
 test('floating toast is suppressed by default and opt-in only for preset, NAM and IR synchronization',()=>{
   assert.ok(html.includes("function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;"));

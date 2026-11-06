@@ -1920,7 +1920,6 @@ function modelDisplayLabel(blockId,modelOrName){
  const name=Array.isArray(modelOrName)?modelOrName[0]:String(modelOrName||"");
  const origin=modelOriginLabel(blockId,name);
  if(origin==="GEN2")return name+" · GEN2";
- if(origin==="IMAGE"&&(blockId==="AMP"||blockId==="EFX"))return getModelBaseName(name);
  if(blockId==="IR"&&getModelBaseName(name).toLowerCase()==="third-party")return name;
  return name;
 }
@@ -3035,11 +3034,11 @@ function renderModelVisual(){
  const holder=$("modelVisual");if(!holder)return;
  const block=BLOCKS[selected],state=states[selected],storedModelName=block.models[state.model][0],isUserIR=block.id==="IR"&&getModelBaseName(storedModelName).toLowerCase()==="third-party",name=storedModelName,basis=isUserIR?"User IR · Third-party":getModelBasis(block.id,storedModelName),origin=modelOriginLabel(block.id,storedModelName);
  const category=block.id==="AMP"?"AMPLIFIER":block.id==="IR"?"SPEAKER CABINET":block.id==="S/R"?"FX LOOP":block.id==="VOL"||block.id==="WAH"?"PEDAL":block.id==="CMP"?"COMPRESSOR":block.id==="EFX"?"DRIVE / EFFECT":block.id==="EQ"?"EQUALIZER":block.id==="GATE"?"NOISE GATE":block.id==="MOD"?"MODULATION":block.id==="DLY"?"DELAY":block.id==="RVB"?"REVERB":block.id;
- const hideImageLabels=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX");
- const originChip=origin&&!hideImageLabels?'<span class="model-origin-chip '+(origin==="IMAGE"?'':'is-gen2')+'">'+origin+'</span>':'';
- const hideImageDisclaimer=hideImageLabels;
+ const hideImageCaptionChip=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX");
+ const originChip=origin&&!hideImageCaptionChip?'<span class="model-origin-chip '+(origin==="IMAGE"?'':'is-gen2')+'">'+origin+'</span>':'';
+ const hideImageDisclaimer=hideImageCaptionChip;
  const isNamAmp=block.id==="AMP"&&(AMP_NAM_SLOT_PROFILES.some(item=>item.name===storedModelName)||/\bNAM\s*\d+\b/i.test(storedModelName));
- const artBadgeText=isNamAmp?'NAM':origin==="IMAGE"&&!hideImageLabels?'IMAGE':'';
+ const artBadgeText=isNamAmp?'NAM':origin==="IMAGE"?'IMAGE':'';
  const artBadgeClass=isNamAmp?'is-nam':'is-image';
  const collectionIRSlot=block.id==="IR"&&isUserIR?activePresetCollectionIRSlot():0;
  const irSlotBadge=collectionIRSlot?'<span class="gear-art-badge is-ir-slot" aria-label="IR '+String(collectionIRSlot).padStart(2,'0')+'" title="Collection IR slot '+String(collectionIRSlot).padStart(2,'0')+'">IR '+String(collectionIRSlot).padStart(2,'0')+'</span>':'';
