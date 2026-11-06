@@ -249,3 +249,17 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - Playback retains the captured 14-bit pair at offsets 0x1E/0x1F: 0 dB -> raw 100 (00 64), +12 dB -> raw 201 (01 49). The -12 dB endpoint is mapped symmetrically to raw 0; that lower endpoint is a linear interpolation assumption and should be checked during final device QA.
 - Removed the temporary Playback diagnostic row and native Java sysexHex echo; normal Android MidiInputPort.send and existing USB-MIDI payload/ACK behavior are restored.
 - Record/Playback offsets, Loopback offset 0x20, complete 46-byte frame validation, serial queue, ACK 14/03, NAM, IR User/Third Party/Collection, presets, Signal Chain and MIDI mapping remain protected.
+
+
+## Build #633 — release-facing dB slider polish (2026-11-06)
+
+- Source commit: `7970a0ab2eb0a09faa865cecd35abfeac4248cad` on `feature/studio-hardware-level-controls`.
+- Both REC Level and PLAY Level are shown in the MG-30 USB Audio Settings range -12.0 dB to +12.0 dB, with zero exactly at the midpoint/default. Step is 0.1 dB. The displayed signed value updates immediately on every slider `input`; device writes retain the existing 220 ms debounce.
+- Record mapping: -12 / 0 / +12 dB -> raw 0 / 50 / 100 at byte offset 0x1D. Center raw50 and +12 raw100 are capture/user-confirmed. Bottom raw0 is a linear symmetric mapping based on the documented -12/+12 range.
+- Playback mapping: -12 / 0 / +12 dB -> 14-bit raw 0 / 100 / 201, split high-7/low-7 at offsets 0x1E/0x1F (`00 00`, `00 64`, `01 49`). Center raw100 and +12 raw201 are confirmed against the QuickTone capture/device; bottom raw0 is symmetric interpolation and should be included in final device QA.
+- Removed the temporary Playback diagnostic row and Java native hex echo helper. Normal Android MidiInputPort.send return behavior and existing MIDI payload transport are restored; protocol bytes at calibrated anchors remain unchanged.
+- Tests: 287 passed, 0 failed. Android initializer validation, Capacitor generation, and USB audio plugin setup passed. Gradle `assembleDebug`: BUILD SUCCESSFUL.
+- GitHub Actions: [Build #633](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42192146884). Artifact ID `13490072502`, ZIP SHA-256 `b6adf26653df2f222a21921f3298eabbb25d1eedc427e452c88db9672b4830a1`.
+- Extracted APK: 4,596,492 bytes; SHA-256 `bbc79a6855518934053729e66bead29014348a3040e774d0ea12952aea0c1f22`. ZIP/APK integrity passed. APK bundle inspected: both slider bounds/defaults and live dB readout logic are present; temporary diagnostic text/echo is absent.
+- Workflow produces a debug APK only (`assembleDebug`), not a signed release APK. A production distribution build requires a release signing configuration/keystore before Play Store or signed sideload distribution.
+- No changes to NAM, IR User/Third Party/Collection, preset, MIDI/CC mappings, Signal Chain, Loopback offset, or USB audio routing.

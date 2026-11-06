@@ -3711,3 +3711,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Record and Playback sliders now show -12.0 to +12.0 dB with default exactly centered at 0.0 dB. Signed one-decimal labels update live during drag; USB-MIDI writes keep the existing 220 ms debounce.
 - Record raw anchors remain 0 / 50 / 100 at -12 / 0 / +12 dB. Playback 14-bit anchors remain 0 / 100 / 201 at -12 / 0 / +12 dB; its lower endpoint is symmetric interpolation pending physical confirmation.
 - Temporary native MIDI diagnostic box and hex echo are removed. No changes to NAM, IR User/Third Party/Collection, presets, MIDI mappings, Signal Chain, Loopback or USB audio.
+
+
+## Build #633 — Hardware Level dB display polish (6 November 2026)
+
+- Both Record and Playback controls display -12.0 dB to +12.0 dB with 0.0 dB at exact midpoint/default; step 0.1 dB; signed readout refreshes on every input event. USB send remains debounced 220 ms.
+- Record anchors -12/0/+12 dB -> raw 0/50/100 at 0x1D. Playback anchors -> 14-bit raw 0/100/201 at 0x1E/0x1F (`00 00`, `00 64`, `01 49`). Playback low-end mapping is an inferred symmetric interpolation pending device QA.
+- Temporary diagnostic box and Java hex echo removed.
+- Build #633 successful: 287 tests; Gradle assembleDebug successful; APK inspected. APK SHA-256 `bbc79a6855518934053729e66bead29014348a3040e774d0ea12952aea0c1f22`.
+- This workflow creates a debug APK, not a signed production release package.
