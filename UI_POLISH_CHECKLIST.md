@@ -3798,3 +3798,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Studio dock alignment is measured synchronously before `showPage('studio')` reveals the page. The prior deferred requestAnimationFrame dock reposition is removed to prevent a visible drop after tab entry.
 - No NAM, User/Third Party IR transfer, IR Collection transfer, preset import/export, Signal Chain behavior, USB-MIDI, MIDI/CC mapping, or native audio code was changed.
 - Automated regression and new Build #640 pending. Device-level video validation remains pending after installation.
+
+- Build #640 found one stale Studio UI test (302/303 passed) that required deferred `requestAnimationFrame` dock positioning. Updated that test to require the new synchronous pre-reveal measurement and verify that the delayed reposition is absent. No application runtime logic was changed in this test-only correction. Build #641 is the rerun.

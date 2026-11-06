@@ -425,10 +425,10 @@ test('Track Settings removes redundant page and selected-track subheadings', () 
 });
 
 
-test('Studio dock geometry is recalculated after selecting Studio from the main navigation', () => {
-  assert.ok(daw.includes("document.querySelector('.nav')?.addEventListener('click'"));
-  assert.ok(daw.includes('button[data-page="studio"]'));
-  assert.ok(daw.includes('window.requestAnimationFrame(syncStudioPinnedControls)'));
+test('Studio dock geometry is synchronized before the Studio page is revealed', () => {
+  assert.ok(daw.includes('window.MG30SyncStudioPinnedControls = syncStudioPinnedControls;'));
+  assert.ok(html.includes("if(p==='studio')window.MG30SyncStudioPinnedControls?.();"));
+  assert.ok(!daw.includes('window.requestAnimationFrame(syncStudioPinnedControls)'));
 });
 
 

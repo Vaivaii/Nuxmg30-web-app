@@ -53,3 +53,7 @@ Requested changes:
 - No NAM, User/Third Party IR transfer, IR Collection transfer, preset import/export, Signal Chain behavior, USB-MIDI, MIDI/CC mapping, or native audio code was changed.
 - Automated regression and new Build #640 pending. Device-level video validation remains pending after installation.
 
+
+## CI assertion correction
+- Build #640 failed one pre-existing test that explicitly required `window.requestAnimationFrame(syncStudioPinnedControls)`. That delayed reposition was intentionally removed to prevent the visible Studio dock drop. Updated the test to assert that `MG30SyncStudioPinnedControls` is called by `showPage('studio')` before page reveal, and that the deferred reposition no longer exists.
+- All 302 other tests passed. Build #641 is the corrected CI rerun.
