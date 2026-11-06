@@ -1024,24 +1024,85 @@ function invalidatePresetManagerCacheForWrite(data){
  }
 }
 function midiSend(data,onDispatch){if(!midiOutput||!midiConnected)return Promise.resolve(false);return enqueueMidi(async()=>{if(typeof onDispatch==='function')onDispatch(performance.now());await midiOutput.send(data);invalidatePresetManagerCacheForWrite(data);return true})}
-const MG30_LEVEL_SYSEX_HEADER=[0xF0,0x43,0x58,0x70,0x14,0x02]; // candidate action; not capture-verified
-function sendMg30SysEx(payloadArray){
- const payload=Array.from(payloadArray||[],value=>Number(value)&0x7F);
- return midiSend([...MG30_LEVEL_SYSEX_HEADER,...payload,0xF7]);
+// Captured from QuickTone MG-30 Gen 2 firmware 6.0.x. This is a complete
+// 46-byte 14/01 hardware-state write frame, not a short parameter payload.
+// Baseline: Loopback OFF, Record Level raw 50, Playback Level raw 100.
+const MG30_HARDWARE_FRAME_TEMPLATE = Object.freeze([
+  0xF0,0x43,0x58,0x70,0x14,0x01,0x00,0x00,0x32,0x00,0x64,0x2C,
+  0x00,0x02,0x00,0x00,0x08,0x34,0x02,0x53,0x55,0x00,0x00,0x31,
+  0x00,0x64,0x32,0x00,0x58,0x32,0x00,0x64,0x01,0x00,0x64,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xF7
+]);
+let mg30HardwareFrameState = Array.from(MG30_HARDWARE_FRAME_TEMPLATE);
+let mg30HardwareWriteChain = Promise.resolve();
+
+function normalizeMg30HardwareSlider(value) {
+ const number = Number(value);
+ if (!Number.isFinite(number)) throw new Error('Nilai slider MG-30 tidak valid.');
+ return Math.max(0, Math.min(100, number));
 }
-function setLoopback(enable){return sendMg30SysEx([enable?0x01:0x11]);}
-function setRecLevel(value){
- const v=Math.max(0,Math.min(100,Number(value)||0));
- return sendMg30SysEx([Math.round(0x34+(v/100)*0x08)]);
+function sendMg30SysEx(frameArray) {
+ const frame = Array.from(frameArray || [], value => Number(value) & 0xFF);
+ if (frame.length !== 46 || frame[0] !== 0xF0 || frame[1] !== 0x43 ||
+     frame[2] !== 0x58 || frame[3] !== 0x70 || frame[4] !== 0x14 ||
+     frame[5] !== 0x01 || frame[45] !== 0xF7) {
+  return Promise.reject(new Error('Frame hardware-level MG-30 harus berupa SysEx 14/01 lengkap sepanjang 46 byte.'));
+ }
+ return midiSend(frame);
 }
-function setPlayLevel(value){
- const v=Math.max(0,Math.min(100,Number(value)||0));
- return sendMg30SysEx([0x00,Math.round(0x68+(v/100)*0x12),0x01]);
+function queueMg30HardwareFrame(frame, controlLabel) {
+ const task = mg30HardwareWriteChain.then(async () => {
+  if (!midiConnected || !midiInput || !midiOutput) {
+   throw new Error('Hubungkan MG-30 melalui USB-MIDI sebelum mengubah hardware level.');
+  }
+  await flushMidi();
+  let ackPromise = null;
+  try {
+   ackPromise = waitForSysEx(body =>
+    body[0] === 0x43 && body[1] === 0x58 && body[2] === 0x70 &&
+    body[3] === 0x14 && body[4] === 0x03 && body.length === 13, 2200);
+   const sent = await sendMg30SysEx(frame);
+   if (!sent) {
+    ackPromise.catch(() => {});
+    throw new Error('Perintah 14/01 tidak terkirim.');
+   }
+   await ackPromise;
+   return { control: controlLabel, acknowledged: true, response: '14/03' };
+  } catch (error) {
+   if (ackPromise) ackPromise.catch(() => {});
+   throw new Error(controlLabel + ' gagal: ' + (error?.message || 'ACK 14/03 tidak diterima.'));
+  }
+ });
+ mg30HardwareWriteChain = task.catch(() => {});
+ return task;
 }
-window.sendMg30SysEx=sendMg30SysEx;
-window.setLoopback=setLoopback;
-window.setRecLevel=setRecLevel;
-window.setPlayLevel=setPlayLevel;
+function updateMg30HardwareField(offset, rawValue, controlLabel) {
+ const frame = mg30HardwareFrameState.slice();
+ frame[offset] = Number(rawValue) & 0x7F;
+ // Keep all previously requested hardware fields intact across successive writes.
+ mg30HardwareFrameState = frame.slice();
+ return queueMg30HardwareFrame(frame, controlLabel);
+}
+function setLoopback(enable) {
+ // Captured order: 0x11 = ON, then 0x01 = OFF (bit 0x10 changes).
+ return updateMg30HardwareField(0x20, enable ? 0x11 : 0x01, 'USB Loopback');
+}
+function setRecLevel(value) {
+ const normalized = normalizeMg30HardwareSlider(value);
+ // Observed Record Level samples: 0x34, 0x37, 0x3A, 0x3C.
+ const raw = Math.round(0x34 + (normalized / 100) * 0x08);
+ return updateMg30HardwareField(0x1D, raw, 'Record Level');
+}
+function setPlayLevel(value) {
+ const normalized = normalizeMg30HardwareSlider(value);
+ // Observed Playback Level samples: 0x68, 0x70, 0x76, 0x7A.
+ const raw = Math.round(0x68 + (normalized / 100) * 0x12);
+ return updateMg30HardwareField(0x1F, raw, 'Playback Level');
+}
+window.sendMg30SysEx = sendMg30SysEx;
+window.setLoopback = setLoopback;
+window.setRecLevel = setRecLevel;
+window.setPlayLevel = setPlayLevel;
 
 function sendCC(cc,value){if(presetImportBusy||presetExportBusy||!midiOutput||!midiConnected)return;pendingCC.set(cc,Math.max(0,Math.min(127,Number(value)||0)));if(!flushingCC){flushingCC=true;flushCC()}}
 async function flushCC(){try{while(pendingCC.size){const batch=[...pendingCC.entries()];pendingCC.clear();for(const [cc,value] of batch)await midiSend([0xB0,cc,value])}}finally{flushingCC=false;if(pendingCC.size){flushingCC=true;flushCC()}}}
