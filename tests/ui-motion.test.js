@@ -202,7 +202,7 @@ test('IMAGE-based AMP and EFX suppress only the disclaimer while retaining Based
   assert.ok(renderer.includes('origin==="IMAGE"&&!hideImageDisclaimer'));
   assert.ok(renderer.includes("'+category+'</span>'+originChip+'</div><div class=\"gear-copy-meta\">"));
   assert.ok(renderer.includes(`<b>Based on:</b><span>'+escapeHtml(basis)+'`));
-  assert.ok(renderer.includes("'+artBadge+'</div>"));
+  assert.ok(renderer.includes(`+artBadge+'</div>`));
   assert.ok(renderer.includes("'<div class=\"model-origin-note\">'+escapeHtml(originNote)"));
   assert.ok(!renderer.includes("hideImageDisclaimer?'':'<div class=\"gear-copy-meta\">"),'Based on must not be gated by IMAGE disclaimer condition');
 });
