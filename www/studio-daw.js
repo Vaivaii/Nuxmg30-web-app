@@ -672,11 +672,11 @@ function renderHardwareLevelPanel() {
     panel.className = 'daw-settings-section daw-output-routing-card daw-hardware-levels-card';
     panel.dataset.dawHardwareLevels = 'true';
     panel.innerHTML =
-      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Experimental candidate control for Loopback and USB recording/playback levels.</p></div></div>' +
-      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Experimental candidate WRITE; check pedal response.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
+      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>USB loopback and MG-30 recording/playback hardware levels.</p></div></div>' +
+      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Route MG-30 playback back to the USB recording input.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
       '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" value="50"></div>' +
       '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">50 / 100</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" value="50"></div>' +
-      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">EXPERIMENTAL WRITE MODE — candidate SysEx is sent only after user changes a control. Header/action/offsets are not verified; confirm pedal response. NAM, IR, and MIDI mappings remain untouched.</p>';
+      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">Controls send the captured MG-30 Gen 2 SysEx 14/01 frame and wait for the device 14/03 acknowledgement. Slider scale is mapped to the captured raw-value span; confirm the audible result on the pedal.</p>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
     else host.appendChild(panel);
@@ -686,31 +686,44 @@ function renderHardwareLevelPanel() {
   const playback = $('dawHardwarePlaybackLevel');
   const recordReadout = $('dawHardwareRecordReadout');
   const playbackReadout = $('dawHardwarePlaybackReadout');
-  if (record && recordReadout && !record.dataset.candidateBound) {
+  const note = panel.querySelector('.daw-hardware-protocol-note');
+  const showResult = (label, promise) => {
+    Promise.resolve(promise).then(result => {
+      if (note) note.textContent = label + ' dikirim; ACK MG-30 14/03 diterima.';
+      if (result?.acknowledged !== true && note) note.textContent = label + ' terkirim, tetapi status ACK belum dikonfirmasi.';
+    }).catch(error => {
+      if (note) note.textContent = label + ' gagal: ' + (error?.message || String(error));
+    });
+  };
+  if (record && recordReadout && !record.dataset.hardwareBound) {
     let timer = null;
     record.addEventListener('input', () => {
       recordReadout.textContent = record.value + ' / 100';
       clearTimeout(timer);
-      timer = setTimeout(() => { if (typeof window.setRecLevel === 'function') void window.setRecLevel(record.value); }, 300);
+      timer = setTimeout(() => {
+        if (typeof window.setRecLevel === 'function') showResult('Record Level ' + record.value, window.setRecLevel(record.value));
+      }, 220);
     });
-    record.dataset.candidateBound = 'true';
+    record.dataset.hardwareBound = 'true';
   }
-  if (playback && playbackReadout && !playback.dataset.candidateBound) {
+  if (playback && playbackReadout && !playback.dataset.hardwareBound) {
     let timer = null;
     playback.addEventListener('input', () => {
       playbackReadout.textContent = playback.value + ' / 100';
       clearTimeout(timer);
-      timer = setTimeout(() => { if (typeof window.setPlayLevel === 'function') void window.setPlayLevel(playback.value); }, 300);
+      timer = setTimeout(() => {
+        if (typeof window.setPlayLevel === 'function') showResult('Playback Level ' + playback.value, window.setPlayLevel(playback.value));
+      }, 220);
     });
-    playback.dataset.candidateBound = 'true';
+    playback.dataset.hardwareBound = 'true';
   }
-  if (loopback && !loopback.dataset.candidateBound) {
+  if (loopback && !loopback.dataset.hardwareBound) {
     loopback.addEventListener('change', () => {
-      const note = panel.querySelector('.daw-hardware-protocol-note');
-      if (note) note.textContent = 'EXPERIMENTAL WRITE candidate sent: Loopback ' + (loopback.checked ? 'ON' : 'OFF') + '. Check pedal response; header/offset not verified.';
-      if (typeof window.setLoopback === 'function') void window.setLoopback(loopback.checked);
+      if (typeof window.setLoopback === 'function') {
+        showResult('USB Loopback ' + (loopback.checked ? 'ON' : 'OFF'), window.setLoopback(loopback.checked));
+      }
     });
-    loopback.dataset.candidateBound = 'true';
+    loopback.dataset.hardwareBound = 'true';
   }
 }
 
