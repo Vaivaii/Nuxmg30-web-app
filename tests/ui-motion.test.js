@@ -154,6 +154,7 @@ test('bundled mobile Editor stylesheet keeps the full model frame and caption ra
   assert.match(rules,/body > \.app > #page-editor > \.editor > \.main-editor-card #modelVisual\.model-visual-stage\s*\{[^}]*overflow:visible!important/s);
   assert.match(rules,/\.gear-art\s*\{[^}]*height:112px!important/s);
   assert.match(rules,/\.gear-copy\s*\{[^}]*height:56px!important/s);
+  assert.match(rules,/\.gear-copy\s*\{[^}]*padding:6px 4px 0!important/s);
   assert.match(rules,/\.gear-copy-head\s*\{[^}]*visibility:visible!important/s);
   assert.match(rules,/\.gear-copy \.gear-type\s*\{[^}]*visibility:visible!important/s);
   assert.match(rules,/\.gear-copy-meta\s*\{[^}]*flex:1 1 auto!important/s);
@@ -162,8 +163,8 @@ test('bundled mobile Editor stylesheet keeps the full model frame and caption ra
   assert.match(rules,/gear-art-amp \.gear-svg\s*\{[^}]*width:62%!important/s);
   assert.match(rules,/gear-art-pedal \.gear-svg\s*\{[^}]*width:36%!important/s);
   assert.match(rules,/gear-art-cabinet \.gear-svg\s*\{[^}]*width:60%!important/s);
-  assert.match(rules,/gear-art-expression \.gear-svg\s*\{[^}]*width:46%!important/s);
-  assert.match(rules,/gear-art-loop \.gear-svg\s*\{[^}]*width:40%!important/s);
+  assert.match(rules,/gear-art-expression \.gear-svg\s*\{[^}]*width:40%!important/s);
+  assert.match(rules,/gear-art-loop \.gear-svg\s*\{[^}]*width:46%!important/s);
   assert.match(rules,/max-height:780px\)\s*\{[\s\S]*?height:154px!important/s);
   assert.match(rules,/\.gear-art\s*\{[^}]*height:98px!important/s);
   assert.ok(!html.includes('id="editor-fixed-model-frame-scene-anchor"'), 'old override must not remain in inline HTML');
