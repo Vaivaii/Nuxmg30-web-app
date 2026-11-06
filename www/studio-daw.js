@@ -674,9 +674,8 @@ function renderHardwareLevelPanel() {
     panel.innerHTML =
       '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>USB loopback and MG-30 recording/playback hardware levels.</p></div></div>' +
       '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Route MG-30 playback back to the USB recording input.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" value="50"></div>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">50 / 100</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" value="50"></div>' +
-      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">Controls send the captured MG-30 Gen 2 SysEx 14/01 frame and wait for the device 14/03 acknowledgement. Slider scale is mapped to the captured raw-value span; confirm the audible result on the pedal.</p>';
+      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" step="1" value="50"></div>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">50 / 100</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" step="1" value="50"></div>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
     else host.appendChild(panel);
@@ -686,13 +685,15 @@ function renderHardwareLevelPanel() {
   const playback = $('dawHardwarePlaybackLevel');
   const recordReadout = $('dawHardwareRecordReadout');
   const playbackReadout = $('dawHardwarePlaybackReadout');
-  const note = panel.querySelector('.daw-hardware-protocol-note');
-  const showResult = (label, promise) => {
-    Promise.resolve(promise).then(result => {
-      if (note) note.textContent = label + ' dikirim; ACK MG-30 14/03 diterima.';
-      if (result?.acknowledged !== true && note) note.textContent = label + ' terkirim, tetapi status ACK belum dikonfirmasi.';
+  const reportWrite = (label, operation) => {
+    Promise.resolve(operation).then(result => {
+      if (result?.acknowledged === true) {
+        setStatus(label + ' updated on MG-30.', 'ok');
+      } else {
+        setStatus(label + ' sent; device acknowledgement was not confirmed.', 'warn');
+      }
     }).catch(error => {
-      if (note) note.textContent = label + ' gagal: ' + (error?.message || String(error));
+      setStatus(label + ' failed: ' + (error?.message || String(error)), 'warn');
     });
   };
   if (record && recordReadout && !record.dataset.hardwareBound) {
@@ -701,7 +702,9 @@ function renderHardwareLevelPanel() {
       recordReadout.textContent = record.value + ' / 100';
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (typeof window.setRecLevel === 'function') showResult('Record Level ' + record.value, window.setRecLevel(record.value));
+        if (typeof window.setRecLevel === 'function') {
+          reportWrite('Record Level ' + record.value, window.setRecLevel(record.value));
+        }
       }, 220);
     });
     record.dataset.hardwareBound = 'true';
@@ -712,7 +715,9 @@ function renderHardwareLevelPanel() {
       playbackReadout.textContent = playback.value + ' / 100';
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (typeof window.setPlayLevel === 'function') showResult('Playback Level ' + playback.value, window.setPlayLevel(playback.value));
+        if (typeof window.setPlayLevel === 'function') {
+          reportWrite('Playback Level ' + playback.value, window.setPlayLevel(playback.value));
+        }
       }, 220);
     });
     playback.dataset.hardwareBound = 'true';
@@ -720,7 +725,7 @@ function renderHardwareLevelPanel() {
   if (loopback && !loopback.dataset.hardwareBound) {
     loopback.addEventListener('change', () => {
       if (typeof window.setLoopback === 'function') {
-        showResult('USB Loopback ' + (loopback.checked ? 'ON' : 'OFF'), window.setLoopback(loopback.checked));
+        reportWrite('USB Loopback ' + (loopback.checked ? 'ON' : 'OFF'), window.setLoopback(loopback.checked));
       }
     });
     loopback.dataset.hardwareBound = 'true';
