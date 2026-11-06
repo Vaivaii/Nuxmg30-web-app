@@ -203,7 +203,7 @@ test('IMAGE-based AMP and EFX keep category labels but suppress overlapping desc
   assert.ok(renderer.includes("(hideImageDescription?'':'<div class=\"gear-copy-meta\">"));
   assert.ok(renderer.includes('origin===\"IMAGE\"&&!hideImageDescription'));
   assert.ok(renderer.includes("'+category"));
-  assert.ok(renderer.includes("'+artBadge+'</div>"));
+  assert.ok(renderer.includes(`+artBadge+'</div>`));
 });
 
 test('floating toast is suppressed by default and opt-in only for preset, NAM and IR synchronization',()=>{
@@ -211,7 +211,7 @@ test('floating toast is suppressed by default and opt-in only for preset, NAM an
   assert.match(html,/toast\('Preset tersimpan; urutan signal chain diverifikasi',1900,'preset'\)/);
   assert.match(html,/toast\('Nama 10 slot NAM disinkronkan dari MG-30',1900,'nam'\)/);
   assert.match(html,/toast\('Preset diimpor dan tiga scene diverifikasi',1900,'preset'\)/);
-  assert.ok(irTransfer.includes("window.toast('Collection synced"));
+  assert.ok(irTransfer.includes("'Collection synced ·"));
   assert.match(irTransfer,/window\.toast\([^\n]*,2600,'ir'\)/);
   assert.match(irTransfer,/window\.toast\([^\n]*,2800,'ir'\)/);
   assert.ok(html.includes("toast('Draft dimuat')"),'local draft feedback remains in source but is suppressed by default');
