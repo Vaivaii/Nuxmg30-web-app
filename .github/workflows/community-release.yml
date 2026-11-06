@@ -116,20 +116,20 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           cat > "$RUNNER_TEMP/mg30-community-signing.init.gradle" <<'GRADLE'
-          gradle.projectsEvaluated {
-            rootProject.allprojects.each { project ->
-              if (project.plugins.hasPlugin("com.android.application")) {
-                def androidExt = project.extensions.findByName("android")
-                def signing = androidExt.signingConfigs.findByName("communityRelease")
-                if (signing == null) signing = androidExt.signingConfigs.create("communityRelease")
+          gradle.beforeProject { project ->
+            project.plugins.withId("com.android.application") {
+              def androidComponents = project.extensions.findByName("androidComponents")
+              androidComponents.finalizeDsl { androidDsl ->
+                def signing = androidDsl.signingConfigs.findByName("communityRelease")
+                if (signing == null) signing = androidDsl.signingConfigs.create("communityRelease")
                 signing.storeFile = new File(System.getenv("MG30_KEYSTORE_PATH"))
                 signing.storeType = "PKCS12"
                 signing.storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 signing.keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 signing.keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
-                androidExt.buildTypes.getByName("release").signingConfig = signing
-                androidExt.defaultConfig.versionCode = 1
-                androidExt.defaultConfig.versionName = System.getenv("RELEASE_TAG").replaceFirst("^v", "")
+                androidDsl.buildTypes.getByName("release").signingConfig = signing
+                androidDsl.defaultConfig.versionCode = 1
+                androidDsl.defaultConfig.versionName = System.getenv("RELEASE_TAG").replaceFirst("^v", "")
               }
             }
           }
