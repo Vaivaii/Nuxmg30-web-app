@@ -21,3 +21,12 @@ For each operation, capture both USB OUT and IN traffic and verify the resulting
 ## Commits
 - `7daa192a17e853e0b40eb00da737963ad127f6f3` — safe controls scaffold in `www/studio-daw.js`.
 - `ae5e01d1e0780642ca58a3048f41c9e0d5164c4d` — styles in `www/studio-daw.css`.
+
+## Experimental candidate WRITE wiring — 2026-11-06
+- Added candidate SysEx bridge in `www/index.html`: header `F0 43 58 70 14 02`, payload, `F7`.
+- Loopback payload candidate: `01` ON / `11` OFF.
+- Record Level maps UI 0–100 linearly to candidate byte range `34–3C`.
+- Playback Level maps UI 0–100 linearly to candidate byte range `68–7A`, payload `00 value 01`.
+- UI controls call bridge only after user interaction; sliders debounce 300 ms.
+- IMPORTANT: action byte `14 02`, parameter offsets, and mapping are experimental hypotheses, not verified by supplied captures. No startup writes; verify each change on hardware.
+- NAM, IR Collection/User transfer, MIDI CC mappings, and preset paths were not edited.
