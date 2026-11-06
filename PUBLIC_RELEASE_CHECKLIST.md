@@ -30,7 +30,7 @@
 
 ## Public-facing material and legal/privacy
 - [x] Select the open-source distribution model (owner decision recorded 7 November 2026).
-- [ ] Select the exact open-source license (MIT vs GPL-3.0 or another approved license) and add the matching LICENSE text.
+- [x] Select GPL-3.0-only and add canonical GNU GPL v3 LICENSE text.
 - [ ] Review dependency licenses and confirm all bundled artwork, fonts and other assets can be distributed under their respective terms.
 - [x] Update the default-branch README landing page with truthful release status and links to the Android source/release-prep branch (README-only change; no application source merged to main).
 - [x] Prepare the Android-app README on the release-prep branch with compatibility, installation, safety and known-limitations information.
