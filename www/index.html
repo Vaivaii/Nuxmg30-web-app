@@ -1651,10 +1651,10 @@ async function saveToDevice(){
   const ok=await writeHardwarePreset(targetSlot,parts);
   if(!ok)throw new Error('Read-back tidak cocok; preset TIDAK dinyatakan tersimpan');
   setDeviceStatus('Preset '+slotName()+' tersimpan dan diverifikasi · urutan signal chain Scene '+(activeSceneIndex+1)+' ikut tersimpan.');
-  toast('Preset tersimpan; urutan signal chain diverifikasi');
+  toast('Preset tersimpan; urutan signal chain diverifikasi',1900,'preset');
  }catch(e){
   setDeviceStatus('GAGAL SIMPAN: '+e.message);
-  toast('Gagal simpan: '+e.message);
+  toast('Gagal simpan: '+e.message,1900,'preset');
  }
 }
 async function selectHardwareSlot(prog,fromDevice=false){
@@ -1678,10 +1678,10 @@ async function selectHardwareSlot(prog,fromDevice=false){
   setDeviceStatus('Membaca model, parameter, dan chain preset '+slotName()+'…');
   const name=await readActiveBuffer({program:targetSlot});
   setDeviceStatus('Sinkronisasi selesai: '+slotName()+(name?' · '+name:''));
-  toast('Preset '+slotName()+' dibaca ke aplikasi');
+  toast('Preset '+slotName()+' dibaca ke aplikasi',1900,'preset');
  }catch(error){
   setDeviceStatus('Preset '+slotName()+' dipilih, pembacaan state gagal: '+error.message);
-  toast('Gagal sinkron preset: '+error.message);
+  toast('Gagal sinkron preset: '+error.message,1900,'preset');
  }
 }
 function handleMG30MidiMessage(e){if(presetImportBusy||presetExportBusy)return;const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
@@ -1811,7 +1811,7 @@ function changeSelectedModel(delta){
  }
 }
 function persist(){localStorage.setItem('mg30-presets',JSON.stringify(presets));localStorage.setItem('mg30-draft',JSON.stringify({name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex,targetSlot,chainOrder}));notifyActivePresetChanged();}
-function toast(s,duration=1900){const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
+function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
 
 function renderHardwarePreset(){
  const slot=$('hardwarePresetSlot'),name=$('hardwarePresetName'),source=$('hardwarePresetSource'),fav=$('favoritePresetBtn');
@@ -3035,15 +3035,17 @@ function renderModelVisual(){
  const block=BLOCKS[selected],state=states[selected],storedModelName=block.models[state.model][0],isUserIR=block.id==="IR"&&getModelBaseName(storedModelName).toLowerCase()==="third-party",name=storedModelName,basis=isUserIR?"User IR · Third-party":getModelBasis(block.id,storedModelName),origin=modelOriginLabel(block.id,storedModelName);
  const category=block.id==="AMP"?"AMPLIFIER":block.id==="IR"?"SPEAKER CABINET":block.id==="S/R"?"FX LOOP":block.id==="VOL"||block.id==="WAH"?"PEDAL":block.id==="CMP"?"COMPRESSOR":block.id==="EFX"?"DRIVE / EFFECT":block.id==="EQ"?"EQUALIZER":block.id==="GATE"?"NOISE GATE":block.id==="MOD"?"MODULATION":block.id==="DLY"?"DELAY":block.id==="RVB"?"REVERB":block.id;
  const originChip=origin?'<span class="model-origin-chip '+(origin==="IMAGE"?'':'is-gen2')+'">'+origin+'</span>':'';
+ const hideImageDescription=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX");
+ const captionOriginChip=hideImageDescription?'':originChip;
  const isNamAmp=block.id==="AMP"&&(AMP_NAM_SLOT_PROFILES.some(item=>item.name===storedModelName)||/\bNAM\s*\d+\b/i.test(storedModelName));
  const artBadgeText=isNamAmp?'NAM':origin==="IMAGE"?'IMAGE':'';
  const artBadgeClass=isNamAmp?'is-nam':'is-image';
  const collectionIRSlot=block.id==="IR"&&isUserIR?activePresetCollectionIRSlot():0;
  const irSlotBadge=collectionIRSlot?'<span class="gear-art-badge is-ir-slot" aria-label="IR '+String(collectionIRSlot).padStart(2,'0')+'" title="Collection IR slot '+String(collectionIRSlot).padStart(2,'0')+'">IR '+String(collectionIRSlot).padStart(2,'0')+'</span>':'';
  const artBadge=artBadgeText?'<span class="gear-art-badge '+artBadgeClass+'" aria-label="'+artBadgeText+'">'+artBadgeText+'</span>':irSlotBadge;
- const originNote=origin==="IMAGE"?'Model audio berbasis IMAGE/capture menurut katalog QuickTone. Visual di kartu ini hanya ilustrasi UI, bukan gambar model capture. Verifikasi pilihan di perangkat sebelum menyimpan preset.':origin==="GEN2"?'Efek tambahan pada katalog QuickTone GEN2. ID dan parameter hardware perlu diuji.':'';
+ const originNote=origin==="IMAGE"&&!hideImageDescription?'Model audio berbasis IMAGE/capture menurut katalog QuickTone. Visual di kartu ini hanya ilustrasi UI, bukan gambar model capture. Verifikasi pilihan di perangkat sebelum menyimpan preset.':origin==="GEN2"?'Efek tambahan pada katalog QuickTone GEN2. ID dan parameter hardware perlu diuji.':'';
  const artClass=block.id==="AMP"?"gear-art-amp":block.id==="IR"?"gear-art-cabinet":block.id==="VOL"||block.id==="WAH"?"gear-art-expression":block.id==="S/R"?"gear-art-loop":"gear-art-pedal";
- holder.innerHTML='<div class="gear-visual vector-visual"><div class="gear-art '+artClass+'">'+renderGearSvg(block.id,name)+artBadge+'</div><div class="gear-copy"><div class="gear-copy-head"><span class="gear-type">'+category+'</span>'+originChip+'</div><div class="gear-copy-meta"><small class="based-on"><b>Based on:</b><span>'+escapeHtml(basis)+'</span></small></div>'+(originNote?'<div class="model-origin-note">'+escapeHtml(originNote)+'</div>':'')+'</div></div>';
+ holder.innerHTML='<div class="gear-visual vector-visual"><div class="gear-art '+artClass+'">'+renderGearSvg(block.id,name)+artBadge+'</div><div class="gear-copy"><div class="gear-copy-head"><span class="gear-type">'+category+'</span>'+captionOriginChip+'</div>'+(hideImageDescription?'':'<div class="gear-copy-meta"><small class="based-on"><b>Based on:</b><span>'+escapeHtml(basis)+'</span></small></div>')+(originNote?'<div class="model-origin-note">'+escapeHtml(originNote)+'</div>':'')+'</div></div>';
 }
 function renderBlockIcon(blockId){
  const shapes={
@@ -3510,8 +3512,8 @@ async function scanNamDeviceSlots(notifyCollectionAfterRead=false){
    });
    applyNativeNamSlotNames(result.slots,'read');
    const received=result.slots.filter(row=>row.received).length;
-   if(received===10)toast('Nama 10 slot NAM disinkronkan dari MG-30');
-   else toast('Metadata terbaca pada '+received+'/10 slot; periksa status setiap slot');
+   if(received===10)toast('Nama 10 slot NAM disinkronkan dari MG-30',1900,'nam');
+   else toast('Metadata terbaca pada '+received+'/10 slot; periksa status setiap slot',1900,'nam');
    return;
   }
 
@@ -3533,11 +3535,11 @@ async function scanNamDeviceSlots(notifyCollectionAfterRead=false){
   const received=rows.filter(r=>r.received).length;
   status.textContent='Selesai: '+received+'/10 record mentah merespons. Pembacaan nama native memerlukan APK Android.';
   copyButton.disabled=received===0;
-  if(received===10)toast('10 record mentah dibaca');
-  else toast('Pembacaan selesai: '+received+'/10 record');
+  if(received===10)toast('10 record mentah dibaca',1900,'nam');
+  else toast('Pembacaan selesai: '+received+'/10 record',1900,'nam');
  }catch(error){
   status.textContent='Gagal menyinkronkan nama NAM dari MG-30: '+String(error&&error.message||error);
-  toast('Gagal membaca nama NAM');
+  toast('Gagal membaca nama NAM',1900,'nam');
  }finally{
   button.dataset.busy='0';button.disabled=false;button.textContent='Baca ulang 10 nama NAM';
   if(notifyCollectionAfterRead)window.dispatchEvent(new CustomEvent('mg30-nam-sync-complete'));
@@ -3587,7 +3589,7 @@ window.addEventListener('mg30-native-midi-ready',()=>{
  if(document.readyState==='complete')startInitialScan();
  else window.addEventListener('load',startInitialScan,{once:true});
 },{once:true});
-$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
+$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan',1900,'preset')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
 
 function ctrlEditorEnter() {
  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung melalui USB-MIDI.');
@@ -3658,7 +3660,7 @@ window.MG30PresetImportBridge=Object.freeze({
    }
    readbackMatched=true;
    setDeviceStatus('Impor '+slotName(plan.targetProgram)+' selesai · 78 ACK · tiga scene lolos readback.');
-   toast('Preset diimpor dan tiga scene diverifikasi');
+   toast('Preset diimpor dan tiga scene diverifikasi',1900,'preset');
    return {success:true,framesAcknowledged:acknowledged,sceneReadback:readbackMatched,resourceName:plan.resourceName,targetProgram:plan.targetProgram};
   }catch(error){
    const detail='Berhenti setelah '+acknowledged+'/78 ACK'+(currentStep?' pada '+currentStep.kind+' #'+currentStep.index:'')+'. '+(error?.message||String(error));
@@ -3746,7 +3748,7 @@ window.MG30PresetImportBridge=Object.freeze({
     onProgress({completed:acknowledged,total:plan.totalFrames,phase:'Verifikasi readback',verifiedPrograms,verifiedScenes:verifiedPrograms*3});
    }
    setDeviceStatus('Import All selesai · '+acknowledged.toLocaleString('id-ID')+' ACK · 128 preset / 384 scene lolos readback.');
-   toast('128 preset berhasil diimpor dan diverifikasi');
+   toast('128 preset berhasil diimpor dan diverifikasi',1900,'preset');
    return {success:true,framesAcknowledged:acknowledged,verifiedPrograms,verifiedScenes:verifiedPrograms*3,resourcePrograms:plan.resourcePrograms};
   }catch(error){
    const detail='Berhenti setelah '+acknowledged+'/'+plan.totalFrames+' ACK'+(currentStep?' pada '+currentStep.kind+(Number.isInteger(currentStep.program)?' program '+currentStep.program:''):'')+'. '+(error?.message||String(error));
