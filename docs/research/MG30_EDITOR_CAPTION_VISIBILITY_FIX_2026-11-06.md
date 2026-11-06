@@ -64,3 +64,13 @@ The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 
 - Packaged HTML/CSS inspection passed for the hashed Vite stylesheet reference, short/regular frame and artwork dimensions, fixed caption rail and inset, category-specific SVG widths, visible AMP/Speaker Cabinet/Based on markup, and bottom-anchored full-height Scene buttons.
 - The original source stylesheet query token is replaced by Vite with a hashed production CSS asset; the built HTML correctly references that single hashed asset.
 - This is CI and packaged-asset verification. Final visual confirmation on the actual Android phone remains pending.
+
+
+## User-requested final cleanup — IMAGE captions and toast scope (6 November 2026)
+
+- User confirmed Build #652 on the physical Android device: all three Scene cards are visible, artwork sizing/layout is good, USB-MIDI connected, and preset name readback is working.
+- New screenshot issue: IMAGE-based AMP and EFX/pedal show overlapping descriptive text. Keep the category label and IMAGE badge on the artwork; suppress the caption-rail origin chip, Based on row and IMAGE disclaimer only when `origin === "IMAGE"` and block is AMP or EFX. Do not suppress captions for other block types or GEN2/NAM/IR.
+- Toast policy: default `toast(...)` calls are now no-ops. Toast is rendered only when explicitly scoped to `preset`, `nam`, or `ir`, representing device synchronization/readback/import operations. Local draft actions, scene changes/copy, signal-chain edits, connection prompts, validation hints, clipboard, favorites, and other incidental feedback no longer open a toast. IR Collection synchronization explicitly uses scope `ir`.
+- Preserve status-panel messages and native progress dialogs; this change only gates the floating toast.
+- Keep original MG-30 GEN2 6.0.x protocol behavior, NAM transfer, IR User/Third Party and Collection transfer, preset import/export, USB-MIDI, and MIDI/CC mappings unchanged.
+- Required verification: full regression suite, Vite build, Capacitor generation, Gradle APK build, then inspect packaged JS/CSS to ensure IMAGE captions are suppressed and toast scope gate is bundled.
