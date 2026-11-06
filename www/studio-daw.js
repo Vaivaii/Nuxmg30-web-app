@@ -662,9 +662,7 @@ function renderOutputRoutingPanel() {
   }
 }
 
-// Hardware monitoring controls are intentionally read-only until the MG-30
-// write protocol has been validated against a real device capture. Never send
-// guessed SysEx frames from these controls.
+// Experimental candidate SysEx controls. Header action and payload offsets are hypotheses; only send after user interaction.
 function renderHardwareLevelPanel() {
   const host = $('dawTrackSettingsPage');
   if (!host) return;
@@ -675,10 +673,10 @@ function renderHardwareLevelPanel() {
     panel.dataset.dawHardwareLevels = 'true';
     panel.innerHTML =
       '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Local UI test for Loopback and USB recording/playback levels.</p></div></div>' +
-      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>UI preview only; does not change the pedal.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">64 / 127</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="127" value="64"></div>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">64 / 127</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="127" value="64"></div>' +
-      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">TEST MODE — these controls update this screen only. No SysEx/MIDI is sent to the MG-30, so pedal settings will not change. Hardware write protocol for Gen 2 firmware 6.0.x is still unverified. NAM, IR, and MIDI mappings remain untouched.</p>';
+      '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Experimental candidate WRITE; check pedal response.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" value="50"></div>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">64 / 127</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" value="50"></div>' +
+      '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">EXPERIMENTAL WRITE MODE — candidate SysEx is sent only after user changes a control. Header/action/offsets are not verified; confirm pedal response. NAM, IR, and MIDI mappings remain untouched.</p>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
     else host.appendChild(panel);
@@ -688,20 +686,31 @@ function renderHardwareLevelPanel() {
   const playback = $('dawHardwarePlaybackLevel');
   const recordReadout = $('dawHardwareRecordReadout');
   const playbackReadout = $('dawHardwarePlaybackReadout');
-  if (record && recordReadout && !record.dataset.previewBound) {
-    record.addEventListener('input', () => { recordReadout.textContent = record.value + ' / 127'; });
-    record.dataset.previewBound = 'true';
+  if (record && recordReadout && !record.dataset.candidateBound) {
+    let timer = null;
+    record.addEventListener('input', () => {
+      recordReadout.textContent = record.value + ' / 100';
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (typeof window.setRecLevel === 'function') void window.setRecLevel(record.value); }, 300);
+    });
+    record.dataset.candidateBound = 'true';
   }
-  if (playback && playbackReadout && !playback.dataset.previewBound) {
-    playback.addEventListener('input', () => { playbackReadout.textContent = playback.value + ' / 127'; });
-    playback.dataset.previewBound = 'true';
+  if (playback && playbackReadout && !playback.dataset.candidateBound) {
+    let timer = null;
+    playback.addEventListener('input', () => {
+      playbackReadout.textContent = playback.value + ' / 100';
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (typeof window.setPlayLevel === 'function') void window.setPlayLevel(playback.value); }, 300);
+    });
+    playback.dataset.candidateBound = 'true';
   }
-  if (loopback && !loopback.dataset.previewBound) {
+  if (loopback && !loopback.dataset.candidateBound) {
     loopback.addEventListener('change', () => {
       const note = panel.querySelector('.daw-hardware-protocol-note');
-      if (note) note.textContent = 'TEST MODE — UI state: Loopback ' + (loopback.checked ? 'ON' : 'OFF') + '. This is only a visual preview; no command was sent to the pedal.';
+      if (note) note.textContent = 'EXPERIMENTAL WRITE candidate sent: Loopback ' + (loopback.checked ? 'ON' : 'OFF') + '. Check pedal response; header/offset not verified.';
+      if (typeof window.setLoopback === 'function') void window.setLoopback(loopback.checked);
     });
-    loopback.dataset.previewBound = 'true';
+    loopback.dataset.candidateBound = 'true';
   }
 }
 
