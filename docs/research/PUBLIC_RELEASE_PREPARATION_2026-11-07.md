@@ -58,4 +58,9 @@ The owner selected **GPL-3.0-only** on 7 November 2026. A canonical GPL-3.0-only
 
 ## Current status
 
-GPL-3.0-only selection and the canonical LICENSE file are recorded in the release-prep README, guide, checklist and this research note. No lockfile workflow was run, no `package-lock.json` has been committed, no signed APK was built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. The source branch and functional app code remain unchanged.
+- Release-preparation branch HEAD: `3078f519c514b7250564ec0c8a223bd1c7bbc1c1`.
+- Default `main` HEAD: `e67d52663ca1f9ffadd70875d03c254edc99e930` (README-only update; application source not merged).
+- Compared with Build #669 source commit, the release-preparation branch changes only documentation and two GitHub Actions workflow files; no application runtime or protocol source files differ.
+- The branch currently has zero Actions runs and the repository has zero GitHub Releases.
+
+GPL-3.0-only selection and the canonical LICENSE file are recorded in the release-prep README, guide, checklist and this research note. The source-audited privacy notice, preliminary direct dependency license inventory and contributor guide are present. The deterministic lockfile workflow is prepared but has not been run, so no `package-lock.json` is committed yet. The signed release workflow requires the lockfile and uses `npm ci`, so it will stop until that prerequisite exists. No signed APK was built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. Functional app code remains unchanged.
