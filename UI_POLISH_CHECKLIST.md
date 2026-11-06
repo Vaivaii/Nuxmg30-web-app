@@ -3704,3 +3704,10 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Artifact ID `13488109760`; extracted APK SHA-256 `70581af246c7c028330d67b4079bfc65573c127e573ba49d39981182d4212af1`.
 - Android native plugin echoes the 46-byte 14/01 array passed to `MidiInputPort.send()`; UI displays Playback offsets 0x1E/0x1F, native-vs-JS equality and 14/03 ACK.
 - Diagnostic receipt is not a bus capture; no outbound MIDI bytes or mappings have changed. Physical diagnostic test pending.
+
+
+## Release-facing Hardware Levels polish — 6 November 2026
+
+- Record and Playback sliders now show -12.0 to +12.0 dB with default exactly centered at 0.0 dB. Signed one-decimal labels update live during drag; USB-MIDI writes keep the existing 220 ms debounce.
+- Record raw anchors remain 0 / 50 / 100 at -12 / 0 / +12 dB. Playback 14-bit anchors remain 0 / 100 / 201 at -12 / 0 / +12 dB; its lower endpoint is symmetric interpolation pending physical confirmation.
+- Temporary native MIDI diagnostic box and hex echo are removed. No changes to NAM, IR User/Third Party/Collection, presets, MIDI mappings, Signal Chain, Loopback or USB audio.

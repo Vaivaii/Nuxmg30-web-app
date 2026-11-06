@@ -240,3 +240,12 @@ This fixes the previously unsupported slider scaling assumption. The full physic
 - This receipt verifies the exact buffer submitted to `MidiInputPort.send()`; it is not a passive USB bus capture. It does not modify the outgoing packet.
 - No changes to Playback 14-bit mapping, Record Level, Loopback, MIDI queue, ACK filter, NAM, IR User/Third Party/Collection, preset, Signal Chain, MIDI/CC mapping or DAW audio paths.
 - User physical test pending: install diagnostic APK, move Playback to 150, then report the displayed `OUT 0x1E/0x1F` pair and whether the native echo says `matches` or `DIFFERS`. Expected at UI 150 is `01 49`; if correct with ACK but device still displays +3 dB, further investigation must focus on USB bus/device interpretation rather than slider math.
+
+
+## Release UI: centered dB sliders and diagnostic removal (2026-11-06)
+
+- Both Record and Playback controls now display the pedal's signed level scale: minimum -12.0 dB, default/center 0.0 dB, maximum +12.0 dB, step 0.1 dB. Readouts update on each slider input event; hardware writes retain the existing 220 ms debounce.
+- Record retains captured raw anchors: -12 dB -> 0, 0 dB -> 50, +12 dB -> 100 at offset 0x1D.
+- Playback retains the captured 14-bit pair at offsets 0x1E/0x1F: 0 dB -> raw 100 (00 64), +12 dB -> raw 201 (01 49). The -12 dB endpoint is mapped symmetrically to raw 0; that lower endpoint is a linear interpolation assumption and should be checked during final device QA.
+- Removed the temporary Playback diagnostic row and native Java sysexHex echo; normal Android MidiInputPort.send and existing USB-MIDI payload/ACK behavior are restored.
+- Record/Playback offsets, Loopback offset 0x20, complete 46-byte frame validation, serial queue, ACK 14/03, NAM, IR User/Third Party/Collection, presets, Signal Chain and MIDI mapping remain protected.

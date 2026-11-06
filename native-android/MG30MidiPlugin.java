@@ -231,31 +231,10 @@ public class MG30MidiPlugin extends Plugin {
             JSObject result = new JSObject();
             result.put("sent", true);
             result.put("bytes", bytes.length);
-            if (bytes.length == 46
-                && (bytes[0] & 0xFF) == 0xF0
-                && (bytes[1] & 0xFF) == 0x43
-                && (bytes[2] & 0xFF) == 0x58
-                && (bytes[3] & 0xFF) == 0x70
-                && (bytes[4] & 0xFF) == 0x14
-                && (bytes[5] & 0xFF) == 0x01
-                && (bytes[45] & 0xFF) == 0xF7) {
-                result.put("sysexHex", bytesToHex(bytes));
-            }
             call.resolve(result);
         } catch (JSONException | IOException error) {
             call.reject("Pengiriman MIDI gagal: " + error.getMessage());
         }
-    }
-
-    private static String bytesToHex(byte[] bytes) {
-        final char[] hex = "0123456789ABCDEF".toCharArray();
-        StringBuilder result = new StringBuilder(bytes.length * 2);
-        for (byte value : bytes) {
-            int unsigned = value & 0xFF;
-            result.append(hex[(unsigned >>> 4) & 0x0F]);
-            result.append(hex[unsigned & 0x0F]);
-        }
-        return result.toString();
     }
 
     private static boolean isSupportedPatchSize(int length) {
