@@ -672,10 +672,10 @@ function renderHardwareLevelPanel() {
     panel.className = 'daw-settings-section daw-output-routing-card daw-hardware-levels-card';
     panel.dataset.dawHardwareLevels = 'true';
     panel.innerHTML =
-      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Local UI test for Loopback and USB recording/playback levels.</p></div></div>' +
+      '<div class="daw-project-settings-heading"><div><h4>MG-30 Hardware Levels</h4><p>Experimental candidate control for Loopback and USB recording/playback levels.</p></div></div>' +
       '<label class="daw-hardware-toggle"><span><strong>USB Loopback</strong><small>Experimental candidate WRITE; check pedal response.</small></span><input type="checkbox" id="dawHardwareLoopback"></label>' +
       '<div class="daw-hardware-level-row"><label for="dawHardwareRecordLevel">Record Level <strong id="dawHardwareRecordReadout">50 / 100</strong></label><input id="dawHardwareRecordLevel" type="range" min="0" max="100" value="50"></div>' +
-      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">64 / 127</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" value="50"></div>' +
+      '<div class="daw-hardware-level-row"><label for="dawHardwarePlaybackLevel">Playback Level <strong id="dawHardwarePlaybackReadout">50 / 100</strong></label><input id="dawHardwarePlaybackLevel" type="range" min="0" max="100" value="50"></div>' +
       '<p class="daw-inspector-note daw-hardware-protocol-note" role="status">EXPERIMENTAL WRITE MODE — candidate SysEx is sent only after user changes a control. Header/action/offsets are not verified; confirm pedal response. NAM, IR, and MIDI mappings remain untouched.</p>';
     const outputPanel = host.querySelector('[data-daw-output-routing]');
     if (outputPanel?.nextSibling) host.insertBefore(panel, outputPanel.nextSibling);
