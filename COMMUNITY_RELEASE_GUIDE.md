@@ -73,4 +73,4 @@ The application ID is `com.vaivaii.mg30studio`. The first signed release uses ve
 
 The source license is now selected and the `LICENSE` file is present. Remaining legal review includes confirming the project has authority to license all first-party code and auditing third-party dependencies and bundled assets.
 
-A public privacy notice is also required before broad distribution. Review the app's network/API integrations, OAuth flow, permissions, local storage and any diagnostics before making privacy promises. Do not publish a privacy statement based on assumptions; inspect the actual app and generated Android manifest first.
+A source-audited draft privacy notice now exists at `PRIVACY.md`. It documents the observed TONE3000 OAuth/API flow, YouTube API/embed, localStorage data, USB-MIDI, audio recording, and the current camera-permission uncertainty. It must be checked against the final generated manifest and release APK before publication. A preliminary direct-dependency license inventory is in `THIRD_PARTY_NOTICES.md`; it is not a complete SBOM because no lockfile exists yet.
