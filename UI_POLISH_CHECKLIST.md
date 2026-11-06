@@ -3821,3 +3821,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Added regression tests for the exact z-index ordering and explicit SVG widths; tests assert the previous invalid `width:auto` behavior is absent from the final Editor card style.
 - This change is strictly UI CSS/markup and test coverage. It does not change NAM, custom IR transfer, Collection IR, preset logic, Signal Chain, USB-MIDI, hardware communication, MIDI IDs or CC mappings.
 - Build #645 pending; physical verification still required after install.
+
+- Build #645 stopped before APK because one pre-existing card-proportion test still expected the superseded SVG height percentages (301/302 passed). That test now checks the values that must remain invariant—116px/105px stage and 46px Scene cards—while a separate new test validates the replacement explicit SVG width bounds. Runtime source is unchanged by this correction; Build #646 reruns the full suite and APK build.
