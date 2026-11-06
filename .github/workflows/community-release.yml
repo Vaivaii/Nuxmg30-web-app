@@ -1,0 +1,169 @@
+name: MG30 Studio Community Release (signed candidate)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Community version tag, e.g. v1.0.0-community.1"
+        required: true
+        type: string
+        default: "v1.0.0-community.1"
+      create_draft_release:
+        description: "Create a GitHub draft release after the signed APK passes verification"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  signed-community-candidate:
+    name: Test, sign, verify and package community APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-community\.[0-9]+$ ]]; then
+            echo "Invalid community release tag: $RELEASE_TAG"
+            exit 1
+          fi
+
+      - name: Checkout immutable Build 669 source
+        uses: actions/checkout@v4
+        with:
+          ref: b67a3196fba5191741399fc8bcb79c7d5a5babfb
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies and run regression suite
+        run: |
+          npm install
+          node --check scripts/init-android.mjs
+          npm test
+
+      - name: Prepare and validate release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mg30-studio-community.p12"
+          test -s "$RUNNER_TEMP/mg30-studio-community.p12"
+          keytool -list -keystore "$RUNNER_TEMP/mg30-studio-community.p12" -storetype PKCS12 -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "MG30_KEYSTORE_PATH=$RUNNER_TEMP/mg30-studio-community.p12" >> "$GITHUB_ENV"
+
+      - name: Generate Android project
+        run: npm run android:init
+
+      - name: Configure release signing and version metadata
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          cat > "$RUNNER_TEMP/mg30-community-signing.init.gradle" <<'GRADLE'
+          gradle.projectsEvaluated {
+            rootProject.allprojects.each { project ->
+              if (project.plugins.hasPlugin("com.android.application")) {
+                def androidExt = project.extensions.findByName("android")
+                def signing = androidExt.signingConfigs.findByName("communityRelease")
+                if (signing == null) signing = androidExt.signingConfigs.create("communityRelease")
+                signing.storeFile = new File(System.getenv("MG30_KEYSTORE_PATH"))
+                signing.storeType = "PKCS12"
+                signing.storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                signing.keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                signing.keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                androidExt.buildTypes.getByName("release").signingConfig = signing
+                androidExt.defaultConfig.versionCode = 1
+                androidExt.defaultConfig.versionName = System.getenv("RELEASE_TAG").replaceFirst("^v", "")
+              }
+            }
+          }
+          GRADLE
+          echo "MG30_SIGNING_INIT=$RUNNER_TEMP/mg30-community-signing.init.gradle" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        run: |
+          cd android
+          ./gradlew --no-daemon assembleRelease -I "$MG30_SIGNING_INIT"
+
+      - name: Verify APK, package identity and checksum
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee android/app/build/outputs/apk/release/signature-verification.txt
+          grep -q "Signer #1 certificate SHA-256 digest" android/app/build/outputs/apk/release/signature-verification.txt
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          "$AAPT" dump badging "$APK" | tee android/app/build/outputs/apk/release/apk-badging.txt
+          grep -q "package: name='com.vaivaii.mg30studio'" android/app/build/outputs/apk/release/apk-badging.txt
+          cd android/app/build/outputs/apk/release
+          sha256sum app-release.apk > app-release.apk.sha256
+          cd "$GITHUB_WORKSPACE"
+          cp android/app/build/outputs/apk/release/app-release.apk MG30-Studio-Community.apk
+          cp android/app/build/outputs/apk/release/app-release.apk.sha256 MG30-Studio-Community.apk.sha256
+          cp android/app/build/outputs/apk/release/signature-verification.txt MG30-Studio-Community-signature.txt
+          cp android/app/build/outputs/apk/release/apk-badging.txt MG30-Studio-Community-package-info.txt
+
+      - name: Upload signed APK audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MG30-Studio-Community-Signed-Candidate
+          path: |
+            MG30-Studio-Community.apk
+            MG30-Studio-Community.apk.sha256
+            MG30-Studio-Community-signature.txt
+            MG30-Studio-Community-package-info.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create GitHub draft release (optional)
+        if: inputs.create_draft_release == true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          target_commitish: b67a3196fba5191741399fc8bcb79c7d5a5babfb
+          name: MG30 Studio ${{ inputs.release_tag }} — Community Edition
+          draft: true
+          prerelease: true
+          make_latest: false
+          body: |
+            MG30 Studio Community Edition for the original NUX MG-30 Gen 2, firmware 6.0.x.
+
+            This is a signed release candidate built from source commit b67a3196fba5191741399fc8bcb79c7d5a5babfb (Build #669). It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
+
+            Verify the SHA-256 checksum before installation. Review the compatibility and known-limitations notes before using device-write operations.
+
+            Independent community project; not affiliated with NUX.
+          files: |
+            MG30-Studio-Community.apk
+            MG30-Studio-Community.apk.sha256
+            MG30-Studio-Community-signature.txt
+            MG30-Studio-Community-package-info.txt
+          fail_on_unmatched_files: true
