@@ -36,7 +36,7 @@ All other frame bytes are preserved. Writes are serialized through a dedicated h
 
 ## Slider scaling qualification
 
-The UI slider uses a 0–100 normalized value. The wire conversion maps that normalized value linearly across the minimum and maximum raw values observed in the supplied capture samples:
+The UI slider uses a 0–100 normalized value. The wire conversion maps that normalized value linearly across the lowest and highest raw values observed in the supplied capture samples. The on-screen explanatory warning note has been removed; ACK/failure feedback is sent to the existing visually hidden DAW live-status region:
 - Record Level: `0x34..0x3C`
 - Playback Level: `0x68..0x7A`
 
