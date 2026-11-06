@@ -176,3 +176,18 @@ Run #7: [42291743508](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42
 - Release branch fix commit: `8ffdff060afe50250fb81746608ba322c39f4eab`; main: `304af06b910d2d9c00aac0e33fa40d35c38e1e48`.
 - No app runtime/protocol code changed.
 - Next: rerun signed candidate from release branch with same tag and draft=false; verify assembleRelease, apksigner, package ID, SHA-256 and artifact.
+
+
+## Signed candidate run #8 — APK signing succeeded; verifier output matcher corrected — 7 November 2026
+
+Run #8, Attempt 2: [42292044547](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42292044547), checked-out commit `db4649d08dd4e8b5d54daad28945baa8e1fe9dd5`.
+- Owner updated `ANDROID_KEY_PASSWORD` to match the PKCS#12 keystore password.
+- `npm ci` and all 310/310 regression tests passed.
+- Keystore Base64 decoding, store password and alias validation passed.
+- Android project generation and Gradle signing configuration passed.
+- `assembleRelease` completed with **BUILD SUCCESSFUL**; the release APK was created and signed.
+- `apksigner verify --verbose --print-certs` itself succeeded and reported one V2 signer, RSA 4096-bit, certificate SHA-256 `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Workflow verification failed only because its grep expected the literal text `Signer #1 certificate SHA-256 digest`, while the installed Android Build Tools print `V2 Signer: certificate SHA-256 digest:`. This is a workflow-output matcher bug, not an APK/signing failure. Package-ID and checksum checks were not reached; artifact upload was skipped.
+- Corrected the signature matcher on `release/community-prep-v2` to require the actual V2 certificate SHA-256 digest line and a 64-character hexadecimal digest. Fix commit: `89ffbd7db7fa9992712c3e7f83cd0b917dac6b7a`.
+- Next: dispatch the signed candidate workflow from the updated release branch with tag `v1.0.0-community.1` and `create_draft_release=false`. Verify signature, package ID, checksum and uploaded artifact. Do not publish a release yet.
+- No app runtime or protocol source changed. NAM, User/Third Party IR, IR Collection, MIDI mappings, USB-MIDI and device communication remain untouched.
