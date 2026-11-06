@@ -142,3 +142,36 @@ test('Editor artwork SVGs have explicit bounded widths instead of intrinsic auto
   assert.match(stageRules, /gear-art-loop \.gear-svg\s*\{[^}]*width:40%!important;[^}]*height:100%!important/s);
   assert.doesNotMatch(stageRules, /gear-art-(?:amp|pedal|cabinet|expression|loop) \.gear-svg\s*\{[^}]*width:auto!important/s);
 });
+
+
+test('all Editor model types share one fixed artwork frame and an independent non-clipped caption rail',()=>{
+  const start=html.indexOf('<style id="editor-fixed-model-frame-scene-anchor">');
+  const end=html.indexOf('</style>',start);
+  assert.ok(start>=0&&end>start,'missing final fixed model frame override');
+  const rules=html.slice(start,end);
+  assert.match(rules,/#modelVisual\.model-visual-stage\s*\{[^}]*height:198px!important/s);
+  assert.match(rules,/#modelVisual \.gear-visual\.vector-visual\s*\{[^}]*height:198px!important/s);
+  assert.match(rules,/#modelVisual \.gear-art\s*\{[^}]*height:142px!important/s);
+  assert.match(rules,/#modelVisual \.gear-copy\s*\{[^}]*height:56px!important/s);
+  assert.match(rules,/#modelVisual \.gear-copy\s*\{[^}]*overflow:visible!important/s);
+  assert.match(rules,/gear-art-amp \.gear-svg\s*\{[^}]*width:62%!important/s);
+  assert.match(rules,/gear-art-pedal \.gear-svg\s*\{[^}]*width:30%!important/s);
+  assert.match(rules,/gear-art-cabinet \.gear-svg\s*\{[^}]*width:54%!important/s);
+  assert.match(rules,/gear-art-expression \.gear-svg\s*\{[^}]*width:34%!important/s);
+  assert.match(rules,/gear-art-loop \.gear-svg\s*\{[^}]*width:40%!important/s);
+  assert.match(rules,/\.gear-copy \.gear-type\s*\{[^}]*white-space:nowrap!important/s);
+  assert.match(rules,/\.gear-copy \.based-on\s*\{[^}]*-webkit-line-clamp:2!important/s);
+  assert.match(rules,/\.model-origin-note\s*\{[^}]*-webkit-line-clamp:2!important/s);
+});
+
+test('Editor Scenes are anchored to the lower edge with consistent breathing room and taller touch targets',()=>{
+  const start=html.indexOf('<style id="editor-fixed-model-frame-scene-anchor">');
+  const end=html.indexOf('</style>',start);
+  const rules=html.slice(start,end);
+  assert.match(rules,/\.scene-bar\s*\{[^}]*margin:auto 0 0!important/s);
+  assert.match(rules,/\.scene-bar\s*\{[^}]*padding:12px 0 2px!important/s);
+  assert.match(rules,/\.scene-button\s*\{[^}]*min-height:64px!important/s);
+  assert.match(rules,/\.main-editor-card\s*\{[^}]*padding-bottom:16px!important/s);
+  assert.ok(css.includes('body > .app > #page-editor > .editor'));
+  assert.ok(css.includes('overflow: hidden !important'));
+});

@@ -3823,3 +3823,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Build #645 pending; physical verification still required after install.
 
 - Build #645 stopped before APK because one pre-existing card-proportion test still expected the superseded SVG height percentages (301/302 passed). That test now checks the values that must remain invariant—116px/105px stage and 46px Scene cards—while a separate new test validates the replacement explicit SVG width bounds. Runtime source is unchanged by this correction; Build #646 reruns the full suite and APK build.
+
+
+## Fixed model artwork frame + bottom-anchored Scenes — Build #647 pending — 6 November 2026
+
+- User approved two UI decisions: (1) one fixed artwork frame shared by AMP, pedals, cabinet IR and all other model categories; image size remains category-specific inside the same frame; (2) Scenes anchored at the bottom of the existing main Editor card.
+- Branch `feature/editor-fixed-model-frame-scene-anchor` was created directly from Build #646 source commit `10cff1827a42b08a66f08039269bc369cec804d6`. No cherry-pick or rollback.
+- Current issue diagnosed: the `#modelVisual` wrapper was being clipped at a short fixed height while its child `.gear-copy` contained category, Based on and optional origin note. That allowed the Speaker Cabinet category label to be cut off. The model artwork and caption were not separated into independent fixed layout rails.
+- New final inline style block creates a consistent mobile model visual unit: 198px total, with 142px artwork frame and 56px independent caption rail. On short-height phones the entire unit scales to 182px (126px artwork + 56px caption), equally for every model category. SVGs retain per-category explicit width bounds and `object-fit:contain`.
+- Caption rail is visible and fixed-height; category title, two-line Based on text and optional two-line origin note have their own bounded slots. Only artwork frame clips overflow; caption rail does not.
+- Scene strip is pushed to the bottom of the fixed Editor card with `margin-top:auto`; card bottom padding is 16px, Scene top separation 12px, and touch targets are 64px tall. Editor viewport remains locked; no scrolling added.
+- Only `www/index.html`, UI regression tests, workflow branch allowlist, and this checklist are changed. No header, dock, tab animation, Studio behavior, NAM, IR transfer/Collection, preset, Signal Chain, USB-MIDI or MIDI/CC mapping code changed.
+- Regression tests now assert fixed stage/visual dimensions, independent unclipped caption, all category widths, Scene bottom anchoring, button dimensions and locked Editor viewport. Build #647 pending.
