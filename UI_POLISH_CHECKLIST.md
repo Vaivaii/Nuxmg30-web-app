@@ -3800,3 +3800,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Automated regression and new Build #640 pending. Device-level video validation remains pending after installation.
 
 - Build #640 found one stale Studio UI test (302/303 passed) that required deferred `requestAnimationFrame` dock positioning. Updated that test to require the new synchronous pre-reveal measurement and verify that the delayed reposition is absent. No application runtime logic was changed in this test-only correction. Build #641 is the rerun.
+
+## Build #641 validation and APK inspection — 6 November 2026
+
+- GitHub Actions run: `42222668436`, Build #641, branch `feature/editor-artwork-panel-nav-refinement`, source commit `60ae25e1fdc731a6dca9b5c34a1aa37ef8e64a73`, completed successfully.
+- Automated protocol/UI regression suite: **303 passed, 0 failed**. Android initializer syntax passed; Capacitor Android generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m`; artifact upload passed.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `13503164772`, ZIP size 4,224,667 bytes. ZIP SHA-256: `23a3c0dd33158c580425884c28e656539589120f87c886b8e7a763edf025b9a6`.
+- Extracted APK: `MG30-Studio-Build-641.apk`, 4,601,836 bytes. APK SHA-256: `843d66db65a48b1d1ff2a2feab41416f1df265a717cb45f93b2f0030dcbefd7a`. APK ZIP-structure test passed with no corrupt entries.
+- Inspected packaged WebView payload: gear category classes for AMP, cabinet IR, expression pedal and regular pedals; category scale rules AMP 0.92 / pedal 0.80 / cabinet 0.78 / expression 0.72 / FX loop 0.84; parameter panel uses `height:auto`, zero minimum height and capped maximum height; app-shell gradient background is present; synchronous Studio dock alignment call and exported helper are present.
+- This validation proves code inclusion, syntax/test pass, production asset generation and Android debug APK build. It does **not** constitute a physical-device check of screen-recorded transitions or a measured 60 fps frame-time benchmark. Device verification is the remaining step.
+- The baseline Build #639 branch remains unchanged. No NAM, IR, presets, Signal Chain, USB-MIDI, MIDI/CC mapping or pedal communication source was modified.

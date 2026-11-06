@@ -57,3 +57,14 @@ Requested changes:
 ## CI assertion correction
 - Build #640 failed one pre-existing test that explicitly required `window.requestAnimationFrame(syncStudioPinnedControls)`. That delayed reposition was intentionally removed to prevent the visible Studio dock drop. Updated the test to assert that `MG30SyncStudioPinnedControls` is called by `showPage('studio')` before page reveal, and that the deferred reposition no longer exists.
 - All 302 other tests passed. Build #641 is the corrected CI rerun.
+
+
+## Build #641 validation and APK inspection — 6 November 2026
+
+- GitHub Actions run: `42222668436`, Build #641, branch `feature/editor-artwork-panel-nav-refinement`, source commit `60ae25e1fdc731a6dca9b5c34a1aa37ef8e64a73`, completed successfully.
+- Automated protocol/UI regression suite: **303 passed, 0 failed**. Android initializer syntax passed; Capacitor Android generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m`; artifact upload passed.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `13503164772`, ZIP size 4,224,667 bytes. ZIP SHA-256: `23a3c0dd33158c580425884c28e656539589120f87c886b8e7a763edf025b9a6`.
+- Extracted APK: `MG30-Studio-Build-641.apk`, 4,601,836 bytes. APK SHA-256: `843d66db65a48b1d1ff2a2feab41416f1df265a717cb45f93b2f0030dcbefd7a`. APK ZIP-structure test passed with no corrupt entries.
+- Inspected packaged WebView payload: gear category classes for AMP, cabinet IR, expression pedal and regular pedals; category scale rules AMP 0.92 / pedal 0.80 / cabinet 0.78 / expression 0.72 / FX loop 0.84; parameter panel uses `height:auto`, zero minimum height and capped maximum height; app-shell gradient background is present; synchronous Studio dock alignment call and exported helper are present.
+- This validation proves code inclusion, syntax/test pass, production asset generation and Android debug APK build. It does **not** constitute a physical-device check of screen-recorded transitions or a measured 60 fps frame-time benchmark. Device verification is the remaining step.
+- The baseline Build #639 branch remains unchanged. No NAM, IR, presets, Signal Chain, USB-MIDI, MIDI/CC mapping or pedal communication source was modified.
