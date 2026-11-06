@@ -40,7 +40,7 @@
 - [ ] Review NUX name/logo and other third-party artwork/marks; retain non-affiliation notice.
 - [ ] Prepare installation, update, troubleshooting and backup instructions.
 - [ ] Prepare release notes and known-issues section.
-- [ ] Confirm support/contact channel and issue-reporting template.
+- [x] Confirm GitHub Issues as the public support and issue-reporting channel; add `CONTRIBUTING.md` guidance.
 - [ ] Review APK permissions and release package contents.
 
 ## Publication gate
