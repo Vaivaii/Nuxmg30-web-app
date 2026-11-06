@@ -42,6 +42,7 @@ test('Android Back dismisses transient dialogs and exits the app when no dialog 
   assert.ok(presetLibrarySource.includes("window.MG30PresetExportBusy"));
   assert.ok(presetLibrarySource.includes("window.MG30IRTransferBusy"));
   assert.ok(presetLibrarySource.includes("window.MG30PresetManagerBusy"));
+  assert.ok(presetLibrarySource.includes('activeDeviceOperation() ||'));
   assert.ok(presetLibrarySource.includes("topDialog.dataset.state === 'loading'"));
   assert.ok(presetLibrarySource.includes("topDialog.dataset.owner === 'import'"));
   assert.ok(presetLibrarySource.includes("topDialog.dataset.owner === 'export'"));

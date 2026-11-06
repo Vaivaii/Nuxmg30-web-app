@@ -186,6 +186,7 @@ function initPresetLibraryUI() {
   // Capacitor may navigate the WebView history instead of exiting the activity.
   async function handleAndroidBackButton() {
     const transferActive = Boolean(
+      activeDeviceOperation() ||
       window.MG30PresetManagerBusy ||
       window.MG30PresetImportBusy ||
       window.MG30PresetExportBusy ||
