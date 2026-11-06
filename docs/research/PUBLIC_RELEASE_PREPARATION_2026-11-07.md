@@ -44,7 +44,8 @@ The release workflow:
 5. Import All has a documented program 72 / scene 0 readback mismatch; Export All end-to-end remains unvalidated. Do not market either as fully verified.
 6. First signed APK will have a different certificate from the installed debug APK. The user may need to back up app data, uninstall the debug build, then install the signed build. Keep the same release key for all future updates and increment versionCode after the first release.
 7. Review NUX/Cherub marks, bundled artwork and third-party assets before broad public distribution.
-8. The GitHub default branch remains `main` and is not synchronized with the current Android app source. The release-prep branch must not be merged into main without a deliberate reconciliation plan.
+8. The GitHub default branch remains `main` and is not synchronized with the current Android app source. Its README has now been replaced with a release-status landing page that links to the current Android source/release-prep branch; no application source was merged into main. Do not merge branches without a deliberate reconciliation plan.
+9. No `package-lock.json` exists in the current source tree. Add a lockfile and use deterministic `npm ci` before the final public build; the current candidate workflow follows the existing CI's `npm install` behavior.
 
 ## Current status
 
