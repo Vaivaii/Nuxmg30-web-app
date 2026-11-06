@@ -22,3 +22,9 @@ No changes are made to NAM transfer/protocol code, IR transfer/import paths or C
 - Automated checks: `npm test` (executed by the Android Build workflow).
 - Android build: `npm run android:init` followed by `./gradlew --no-daemon assembleDebug` (executed by the Android Build workflow).
 - A successful CI build validates compilation and automated tests; physical Android Back-button behavior still requires verification on a handset before public release.
+
+## Follow-up copy audit
+
+- Extended central English dictionary coverage to dynamic IR transfer errors, Collection status labels, preset readback feedback, Export All/Single status, IR name metadata, and NAM model validation errors.
+- Corrected the dynamic IR Collection error prefix handling so the translated message retains the complete original error detail.
+- Added regression cases for these dynamic messages.

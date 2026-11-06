@@ -75,6 +75,24 @@ test('Global English copy covers all remaining visible Indonesian interface labe
     ['Import All selesai: 128 preset dan 384 scene telah diverifikasi.', 'Import All complete: all 128 presets and 384 scenes have been verified.']
   ]);
   for (const [source, expected] of cases) assert.equal(translate(source), expected, source);
+
+  const dynamicCases = [
+    ['Android tidak mengonfirmasi penyimpanan file Export All.', 'Android did not confirm that the Export All file was saved.'],
+    ['128 preset selesai dibaca. Menyusun satu file bank…', 'All 128 presets have been read. Building a single bank file…'],
+    ['Export All berhenti sebelum 128 record berhasil dibaca.', 'Export All stopped before all 128 records could be read.'],
+    ['Nama IR: "cab_57".', 'IR name: "cab_57".'],
+    ['Nama IR di pedal tidak diubah.', 'The IR name on the pedal was not changed.'],
+    ['Model harus memiliki tepat 1.871 bobot A2-Lite.', 'The model must contain exactly 1,871 A2-Lite weights.'],
+    ['Bobot model ke-5 bukan angka valid.', 'Model weight 5 is not a valid number.'],
+    ['Timeout ACK untuk fase 43', 'ACK timeout for phase 43'],
+    ['Pengiriman fase gagal: USB disconnected', 'Failed to send phase: USB disconnected'],
+    ['Gagal sinkron preset: timeout', 'Preset synchronization failed: timeout'],
+    ['Membaca model, parameter, dan chain preset 03A…', 'Reading model, parameters, and preset signal chain 03A…'],
+    ['Sinkronisasi selesai: 03A · Fender Deluxe', 'Synchronization complete: 03A · Fender Deluxe'],
+    ['File tersimpan: sample.wav · 1,234 byte. Lokasi: folder yang kamu pilih di File manager Android.', 'File saved: sample.wav · 1,234 bytes. Location: the folder you selected in the Android file manager.'],
+    ['IR Collection gagal dimuat: Local storage read error', 'Failed to load IR Collection: Local storage read error']
+  ];
+  for (const [source, expected] of dynamicCases) assert.equal(translate(source), expected, source);
   assert.match(html, /<html lang="en">/);
   assert.equal(html.includes("toast('Preset '+slotName()+' dibaca ke aplikasi'"), false);
 });
