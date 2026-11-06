@@ -3860,3 +3860,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Stylesheet cache token advances to `stable-ui-3`. Regression tests enforce normal/short-screen frame budgets, image widths, caption inset and Scene row dimensions.
 - Caption-repair Build run `42247914706` passed: 305/305 tests, Vite production build, Capacitor generation, Gradle `assembleDebug` and artifact upload.
 - No changes to NAM, IR User/Third Party, IR Collection, preset import/export, Signal Chain, USB-MIDI or MIDI/CC mappings. This layout follow-up requires its own complete CI run and packaged APK inspection.
+
+
+### Build #652 — Editor Scene layout fit verification — 6 November 2026
+
+- Final source commit used by CI: `6cbc499fe208ae03e31d3bebae4fc69bede7f972` on `fix/editor-model-caption-visibility`.
+- GitHub Actions run `42250261456` completed **success**: 305 passed, 0 failed; Android initializer syntax, Vite production build (774? no—see run log: 1.08s), Capacitor Android generation, Gradle `assembleDebug` and artifact upload all passed.
+- Artifact ID: `13521260234`; ZIP size 4,225,778 bytes; ZIP SHA-256 `3b569ffb607546316a8e6be39a9d0c494abf88a6b7d6e8c74cb1cb53df73e93b`.
+- Extracted APK size 4,602,740 bytes; APK SHA-256 `6072daca080046fb1fc9cacafe7b394a51250b2e11a61de25a951c10565d08f2`.
+- ZIP integrity and APK ZIP/payload integrity passed.
+- Packaged asset inspection passed: Vite HTML references the hashed production CSS; the generated CSS includes 168px/154px total visual frame, 112px/98px artwork frame, 56px caption, 6px caption inset, category-specific artwork widths (AMP 62%, pedal 36%, cabinet 60%, expression 40%, FX loop 46%), bottom-anchored Scene row and 64px Scene targets. The bundled HTML retains AMPLIFIER, SPEAKER CABINET and Based on markup. Vite removes the source query token when it consolidates CSS into a hashed asset; this is expected, and the production HTML references that hashed asset.
+- The source and APK were not changed to touch NAM, IR User/Third Party, IR Collection, preset transfer, Signal Chain, USB-MIDI or MIDI/CC mapping.
+- Physical visual confirmation of the full Scene row on the user's phone remains pending. CI and bundled asset inspection have passed; do not claim device-level visual confirmation before the user checks this build.

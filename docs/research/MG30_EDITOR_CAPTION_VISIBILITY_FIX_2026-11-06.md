@@ -33,7 +33,7 @@ No changes to NAM, IR User/Third Party, IR Collection, Import/Export Presets, Si
 
 ## Validation
 
-Pending: full Node regression suite, Android initializer syntax, Vite production build, Capacitor generation, Gradle `assembleDebug`, and inspection of the packaged CSS/HTML inside the resulting APK. The physical device must be checked for both AMP and IR category/Based on captions after installation.
+Build #652 / run `42250261456` passed the complete CI pipeline and packaged asset inspection. The physical device must still be checked after installation for the complete Scene row, artwork scale and caption spacing.
 
 
 ## Follow-up layout fit — user screenshot after caption repair (6 November 2026)
@@ -52,3 +52,15 @@ Adjustment:
 - CSS cache token changes from `stable-ui-2` to `stable-ui-3`.
 
 The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 tests and the Android build. This layout follow-up must independently pass the complete suite/build and packaged APK inspection before distribution.
+
+
+## Build #652 verification — Editor card layout fit
+
+- Source commit: `6cbc499fe208ae03e31d3bebae4fc69bede7f972`.
+- GitHub Actions run `42250261456`: **success**; 305 tests passed, 0 failed; Vite production build, Android initializer, Capacitor generation, Gradle `assembleDebug` and artifact upload passed.
+- Artifact ID `13521260234`; ZIP size 4,225,778 bytes; ZIP SHA-256 `3b569ffb607546316a8e6be39a9d0c494abf88a6b7d6e8c74cb1cb53df73e93b`.
+- APK size 4,602,740 bytes; APK SHA-256 `6072daca080046fb1fc9cacafe7b394a51250b2e11a61de25a951c10565d08f2`.
+- ZIP and APK integrity tests passed.
+- Packaged HTML/CSS inspection passed for the hashed Vite stylesheet reference, short/regular frame and artwork dimensions, fixed caption rail and inset, category-specific SVG widths, visible AMP/Speaker Cabinet/Based on markup, and bottom-anchored full-height Scene buttons.
+- The original source stylesheet query token is replaced by Vite with a hashed production CSS asset; the built HTML correctly references that single hashed asset.
+- This is CI and packaged-asset verification. Final visual confirmation on the actual Android phone remains pending.
