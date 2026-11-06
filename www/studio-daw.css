@@ -2726,3 +2726,17 @@
   content:none!important;
   display:none!important;
 }
+
+
+/* MG-30 hardware-level controls: deliberately locked until write SysEx is verified. */
+.daw-hardware-levels-card{display:grid;gap:10px}
+.daw-hardware-toggle,.daw-hardware-level-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid #303b2d;border-radius:9px;background:#151c14}
+.daw-hardware-toggle span{display:grid;gap:3px;min-width:0}
+.daw-hardware-toggle strong,.daw-hardware-level-row label{color:#e6eedf;font-size:10px;font-weight:800}
+.daw-hardware-toggle small{color:#879580;font-size:8px;line-height:1.4}
+.daw-hardware-toggle input{accent-color:#c5f36b}
+.daw-hardware-level-row{display:grid;grid-template-columns:1fr;gap:7px}
+.daw-hardware-level-row label{display:flex;justify-content:space-between;gap:8px}
+.daw-hardware-level-row input{width:100%;accent-color:#c5f36b}
+.daw-hardware-level-row input:disabled,.daw-hardware-toggle input:disabled{opacity:.55}
+.daw-hardware-protocol-note{margin:0;padding:9px 10px;border:1px solid #55452a;border-radius:8px;background:#211c12;color:#c9b98e;line-height:1.5}
