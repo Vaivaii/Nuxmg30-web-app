@@ -74,3 +74,15 @@ The caption repair commit `0c13c36178b7bcbd421af14478f1ccade7a6985e` passed 305 
 - Preserve status-panel messages and native progress dialogs; this change only gates the floating toast.
 - Keep original MG-30 GEN2 6.0.x protocol behavior, NAM transfer, IR User/Third Party and Collection transfer, preset import/export, USB-MIDI, and MIDI/CC mappings unchanged.
 - Required verification: full regression suite, Vite build, Capacitor generation, Gradle APK build, then inspect packaged JS/CSS to ensure IMAGE captions are suppressed and toast scope gate is bundled.
+
+
+### Build #653 — IMAGE caption cleanup and sync-only toast — 6 November 2026
+
+- Final source commit used by CI: `0f09fde434befeb24e0717cecf5a86ccf33b0949`.
+- GitHub Actions run `42253122488` completed **success**: 307 tests passed, 0 failed; Android initializer syntax, Vite production build, Capacitor Android generation, Gradle `assembleDebug`, and artifact upload passed.
+- Artifact ID: `13519999498`; ZIP size 4,225,993 bytes; ZIP SHA-256 `e2cd03a343074292a795829a204c2eb3a9dc4723427db160c4855f0fe391fa98`.
+- APK size 4,602,868 bytes; APK SHA-256 `8d6f57fd1b816002ffe567492acaa64eaef0bd6c8f2a5e38b4bf53ee82bab12a`.
+- ZIP and APK integrity checks passed. Packaged HTML inspection confirmed IMAGE-based AMP/EFX caption conditional, removal of Based on row and IMAGE origin note in those cases, and toast allowlist. Packaged JS inspection confirmed IR Collection toast calls use the `ir` scope.
+- Default toast calls now return without displaying. Only explicit `preset`, `nam`, and `ir` synchronization calls display.
+- No changes to original MG-30 Gen 2 6.0.x hardware protocol, NAM/IR transfer data, preset payloads, signal chain/MIDI/CC mappings, or USB-MIDI behavior.
+- User should install Build #653 and visually confirm IMAGE-based AMP and EFX caption rails are clean and that only preset/NAM/IR sync notifications appear.
