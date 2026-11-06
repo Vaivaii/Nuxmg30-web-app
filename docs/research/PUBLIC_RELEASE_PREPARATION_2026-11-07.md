@@ -24,6 +24,7 @@ Preparation-only changes on this branch:
 - Updated `COMMUNITY_RELEASE_GUIDE.md` to pin the Build #669 source.
 - Added `PUBLIC_RELEASE_CHECKLIST.md`.
 - Replaced the stale prototype README with a truthful Community Edition overview and limitations.
+- Recorded the owner's open-source distribution model selection and the remaining exact-license decision.
 - No application runtime source, NAM, IR, MIDI mapping, USB-MIDI, preset, Signal Chain, or hardware protocol code was changed.
 
 The release workflow:
@@ -35,10 +36,16 @@ The release workflow:
 - uploads an audit artifact;
 - creates a GitHub Release only when explicitly requested, and then creates it as draft + prerelease, never automatically public/latest.
 
+## Owner decision recorded: open-source model
+
+The owner selected **open** on 7 November 2026: the intended source distribution model allows study, modification and redistribution under a recognized open-source license.
+
+This is a model selection, not a completed license grant. No `LICENSE` file has been added because the exact license has not yet been chosen. The guide now explains the difference between MIT (permissive) and GPL-3.0-only (copyleft). Until the exact license is committed, do not represent the source as already licensed for reuse.
+
 ## Release blockers / owner decisions
 
 1. The four signing secrets have not been confirmed as configured. The keystore must be created and backed up by the owner; never send it or its passwords in chat.
-2. The repository has no LICENSE file. The owner must choose the source-code license before inviting contributions or implying source redistribution/modification rights.
+2. Exact source-code license remains to be selected; then add the corresponding LICENSE file and review dependency/asset licensing.
 3. No public privacy notice was found. Review OAuth, network/API integrations, local storage, permissions and diagnostics before publishing a privacy promise.
 4. Physical hardware QA of the exact Build #669 candidate is not documented. Test original Gen 2 firmware 6.0.x and protect NAM, User/Third Party IR, IR Collection, MIDI/CC mappings, USB-MIDI, presets and Signal Chain.
 5. Import All has a documented program 72 / scene 0 readback mismatch; Export All end-to-end remains unvalidated. Do not market either as fully verified.
@@ -49,4 +56,4 @@ The release workflow:
 
 ## Current status
 
-Preparation branch and documentation/workflow are in place. No signed APK has been built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. The source branch and functional app code remain unchanged.
+Open-source distribution model decision is recorded in the release-prep README, guide, checklist and this research note. No exact license was selected, no LICENSE file was added, no signed APK was built in this preparation session, no signing secrets were read, no tag was created, and no public or draft release was published. The source branch and functional app code remain unchanged.
