@@ -76,5 +76,5 @@ test('Global English copy covers all remaining visible Indonesian interface labe
   ]);
   for (const [source, expected] of cases) assert.equal(translate(source), expected, source);
   assert.match(html, /<html lang="en">/);
-  assert.doesNotMatch(html, /toast\\('Preset '\\+slotName\\(\\)\\+' dibaca ke aplikasi'/);
+  assert.equal(html.includes("toast('Preset '+slotName()+' dibaca ke aplikasi'"), false);
 });
