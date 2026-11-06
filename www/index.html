@@ -1039,7 +1039,8 @@ let mg30HardwareWriteChain = Promise.resolve();
 function normalizeMg30HardwareSlider(value) {
  const number = Number(value);
  if (!Number.isFinite(number)) throw new Error('Nilai slider MG-30 tidak valid.');
- return Math.max(0, Math.min(100, number));
+ // 14/01 stores each slider directly as a 7-bit SysEx data byte.
+ return Math.round(Math.max(0, Math.min(0x7F, number)));
 }
 function sendMg30SysEx(frameArray) {
  const frame = Array.from(frameArray || [], value => Number(value) & 0xFF);
@@ -1088,15 +1089,13 @@ function setLoopback(enable) {
  return updateMg30HardwareField(0x20, enable ? 0x11 : 0x01, 'USB Loopback');
 }
 function setRecLevel(value) {
- const normalized = normalizeMg30HardwareSlider(value);
- // Observed Record Level samples: 0x34, 0x37, 0x3A, 0x3C.
- const raw = Math.round(0x34 + (normalized / 100) * 0x08);
+ const raw = normalizeMg30HardwareSlider(value);
+ // Capture values track the raw slider value directly (e.g. 0x34, 0x37, 0x3A, 0x3C).
  return updateMg30HardwareField(0x1D, raw, 'Record Level');
 }
 function setPlayLevel(value) {
- const normalized = normalizeMg30HardwareSlider(value);
- // Observed Playback Level samples: 0x68, 0x70, 0x76, 0x7A.
- const raw = Math.round(0x68 + (normalized / 100) * 0x12);
+ const raw = normalizeMg30HardwareSlider(value);
+ // Capture values track the raw slider value directly (e.g. 0x68, 0x70, 0x76, 0x7A).
  return updateMg30HardwareField(0x1F, raw, 'Playback Level');
 }
 window.sendMg30SysEx = sendMg30SysEx;
