@@ -3778,3 +3778,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Regression suite and Build #642 pending; physical device validation remains required.
 
 - Build #642 reached the test suite and reported 2 stale stylesheet-cache assertions still expecting `motion-lite-3` (297/299 passed). Updated the NAM/TONE3000 and shared UI tests to expect the restored stable stylesheet token `stable-ui-1`. Runtime code unchanged by this test correction; Build #643 is the rerun.
+
+## Build #643 validation and APK inspection — 6 November 2026
+
+- GitHub Actions run `42227020881`, Build #643, branch `feature/editor-stable-ui-artwork-fit`, source commit `e7013e4b14253baf4c359dbe1be7a91dd0e82f38`, completed successfully.
+- Regression suite: **299 passed, 0 failed**. Android initializer syntax passed; Capacitor Android generation passed; Gradle `assembleDebug` reported `BUILD SUCCESSFUL in 1m 28s`; artifact upload passed.
+- Artifact `MG30-Studio-debug-APK`, ID `13506332719`, ZIP size 4,223,527 bytes, SHA-256 `cf3ff07e0b19c9d958b8857512ed02cd64b365a8810590a2ebe9ce58e4e1d32b`.
+- Extracted APK `MG30-Studio-Build-643.apk`, size 4,601,056 bytes, SHA-256 `ea917404fdc17d9ea677dc4fca9de10a2039243dad7f771561eca9a776686048`. ZIP integrity and APK ZIP structure both passed.
+- Packaged asset inspection confirmed: stable page fade and Studio opacity-only transitions are present; horizontal slide helper is absent; original Studio dock measurement and deferred `requestAnimationFrame` correction are present; non-AMP category SVG width limits are embedded in the packaged index; dynamic parameter sheet cap is present in bundled CSS.
+- Build #643 is a CI-successful debug APK and asset inspection, not yet physically installed or validated on the user's phone. User verification remains necessary for Editor header appearance, pedal/cabinet/wah full visibility, absence of gradient glitch, and Studio dock placement.
+- Build #641 branch remains unchanged. No NAM, IR, preset, Signal Chain, USB-MIDI or MIDI/CC mapping implementation was changed.
