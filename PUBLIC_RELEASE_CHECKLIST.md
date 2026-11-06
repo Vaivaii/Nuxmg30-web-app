@@ -5,7 +5,8 @@
 - [ ] Four GitHub Actions signing secrets are configured.
 - [ ] Run signed candidate workflow from `release/community-prep-v2`.
 - [ ] 310+ regression tests (or updated suite) pass.
-- [ ] Add and commit a lockfile; switch release workflow to deterministic `npm ci` before the public build (current repository has no package-lock.json).
+- [ ] Run Actions → Prepare deterministic npm lockfile on `release/community-prep-v2`; confirm `package-lock.json` is committed.
+- [x] Configure signed release workflow to require `package-lock.json` and use deterministic `npm ci`.
 - [ ] Capacitor Android generation and Gradle `assembleRelease` pass.
 - [ ] `apksigner verify` passes; record signer certificate SHA-256.
 - [ ] Android package ID is `com.vaivaii.mg30studio`.
