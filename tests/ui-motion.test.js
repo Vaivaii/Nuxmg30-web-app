@@ -192,3 +192,27 @@ test('Editor Scenes remain bottom-anchored inside the fixed card with the approv
   assert.ok(css.includes('body > .app > #page-editor > .editor'));
   assert.ok(css.includes('overflow: hidden !important'));
 });
+
+
+test('IMAGE-based AMP and EFX keep category labels but suppress overlapping description captions',()=>{
+  const start=html.indexOf('function renderModelVisual(){');
+  const end=html.indexOf('\nfunction renderBlockIcon',start);
+  const renderer=html.slice(start,end);
+  assert.ok(renderer.includes('const hideImageDescription=origin==="IMAGE"&&(block.id==="AMP"||block.id==="EFX")'));
+  assert.ok(renderer.includes("captionOriginChip=hideImageDescription?'':originChip"));
+  assert.ok(renderer.includes("(hideImageDescription?'':'<div class=\"gear-copy-meta\">"));
+  assert.ok(renderer.includes("origin==="IMAGE"&&!hideImageDescription"));
+  assert.ok(renderer.includes("'+category"));
+  assert.ok(renderer.includes("'+artBadge+'</div>"));
+});
+
+test('floating toast is suppressed by default and opt-in only for preset, NAM and IR synchronization',()=>{
+  assert.ok(html.includes("function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;"));
+  assert.match(html,/toast\('Preset tersimpan; urutan signal chain diverifikasi',1900,'preset'\)/);
+  assert.match(html,/toast\('Nama 10 slot NAM disinkronkan dari MG-30',1900,'nam'\)/);
+  assert.match(html,/toast\('Preset diimpor dan tiga scene diverifikasi',1900,'preset'\)/);
+  assert.ok(irTransfer.includes("window.toast('Collection synced"));
+  assert.match(irTransfer,/window\.toast\([^\n]*,2600,'ir'\)/);
+  assert.match(irTransfer,/window\.toast\([^\n]*,2800,'ir'\)/);
+  assert.ok(html.includes("toast('Draft dimuat')"),'local draft feedback remains in source but is suppressed by default');
+});
