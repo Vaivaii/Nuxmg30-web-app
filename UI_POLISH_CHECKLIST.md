@@ -3776,3 +3776,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Motion animates only `transform` and `opacity` for 240 ms with a compositor-friendly easing curve. The helper respects `prefers-reduced-motion`. No height, margin, or layout properties are interpolated.
 - This change is presentation-only: no NAM, User/Third Party IR, IR Collection, preset transfer, Signal Chain protocol, USB-MIDI, parameter IDs, MIDI/CC mappings, or hardware level fields are modified.
 - Automated regression checks and Build #638 are pending; physical phone validation of the new appearance/motion remains separate.
+
+- Build #638 was rejected by two stale regression assertions: one still expected the previous `motion-lite-3` stylesheet cache token and one still expected fade-only tab entrance. Both assertions were updated to the new `editor-fluid-1` cache token and horizontal WAAPI navigation contract; Build #639 is the corrected rerun.

@@ -45,7 +45,7 @@ test('TONE3000 selection still populates and moves the original catalogue node w
 });
 
 test('NAM/TONE3000 width fix is cache-busted without altering transfer sources', () => {
-  assert.ok(html.includes('ui-redesign.css?v=motion-lite-3'));
+  assert.ok(html.includes('ui-redesign.css?v=editor-fluid-1'));
   assert.ok(!html.includes('ui-redesign.css?v=motion-lite-2'));
   assert.ok(irTransfer.includes('function toggleModelTool(mode)'));
   assert.ok(tone3000.includes('async function loadSelectedTone(toneId, options = {})'));

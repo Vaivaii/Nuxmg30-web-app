@@ -26,3 +26,8 @@ Requested changes:
 ## Validation
 - Automated regression and GitHub Actions Build #638: pending.
 - Device test: pending. Verify the amp/cabinet head is fully visible, other gear artwork has breathing room, Scenes sit lower without clipping, parameter sheet travels behind the dock header, bottom navigation remains above the sheet, and all requested tab transitions remain smooth while the DAW dock stays fixed.
+
+## First CI attempt correction
+- Build #638 reached the Node test suite and reported 2 failures out of 299: an older NAM/TONE3000 cache-bust assertion still expected `motion-lite-3`, and the previous app-wide motion test still required the old fade animation.
+- Corrected the tests only: update the expected shared stylesheet token to `editor-fluid-1` and assert the current horizontal navigation motion layer instead of the retired fade-only rule.
+- No application protocol or NAM/IR logic was changed to address these test failures. Corrected CI rerun is Build #639.

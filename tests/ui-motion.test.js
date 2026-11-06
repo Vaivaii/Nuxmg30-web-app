@@ -8,11 +8,10 @@ const studioCss = readFileSync(new URL('../www/studio-daw.css', import.meta.url)
 const studioJs = readFileSync(new URL('../www/studio-daw.js', import.meta.url), 'utf8');
 const irTransfer = readFileSync(new URL('../www/ir-transfer.js', import.meta.url), 'utf8');
 
-test('app-wide motion layer provides short entrances for every main app tab', () => {
+test('main app pages are covered by the horizontal navigation motion layer', () => {
   assert.ok(css.includes('@keyframes mg30-page-enter'));
-  assert.ok(css.includes('body>.app>section[id^="page-"]:not(.hidden)'));
-  assert.ok(css.includes('animation:mg30-page-enter .18s ease-out both'));
-  assert.ok(css.includes('@keyframes mg30-content-enter'));
+  assert.ok(css.includes('body>.app>section[id^="page-"]:not(.hidden){animation:none}'));
+  assert.ok(html.includes('function playHorizontalSlide(node,offset)'));
   for (const id of ['page-editor', 'page-nam', 'page-presets', 'page-studio', 'page-device', 'page-backup']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing app tab: ' + id);
   }
