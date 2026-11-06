@@ -19,7 +19,9 @@ The owner selected **GPL-3.0-only** on 7 November 2026. The repository now inclu
 
 ## Current release workflow
 
-Run Actions → **MG30 Studio Community Release (signed candidate)** from branch `release/community-prep-v2`.
+First run Actions → **Prepare deterministic npm lockfile** from branch `release/community-prep-v2`. That workflow creates `package-lock.json`, validates `npm ci` and tests, then commits the lockfile to the branch. Wait for that commit to appear before starting the signed release workflow.
+
+Then run Actions → **MG30 Studio Community Release (signed candidate)** from branch `release/community-prep-v2`. The release workflow checks out the exact commit selected for that dispatch and requires `package-lock.json`; it uses `npm ci`, not `npm install`. The source commit is recorded by the workflow and attached to the draft release target.
 
 - The workflow always runs tests and creates a signed APK candidate.
 - It requires all four signing secrets and fails closed if any is missing or invalid.
