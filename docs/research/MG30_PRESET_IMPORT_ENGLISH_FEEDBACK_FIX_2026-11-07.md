@@ -35,3 +35,8 @@ No SysEx command bytes, payload layouts, transaction order, ACK matching rules, 
 ## Validation status
 
 Record CI test/build/signature results after the workflow completes. Successful CI does not replace physical MG-30 verification. If Import All still reports a readback mismatch at program 72, scene 0, treat it as an outstanding preset data verification issue; do not label that operation as successful.
+
+## CI iteration note
+
+- First workflow run on commit `6dc117de33f48650318c802d4b6f048ef4a7491e` stopped at regression tests before the Android build. 310 tests passed and two assertions failed because the existing tests still expected the previous Indonesian toast text and looked for a native progress-phase string in the separate UI module rather than the HTML bridge.
+- Updated those test assertions to match the English toast and check the phase labels in the bridge. No application protocol/runtime code was changed for this test-only correction. Re-run results pending.

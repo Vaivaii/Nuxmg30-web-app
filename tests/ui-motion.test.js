@@ -217,7 +217,7 @@ test('floating toast is suppressed by default and opt-in only for preset, NAM an
   assert.ok(html.includes("function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;"));
   assert.match(html,/toast\('Preset tersimpan; urutan signal chain diverifikasi',1900,'preset'\)/);
   assert.match(html,/toast\('Nama 10 slot NAM disinkronkan dari MG-30',1900,'nam'\)/);
-  assert.match(html,/toast\('Preset diimpor dan tiga scene diverifikasi',1900,'preset'\)/);
+  assert.match(html,/toast\('Preset imported and all three scenes verified',1900,'preset'\)/);
   assert.ok(irTransfer.includes("'Collection synced ·"));
   assert.match(irTransfer,/window\.toast\([^\n]*,2600,'ir'\)/);
   assert.match(irTransfer,/window\.toast\([^\n]*,2800,'ir'\)/);
