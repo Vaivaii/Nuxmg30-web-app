@@ -25,10 +25,10 @@ test("Import All confirmation uses real newlines instead of visible backslash-n 
   assert.ok(importUiSource.includes("irPresetCount.toLocaleString('en-US') + ' presets include embedded IR resources.\\n\\n' +"));
   assert.doesNotMatch(importUiSource, /\\\\n/);
   const popupStart = importUiSource.indexOf("const confirmed = window.confirm(");
-  const popupEnd = importUiSource.indexOf("\\n    );", popupStart);
+  const popupEnd = importUiSource.indexOf("\n    );", popupStart);
   assert.ok(popupStart >= 0 && popupEnd > popupStart);
   const popupSource = importUiSource.slice(popupStart, popupEnd);
-  assert.equal((popupSource.match(/\\\\n/g) || []).length, 9);
+  assert.equal((popupSource.match(/\\n/g) || []).length, 9);
 });
 
 test("Import All summary appears only in the confirmation popup, not as a persistent button or label", async () => {
