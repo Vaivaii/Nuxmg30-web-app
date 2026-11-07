@@ -2,7 +2,11 @@ import { parseMG30SinglePresetPatch, parseMG30AllPresetPatch, buildMG30SinglePre
 import { buildMG30AllPresetImportPlan } from './mg30-preset-all-import.js';
 
 const $ = id => document.getElementById(id);
-const fmt = n => new Intl.NumberFormat('id-ID').format(n) + ' byte';
+const englishText = value => {
+  const text = String(value ?? '');
+  return window.MG30EnglishUI?.translate?.(text) ?? text;
+};
+const fmt = n => new Intl.NumberFormat('en-US').format(n) + (Number(n) === 1 ? ' byte' : ' bytes');
 const FAILURE_FEEDBACK_AUTO_CLOSE_MS = 5000;
 
 function slotLabel(program) {
@@ -39,7 +43,7 @@ function init() {
 
   const api = () => window.MG30PresetImportBridge;
   const message = (text, kind = '') => {
-    status.textContent = text;
+    status.textContent = englishText(text);
     status.classList.remove('ok', 'warn');
     if (kind) status.classList.add(kind);
   };
@@ -62,11 +66,11 @@ function init() {
     if (!progressReady) return;
     progressDialog.dataset.owner = 'import';
     progressDialog.dataset.state = 'loading';
-    progressTitle.textContent = importMode === 'all' ? 'Import All sedang berlangsung' : 'Import sedang berlangsung';
+    progressTitle.textContent = importMode === 'all' ? 'Import All in Progress' : 'Import in Progress';
     progressTrack.classList.remove('is-indeterminate');
     progressTrack.setAttribute('aria-valuenow', '0');
     progressFill.style.width = '0%';
-    progressNote.textContent = 'Jangan tutup aplikasi atau lepas koneksi USB selama proses berlangsung.';
+    progressNote.textContent = 'Do not close the app or disconnect USB while the transfer is running.';
     if (!progressDialog.open) {
       if (typeof progressDialog.showModal === 'function') progressDialog.showModal();
       else progressDialog.setAttribute('open', '');
@@ -81,9 +85,9 @@ function init() {
       progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / progressTotal * 100)));
       progressFill.style.width = (completed / progressTotal * 100) + '%';
       if (progress?.phase === 'Verifikasi readback') {
-        progressNote.textContent = 'Memverifikasi preset ' + (progress.verifiedPrograms || 0) + '/128 (' + (progress.verifiedScenes || 0) + '/384 scene)…';
+        progressNote.textContent = 'Verifying presets ' + (progress.verifiedPrograms || 0) + '/128 (' + (progress.verifiedScenes || 0) + '/384 scenes)…';
       } else if (progress?.phase) {
-        progressNote.textContent = progress.phase + ' · ' + completed.toLocaleString('id-ID') + '/' + progressTotal.toLocaleString('id-ID') + ' frame diakui perangkat.';
+        progressNote.textContent = englishText(progress.phase) + ' · ' + completed.toLocaleString('en-US') + '/' + progressTotal.toLocaleString('en-US') + ' frames acknowledged by the device.';
       }
     }
   }
@@ -94,11 +98,11 @@ function init() {
       return;
     }
     progressDialog.dataset.state = state;
-    progressTitle.textContent = title;
+    progressTitle.textContent = englishText(title);
     progressTrack.classList.remove('is-indeterminate');
     progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / progressTotal * 100)));
     progressFill.style.width = (completed / progressTotal * 100) + '%';
-    progressNote.textContent = note;
+    progressNote.textContent = englishText(note);
     if (progressCloseTimer) window.clearTimeout(progressCloseTimer);
     progressCloseTimer = window.setTimeout(() => {
       closeProgressDialog();
@@ -120,11 +124,11 @@ function init() {
   });
   const refreshTarget = () => {
     if (selectedTargetProgram === null) {
-      targetLabel.textContent = 'Pilih slot tujuan dengan mengetuk kartu preset di bawah.';
+      targetLabel.textContent = 'Select a destination slot by tapping a preset card below.';
       return;
     }
     const label = api()?.getTargetLabel?.() || slotLabel(selectedTargetProgram);
-    targetLabel.textContent = 'Slot tujuan: ' + label;
+    targetLabel.textContent = 'Destination slot: ' + label;
   };
   const lock = value => {
     busy = value;
@@ -162,28 +166,28 @@ function init() {
 
     if (!file) {
       info.textContent = '';
-      message('Tidak ada file yang dipilih.');
+      message('No file selected.');
       importBar.classList.remove('has-file');
       return;
     }
 
     info.textContent = file.name;
-    targetLabel.textContent = 'Pilih slot tujuan.';
+    targetLabel.textContent = 'Select a destination slot.';
     importBar.classList.add('has-file');
-    message('Memeriksa struktur .mg30patch…');
+    message('Checking .mg30patch file structure…');
 
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (importMode === 'all') {
         parsedAll = parseMG30AllPresetPatch(bytes);
         info.textContent = file.name;
-        targetLabel.textContent = parsedAll.records.length.toLocaleString('id-ID') + ' preset siap diimpor · ' + parsedAll.resourcePrograms.length.toLocaleString('id-ID') + ' preset membawa resource IR.';
+        targetLabel.textContent = parsedAll.records.length.toLocaleString('en-US') + ' presets ready to import · ' + parsedAll.resourcePrograms.length.toLocaleString('en-US') + ' presets include embedded IR resources.';
         allRun.classList.remove('hidden');
-        message('File All Preset valid. Menekan tombol di bawah akan menimpa seluruh bank 128 preset.', 'warn');
+        message('Valid All Preset file. Starting the import will overwrite all 128 preset slots.', 'warn');
       } else {
         parsed = parseMG30SinglePresetPatch(bytes);
         info.textContent = file.name;
-        targetLabel.textContent = 'Pilih slot tujuan.';
+        targetLabel.textContent = 'Select a destination slot.';
         message('');
       }
     } catch (error) {
@@ -206,16 +210,14 @@ function init() {
     try {
       plan = buildMG30AllPresetImportPlan(parsedAll.records);
     } catch (error) {
-      message(error?.message || 'Rencana Import All tidak valid.', 'warn');
+      message(error?.message || 'Invalid Import All plan.', 'warn');
       return;
     }
     const confirmed = window.confirm(
-      'PERINGATAN: IMPORT ALL PRESET\n\n' +
-      'File ' + file.name + ' akan menulis ulang SELURUH 128 preset (slot 01A–32D) pada MG-30. ' +
-      'Sebanyak ' + plan.resourcePrograms.length + ' preset juga mengirim resource IR melalui jalur User / Third Party.\n\n' +
-      'Proses tidak dapat dibatalkan setelah pengiriman dimulai. Jika kabel terlepas atau transfer gagal, bank dapat tertinggal dalam kondisi sebagian terisi. ' +
-      'Pastikan kamu memiliki backup lengkap dan pedal menggunakan firmware MG-30 Gen2 6.0.x (bukan MKII).\n\n' +
-      'Lanjutkan menimpa seluruh 128 preset?'
+      'IMPORT ALL PRESETS?\n\n' +
+      file.name + ' will overwrite all 128 preset slots (01A–32D) and transfer any embedded IR resources included in the file.\n\n' +
+      'The transfer cannot be canceled once it starts. Back up your presets before continuing.\n\n' +
+      'Continue with Import All?'
     );
     if (!confirmed) return;
 
@@ -224,18 +226,18 @@ function init() {
     openProgressDialog();
     try {
       await bridge.importAll(plan, updateProgressDialog);
-      message('Import All selesai: 128 preset dan 384 scene telah diverifikasi.', 'ok');
-      finishProgressDialog('success', 'Import All selesai', '128 preset / 384 scene lolos readback.', plan.totalFrames, 1800);
+      message('');
+      finishProgressDialog('success', 'Import All Complete', '128 presets and 384 scenes passed readback verification.', plan.totalFrames, 1800);
       input.value = '';
       file = null;
       parsedAll = null;
       info.textContent = '';
       importBar.classList.remove('has-file');
       allRun.classList.add('hidden');
-      targetLabel.textContent = 'Pilih slot tujuan dengan mengetuk kartu preset di bawah.';
+      targetLabel.textContent = 'Select a destination slot by tapping a preset card below.';
     } catch (error) {
-      message(error?.message || 'Import All gagal.', 'warn');
-      finishProgressDialog('error', 'Import All gagal', 'Bank mungkin terisi sebagian. Jangan lepas USB sebelum perangkat stabil.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
+      message('');
+      finishProgressDialog('error', 'Import All Failed', (error?.message || 'The import could not be completed.') + '\n\nThe bank may be partially written. Keep USB connected until the MG-30 is stable.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
     } finally {
       lock(false);
       progressTotal = 78;
@@ -251,14 +253,14 @@ function init() {
     refreshTarget();
 
     if (!bridge?.isConnected?.()) {
-      message('File siap. Hubungkan MG-30 melalui USB-MIDI sebelum mengimpor ke ' +
+      message('File ready. Connect the MG-30 via USB-MIDI before importing to ' +
         slotLabel(program) + '.', 'warn');
       return;
     }
 
     const activeProgram = Number(bridge.getTargetProgram?.());
     if (activeProgram !== program) {
-      message('Slot perangkat belum cocok dengan pilihan. Pilih kembali kartu slot tujuan.', 'warn');
+      message('The selected slot does not match the active device slot. Select the destination card again.', 'warn');
       return;
     }
 
@@ -266,18 +268,16 @@ function init() {
     try {
       plan = buildMG30SinglePresetImportPlan(parsed, program);
     } catch (error) {
-      message(error?.message || 'Rencana impor tidak valid.', 'warn');
+      message(error?.message || 'Invalid preset import plan.', 'warn');
       return;
     }
 
     const target = bridge.getTargetLabel?.() || slotLabel(program);
     const confirmed = window.confirm(
-      'Impor ' + file.name + ' ke preset ' + target + '?\n\n' +
-      'Resource IR "' + parsed.resourceName +
-      '" akan dikirim ke Third Party / User, lalu tiga scene preset akan ditulis. ' +
-      'Slot tujuan akan ditimpa.\n\n' +
-      'Batch 128 preset belum didukung. Collection dan NAM tidak disentuh. ' +
-      'Pastikan data penting sudah dicadangkan sebelum melanjutkan.'
+      'Import "' + file.name + '" to preset ' + target + '?\n\n' +
+      'This will overwrite the selected slot, transfer the embedded IR resource, and write all three scenes. ' +
+      'Collection and NAM will not be affected. Back up important data first.\n\n' +
+      'Continue?'
     );
 
     if (!confirmed) {
@@ -290,7 +290,7 @@ function init() {
     try {
       await bridge.import(plan, updateProgressDialog);
       message('');
-      finishProgressDialog('success', 'Import selesai', '', 78, 1050);
+      finishProgressDialog('success', 'Import Complete', 'The preset and all three scenes passed readback verification.', 78, 1800);
       input.value = '';
       file = null;
       parsed = null;
@@ -299,9 +299,9 @@ function init() {
       info.textContent = '';
       importBar.classList.remove('has-file');
       refreshTarget();
-    } catch {
+    } catch (error) {
       message('');
-      finishProgressDialog('error', 'Import gagal', 'Periksa koneksi perangkat.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
+      finishProgressDialog('error', 'Import Failed', (error?.message || 'The import could not be completed.') + '\n\nCheck the USB connection and keep the MG-30 connected until it is stable.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
     } finally {
       lock(false);
     }

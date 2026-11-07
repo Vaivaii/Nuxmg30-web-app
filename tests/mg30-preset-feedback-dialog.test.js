@@ -20,10 +20,31 @@ test('Export failure feedback preserves the error detail and auto-closes', () =>
   assert.ok(presetLibrarySource.includes("showExportFeedback(title, text, 'error', 0, EXPORT_FAILURE_AUTO_CLOSE_MS)"));
 });
 
-test('Import Single and Import All failure dialogs auto-close after five seconds', () => {
+test('Import All and Single terminal feedback uses English and clears persistent status text', () => {
   assert.ok(importSource.includes('const FAILURE_FEEDBACK_AUTO_CLOSE_MS = 5000;'));
-  assert.ok(importSource.includes("finishProgressDialog('error', 'Import All gagal', 'Bank mungkin terisi sebagian. Jangan lepas USB sebelum perangkat stabil.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS)"));
-  assert.ok(importSource.includes("finishProgressDialog('error', 'Import gagal', 'Periksa koneksi perangkat.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS)"));
+  assert.ok(importSource.includes("finishProgressDialog('error', 'Import All Failed'"));
+  assert.ok(importSource.includes("finishProgressDialog('error', 'Import Failed'"));
+  assert.ok(importSource.includes("finishProgressDialog('success', 'Import All Complete'"));
+  assert.ok(importSource.includes("finishProgressDialog('success', 'Import Complete'"));
+  assert.ok(importSource.includes("message('');\n      finishProgressDialog('error', 'Import All Failed'"));
+  assert.doesNotMatch(importSource, /Batch 128 preset belum didukung|Import All selesai|Import sedang berlangsung|Kurva IR|diakui perangkat/i);
+});
+
+test('Import confirmations are concise English and do not claim batch import is unsupported', () => {
+  assert.ok(importSource.includes('IMPORT ALL PRESETS?'));
+  assert.ok(importSource.includes('will overwrite all 128 preset slots (01A–32D)'));
+  assert.ok(importSource.includes('Back up your presets before continuing.'));
+  assert.ok(importSource.includes('This will overwrite the selected slot'));
+  assert.ok(importSource.includes('Collection and NAM will not be affected.'));
+  assert.doesNotMatch(importSource, /Batch 128 preset belum didukung|Batch import of 128 presets is not supported/i);
+});
+
+test('Import progress titles, instructions, counters, and notes are English', () => {
+  assert.ok(importSource.includes('Import All in Progress'));
+  assert.ok(importSource.includes('Do not close the app or disconnect USB'));
+  assert.ok(importSource.includes('Verifying presets '));
+  assert.ok(importSource.includes('frames acknowledged by the device.'));
+  assert.doesNotMatch(importSource, /sedang berlangsung|Jangan tutup aplikasi|Memverifikasi preset|frame diakui perangkat|Kurva IR/i);
 });
 
 test('Dialog Back / Escape is blocked only while an Import or Export transfer is active', () => {
