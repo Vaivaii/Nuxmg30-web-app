@@ -36,7 +36,9 @@ test('Import All and Single terminal feedback uses English and clears persistent
 test('Import All action and result feedback are modal, English, and dismissible', async () => {
   const html = await readFile(new URL('../www/index.html', import.meta.url), 'utf8');
   const css = await readFile(new URL('../www/preset-library-ui.css', import.meta.url), 'utf8');
-  assert.ok(html.includes('id="presetImportAllRun">Start Import All · 128 Presets</button>'));
+  assert.ok(!html.includes('presetImportAllRun'));
+  assert.ok(importSource.includes('START IMPORT ALL · '));
+  assert.ok(importSource.includes('presets include embedded IR resources.'));
   assert.ok(html.includes('id="presetImportProgressDone" type="button" hidden>Done</button>'));
   assert.ok(html.includes('id="presetImportStatus" role="status" aria-live="polite" hidden'));
   assert.ok(css.includes('#page-presets #presetImportStatus.warn:not(:empty)'));

@@ -20,8 +20,20 @@ test("native Import All validates variable IR group count and dynamic total fram
   assert.doesNotMatch(allImportBridge, /2412/);
 });
 
+test("Import All summary appears only in the confirmation popup, not as a persistent button or label", async () => {
+  const html = await readFile(new URL("../www/index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /presetImportAllRun/);
+  assert.doesNotMatch(importUiSource, /allRun|presetImportAllRun/);
+  assert.ok(importUiSource.includes("START IMPORT ALL · "));
+  assert.ok(importUiSource.includes("presets are ready to import."));
+  assert.ok(importUiSource.includes("presets include embedded IR resources."));
+  assert.ok(importUiSource.includes("finally {\\n      clearAllImportSelection();"));
+  assert.ok(importUiSource.includes("clearAllImportSelection();"));
+});
+
 test("Import All UI displays parsed resource count and uses the plan frame total", () => {
-  assert.match(importUiSource, /parsedAll\.resourcePrograms\.length\.toLocaleString/);
+  assert.ok(importUiSource.includes('const irPresetCount = parsedAll.resourcePrograms.length;'));
+  assert.ok(importUiSource.includes("irPresetCount.toLocaleString('en-US')"));
   assert.match(importUiSource, /progressTotal = plan\.totalFrames/);
   assert.match(importUiSource, /plan\.totalFrames, 5000/);
   assert.doesNotMatch(importUiSource, /27 preset membawa resource IR/);

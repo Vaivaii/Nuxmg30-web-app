@@ -18,7 +18,6 @@ function init() {
   const input = $('presetImportFile');
   const choose = $('presetImportChoose');
   const allChoose = $('presetImportAllChoose');
-  const allRun = $('presetImportAllRun');
   const info = $('presetImportFileInfo');
   const status = $('presetImportStatus');
   const targetLabel = $('presetImportTarget');
@@ -30,7 +29,7 @@ function init() {
   const progressNote = $('presetImportProgressNote');
   const progressDone = $('presetImportProgressDone');
   const progressReady = Boolean(progressDialog && progressTitle && progressTrack && progressFill && progressNote && progressDone);
-  if (!input || !choose || !allChoose || !allRun || !info || !status || !targetLabel || !importBar) return;
+  if (!input || !choose || !allChoose || !info || !status || !targetLabel || !importBar) return;
 
   let parsed = null;
   let parsedAll = null;
@@ -144,14 +143,72 @@ function init() {
     input.disabled = value;
     choose.disabled = value;
     allChoose.disabled = value;
-    allRun.disabled = value;
   };
+
+  function clearAllImportSelection() {
+    input.value = '';
+    file = null;
+    parsedAll = null;
+    info.textContent = '';
+    targetLabel.textContent = '';
+    importBar.classList.remove('has-file');
+  }
+
+  async function confirmAndImportAll() {
+    if (busy || !parsedAll || !file) return;
+    const bridge = api();
+    if (!bridge?.isConnected?.()) {
+      message('Connect the MG-30 via USB-MIDI before starting Import All.', 'warn');
+      clearAllImportSelection();
+      return;
+    }
+
+    let plan;
+    try {
+      plan = buildMG30AllPresetImportPlan(parsedAll.records);
+    } catch (error) {
+      message(error?.message || 'Invalid Import All plan.', 'warn');
+      clearAllImportSelection();
+      return;
+    }
+
+    const importFile = file;
+    const presetCount = parsedAll.records.length;
+    const irPresetCount = parsedAll.resourcePrograms.length;
+    const confirmed = window.confirm(
+      'START IMPORT ALL · ' + presetCount.toLocaleString('en-US') + ' PRESETS?\\n\\n' +
+      presetCount.toLocaleString('en-US') + ' presets are ready to import.\\n' +
+      irPresetCount.toLocaleString('en-US') + ' presets include embedded IR resources.\\n\\n' +
+      'File: ' + importFile.name + '\\n\\n' +
+      'This will overwrite all preset slots (01A–32D). The transfer cannot be canceled once it starts. Back up your presets before continuing.\\n\\n' +
+      'Continue?'
+    );
+    if (!confirmed) {
+      clearAllImportSelection();
+      return;
+    }
+
+    progressTotal = plan.totalFrames;
+    lock(true);
+    openProgressDialog();
+    try {
+      await bridge.importAll(plan, updateProgressDialog);
+      message('');
+      finishProgressDialog('success', 'Import All Complete', '128 presets and 384 scenes passed readback verification.', plan.totalFrames, 5000);
+    } catch (error) {
+      message('');
+      finishProgressDialog('error', 'Import All Failed', (error?.message || 'The import could not be completed.') + '\\n\\nThe bank may be partially written. Keep USB connected until the MG-30 is stable.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
+    } finally {
+      clearAllImportSelection();
+      lock(false);
+      progressTotal = 78;
+    }
+  }
 
   choose.addEventListener('click', () => {
     if (!busy) {
       importMode = 'single';
       parsedAll = null;
-      allRun.classList.add('hidden');
       input.click();
     }
   });
@@ -160,7 +217,6 @@ function init() {
     if (!busy) {
       importMode = 'all';
       parsed = null;
-      allRun.classList.add('hidden');
       input.click();
     }
   });
@@ -169,7 +225,6 @@ function init() {
     file = input.files?.[0] || null;
     parsed = null;
     parsedAll = null;
-    allRun.classList.add('hidden');
     selectedTargetProgram = null;
     refreshTarget();
 
@@ -180,9 +235,10 @@ function init() {
       return;
     }
 
-    info.textContent = file.name;
-    targetLabel.textContent = 'Select a destination slot.';
-    importBar.classList.add('has-file');
+    info.textContent = importMode === 'all' ? '' : file.name;
+    targetLabel.textContent = importMode === 'all' ? '' : 'Select a destination slot.';
+    if (importMode === 'all') importBar.classList.remove('has-file');
+    else importBar.classList.add('has-file');
     message('Checking .mg30patch file structure…');
 
     try {
@@ -190,9 +246,11 @@ function init() {
       if (importMode === 'all') {
         parsedAll = parseMG30AllPresetPatch(bytes);
         info.textContent = file.name;
-        targetLabel.textContent = parsedAll.records.length.toLocaleString('en-US') + ' presets ready to import · ' + parsedAll.resourcePrograms.length.toLocaleString('en-US') + ' presets include embedded IR resources.';
-        allRun.classList.remove('hidden');
+        info.textContent = '';
+        targetLabel.textContent = '';
+        importBar.classList.remove('has-file');
         message('');
+        await confirmAndImportAll();
       } else {
         parsed = parseMG30SinglePresetPatch(bytes);
         info.textContent = file.name;
@@ -202,56 +260,12 @@ function init() {
     } catch (error) {
       parsed = null;
       parsedAll = null;
-      allRun.classList.add('hidden');
-      message(error?.message || 'File .mg30patch tidak valid.', 'warn');
+      if (importMode === 'all') clearAllImportSelection();
+      message(error?.message || 'Invalid .mg30patch file.', 'warn');
     }
   });
 
 
-  allRun.addEventListener('click', async () => {
-    if (busy || !parsedAll || !file) return;
-    const bridge = api();
-    if (!bridge?.isConnected?.()) {
-      message('File All Preset valid. Hubungkan MG-30 melalui USB-MIDI sebelum memulai.', 'warn');
-      return;
-    }
-    let plan;
-    try {
-      plan = buildMG30AllPresetImportPlan(parsedAll.records);
-    } catch (error) {
-      message(error?.message || 'Invalid Import All plan.', 'warn');
-      return;
-    }
-    const confirmed = window.confirm(
-      'IMPORT ALL PRESETS?\n\n' +
-      file.name + ' will overwrite all 128 preset slots (01A–32D) and transfer any embedded IR resources included in the file.\n\n' +
-      'The transfer cannot be canceled once it starts. Back up your presets before continuing.\n\n' +
-      'Continue with Import All?'
-    );
-    if (!confirmed) return;
-
-    progressTotal = plan.totalFrames;
-    lock(true);
-    openProgressDialog();
-    try {
-      await bridge.importAll(plan, updateProgressDialog);
-      message('');
-      finishProgressDialog('success', 'Import All Complete', '128 presets and 384 scenes passed readback verification.', plan.totalFrames, 5000);
-      input.value = '';
-      file = null;
-      parsedAll = null;
-      info.textContent = '';
-      importBar.classList.remove('has-file');
-      allRun.classList.add('hidden');
-      targetLabel.textContent = 'Select a destination slot by tapping a preset card below.';
-    } catch (error) {
-      message('');
-      finishProgressDialog('error', 'Import All Failed', (error?.message || 'The import could not be completed.') + '\n\nThe bank may be partially written. Keep USB connected until the MG-30 is stable.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
-    } finally {
-      lock(false);
-      progressTotal = 78;
-    }
-  });
 
   async function confirmAndImport(program) {
     if (busy || !parsed || !file) return;
