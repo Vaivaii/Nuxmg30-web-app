@@ -42,3 +42,20 @@ Record CI test/build/signature results after the workflow completes. Successful 
 - Updated those test assertions to match the English toast and check the phase labels in the bridge. No application protocol/runtime code was changed for this test-only correction. Re-run results pending.
 
 - The second CI retry revealed the phase-label assertion used `phase:` although the source declares `const phase = ...`; corrected the test to match the declaration. The other stale assertion (success toast) was already corrected in the previous test-only commit. Re-run pending.
+
+## Successful CI result — Run #12
+
+- Workflow run: [42357238084](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42357238084)
+- Tested commit: `671413ba9ad04234d8bf5c74916dda1953c0df12`
+- Result: success; all workflow steps completed except the optional draft-release step, which was intentionally skipped.
+- Regression suite: **312 tests passed, 0 failed**.
+- Android Release: `BUILD SUCCESSFUL`; 244 actionable Gradle tasks executed.
+- APK V2 signature verification: passed; one signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package: `com.vaivaii.mg30studio`.
+- Version: `1.0.0-community.2`, versionCode `2`.
+- APK SHA-256 sidecar generated and `sha256sum --check` passed.
+- Uploaded artifact: `MG30-Studio-Community-Signed-Candidate`, artifact ID `13567824108`, 3,237,646 bytes, expires 2027-02-05.
+- Artifact ZIP digest: `7c2c5fde36d4badf610282303a4c7d83e2b28f9f43ca01936a55fbfa4aada2d5`.
+- No public/draft GitHub Release was created.
+- Physical Android installation and MG-30 hardware validation are still pending. In particular, retest the previously observed Import All readback mismatch at program 72 / scene 0. Do not claim the device-side import issue is resolved based on CI alone.
