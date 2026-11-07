@@ -56,3 +56,20 @@ CI regression/build/signature results for this exact commit must be recorded aft
 - The next package is intentionally bumped to `1.0.0-community.3` / Android `versionCode 3` so it can install as an update over the previous `.2` candidate signed with the same community key.
 - The workflow manual-dispatch default and push fallback tag were updated to `v1.0.0-community.3`.
 - Re-run the complete CI on this versioned workflow commit; only the resulting artifact is the one to install.
+
+
+## Final versioned candidate CI — successful
+
+- Tested source/workflow commit: `5730430c7b60519b4304f0dcef56bc707f879ddb`
+- GitHub Actions run: [42361957883](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42361957883)
+- Regression tests: **314 passed, 0 failed**.
+- Android Release: `BUILD SUCCESSFUL`.
+- APK V2 signature verification: passed.
+- APK checksum verification: passed.
+- Package ID: `com.vaivaii.mg30studio`.
+- Version: `1.0.0-community.3`, Android `versionCode 3`.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13569209485`.
+- Artifact ZIP SHA-256: `9d48d116058cfc5d0a4db552dbcfe16eeaafd9c76bdfd522ef2b8c5fcbbae0cd`.
+- Artifact expires: 2027-02-05.
+- This candidate is built and signed, but the Import All confirmation/cleanup behavior still needs final visual confirmation on the user's physical Android phone and original Gen 2 MG-30 firmware 6.0.x.
