@@ -49,3 +49,10 @@ CI regression/build/signature results for this exact commit must be recorded aft
 - Artifact ZIP SHA-256: `bf8af88c10879c55fd4409f2a39b7d55cfb91b905b8cfd04ae413a837deb2ef7`.
 - Artifact expiration: 2027-02-05.
 - This remains a release candidate until physical Import All validation is completed on the original Gen 2 MG-30 firmware 6.0.x.
+
+
+## Candidate version increment
+
+- The next package is intentionally bumped to `1.0.0-community.3` / Android `versionCode 3` so it can install as an update over the previous `.2` candidate signed with the same community key.
+- The workflow manual-dispatch default and push fallback tag were updated to `v1.0.0-community.3`.
+- Re-run the complete CI on this versioned workflow commit; only the resulting artifact is the one to install.
