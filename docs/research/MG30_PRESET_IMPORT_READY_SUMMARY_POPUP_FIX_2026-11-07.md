@@ -105,3 +105,21 @@ The user installed candidate .3 and sent a screenshot showing literal `\\n\\n` c
 - Artifact expires: 2027-02-05.
 - Candidate .4 can update installed .3 because it uses the same signing certificate and a higher versionCode.
 - Physical Import All test on the MG-30 is still required after installing .4.
+
+
+## User-requested final workflow rerun — successful
+
+- User asked to run the workflow after installing candidate .4.
+- A first test-only strengthening run `42372269242` exposed a test selector mistake (the assertion searched for a literal escaped newline where the source has a real line break). No app code regression was indicated; 314/315 passed. The selector was corrected.
+- Final run: [42372337650](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42372337650).
+- Final tested commit: `9752662474cd88d11aa5c62d88d91a04cc2075ea`.
+- Tests: **315 passed, 0 failed**.
+- Android Release: `BUILD SUCCESSFUL`.
+- APK V2 signature verification: passed.
+- APK checksum verification: passed (`MG30-Studio-Community.apk: OK`).
+- Package: `com.vaivaii.mg30studio`; version `1.0.0-community.4`; versionCode `4`.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13573942173`.
+- Artifact ZIP SHA-256: `efbbc1c1aff53f9738b36c021b799233b9626285b7f1f50416aa3508389eeef4`.
+- Artifact expires: 2027-02-05.
+- App runtime changes remain limited to Import All popup newline rendering; the strengthened test checks the nine expected newline escapes. Physical-device confirmation remains the final acceptance step.
