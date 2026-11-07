@@ -20,6 +20,12 @@ test("native Import All validates variable IR group count and dynamic total fram
   assert.doesNotMatch(allImportBridge, /2412/);
 });
 
+test("Import All confirmation uses real newlines instead of visible backslash-n text", () => {
+  assert.ok(importUiSource.includes("presetCount.toLocaleString('en-US') + ' PRESETS?\\n\\n' +"));
+  assert.ok(importUiSource.includes("irPresetCount.toLocaleString('en-US') + ' presets include embedded IR resources.\\n\\n' +"));
+  assert.doesNotMatch(importUiSource, /\\\\n/);
+});
+
 test("Import All summary appears only in the confirmation popup, not as a persistent button or label", async () => {
   const html = await readFile(new URL("../www/index.html", import.meta.url), "utf8");
   assert.doesNotMatch(html, /presetImportAllRun/);

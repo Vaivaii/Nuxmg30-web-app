@@ -176,11 +176,11 @@ function init() {
     const presetCount = parsedAll.records.length;
     const irPresetCount = parsedAll.resourcePrograms.length;
     const confirmed = window.confirm(
-      'START IMPORT ALL · ' + presetCount.toLocaleString('en-US') + ' PRESETS?\\n\\n' +
-      presetCount.toLocaleString('en-US') + ' presets are ready to import.\\n' +
-      irPresetCount.toLocaleString('en-US') + ' presets include embedded IR resources.\\n\\n' +
-      'File: ' + importFile.name + '\\n\\n' +
-      'This will overwrite all preset slots (01A–32D). The transfer cannot be canceled once it starts. Back up your presets before continuing.\\n\\n' +
+      'START IMPORT ALL · ' + presetCount.toLocaleString('en-US') + ' PRESETS?\n\n' +
+      presetCount.toLocaleString('en-US') + ' presets are ready to import.\n' +
+      irPresetCount.toLocaleString('en-US') + ' presets include embedded IR resources.\n\n' +
+      'File: ' + importFile.name + '\n\n' +
+      'This will overwrite all preset slots (01A–32D). The transfer cannot be canceled once it starts. Back up your presets before continuing.\n\n' +
       'Continue?'
     );
     if (!confirmed) {
@@ -197,7 +197,7 @@ function init() {
       finishProgressDialog('success', 'Import All Complete', '128 presets and 384 scenes passed readback verification.', plan.totalFrames, 5000);
     } catch (error) {
       message('');
-      finishProgressDialog('error', 'Import All Failed', (error?.message || 'The import could not be completed.') + '\\n\\nThe bank may be partially written. Keep USB connected until the MG-30 is stable.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
+      finishProgressDialog('error', 'Import All Failed', (error?.message || 'The import could not be completed.') + '\n\nThe bank may be partially written. Keep USB connected until the MG-30 is stable.', progressCompleted, FAILURE_FEEDBACK_AUTO_CLOSE_MS);
     } finally {
       clearAllImportSelection();
       lock(false);

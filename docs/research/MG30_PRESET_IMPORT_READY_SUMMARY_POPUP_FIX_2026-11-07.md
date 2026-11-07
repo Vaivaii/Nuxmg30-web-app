@@ -73,3 +73,13 @@ CI regression/build/signature results for this exact commit must be recorded aft
 - Artifact ZIP SHA-256: `9d48d116058cfc5d0a4db552dbcfe16eeaafd9c76bdfd522ef2b8c5fcbbae0cd`.
 - Artifact expires: 2027-02-05.
 - This candidate is built and signed, but the Import All confirmation/cleanup behavior still needs final visual confirmation on the user's physical Android phone and original Gen 2 MG-30 firmware 6.0.x.
+
+
+## Follow-up: fix visible backslash-n in confirmation popup — 2026-11-07
+
+The user installed candidate .3 and sent a screenshot showing literal `\\n\\n` characters inside the Import All confirmation. The popup source had double-escaped newline sequences, so Android rendered them as ordinary characters.
+
+- Replaced double escapes with single JavaScript newline escapes in the Import All confirmation and Import All failure note.
+- Added regression tests asserting the confirmation source contains newline escapes and no double-escaped sequences.
+- Candidate version incremented to `1.0.0-community.4`, Android `versionCode 4`, to allow an in-place update over installed .3 using the same signing key.
+- Physical MG-30 verification is still required after installation.
