@@ -27,7 +27,7 @@ test("Import All summary appears only in the confirmation popup, not as a persis
   assert.ok(importUiSource.includes("START IMPORT ALL · "));
   assert.ok(importUiSource.includes("presets are ready to import."));
   assert.ok(importUiSource.includes("presets include embedded IR resources."));
-  assert.ok(importUiSource.includes("finally {\\n      clearAllImportSelection();"));
+  assert.ok(importUiSource.includes("finally {\n      clearAllImportSelection();"));
   assert.ok(importUiSource.includes("clearAllImportSelection();"));
 });
 

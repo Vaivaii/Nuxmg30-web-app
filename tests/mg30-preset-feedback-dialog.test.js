@@ -46,10 +46,12 @@ test('Import All action and result feedback are modal, English, and dismissible'
   assert.ok(css.includes('preset-import-progress-done'));
 });
 
-test('Import confirmations are concise English and do not claim batch import is unsupported', () => {
-  assert.ok(importSource.includes('IMPORT ALL PRESETS?'));
-  assert.ok(importSource.includes('will overwrite all 128 preset slots (01A–32D)'));
-  assert.ok(importSource.includes('Back up your presets before continuing.'));
+test('Import confirmations are concise English for both All and Single import', () => {
+  assert.ok(importSource.includes('START IMPORT ALL · '));
+  assert.ok(importSource.includes('presets are ready to import.'));
+  assert.ok(importSource.includes('presets include embedded IR resources.'));
+  assert.ok(importSource.includes('This will overwrite all preset slots (01A–32D).'));
+  assert.ok(importSource.includes('Continue?'));
   assert.ok(importSource.includes('This will overwrite the selected slot'));
   assert.ok(importSource.includes('Collection and NAM will not be affected.'));
   assert.doesNotMatch(importSource, /Batch 128 preset belum didukung|Batch import of 128 presets is not supported/i);

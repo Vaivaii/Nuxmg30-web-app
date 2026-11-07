@@ -28,3 +28,7 @@ Those items were a persistent selected-file summary and action button. The previ
 ## Validation
 
 CI regression/build/signature results for this exact commit must be recorded after the workflow finishes. Device hardware verification remains separate from CI.
+
+## CI iteration note
+
+- Run `42361583573` stopped at two stale regression assertions; Android build steps were correctly skipped. One assertion expected a literal backslash-n rather than a newline in the finally cleanup block, and another expected the old “IMPORT ALL PRESETS?” confirmation copy. Updated both tests to validate the new single confirmation containing the dynamic preset and embedded-IR counts. No device protocol code was changed as part of this test-only correction. Re-run pending.
