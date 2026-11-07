@@ -514,8 +514,8 @@
   <span id="presetImportFileInfo"></span>
   <span id="presetImportTarget">Select a destination slot by tapping a preset card below.</span>
  </div>
- <button class="btn primary hidden" type="button" id="presetImportAllRun">Mulai Import All · 128 Preset</button>
- <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite"></p>
+ <button class="btn primary hidden" type="button" id="presetImportAllRun">Start Import All · 128 Presets</button>
+ <p class="studio-result" id="presetImportStatus" role="status" aria-live="polite" hidden></p>
 
  <dialog id="presetImportProgressDialog" class="preset-import-progress-dialog" aria-labelledby="presetImportProgressTitle" aria-describedby="presetImportProgressNote">
   <div class="preset-import-progress-shell">
@@ -526,6 +526,7 @@
     </div>
    </div>
    <p class="preset-import-progress-note" id="presetImportProgressNote">Do not close the app or disconnect USB while the transfer is running.</p>
+   <button class="btn primary preset-import-progress-done" id="presetImportProgressDone" type="button" hidden>Done</button>
   </div>
  </dialog>
  <p class="studio-result" id="presetExportStatus" role="status" aria-live="polite"></p>

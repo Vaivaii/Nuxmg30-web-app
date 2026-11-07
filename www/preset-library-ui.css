@@ -103,22 +103,10 @@
   margin: 0;
 }
 
-/* Keep Import validation warnings available, but suppress duplicate success/technical banners. */
-#page-presets #presetImportStatus {
-  display: none;
-  margin: 0 0 12px;
-  padding: 9px 11px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.45;
-}
+/* Import feedback is modal-only; never leave a status banner under the Import All action. */
+#page-presets #presetImportStatus,
 #page-presets #presetImportStatus.warn:not(:empty) {
-  display: block;
-  border-color: rgba(220, 164, 94, .5);
-  color: #e6c99b;
+  display: none !important;
 }
 #page-presets #presetExportStatus {
   display: none !important;
@@ -443,6 +431,12 @@
   text-align: center;
 }
 #page-presets .preset-import-progress-note:empty { display: none; }
+#page-presets .preset-import-progress-done {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 16px;
+}
+#page-presets .preset-import-progress-done[hidden] { display: none !important; }
 @keyframes preset-feedback-indeterminate {
   from { transform: translateX(0); }
   to { transform: translateX(155%); }

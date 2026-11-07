@@ -28,7 +28,8 @@ function init() {
   const progressTrack = $('presetImportProgressTrack');
   const progressFill = $('presetImportProgressFill');
   const progressNote = $('presetImportProgressNote');
-  const progressReady = Boolean(progressDialog && progressTitle && progressTrack && progressFill && progressNote);
+  const progressDone = $('presetImportProgressDone');
+  const progressReady = Boolean(progressDialog && progressTitle && progressTrack && progressFill && progressNote && progressDone);
   if (!input || !choose || !allChoose || !allRun || !info || !status || !targetLabel || !importBar) return;
 
   let parsed = null;
@@ -43,13 +44,17 @@ function init() {
 
   const api = () => window.MG30PresetImportBridge;
   const message = (text, kind = '') => {
-    status.textContent = englishText(text);
+    status.textContent = '';
     status.classList.remove('ok', 'warn');
-    if (kind) status.classList.add(kind);
+    if (!text || kind !== 'warn') return;
+    const copy = englishText(text);
+    if (typeof window.alert === 'function') window.alert(copy);
   };
 
   function closeProgressDialog() {
     if (!progressReady) return;
+    if (progressCloseTimer) window.clearTimeout(progressCloseTimer);
+    progressCloseTimer = null;
     if (progressDialog.open && typeof progressDialog.close === 'function') {
       progressDialog.close();
     } else {
@@ -64,6 +69,7 @@ function init() {
     progressCompleted = 0;
     message('');
     if (!progressReady) return;
+    progressDone.hidden = true;
     progressDialog.dataset.owner = 'import';
     progressDialog.dataset.state = 'loading';
     progressTitle.textContent = importMode === 'all' ? 'Import All in Progress' : 'Import in Progress';
@@ -98,6 +104,8 @@ function init() {
       return;
     }
     progressDialog.dataset.state = state;
+    progressDone.hidden = false;
+    progressDone.textContent = 'Done';
     progressTitle.textContent = englishText(title);
     progressTrack.classList.remove('is-indeterminate');
     progressTrack.setAttribute('aria-valuenow', String(Math.round(completed / progressTotal * 100)));
@@ -110,6 +118,7 @@ function init() {
     }, delay);
   }
 
+  progressDone?.addEventListener('click', closeProgressDialog);
   progressDialog?.addEventListener('cancel', event => {
     // Do not dismiss an active USB transfer. Once it reaches a terminal state,
     // allow Escape / Android Back to close the result dialog immediately.
@@ -183,7 +192,7 @@ function init() {
         info.textContent = file.name;
         targetLabel.textContent = parsedAll.records.length.toLocaleString('en-US') + ' presets ready to import · ' + parsedAll.resourcePrograms.length.toLocaleString('en-US') + ' presets include embedded IR resources.';
         allRun.classList.remove('hidden');
-        message('Valid All Preset file. Starting the import will overwrite all 128 preset slots.', 'warn');
+        message('');
       } else {
         parsed = parseMG30SinglePresetPatch(bytes);
         info.textContent = file.name;
@@ -227,7 +236,7 @@ function init() {
     try {
       await bridge.importAll(plan, updateProgressDialog);
       message('');
-      finishProgressDialog('success', 'Import All Complete', '128 presets and 384 scenes passed readback verification.', plan.totalFrames, 1800);
+      finishProgressDialog('success', 'Import All Complete', '128 presets and 384 scenes passed readback verification.', plan.totalFrames, 5000);
       input.value = '';
       file = null;
       parsedAll = null;
@@ -290,7 +299,7 @@ function init() {
     try {
       await bridge.import(plan, updateProgressDialog);
       message('');
-      finishProgressDialog('success', 'Import Complete', 'The preset and all three scenes passed readback verification.', 78, 1800);
+      finishProgressDialog('success', 'Import Complete', 'The preset and all three scenes passed readback verification.', 78, 5000);
       input.value = '';
       file = null;
       parsed = null;
