@@ -30,3 +30,21 @@ Record fresh test/build/signature results for the commit after CI finishes. CI s
 ## First CI iteration
 
 - Run `42359248001` stopped in regression tests before the APK build. The failures were test-only: the existing dynamic test still expected the previous 1.8-second result timer, and the newly added HTML assertions contained malformed escaping in regular expressions. The UI/runtime implementation was not changed for these test corrections. Updated assertions now expect 5 seconds and use literal string checks. Re-run pending.
+
+
+## Final CI result — successful
+
+- Branch: `release/community-prep-v2`
+- Tested commit: `ad31bbe10fe6fe16c9900b00f372f663d4b46b62`
+- GitHub Actions run: [42359367899](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42359367899)
+- Regression suite: **313 passed, 0 failed**.
+- Android Release: `BUILD SUCCESSFUL`.
+- Release signing keystore and alias validation: passed.
+- APK V2 signature verification: passed.
+- Package ID: `com.vaivaii.mg30studio`.
+- Version name: `1.0.0-community.2`; versionCode: `2`.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, artifact ID `13569216047`.
+- Artifact ZIP SHA-256: `e9abc00ada7304d88bc6066c2426daf3e376c78ae5c39a66fdc7aa0fa50128b6`.
+- Artifact expires: 2027-02-05.
+- APK remains a candidate pending clean installation and physical MG-30 hardware smoke test. CI does not prove actual preset-write/readback on the pedal.
