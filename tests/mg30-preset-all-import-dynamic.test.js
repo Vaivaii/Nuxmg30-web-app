@@ -27,7 +27,7 @@ test("Import All UI displays parsed resource count and uses the plan frame total
   assert.doesNotMatch(importUiSource, /27 preset membawa resource IR/);
   assert.match(importUiSource, /completed\.toLocaleString\('en-US'\)/);
   assert.match(bridgeSource, /phase:'Verifying readback'/);
-  assert.match(bridgeSource, /phase:currentStep\.kind==='ir-name'\?'IR name':currentStep\.kind==='ir-waveform'\?'IR waveform':currentStep\.kind==='ir-curve'\?'IR curve':'Preset scene'/);
+  assert.match(bridgeSource, /const phase=currentStep\.kind==='ir-name'\?'IR name':currentStep\.kind==='ir-waveform'\?'IR waveform':currentStep\.kind==='ir-curve'\?'IR curve':'Preset scene'/);
   assert.match(bridgeSource, /currentStep=null;\s*setDeviceStatus\(acknowledged\.toLocaleString\('en-US'\)/);
   assert.doesNotMatch(importUiSource, /progressTotal = 2412/);
 });

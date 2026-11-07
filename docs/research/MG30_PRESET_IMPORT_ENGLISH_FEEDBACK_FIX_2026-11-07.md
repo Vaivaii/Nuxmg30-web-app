@@ -40,3 +40,5 @@ Record CI test/build/signature results after the workflow completes. Successful 
 
 - First workflow run on commit `6dc117de33f48650318c802d4b6f048ef4a7491e` stopped at regression tests before the Android build. 310 tests passed and two assertions failed because the existing tests still expected the previous Indonesian toast text and looked for a native progress-phase string in the separate UI module rather than the HTML bridge.
 - Updated those test assertions to match the English toast and check the phase labels in the bridge. No application protocol/runtime code was changed for this test-only correction. Re-run results pending.
+
+- The second CI retry revealed the phase-label assertion used `phase:` although the source declares `const phase = ...`; corrected the test to match the declaration. The other stale assertion (success toast) was already corrected in the previous test-only commit. Re-run pending.
