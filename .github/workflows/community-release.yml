@@ -1,11 +1,6 @@
 name: MG30 Studio Community Release (signed candidate)
 
 on:
-  push:
-    branches:
-      - release/community-prep-v2
-    paths:
-      - '.github/workflows/community-release.yml'
   workflow_dispatch:
     inputs:
       release_tag:
@@ -40,7 +35,7 @@ jobs:
 
       - name: Validate release tag
         env:
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.1' }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-community\.[0-9]+$ ]]; then
@@ -118,7 +113,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.1' }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           cat > "$RUNNER_TEMP/mg30-community-signing.init.gradle" <<'GRADLE'
           gradle.beforeProject { project ->
@@ -146,7 +141,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.1' }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease -I "$MG30_SIGNING_INIT"
