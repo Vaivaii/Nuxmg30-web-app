@@ -83,3 +83,25 @@ The user installed candidate .3 and sent a screenshot showing literal `\\n\\n` c
 - Added regression tests asserting the confirmation source contains newline escapes and no double-escaped sequences.
 - Candidate version incremented to `1.0.0-community.4`, Android `versionCode 4`, to allow an in-place update over installed .3 using the same signing key.
 - Physical MG-30 verification is still required after installation.
+
+
+## Newline rendering fix candidate .4 — CI successful
+
+- User screenshot confirmed the previous popup showed literal `\\n\\n` text.
+- Replaced all nine double-escaped newline sequences in the Import All confirmation with single JavaScript newline escapes.
+- Fixed the Import All failure dialog's line breaks as well.
+- Added regression test to require correct newline source escapes and reject double-escaped backslash-n.
+- Version: `1.0.0-community.4`, Android `versionCode 4`.
+- Tested commit: `b924a9bf19dbb62541983d2017c073136f6773de`.
+- Actions run: [42370533441](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42370533441).
+- Tests: **315 passed, 0 failed**.
+- Android Release: `BUILD SUCCESSFUL`.
+- APK V2 signature check: passed.
+- APK SHA-256 check: passed (`MG30-Studio-Community.apk: OK`).
+- Package: `com.vaivaii.mg30studio`, version `1.0.0-community.4`, versionCode `4`.
+- Signing certificate SHA-256 remains `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13572999593`.
+- Artifact ZIP SHA-256: `ecc9a7f0d94fce275d152141a13054a27beb5d1564f4a74f611763d758f6c836`.
+- Artifact expires: 2027-02-05.
+- Candidate .4 can update installed .3 because it uses the same signing certificate and a higher versionCode.
+- Physical Import All test on the MG-30 is still required after installing .4.
