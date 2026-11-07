@@ -32,3 +32,20 @@ CI regression/build/signature results for this exact commit must be recorded aft
 ## CI iteration note
 
 - Run `42361583573` stopped at two stale regression assertions; Android build steps were correctly skipped. One assertion expected a literal backslash-n rather than a newline in the finally cleanup block, and another expected the old “IMPORT ALL PRESETS?” confirmation copy. Updated both tests to validate the new single confirmation containing the dynamic preset and embedded-IR counts. No device protocol code was changed as part of this test-only correction. Re-run pending.
+
+
+## Successful CI result
+
+- Exact tested commit: `718b4a202b1982149a80366d92c37bf5de8f855b`
+- GitHub Actions run: [42361691741](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42361691741)
+- Regression suite: **314 passed, 0 failed**.
+- Android Release build: `BUILD SUCCESSFUL`.
+- APK V2 signature verification: passed.
+- APK checksum verification: passed (`MG30-Studio-Community.apk: OK`).
+- Package ID: `com.vaivaii.mg30studio`.
+- Version name: `1.0.0-community.2`; versionCode: `2`.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13569079803`.
+- Artifact ZIP SHA-256: `bf8af88c10879c55fd4409f2a39b7d55cfb91b905b8cfd04ae413a837deb2ef7`.
+- Artifact expiration: 2027-02-05.
+- This remains a release candidate until physical Import All validation is completed on the original Gen 2 MG-30 firmware 6.0.x.
