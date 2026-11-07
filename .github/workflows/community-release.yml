@@ -1,6 +1,11 @@
 name: MG30 Studio Community Release (signed candidate)
 
 on:
+  push:
+    branches:
+      - release/community-prep-v2
+    paths:
+      - '.github/workflows/community-release.yml'
   workflow_dispatch:
     inputs:
       release_tag:
@@ -35,7 +40,7 @@ jobs:
 
       - name: Validate release tag
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.1' }}
         run: |
           set -euo pipefail
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-community\.[0-9]+$ ]]; then
@@ -113,7 +118,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.1' }}
         run: |
           cat > "$RUNNER_TEMP/mg30-community-signing.init.gradle" <<'GRADLE'
           gradle.beforeProject { project ->
@@ -141,7 +146,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.1' }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease -I "$MG30_SIGNING_INIT"
@@ -159,11 +164,10 @@ jobs:
           test -x "$AAPT"
           "$AAPT" dump badging "$APK" | tee android/app/build/outputs/apk/release/apk-badging.txt
           grep -q "package: name='com.vaivaii.mg30studio'" android/app/build/outputs/apk/release/apk-badging.txt
-          cd android/app/build/outputs/apk/release
-          sha256sum app-release.apk > app-release.apk.sha256
           cd "$GITHUB_WORKSPACE"
           cp android/app/build/outputs/apk/release/app-release.apk MG30-Studio-Community.apk
-          cp android/app/build/outputs/apk/release/app-release.apk.sha256 MG30-Studio-Community.apk.sha256
+          sha256sum MG30-Studio-Community.apk > MG30-Studio-Community.apk.sha256
+          sha256sum --check MG30-Studio-Community.apk.sha256
           cp android/app/build/outputs/apk/release/signature-verification.txt MG30-Studio-Community-signature.txt
           cp android/app/build/outputs/apk/release/apk-badging.txt MG30-Studio-Community-package-info.txt
 
