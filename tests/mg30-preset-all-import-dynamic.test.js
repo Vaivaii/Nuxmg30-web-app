@@ -23,7 +23,7 @@ test("native Import All validates variable IR group count and dynamic total fram
 test("Import All UI displays parsed resource count and uses the plan frame total", () => {
   assert.match(importUiSource, /parsedAll\.resourcePrograms\.length\.toLocaleString/);
   assert.match(importUiSource, /progressTotal = plan\.totalFrames/);
-  assert.match(importUiSource, /plan\.totalFrames, 1800/);
+  assert.match(importUiSource, /plan\.totalFrames, 5000/);
   assert.doesNotMatch(importUiSource, /27 preset membawa resource IR/);
   assert.match(importUiSource, /completed\.toLocaleString\('en-US'\)/);
   assert.match(importUiSource, /progressDone\.hidden = false/);

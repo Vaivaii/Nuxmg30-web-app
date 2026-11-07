@@ -26,3 +26,7 @@ Original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
 ## Validation
 
 Record fresh test/build/signature results for the commit after CI finishes. CI success does not replace physical MG-30 testing.
+
+## First CI iteration
+
+- Run `42359248001` stopped in regression tests before the APK build. The failures were test-only: the existing dynamic test still expected the previous 1.8-second result timer, and the newly added HTML assertions contained malformed escaping in regular expressions. The UI/runtime implementation was not changed for these test corrections. Updated assertions now expect 5 seconds and use literal string checks. Re-run pending.
