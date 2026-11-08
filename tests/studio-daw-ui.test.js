@@ -792,10 +792,8 @@ test('Track Settings reserves enough mobile scroll clearance above the fixed DAW
   const finalRule = css.slice(start);
   assert.ok(finalRule.includes('#page-studio #dawTrackSettingsPage:not([hidden]){'));
   assert.ok(finalRule.includes('padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))!important;'));
-  const dockStart = css.lastIndexOf('#page-studio #dawStudioDock{');
-  assert.ok(dockStart >= 0, 'existing pinned Studio dock rule must remain');
-  const dockEnd = css.indexOf('}', dockStart);
-  assert.ok(css.slice(dockStart, dockEnd).includes('position:fixed!important'));
+  assert.ok(css.includes('position:fixed!important;left:50%!important;right:auto!important;bottom:calc(58px + env(safe-area-inset-bottom,0px))!important'),
+    'the existing pinned Studio transport dock remains fixed in its original position');
   assert.ok(html.includes('id="dawStudioDock"'));
   assert.ok(html.includes('data-daw-page="track-settings"'));
 });
