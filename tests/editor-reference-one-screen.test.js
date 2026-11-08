@@ -71,10 +71,12 @@ test('NAM slot subtitle is stacked below AMP and left-aligned like built-in mode
   const end = html.indexOf('</style>', start);
   assert.ok(start >= 0 && end > start, 'the final Editor cascade must be present');
   const finalCascade = html.slice(start, end);
-  const match = finalCascade.match(/\\.editor-heading\\.is-nam-profile>div\\s*\\{([^}]*)\\}/);
-  assert.ok(match, 'NAM heading content must have a dedicated layout rule');
-  assert.match(match[1], /flex-direction:column!important/);
-  assert.match(match[1], /align-items:flex-start!important/);
-  assert.match(finalCascade, /\\.editor-heading\\.is-nam-profile #editorSub\\s*\\{/);
+  const headingRuleStart = finalCascade.indexOf('.editor-heading.is-nam-profile>div{');
+  assert.ok(headingRuleStart >= 0, 'NAM heading content must have a dedicated layout rule');
+  const headingRuleEnd = finalCascade.indexOf('}', headingRuleStart);
+  const headingRule = finalCascade.slice(headingRuleStart, headingRuleEnd);
+  assert.ok(headingRule.includes('flex-direction:column!important'));
+  assert.ok(headingRule.includes('align-items:flex-start!important'));
+  assert.ok(finalCascade.includes('.editor-heading.is-nam-profile #editorSub{'));
   assert.ok(html.includes("$('editorSub').closest('.editor-heading')?.classList.toggle('is-nam-profile',!!namProfile)"));
 });
