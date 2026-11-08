@@ -340,3 +340,23 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 
 - Full Node regression suite and signed Community Release workflow must pass before distributing the APK.
 - Do not claim physical MG-30 verification based solely on CI.
+
+
+
+### Community .14 build result — verified signed APK
+
+- Final source commit used by Actions: `3da645f537103f79ec7a21ce636a3031bbf95fde`.
+- UI implementation commit: `7bf29c22129a191b8bb637658eae105dce785e97`.
+- Regression test correction commits: `7a59609df8d8e990a648cd81b88476659dae4d5e` and `3da645f537103f79ec7a21ce636a3031bbf95fde`.
+- GitHub Actions run: [42501013321](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42501013321).
+- Regression suite: **343 tests passed, 0 failed**.
+- Keystore/alias validation, Android project generation and signing metadata: passed.
+- Gradle Release: `BUILD SUCCESSFUL in 1m 18s`.
+- APK Signature Scheme v2: valid; one RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.14`; versionCode `14`; min SDK `24`; target SDK `36`.
+- APK size: `3,570,390` bytes.
+- APK SHA-256: `a956432182f76cd5ec2d04a8982586522af74a754ed5ceb75675b47007d6a9b1`; matched the CI sidecar exactly and independently recomputed after extraction.
+- Artifact ID: `13625825888`; artifact ZIP digest: `sha256:b095183d723eb417d8711278379ab73029625952b4792d15eb26412e1c871fba`.
+- Extracted and inspected `assets/public/index.html` inside the actual APK. Confirmed final v8 style node and installer are present; 68px discrete-control and 52px option heights are bundled; the superseded 116px/94px discrete-switch rules are removed from v7; the remaining 116px declaration in the bundle applies only to model artwork stage / gear-art, not parameter switches; no `12 blocks` label remains in Signal Chain markup; the edit icon class and SVG are absent; `EDIT` text and dynamic `DONE` label handler are present.
+- This confirms build and static bundle integrity. Final screenshot parity and actual switch hardware writes still require the user to install and verify on the original MG-30 Gen 2; do not state that physical hardware behavior was verified by CI.
