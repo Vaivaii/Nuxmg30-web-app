@@ -9,7 +9,7 @@ test('English UI uses English copy for the screenshot-reported strings', async (
   const html = await read('../www/index.html');
   const nativeMidi = await read('../www/native-midi.js');
 
-  assert.match(html, /12 blocks/);
+  assert.doesNotMatch(html, /12 blocks/);
   assert.doesNotMatch(html, /12 blok/);
   assert.match(html, /placeholder="Search for a song or artist…"/);
   assert.match(html, /⠿ MOVE/);

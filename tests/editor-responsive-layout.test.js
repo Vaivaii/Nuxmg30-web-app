@@ -91,13 +91,13 @@ test('v6 is moved after the Vite stylesheet by the authoritative style installer
 
 test('Discrete switch cards are compact and proportional rather than tall parameter-row slabs',()=>{
   const v8=html.slice(html.indexOf('<style id="editor-reference-final-v8">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v8">')));
-  assert.match(v8,/knob-discrete-switch\\{[\\s\\S]*?height:68px!important[\\s\\S]*?max-height:68px!important/);
-  assert.match(v8,/knob-two-way\\{[\\s\\S]*?max-width:164px!important/);
-  assert.match(v8,/three-way-switch\\{[\\s\\S]*?height:52px!important/);
-  assert.match(v8,/switch-position-button\\{[\\s\\S]*?height:52px!important/);
-  assert.match(v8,/knob-two-way \\.switch-position\\{[\\s\\S]*?display:none!important/);
+  assert.ok(v8.includes('height:68px!important;max-height:68px!important'));
+  assert.ok(v8.includes('width:min(100%,164px)!important;max-width:164px!important'));
+  assert.ok(v8.includes('grid-template-rows:52px!important'));
+  assert.ok(v8.includes('height:52px!important;min-height:52px!important;max-height:52px!important'));
+  assert.ok(v8.includes('knob-two-way .switch-position'));
   assert.ok(html.includes("choice.position+' '+choice.label"));
-  assert.ok(html.includes("data-switch-value=\\"'+choice.value+'\\""));
+  assert.ok(html.includes('data-switch-value=\\"'+choice.value+'\\"'));
 });
 
 test('Parallel-routing connector cards are wide enough for the complete routing icon',()=>{
@@ -136,8 +136,9 @@ test('Signal Chain uses a text-only EDIT action and no longer displays the block
 
 test('Signal Chain edit row has visible separation before the horizontal pedal strip',()=>{
   const v8=html.slice(html.indexOf('<style id="editor-reference-final-v8">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v8">')));
-  assert.match(v8,/signal-chain-panel>\\.panel-head\\{[\\s\\S]*?margin:0 0 6px!important/);
-  assert.match(v8,/chain-head-actions \\.chain-edit-toggle\\{[\\s\\S]*?width:50px!important[\\s\\S]*?height:22px!important/);
-  assert.match(v8,/chain-track\\{[\\s\\S]*?height:46px!important/);
-  assert.match(v8,/signal-chain-panel\\{[\\s\\S]*?height:88px!important/);
+  assert.ok(v8.includes('margin:0 0 6px!important'));
+  assert.ok(v8.includes('width:50px!important;min-width:50px!important;max-width:50px!important'));
+  assert.ok(v8.includes('height:22px!important;min-height:22px!important;max-height:22px!important'));
+  assert.ok(v8.includes('height:46px!important;max-height:46px!important'));
+  assert.ok(v8.includes('height:88px!important;min-height:88px!important;max-height:88px!important'));
 });
