@@ -46,3 +46,18 @@ The user explicitly requested a faithful implementation of the supplied 684×153
 ## CI iteration — DOM assertion updated
 
 - First CI run `42455295027` and follow-up `42455835956` both stopped in regression tests before Android build. Each run had 322/323 tests pass. The sole failing test searched for the AMP card close using the pre-move adjacent HTML pattern `</div><details...`; the new Editor card retains hidden selects and draft controls before the card closes. Updated test to use the following quick-panel boundary as the parent card end. No runtime/parameter behavior change was needed.
+
+
+## Signed Community .7 build — SUCCESS
+
+- Final source commit used by the build: `9cbec5c9ff2d7ca3de7cf2b626cdb5b1b620316c` (`test: assert inline parameter mount in updated editor card`).
+- GitHub Actions run: `42455928929` — all 14 workflow steps completed successfully except the optional draft-release step, which was intentionally skipped.
+- Regression suite: `323 tests`, `323 passed`, `0 failed`.
+- Keystore decoding, password and alias validation passed.
+- Android project generation passed; Gradle `assembleRelease` completed with `BUILD SUCCESSFUL`.
+- APK verification passed with APK Signature Scheme v2 and one RSA 4096-bit signer.
+- Package identity: `com.vaivaii.mg30studio`; versionName `1.0.0-community.7`; versionCode `7`; min SDK `24`; target SDK `36`.
+- APK SHA-256: `77fc5b7e5a825fbfde45f9c6d72acb9046355d4220da89af68785a3fd44c5d9e`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13607950445`, run `42455928929`.
+- Built APK was extracted and its provided SHA-256 sidecar independently checked in the working environment; result: `OK`.
+- This proves CI regression/build/signature/package validation only. Physical Android installation, screenshot/layout validation and MG-30 hardware smoke testing remain pending; do not mark those as passed until explicitly tested.
