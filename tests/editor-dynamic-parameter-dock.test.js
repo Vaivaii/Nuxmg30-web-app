@@ -8,7 +8,7 @@ test('All live model controls are mounted once, directly inside the AMP editor c
   const cardStart = html.indexOf('class="control main-editor-card"');
   const modelVisual = html.indexOf('id="modelVisual"', cardStart);
   const knobMount = html.indexOf('id="knobs"', modelVisual);
-  const cardEnd = html.indexOf('</div><details class="control quick-panel"', cardStart);
+  const cardEnd = html.indexOf('<details class="control quick-panel"', cardStart);
   assert.ok(cardStart >= 0 && modelVisual > cardStart && knobMount > modelVisual && knobMount < cardEnd);
   assert.equal((html.match(/id="knobs"/g) || []).length, 1);
   assert.ok(html.includes("$('knobs').innerHTML=controls.map"));
