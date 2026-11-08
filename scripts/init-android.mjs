@@ -149,7 +149,7 @@ if (existsSync(stylesPath)) {
   if (themeMatch) {
     let theme = themeMatch[0];
     // Use explicit WindowInsets handling instead of opting out of edge-to-edge enforcement.
-    theme = theme.replace(/\\s*<item name="android:windowOptOutEdgeToEdgeEnforcement">[^<]*<\\/item>\\s*/g, '\\n');
+    theme = theme.replace(/\s*<item name="android:windowOptOutEdgeToEdgeEnforcement">[^<]*<\/item>\s*/g, '\n');
     for (const item of [
       '<item name="android:statusBarColor">#0b1012</item>',
       '<item name="android:windowBackground">#0b1012</item>',

@@ -19,14 +19,14 @@ test('Android uses edge-to-edge and applies real system bar and cutout insets to
   assert.ok(initializer.includes('ViewCompat.requestApplyInsets(insetsHost);'));
   assert.ok(initializer.includes('controller.setAppearanceLightNavigationBars(false);'));
   assert.ok(initializer.includes('.setInsets(insetTypes, Insets.NONE)'));
-  assert.doesNotMatch(initializer, /setDecorFitsSystemWindows\\(getWindow\\(\\), true\\)/);
+  assert.doesNotMatch(initializer, /setDecorFitsSystemWindows\(getWindow\(\), true\)/);
   assert.doesNotMatch(initializer, /windowOptOutEdgeToEdgeEnforcement/);
 });
 
 test('Insets are re-applied on resume and measured dynamically rather than using a fixed navigation-bar height', () => {
-  assert.match(initializer, /public void onResume\\(\\)[\\s\\S]*?applySystemBars\\(\\);/);
+  assert.match(initializer, /public void onResume\(\)[\s\S]*?applySystemBars\(\);/);
   assert.ok(initializer.includes('getInsets(insetTypes)'));
-  assert.doesNotMatch(initializer, /navigationBarHeight\\s*=\\s*\\d+|setPadding\\([^)]*\\b(24|48|72)\\b/);
+  assert.doesNotMatch(initializer, /navigationBarHeight\s*=\s*\d+|setPadding\([^)]*\b(24|48|72)\b/);
 });
 
 test('Initial WebView markup already opens Editor and keeps NAM/IR hidden', () => {
