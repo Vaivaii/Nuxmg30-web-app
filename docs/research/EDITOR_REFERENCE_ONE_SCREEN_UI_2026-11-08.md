@@ -102,3 +102,47 @@ The user explicitly requested a faithful implementation of the supplied 684×153
 - Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13614704529`; artifact ZIP digest `sha256:d95bc46d98bc1f158289de17c8b275d389d616fda5f29e80be23985f9f1c1503`.
 - The downloaded audit artifact contained the signed APK and CI sidecars; the APK's sidecar checksum independently verified `OK`, and a separate user-facing APK file plus checksum sidecar were created.
 - This records automated test/build/signature/package validation only. Do not mark physical installation, screenshot parity or live MG-30 hardware smoke tests as passed until the user validates them.
+
+
+
+## Reference mismatch correction — Community .9
+
+### Evidence from installed Community .8 screenshot
+
+The user supplied a same-resolution pair (691×1536) showing Community .8 versus the required reference. Community .8 was not accepted visually. Specific mismatches:
+- Preset strip, Signal Chain panel and global/editor headers consumed too much vertical space versus the reference.
+- Signal Chain descriptive text remained visible because a previous selector had greater CSS specificity than the new override.
+- Per-block cards were too wide, so fewer blocks were visible than the reference strip.
+- The AMP category caption remained visible; AMP artwork was undersized relative to its card; the remaining vertical area for inline knobs collapsed and only partial dial/range fragments were visible.
+- Scene dock used fixed positioning inside the Editor while app tabs were separately fixed; on edge-to-edge Android the fixed app tabs did not reserve the native system navigation area, leaving a large gap/incorrect overlap depending on navigation mode.
+
+### Community .9 corrections
+
+- Candidate version: `1.0.0-community.9`, versionCode `9`, same signing certificate as prior Community candidates.
+- Main source implementation commit: `54973e8945213ceb0fb8dedd09531eb82b0673a6`; follow-up syntax/test commits: `ec50d47f5b7383ee9cb160ac5baf9ca05921188d`, `899334d8f6571195698a4d4674b4de6b3a9b4115`, `69b2cb2b5529b89550779096d9cac7c1d83cb5ca`, `07a5631280ed477caad6b8ac06cdd41cb1b83602`.
+- Rescaled Editor vertical dimensions for 691×1536 phone reference: topbar 38 CSS px, preset row 42 CSS px, Signal Chain 88 CSS px, Scene dock 62 CSS px. The AMP card flexes into the remaining content height to give the knob grid two full rows.
+- Restored/kept the tab title and horizontal CTRL/EXP + Save to Device layout.
+- The Signal Chain paragraph is hidden with a selector matching the stronger previous cascade; block model/status captions remain hidden. Blocks are 44 CSS px wide, show icon + block name only, and explicit left/right arrow buttons scroll the original chain element without replacing its renderer or order logic.
+- Preset strip adds the divider and pencil glyph visually; the existing preset jump/name trigger and event path remain unchanged.
+- AMP header gains the visual divider separators; AMP artwork is enlarged and constrained with `object-fit:contain`. The AMP category caption is hidden so the reference only retains the Based on line. Non-AMP artwork has bounded width/height and uses contain sizing.
+- Scene dock is now a normal-flow final flex child after the AMP editor, rather than a fixed overlay. It occupies the bottom dock position directly above the fixed app tab bar.
+- App tab bar bottom is offset by the live Android navigation-bar inset. The generated Android `MainActivity` now exposes only `getNavigationBottomInsetDp()` through a small WebView JavaScript interface, sourced from `WindowInsetsCompat.Type.navigationBars()`. CSS/JS use it to lift the app tabs above 3-button or gesture navigation. The workspace reserve is calculated from measured app-tab height + system bottom inset + scene gap.
+- No changes to NAM/IR transfers, parameter or knob renderer/event handlers, MIDI/CC mapping, scene CC 80 logic, SysEx, preset serialization, signal-chain order/bypass data, USB audio, or MG-30 device protocol.
+
+### Successful CI and APK audit — Community .9
+
+- Exact build source commit: `07a5631280ed477caad6b8ac06cdd41cb1b83602`.
+- GitHub Actions run: [42478061304](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42478061304).
+- Regression suite: **330 tests passed, 0 failed**.
+- Native Android project generation: passed.
+- Gradle signed Release build: `BUILD SUCCESSFUL`.
+- Keystore/password/alias validation: passed.
+- APK Signature Scheme v2 verification: passed, one RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package ID: `com.vaivaii.mg30studio`; versionName `1.0.0-community.9`; versionCode `9`; min SDK `24`; target SDK `36`.
+- APK size: `3,565,854` bytes.
+- APK SHA-256: `e14095fa350e95350ea09f0839a4b4b49967d1b8739783eca935c3468b37f0ec`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13616860328`; ZIP SHA-256 `cf2b20cea517c855a13235873687f258880ce46d4ba4fdfbc194c32bd56ed6c8`.
+- Downloaded audit ZIP was unpacked locally; its APK SHA-256 sidecar independently matched the APK exactly.
+- The final APK bundle was checked to include the v3 responsive CSS, Signal Chain arrow markup and Android inset bridge module.
+- Physical Android installation and screenshot matching in both 3-button and gesture navigation modes remain pending. CI verifies source/tests/build/signature/package only; do not state that the physical visual match is proven until the user checks it.
