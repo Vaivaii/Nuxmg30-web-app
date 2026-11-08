@@ -144,31 +144,32 @@ test('Editor artwork SVGs have explicit bounded widths instead of intrinsic auto
 });
 
 
-test('bundled mobile Editor stylesheet keeps the full model frame and caption rail above short-screen clamps',()=>{
-  const marker='/* Final compact mobile Editor layout:';
-  const start=css.lastIndexOf(marker);
-  assert.ok(start>=0,'missing final bundled Editor frame override');
-  assert.ok(start>css.lastIndexOf('height:clamp(92px,13dvh,118px)'), 'final override must follow the short-screen clamp');
-  const rules=css.slice(start);
-  assert.match(rules,/body > \.app > #page-editor > \.editor > \.main-editor-card #modelVisual\.model-visual-stage\s*\{[^}]*height:168px!important/s);
-  assert.match(rules,/body > \.app > #page-editor > \.editor > \.main-editor-card #modelVisual\.model-visual-stage\s*\{[^}]*overflow:visible!important/s);
-  assert.match(rules,/\.gear-art\s*\{[^}]*height:112px!important/s);
-  assert.match(rules,/\.gear-copy\s*\{[^}]*height:56px!important/s);
-  assert.match(rules,/\.gear-copy\s*\{[^}]*padding:6px 4px 0!important/s);
-  assert.match(rules,/\.gear-copy-head\s*\{[^}]*visibility:visible!important/s);
-  assert.match(rules,/\.gear-copy \.gear-type\s*\{[^}]*visibility:visible!important/s);
-  assert.match(rules,/\.gear-copy-meta\s*\{[^}]*flex:1 1 auto!important/s);
-  assert.match(rules,/\.gear-copy \.based-on\s*\{[^}]*display:flex!important/s);
-  assert.match(rules,/\.gear-copy \.based-on\s*\{[^}]*max-height:none!important/s);
-  assert.match(rules,/gear-art-amp \.gear-svg\s*\{[^}]*width:62%!important/s);
-  assert.match(rules,/gear-art-pedal \.gear-svg\s*\{[^}]*width:36%!important/s);
-  assert.match(rules,/gear-art-cabinet \.gear-svg\s*\{[^}]*width:60%!important/s);
-  assert.match(rules,/gear-art-expression \.gear-svg\s*\{[^}]*width:40%!important/s);
-  assert.match(rules,/gear-art-loop \.gear-svg\s*\{[^}]*width:46%!important/s);
-  assert.match(rules,/max-height:780px\)\s*\{[\s\S]*?height:154px!important/s);
-  assert.match(rules,/\.gear-art\s*\{[^}]*height:98px!important/s);
-  assert.ok(!html.includes('id="editor-fixed-model-frame-scene-anchor"'), 'old override must not remain in inline HTML');
+test('final Editor frame preserves complete AMP/pedal artwork and gives the inline knob grid the remaining height',()=>{
+  const finalCss=html.match(/<style id="editor-reference-final-v4">([\\s\\S]*?)<\\/style>/)?.[1]||'';
+  assert.ok(finalCss.length>8000,'missing authoritative final Editor stylesheet');
+  assert.match(finalCss,/#modelVisual\\.model-visual-stage\\{[^}]*height:116px!important/s);
+  assert.match(finalCss,/gear-art \\.gear-svg\\{[^}]*object-fit:contain!important/s);
+  assert.match(finalCss,/gear-art-amp \\.gear-svg\\{[^}]*width:84%!important/s);
+  assert.match(finalCss,/gear-copy\\{[^}]*height:17px!important/s);
+  assert.match(finalCss,/gear-copy \\.gear-type,[\\s\\S]*?display:none!important/s);
+  assert.match(finalCss,/#knobs\\{[^}]*flex:1 1 0!important/s);
+  assert.match(finalCss,/#knobs\\{[^}]*grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)!important/s);
+  assert.match(finalCss,/max-height:780px\\)[\\s\\S]*?height:104px!important/s);
+  assert.ok(!css.includes('Final compact mobile Editor layout: complete artwork'));
 });
+
+test('Scene dock is outside the AMP card, compact, and directly above the application tab bar',()=>{
+  const finalCss=html.match(/<style id="editor-reference-final-v4">([\\s\\S]*?)<\\/style>/)?.[1]||'';
+  const page=html.slice(html.indexOf('<section id="page-editor">'),html.indexOf('</section>',html.indexOf('<section id="page-editor">')));
+  const cardEnd=page.indexOf('</div><details class="control quick-panel">');
+  const dockPosition=page.indexOf('id="editorSceneDock"');
+  assert.ok(cardEnd>=0&&dockPosition>cardEnd,'Scene dock must follow the Editor card');
+  assert.match(finalCss,/#editorSceneDock\\{[^}]*position:relative!important[^}]*flex:0 0 54px!important/s);
+  assert.match(finalCss,/body>\\.app>\\.nav\\{[^}]*bottom:0!important[^}]*height:72px!important/s);
+  assert.match(finalCss,/padding:0 0 var\\(--editor-workspace-reserve,80px\\)!important/);
+  assert.match(finalCss,/scene-button\\{[^}]*height:44px!important/s);
+});
+
 
 test('AMP and IR renderers always include their category label and Based on value in the shared caption rail',()=>{
   const start=html.indexOf('function renderModelVisual(){');
