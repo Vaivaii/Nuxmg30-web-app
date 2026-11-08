@@ -41,3 +41,9 @@ test('Only UI markup/styles and render presentation changed; MIDI mapping functi
   assert.ok(html.includes("Math.ceil(controls.length/4)"));
   assert.ok(html.includes("function fitInlineParameterDials()"));
 });
+
+test('The visible Tone Workspace / Tone Editor header and both actions remain mounted', () => {
+  assert.ok(html.includes('<span class="eyebrow">TONE WORKSPACE</span><strong>Tone Editor</strong>'));
+  assert.ok(html.includes('id="openCtrlEditor"'));
+  assert.ok(html.includes('id="saveDeviceBtn"'));
+});
