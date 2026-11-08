@@ -227,3 +227,49 @@ A direct inspection of the built APK's `assets/public/index.html` revealed that 
 - Audit ZIP downloaded and extracted locally; APK size and SHA-256 sidecar verified independently.
 - Built APK inspection: `editor-reference-final-v4` and `editor-reference-final-v5` are included; Vite CSS link appears after the source style tags; the runtime cascade installer is included after the module script tags; its append operation restores v4/v5 to the end of the generated head cascade. v5 preset hard-cap, measured Scene dock variables, AMP divider and rounded toggle rules are present in the built bundle.
 - CI proves tests, signed build, package identity and checksum. A physical installation/screenshot check in the user's gesture-navigation mode remains the final visual acceptance gate. Do not claim exact visual parity until that screenshot is reviewed. 3-button mode should also be smoke-tested when available.
+
+
+
+## Community .12 — preset / NAM / discrete-switch / cabinet selector polish
+
+### User screenshot findings
+
+The user supplied fresh MG-30 Gen 2 screenshots covering:
+- NAM Profile amp slot (QuickTone Slot 01 · ID 54), with long subtitle crowding the AMP heading.
+- Built-in amp models with the normal `Model N` subtitle.
+- Built-in AMP and modulation/effect models containing two- and three-position discrete controls, where switch buttons were squeezed into one quarter-width knob-grid cell and labels wrapped vertically.
+- IR/Cabinet controls still showing Indonesian placeholder text `Pilih mic` and `Pilih posisi`.
+- Preset name text that sat too high within its preset card.
+
+### Source changes
+
+- Candidate: `1.0.0-community.12`, Android versionCode `12`.
+- Branch: `feature/editor-reference-one-screen`.
+- Source implementation commit: `d4ac95fbf8acd94f49b32670eaa05c995e3e0472`.
+- Renderer/test repair commit: `24a765345d36652a9e5ad2ef290b0a46cd409f2c`.
+- Added `editor-reference-final-v6`, included in the runtime cascade installer after Vite's generated CSS alongside v4/v5. It remains an Editor-only visual layer.
+- Preset name: explicitly centers `.hardware-preset-name-trigger` and its label vertically within the compact 42px preset row; existing previous/next/favorite/preset jump handlers are unchanged.
+- NAM subtitle: `renderEditor()` leaves the `editorSub` empty and marks the AMP heading with `is-nam-profile` only when `ampNamProfileForModelIndex()` identifies a custom NAM slot. The v6 style hides that subtitle and vertically centers the AMP title. Built-in AMP models continue to show their normal `Model N` sublabel.
+- Discrete parameter grid: added `parameterGridRowCount(controls,4)`, allocating 2 columns for each `isDiscreteSwitch(control)` and 1 column for a normal dial. The matching v6 CSS gives each discrete switch `grid-column:span 2`, places its two/three choices in an explicit horizontal grid, prevents vertical writing and disables aggressive word breaking. This fixes narrow stacked letters for controls such as CONTOUR, LO/HI MIDS FREQ, UP/DOWN, MODE and similar hardware discrete controls. Switch choices, `data-switch-value`, readback, active state, stored raw values, and click handlers are unchanged.
+- Cabinet placeholders now read `Select mic` and `Select position`. `MIC_OPTIONS`, `MIC_POSITION_OPTIONS`, parameter IDs `mic`/`position`, enum indices, `encodeParameterValue`, `normalizeParameterValue`, and `sendBlockParam` are unchanged.
+- No changes to MIDI CC number mapping, discrete-switch value inversion rules, SysEx, NAM transfer, User/Third Party IR import, IR Collection, preset save/serialization, signal-chain order, or USB audio.
+
+### Regression / signed build — SUCCESS
+
+- Exact source commit built: `24a765345d36652a9e5ad2ef290b0a46cd409f2c`.
+- GitHub Actions run: [42492053138](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42492053138).
+- Regression suite: **337 passed, 0 failed**.
+- Inline JavaScript syntax validation: passed.
+- Keystore / alias validation: passed.
+- Android project generation: passed.
+- Gradle Release: `BUILD SUCCESSFUL`.
+- APK signature verification: Signature Scheme v2 valid; RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b` (same Community signing identity).
+- Package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.12`; versionCode `12`; min SDK `24`; target SDK `36`.
+- APK size: `3,569,318` bytes.
+- APK SHA-256: `a1f4bd36e980bf42dbe607dfa1446857593702e7bb08936bfba29b7719bd3162`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13621428155`; artifact ZIP SHA-256 `a1b4cb334416c192d7239108f3e1f4ea9d7876e49db6a3ab23b785136027e21c`.
+- Downloaded audit ZIP was unpacked locally. APK's sidecar checksum matched independently using `sha256sum`.
+- Direct APK bundle inspection confirmed `editor-reference-final-v6`, `parameterGridRowCount(controls,4)`, two-column discrete switch CSS, the NAM subtitle class, and English cabinet placeholders are present; the old Indonesian cabinet placeholders are absent.
+- The built APK still contains `sendBlockParam`, `normalizeParameterValue`, `data-switch-value` and the existing event-binding paths. This is source/bundle integrity evidence, not a live hardware interaction test.
+- Physical MG-30 testing and visual confirmation of the two-column discrete switches on the phone remain pending user installation; do not state that live parameter writes were verified by CI.
