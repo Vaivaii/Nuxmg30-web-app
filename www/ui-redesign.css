@@ -2922,3 +2922,49 @@ body > .app > #page-editor:not(.hidden) {
   body > .app > #page-editor > .editor > .main-editor-card #modelVisual .gear-art {flex-basis:98px!important;height:98px!important;min-height:98px!important;max-height:98px!important}
   body > .app > #page-editor > .editor > .main-editor-card .scene-bar {padding-top:9px!important}
 }
+
+
+/* Android 3-button / compact-height recovery:
+   Scroll the Editor workspace as a whole. The former viewport lock clipped the
+   Scene row inside a fixed-height AMP card while dock and tab navigation overlay it. */
+@media (max-width:720px) {
+  body > .app > #page-editor:not(.hidden) {
+    display:block!important;
+    flex:1 1 0!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding:0 0 calc(220px + env(safe-area-inset-bottom,0px))!important;
+    scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom,0px))!important;
+    box-sizing:border-box!important;
+  }
+  body > .app > #page-editor > .editor {
+    display:flex!important;
+    flex:0 0 auto!important;
+    flex-direction:column!important;
+    min-height:0!important;
+    height:auto!important;
+    overflow:visible!important;
+  }
+  body > .app > #page-editor > .editor > .main-editor-card {
+    display:flex!important;
+    flex:0 0 auto!important;
+    flex-direction:column!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:14px!important;
+  }
+  body > .app > #page-editor > .editor > .main-editor-card .scene-bar {
+    flex:0 0 auto!important;
+    margin:8px 0 8px!important;
+  }
+  body > .app > #page-editor > .editor > .main-editor-card .scene-buttons {
+    flex:0 0 auto!important;
+  }
+}
