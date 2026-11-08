@@ -3967,3 +3967,21 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Release workflow candidate advanced from Community .15 / versionCode 15 to Community .16 / versionCode 16.
 - Automated test/build and signed APK inspection: pending GitHub Actions. Physical-device verification remains pending user installation and screenshot review on the original MG-30 Gen 2.
 
+
+
+### Community .16 build, signed APK and bundle inspection — 9 November 2026
+
+- Application source changes: commit `bb61255fc82127e36dd726bc886c1e01482314fd`.
+- Final test-only assertion correction: commit `3d55dfefe6c7606f906b58a617276f582555653e`. No app source or runtime behavior changed after the source fix commit.
+- Successful GitHub Actions Build #54: [run 42509337120](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42509337120); tested HEAD `3d55dfefe6c7606f906b58a617276f582555653e`.
+- Regression suite: **348 passed, 0 failed**.
+- Release keystore / alias validation: passed. Android project generation and release signing metadata configuration: passed.
+- Gradle: `./gradlew --no-daemon assembleRelease` — **BUILD SUCCESSFUL in 1m 41s**.
+- APK verification: APK Signature Scheme v2 **true**, one RSA 4096-bit signer. Certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.16`; versionCode `16`; min SDK `24`; target SDK `36`.
+- Signed APK size: **3,571,802 bytes**. SHA-256: `a0b7284be21649b23d1ce51c3682435dd10f2b60fa890695ed8d6c130a96ed70`.
+- GitHub audit artifact `MG30-Studio-Community-Signed-Candidate`, ID `13628618604`, ZIP size 3,252,841 bytes; ZIP SHA-256 `3ba625b6eb0240cce37be1a058879fe962b66fbcd714466e8b536a2738b45869`.
+- Downloaded audit ZIP integrity and extracted APK ZIP integrity passed. The APK's included checksum sidecar independently matched the extracted APK.
+- Direct inspection of the actual APK confirmed: NAM profile subtitle flex direction is column and left-aligned; the existing NAM profile class handler and late v9 style installer remain; Track Settings CSS includes the new 88px + safe-area bottom clearance; the pre-existing fixed Studio dock and DAW transport controls remain in the package.
+- The first two CI runs exposed only new-test assertion mistakes (over-escaped selector patterns, then targeting the later variable-only dock override). Those assertions were corrected without changing application source. Final Run #54 passed all 348 tests.
+- **Physical-device acceptance remains pending**: install Community .16 on the original NUX MG-30 Gen 2 firmware 6.0.x and visually verify (1) AMP / NAM Slot N two-line hierarchy and (2) scrolling Track Settings fully above the fixed dock. CI and package inspection do not substitute for that phone check.
