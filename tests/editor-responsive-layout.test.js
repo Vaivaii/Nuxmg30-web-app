@@ -3,50 +3,62 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
-const finalCss = html.match(/<style id="editor-fixed-reference-viewport-v2">([\s\S]*?)<\/style>/)?.[1] || '';
+const init = readFileSync(new URL('../scripts/init-android.mjs', import.meta.url), 'utf8');
+const finalCss = html.match(/<style id="editor-fixed-reference-viewport-v3">([\s\S]*?)<\/style>/)?.[1] || '';
 
-test('The final mobile Editor is fixed to the measured viewport with no vertical page scrolling', () => {
+test('The reference Editor is fixed with a normal-flow Scene dock and no vertical page scrolling', () => {
   assert.ok(finalCss.length > 1000);
   assert.match(finalCss, /height:100dvh!important/);
-  assert.match(finalCss, /#page-editor:not\(\.hidden\)[\s\S]*?overflow:hidden!important/);
-  const pageRule = finalCss.match(/body>\.app>#page-editor:not\(\.hidden\)\s*\{([\s\S]*?)\}/)?.[1] || '';
-  assert.match(pageRule, /overflow:hidden!important/);
-  assert.doesNotMatch(pageRule, /overflow-y\s*:\s*auto/i);
-  assert.match(finalCss, /overflow-x:auto!important;overflow-y:hidden!important/);
+  const page = finalCss.match(/body>\.app>#page-editor:not\(\.hidden\)\s*\{([\s\S]*?)\}/)?.[1] || '';
+  assert.match(page, /overflow:hidden!important/);
+  assert.doesNotMatch(page, /overflow-y\s*:\s*auto/i);
+  assert.match(finalCss, /#editorSceneDock\{[\s\S]*?position:relative!important/);
+  assert.doesNotMatch(finalCss.match(/#editorSceneDock\{([\s\S]*?)\}/)?.[1] || '', /position:fixed/i);
 });
 
-test('Tone tab header remains visible with CTRL / EXP and Save to Device in one row', () => {
+test('Reference sizing keeps the title/action row, preset strip and compact 88px Signal Chain proportions', () => {
+  assert.match(finalCss, /\.editor-topbar\{[\s\S]*?flex:0 0 38px!important/);
+  assert.match(finalCss, /\.hardware-preset-card\{[\s\S]*?flex:0 0 42px!important/);
+  assert.match(finalCss, /\.signal-chain-panel\{[\s\S]*?flex:0 0 88px!important/);
+  assert.match(finalCss, /#page-editor \.editor-section-label\{[\s\S]*?display:flex!important/);
   assert.ok(html.includes('<span class="eyebrow">TONE WORKSPACE</span><strong>Tone Editor</strong>'));
-  assert.match(finalCss, /#page-editor \.editor-section-label\s*\{[\s\S]*?display:flex!important/);
-  assert.match(finalCss, /#page-editor \.editor-topbar\s*\{[\s\S]*?order:1!important/);
-  assert.match(finalCss, /#page-editor \.editor-top-actions\s*\{[\s\S]*?display:flex!important/);
-  assert.match(finalCss, /#page-editor \.hardware-preset-card\s*\{[\s\S]*?order:2!important/);
+  assert.match(finalCss, /#openCtrlEditor\{width:82px!important\}/);
+  assert.match(finalCss, /#saveDeviceBtn\{width:104px!important\}/);
 });
 
-test('Signal Chain descriptions and model/state captions are hidden while block icons and names remain', () => {
-  assert.match(finalCss, /#page-editor \.signal-chain-copy p\{display:none!important\}/);
+test('Signal Chain removes the descriptive sentence and keeps only compact block icon/name cards with arrows', () => {
+  assert.match(finalCss, /body>\.app>#page-editor>\.signal-chain-panel \.signal-chain-copy p\{display:none!important/);
   assert.match(finalCss, /#page-editor \.chain \.block small\{display:none!important\}/);
   assert.match(finalCss, /#page-editor \.chain \.block \.symbol svg/);
   assert.match(finalCss, /#page-editor \.chain \.block b\{/);
+  assert.ok(html.includes('id="chainScrollPrev"'));
+  assert.ok(html.includes('id="chainScrollNext"'));
+  assert.ok(html.includes("holder.scrollBy({left:-Math.max(100,holder.clientWidth*.72),behavior:'smooth'})"));
 });
 
-test('AMP and non-AMP artwork are contained and four-column parameter dials remain responsive', () => {
+test('All model artwork is contained, AMP art is enlarged and four-column inline knobs remain responsive', () => {
   assert.match(finalCss, /\.gear-art \.gear-svg\{[\s\S]*?object-fit:contain!important/);
+  assert.match(finalCss, /\.gear-art\.gear-art-amp \.gear-svg\{width:84%!important/);
+  assert.match(finalCss, /#modelVisual \.gear-copy-head \.gear-type\{display:none!important/);
   assert.match(finalCss, /#page-editor \.main-editor-card #knobs\{[\s\S]*?grid-template-columns:repeat\(4,minmax\(0,1fr\)\)!important/);
   assert.match(html, /function fitInlineParameterDials\(\)/);
   assert.match(html, /ResizeObserver\(\(\)=>requestAnimationFrame\(fitInlineParameterDials\)\)/);
 });
 
-test('The Scene dock replaces the old AMP dock at the bottom and the Copy menu is an upward popup', () => {
-  assert.match(finalCss, /#editorSceneDock\{[\s\S]*?position:fixed!important[\s\S]*?bottom:var\(--editor-scene-bottom,94px\)!important/);
+test('Scene dock replaces the AMP model dock; Android app tabs respect native navigation insets', () => {
+  assert.match(finalCss, /bottom:var\(--mg30-system-nav-bottom,env\(safe-area-inset-bottom,0px\)\)!important/);
+  assert.match(finalCss, /padding:0 0 var\(--editor-workspace-reserve,92px\)!important/);
+  assert.match(finalCss, /#editorSceneDock\{[\s\S]*?order:5!important/);
   assert.match(finalCss, /#editorDockBackdrop,#editorParameterDock\{display:none!important\}/);
-  assert.match(finalCss, /padding:0 0 var\(--editor-workspace-reserve,170px\)!important/);
   assert.match(html, /const top=Math\.max\(8,rect\.top-placedHeight-7\)/);
   assert.match(html, /menu\.style\.bottom='auto'/);
+  assert.match(init, /WindowInsetsCompat\.Type\.navigationBars\(\)/);
+  assert.match(init, /getNavigationBottomInsetDp/);
+  assert.match(init, /addJavascriptInterface\(androidInsetsBridge, "MG30AndroidInsets"\)/);
 });
 
-test('System-navigation clearance is measured from actual app-tab geometry', () => {
+test('Native inset changes trigger a recalculation of normal-flow workspace reserve', () => {
   assert.ok(html.includes('src="./editor-viewport-fit.js"'));
-  assert.match(finalCss, /bottom:var\(--editor-scene-bottom,94px\)!important/);
-  assert.match(finalCss, /padding:0 0 var\(--editor-workspace-reserve,170px\)!important/);
+  assert.match(viewportSource, /window\.MG30AndroidInsets\?\.getNavigationBottomInsetDp\?\(\)/);
+  assert.match(viewportSource, /window\.addEventListener\('mg30androidinsets',schedule\)/);
 });

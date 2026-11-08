@@ -47,3 +47,9 @@ test('The visible Tone Workspace / Tone Editor header and both actions remain mo
   assert.ok(html.includes('id="openCtrlEditor"'));
   assert.ok(html.includes('id="saveDeviceBtn"'));
 });
+
+test('Signal Chain wrapper exposes scroll arrows without replacing the existing chain mount', () => {
+  assert.ok(html.includes('<div class="chain" id="chain"></div>'));
+  assert.ok(html.includes('id="chainScrollPrev"'));
+  assert.ok(html.includes('id="chainScrollNext"'));
+});
