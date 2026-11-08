@@ -142,3 +142,34 @@ test('Signal Chain edit row has visible separation before the horizontal pedal s
   assert.ok(v8.includes('height:46px!important;max-height:46px!important'));
   assert.ok(v8.includes('height:88px!important;min-height:88px!important;max-height:88px!important'));
 });
+
+test('NAM editor subtitle shows the exact one-based NAM Slot number',()=>{
+  assert.ok(html.includes("$('editorSub').textContent=namProfile?('NAM Slot '+namProfile.slot):('Model '+(s.model+1))"));
+  const v6=html.slice(html.indexOf('<style id="editor-reference-final-v6">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v6">')));
+  assert.ok(!v6.includes('.editor-heading.is-nam-profile #editorSub{'));
+  const v9=html.slice(html.indexOf('<style id="editor-reference-final-v9">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v9">')));
+  assert.ok(v9.includes('editor-heading.is-nam-profile #editorSub'));
+  assert.ok(v9.includes('display:block!important'));
+});
+
+test('Hardware preset selector is a modal dialog with a vertical scroll list and preset names',()=>{
+  assert.ok(html.includes('<dialog class="preset-jump-menu" id="presetJumpMenu"'));
+  assert.ok(html.includes("localStorage.getItem('mg30-preset-library-card-names-v1')"));
+  assert.ok(html.includes("const name=activeName||cachedNames[program]||'—'"));
+  assert.ok(html.includes('class="preset-jump-list" role="listbox" aria-label="Preset list"'));
+  assert.ok(html.includes('class="preset-jump-name"'));
+  const v9=html.slice(html.indexOf('<style id="editor-reference-final-v9">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v9">')));
+  assert.ok(v9.includes('overflow-y:auto!important'));
+  assert.ok(v9.includes('grid-template-columns:62px minmax(0,1fr)!important'));
+  assert.ok(html.includes('menu.showModal()'));
+  assert.ok(html.includes('menu.close()'));
+  assert.ok(html.includes('togglePresetJumpMenu(false)'));
+  assert.ok(html.includes('await selectHardwareSlot(slot,false)'));
+  assert.ok(!html.includes('<div class="preset-jump-grid">'));
+});
+
+test('v9 dialog and NAM subtitle styles are moved after the Vite stylesheet',()=>{
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9']"));
+  assert.ok(html.includes('editor-reference-final-v9'));
+  assert.ok(html.includes('document.head.appendChild(style)'));
+});

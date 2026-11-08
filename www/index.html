@@ -1533,10 +1533,7 @@
  body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile #editorTitle{
   display:block!important;margin:0!important;line-height:1.1!important;
  }
- body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile #editorSub{
-  display:none!important;visibility:hidden!important;width:0!important;height:0!important;
-  min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;
- }
+
 
  /* Discrete two/three-position controls span half the four-column grid, never a narrow quarter-column.
     Each option stays horizontal and readable; the underlying button values and CC handlers are unchanged. */
@@ -1728,6 +1725,76 @@
  body>.app>#page-editor>.signal-chain-panel>.panel-head{gap:7px!important}
 }
 </style>
+<style id="editor-reference-final-v9">
+/* Preset chooser: native modal dialog with a vertical, independently scrollable 128-slot list. */
+.preset-jump-menu[open]{
+ position:fixed!important;inset:0!important;top:0!important;right:0!important;bottom:0!important;left:0!important;
+ width:min(calc(100vw - 32px),440px)!important;min-width:0!important;max-width:440px!important;
+ height:min(78dvh,680px)!important;min-height:0!important;max-height:78dvh!important;
+ margin:auto!important;padding:0!important;display:flex!important;flex-direction:column!important;
+ overflow:hidden!important;border:1px solid #3b4a4d!important;border-radius:18px!important;
+ background:linear-gradient(150deg,#182226,#101719)!important;color:#edf3ee!important;
+ box-shadow:0 24px 70px #000c!important;z-index:10000!important;box-sizing:border-box!important;
+}
+.preset-jump-menu::backdrop{background:rgba(0,0,0,.72);backdrop-filter:blur(3px)}
+.preset-jump-dialog-head{
+ display:flex!important;flex:0 0 62px!important;align-items:center!important;justify-content:space-between!important;
+ gap:12px!important;min-width:0!important;padding:10px 14px!important;
+ border-bottom:1px solid #2d3a3e!important;background:#152024!important;
+}
+.preset-jump-dialog-head>div{display:flex!important;flex-direction:column!important;gap:3px!important;min-width:0!important}
+.preset-jump-dialog-head strong{font-size:15px!important;line-height:1.15!important;font-weight:850!important;color:#eff6ef!important}
+.preset-jump-dialog-head small{font-size:10px!important;line-height:1.2!important;color:#91a19f!important}
+.preset-jump-dialog-head button{
+ display:grid!important;flex:0 0 34px!important;place-items:center!important;width:34px!important;height:34px!important;
+ border:1px solid #3a484c!important;border-radius:10px!important;background:#1c292d!important;
+ color:#ecf2ed!important;font-size:22px!important;line-height:1!important;
+}
+.preset-jump-list{
+ display:flex!important;flex:1 1 auto!important;flex-direction:column!important;align-items:stretch!important;
+ min-width:0!important;min-height:0!important;width:100%!important;padding:7px 10px 10px!important;
+ overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+ -webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;scrollbar-width:thin!important;
+}
+.preset-jump-option{
+ display:grid!important;flex:0 0 46px!important;grid-template-columns:62px minmax(0,1fr)!important;
+ align-items:center!important;justify-items:stretch!important;gap:10px!important;width:100%!important;
+ min-width:0!important;min-height:46px!important;height:46px!important;margin:0!important;padding:0 10px!important;
+ border:0!important;border-bottom:1px solid #29363a!important;border-radius:0!important;
+ background:transparent!important;color:#e5ece8!important;text-align:left!important;
+ font-size:12px!important;font-weight:650!important;box-shadow:none!important;
+}
+.preset-jump-option:last-child{border-bottom:0!important}
+.preset-jump-option .preset-jump-slot{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ width:58px!important;height:30px!important;border:1px solid #334247!important;border-radius:8px!important;
+ background:#192428!important;color:#c2f36b!important;font-size:11px!important;font-weight:850!important;
+ font-variant-numeric:tabular-nums!important;letter-spacing:.2px!important;
+}
+.preset-jump-option .preset-jump-name{
+ display:block!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
+ white-space:nowrap!important;color:#d8e1dc!important;font-size:12px!important;line-height:1.2!important;
+}
+.preset-jump-option.active{
+ border:1px solid #829e4a!important;border-radius:9px!important;background:#29381f!important;
+ box-shadow:inset 0 0 0 1px #c5f36b22!important;
+}
+.preset-jump-option.active .preset-jump-slot{
+ border-color:#9bbc5e!important;background:#324820!important;color:#d2ff79!important;
+}
+.preset-jump-option.active .preset-jump-name{color:#d5f694!important;font-weight:800!important}
+@media(max-width:390px){
+ .preset-jump-menu[open]{width:calc(100vw - 24px)!important;height:80dvh!important;max-height:80dvh!important}
+ .preset-jump-option{flex-basis:44px!important;height:44px!important;min-height:44px!important;grid-template-columns:58px minmax(0,1fr)!important}
+ .preset-jump-option .preset-jump-slot{width:54px!important;height:28px!important}
+}
+/* NAM subtitle is short again: identify the actual one-based slot, not the long QuickTone cache label. */
+body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile #editorSub{
+ display:block!important;visibility:visible!important;width:auto!important;height:auto!important;
+ min-height:0!important;max-height:none!important;margin:2px 0 0!important;padding:0!important;
+ color:#879594!important;font-size:11px!important;line-height:1.2!important;
+}
+</style>
 </head>
 <body><div class="app">
 <header class="top"><div class="brand"><div class="logo" aria-label="NUX"><img src="./assets/nux-logo-white.svg" alt="NUX"></div><div><h1>MG-30 <span class="gen2-label">GEN2</span></h1><p>MOBILE EDITOR</p></div></div><div class="actions"><div class="usb-header-status" aria-live="polite"><strong>USB MIDI</strong><small id="usbHeaderStatus">Terputus</small></div><button class="btn usb-connect-btn" id="connectMidi" type="button" title="USB-MIDI terputus" aria-label="Hubungkan NUX MG-30 melalui USB-MIDI" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13"/><path d="m9 6 3-3 3 3"/><path d="M12 10H8l-2 2v3"/><path d="M12 12h4l2 2v1"/><path d="M12 16v4"/><path d="M10 20h4"/><circle cx="6" cy="17" r="1.5"/><rect x="16.5" y="15.5" width="3" height="3" rx=".5"/></svg></button><button class="btn" id="resetBtn">Reset</button></div></header>
@@ -1740,7 +1807,7 @@
 </nav>
 <section id="page-editor"><div class="editor-topbar"><div class="editor-section-label"><span class="eyebrow">TONE WORKSPACE</span><strong>Tone Editor</strong></div><div class="editor-top-actions"><button class="btn ctrl-open-btn" id="openCtrlEditor" type="button" aria-haspopup="dialog">CTRL / EXP</button><button class="btn" id="saveDeviceBtn" title="Save to Device">▣ <span>Save to Device</span></button></div></div>
 <div class="device-strip is-hidden-compact" id="connectionStrip"><div class="device-orb" id="deviceOrb"></div><div class="device-copy"><strong>NUX MG-30 GEN2</strong><small id="connectionStatusText">Belum terhubung · tekan Hubungkan untuk sinkronisasi</small></div><button class="btn" id="openDeviceFromEditor">Device & MIDI ↗</button></div>
-<div class="hardware-preset-card"><button class="preset-step" id="prevHardwarePreset" title="Preset sebelumnya" aria-label="Preset sebelumnya">‹</button><div class="hardware-preset-main"><div class="hardware-preset-slot" id="hardwarePresetSlot">01A</div><div class="hardware-preset-details"><button type="button" id="presetJumpTrigger" class="hardware-preset-name-trigger" aria-expanded="false" aria-controls="presetJumpMenu"><strong id="hardwarePresetName">Connect to read preset</strong></button><small id="hardwarePresetSource">Nama preset akan dibaca dari pedal</small></div></div><button class="preset-favorite" id="favoritePresetBtn" title="Tandai favorit" aria-label="Tandai favorit">☆</button><button class="preset-step" id="nextHardwarePreset" title="Preset berikutnya" aria-label="Preset berikutnya">›</button><div class="preset-jump-menu hidden" id="presetJumpMenu" role="dialog" aria-label="Preset"></div></div><div class="stats"><div class="stat"><small>Preset aktif</small><strong id="statName">Slot 01A</strong></div><div class="stat"><small>Efek aktif</small><strong id="statActive">8 / 11</strong></div><div class="stat"><small>Parameter diubah</small><strong id="statChanged">0</strong></div></div>
+<div class="hardware-preset-card"><button class="preset-step" id="prevHardwarePreset" title="Preset sebelumnya" aria-label="Preset sebelumnya">‹</button><div class="hardware-preset-main"><div class="hardware-preset-slot" id="hardwarePresetSlot">01A</div><div class="hardware-preset-details"><button type="button" id="presetJumpTrigger" class="hardware-preset-name-trigger" aria-expanded="false" aria-controls="presetJumpMenu"><strong id="hardwarePresetName">Connect to read preset</strong></button><small id="hardwarePresetSource">Nama preset akan dibaca dari pedal</small></div></div><button class="preset-favorite" id="favoritePresetBtn" title="Tandai favorit" aria-label="Tandai favorit">☆</button><button class="preset-step" id="nextHardwarePreset" title="Preset berikutnya" aria-label="Preset berikutnya">›</button><dialog class="preset-jump-menu" id="presetJumpMenu" aria-label="Choose preset" aria-labelledby="presetJumpTitle"></dialog></div><div class="stats"><div class="stat"><small>Preset aktif</small><strong id="statName">Slot 01A</strong></div><div class="stat"><small>Efek aktif</small><strong id="statActive">8 / 11</strong></div><div class="stat"><small>Parameter diubah</small><strong id="statChanged">0</strong></div></div>
 <div class="panel signal-chain-panel"><div class="panel-head"><div class="signal-chain-copy"><h3>Signal chain</h3><p id="chainEditHint">Select a block to edit its model. Press Edit to change the order; the pedal syncs automatically when connected.</p></div><div class="chain-head-actions"><button class="btn chain-edit-toggle" type="button" id="chainEditToggle" aria-label="Edit signal chain order" title="Edit signal chain order" aria-pressed="false"><span id="chainEditLabel">EDIT</span></button></div></div><div class="chain-track"><button type="button" class="chain-scroll-arrow" id="chainScrollPrev" aria-label="Blok sebelumnya">‹</button><div class="chain" id="chain"></div><button type="button" class="chain-scroll-arrow" id="chainScrollNext" aria-label="Blok berikutnya">›</button></div></div>
 <div class="editor"><div class="control main-editor-card"><div class="panel-head"><div class="editor-heading"><span id="editorBlockIcon" class="editor-block-icon" aria-hidden="true"></span><div><h3 id="editorTitle">AMP · Deluxe Rvb</h3><p id="editorSub">Pilih model dan atur parameter</p></div></div><select id="blockQuickSelect" class="block-quick-select" aria-label="Pilih model blok aktif"></select><label class="block-toggle" title="Aktifkan atau bypass blok"><span id="blockStatus">ON</span><input class="switch" id="blockSwitch" type="checkbox" checked aria-label="Aktifkan blok"></label></div><div id="modelVisual" class="model-visual-stage"></div><div id="knobs" class="knobs knobs-few" aria-label="Model parameters"></div><select id="modelSelect" class="hidden" aria-hidden="true" tabindex="-1"></select><div class="row preset-name-row hidden"><label for="presetName">Draft name</label><input type="text" id="presetName" value="Draft 01A"></div><select id="sceneSelect" class="hidden" aria-hidden="true" tabindex="-1"><option>A · Clean</option><option>B · Rhythm</option><option>C · Lead</option></select></div>
 <details class="control quick-panel"><summary><span>Quick actions & informasi</span><small>Draft lokal · Ekspor · Status fitur</small></summary><div class="quick-panel-body"><button class="btn" id="duplicateBtn">⧉ Duplikat preset</button> <button class="btn" id="exportBtn">↧ Ekspor JSON</button><div class="notice"><b>Catatan kompatibilitas.</b> Perubahan model dan slider tetap menggunakan jalur MIDI yang sudah ada. Pemetaan parameter firmware GEN2 belum diverifikasi sepenuhnya.</div><div class="switch-row"><span>Draft tersimpan otomatis</span><span class="chip">LOCAL</span></div><div class="switch-row"><span>Hardware GEN2</span><span class="chip">BELUM DIVERIFIKASI</span></div></div></details></div><div class="scene-bar" id="editorSceneDock" aria-label="Scene selector"><div class="scene-bar-head"><strong><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 4.5-9 4.5-9-4.5L12 3Z"/><path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5"/></svg><span>Scene</span></strong><div class="scene-copy-wrap" id="sceneCopyWrap"><button type="button" class="scene-copy-toggle" id="copySceneToggle" aria-label="Copy Scene" title="Copy Scene" aria-expanded="false" aria-controls="sceneCopyMenu"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg></button><div id="sceneCopyMenu" class="scene-copy-menu" hidden></div></div></div><div id="sceneButtons" class="scene-buttons"></div></div></section>
@@ -4644,7 +4711,7 @@ function parameterGridRowCount(controls,columns=4){
  }
  return Math.max(1,rows);
 }
-function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id;$('editorBlockIcon').innerHTML=renderBlockIcon(b.id);$('editorDockBlockType').textContent=b.id;const namProfile=selected===3?ampNamProfileForModelIndex(s.model):null;$('editorSub').textContent=namProfile?'':('Model '+(s.model+1));$('editorSub').classList.toggle('is-nam-profile',!!namProfile);$('editorSub').closest('.editor-heading')?.classList.toggle('is-nam-profile',!!namProfile);$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();const controls=parameterControls(selected,s.model);$('knobs').className='knobs '+(controls.length>=6?'knobs-many':'knobs-few');$('knobs').style.setProperty('--parameter-rows',String(parameterGridRowCount(controls,4)));$('knobs').dataset.parameterCount=String(controls.length);$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');const blockQuick=$('blockQuickSelect');if(blockQuick){blockQuick.innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');blockQuick.value=String(s.model);blockQuick.setAttribute('aria-label','Pilih model '+b.id);}$('modelCurrentName').textContent=modelDisplayLabel(b.id,b.models[s.model]);$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
+function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id;$('editorBlockIcon').innerHTML=renderBlockIcon(b.id);$('editorDockBlockType').textContent=b.id;const namProfile=selected===3?ampNamProfileForModelIndex(s.model):null;$('editorSub').textContent=namProfile?('NAM Slot '+namProfile.slot):('Model '+(s.model+1));$('editorSub').classList.toggle('is-nam-profile',!!namProfile);$('editorSub').closest('.editor-heading')?.classList.toggle('is-nam-profile',!!namProfile);$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();const controls=parameterControls(selected,s.model);$('knobs').className='knobs '+(controls.length>=6?'knobs-many':'knobs-few');$('knobs').style.setProperty('--parameter-rows',String(parameterGridRowCount(controls,4)));$('knobs').dataset.parameterCount=String(controls.length);$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');const blockQuick=$('blockQuickSelect');if(blockQuick){blockQuick.innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');blockQuick.value=String(s.model);blockQuick.setAttribute('aria-label','Pilih model '+b.id);}$('modelCurrentName').textContent=modelDisplayLabel(b.id,b.models[s.model]);$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
 const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=controls.map(control=>{
  const p=control.param,stored=parameterValueForControl(selected,s,s.model,control);
  if(isDiscreteSwitch(control)){
@@ -4960,21 +5027,53 @@ async function copyNamSlotScan(){
 
 function buildPresetJumpMenu(){
  const menu=$('presetJumpMenu');if(!menu)return;
- menu.innerHTML='<div class="preset-jump-menu-head"><strong>Preset</strong><button type="button" id="presetJumpClose" aria-label="Tutup menu preset">×</button></div><div class="preset-jump-grid">'+Array.from({length:128},(_,i)=>'<button type="button" class="preset-jump-option '+(i===targetSlot?'active':'')+'" data-preset-jump="'+i+'">'+slotName(i)+'</button>').join('')+'</div>';
+ let cachedNames={};
+ try{
+  const stored=JSON.parse(localStorage.getItem('mg30-preset-library-card-names-v1')||'{}');
+  if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
+   for(const [key,value] of Object.entries(stored)){
+    const program=Number(key);
+    if(Number.isInteger(program)&&program>=0&&program<128&&typeof value==='string')cachedNames[program]=value.trim().slice(0,16);
+   }
+  }
+ }catch{}
+ const rows=Array.from({length:128},(_,program)=>{
+  const activeName=program===targetSlot&&hardwarePresetNameLoaded&&hardwarePresetName?hardwarePresetName:'';
+  const name=activeName||cachedNames[program]||'—';
+  const active=program===targetSlot;
+  return '<button type="button" class="preset-jump-option'+(active?' active':'')+'" role="option" aria-selected="'+String(active)+'" data-preset-jump="'+program+'"><span class="preset-jump-slot">'+slotName(program)+'</span><span class="preset-jump-name">'+escapeHtml(name)+'</span></button>';
+ }).join('');
+ menu.innerHTML='<div class="preset-jump-dialog-head"><div><strong id="presetJumpTitle">Choose Preset</strong><small>128 hardware slots · Select a preset to load</small></div><button type="button" id="presetJumpClose" aria-label="Close preset list">×</button></div><div class="preset-jump-list" role="listbox" aria-label="Preset list">'+rows+'</div>';
  menu.querySelector('#presetJumpClose').onclick=()=>togglePresetJumpMenu(false);
  menu.querySelectorAll('[data-preset-jump]').forEach(btn=>btn.onclick=async()=>{
-  const slot=Number(btn.dataset.presetJump);togglePresetJumpMenu(false);
+  const slot=Number(btn.dataset.presetJump);
+  togglePresetJumpMenu(false);
   if(!Number.isInteger(slot)||slot<0||slot>127)return;
   await selectHardwareSlot(slot,false);
  });
 }
 function togglePresetJumpMenu(force){
  const menu=$('presetJumpMenu'),trigger=$('presetJumpTrigger');if(!menu||!trigger)return;
- const open=typeof force==='boolean'?force:menu.classList.contains('hidden');
- if(open){buildPresetJumpMenu();menu.classList.remove('hidden');trigger.setAttribute('aria-expanded','true');const active=menu.querySelector('.preset-jump-option.active');if(active)active.scrollIntoView({block:'nearest'});}
- else{menu.classList.add('hidden');trigger.setAttribute('aria-expanded','false');}
+ const open=typeof force==='boolean'?force:!menu.open;
+ if(open){
+  buildPresetJumpMenu();
+  if(typeof menu.showModal==='function')menu.showModal();
+  else menu.setAttribute('open','');
+  trigger.setAttribute('aria-expanded','true');
+  const active=menu.querySelector('.preset-jump-option.active');
+  if(active)active.scrollIntoView({block:'nearest'});
+ }else{
+  if(menu.open&&typeof menu.close==='function')menu.close();
+  else menu.removeAttribute('open');
+  trigger.setAttribute('aria-expanded','false');
+ }
 }
-initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
+const presetJumpDialog=$('presetJumpMenu');
+if(presetJumpDialog){
+ presetJumpDialog.addEventListener('cancel',()=> $('presetJumpTrigger')?.setAttribute('aria-expanded','false'));
+ presetJumpDialog.addEventListener('click',event=>{if(event.target===presetJumpDialog)togglePresetJumpMenu(false)});
+}
+initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m?.open&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
 function autoConnectMG30FromUsb(deviceInfo=null){
  if(!window.NUXNativeMidi?.available||midiConnected||midiConnectPending)return;
  if(deviceInfo){
@@ -5520,7 +5619,7 @@ window.MG30CtrlBridge=Object.freeze({
 <script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
-  const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8'];
+  const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];
   const moveStyles=()=>{
     // Vite appends assets/index-*.css after source styles in the generated <head>.
     // Re-appending these two nodes after DOMContentLoaded restores the intended final cascade.

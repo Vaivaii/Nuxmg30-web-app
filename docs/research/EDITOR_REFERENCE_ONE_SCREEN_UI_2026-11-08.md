@@ -360,3 +360,28 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Artifact ID: `13625825888`; artifact ZIP digest: `sha256:b095183d723eb417d8711278379ab73029625952b4792d15eb26412e1c871fba`.
 - Extracted and inspected `assets/public/index.html` inside the actual APK. Confirmed final v8 style node and installer are present; 68px discrete-control and 52px option heights are bundled; the superseded 116px/94px discrete-switch rules are removed from v7; the remaining 116px declaration in the bundle applies only to model artwork stage / gear-art, not parameter switches; no `12 blocks` label remains in Signal Chain markup; the edit icon class and SVG are absent; `EDIT` text and dynamic `DONE` label handler are present.
 - This confirms build and static bundle integrity. Final screenshot parity and actual switch hardware writes still require the user to install and verify on the original MG-30 Gen 2; do not state that physical hardware behavior was verified by CI.
+
+
+
+## Community .15 — NAM Slot subtitle and modal hardware preset chooser
+
+### User request / screenshots
+
+- Restore the subtitle below AMP when an AMP model is a NAM profile, showing the one-based slot label `NAM Slot 1`, `NAM Slot 2`, etc. instead of the long QuickTone slot / ID string.
+- Replace the current preset selector's four-column slot-number grid with a popup/modal window containing a vertical, scrollable list of hardware preset slots. Each row displays slot code and preset name, visually following the preset cards/list already used in Preset Manager. After tapping a slot, use the existing hardware slot selection handler and automatically close the popup.
+
+### Implementation scope
+
+- Candidate `1.0.0-community.15`, versionCode `15`.
+- Branch `feature/editor-reference-one-screen`.
+- NAM subtitle is assigned from the existing `ampNamProfileForModelIndex()` result: `NAM Slot ` + `profile.slot`. Removed the v6 rule that hid the NAM subtitle. No NAM slot index mapping, profile lookup, QuickTone ID, NAM transfer, or slot cache is altered.
+- Preset chooser container is now a native `<dialog>` using `showModal()/close()`; Escape/cancel and backdrop click close it and update `aria-expanded`.
+- The 128-row vertical list reads names from the same Preset Manager localStorage cache key `mg30-preset-library-card-names-v1`, with the currently loaded hardware preset name taking precedence for the active slot. Slot identifiers are generated with the existing `slotName(program)` helper. Unscanned slots display `—` until Preset Manager reads their names.
+- Selecting a row closes the modal and calls the original `selectHardwareSlot(slot,false)`. The old Program Change, preset synchronization/read flow, favorite button, previous/next slot controls, and Preset Manager module `www/preset-library-ui.js` are untouched.
+- No changes to MIDI CC mapping, SysEx, preset buffer writes, NAM import, IR User/Third Party import, IR Collection, scene switching, signal-chain ordering, Device behavior, or USB audio.
+
+### Regression / signed build
+
+- Added tests for one-based NAM slot subtitle, modal semantics, vertical scroll list, cached Preset Manager preset names, auto-close, reuse of the existing slot selection function, and late stylesheet cascade.
+- Full Node regression suite and signed Community Release workflow must pass before distributing APK.
+- CI proves source/build integrity only; actual hardware preset selection and visual popup behavior still require phone verification.
