@@ -97,7 +97,7 @@ test('Discrete switch cards are compact and proportional rather than tall parame
   assert.ok(v8.includes('height:52px!important;min-height:52px!important;max-height:52px!important'));
   assert.ok(v8.includes('knob-two-way .switch-position'));
   assert.ok(html.includes("choice.position+' '+choice.label"));
-  assert.ok(html.includes('data-switch-value=\\"'+choice.value+'\\"'));
+  assert.ok(html.includes("data-switch-value=\"'+choice.value+'\""));
 });
 
 test('Parallel-routing connector cards are wide enough for the complete routing icon',()=>{
