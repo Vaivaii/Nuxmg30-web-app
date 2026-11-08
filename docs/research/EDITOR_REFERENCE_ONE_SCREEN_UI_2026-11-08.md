@@ -146,3 +146,47 @@ The user supplied a same-resolution pair (691×1536) showing Community .8 versus
 - Downloaded audit ZIP was unpacked locally; its APK SHA-256 sidecar independently matched the APK exactly.
 - The final APK bundle was checked to include the v3 responsive CSS, Signal Chain arrow markup and Android inset bridge module.
 - Physical Android installation and screenshot matching in both 3-button and gesture navigation modes remain pending. CI verifies source/tests/build/signature/package only; do not state that the physical visual match is proven until the user checks it.
+
+
+
+## Community .10 — CSS cascade audit and final fixed viewport correction
+
+### Root-cause audit from the user's installed .9 screenshot
+
+The .9 build still did not match the supplied UI reference. The visual symptoms were traced to specific code-level conflicts:
+- `www/ui-redesign.css` still ended with a legacy `Final compact mobile Editor layout` block, followed by an `Android 3-button / compact-height recovery` block. Those late rules made the Editor page vertically scrollable, returned the main AMP card to auto height, reserved a fixed artwork/caption block, and restored category captions.
+- The legacy responsive stylesheet retained higher-specificity mobile rules for the preset row (70px minimum), Signal Chain panel (content-sized with a two-line explanatory paragraph), block cards (72px minimum), and the AMP card. The weaker .9 inline stylesheet did not consistently win the cascade.
+- The AMP/pedal parameter nodes were still rendered by the original `renderEditor()` function, but their parent `.editor` and `.main-editor-card` were given auto height by the legacy recovery rule. Consequently, the flex-growing `#knobs` grid had no defined remaining height and collapsed to clipped dial arcs.
+- The Scene dock was already moved into normal DOM flow, but `editor-viewport-fit.js` measured the Android navigation inset a second time. `scripts/init-android.mjs` generated a `MainActivity` that applies system-bar insets as padding on `android.R.id.content`; the extra JavaScript bottom offset therefore counted the same system inset again and left a large gap above the app tabs.
+
+### Community .10 corrections
+
+- New final responsive style: `editor-reference-final-v4`, appended after previous styles with selectors matched to / stronger than the old high-specificity rules.
+- Removed the obsolete final compact mobile Editor style block and the Android scroll-recovery block from the end of `www/ui-redesign.css`. This removes the contradictory scroll/auto-height behavior instead of layering another competing override on top.
+- Restored a fixed flex layout for the page Editor, editor card and model parameter area. The main AMP/pedal card now receives the remaining viewport height; `#knobs` is a four-column dynamic grid with a flexing height. The existing `fitInlineParameterDials()` remains presentation-only and now caps the adaptive dial at 66px.
+- Preset row is forced to 42 CSS px and the generated pencil pseudo-element is disabled; existing preset jump/name click behavior and previous/next/favorite actions remain in the DOM.
+- Signal Chain is forced to 88 CSS px with a 21px heading/actions row and a separate block row. Its explanatory paragraph and per-block model/status captions are hidden. Existing chain renderer, selection, drag reorder, routing state and horizontal scroll behavior remain; explicit left/right strip arrows remain.
+- Artwork stage is forced to 116 CSS px with `object-fit:contain` for AMP and non-AMP categories. Only the category caption/disclaimer is hidden; the renderer still supplies category metadata and the Based on caption. Artwork is visually bounded and centered.
+- Scene dock is compacted to 54 CSS px, retained as a normal-flow sibling after the Editor card, directly above app navigation. The old floating AMP model dock stays hidden.
+- App navigation is fixed to `bottom:0` in the WebView content viewport. The existing native `MainActivity` already pads the WebView host using `WindowInsetsCompat.Type.systemBars()`; the redundant WebView JavaScript inset bridge was removed from `scripts/init-android.mjs`, and `editor-viewport-fit.js` now reserves only measured app-tab height + the small Scene gap. No double system-bar offset remains. This works against the WebView's native-inset safe viewport in both system navigation modes.
+- The global NUX wordmark is restored to a wider proportion; the Editor tab heading and horizontal CTRL/EXP + Save to Device actions remain intact.
+- Copy Scene continues using the upward popup introduced earlier.
+- No parameter protocol, knob renderer, parameter event handler, discrete control mapping, MIDI/CC mapping, SysEx frame, NAM import/transfer, User/Third Party IR import, IR Collection logic, preset serialization, signal-chain model order, USB audio recorder, or MG-30 hardware command changed. Changes in this iteration are presentation/layout, removal of a redundant visual-only inset bridge, and test expectations.
+
+### Successful signed build — Community .10
+
+- UI implementation commit: `4e66b8953d947222a87a91d1f33ef458bd71c7fd`; final test commit used as exact build source: `7010f340a8bc54c35f1cc3c03afd5dedbe53a87c`.
+- GitHub Actions run: [42484189724](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42484189724).
+- Regression suite: **332 tests passed, 0 failed**.
+- Keystore password and alias validation: passed.
+- Android project generation: passed.
+- Gradle Release build: `BUILD SUCCESSFUL`.
+- APK Signature Scheme v2 verification: passed with an RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b` (same Community signing identity).
+- Package ID: `com.vaivaii.mg30studio`; versionName `1.0.0-community.10`; versionCode `10`; min SDK `24`; target SDK `36`.
+- APK size: `3,566,966` bytes.
+- APK SHA-256: `8eee70e9a6431c3ac634a85c06d4b3b91c54fc2e843590a19731b22072373838`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13618448488`; ZIP digest `sha256:237ac776479b99a89f9117580d6c2596a9cfb4f5be5d72dabf6aeabf5b06e27f`.
+- Downloaded audit ZIP was unpacked locally. APK file size, package/version metadata and sidecar SHA-256 were independently checked; SHA-256 matched exactly.
+- The built APK's `assets/public/index.html` was inspected and contains `editor-reference-final-v4` and the Signal Chain scroll arrows. The bundled stylesheet was inspected and no longer contains either legacy final mobile Editor override marker.
+- CI confirms tests/build/signature/package integrity. Physical screenshot parity in both 3-button and gesture navigation modes and MG-30 hardware smoke testing remain pending; do not claim exact 100% visual parity until the user installs and checks the build.
