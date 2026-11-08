@@ -6,7 +6,7 @@ const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8')
 
 test('Editor reference layout keeps the hardware header and preset/action rows', () => {
   assert.ok(html.includes('<header class="top">'));
-  assert.ok(html.includes('id="hardwarePresetCard"') === false); // the original preset-card DOM and IDs remain
+  assert.ok(html.includes('class="hardware-preset-card"'));
   assert.ok(html.includes('id="hardwarePresetSlot"'));
   assert.ok(html.includes('id="prevHardwarePreset"'));
   assert.ok(html.includes('id="nextHardwarePreset"'));
@@ -28,7 +28,7 @@ test('Scenes use the bottom dock with the existing scene switch and copy IDs', (
   assert.ok(html.includes('id="editorSceneDock"'));
   assert.ok(html.includes('id="sceneButtons"'));
   assert.ok(html.includes('id="copySceneToggle"'));
-  assert.match(html, /holder\.innerHTML=items\.map\(\(item,i\)=>.*\(i\+1\).*data-scene/);
+  assert.match(html, /holder\.innerHTML=items\.map\(\(item,i\)=>.*data-scene.*\(i\+1\)/);
 });
 
 test('Only UI markup/styles and render presentation changed; MIDI mapping functions remain in place', () => {
@@ -38,4 +38,6 @@ test('Only UI markup/styles and render presentation changed; MIDI mapping functi
   assert.ok(html.includes("sendBlockSwitch(selected)"));
   assert.ok(html.includes("midiSend([0xB0,80,index])"));
   assert.ok(html.includes("function renderEditor()"));
+  assert.ok(html.includes("Math.ceil(controls.length/4)"));
+  assert.ok(html.includes("function fitInlineParameterDials()"));
 });

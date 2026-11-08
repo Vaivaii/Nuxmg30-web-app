@@ -7,6 +7,8 @@ const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8')
 test('Reference Editor is a fixed-height mobile workspace without vertical page scrolling', () => {
   assert.match(html, /#page-editor:not\(\.hidden\)[\s\S]*?overflow:hidden!important/);
   assert.match(html, /\.app \{[\s\S]*?height:100dvh!important[\s\S]*?overflow:hidden!important/);
+  assert.match(html, /#page-editor:not\(\.hidden\)[\s\S]*?height:auto!important[\s\S]*?flex:1 1 0!important/);
+  assert.match(html, /#page-editor \{ animation:none!important; transform:none!important; \}/);
   assert.doesNotMatch(html, /#page-editor:not\(\.hidden\)[^}]*overflow-y:auto/);
 });
 
@@ -29,4 +31,6 @@ test('Scene buttons are docked above the app tabs and retain Copy Scene control'
   assert.match(html, /id="sceneButtons"/);
   assert.match(html, /id="copySceneToggle"/);
   assert.match(html, /bottom:calc\(66px \+ env\(safe-area-inset-bottom,0px\)\)/);
+  assert.match(html, /--parameter-dial-size/);
+  assert.match(html, /grid-template-rows:repeat\(var\(--parameter-rows,1\),minmax\(0,1fr\)\)/);
 });

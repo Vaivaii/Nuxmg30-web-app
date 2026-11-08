@@ -370,10 +370,11 @@
   .nav { position:fixed!important; z-index:60!important; left:0!important; right:0!important; bottom:0!important; width:100%!important; margin:0!important; }
   #page-editor:not(.hidden) {
     display:flex!important; flex:1 1 auto!important; flex-direction:column!important; align-items:stretch!important;
-    width:100%!important; height:100%!important; min-height:0!important; max-height:100%!important;
-    margin:0!important; padding:0!important; gap:6px!important; overflow:hidden!important;
+    width:100%!important; height:auto!important; min-height:0!important; max-height:none!important;
+    flex:1 1 0!important; margin:0!important; padding:0!important; gap:6px!important; overflow:hidden!important;
     overscroll-behavior:none!important; box-sizing:border-box!important;
   }
+  #page-editor { animation:none!important; transform:none!important; }
   #page-editor .editor-section-label { display:none!important; }
   #page-editor .device-strip,#page-editor .stats,#page-editor .quick-panel { display:none!important; }
   #page-editor .hardware-preset-card {
@@ -419,7 +420,7 @@
   }
   #page-editor > .editor > .main-editor-card {
     display:flex!important; flex:1 1 auto!important; flex-direction:column!important; align-items:stretch!important;
-    width:100%!important; min-width:0!important; min-height:0!important; height:100%!important; max-height:100%!important;
+    width:100%!important; min-width:0!important; min-height:0!important; height:auto!important; max-height:none!important;
     margin:0!important; padding:8px 10px 6px!important; border-radius:15px!important; overflow:hidden!important;
   }
   #page-editor .main-editor-card > .panel-head {
@@ -483,8 +484,8 @@
     gap:1px!important; width:100%!important; min-width:0!important; min-height:0!important; padding:0!important; touch-action:none!important;
   }
   #page-editor .main-editor-card #knobs .dial {
-    display:block!important; flex:0 0 auto!important; width:clamp(28px,calc((100dvh - 530px)/var(--parameter-rows,1) - 18px),52px)!important;
-    height:clamp(28px,calc((100dvh - 530px)/var(--parameter-rows,1) - 18px),52px)!important; margin:0 auto!important; border-radius:50%!important;
+    display:block!important; flex:0 0 auto!important; width:var(--parameter-dial-size,44px)!important;
+    height:var(--parameter-dial-size,44px)!important; max-width:100%!important; margin:0 auto!important; border-radius:50%!important;
   }
   #page-editor .main-editor-card #knobs .dial:before { inset:5px!important; }
   #page-editor .main-editor-card #knobs .dial-needle { top:50%!important; left:calc(50% - 1.5px)!important; width:3px!important; height:14px!important; transform:translateY(-100%) rotate(var(--angle))!important; transform-origin:50% 100%!important; }
@@ -3443,6 +3444,16 @@ function setChainEditMode(enabled){
  const holder=$('chain');if(holder)holder.classList.toggle('reorder-mode',chainEditMode);
  renderChain();
 }
+function fitInlineParameterDials(){
+ const holder=$('knobs');
+ if(!holder||!holder.isConnected||holder.clientHeight<1)return;
+ const rows=Math.max(1,Number(holder.style.getPropertyValue('--parameter-rows'))||Math.ceil(holder.children.length/4)||1);
+ const rowHeight=holder.clientHeight/rows;
+ const labelSpace=20;
+ const size=Math.max(26,Math.min(52,Math.floor(rowHeight-labelSpace)));
+ holder.style.setProperty('--parameter-dial-size',size+'px');
+}
+window.addEventListener('resize',fitInlineParameterDials,{passive:true});
 function renderEditor(){let b=BLOCKS[selected],s=states[selected];$('editorTitle').textContent=b.id;$('editorBlockIcon').innerHTML=renderBlockIcon(b.id);$('editorDockBlockType').textContent=b.id;const namProfile=selected===3?ampNamProfileForModelIndex(s.model):null;$('editorSub').textContent=namProfile?('QuickTone Slot '+namProfile.slot+' · ID '+namProfile.id):('Model '+(s.model+1));$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);$('blockSwitch').checked=s.on;renderModelVisual();const controls=parameterControls(selected,s.model);$('knobs').className='knobs '+(controls.length>=6?'knobs-many':'knobs-few');$('knobs').style.setProperty('--parameter-rows',String(Math.max(1,Math.ceil(controls.length/4))));$('knobs').dataset.parameterCount=String(controls.length);$('modelSelect').innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');const blockQuick=$('blockQuickSelect');if(blockQuick){blockQuick.innerHTML=b.models.map((m,i)=>'<option value="'+i+'" '+(i===s.model?'selected':'')+'>'+escapeHtml(modelDisplayLabel(b.id,m))+'</option>').join('');blockQuick.value=String(s.model);blockQuick.setAttribute('aria-label','Pilih model '+b.id);}$('modelCurrentName').textContent=modelDisplayLabel(b.id,b.models[s.model]);$('modelPrev').onclick=()=>changeSelectedModel(-1);$('modelNext').onclick=()=>changeSelectedModel(1);
 const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.onpointerdown=e=>{if(e.target.closest('button,select,input'))return;swipeArea._swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,block:selected};try{swipeArea.setPointerCapture(e.pointerId)}catch(_){}}; swipeArea.onpointerup=e=>{const p=swipeArea._swipeStart;swipeArea._swipeStart=null;if(!p||p.block!==selected)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.45){e.preventDefault();changeSelectedModel(dx<0?1:-1)}}; swipeArea.onpointercancel=()=>{swipeArea._swipeStart=null};$('knobs').innerHTML=controls.map(control=>{
  const p=control.param,stored=parameterValueForControl(selected,s,s.model,control);
@@ -3461,6 +3472,7 @@ const swipeArea=$('modelVisual');swipeArea.style.touchAction='pan-y';swipeArea.o
  const v=stored??50,label=control.label||p.toUpperCase();
  return '<div class="knob"><label>'+escapeHtml(label)+'</label><div class="dial-control" data-p="'+p+'" role="slider" tabindex="0" aria-label="'+escapeHtml(label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v+'"><div class="dial" style="--fill:'+((v/100)*270)+'deg;--angle:'+(-135+(v/100)*270)+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+v+'</output></div></div>';
 }).join('');
+requestAnimationFrame(fitInlineParameterDials);
 $('knobs').querySelectorAll('.switch-position-button').forEach(el=>{
  el.onclick=()=>{
   const param=el.dataset.switchParam,value=Number(el.dataset.switchValue);
