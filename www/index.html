@@ -1788,7 +1788,12 @@
  .preset-jump-option{flex-basis:44px!important;height:44px!important;min-height:44px!important;grid-template-columns:58px minmax(0,1fr)!important}
  .preset-jump-option .preset-jump-slot{width:54px!important;height:28px!important}
 }
-/* NAM subtitle is short again: identify the actual one-based slot, not the long QuickTone cache label. */
+/* NAM profiles use the same two-line hierarchy as built-in amps:
+   AMP first, then the one-based slot subtitle below it. */
+body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile>div{
+ display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+ justify-content:center!important;align-self:stretch!important;min-width:0!important;min-height:0!important;
+}
 body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile #editorSub{
  display:block!important;visibility:visible!important;width:auto!important;height:auto!important;
  min-height:0!important;max-height:none!important;margin:2px 0 0!important;padding:0!important;

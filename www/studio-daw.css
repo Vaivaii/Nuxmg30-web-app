@@ -2739,3 +2739,13 @@
 .daw-hardware-level-row label{display:flex;justify-content:space-between;gap:8px}
 .daw-hardware-level-row input{width:100%;accent-color:#c5f36b}
 .daw-hardware-level-row input:disabled,.daw-hardware-toggle input:disabled{opacity:.55}
+
+
+/* Community .16 — reserve scroll room below Track Settings for the fixed DAW dock.
+   The workspace already contributes its existing reserve; this page-level
+   extension lets the final Project Settings content clear the transport/subnav. */
+@media(max-width:720px){
+  #page-studio #dawTrackSettingsPage:not([hidden]){
+    padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))!important;
+  }
+}

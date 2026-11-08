@@ -3956,3 +3956,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Extracted APK size 4,602,856 bytes; APK SHA-256 `dc9a63173abc4343a5b093ad41bb97cd08ae6591ac343a7b3337b1cea8928a89`.
 - ZIP integrity and APK ZIP integrity passed. Packaged APK inspection confirmed the AMP/EFX caption chip is conditional on `hideImageCaptionChip`, the artwork badge text remains `IMAGE`, the Based on row is unconditional, and the long disclaimer remains hidden for those AMP/EFX IMAGE models.
 - This is source/build/package verification; user physical installation verification remains pending.
+
+
+## Community .16 — NAM subtitle row and Track Settings scroll clearance (9 November 2026)
+
+- User tested Community .15 and supplied screenshots showing two UI defects: the one-based NAM Slot subtitle was displayed beside AMP instead of below it, and the final Track Settings / Project Settings content could not scroll far enough to clear the fixed DAW transport + sub-navigation dock.
+- NAM fix is presentation-only in the final editor-reference-final-v9 cascade: the text container under the AMP heading now uses a vertical flex layout, left-aligned, with AMP on the first line and the existing NAM Slot N subtitle on the second. The NAM model lookup, slot mapping, NAM transfer, model selection, and parameter read/write handlers are unchanged.
+- Track Settings fix adds 88px plus the Android safe-area inset to the bottom of the active Track Settings page. This is additive to the existing Studio workspace reserve and allows the last Project Settings / Quick Record content to scroll above the fixed dock. The dock geometry, Timeline, Mixer, transport controls, recording, project storage, import/export and track behavior are unchanged.
+- Regression tests added for the NAM two-line layout and the Track Settings bottom-scroll reserve. Existing suite coverage continues to protect Studio pages and DAW controls.
+- Release workflow candidate advanced from Community .15 / versionCode 15 to Community .16 / versionCode 16.
+- Automated test/build and signed APK inspection: pending GitHub Actions. Physical-device verification remains pending user installation and screenshot review on the original MG-30 Gen 2.
+

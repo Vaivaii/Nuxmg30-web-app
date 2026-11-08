@@ -64,3 +64,17 @@ test('The final Editor cascade keeps the original parameter renderer, MIDI handl
   assert.ok(html.includes('id="sceneButtons"'));
   assert.ok(html.includes('id="copySceneToggle"'));
 });
+
+
+test('NAM slot subtitle is stacked below AMP and left-aligned like built-in model subtitles', () => {
+  const start = html.indexOf('<style id="editor-reference-final-v9">');
+  const end = html.indexOf('</style>', start);
+  assert.ok(start >= 0 && end > start, 'the final Editor cascade must be present');
+  const finalCascade = html.slice(start, end);
+  const match = finalCascade.match(/\\.editor-heading\\.is-nam-profile>div\\s*\\{([^}]*)\\}/);
+  assert.ok(match, 'NAM heading content must have a dedicated layout rule');
+  assert.match(match[1], /flex-direction:column!important/);
+  assert.match(match[1], /align-items:flex-start!important/);
+  assert.match(finalCascade, /\\.editor-heading\\.is-nam-profile #editorSub\\s*\\{/);
+  assert.ok(html.includes("$('editorSub').closest('.editor-heading')?.classList.toggle('is-nam-profile',!!namProfile)"));
+});

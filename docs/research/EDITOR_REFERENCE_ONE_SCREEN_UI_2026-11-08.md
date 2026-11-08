@@ -407,3 +407,20 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Package info and signing output were inspected from the downloaded audit bundle. The final signed APK and sidecar were copied to the stable `/mnt/data/NUX-MG30-Studio-Community-15.apk` paths and verified byte-identical to the APK inside the audit ZIP.
 - Source-level tests verify that selection calls the existing `selectHardwareSlot(slot,false)` path and the dialog closes after a choice. Preset Manager module `www/preset-library-ui.js` was not modified; the chooser reads its existing localStorage name cache. Slots whose names have not yet been scanned remain labeled `—` until Preset Manager populates the cache.
 - This confirms source, build, signing and bundle integrity. Final modal appearance, hardware slot switching and NAM subtitle alignment still require user installation/visual confirmation on the original MG-30 Gen 2; do not claim physical hardware verification based solely on CI.
+
+
+## Community .16 — NAM subtitle and Track Settings scroll correction (9 November 2026)
+
+### User-observed defects
+
+- Community .15 displayed NAM Slot 1 inline beside AMP; the requested hierarchy is AMP on the first line and the slot subtitle beneath it, matching built-in AMP headings such as AMP / Model 34.
+- In Studio → DAW → Track Settings, the bottom of Project Settings (including the saved Quick Record take section) was covered by the fixed transport and Track Settings sub-navigation. The available scroll range did not move the last content sufficiently above that dock.
+
+### Changes
+
+- Added a final-cascade NAM-only rule to editor-reference-final-v9: the existing heading text wrapper is a vertical flex column and left aligned. The existing NAM Slot N text and profile lookup remain unchanged.
+- Added mobile bottom padding of 88px plus safe-area inset to the active #dawTrackSettingsPage. This supplements, rather than replaces, the existing #studio-daw-workspace bottom reserve. The fixed dock itself is not moved or resized.
+- No changes to NAM protocol/transfer, IR User/Third Party or Collection, preset selection, MIDI CC mapping, Signal Chain ordering, USB-MIDI, DAW transport, recording, project persistence, or audio routing.
+- Added source regression tests for both reported cases.
+- Candidate version: 1.0.0-community.16 (versionCode 16); CI validation pending.
+

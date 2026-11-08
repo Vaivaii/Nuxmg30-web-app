@@ -783,3 +783,17 @@ test('simulated CSS stacking paths place the main popover above Clip and Track m
   assert.equal(compareStackPath(dropdownStack, clipTrackStack), 1,
     'the ancestor stacking context decides paint order before descendant z-index');
 });
+
+
+test('Track Settings reserves enough mobile scroll clearance above the fixed DAW transport dock', () => {
+  const marker = '/* Community .16 — reserve scroll room below Track Settings for the fixed DAW dock.';
+  const start = css.lastIndexOf(marker);
+  assert.ok(start >= 0, 'the final Track Settings clearance rule must be present');
+  const finalRule = css.slice(start);
+  assert.match(finalRule, /#page-studio #dawTrackSettingsPage:not\\(\\[hidden\\]\\)/);
+  assert.match(finalRule, /padding-bottom:calc\\(88px \\+ env\\(safe-area-inset-bottom,0px\\)\\)!important/);
+  assert.match(css, /#page-studio #dawStudioDock\\{[^}]*position:fixed!important/s,
+    'the existing pinned transport dock remains in place');
+  assert.ok(html.includes('id="dawStudioDock"'));
+  assert.ok(html.includes('data-daw-page="track-settings"'));
+});
