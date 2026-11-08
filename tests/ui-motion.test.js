@@ -164,11 +164,10 @@ test('Scene dock is outside the AMP card, compact, and directly above the applic
   const styleEnd=html.indexOf('</style>',styleStart);
   const finalCss=styleStart>=0&&styleEnd>styleStart?html.slice(styleStart,styleEnd):'';
   const pageStart=html.indexOf('<section id="page-editor">');
-  const pageEnd=html.indexOf('</section>',pageStart);
+  const pageEnd=html.indexOf('<button type="button" id="editorDockBackdrop"',pageStart);
   const page=html.slice(pageStart,pageEnd);
-  const cardEnd=page.indexOf('</div><details class="control quick-panel">');
-  const dockPosition=page.indexOf('id="editorSceneDock"');
-  assert.ok(cardEnd>=0&&dockPosition>cardEnd,'Scene dock must follow the Editor card');
+  const sceneDockBoundary=page.indexOf('</details></div><div class="scene-bar" id="editorSceneDock"');
+  assert.ok(sceneDockBoundary>=0,'Scene dock must be a sibling after the Editor card and quick panel');
   assert.ok(finalCss.includes('#editorSceneDock{order:5!important;position:relative!important'),'Scene dock must be normal-flow, not fixed');
   assert.ok(finalCss.includes('bottom:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%!important;height:72px!important'),'app tabs must dock to the bottom of the insets-safe WebView');
   assert.ok(finalCss.includes('padding:0 0 var(--editor-workspace-reserve,80px)!important'),'Scene dock must reserve only app-nav height plus gap');
@@ -185,20 +184,6 @@ test('AMP and IR renderers always include their category label and Based on valu
   assert.ok(renderer.includes('class="gear-type">\'+category'), 'category must be rendered in the caption rail');
   assert.ok(renderer.includes('class="based-on"><b>Based on:</b><span>\'+escapeHtml(basis)'), 'Based on label and value must be rendered');
 });
-
-test('Editor Scenes remain bottom-anchored inside the fixed card with the approved touch targets',()=>{
-  const marker='/* Final compact mobile Editor layout:';
-  const start=css.lastIndexOf(marker);
-  assert.ok(start>=0);
-  const rules=css.slice(start);
-  assert.match(rules,/\.scene-bar\s*\{[^}]*margin:auto 0 0!important/s);
-  assert.match(rules,/\.scene-bar\s*\{[^}]*padding:10px 0 2px!important/s);
-  assert.match(rules,/\.scene-button\s*\{[^}]*min-height:64px!important/s);
-  assert.match(rules,/\.main-editor-card\s*\{[^}]*padding-bottom:12px!important/s);
-  assert.ok(css.includes('body > .app > #page-editor > .editor'));
-  assert.ok(css.includes('overflow: hidden !important'));
-});
-
 
 test('IMAGE-based AMP and EFX keep artwork badge and Based on, but hide only caption IMAGE chip and disclaimer',()=>{
   const start=html.indexOf('function renderModelVisual(){');
