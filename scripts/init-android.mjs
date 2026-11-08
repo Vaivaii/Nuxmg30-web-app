@@ -61,7 +61,7 @@ const mainActivityLines = [
   '        }',
   '        return null;',
   '    }',
-  ''
+  '',
   '',
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 const init = readFileSync(new URL('../scripts/init-android.mjs', import.meta.url), 'utf8');
+const viewportSource = readFileSync(new URL('../www/editor-viewport-fit.js', import.meta.url), 'utf8');
 const finalCss = html.match(/<style id="editor-fixed-reference-viewport-v3">([\s\S]*?)<\/style>/)?.[1] || '';
 
 test('The reference Editor is fixed with a normal-flow Scene dock and no vertical page scrolling', () => {
