@@ -20,5 +20,5 @@ test('A resized application tab bar is measured dynamically', () => {
 });
 
 test('Fallback dimensions remain finite and non-negative', () => {
-  assert.equal(computeEditorViewportFit({ navHeight: 0, sceneGap: 0 }).workspaceReserve, 76);
+  assert.equal(computeEditorViewportFit({ navHeight: 0, sceneGap: 0 }).workspaceReserve, 80);
 });
