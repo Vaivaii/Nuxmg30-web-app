@@ -8,9 +8,9 @@ const fitSource = readFileSync(new URL('../www/editor-viewport-fit.js', import.m
 const nativeInit = readFileSync(new URL('../scripts/init-android.mjs', import.meta.url), 'utf8');
 const finalCss = html.match(/<style id="editor-reference-final-v5">([\s\S]*?)<\/style>/)?.[1] || '';
 
-test('Vite generated CSS cannot override the final Editor styles: both authoritative style nodes are moved after the bundled stylesheet', () => {
+test('Vite generated CSS cannot override the final Editor styles: all authoritative Editor style nodes are moved after the bundled stylesheet', () => {
   assert.ok(finalCss.length > 3000);
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
   assert.ok(html.includes("document.addEventListener('DOMContentLoaded',moveStyles,{once:true})"));
   assert.ok(html.indexOf('moveEditorReferenceStylesAfterBundledCss') > html.indexOf('editor-reference-final-v5'));
@@ -59,11 +59,14 @@ test('Preset name is vertically centered in the compact preset card',()=>{
   assert.match(v6,/hardware-preset-name-trigger strong\{[\s\S]*?line-height:1\.15!important/);
 });
 
-test('NAM slot hides only the long QuickTone slot subtitle; built-in AMP retains Model N',()=>{
-  assert.match(html,/\$\('editorSub'\)\.textContent=namProfile\?'':\('Model '\+\(s\.model\+1\)\)/);
-  assert.match(html,/editor-heading'\)\?\.classList\.toggle\('is-nam-profile',!!namProfile\)/);
+test('NAM slot subtitle is restored as a short one-based NAM Slot label; built-in AMP retains Model N',()=>{
+  assert.ok(html.includes("$('editorSub').textContent=namProfile?('NAM Slot '+namProfile.slot):('Model '+(s.model+1))"));
+  assert.ok(html.includes("editor-heading')?.classList.toggle('is-nam-profile',!!namProfile)"));
   const v6=html.slice(html.indexOf('<style id="editor-reference-final-v6">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v6">')));
-  assert.match(v6,/editor-heading\.is-nam-profile #editorSub\{[\s\S]*?display:none!important/);
+  assert.ok(!v6.includes('.editor-heading.is-nam-profile #editorSub{'));
+  const v9=html.slice(html.indexOf('<style id="editor-reference-final-v9">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v9">')));
+  assert.ok(v9.includes('editor-heading.is-nam-profile #editorSub'));
+  assert.ok(v9.includes('display:block!important'));
 });
 
 test('Discrete AMP/pedal switches span two grid columns and keep button labels horizontal',()=>{
@@ -85,7 +88,7 @@ test('Cabinet selector placeholders are English while parameter values and IDs r
 });
 
 test('v6 is moved after the Vite stylesheet by the authoritative style installer',()=>{
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
 });
 
@@ -117,7 +120,7 @@ test('Device page owns a vertical scroll viewport and reserves room above the ap
 });
 
 test('v8 is installed after the bundled CSS and after all earlier Editor final styles',()=>{
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9']"));
   assert.ok(html.indexOf('editor-reference-final-v8')<html.indexOf('</head>'));
   assert.ok(html.includes("document.head.appendChild(style)"));
 });
