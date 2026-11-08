@@ -385,3 +385,25 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Added tests for one-based NAM slot subtitle, modal semantics, vertical scroll list, cached Preset Manager preset names, auto-close, reuse of the existing slot selection function, and late stylesheet cascade.
 - Full Node regression suite and signed Community Release workflow must pass before distributing APK.
 - CI proves source/build integrity only; actual hardware preset selection and visual popup behavior still require phone verification.
+
+
+
+### Community .15 build result — verified signed APK
+
+- Final source/test commit used by GitHub Actions: `e9ab0933093d563aec3bd57e86bad231474b1df1`.
+- UI implementation commit: `1fce7b6cf557b1072b6698daf677be64fec9a9c0`.
+- Regression contract correction commit: `e9ab0933093d563aec3bd57e86bad231474b1df1`.
+- GitHub Actions run: [42507269250](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42507269250).
+- Regression suite: **346 passed, 0 failed**.
+- Keystore / alias validation, Android project generation and signing metadata: passed.
+- Gradle Release: `BUILD SUCCESSFUL in 1m 43s`.
+- APK Signature Scheme v2: verified successfully; one RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.15`; versionCode `15`; min SDK `24`; target SDK `36`.
+- APK size: `3,571,754` bytes.
+- APK SHA-256: `c1ab305c851719c32079ec8a44ba4ae50577e8d7b44cdab0a9a619543bcc76f0`; matches the included sidecar and was independently recomputed after extracting the APK.
+- Artifact ID: `13628071152`; artifact ZIP digest: `sha256:89e7ae11efc7d7729c1466577fbad25618a918b204267af1fb3fee0447aba8d1`.
+- Direct APK inspection of `assets/public/index.html` confirmed the native `<dialog id="presetJumpMenu">`, `preset-jump-list` vertical list, cache key `mg30-preset-library-card-names-v1`, `menu.showModal()`, `menu.close()`, and one-based `NAM Slot` subtitle logic are bundled. The old `preset-jump-grid` markup is absent.
+- Package info and signing output were inspected from the downloaded audit bundle. The final signed APK and sidecar were copied to the stable `/mnt/data/NUX-MG30-Studio-Community-15.apk` paths and verified byte-identical to the APK inside the audit ZIP.
+- Source-level tests verify that selection calls the existing `selectHardwareSlot(slot,false)` path and the dialog closes after a choice. Preset Manager module `www/preset-library-ui.js` was not modified; the chooser reads its existing localStorage name cache. Slots whose names have not yet been scanned remain labeled `—` until Preset Manager populates the cache.
+- This confirms source, build, signing and bundle integrity. Final modal appearance, hardware slot switching and NAM subtitle alignment still require user installation/visual confirmation on the original MG-30 Gen 2; do not claim physical hardware verification based solely on CI.
