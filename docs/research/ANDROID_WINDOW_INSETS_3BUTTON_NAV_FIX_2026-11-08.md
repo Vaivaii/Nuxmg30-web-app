@@ -32,3 +32,8 @@ On Android devices using gesture navigation, the Editor layout fits. On devices 
 First CI run `42448134416` failed before tests because an over-escaped JavaScript regex in the Android initializer caused a syntax error. No APK was produced. Correct the regex and rerun the complete test, Android project generation, signed Release build, APK signature, package identity and checksum checks.
 
 CI build success does not itself simulate physical gesture/3-button navigation. Final device check is required with the app installed on both navigation modes.
+
+
+## CI iteration 2
+
+- Run `42448360681` passed Node syntax validation but stopped at one regression assertion. The assertion rejected any occurrence of the theme opt-out attribute's name, including the intentional cleanup regex in the initializer. Updated the assertion to reject only re-insertion of the opt-out XML item into the generated theme. The actual edge-to-edge/insets implementation was unchanged.

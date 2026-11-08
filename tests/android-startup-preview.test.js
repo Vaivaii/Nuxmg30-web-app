@@ -20,7 +20,7 @@ test('Android uses edge-to-edge and applies real system bar and cutout insets to
   assert.ok(initializer.includes('controller.setAppearanceLightNavigationBars(false);'));
   assert.ok(initializer.includes('.setInsets(insetTypes, Insets.NONE)'));
   assert.doesNotMatch(initializer, /setDecorFitsSystemWindows\(getWindow\(\), true\)/);
-  assert.doesNotMatch(initializer, /windowOptOutEdgeToEdgeEnforcement/);
+  assert.doesNotMatch(initializer, /'<item name="android:windowOptOutEdgeToEdgeEnforcement">/);
 });
 
 test('Insets are re-applied on resume and measured dynamically rather than using a fixed navigation-bar height', () => {
