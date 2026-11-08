@@ -51,3 +51,40 @@ test('Android system bars remain handled by native WindowInsets, without a secon
   assert.doesNotMatch(nativeInit, /MG30AndroidInsets|getNavigationBottomInsetDp/);
   assert.match(nativeInit, /view\.setPadding\(insetsBaseLeft \+ systemInsets\.left/);
 });
+
+test('Preset name is vertically centered in the compact preset card',()=>{
+  const v6=html.slice(html.indexOf('<style id="editor-reference-final-v6">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v6">')));
+  assert.match(v6,/hardware-preset-details\{[\s\S]*?align-items:center!important/);
+  assert.match(v6,/hardware-preset-name-trigger\{[\s\S]*?align-items:center!important[\s\S]*?height:100%!important/);
+  assert.match(v6,/hardware-preset-name-trigger strong\{[\s\S]*?line-height:1\.15!important/);
+});
+
+test('NAM slot hides only the long QuickTone slot subtitle; built-in AMP retains Model N',()=>{
+  assert.match(html,/\$\('editorSub'\)\.textContent=namProfile\?'':\('Model '\+\(s\.model\+1\)\)/);
+  assert.match(html,/editor-heading'\)\?\.classList\.toggle\('is-nam-profile',!!namProfile\)/);
+  const v6=html.slice(html.indexOf('<style id="editor-reference-final-v6">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v6">')));
+  assert.match(v6,/editor-heading\.is-nam-profile #editorSub\{[\s\S]*?display:none!important/);
+});
+
+test('Discrete AMP/pedal switches span two grid columns and keep button labels horizontal',()=>{
+  assert.match(html,/function parameterGridRowCount\(controls,columns=4\)/);
+  assert.match(html,/const span=isDiscreteSwitch\(control\)\?2:1/);
+  assert.match(html,/parameterGridRowCount\(controls,4\)/);
+  const v6=html.slice(html.indexOf('<style id="editor-reference-final-v6">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v6">')));
+  assert.match(v6,/knob-discrete-switch\{[\s\S]*?grid-column:span 2!important/);
+  assert.match(v6,/three-way-switch\{[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/);
+  assert.match(v6,/switch-position-button\{[\s\S]*?writing-mode:horizontal-tb!important[\s\S]*?overflow-wrap:normal!important/);
+});
+
+test('Cabinet selector placeholders are English while parameter values and IDs remain unchanged',()=>{
+  assert.ok(html.includes("placeholder=p==='mic'?'Select mic':'Select position'"));
+  assert.ok(html.includes("el.onchange=()=>{"));
+  assert.ok(html.includes("normalizeParameterValue(param,raw)"));
+  assert.ok(html.includes("sendBlockParam(selected,param,value)"));
+  assert.ok(!html.includes("placeholder=p==='mic'?'Pilih mic':'Pilih posisi'"));
+});
+
+test('v6 is moved after the Vite stylesheet by the authoritative style installer',()=>{
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6']"));
+  assert.ok(html.includes("document.head.appendChild(style)"));
+});
