@@ -190,3 +190,40 @@ The .9 build still did not match the supplied UI reference. The visual symptoms 
 - Downloaded audit ZIP was unpacked locally. APK file size, package/version metadata and sidecar SHA-256 were independently checked; SHA-256 matched exactly.
 - The built APK's `assets/public/index.html` was inspected and contains `editor-reference-final-v4` and the Signal Chain scroll arrows. The bundled stylesheet was inspected and no longer contains either legacy final mobile Editor override marker.
 - CI confirms tests/build/signature/package integrity. Physical screenshot parity in both 3-button and gesture navigation modes and MG-30 hardware smoke testing remain pending; do not claim exact 100% visual parity until the user installs and checks the build.
+
+
+
+## Community .11 — Vite cascade order fix and measured Scene dock
+
+### Additional root cause found from the signed .10 APK itself
+
+A direct inspection of the built APK's `assets/public/index.html` revealed that Vite injects the compiled `assets/index-*.css` link near the end of `<head>`, **after** the source inline styles `editor-reference-final-v4`. Therefore, even though v4 was authored after the original source styles, the generated CSS bundle was later in the runtime cascade and could override equal/higher-priority legacy mobile rules. This explains why the .10 source contained a 42px preset rule while the installed screenshot still showed the preset row at the older oversized height; it also explains why the dock positioning rules were only partially applied.
+
+### Community .11 corrections
+
+- Added `editor-reference-final-v5` and a runtime `moveEditorReferenceStylesAfterBundledCss()` installer. After DOMContentLoaded (after Vite's stylesheet has loaded), it appends `editor-reference-final-v4` and `editor-reference-final-v5` to the end of `document.head`, in that order. The generated CSS bundle can no longer supersede the final Editor styles.
+- Preset strip now has explicit `height`, `min-height`, `max-height`, `block-size`, and `max-block-size` all locked to 42 CSS px, with internal slot and controls bounded to the card. This prevents intrinsic flex content from reopening the old taller row.
+- Scene dock is now a fixed dock anchored directly above the actual application tab bar. `editor-viewport-fit.js` measures the actual navigation top, page bottom and Scene dock height using `getBoundingClientRect()`, then derives `--editor-scene-dock-bottom` and `--editor-workspace-reserve`. The geometry adapts to a WebView whose bottom is already reduced by native system insets, and to a viewport where the app tab bar occupies its own bottom region. This replaces a fixed guessed reserve.
+- Signal Chain is kept at 88 CSS px; heading/actions and icon/name block row are explicitly sized so block cards retain their full 46 CSS px height without descriptive captions.
+- AMP block ON/OFF container is now a rounded pill with a complete 1px border and 999px radius, rather than the earlier rectangular/left-divider appearance.
+- A subtle horizontal top border and padding are added to `#knobs`, separating the parameter grid visually from the AMP artwork and Based on line.
+- `computeEditorViewportFit` pure tests cover both gesture-mode geometry (page bottom at the viewport edge) and 3-button / already-inset WebView geometry (page bottom at the navigation top), plus compact height geometry.
+- Hardware parameter rendering, dial handlers, discrete switches, MIDI/CC/SysEx, scene CC 80 logic, preset save and serialization, NAM import, User/Third Party IR import, IR Collection transfers, signal-chain order, and USB audio routes remain unchanged.
+
+### Successful signed build — Community .11
+
+- Exact build source commit: `320d2466f92c6c57fed11b583e9cc281cb5c98c1`.
+- GitHub Actions run: [42486773755](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42486773755).
+- Regression suite: **332 tests passed, 0 failed**.
+- Keystore and alias validation: passed.
+- Android project generation: passed.
+- Gradle Release build: `BUILD SUCCESSFUL` (1m 22s).
+- APK Signature Scheme v2: passed; RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.11`; versionCode `11`; min SDK `24`; target SDK `36`.
+- APK size: `3,568,450` bytes.
+- APK SHA-256: `8f4b5ee062702cb400b6996bd58acd3fa9b3087297d363229f1689a77c174187`.
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13620310356`; ZIP digest `sha256:9eb78cf97ac7b6ca29b5053bdaca55a6ff9c781f97e5c066fa86a0bf7cc1c015`.
+- Audit ZIP downloaded and extracted locally; APK size and SHA-256 sidecar verified independently.
+- Built APK inspection: `editor-reference-final-v4` and `editor-reference-final-v5` are included; Vite CSS link appears after the source style tags; the runtime cascade installer is included after the module script tags; its append operation restores v4/v5 to the end of the generated head cascade. v5 preset hard-cap, measured Scene dock variables, AMP divider and rounded toggle rules are present in the built bundle.
+- CI proves tests, signed build, package identity and checksum. A physical installation/screenshot check in the user's gesture-navigation mode remains the final visual acceptance gate. Do not claim exact visual parity until that screenshot is reviewed. 3-button mode should also be smoke-tested when available.
