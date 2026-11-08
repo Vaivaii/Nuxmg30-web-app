@@ -909,6 +909,7 @@
 /* Reference 691x1536 screen, scaled for CSS px. The Scene dock is in normal
    Editor flow; app navigation is lifted by the actual Android system-bar inset. */
 @media(max-width:720px){
+ :root{--mg30-system-nav-bottom:env(safe-area-inset-bottom,0px)}
  html,body{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;overscroll-behavior:none!important}
  body{position:fixed!important;inset:0!important;padding:0!important}
  body>.app{
