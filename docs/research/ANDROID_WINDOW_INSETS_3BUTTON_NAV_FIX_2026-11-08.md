@@ -37,3 +37,22 @@ CI build success does not itself simulate physical gesture/3-button navigation. 
 ## CI iteration 2
 
 - Run `42448360681` passed Node syntax validation but stopped at one regression assertion. The assertion rejected any occurrence of the theme opt-out attribute's name, including the intentional cleanup regex in the initializer. Updated the assertion to reject only re-insertion of the opt-out XML item into the generated theme. The actual edge-to-edge/insets implementation was unchanged.
+
+
+## Final CI result — successful signed candidate
+
+- Final source/workflow commit: `020198c9de3615cc2227268ce2668f0a4fb0f01b`.
+- GitHub Actions run: [42448452194](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42448452194).
+- Regression tests: **317 passed, 0 failed**.
+- Android project generation: passed.
+- Generated MainActivity compilation / Android Release: `BUILD SUCCESSFUL`.
+- APK V2 signature verification: passed.
+- Package identity: `com.vaivaii.mg30studio`.
+- Version: `1.0.0-community.5`, versionCode `5`.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- APK checksum validation: passed (`MG30-Studio-Community.apk: OK`).
+- Artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13604995973`.
+- Artifact ZIP SHA-256: `d9e051f188791e7c15b49d02bcef3733c3bc840a1e355b75ff15211e5961e22f`.
+- Artifact expires: 2027-02-06.
+- Candidate .5 can update candidate .4 in place: same signing certificate, higher versionCode.
+- CI compiles and verifies the Android implementation, but did not run a physical/emulator navigation-mode visual test. The 3-button and gesture layouts must still be visually confirmed on Android devices after installation.
