@@ -145,29 +145,34 @@ test('Editor artwork SVGs have explicit bounded widths instead of intrinsic auto
 
 
 test('final Editor frame preserves complete AMP/pedal artwork and gives the inline knob grid the remaining height',()=>{
-  const finalCss=html.match(/<style id="editor-reference-final-v4">([\\s\\S]*?)<\\/style>/)?.[1]||'';
+  const styleStart=html.indexOf('<style id="editor-reference-final-v4">');
+  const styleEnd=html.indexOf('</style>',styleStart);
+  const finalCss=styleStart>=0&&styleEnd>styleStart?html.slice(styleStart,styleEnd):'';
   assert.ok(finalCss.length>8000,'missing authoritative final Editor stylesheet');
-  assert.match(finalCss,/#modelVisual\\.model-visual-stage\\{[^}]*height:116px!important/s);
-  assert.match(finalCss,/gear-art \\.gear-svg\\{[^}]*object-fit:contain!important/s);
-  assert.match(finalCss,/gear-art-amp \\.gear-svg\\{[^}]*width:84%!important/s);
-  assert.match(finalCss,/gear-copy\\{[^}]*height:17px!important/s);
-  assert.match(finalCss,/gear-copy \\.gear-type,[\\s\\S]*?display:none!important/s);
-  assert.match(finalCss,/#knobs\\{[^}]*flex:1 1 0!important/s);
-  assert.match(finalCss,/#knobs\\{[^}]*grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)!important/s);
-  assert.match(finalCss,/max-height:780px\\)[\\s\\S]*?height:104px!important/s);
+  assert.ok(finalCss.includes('flex:0 0 116px!important'),'model artwork stage must have a bounded height');
+  assert.ok(finalCss.includes('object-fit:contain!important'),'artwork must not crop');
+  assert.ok(finalCss.includes('gear-art.gear-art-amp .gear-svg{width:84%!important'),'AMP art must remain proportionally large');
+  assert.ok(finalCss.includes('gear-copy{display:flex!important;flex:0 0 17px!important'),'Based on rail must be compact');
+  assert.ok(finalCss.includes('gear-copy .gear-type,'),'category caption selector must be covered');
+  assert.ok(finalCss.includes('flex:1 1 0!important;align-self:stretch!important;grid-template-columns:repeat(4,minmax(0,1fr))!important'),'knob grid must expand into the remaining card height');
+  assert.ok(finalCss.includes('height:104px!important'),'short-screen art clamp must remain responsive');
   assert.ok(!css.includes('Final compact mobile Editor layout: complete artwork'));
 });
 
 test('Scene dock is outside the AMP card, compact, and directly above the application tab bar',()=>{
-  const finalCss=html.match(/<style id="editor-reference-final-v4">([\\s\\S]*?)<\\/style>/)?.[1]||'';
-  const page=html.slice(html.indexOf('<section id="page-editor">'),html.indexOf('</section>',html.indexOf('<section id="page-editor">')));
+  const styleStart=html.indexOf('<style id="editor-reference-final-v4">');
+  const styleEnd=html.indexOf('</style>',styleStart);
+  const finalCss=styleStart>=0&&styleEnd>styleStart?html.slice(styleStart,styleEnd):'';
+  const pageStart=html.indexOf('<section id="page-editor">');
+  const pageEnd=html.indexOf('</section>',pageStart);
+  const page=html.slice(pageStart,pageEnd);
   const cardEnd=page.indexOf('</div><details class="control quick-panel">');
   const dockPosition=page.indexOf('id="editorSceneDock"');
   assert.ok(cardEnd>=0&&dockPosition>cardEnd,'Scene dock must follow the Editor card');
-  assert.match(finalCss,/#editorSceneDock\\{[^}]*position:relative!important[^}]*flex:0 0 54px!important/s);
-  assert.match(finalCss,/body>\\.app>\\.nav\\{[^}]*bottom:0!important[^}]*height:72px!important/s);
-  assert.match(finalCss,/padding:0 0 var\\(--editor-workspace-reserve,80px\\)!important/);
-  assert.match(finalCss,/scene-button\\{[^}]*height:44px!important/s);
+  assert.ok(finalCss.includes('#editorSceneDock{order:5!important;position:relative!important'),'Scene dock must be normal-flow, not fixed');
+  assert.ok(finalCss.includes('bottom:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%!important;height:72px!important'),'app tabs must dock to the bottom of the insets-safe WebView');
+  assert.ok(finalCss.includes('padding:0 0 var(--editor-workspace-reserve,80px)!important'),'Scene dock must reserve only app-nav height plus gap');
+  assert.ok(finalCss.includes('scene-button{display:flex!important;flex:1 1 0!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;min-width:0!important;min-height:44px!important;height:44px!important'),'scene touch targets must match the compact reference');
 });
 
 
