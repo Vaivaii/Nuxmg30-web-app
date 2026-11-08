@@ -10,7 +10,7 @@ const finalCss = html.match(/<style id="editor-reference-final-v5">([\s\S]*?)<\/
 
 test('Vite generated CSS cannot override the final Editor styles: both authoritative style nodes are moved after the bundled stylesheet', () => {
   assert.ok(finalCss.length > 3000);
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
   assert.ok(html.includes("document.addEventListener('DOMContentLoaded',moveStyles,{once:true})"));
   assert.ok(html.indexOf('moveEditorReferenceStylesAfterBundledCss') > html.indexOf('editor-reference-final-v5'));
@@ -85,17 +85,19 @@ test('Cabinet selector placeholders are English while parameter values and IDs r
 });
 
 test('v6 is moved after the Vite stylesheet by the authoritative style installer',()=>{
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
 });
 
-test('Discrete switch cards have a compact fixed footprint and do not repeat UP/DOWN or OFF/ON labels',()=>{
-  const v7=html.slice(html.indexOf('<style id="editor-reference-final-v7">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v7">')));
-  assert.match(v7,/knob-discrete-switch\{[\s\S]*?width:min\(100%,224px\)!important[\s\S]*?height:116px!important/);
-  assert.match(v7,/three-way-switch\{[\s\S]*?height:94px!important/);
-  assert.match(v7,/knob-two-way \.switch-position\{[\s\S]*?display:none!important/);
+test('Discrete switch cards are compact and proportional rather than tall parameter-row slabs',()=>{
+  const v8=html.slice(html.indexOf('<style id="editor-reference-final-v8">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v8">')));
+  assert.match(v8,/knob-discrete-switch\\{[\\s\\S]*?height:68px!important[\\s\\S]*?max-height:68px!important/);
+  assert.match(v8,/knob-two-way\\{[\\s\\S]*?max-width:164px!important/);
+  assert.match(v8,/three-way-switch\\{[\\s\\S]*?height:52px!important/);
+  assert.match(v8,/switch-position-button\\{[\\s\\S]*?height:52px!important/);
+  assert.match(v8,/knob-two-way \\.switch-position\\{[\\s\\S]*?display:none!important/);
   assert.ok(html.includes("choice.position+' '+choice.label"));
-  assert.ok(html.includes("data-switch-value=\"'+choice.value+'\""));
+  assert.ok(html.includes("data-switch-value=\\"'+choice.value+'\\""));
 });
 
 test('Parallel-routing connector cards are wide enough for the complete routing icon',()=>{
@@ -114,8 +116,28 @@ test('Device page owns a vertical scroll viewport and reserves room above the ap
   assert.ok(html.includes("document.querySelectorAll('[id^=\"page-\"]')"));
 });
 
-test('v7 is installed after the bundled CSS and after all earlier Editor final styles',()=>{
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7']"));
-  assert.ok(html.indexOf('editor-reference-final-v7')<html.indexOf('</head>'));
+test('v8 is installed after the bundled CSS and after all earlier Editor final styles',()=>{
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8']"));
+  assert.ok(html.indexOf('editor-reference-final-v8')<html.indexOf('</head>'));
   assert.ok(html.includes("document.head.appendChild(style)"));
+});
+
+test('Signal Chain uses a text-only EDIT action and no longer displays the block count',()=>{
+  const start=html.indexOf('<div class="panel signal-chain-panel">');
+  const end=html.indexOf('<div class="editor">',start);
+  const panel=html.slice(start,end);
+  assert.ok(panel.includes('<span id="chainEditLabel">EDIT</span>'));
+  assert.ok(panel.includes('id="chainEditToggle"'));
+  assert.ok(!panel.includes('12 blocks'));
+  assert.ok(!panel.includes('chain-edit-icon'));
+  assert.ok(!panel.includes('class="chip"'));
+  assert.ok(html.includes("label.textContent=chainEditMode?'DONE':'EDIT'"));
+});
+
+test('Signal Chain edit row has visible separation before the horizontal pedal strip',()=>{
+  const v8=html.slice(html.indexOf('<style id="editor-reference-final-v8">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v8">')));
+  assert.match(v8,/signal-chain-panel>\\.panel-head\\{[\\s\\S]*?margin:0 0 6px!important/);
+  assert.match(v8,/chain-head-actions \\.chain-edit-toggle\\{[\\s\\S]*?width:50px!important[\\s\\S]*?height:22px!important/);
+  assert.match(v8,/chain-track\\{[\\s\\S]*?height:46px!important/);
+  assert.match(v8,/signal-chain-panel\\{[\\s\\S]*?height:88px!important/);
 });

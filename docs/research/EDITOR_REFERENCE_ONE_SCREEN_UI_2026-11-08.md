@@ -314,3 +314,29 @@ The user supplied screenshots showing three remaining defects in Community .12:
 - Downloaded audit ZIP was extracted; APK byte size and independent SHA-256 calculation match the included sidecar checksum. The APK signature file states V2 verification true.
 - Direct APK bundle inspection confirmed `editor-reference-final-v7`, the capped switch CSS, duplicate two-way caption suppression, 38px routing card CSS, and `#page-device` vertical scrolling rules are present in the final APK.
 - Static/integration CI confirms source/package integrity; actual touch-scrolling behavior on the user's Android phone and final visual parity remain to be confirmed after installation.
+
+
+
+## Community .14 — compact discrete-control tiles and Signal Chain header cleanup
+
+### User screenshot findings
+
+The latest screenshots show that Community .13's two-way / three-way selection cards remained excessively tall, filling much of the parameter grid row. For controls such as UP/DOWN and OFF/ON, the selected-state cards were tall slabs rather than proportional tiles. The Signal Chain heading also retained the `12 blocks` chip and an edit-order icon placed too close to the pedal strip.
+
+### Community .14 source changes
+
+- Candidate versionName: `1.0.0-community.14`; Android versionCode: `14`.
+- Branch: `feature/editor-reference-one-screen`.
+- Added final stylesheet `editor-reference-final-v8`, appended after Vite CSS by the existing late-cascade installer.
+- Removed Community .13's oversized discrete-switch rules (116px card / 94px option row) from the source v7 stylesheet rather than merely overriding them.
+- Discrete controls are compact content tiles: 68px total height and 52px choice buttons. Two-way controls cap at 164px width (152px on narrow screens); three-way controls cap at 210px (194px on narrow screens). Both occupy two logical parameter columns and center within their grid area; they no longer stretch to the full row height.
+- Two-way controls continue to hide duplicate position captions; button choices and `data-switch-value` values are unchanged. Three-way controls retain TOP/MIDDLE/BOTTOM captions where the hardware position is distinct from the selected value.
+- Removed the visible `12 blocks` chip from Signal Chain markup.
+- Replaced the Signal Chain edit-order SVG with a text-only `EDIT` button. The original `chainEditToggle` id and `setChainEditMode()` handler remain; while editing, the label changes to `DONE`. The heading row and pedal strip have a defined 6px separation; the action uses a compact 50×22px footprint on its own header row.
+- Existing signal-chain renderer, routing controls, horizontal arrows, order mutation, hardware sync, MIDI CC mapping, discrete-switch values, NAM/IR, Third Party import, IR Collection, preset serialization and Device scroll remain unchanged.
+- No changes outside Editor parameter tile presentation and the Signal Chain header presentation are intended.
+
+### Regression / signed build
+
+- Full Node regression suite and signed Community Release workflow must pass before distributing the APK.
+- Do not claim physical MG-30 verification based solely on CI.
