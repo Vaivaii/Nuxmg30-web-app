@@ -53,3 +53,13 @@ test('Signal Chain wrapper exposes scroll arrows without replacing the existing 
   assert.ok(html.includes('id="chainScrollPrev"'));
   assert.ok(html.includes('id="chainScrollNext"'));
 });
+
+test('The final Editor cascade keeps the original parameter renderer, MIDI handlers and Scene controls', () => {
+  assert.ok(html.includes('id="knobs"'));
+  assert.ok(html.includes('function parameterControls('));
+  assert.ok(html.includes('function sendBlockParam('));
+  assert.ok(html.includes('function sendBlockSwitch('));
+  assert.ok(html.includes('id="editorSceneDock"'));
+  assert.ok(html.includes('id="sceneButtons"'));
+  assert.ok(html.includes('id="copySceneToggle"'));
+});

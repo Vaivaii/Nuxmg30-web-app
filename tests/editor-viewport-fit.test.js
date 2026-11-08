@@ -2,18 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computeEditorViewportFit } from '../www/editor-viewport-fit.js';
 
-test('Three-button navigation moves app tabs above the 48dp system bar and reserves the Scene dock', () => {
-  const fit = computeEditorViewportFit({ navHeight: 78, systemBottomInset: 48, sceneGap: 8 });
-  assert.deepEqual(fit, { navHeight: 78, systemBottomInset: 48, sceneGap: 8, workspaceReserve: 134 });
+test('Three-button system navigation reserves only app tabs and the Scene-to-tab gap', () => {
+  assert.deepEqual(computeEditorViewportFit({ navHeight: 72, sceneGap: 8 }), {
+    navHeight: 72, sceneGap: 8, workspaceReserve: 80
+  });
 });
 
-test('Gesture navigation uses the smaller 24dp system inset without changing Scene dock placement', () => {
-  const fit = computeEditorViewportFit({ navHeight: 78, systemBottomInset: 24, sceneGap: 8 });
-  assert.deepEqual(fit, { navHeight: 78, systemBottomInset: 24, sceneGap: 8, workspaceReserve: 110 });
+test('Gesture navigation uses the same already-inset WebView viewport without a second bottom offset', () => {
+  const fit = computeEditorViewportFit({ navHeight: 72, sceneGap: 8 });
+  assert.equal(fit.workspaceReserve, 80);
 });
 
-test('Browser fallback remains finite when the native inset bridge is not present', () => {
-  const fit = computeEditorViewportFit({ navHeight: 0, systemBottomInset: 0 });
-  assert.equal(fit.workspaceReserve, 86);
-  assert.ok(Number.isFinite(fit.workspaceReserve));
+test('A resized application tab bar is measured dynamically', () => {
+  assert.deepEqual(computeEditorViewportFit({ navHeight: 64, sceneGap: 8 }), {
+    navHeight: 64, sceneGap: 8, workspaceReserve: 72
+  });
+});
+
+test('Fallback dimensions remain finite and non-negative', () => {
+  assert.equal(computeEditorViewportFit({ navHeight: 0, sceneGap: 0 }).workspaceReserve, 76);
 });
