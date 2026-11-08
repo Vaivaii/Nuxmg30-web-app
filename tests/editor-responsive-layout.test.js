@@ -10,7 +10,7 @@ const finalCss = html.match(/<style id="editor-reference-final-v5">([\s\S]*?)<\/
 
 test('Vite generated CSS cannot override the final Editor styles: both authoritative style nodes are moved after the bundled stylesheet', () => {
   assert.ok(finalCss.length > 3000);
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
   assert.ok(html.includes("document.addEventListener('DOMContentLoaded',moveStyles,{once:true})"));
   assert.ok(html.indexOf('moveEditorReferenceStylesAfterBundledCss') > html.indexOf('editor-reference-final-v5'));
@@ -85,7 +85,7 @@ test('Cabinet selector placeholders are English while parameter values and IDs r
 });
 
 test('v6 is moved after the Vite stylesheet by the authoritative style installer',()=>{
-  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6']"));
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
 });
 
