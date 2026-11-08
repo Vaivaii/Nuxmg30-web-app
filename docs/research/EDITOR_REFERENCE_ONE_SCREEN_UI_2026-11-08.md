@@ -273,3 +273,44 @@ The user supplied fresh MG-30 Gen 2 screenshots covering:
 - Direct APK bundle inspection confirmed `editor-reference-final-v6`, `parameterGridRowCount(controls,4)`, two-column discrete switch CSS, the NAM subtitle class, and English cabinet placeholders are present; the old Indonesian cabinet placeholders are absent.
 - The built APK still contains `sendBlockParam`, `normalizeParameterValue`, `data-switch-value` and the existing event-binding paths. This is source/bundle integrity evidence, not a live hardware interaction test.
 - Physical MG-30 testing and visual confirmation of the two-column discrete switches on the phone remain pending user installation; do not state that live parameter writes were verified by CI.
+
+
+
+## Community .13 — discrete switch footprint / routing connector / Device scroll
+
+### User screenshot findings (2026-11-08)
+
+The user supplied screenshots showing three remaining defects in Community .12:
+1. Two-position WAH/EFX switches were stretched to the full grid-row height, making the boxes excessively tall. Each choice also showed duplicated text (e.g. small `UP` caption plus bold `UP`, or `OFF` twice).
+2. MOD → DELAY / DELAY → REVERB connector cards were squeezed to 22 CSS px, clipping the topology icon.
+3. Device & Settings was inside the fixed app shell, whose global overflow is hidden, but the Device page had no independent vertical scrolling viewport. The bottom Tone3000 settings therefore could not be reached reliably with Android system navigation.
+
+### Community .13 source changes
+
+- Candidate versionName: `1.0.0-community.13`; Android versionCode: `13`.
+- Branch: `feature/editor-reference-one-screen`.
+- UI commit: `ca1ecda66f619d30af2b927f954134b49ec02b64`.
+- Regression contract update: `a56068a3fae31f59a6a01ca66b34e3ded7fe34a6`.
+- Added final mobile stylesheet `editor-reference-final-v7`, installed after v4–v6 and the Vite generated CSS by the existing late-cascade installer.
+- Discrete controls: two-way and three-way control cards remain two grid columns wide but are capped at 224px width and 116px height; their option row/buttons are capped at 94px and vertically centered. This prevents them from inheriting the full tall grid row. The `.knob-two-way .switch-position` caption is hidden so `UP/DOWN` and `OFF/ON` labels are not rendered twice. Three-way hardware position captions remain visible when the position and choice label differ.
+- Routing cards: final width is 38px, with a 28px icon container/SVG and 46px card height so the routing topology glyph fits within the card. Existing routing buttons, `data-routing-bit`, serial/parallel state, MIDI connection/busy disabling and event handlers are unchanged.
+- Device page: `#page-device:not(.hidden)` now owns a flex scroll viewport (`min-height:0`, `overflow-y:auto`, momentum scrolling, pan-y touch) and 92px plus safe-area bottom padding so its final settings sections can scroll above the fixed app tabs. The app shell and app navigation remain fixed; Android MainActivity continues to apply native WindowInsets, with no second JavaScript system-bar offset.
+- No changes to NAM/IR import, Third Party mapping, IR Collection, MIDI CC mapping, parameter values, preset state, SysEx, signal-chain model order, or hardware command handlers.
+
+### Regression and release result — PASS
+
+- GitHub Actions run: [42498656656](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42498656656).
+- Exact build source commit: `a56068a3fae31f59a6a01ca66b34e3ded7fe34a6`.
+- Regression suite: **341 tests passed, 0 failed**.
+- Keystore/alias validation: passed.
+- Android project generation: passed.
+- Gradle signed Release: `BUILD SUCCESSFUL in 1m 39s`.
+- APK Signature Scheme v2: verified successfully; RSA 4096-bit signer.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.13`; versionCode `13`; min SDK `24`; target SDK `36`.
+- APK size: `3,570,002` bytes.
+- APK SHA-256: `6f49cda05b821ca43b653471a5eccc01672f3236fbc9b1d59212be3f5555bb01`.
+- Artifact ID: `13624348965`; artifact ZIP digest `sha256:2c8127efe29a2265d609692250636a68b40531f6854c79c62a4ad036ebc7f3fa`.
+- Downloaded audit ZIP was extracted; APK byte size and independent SHA-256 calculation match the included sidecar checksum. The APK signature file states V2 verification true.
+- Direct APK bundle inspection confirmed `editor-reference-final-v7`, the capped switch CSS, duplicate two-way caption suppression, 38px routing card CSS, and `#page-device` vertical scrolling rules are present in the final APK.
+- Static/integration CI confirms source/package integrity; actual touch-scrolling behavior on the user's Android phone and final visual parity remain to be confirmed after installation.
