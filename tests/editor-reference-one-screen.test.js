@@ -38,7 +38,8 @@ test('Only UI markup/styles and render presentation changed; MIDI mapping functi
   assert.ok(html.includes("sendBlockSwitch(selected)"));
   assert.ok(html.includes("midiSend([0xB0,80,index])"));
   assert.ok(html.includes("function renderEditor()"));
-  assert.ok(html.includes("Math.ceil(controls.length/4)"));
+  assert.ok(html.includes("parameterGridRowCount(controls,4)"));
+  assert.ok(html.includes("const span=isDiscreteSwitch(control)?2:1"));
   assert.ok(html.includes("function fitInlineParameterDials()"));
 });
 

@@ -25,7 +25,8 @@ test('The old floating model dock is never visible; the model selector stays in 
 });
 
 test('Parameter count determines grid rows without changing parameter mapping', () => {
-  assert.ok(html.includes("Math.ceil(controls.length/4)"));
+  assert.ok(html.includes("parameterGridRowCount(controls,4)"));
+  assert.ok(html.includes("const span=isDiscreteSwitch(control)?2:1"));
   assert.ok(html.includes("function fitInlineParameterDials()"));
   assert.ok(html.includes("holder.clientHeight/rows"));
   assert.ok(html.includes("requestAnimationFrame(fitInlineParameterDials)"));
