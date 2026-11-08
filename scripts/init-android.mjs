@@ -24,11 +24,22 @@ const mainActivityLines = [
   'import android.graphics.Color;',
   'import android.os.Build;',
   'import android.os.Bundle;',
+  'import android.view.View;',
   'import android.view.WindowManager;',
+  'import androidx.core.graphics.Insets;',
+  'import androidx.core.view.ViewCompat;',
   'import androidx.core.view.WindowCompat;',
+  'import androidx.core.view.WindowInsetsCompat;',
+  'import androidx.core.view.WindowInsetsControllerCompat;',
   'import com.getcapacitor.BridgeActivity;',
   '',
   'public class MainActivity extends BridgeActivity {',
+  '    private View insetsHost;',
+  '    private int insetsBaseLeft;',
+  '    private int insetsBaseTop;',
+  '    private int insetsBaseRight;',
+  '    private int insetsBaseBottom;',
+  '',
   '    @Override',
   '    public void onCreate(Bundle savedInstanceState) {',
   '        registerPlugin(MG30AudioPlugin.class);',
@@ -48,7 +59,7 @@ const mainActivityLines = [
   '',
   '    private void applySystemBars() {',
   '        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {',
-  '            WindowCompat.setDecorFitsSystemWindows(getWindow(), true);',
+  '            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);',
   '            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);',
   '            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);',
   '            getWindow().setStatusBarColor(Color.rgb(11, 16, 18));',
@@ -58,7 +69,32 @@ const mainActivityLines = [
   '                getWindow().setStatusBarContrastEnforced(false);',
   '                getWindow().setNavigationBarContrastEnforced(false);',
   '            }',
-  '            getWindow().getDecorView().setSystemUiVisibility(0);',
+  '            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());',
+  '            controller.setAppearanceLightStatusBars(false);',
+  '            controller.setAppearanceLightNavigationBars(false);',
+  '',
+  '            View content = findViewById(android.R.id.content);',
+  '            if (content != null) {',
+  '                if (insetsHost != content) {',
+  '                    insetsHost = content;',
+  '                    insetsBaseLeft = content.getPaddingLeft();',
+  '                    insetsBaseTop = content.getPaddingTop();',
+  '                    insetsBaseRight = content.getPaddingRight();',
+  '                    insetsBaseBottom = content.getPaddingBottom();',
+  '                    ViewCompat.setOnApplyWindowInsetsListener(insetsHost, (view, windowInsets) -> {',
+  '                        int insetTypes = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();',
+  '                        Insets systemInsets = windowInsets.getInsets(insetTypes);',
+  '                        view.setPadding(insetsBaseLeft + systemInsets.left,',
+  '                                insetsBaseTop + systemInsets.top,',
+  '                                insetsBaseRight + systemInsets.right,',
+  '                                insetsBaseBottom + systemInsets.bottom);',
+  '                        return new WindowInsetsCompat.Builder(windowInsets)',
+  '                                .setInsets(insetTypes, Insets.NONE)',
+  '                                .build();',
+  '                    });',
+  '                }',
+  '                ViewCompat.requestApplyInsets(insetsHost);',
+  '            }',
   '        }',
   '    }',
   '}'
@@ -112,14 +148,15 @@ if (existsSync(stylesPath)) {
   const themeMatch = styles.match(/<style name="[^"]*NoActionBar[^"]*"[^>]*>[\s\S]*?<\/style>/);
   if (themeMatch) {
     let theme = themeMatch[0];
+    // Use explicit WindowInsets handling instead of opting out of edge-to-edge enforcement.
+    theme = theme.replace(/\\s*<item name="android:windowOptOutEdgeToEdgeEnforcement">[^<]*<\\/item>\\s*/g, '\\n');
     for (const item of [
       '<item name="android:statusBarColor">#0b1012</item>',
       '<item name="android:windowBackground">#0b1012</item>',
       '<item name="android:navigationBarColor">#0b1012</item>',
       '<item name="android:windowLightStatusBar">false</item>',
       '<item name="android:windowLightNavigationBar">false</item>',
-      '<item name="android:windowDisablePreview">true</item>',
-      '<item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>'
+      '<item name="android:windowDisablePreview">true</item>'
     ]) {
       const itemName = item.match(/name="([^"]+)"/)[1];
       const startTag = '<item name="' + itemName + '">';
