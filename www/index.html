@@ -1582,6 +1582,69 @@
  }
 }
 </style>
+<style id="editor-reference-final-v7">
+/* Final compact discrete controls, full routing cards and native-page scrolling. */
+@media(max-width:720px){
+ /* Keep 2-way and 3-way parameter selectors compact instead of stretching to the full grid row. */
+ body>.app>#page-editor>.editor>.main-editor-card #knobs .knob-discrete-switch{
+  display:flex!important;grid-column:span 2!important;grid-row:auto!important;
+  align-self:center!important;justify-self:center!important;
+  width:min(100%,224px)!important;max-width:224px!important;
+  height:116px!important;min-height:116px!important;max-height:116px!important;
+  min-width:0!important;overflow:hidden!important;box-sizing:border-box!important;
+ }
+ body>.app>#page-editor>.editor>.main-editor-card #knobs .knob-discrete-switch>label{
+  flex:0 0 16px!important;height:16px!important;min-height:16px!important;max-height:16px!important;
+  margin:0!important;padding:0 2px!important;line-height:16px!important;
+ }
+ body>.app>#page-editor>.editor>.main-editor-card #knobs .knob-discrete-switch .three-way-switch{
+  display:grid!important;flex:0 0 94px!important;align-self:center!important;
+  width:100%!important;height:94px!important;min-height:94px!important;max-height:94px!important;
+  grid-template-rows:94px!important;gap:5px!important;overflow:hidden!important;
+ }
+ body>.app>#page-editor>.editor>.main-editor-card #knobs .knob-discrete-switch .switch-position-button{
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  height:94px!important;min-height:94px!important;max-height:94px!important;width:100%!important;
+  padding:4px 3px!important;gap:2px!important;overflow:hidden!important;
+ }
+ /* UP/DOWN and OFF/ON already name their choices; do not repeat them in the position caption. */
+ body>.app>#page-editor>.editor>.main-editor-card #knobs .knob-two-way .switch-position{
+  display:none!important;visibility:hidden!important;width:0!important;height:0!important;margin:0!important;padding:0!important;
+ }
+
+ /* The routing card sits between chain blocks. Keep enough inline width for its 32px topology icon. */
+ body>.app>#page-editor>.signal-chain-panel .chain .routing-card{
+  display:flex!important;flex:0 0 38px!important;flex-grow:0!important;flex-shrink:0!important;
+  width:38px!important;min-width:38px!important;max-width:38px!important;
+  height:46px!important;min-height:46px!important;max-height:46px!important;
+  align-items:center!important;justify-content:center!important;
+  margin:0!important;padding:3px!important;border-radius:9px!important;box-sizing:border-box!important;
+ }
+ body>.app>#page-editor>.signal-chain-panel .chain .routing-card .routing-symbol{
+  display:grid!important;flex:0 0 28px!important;width:28px!important;height:28px!important;
+  min-width:28px!important;min-height:28px!important;max-width:28px!important;max-height:28px!important;
+  place-items:center!important;overflow:visible!important;
+ }
+ body>.app>#page-editor>.signal-chain-panel .chain .routing-card .routing-symbol svg{
+  display:block!important;width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;
+  max-width:28px!important;max-height:28px!important;overflow:visible!important;
+ }
+
+ /* Device is a scrollable page inside the fixed app shell, above the fixed app tabs.
+    Native MainActivity has already applied WindowInsets, so no duplicate system-bar inset is added. */
+ body>.app>#page-device:not(.hidden){
+  display:block!important;position:relative!important;flex:1 1 0!important;
+  align-self:stretch!important;width:100%!important;min-width:0!important;min-height:0!important;
+  height:0!important;max-height:none!important;margin:0!important;
+  padding:0 0 calc(92px + env(safe-area-inset-bottom,0px))!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior-y:contain!important;-webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;scrollbar-width:thin!important;
+  box-sizing:border-box!important;
+ }
+ body>.app>#page-device:not(.hidden)>*:last-child{margin-bottom:0!important}
+}
+</style>
 </head>
 <body><div class="app">
 <header class="top"><div class="brand"><div class="logo" aria-label="NUX"><img src="./assets/nux-logo-white.svg" alt="NUX"></div><div><h1>MG-30 <span class="gen2-label">GEN2</span></h1><p>MOBILE EDITOR</p></div></div><div class="actions"><div class="usb-header-status" aria-live="polite"><strong>USB MIDI</strong><small id="usbHeaderStatus">Terputus</small></div><button class="btn usb-connect-btn" id="connectMidi" type="button" title="USB-MIDI terputus" aria-label="Hubungkan NUX MG-30 melalui USB-MIDI" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13"/><path d="m9 6 3-3 3 3"/><path d="M12 10H8l-2 2v3"/><path d="M12 12h4l2 2v1"/><path d="M12 16v4"/><path d="M10 20h4"/><circle cx="6" cy="17" r="1.5"/><rect x="16.5" y="15.5" width="3" height="3" rx=".5"/></svg></button><button class="btn" id="resetBtn">Reset</button></div></header>
@@ -5374,7 +5437,7 @@ window.MG30CtrlBridge=Object.freeze({
 <script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
-  const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6'];
+  const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7'];
   const moveStyles=()=>{
     // Vite appends assets/index-*.css after source styles in the generated <head>.
     // Re-appending these two nodes after DOMContentLoaded restores the intended final cascade.

@@ -88,3 +88,34 @@ test('v6 is moved after the Vite stylesheet by the authoritative style installer
   assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6']"));
   assert.ok(html.includes("document.head.appendChild(style)"));
 });
+
+test('Discrete switch cards have a compact fixed footprint and do not repeat UP/DOWN or OFF/ON labels',()=>{
+  const v7=html.slice(html.indexOf('<style id="editor-reference-final-v7">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v7">')));
+  assert.match(v7,/knob-discrete-switch\{[\s\S]*?width:min\(100%,224px\)!important[\s\S]*?height:116px!important/);
+  assert.match(v7,/three-way-switch\{[\s\S]*?height:94px!important/);
+  assert.match(v7,/knob-two-way \.switch-position\{[\s\S]*?display:none!important/);
+  assert.ok(html.includes("choice.position+' '+choice.label"));
+  assert.ok(html.includes("data-switch-value=\"'+choice.value+'\""));
+});
+
+test('Parallel-routing connector cards are wide enough for the complete routing icon',()=>{
+  const v7=html.slice(html.indexOf('<style id="editor-reference-final-v7">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v7">')));
+  assert.match(v7,/chain \.routing-card\{[\s\S]*?flex:0 0 38px!important[\s\S]*?width:38px!important/);
+  assert.match(v7,/routing-symbol svg\{[\s\S]*?width:28px!important[\s\S]*?overflow:visible!important/);
+  assert.ok(html.includes("function signalChainRoutingIcon(parallel)"));
+  assert.ok(html.includes("data-routing-bit"));
+});
+
+test('Device page owns a vertical scroll viewport and reserves room above the app navigation',()=>{
+  const v7=html.slice(html.indexOf('<style id="editor-reference-final-v7">'),html.indexOf('</style>',html.indexOf('<style id="editor-reference-final-v7">')));
+  assert.match(v7,/#page-device:not\(\.hidden\)\{[\s\S]*?flex:1 1 0!important[\s\S]*?overflow-y:auto!important/);
+  assert.match(v7,/#page-device:not\(\.hidden\)\{[\s\S]*?padding:0 0 calc\(92px \+ env\(safe-area-inset-bottom,0px\)\)!important/);
+  assert.match(html,/id="page-device" class="hidden"/);
+  assert.ok(html.includes("document.querySelectorAll('[id^=\"page-\"]')"));
+});
+
+test('v7 is installed after the bundled CSS and after all earlier Editor final styles',()=>{
+  assert.ok(html.includes("styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7']"));
+  assert.ok(html.indexOf('editor-reference-final-v7')<html.indexOf('</head>'));
+  assert.ok(html.includes("document.head.appendChild(style)"));
+});
