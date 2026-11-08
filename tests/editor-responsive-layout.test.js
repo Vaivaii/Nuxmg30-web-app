@@ -40,7 +40,7 @@ test('Signal Chain removes the descriptive sentence and keeps only compact block
 test('All model artwork is contained, AMP art is enlarged and four-column inline knobs remain responsive', () => {
   assert.match(finalCss, /\.gear-art \.gear-svg\{[\s\S]*?object-fit:contain!important/);
   assert.match(finalCss, /\.gear-art\.gear-art-amp \.gear-svg\{\s*width:84%!important/);
-  assert.match(finalCss, /#modelVisual \.gear-copy-head \.gear-type\{display:none!important/);
+  assert.match(finalCss, /#modelVisual \.gear-copy-head,[\s\S]*?#modelVisual \.gear-type\{display:none!important/);
   assert.match(finalCss, /#page-editor \.main-editor-card #knobs\{[\s\S]*?grid-template-columns:repeat\(4,minmax\(0,1fr\)\)!important/);
   assert.match(html, /function fitInlineParameterDials\(\)/);
   assert.match(html, /ResizeObserver\(\(\)=>requestAnimationFrame\(fitInlineParameterDials\)\)/);
@@ -61,5 +61,5 @@ test('Scene dock replaces the AMP model dock; Android app tabs respect native na
 test('Native inset changes trigger a recalculation of normal-flow workspace reserve', () => {
   assert.ok(html.includes('src="./editor-viewport-fit.js"'));
   assert.match(viewportSource, /window\.MG30AndroidInsets\?\.getNavigationBottomInsetDp\?\.\(\)/);
-  assert.match(viewportSource, /window\.addEventListener\('mg30androidinsets',schedule\)/);
+  assert.match(viewportSource, /window\.addEventListener\('mg30androidinsets',\s*schedule\)/);
 });
