@@ -2360,7 +2360,9 @@ function syncStudioPinnedControls() {
   // Align the dock to the measured top of the app navigation, not to a guessed
   // system-navigation height. Gesture and three-button modes can have different
   // WebView heights and different bottom insets.
-  const dockBottom = Math.ceil(viewportHeight - navTop + 8);
+  const dockBottom = navIsFixedAtBottom
+    ? Math.ceil(viewportHeight - navRect.top + 8)
+    : Math.ceil(viewportHeight - navTop + 8);
   dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px');
 
   const studioPage = $('page-studio');

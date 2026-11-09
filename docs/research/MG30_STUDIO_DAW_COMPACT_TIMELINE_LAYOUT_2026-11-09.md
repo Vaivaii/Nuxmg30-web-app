@@ -195,3 +195,9 @@ CI success is not equivalent to physical Android visual/audio acceptance.
 - Full Node regression suite: pending.
 - Android Release build, package identity, signature and checksum: pending.
 - Physical-device acceptance: install Community .28 and compare both gesture and three-button navigation. Confirm dock stays above app navigation and all four track lanes remain accessible in both modes.
+
+### Community .28 first CI attempt — legacy assertion alignment
+- Run [42678706851](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678706851) stopped in the existing DAW UI test file. The new gesture/three-button geometry helper tests passed.
+- Remaining failures were stale assertions: two legacy tests searched for the previous inline dock arithmetic, and two toolbar tests still expected cache token `compact-daw-4`.
+- Kept the prior explicit measured `navRect.top` expression in the fixed-nav branch (same behavior) and updated the cache assertions to `compact-daw-5`.
+- No responsive calculations, CSS sizing, Android Insets handling or device/DAW behavior changed in this correction. The signed build was skipped by the regression gate.
