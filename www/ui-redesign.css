@@ -3048,3 +3048,15 @@ body > .app > #page-editor:not(.hidden) {
     padding: 7px 8px 7px 0 !important;
   }
 }
+
+
+/* Preserve the existing "used by current preset" red marker above the full-height rail fill. */
+@media (max-width: 720px) {
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-number.is-used-in-current-preset,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-number.is-used-in-current-preset {
+    background: #e53935 !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 0 0 2px rgba(229, 57, 53, .16) !important;
+  }
+}

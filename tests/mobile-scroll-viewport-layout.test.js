@@ -134,3 +134,11 @@ test('Preset Manager fade remains inside the scrolling frame and uses a single a
   assert.ok(!fade.includes('90deg'));
   assert.ok(!fade.includes('calc(100% + 16px)'));
 });
+
+
+test('full-height IR rail retains the red used-in-current-preset state marker', () => {
+  const used = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot-number.is-used-in-current-preset,');
+  assert.ok(used.includes('background: #e53935 !important;'));
+  assert.ok(used.includes('color: #fff !important;'));
+  assert.ok(used.includes('box-shadow: 0 0 0 2px rgba(229, 57, 53, .16) !important;'));
+});

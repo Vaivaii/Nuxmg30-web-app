@@ -4049,3 +4049,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Added regression tests for full-height IR number rail, independent divider, exact fade width/alignment, and vertical-only gradient.
 - No changes to Collection slot mapping/actions/data, IR User/Collection SysEx or ACK handling, WAV transfer, preset operations/data, NAM, TONE3000, MIDI mapping, USB-MIDI or Studio.
 - Candidate release advanced to `1.0.0-community.19`, versionCode 19. CI validation pending.
+
+
+
+### Final .19 state-marker conflict guard — 9 November 2026
+
+- During direct inspection of the packaged .19 CSS, identified a selector-specificity conflict: the new full-height dark IR slot rail could override the older red `is-used-in-current-preset` marker.
+- Added an explicit higher-specificity responsive rule restoring the red background, white number and subtle red outline for slots used by the active preset. The full-height rail and separate gray divider remain intact.
+- Added a regression test for that state.
+- The earlier Run #62 passed 357/357 tests and produced a valid signed .19 APK, but that artifact is withheld. A final rebuild is required so the delivered .19 package includes the state-marker preservation rule.
