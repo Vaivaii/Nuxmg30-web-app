@@ -4009,3 +4009,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - No transfer, NAM, TONE3000, MIDI mapping, IR protocol, preset data, or Track Settings runtime code was changed.
 - Artifact: `MG30-Studio-Community-17-audit`, run #55, artifact id `13650791831`; APK size 3,571,818 bytes.
 - Note: automated regression and packaged-CSS/JS inspection completed. A live Android handset/WebView visual test was not available in this run, so final confirmation of touch scrolling on the target phone remains a device-side check.
+
+
+
+## Community .18 — compact IR Collection rows and bottom navigation spacing (9 November 2026)
+
+- User supplied fresh Community .17 screenshots: IR Collection was still using a tall two-column vertical card layout; Preset Manager frame ended too close to the fixed bottom navigation.
+- IR Collection is now a single-column list of compact horizontal slot cards: slot number on the left, status/name/source text in the middle, Import WAV and Use in User actions stacked in a fixed right-hand column. Existing slot DOM, button IDs/data attributes, transfer handlers and 24-slot mapping are unchanged.
+- The inner Collection list keeps vertical scrolling and now has 14px bottom padding/scroll padding. Fallback WebView mode receives the same compact card presentation.
+- Both the IR Collection and Preset Manager viewport controllers now reserve an additional 12px between their visible frame and the measured top edge of the bottom nav. Preset card scroller also receives 16px bottom/scroll padding.
+- The five-button bottom nav was shortened slightly: top/bottom vertical padding reduced by 2px, button padding reduced modestly, icon size reduced from 19px to 18px. All five tabs, labels, hit targets and navigation handlers remain.
+- No change to IR Collection/User SysEx frame IDs or ACK behavior, WAV builder, 24-slot storage, IR-to-preset assignment map, Preset hardware operations/data, NAM, TONE3000, MIDI mapping, USB-MIDI or Studio.
+- Added regression coverage for horizontal card grid, retained Import/Use actions, 24 slots, both 12px viewport gaps, and five-tab nav sizing.
+- Candidate release: `1.0.0-community.18`, versionCode 18. CI and package inspection pending.

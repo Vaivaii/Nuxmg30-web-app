@@ -155,7 +155,7 @@ function initPresetLibraryUI() {
     const headerBottom = topBar.getBoundingClientRect().bottom;
     const navTop = nav.getBoundingClientRect().top;
     const top = Math.max(0, Math.ceil(headerBottom + 7));
-    const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop));
+    const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop) + 12);
 
     document.body.classList.add('preset-manager-active');
     page.style.setProperty('--preset-manager-top', top + 'px');
