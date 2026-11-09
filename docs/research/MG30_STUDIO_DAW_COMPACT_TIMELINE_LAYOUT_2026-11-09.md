@@ -201,3 +201,25 @@ CI success is not equivalent to physical Android visual/audio acceptance.
 - Remaining failures were stale assertions: two legacy tests searched for the previous inline dock arithmetic, and two toolbar tests still expected cache token `compact-daw-4`.
 - Kept the prior explicit measured `navRect.top` expression in the fixed-nav branch (same behavior) and updated the cache assertions to `compact-daw-5`.
 - No responsive calculations, CSS sizing, Android Insets handling or device/DAW behavior changed in this correction. The signed build was skipped by the regression gate.
+
+### Community .28 final CI / APK verification — 10 November 2026
+- Tested source/workflow commit: `c73644bfff2a90075d72062a143b6974dbecb172`.
+- GitHub Actions: [Run 42678936798](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678936798) — **success**.
+- Regression suite: **370 passed, 0 failed** (includes five pure Studio viewport-fit cases and UI integration assertions).
+- Android project generation and release signing setup: passed.
+- Gradle Release: `BUILD SUCCESSFUL`.
+- Package: `com.vaivaii.mg30studio`; Version Name: `1.0.0-community.28`; Version Code: `28`.
+- APK Signature Scheme v2: **verified true**; one signer, RSA 4096-bit.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b` (unchanged from prior Community builds).
+- APK file size: 3,573,734 bytes.
+- APK SHA-256: `2f337d2a262026566fef45f89b3669ab9bf0663e6eea619829f254ccda769f56`. Rechecked locally after extracting the audit artifact; matches the embedded .sha256 file.
+- Workflow audit artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13700419799`.
+- Artifact ZIP SHA-256: `2232bb91cb7a6e0a2973d0ed5185e00d98924ab65b9f8223f4b3e3fe606721e5`; verified against the downloaded artifact.
+- The artifact archive contains APK, checksum file, signature report and package metadata. Package metadata confirms `com.vaivaii.mg30studio`, `1.0.0-community.28`, versionCode `28`.
+- No changes to native Android WindowInsets code, NAM, IR User/Collection, MIDI mapping, audio routing, recording engine, preset workflows or NUX protocol paths.
+- Remaining manual acceptance: install Community .28 and repeat the side-by-side gesture vs three-button navigation comparison. Confirm the Timeline dock remains directly above the app nav, four tracks are visible/reachable, and the short mode can scroll without the fixed dock covering the last lane. CI is not physical-device verification.
+
+### Community .28 first CI attempt / correction history
+- First run [42678706851](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678706851) stopped on legacy test expectations only: two assertions expected the former inline dock arithmetic and two expected the prior cache token. The newly added viewport geometry tests passed.
+- Test-only correction commit: `c73644bfff2a90075d72062a143b6974dbecb172`.
+- Final successful run: [42678936798](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678936798).
