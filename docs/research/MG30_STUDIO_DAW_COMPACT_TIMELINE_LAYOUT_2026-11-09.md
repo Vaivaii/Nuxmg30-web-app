@@ -81,3 +81,17 @@ CI success is not equivalent to physical Android visual/audio acceptance.
 - Result: 362 passed, 1 failed. The failing test was an older second assertion in `tests/studio-daw-arrangement.test.js` that still expected Undo/Redo/Start/End inside More, although the implementation and the other UI test had already been updated.
 - Updated that stale assertion to require all six Undo/Redo/Start/End/Nudge controls in the inline toolbar beside the clock and absent from More; Snap/Zoom and Clip actions remain in their original menus.
 - No application runtime source, toolbar layout or action handlers changed in this correction. Release signing/build was skipped by the regression gate as intended.
+
+### Community .25 final validation — 9 November 2026
+- Corrected commit: `ae337ec11137f0a2dd02895522bc6251e2e6b26c`.
+- GitHub Actions run [42652467996](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42652467996) completed successfully.
+- Regression suite: 363 tests passed, 0 failed.
+- Android project generation and release signing configuration succeeded.
+- Signed APK build succeeded. APK verification step succeeded (package identity, signature and checksum).
+- Package: `com.vaivaii.mg30studio`; version `1.0.0-community.25`; versionCode `25`.
+- APK: `MG30-Studio-Community.apk`, size 3,572,990 bytes.
+- SHA-256: `4bd7fa0bc44459eb055640e37cca216f9382c33979e36b34d13fbb89bbaa2c96`. Independently rechecked against the packaged `.sha256` file after extracting the workflow artifact; checksum matches.
+- APK signature: verified with APK Signature Scheme v2; one signer, RSA 4096-bit. Package metadata and signature report were included in the audit artifact.
+- Workflow artifact: `MG30-Studio-Community-Signed-Candidate` (artifact ID `13689777725`).
+- Scope remains limited to Studio DAW Timeline toolbar and More menu. No NAM, IR import/collection, MIDI mapping, NUX protocol, transport dock or bottom toolbar padding changes.
+- Remaining manual validation: install on the target Android phone and visually/touch-test the toolbar at the device's exact width, including opening More while the transport dock is visible. CI cannot replace this physical-device confirmation.
