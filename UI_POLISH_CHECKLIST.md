@@ -4169,3 +4169,24 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 ### CI follow-up 2
 - The second run narrowed the failures to two assertions that were reading the wrong stylesheet/rule: the Preset list padding lives in `preset-library-ui.css`, not `ui-redesign.css`; and the final fade selector occurrence is only the mobile corner-radius override. Updated both checks to inspect the base scrollport and base absolute fade rules.
 - Other earlier stale expectations, including the NAM/TONE3000 and UI-motion cache-token tests, now pass. Awaiting the next full run.
+
+
+## Community .23 — measured IR card bottom and shorter Preset scroll tail (9 November 2026)
+
+### Screenshot findings
+- Preset Manager fade is attached to the frame, but there is still excessive empty space below the final preset at the scroll limit.
+- IR Collection outer card extends behind the fixed bottom tab bar; its rounded lower border must stop above navigation.
+
+### Root-cause correction
+- Preset list/scroll padding at the bottom was 64px while the fade overlay was 56px. Reduced the end padding to 32px and the pinned fade to 32px, retaining the overlay and pointer-events behavior.
+- The IR page-level fixed offset did not reliably bound the Collection card on Android WebView. IR now measures the actual rendered top of `.ir-collection-frame` and the top of `.nav` in the same `getBoundingClientRect()` coordinate space, then sets `--ir-collection-frame-height = floor(navTop - frameTop - 12)`. The frame uses this value for height, max-height and flex basis. The value is cleared when the viewport mode is exited.
+- The Collection remains the inner scroll owner; all 24 slots and their action buttons remain unchanged.
+
+### Scope protection
+- No changes to NAM model import/readback, IR User/Collection SysEx paths, WAV transfer/ACK/retry, 24-slot mapping, preset data operations, MIDI mapping, USB-MIDI, Studio or audio routing.
+- Stylesheet cache tokens advanced to `stable-ui-8` and `card-v5`. Signed candidate advanced to Community .23, Version Code 23.
+
+### Validation
+- Regression assertions updated for same-coordinate frame/nav measurement, explicit frame sizing and shortened Preset scroll tail/fade.
+- CI regression suite, signed release build, package/signature/checksum verification: pending.
+- Physical Android visual/touch acceptance remains required after installation. CI success alone is not visual proof.

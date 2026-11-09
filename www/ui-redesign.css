@@ -1739,11 +1739,12 @@ html,body{background:#0b1012}
   body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card.ir-collection-frame {
     position: relative;
     display: flex !important;
-    flex: 1 1 0;
+    flex: 0 0 var(--ir-collection-frame-height, auto) !important;
     flex-direction: column !important;
     min-width: 0;
     min-height: 0;
-    height: auto !important;
+    height: var(--ir-collection-frame-height, auto) !important;
+    max-height: var(--ir-collection-frame-height, none) !important;
     align-self: stretch;
     margin: 0;
     padding: 8px 9px;

@@ -161,12 +161,12 @@
   min-height: 0;
   max-height: none;
   margin: 0;
-  padding: 9px 8px 64px;
+  padding: 9px 8px 32px;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  scroll-padding: 9px 0 64px;
+  scroll-padding: 9px 0 32px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -182,7 +182,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 56px;
+  height: 32px;
   border-radius: 0 0 16px 16px;
   background: linear-gradient(
     180deg,
@@ -340,7 +340,7 @@
   }
   #page-presets .preset-library-card-list {
     gap: 8px;
-    padding: 8px 7px 64px;
+    padding: 8px 7px 32px;
     scroll-padding: 8px 0 64px;
   }
   #page-presets .preset-library-fade {
@@ -464,8 +464,8 @@
     max-height: none;
   }
   #page-presets .preset-library-card-list {
-    padding-bottom: 64px;
-    scroll-padding-bottom: 64px;
+    padding-bottom: 32px;
+    scroll-padding-bottom: 32px;
   }
 }
 /* Build source: Export picker hand-off and expanded Preset Manager card viewport. */
@@ -529,8 +529,8 @@
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    padding-bottom: 64px !important;
-    scroll-padding-bottom: 64px !important;
+    padding-bottom: 32px !important;
+    scroll-padding-bottom: 32px !important;
   }
 
   body.preset-manager-active #page-presets .preset-library-footer {

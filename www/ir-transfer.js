@@ -211,6 +211,7 @@ function initUI(){
    if(page){
     page.style.removeProperty('--ir-collection-manager-top');
     page.style.removeProperty('--ir-collection-manager-bottom');
+    grid?.closest('.ir-collection-frame')?.style.removeProperty('--ir-collection-frame-height');
    }
   }
   function scheduleCollectionLayoutCheck(){
@@ -246,6 +247,12 @@ function initUI(){
    document.body.classList.add('ir-collection-manager-active');
    page.style.setProperty('--ir-collection-manager-top',top+'px');
    page.style.setProperty('--ir-collection-manager-bottom',bottom+'px');
+   const collectionFrame=grid.closest('.ir-collection-frame');
+   if(collectionFrame){
+    const frameTop=collectionFrame.getBoundingClientRect().top;
+    const frameHeight=Math.max(0,Math.floor(navTop-frameTop-12));
+    collectionFrame.style.setProperty('--ir-collection-frame-height',frameHeight+'px');
+   }
    scheduleCollectionLayoutCheck();
   }
   if(page){

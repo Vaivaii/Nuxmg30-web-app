@@ -49,7 +49,7 @@ test('reduced-motion preference disables app-wide motion', () => {
 });
 
 test('shared stylesheet cache token is bumped for the motion layer', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-7'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
   assert.ok(!html.includes('ui-redesign.css?v=stable-ui-1'));
 });
 

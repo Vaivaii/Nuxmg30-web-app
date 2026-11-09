@@ -26,7 +26,12 @@ test('NAM and IR Collection is a bounded fourth flex region below the NAM librar
   assert.match(page, /flex-direction:\s*column\s*!important/);
   assert.match(page, /overflow:\s*hidden/);
   assert.doesNotMatch(page, /grid-template-rows/);
-  assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
+  assert.ok(irTransfer.includes('const frameHeight=Math.max(0,Math.floor(navTop-frameTop-12));'));
+  assert.match(irTransfer, /collectionFrame\.getBoundingClientRect\(\)\.top/);
+  assert.match(irTransfer, /collectionFrame\.style\.setProperty\('--ir-collection-frame-height'/);
+  assert.match(irTransfer, /collectionFrame\.style\.removeProperty\('--ir-collection-frame-height'/);
+  assert.match(css, /flex:\s*0 0 var\(--ir-collection-frame-height, auto\) !important/);
+  assert.match(css, /height:\s*var\(--ir-collection-frame-height, auto\) !important/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-top'/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-bottom'/);
   assert.match(namLibrary, /page\.insertBefore\(panel,\s*irContent\)/,
@@ -68,7 +73,7 @@ test('Preset Manager outer frame bounds the independently scrolling card list', 
   const list = cssBlock(presetCss, '#page-presets .preset-library-card-list');
   assert.match(list, /flex:\s*1 1 0/);
   assert.match(list, /min-height:\s*0/);
-  assert.match(list, /padding:\s*9px 8px 64px/);
+  assert.match(list, /padding:\s*9px 8px 32px/);
   assert.match(list, /overflow-y:\s*auto/);
   assert.match(presetUi, /selected\?\.scrollIntoView\(\{ block: 'nearest', behavior: 'smooth' \}\)/);
 });
@@ -100,8 +105,8 @@ test('IR Collection and Preset Manager reserve safe space above the bottom navig
   assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
   assert.ok(presetUi.includes('const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop) + 12);'));
   const list = cssBlock(presetCss, '#page-presets .preset-library-card-list');
-  assert.ok(list.includes('padding: 9px 8px 64px;'));
-  assert.ok(list.includes('scroll-padding: 9px 0 64px;'));
+  assert.ok(list.includes('padding: 9px 8px 32px;'));
+  assert.ok(list.includes('scroll-padding: 9px 0 32px;'));
   const irGrid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
   assert.ok(irGrid.includes('padding: 7px 6px 64px;'));
 });
@@ -141,7 +146,7 @@ test('Preset Manager fade is an absolute non-interactive sibling pinned to the o
   assert.ok(fade.includes('bottom: 0;'));
   assert.ok(fade.includes('right: 0;'));
   assert.ok(fade.includes('left: 0;'));
-  assert.ok(fade.includes('height: 56px;'));
+  assert.ok(fade.includes('height: 32px;'));
   assert.ok(fade.includes('z-index: 20;'));
   assert.ok(fade.includes('pointer-events: none;'));
   assert.ok(!presetCss.includes('.preset-library-card-list::after'));
@@ -177,9 +182,9 @@ test('IR Collection outer frame is a bounded flex column containing the inner sc
   assert.ok(grid.includes('overflow-y: auto !important;'));
 });
 
-test('Community .22 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-7'));
-  assert.ok(html.includes('preset-library-ui.css?v=card-v4'));
+test('Community .23 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v5'));
 });
 
 
@@ -226,9 +231,9 @@ test('IR Collection uses a bounded flex chain and a sibling fade without changin
   assert.ok(irTransfer.includes('for(let slot=1;slot<=24;slot++)'));
 });
 
-test('Community .22 cache tokens point to the corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-7'));
-  assert.ok(html.includes('preset-library-ui.css?v=card-v4'));
+test('Community .23 cache tokens point to the corrected layout stylesheets', () => {
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v5'));
 });
 
 
