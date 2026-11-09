@@ -2990,6 +2990,7 @@ body > .app > #page-editor:not(.hidden) {
 @media (max-width: 720px) {
   body.ir-collection-manager-active #page-nam .ir-collection-slot,
   body.ir-collection-layout-fallback #page-nam .ir-collection-slot {
+    display: grid !important;
     grid-template-columns: 64px minmax(0, 1fr) minmax(96px, 112px) !important;
     min-height: 76px !important;
     padding: 0 !important;
