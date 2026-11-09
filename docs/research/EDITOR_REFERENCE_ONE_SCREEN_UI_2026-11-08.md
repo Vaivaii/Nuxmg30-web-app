@@ -456,3 +456,14 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Added `tests/mobile-scroll-viewport-layout.test.js` to guard the four-row NAM layout, Collection grid end clearance, measured Preset viewport, and the independent Preset card scroller.
 - Candidate advanced from Community .16 / versionCode 16 to Community .17 / versionCode 17.
 - CI build, signed APK inspection and physical device verification: pending.
+
+### Community .17 verification completed — 9 November 2026
+
+- GitHub Actions run #55: success, commit `99fb897e9cb317c09110e1facbf945175960cc4a`.
+- Regression suite: 352 tests, 352 passed, 0 failed.
+- Android Release: `BUILD SUCCESSFUL`; signed APK generated.
+- APK verification: package `com.vaivaii.mg30studio`, versionCode 17, versionName `1.0.0-community.17`; APK Signature Scheme v2 verified true; SHA-256 checksum check passed.
+- Downloaded audit artifact and extracted the exact APK payload. Confirmed the bundled production CSS contains the four-row NAM viewport, Collection 12px end padding and scroll padding, the measured fixed Preset Manager viewport, and the independently scrolling Preset card list. Confirmed bundled JavaScript retains both top/header and bottom/navigation measurements and sets the corresponding CSS custom properties for NAM and Preset Manager.
+- No transfer, NAM, TONE3000, MIDI mapping, IR protocol, preset data, or Track Settings runtime code was changed.
+- Artifact: `MG30-Studio-Community-17-audit`, run #55, artifact id `13650791831`; APK size 3,571,818 bytes.
+- Note: automated regression and packaged-CSS/JS inspection completed. A live Android handset/WebView visual test was not available in this run, so final confirmation of touch scrolling on the target phone remains a device-side check.
