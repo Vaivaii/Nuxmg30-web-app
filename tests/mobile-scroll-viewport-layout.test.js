@@ -80,7 +80,7 @@ test('IR Collection uses compact one-column horizontal slot cards without changi
   assert.ok(grid.includes('padding: 8px 7px 14px !important;'));
   const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot,');
   assert.ok(card.includes('display: grid !important;'));
-  assert.ok(card.includes('grid-template-columns: 42px minmax(0, 1fr) minmax(96px, 112px) !important;'));
+  assert.ok(card.includes('grid-template-columns: 64px minmax(0, 1fr) minmax(96px, 112px) !important;'));
   assert.ok(css.includes('display: contents !important;'));
   assert.ok(irTransfer.includes('data-slot-import'));
   assert.ok(irTransfer.includes('data-slot-use'));
