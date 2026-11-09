@@ -516,3 +516,20 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Added an explicit higher-specificity responsive rule restoring the red background, white number and subtle red outline for slots used by the active preset. The full-height rail and separate gray divider remain intact.
 - Added a regression test for that state.
 - The earlier Run #62 passed 357/357 tests and produced a valid signed .19 APK, but that artifact is withheld. A final rebuild is required so the delivered .19 package includes the state-marker preservation rule.
+
+### Community .19 final build, APK and packaged CSS verification — 9 November 2026
+
+- Final runtime/source commit: `1ba2dfdb67493f389f73bb8788698ada310499a4` on `feature/editor-reference-one-screen`.
+- Final GitHub Actions Run #63 succeeded: [run 42576421938](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42576421938).
+- Regression suite: **358 passed, 0 failed**.
+- Gradle Release: `BUILD SUCCESSFUL in 1m 34s`.
+- Package/version: `com.vaivaii.mg30studio`, versionName `1.0.0-community.19`, versionCode `19`, min SDK 24, target SDK 36.
+- APK Signature Scheme v2: valid; one RSA 4096-bit signer; certificate SHA-256 `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Signed APK size: **3,572,554 bytes**. SHA-256: `0eaa8592e7916b89f3149ee77aaf5f21c3d3cd8cb26c0a1b9fc85e2291642f29`. Extracted APK ZIP integrity passed and embedded checksum sidecar matched the APK.
+- Direct inspection of the APK's compiled production CSS verified: full-height 64px dark IR slot-number rail; minimum 80px slot card with three equal flexible rows; separate full-height 3px divider; red `is-used-in-current-preset` marker remains; Preset Manager fade is 36px high, 100% of the inner list width, has no horizontal side gradient or negative side margins, and ends in the same `#101619` tone as the frame.
+- Preset fade override is in `preset-library-ui.css`, which loads after `ui-redesign.css`, so the final rule wins over the old 64px horizontal+vertical fade.
+- The CSS cache token advanced to `stable-ui-4`; Vite compiles the stylesheet to its content-hashed Android asset.
+- Run #58 and #59 failed only because old/new assertions were not synchronized with the latest selectors and width. Run #61 exposed a test scope typo. These were corrected; the final Run #63 passed all 358 tests. Earlier .19 artifacts from Runs #60 and #62 are **withheld**; only the final Run #63 APK is approved.
+- No changes to IR Collection/User protocol commands, ACK/retry, WAV payload builder, 24-slot map, preset read/write/rename/save/import/export, NAM, TONE3000, MIDI mapping, USB-MIDI, or Studio signal/audio logic.
+- Audit artifact ID `13655407229`, ZIP SHA-256 `0756f594fd16862af439a540db195030098090f8b78b0b8f6dafb65bf4277353`.
+- Target-device visual/touch acceptance still requires the user to install .19 on the original NUX MG-30 Gen 2 firmware 6.0.x; CI and package inspection have passed but do not claim physical handset testing.
