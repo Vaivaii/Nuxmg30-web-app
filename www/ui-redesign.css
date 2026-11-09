@@ -1166,31 +1166,6 @@ html,body{background:#0b1012}
     display: none !important;
   }
 
-  /* Retire the old Preset-only fixed viewport; it now uses the same flex scroll model. */
-  body.preset-manager-active > .app > #page-presets.preset-library-page:not(.hidden) {
-    position: relative !important;
-    z-index: auto !important;
-    inset: auto !important;
-    top: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-    left: auto !important;
-    display: block !important;
-    flex: 1 1 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 0 8px !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    overscroll-behavior-y: contain !important;
-    -webkit-overflow-scrolling: touch;
-    box-sizing: border-box !important;
-  }
-
   body.preset-manager-active > .app > .footer,
   body > .app > .footer {
     display: none !important;
@@ -1277,22 +1252,28 @@ html,body{background:#0b1012}
     display: none !important;
   }
 
-  /* Preset page is a column: fixed heading/actions + the one independently scrolling card list. */
+  /* Preset Manager uses its measured viewport between the app header and fixed nav.
+     preset-library-ui.js updates both custom properties from the actual visible edges.
+     Keep the page fixed and the 128-card list as its only vertical scroller. */
   body.preset-manager-active > .app > #page-presets.preset-library-page:not(.hidden) {
-    position: relative !important;
+    position: fixed !important;
+    z-index: 50 !important;
     inset: auto !important;
+    top: var(--preset-manager-top, 166px) !important;
+    right: 10px !important;
+    bottom: var(--preset-manager-bottom, 107px) !important;
+    left: 10px !important;
     display: flex !important;
-    flex: 1 1 0 !important;
     flex-direction: column !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    width: 100% !important;
-    max-width: none !important;
+    width: auto !important;
+    max-width: 1100px !important;
     min-width: 0 !important;
     min-height: 0 !important;
     max-height: none !important;
     height: auto !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
@@ -1521,7 +1502,7 @@ html,body{background:#0b1012}
     bottom: var(--ir-collection-manager-bottom, 107px);
     left: 10px;
     display: grid !important;
-    grid-template-rows: max-content max-content minmax(0, 1fr);
+    grid-template-rows: max-content max-content max-content minmax(0, 1fr) !important;
     align-content: stretch;
     width: auto;
     max-width: 1100px;
@@ -1829,7 +1810,8 @@ html,body{background:#0b1012}
     height: 100% !important;
     max-height: none !important;
     margin: 0;
-    padding: 7px 6px;
+    padding: 7px 6px 12px;
+    scroll-padding-bottom: 12px;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
@@ -1872,7 +1854,7 @@ html,body{background:#0b1012}
     left: 10px !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    padding: 0 0 8px !important;
+    padding: 0 0 16px !important;
     box-sizing: border-box !important;
     -webkit-overflow-scrolling: touch;
   }

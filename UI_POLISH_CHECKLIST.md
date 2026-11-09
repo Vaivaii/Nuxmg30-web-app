@@ -3985,3 +3985,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Direct inspection of the actual APK confirmed: NAM profile subtitle flex direction is column and left-aligned; the existing NAM profile class handler and late v9 style installer remain; Track Settings CSS includes the new 88px + safe-area bottom clearance; the pre-existing fixed Studio dock and DAW transport controls remain in the package.
 - The first two CI runs exposed only new-test assertion mistakes (over-escaped selector patterns, then targeting the later variable-only dock override). Those assertions were corrected without changing application source. Final Run #54 passed all 348 tests.
 - **Physical-device acceptance remains pending**: install Community .16 on the original NUX MG-30 Gen 2 firmware 6.0.x and visually verify (1) AMP / NAM Slot N two-line hierarchy and (2) scrolling Track Settings fully above the fixed dock. CI and package inspection do not substitute for that phone check.
+
+
+
+## Community .17 — NAM/IR Collection and Preset Manager bottom viewport correction (9 November 2026)
+
+- User confirmed Community .16 fixed both previous defects: NAM Slot subtitle is below AMP, and Studio Track Settings now scrolls above its dock.
+- New phone screenshots show the bottom of the IR Collection and Preset Manager card areas is still clipped by the bottom app navigation.
+- Root cause A (NAM & IR): `ir-transfer.js` creates four direct page rows in order — `nam-page-hero`, `nam-ir-tools-frame`, `namModelLibrary` (inserted by `nam-model-library-ui.js` immediately before `ir-import-content`), and the Collection `ir-import-content`. The active mobile CSS allocated only three grid rows. The Collection therefore landed in an implicit row outside the intended measured viewport. Changed the explicit grid to three max-content rows plus one `minmax(0,1fr)` Collection row. Added 12px bottom padding/scroll-padding to the 24-slot inner grid and a 16px fallback page clearance.
+- Root cause B (Preset Manager): `preset-library-ui.js` already measures the real top-header bottom and bottom-nav top and sets `--preset-manager-top/bottom`. A later `ui-redesign.css` mobile override changed that page to `position:relative`, defeating the measured fixed viewport; a second stale relative-scroller override duplicated the conflict. Removed the stale override and restored the fixed measured interval in the authoritative mobile rule. The 128-card list remains the single independent vertical scroller.
+- Only `www/ui-redesign.css` changes runtime behavior. Preset and IR transfer JavaScript, MIDI, Collection SysEx frames, WAV import, local storage, preset data, hardware selection, NAM, TONE3000, and the already-correct Track Settings clearance are untouched.
+- Added `tests/mobile-scroll-viewport-layout.test.js` to guard the four-row NAM layout, Collection grid end clearance, measured Preset viewport, and the independent Preset card scroller.
+- Candidate advanced from Community .16 / versionCode 16 to Community .17 / versionCode 17.
+- CI build, signed APK inspection and physical device verification: pending.
