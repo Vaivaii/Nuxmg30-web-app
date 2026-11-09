@@ -615,3 +615,10 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Regression tests updated for the flex viewport chain, explicit sibling fades, pointer-events, 64px scroll tails, preserved 24-slot controls and cache tokens.
 - CI/release build: pending at source commit time.
 - Target Android/WebView visual/touch acceptance: pending install and on-device review.
+
+
+### CI follow-up after connection resumed
+- Community .22 first workflow run reached the regression suite (363 tests): 356 passed, 7 failed. APK/signing/build steps were correctly skipped because the regression gate failed.
+- Failures were stale assertions left behind by the layout refactor: previous cache token values, previous grid-row layout expectations, the old preset fade selector count, and a test expecting the list's bottom padding in a longhand declaration rather than the new padding shorthand.
+- Removed a redundant partial duplicate IR root selector and updated the affected tests to assert the flex-frame/sibling-fade implementation and current cache tokens. No application transfer or device protocol logic was changed.
+- Re-run of regression suite and release packaging: pending.

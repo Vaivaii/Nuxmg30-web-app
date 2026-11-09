@@ -100,7 +100,7 @@ test('IR Collection and Preset Manager reserve safe space above the bottom navig
   assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
   assert.ok(presetUi.includes('const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop) + 12);'));
   const list = lastCssBlock(css, 'body.preset-manager-active #page-presets .preset-library-card-list {');
-  assert.ok(list.includes('padding-bottom: 64px !important;'));
+  assert.ok(list.includes('padding: 9px 8px 64px;'));
   assert.ok(list.includes('scroll-padding-bottom: 64px !important;'));
   const irGrid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
   assert.ok(irGrid.includes('padding: 7px 6px 64px;'));
@@ -135,7 +135,7 @@ test('IR slot number is a full-height filled rail with a separate divider, match
 
 
 test('Preset Manager fade is an absolute non-interactive sibling pinned to the outer frame bottom', () => {
-  assert.equal((presetCss.match(/#page-presets \.preset-library-fade/g) || []).length, 1);
+  assert.equal((presetCss.match(/#page-presets \.preset-library-fade/g) || []).length, 2);
   const fade = lastCssBlock(presetCss, '#page-presets .preset-library-fade');
   assert.ok(fade.includes('position: absolute;'));
   assert.ok(fade.includes('bottom: 0;'));
@@ -161,16 +161,20 @@ test('full-height IR rail retains the red used-in-current-preset state marker', 
 });
 
 
-test('IR Collection outer scroll frame fits its allocated grid row instead of overflowing the card', () => {
+test('IR Collection outer frame is a bounded flex column containing the inner scrollport', () => {
+  const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card.ir-collection-frame {');
+  assert.ok(card.includes('position: relative;'));
+  assert.ok(card.includes('display: flex !important;'));
+  assert.ok(card.includes('flex: 1 1 0;'));
+  assert.ok(card.includes('min-height: 0;'));
+  assert.ok(card.includes('overflow: hidden;'));
   const grid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
   assert.ok(grid.includes('height: auto !important;'));
   assert.ok(grid.includes('min-height: 0 !important;'));
   assert.ok(grid.includes('max-height: none !important;'));
   assert.ok(grid.includes('align-self: stretch !important;'));
   assert.ok(grid.includes('box-sizing: border-box;'));
-  assert.ok(!grid.includes('height: 100% !important;'));
-  assert.ok(css.includes('grid-template-rows: auto minmax(0, 1fr) auto !important;'));
-  assert.ok(css.includes('overflow-y: auto !important;'));
+  assert.ok(grid.includes('overflow-y: auto !important;'));
 });
 
 test('Community .22 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
