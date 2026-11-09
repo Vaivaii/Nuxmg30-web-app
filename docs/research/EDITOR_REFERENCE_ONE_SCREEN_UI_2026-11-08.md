@@ -560,3 +560,34 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - No IR protocol/transfer, ACK/retry, WAV payload, Collection/User slot mapping, 24-slot storage, preset operation/data, NAM, TONE3000, MIDI, USB-MIDI or Studio logic changed.
 - Audit artifact ID `13659653885`; ZIP size **3,253,351 bytes**; ZIP SHA-256 `d209a518cc43448e8ce07fa77354044a4ef09acaf7d1186be1a15fe3c1f35070`.
 - Phone-side visual/touch confirmation still pending: install Community .20 on original NUX MG-30 Gen 2 firmware 6.0.x to confirm the complete frame and stationary bottom fade on the target WebView.
+
+## Community .21 — final viewport-chain audit and release verification (9 November 2026)
+
+### Source audit and root causes
+
+- User's latest screenshots still showed IR Collection slots 23–24 and the lower frame concealed beneath the app navigation; Preset Manager's bottom fade did not meet the actual scroll frame.
+- A complete DOM/CSS audit identified the root IR sizing defect: `initUI()` hides the original direct-child legacy hero and import panel, then appends a single visible `#ir-manager-ui` child into `#ir-import-content`. The old `grid-template-rows:auto minmax(0,1fr)` sent that one visible child into the `auto` row and left the flexible row empty. This let the 24-slot content determine its intrinsic height and overflow the fixed NAM viewport. A separate chain of `height:100%` rules on root, manager, card and slot grid compounded the overflow.
+- Fixed by assigning the visible root exactly one `minmax(0,1fr)` row; manager also gets one flexible row; card retains `auto minmax(0,1fr) auto`; all active ancestor/grid percentage heights are removed and replaced with auto sizing plus `min-height:0`/stretch. The Collection grid remains the only inner `overflow-y:auto` scroller inside its border/background frame.
+- A duplicate later selector for `#page-nam > #ir-import-content` had only partial `grid-row/min-height` declarations. It was merged into the authoritative root rule and removed, preventing cascade order from splitting sizing responsibility.
+- Preset fade audit found the original sticky 64px side+bottom fade, the .19 inner-scroll override, and the .20 page-level absolute overlay coexisting. The page overlay was attached to `#page-presets`, not the actual scrolling frame. All three conflicting versions were consolidated into one pseudo-element on `.preset-library-card-list`: sticky at `bottom:0`, width 100%, height 42px, `margin:-42px 0 0`, vertical-only gradient. The page-level overlay and duplicate .19/.20 blocks are removed.
+
+### Change and regression protection
+
+- Runtime source commit: `ef04db7caf7a38fa369d0c9c5470f1fe86a6ea4b`.
+- Test-only selector cleanup commits: `f72b0a6b232ebf04908b0277281cf6c636c66f7a` and `f54830173b2a4400d6ef4049489ade810d34c952`. These test commits did not change application runtime source.
+- WebView cache tokens advanced to `stable-ui-6` and `card-v3`.
+- Added regression assertions for the one-visible-child/one-grid-track root, all ancestor height rules, uniqueness of the root selector, continued 24-slot inner scrolling, exactly one sticky Preset fade, and cache tokens.
+- No IR protocol IDs, ACK/retry, WAV payload/build, User/Collection mapping, 24-slot mapping/actions, preset read/write/import/export, NAM/TONE3000 behavior, MIDI mapping, USB-MIDI, Studio or audio routing code was modified.
+
+### Final CI and APK
+
+- GitHub Actions Run #68 succeeded: [run 42594836165](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42594836165), tested HEAD `f54830173b2a4400d6ef4049489ade810d34c952`.
+- Regression suite: **363 passed, 0 failed**.
+- Gradle: `BUILD SUCCESSFUL in 1m 49s`.
+- Android package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.21`; versionCode `21`; min SDK 24; target SDK 36.
+- APK Signature Scheme v2: verified true; one RSA 4096-bit signer. Certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Signed APK size: **3,572,458 bytes**. SHA-256: `96ddd70280669c5642e6cb3871f267286fd285d3e6b92283e32d4012bee1cffe`. Extracted APK ZIP integrity passed (449 entries); sidecar SHA-256 matched the APK.
+- Actual Vite-bundled APK CSS verified: active Collection root has exactly one grid track; manager/card/grid no longer force percentage height; only one active root sizing selector remains; slot grid retains inner vertical overflow and frame border. Preset CSS has exactly one sticky fade on the real scroller and no page-level fade pseudo.
+- APK asset includes the new CSS bundle and cache-token assets. Package metadata and v2 signature were inspected from the audit ZIP, not inferred from workflow success alone.
+- Audit artifact ID `13663565160`, ZIP size **3,253,249 bytes**, ZIP SHA-256 `4722b2e3f38652cec6245284acb03a5cdd9ca4dec4dd76759b7530096f5caa3c`.
+- Phone-side visual/touch acceptance remains pending: install Community .21 on the original NUX MG-30 Gen 2 firmware 6.0.x to confirm the lower Collection frame and last slots are reachable, and the Preset fade touches the scroller's exact lower edge.
