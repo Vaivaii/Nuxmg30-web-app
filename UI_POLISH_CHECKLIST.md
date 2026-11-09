@@ -4022,3 +4022,18 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - No change to IR Collection/User SysEx frame IDs or ACK behavior, WAV builder, 24-slot storage, IR-to-preset assignment map, Preset hardware operations/data, NAM, TONE3000, MIDI mapping, USB-MIDI or Studio.
 - Added regression coverage for horizontal card grid, retained Import/Use actions, 24 slots, both 12px viewport gaps, and five-tab nav sizing.
 - Candidate release: `1.0.0-community.18`, versionCode 18. CI and package inspection pending.
+
+### Community .18 — release verification completed (9 November 2026)
+
+- Application/runtime source commit: `89eb6b0d85817aa2139eb849adad47261a21623f`.
+- Final regression-test-only commit: `f50ec5f9549e7ef39a61d2300b897bf018f5772d`. This corrected four assertions to match the implemented CSS/viewport strings; no further runtime source change after the application commit.
+- GitHub Actions Run #57 succeeded: [run 42567326423](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42567326423).
+- Regression suite: **355 tests passed, 0 failed**.
+- Android Release: `BUILD SUCCESSFUL in 1m 34s`.
+- APK package/version: `com.vaivaii.mg30studio`, versionName `1.0.0-community.18`, versionCode `18`, min SDK 24, target SDK 36.
+- APK Signature Scheme v2: valid; one RSA 4096-bit signer. Certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- APK size: **3,572,246 bytes**. APK SHA-256: `984233f881131d963f08d973ba95c651543fa211b5dcae97209e78b6d6ea617f`. Extracted APK ZIP integrity: passed (449 entries); embedded checksum matched.
+- Direct inspection of bundled production assets verified: one-column compact IR slot list; horizontal card grid columns (slot number / metadata / action buttons); original Import WAV and Use in User data actions remain present; all 24 Collection slots remain in the compiled application; IR and Preset viewport controllers both add 12px below the visible frame; bottom nav has only modestly reduced padding and retains five columns; Preset list adds 16px bottom/scroll padding.
+- Test assertion failures in first Run #56 were due to tests using pre-adjustment viewport values and over-escaped regular expressions. Corrected tests use literal assertions; final Run #57 passed. No IR/User/Collection SysEx command, ACK/retry, WAV transfer, 24-slot mapping, preset data/operations, NAM, TONE3000, MIDI mapping, USB-MIDI, or Studio functionality was changed.
+- User-side physical Android/WebView confirmation remains pending. CI and bundled APK inspection passed; the exact visual spacing/scroll feel should still be checked on the target phone.
+- Audit artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13652031696`, ZIP SHA-256 `961fd8ca6c2015dccb80f5e5b30713c93795b10b07c57f24b7cc94d104628378`.
