@@ -95,3 +95,26 @@ CI success is not equivalent to physical Android visual/audio acceptance.
 - Workflow artifact: `MG30-Studio-Community-Signed-Candidate` (artifact ID `13689777725`).
 - Scope remains limited to Studio DAW Timeline toolbar and More menu. No NAM, IR import/collection, MIDI mapping, NUX protocol, transport dock or bottom toolbar padding changes.
 - Remaining manual validation: install on the target Android phone and visually/touch-test the toolbar at the device's exact width, including opening More while the transport dock is visible. CI cannot replace this physical-device confirmation.
+
+## Community .26 — Studio Timeline toolbar touch targets and Section dropdown anchor (9 November 2026)
+
+### User screenshot findings
+- Community .25 placed Undo/Redo, cursor Start/End and Nudge left/right beside the clock correctly, but the controls were too small and too tightly spaced for convenient touch use.
+- Section dropdown opened from its left edge and extended beyond the right side of the phone screen, clipping Loop section and In/Out/Clear controls.
+
+### Implementation
+- Increased the six inline history/navigation/nudge controls from 22x28px to 32x34px, increased spacing from 2px to 5px, and slightly enlarged glyphs.
+- On very narrow devices (<=380px), controls use 28x32px and 3px spacing so the six controls remain compact without returning to the prior tiny target.
+- Re-anchored the Section menu to the right edge of its trigger (left:auto/right:0), with a viewport-bounded width and border-box sizing, so the panel opens leftward into available screen space.
+- Static stylesheet and runtime-injected Android styles are kept in sync. Stylesheet cache token advanced to `compact-daw-3`.
+- No changes to toolbar's 7px padding, two-row layout, timeline height, track/lane dimensions, transport dock, bottom padding, audio engine, project persistence, NAM, IR, MIDI mapping or device protocol.
+
+### Regression protection
+- Added UI regression checks for 32x34px standard touch targets, 28x32px narrow-screen targets, 5px/3px spacing, right-anchored viewport-bounded Section panel and unchanged 7px toolbar padding.
+- Existing menu action IDs and all click handlers remain untouched.
+
+### Validation
+- Source commit: pending.
+- Regression tests: pending.
+- Signed Android Release / APK package, signature and checksum verification: pending.
+- Physical Android confirmation remains required: ensure toolbar buttons are comfortably tappable and all Section menu controls are visible and usable on the device.

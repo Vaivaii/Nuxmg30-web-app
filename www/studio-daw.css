@@ -845,11 +845,11 @@
   display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;min-width:0!important;min-height:34px!important
 }
 #page-studio .daw-compact-menu-row{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;min-width:0!important}
-#page-studio .daw-inline-history-tools{display:flex!important;align-items:center!important;justify-content:center!important;gap:2px!important;min-width:0!important}
+#page-studio .daw-inline-history-tools{display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-width:0!important}
 #page-studio .daw-toolbar-icon-btn{
-  display:grid!important;place-items:center!important;flex:0 0 22px!important;width:22px!important;min-width:22px!important;height:28px!important;min-height:28px!important;
-  padding:0!important;border:1px solid #34413c!important;border-radius:7px!important;background:#141d1b!important;color:#e6eee4!important;
-  font-size:11px!important;font-weight:800!important;line-height:1!important;cursor:pointer!important
+  display:grid!important;place-items:center!important;flex:0 0 32px!important;width:32px!important;min-width:32px!important;height:34px!important;min-height:34px!important;
+  padding:0!important;border:1px solid #34413c!important;border-radius:8px!important;background:#141d1b!important;color:#e6eee4!important;
+  font-size:14px!important;font-weight:800!important;line-height:1!important;cursor:pointer!important
 }
 #page-studio .daw-toolbar-icon-btn:disabled{opacity:.32!important;cursor:not-allowed!important}
 #page-studio .daw-toolbar-icon-btn:not(:disabled):active{border-color:#8fae60!important;color:#c5f36b!important}
