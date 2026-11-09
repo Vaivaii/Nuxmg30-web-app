@@ -671,7 +671,7 @@ test('DAW overflow menu stacks above the timeline playhead and stays unclipped',
   assert.ok(daw.includes('z-index:1!important'));
 });
 
-test('Compact DAW toolbar uses two rows and keeps every editing action in its menu', () => {
+test('Compact DAW toolbar places history/navigation beside the clock and retains dropdown actions', () => {
   const start = html.indexOf('<div class="daw-quick-toolbar">');
   const end = html.indexOf('<div class="daw-timeline-panel">', start);
   const toolbar = html.slice(start, end);
@@ -691,12 +691,26 @@ test('Compact DAW toolbar uses two rows and keeps every editing action in its me
   for (const id of ids) {
     assert.equal((toolbar.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1, id + ' must remain exactly once');
   }
+  const inlineStart = toolbar.indexOf('class="daw-inline-history-tools"');
+  const inlineEnd = toolbar.indexOf('</div>', inlineStart);
+  const inline = toolbar.slice(inlineStart, inlineEnd);
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawNudgeLeft','dawNudgeRight']) {
+    assert.ok(inline.includes('id="' + id + '"'), id + ' must sit beside the playback clock');
+  }
   const moreStart = toolbar.indexOf('id="dawMoreMenuPanel"');
   const moreEnd = toolbar.indexOf('</details>', moreStart);
   const more = toolbar.slice(moreStart, moreEnd);
-  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawSnap','dawZoom','dawNudgeLeft','dawNudgeRight']) {
-    assert.ok(more.includes('id="' + id + '"'), id + ' must stay accessible from More');
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawNudgeLeft','dawNudgeRight']) {
+    assert.equal(more.includes('id="' + id + '"'), false, id + ' must not remain in More');
   }
+  for (const id of ['dawSnap','dawZoom']) assert.ok(more.includes('id="' + id + '"'), id + ' remains in More');
+  assert.ok(css.includes('grid-template-columns:auto minmax(0,1fr) auto'));
+  assert.ok(daw.includes('#page-studio .daw-toolbar-icon-btn{'));
+  assert.ok(daw.includes('width:min(280px,calc(100vw - 48px))!important'));
+  assert.ok(daw.includes('max-height:min(64vh,460px)!important'));
+  assert.ok(daw.includes('#page-studio .daw-toolbar-fade-control{grid-template-columns:repeat(2,minmax(0,1fr))'));
+  assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
+  assert.ok(html.includes('studio-daw.css?v=compact-daw-2'));
   const sectionStart = toolbar.indexOf('class="daw-action-menu daw-section-menu"');
   const sectionEnd = toolbar.indexOf('</details>', sectionStart);
   const section = toolbar.slice(sectionStart, sectionEnd);

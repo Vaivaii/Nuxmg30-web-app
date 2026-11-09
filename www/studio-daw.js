@@ -2132,8 +2132,12 @@ function addTrackInputRoutingStyles() {
   style.textContent = `
     #page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}
     #page-studio .daw-quick-toolbar-primary{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:0!important}
-    #page-studio .daw-quick-toolbar-position{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;min-width:0!important;min-height:34px!important}
-    #page-studio .daw-position-readout{display:grid!important;justify-items:start!important;gap:0!important;min-width:76px!important;text-align:left!important}
+    #page-studio .daw-quick-toolbar-position{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;min-width:0!important;min-height:34px!important}
+    #page-studio .daw-position-readout{display:grid!important;justify-items:start!important;gap:0!important;min-width:76px!important;flex:0 0 auto!important;text-align:left!important}
+    #page-studio .daw-inline-history-tools{display:flex!important;align-items:center!important;justify-content:center!important;gap:2px!important;min-width:0!important}
+    #page-studio .daw-toolbar-icon-btn{display:grid!important;place-items:center!important;flex:0 0 22px!important;width:22px!important;min-width:22px!important;height:28px!important;min-height:28px!important;padding:0!important;border:1px solid #34413c!important;border-radius:7px!important;background:#141d1b!important;color:#e6eee4!important;font-size:11px!important;font-weight:800!important;line-height:1!important;cursor:pointer!important}
+    #page-studio .daw-toolbar-icon-btn:disabled{opacity:.32!important;cursor:not-allowed!important}
+    #page-studio .daw-toolbar-icon-btn:not(:disabled):active{border-color:#8fae60!important;color:#c5f36b!important}
     #page-studio .daw-compact-menu-row{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;min-width:0!important}
     #page-studio .daw-position-readout strong{font-size:clamp(18px,4.8vw,23px)!important;line-height:1.02!important}
     #page-studio .daw-position-readout small{font-size:9px!important;line-height:1.05!important}
@@ -2160,7 +2164,7 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-loop-range{position:absolute;top:0;bottom:0;background:rgba(83,212,199,.18);border-left:2px solid #53d4c7;border-right:2px solid #53d4c7;pointer-events:none;z-index:1}
     #page-studio .daw-ruler-inner{position:relative}
     #page-studio .daw-more-menu{position:relative!important;z-index:50!important}
-    #page-studio .daw-more-menu-panel{position:absolute!important;z-index:60!important;right:0!important;top:42px!important;width:min(310px,calc(100vw - 40px))!important;max-height:min(72vh,560px)!important;overflow-y:auto!important;display:grid!important;gap:7px!important;padding:11px!important;border:1px solid #3d4a3e!important;border-radius:11px!important;background:#111a16!important;box-shadow:0 8px 24px #0009!important}
+    #page-studio .daw-more-menu-panel{position:absolute!important;z-index:60!important;right:0!important;top:42px!important;width:min(280px,calc(100vw - 48px))!important;max-height:min(64vh,460px)!important;overflow-y:auto!important;display:grid!important;gap:6px!important;padding:9px!important;border:1px solid #3d4a3e!important;border-radius:10px!important;background:#111a16!important;box-shadow:0 8px 24px #0009!important}
     #page-studio .daw-menu-section-label{font-size:9px;color:#91a08b;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 1px}
     #page-studio .daw-fade-target{font-size:10px;color:#9ba996;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     #page-studio .daw-toolbar-fade-control{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px;border:1px solid #29372e;border-radius:9px;background:#0d1512}
@@ -2173,7 +2177,8 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-menu-control input{width:125px;accent-color:#c5f36b}
     #page-studio .daw-edit-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
     #page-studio .daw-edit-menu-grid .daw-tool-btn{width:100%;min-width:0;min-height:36px;padding:6px 8px;font-size:10px;text-align:left;white-space:nowrap}
-    @media(max-width:520px){#page-studio .daw-quick-toolbar-position{gap:4px!important}#page-studio .daw-clock-actions{gap:3px!important}#page-studio .daw-clock-action-btn{min-width:30px!important;height:32px!important;padding:0 5px!important;font-size:9px!important}#page-studio .daw-position-readout{min-width:78px!important}#page-studio .daw-section-toolbar{gap:4px;flex-wrap:wrap}#page-studio .daw-section-controls{gap:4px}#page-studio .daw-section-loop-toggle{padding:0 6px;font-size:9px}#page-studio .daw-section-toolbar .daw-tool-btn{padding:4px 6px;font-size:9px}#page-studio .daw-loop-range-readout{flex:1 1 75px;font-size:8px}#page-studio .daw-section-context{margin-left:auto}#page-studio .daw-toolbar-fade-control{grid-template-columns:1fr}}
+    @media(max-width:380px){#page-studio .daw-position-readout{min-width:70px!important}#page-studio .daw-toolbar-icon-btn{flex-basis:19px!important;width:19px!important;min-width:19px!important;height:26px!important;min-height:26px!important;font-size:9px!important}#page-studio .daw-action-menu>summary{padding:4px 6px!important}#page-studio .daw-inline-history-tools{gap:1px!important}}
+    @media(max-width:520px){#page-studio .daw-quick-toolbar-position{gap:4px!important}#page-studio .daw-clock-actions{gap:3px!important}#page-studio .daw-clock-action-btn{min-width:30px!important;height:32px!important;padding:0 5px!important;font-size:9px!important}#page-studio .daw-position-readout{min-width:78px!important}#page-studio .daw-section-toolbar{gap:4px;flex-wrap:wrap}#page-studio .daw-section-controls{gap:4px}#page-studio .daw-section-loop-toggle{padding:0 6px;font-size:9px}#page-studio .daw-section-toolbar .daw-tool-btn{padding:4px 6px;font-size:9px}#page-studio .daw-loop-range-readout{flex:1 1 75px;font-size:8px}#page-studio .daw-section-context{margin-left:auto}#page-studio .daw-toolbar-fade-control{grid-template-columns:repeat(2,minmax(0,1fr))}}
     #page-studio .daw-input-routing-panel{margin:14px 0;padding:12px;border:1px solid #334139;border-radius:14px;background:#101816;color:#e6eddf}
     #page-studio .daw-input-routing-head{margin-bottom:12px}
     #page-studio .daw-input-routing-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:850;color:#a7b89a}

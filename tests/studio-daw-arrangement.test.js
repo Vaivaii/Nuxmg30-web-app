@@ -84,8 +84,25 @@ test('mobile DAW controls are consolidated into the metronome card and overflow 
     assert.ok(toolbar.includes(`id="${id}"`), `${id} stays inside the metronome card`);
   }
   for (const id of ['dawUndo', 'dawRedo', 'dawCopyClip', 'dawPasteClip', 'dawDuplicateClip', 'dawNudgeLeft', 'dawNudgeRight', 'dawCursorStart', 'dawCursorEnd']) {
-    assert.ok(toolbar.includes(`id="${id}"`), `${id} is available in the compact overflow menu`);
+    assert.ok(toolbar.includes(`id="${id}"`), `${id} remains available in the DAW toolbar`);
   }
+  const inlineToolsStart = toolbar.indexOf('class="daw-inline-history-tools"');
+  const inlineToolsEnd = toolbar.indexOf('</div>', inlineToolsStart);
+  const inlineTools = toolbar.slice(inlineToolsStart, inlineToolsEnd);
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawNudgeLeft','dawNudgeRight']) {
+    assert.ok(inlineTools.includes('id="' + id + '"'), id + ' is directly beside the playback clock');
+  }
+  const moreStart = toolbar.indexOf('id="dawMoreMenuPanel"');
+  const moreEnd = toolbar.indexOf('</details>', moreStart);
+  const more = toolbar.slice(moreStart, moreEnd);
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawNudgeLeft','dawNudgeRight']) {
+    assert.equal(more.includes('id="' + id + '"'), false, id + ' must not be trapped in More');
+  }
+  assert.ok(more.includes('id="dawSnap"'));
+  assert.ok(more.includes('id="dawZoom"'));
+  assert.ok(daw.includes('#page-studio .daw-more-menu-panel{position:absolute!important;z-index:60!important;right:0!important;top:42px!important;width:min(280px,calc(100vw - 48px))!important'));
+  assert.ok(daw.includes('max-height:min(64vh,460px)!important'));
+  assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
   assert.ok(toolbar.includes('class="daw-more-menu-panel daw-menu-panel"'));
   assert.ok(toolbar.includes('class="daw-quick-toolbar-position"'));
   assert.ok(toolbar.includes('class="daw-compact-menu-row"'));

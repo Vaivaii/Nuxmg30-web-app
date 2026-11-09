@@ -4251,3 +4251,29 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - GitHub audit artifact: `MG30-Studio-Community-Signed-Candidate`, Artifact ID `13683626227`, ZIP SHA-256 `a8f2c94e2f607c6a48317ab68d8ea2379f7f00a9090528aedeb9e0bba66d74b0`.
 - The artifact ZIP was downloaded, extracted and inspected. It contains the APK, signature report, package report and SHA-256 file. The extracted APK checksum matches the checksum file and the locally computed SHA-256.
 - Physical Android review is pending installation. The new toolbar layout has not yet been visually accepted on the phone. Do not mark the Track 4 fit above the fixed dock as device-verified until the owner supplies a new screenshot.
+
+## Community .25 — Studio Timeline history/navigation toolbar and compact More menu (9 November 2026)
+
+### User request and screenshot findings
+- Studio > DAW Timeline was already functioning; the defect was only that the More dropdown extended behind / was obscured by the fixed transport dock.
+- The toolbar's second row had unused space between the playback clock and Section/Clip menu triggers.
+- User requested Undo, Redo, cursor Start/End and Nudge controls in that space, plus a slightly smaller dropdown.
+- Preserve the existing timeline/track sizing, four visible lanes, transport dock position and all bottom padding.
+
+### Implementation
+- Moved the existing button elements (same IDs) for Undo, Redo, cursor Start, cursor End, Nudge Left and Nudge Right from More into a compact icon toolbar directly beside the playback clock.
+- Kept all original event bindings and behavior in `www/studio-daw.js`; no new action implementations or duplicate element IDs.
+- More now retains only Clip Fades, Snap and Zoom controls. Its maximum width is reduced from 310px to 280px; max-height from 560px to 460px; padding/gap are tightened. Fade controls remain side-by-side on phones to reduce panel height.
+- The toolbar's existing 7px padding is intentionally unchanged. No transport dock, timeline viewport, lane sizing, audio, recording, project persistence or device protocol logic was modified.
+- Bumped WebView stylesheet cache token to `compact-daw-2`.
+- Updated the signed release workflow to Community .25 / versionCode 25.
+
+### Regression protection
+- Updated DAW arrangement/UI tests to verify all six actions occur exactly once in the inline clock toolbar, are absent from More, and remain bound to their original handlers.
+- Added checks for the smaller More dimensions, compact mobile fade layout, stylesheet cache token, and unchanged 7px toolbar padding.
+
+### Validation
+- Source commit: pending.
+- Full regression tests: pending.
+- Signed Android Release and APK signature/package/checksum verification: pending.
+- Physical Android visual/touch confirmation: pending installation. Verify all six toolbar controls fit between the clock and Section/Clip triggers at the user's screen width; open More and confirm it no longer extends beneath the transport dock. Verify buttons and nudge retain their existing enabled/disabled behavior.
