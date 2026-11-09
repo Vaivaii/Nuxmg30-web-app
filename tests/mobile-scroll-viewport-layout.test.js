@@ -29,7 +29,7 @@ test('NAM and IR Collection is a bounded fourth flex region below the NAM librar
   assert.ok(irTransfer.includes('const frameHeight=Math.max(0,Math.floor(navTop-frameTop-12));'));
   assert.match(irTransfer, /collectionFrame\.getBoundingClientRect\(\)\.top/);
   assert.match(irTransfer, /collectionFrame\.style\.setProperty\('--ir-collection-frame-height'/);
-  assert.match(irTransfer, /collectionFrame\.style\.removeProperty\('--ir-collection-frame-height'/);
+  assert.match(irTransfer, /grid\?\.closest\('\.ir-collection-frame'\)\?\.style\.removeProperty\('--ir-collection-frame-height'/);
   assert.match(css, /flex:\s*0 0 var\(--ir-collection-frame-height, auto\) !important/);
   assert.match(css, /height:\s*var\(--ir-collection-frame-height, auto\) !important/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-top'/);
@@ -170,7 +170,7 @@ test('IR Collection outer frame is a bounded flex column containing the inner sc
   const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card.ir-collection-frame {');
   assert.ok(card.includes('position: relative;'));
   assert.ok(card.includes('display: flex !important;'));
-  assert.ok(card.includes('flex: 1 1 0;'));
+  assert.ok(card.includes('flex: 0 0 var(--ir-collection-frame-height, auto) !important;'));
   assert.ok(card.includes('min-height: 0;'));
   assert.ok(card.includes('overflow: hidden;'));
   const grid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
@@ -206,7 +206,7 @@ test('IR Collection uses a bounded flex chain and a sibling fade without changin
   const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card.ir-collection-frame {');
   assert.ok(card.includes('position: relative;'));
   assert.ok(card.includes('display: flex !important;'));
-  assert.ok(card.includes('flex: 1 1 0;'));
+  assert.ok(card.includes('flex: 0 0 var(--ir-collection-frame-height, auto) !important;'));
   assert.ok(card.includes('min-height: 0;'));
   assert.ok(card.includes('overflow: hidden;'));
 

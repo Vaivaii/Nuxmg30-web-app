@@ -648,3 +648,9 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Regression assertions updated for same-coordinate frame/nav measurement, explicit frame sizing and shortened Preset scroll tail/fade.
 - CI regression suite, signed release build, package/signature/checksum verification: pending.
 - Physical Android visual/touch acceptance remains required after installation. CI success alone is not visual proof.
+
+
+### Community .23 CI test follow-up
+- First .23 run was stopped at the regression-test gate. The implementation now sizes the Collection frame with `flex: 0 0 var(--ir-collection-frame-height)`, while two pre-existing test assertions still required its previous `flex: 1 1 0` rule. One cleanup assertion also looked for a local variable name not used by the safe optional-chain cleanup expression.
+- Updated these assertions to verify the actual measured-frame flex basis and the actual cleanup path. No production protocol or transfer code changed in this test-only follow-up.
+- The next complete regression run and signed APK pipeline are pending.
