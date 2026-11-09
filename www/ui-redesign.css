@@ -2992,7 +2992,9 @@ body > .app > #page-editor:not(.hidden) {
   body.ir-collection-layout-fallback #page-nam .ir-collection-slot {
     display: grid !important;
     grid-template-columns: 64px minmax(0, 1fr) minmax(96px, 112px) !important;
-    min-height: 76px !important;
+    min-height: 80px !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+    align-content: stretch !important;
     padding: 0 !important;
     overflow: hidden !important;
   }

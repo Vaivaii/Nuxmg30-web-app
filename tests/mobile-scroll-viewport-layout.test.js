@@ -108,6 +108,8 @@ test('IR slot number is a full-height filled rail with a separate divider, match
   const number = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot-number,');
   assert.ok(number.includes('width: 64px !important;'));
   assert.ok(number.includes('height: 100% !important;'));
+  assert.ok(card.includes('grid-template-rows: repeat(3, minmax(0, 1fr)) !important;'));
+  assert.ok(card.includes('min-height: 80px !important;'));
   assert.ok(number.includes('background: rgba(0, 0, 0, .13) !important;'));
   assert.ok(number.includes('border: 0 !important;'));
   assert.ok(number.includes('border-radius: 11px 0 0 11px !important;'));
