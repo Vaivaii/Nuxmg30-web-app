@@ -99,9 +99,9 @@ test('IR Collection uses compact one-column horizontal slot cards without changi
 test('IR Collection and Preset Manager reserve safe space above the bottom navigation', () => {
   assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
   assert.ok(presetUi.includes('const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop) + 12);'));
-  const list = lastCssBlock(css, 'body.preset-manager-active #page-presets .preset-library-card-list {');
+  const list = cssBlock(presetCss, '#page-presets .preset-library-card-list');
   assert.ok(list.includes('padding: 9px 8px 64px;'));
-  assert.ok(list.includes('scroll-padding-bottom: 64px !important;'));
+  assert.ok(list.includes('scroll-padding: 9px 0 64px;'));
   const irGrid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
   assert.ok(irGrid.includes('padding: 7px 6px 64px;'));
 });
@@ -136,7 +136,7 @@ test('IR slot number is a full-height filled rail with a separate divider, match
 
 test('Preset Manager fade is an absolute non-interactive sibling pinned to the outer frame bottom', () => {
   assert.equal((presetCss.match(/#page-presets \.preset-library-fade/g) || []).length, 2);
-  const fade = lastCssBlock(presetCss, '#page-presets .preset-library-fade');
+  const fade = cssBlock(presetCss, '#page-presets .preset-library-fade');
   assert.ok(fade.includes('position: absolute;'));
   assert.ok(fade.includes('bottom: 0;'));
   assert.ok(fade.includes('right: 0;'));

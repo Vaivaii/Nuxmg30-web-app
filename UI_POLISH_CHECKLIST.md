@@ -4164,3 +4164,8 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Failures were stale assertions left behind by the layout refactor: previous cache token values, previous grid-row layout expectations, the old preset fade selector count, and a test expecting the list's bottom padding in a longhand declaration rather than the new padding shorthand.
 - Removed a redundant partial duplicate IR root selector and updated the affected tests to assert the flex-frame/sibling-fade implementation and current cache tokens. No application transfer or device protocol logic was changed.
 - Re-run of regression suite and release packaging: pending.
+
+
+### CI follow-up 2
+- The second run narrowed the failures to two assertions that were reading the wrong stylesheet/rule: the Preset list padding lives in `preset-library-ui.css`, not `ui-redesign.css`; and the final fade selector occurrence is only the mobile corner-radius override. Updated both checks to inspect the base scrollport and base absolute fade rules.
+- Other earlier stale expectations, including the NAM/TONE3000 and UI-motion cache-token tests, now pass. Awaiting the next full run.
