@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const css = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 const presetCss = readFileSync(new URL('../www/preset-library-ui.css', import.meta.url), 'utf8');
 const presetUi = readFileSync(new URL('../www/preset-library-ui.js', import.meta.url), 'utf8');
 const irTransfer = readFileSync(new URL('../www/ir-transfer.js', import.meta.url), 'utf8');
