@@ -122,17 +122,20 @@ test('IR slot number is a full-height filled rail with a separate divider, match
   assert.ok(divider.includes('background: #75847d !important;'));
 });
 
-test('Preset Manager fade remains inside the scrolling frame and uses a single aligned vertical gradient', () => {
-  const fade = lastCssBlock(presetCss, '#page-presets .preset-library-card-list::after');
-  assert.ok(fade.includes('width: 100%;'));
-  assert.ok(fade.includes('height: 36px;'));
-  assert.ok(fade.includes('bottom: 0;'));
-  assert.ok(fade.includes('margin-left: 0;'));
-  assert.ok(fade.includes('margin-right: 0;'));
-  assert.ok(fade.includes('margin-top: -36px;'));
+test('Preset Manager fade is pinned to the fixed viewport bottom, not the end of scroll content', () => {
+  const oldFade = lastCssBlock(presetCss, '#page-presets .preset-library-card-list::after');
+  assert.ok(oldFade.includes('content: none !important;'));
+  assert.ok(oldFade.includes('display: none !important;'));
+  const fade = lastCssBlock(presetCss, 'body.preset-manager-active > .app > #page-presets.preset-library-page:not(.hidden)::after');
+  assert.ok(fade.includes('position: absolute !important;'));
+  assert.ok(fade.includes('bottom: 2px !important;'));
+  assert.ok(fade.includes('right: 0 !important;'));
+  assert.ok(fade.includes('left: 0 !important;'));
+  assert.ok(fade.includes('width: auto !important;'));
+  assert.ok(fade.includes('height: 36px !important;'));
+  assert.ok(fade.includes('pointer-events: none !important;'));
   assert.ok(fade.includes('linear-gradient('));
   assert.ok(!fade.includes('90deg'));
-  assert.ok(!fade.includes('calc(100% + 16px)'));
 });
 
 
@@ -141,4 +144,22 @@ test('full-height IR rail retains the red used-in-current-preset state marker', 
   assert.ok(used.includes('background: #e53935 !important;'));
   assert.ok(used.includes('color: #fff !important;'));
   assert.ok(used.includes('box-shadow: 0 0 0 2px rgba(229, 57, 53, .16) !important;'));
+});
+
+
+test('IR Collection outer scroll frame fits its allocated grid row instead of overflowing the card', () => {
+  const grid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
+  assert.ok(grid.includes('height: auto !important;'));
+  assert.ok(grid.includes('min-height: 0 !important;'));
+  assert.ok(grid.includes('max-height: none !important;'));
+  assert.ok(grid.includes('align-self: stretch !important;'));
+  assert.ok(grid.includes('box-sizing: border-box !important;'));
+  assert.ok(!grid.includes('height: 100% !important;'));
+  assert.ok(css.includes('grid-template-rows: auto minmax(0, 1fr) auto;'));
+  assert.ok(css.includes('overflow-y: auto !important;'));
+});
+
+test('Community .20 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-5'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v2'));
 });

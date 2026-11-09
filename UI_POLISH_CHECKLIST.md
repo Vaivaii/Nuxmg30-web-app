@@ -4075,3 +4075,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - No changes to IR Collection/User protocol commands, ACK/retry, WAV payload builder, 24-slot map, preset read/write/rename/save/import/export, NAM, TONE3000, MIDI mapping, USB-MIDI, or Studio signal/audio logic.
 - Audit artifact ID `13655407229`, ZIP SHA-256 `0756f594fd16862af439a540db195030098090f8b78b0b8f6dafb65bf4277353`.
 - Target-device visual/touch acceptance still requires the user to install .19 on the original NUX MG-30 Gen 2 firmware 6.0.x; CI and package inspection have passed but do not claim physical handset testing.
+
+
+
+## Community .20 — restore the complete IR Collection frame and pin Preset fade (9 November 2026)
+
+- User provided side-by-side screenshots: reference IR Collection had a bounded framed scroll viewport; .19 showed the lower part of the frame clipped beneath the app nav. Preset Manager's bottom fade appeared noticeably above the actual bottom edge.
+- IR root cause: `.ir-collection-grid` is the flexible middle child of the Collection card's `grid-template-rows: auto minmax(0,1fr) auto`, but an older rule forced `height:100% !important`. That percentage was based on the full card, including its header, so the grid overflowed its allocated middle row and its lower frame edge was clipped by the parent's `overflow:hidden`. Community .20 overrides only the active mobile Collection grid to `height:auto !important`, `min-height:0`, `max-height:none`, `align-self:stretch`, and border-box sizing. The grid naturally fills exactly the allocated middle row; its own `overflow-y:auto` keeps all 24 slots inside the restored frame.
+- Preset fade root cause: the fade pseudo-element belonged to the scrolling card content, so its position was tied to the scrolled content/end-of-list. The old scroller pseudo is disabled. A new 36px vertical-gradient overlay is anchored absolutely to the fixed Preset Manager page at `bottom:2px`, spanning its full content width and staying stationary while cards scroll. It therefore aligns with the actual bottom of the list viewport rather than an item in the scroll stream.
+- No changes to slot card arrangement or appearance, IR transfer/User/Collection SysEx, ACK/retry, WAV payload, 24-slot map, preset operations/data, NAM, TONE3000, MIDI mapping, USB-MIDI, or Studio.
+- Cache tokens advanced to `stable-ui-5` and `card-v2` so Android WebView reloads both corrected stylesheets.
+- Added regression tests for the IR grid's allocated height, inner overflow scroller, fixed Preset viewport fade, and both cache tokens.
+- Candidate release: `1.0.0-community.20`, versionCode 20. CI validation and package inspection pending.

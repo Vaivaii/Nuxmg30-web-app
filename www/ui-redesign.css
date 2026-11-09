@@ -3060,3 +3060,16 @@ body > .app > #page-editor:not(.hidden) {
     box-shadow: 0 0 0 2px rgba(229, 57, 53, .16) !important;
   }
 }
+
+
+/* Community .20 — keep the Collection frame within the measured NAM page viewport.
+   The grid is a minmax(0,1fr) child after the collection header; height:100% overflows that row. */
+@media (max-width: 720px) {
+  body.ir-collection-manager-active #page-nam .ir-collection-grid {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: stretch !important;
+    box-sizing: border-box !important;
+  }
+}
