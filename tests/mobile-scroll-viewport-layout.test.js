@@ -123,20 +123,21 @@ test('IR slot number is a full-height filled rail with a separate divider, match
   assert.ok(divider.includes('background: #75847d !important;'));
 });
 
-test('Preset Manager fade is pinned to the fixed viewport bottom, not the end of scroll content', () => {
-  const oldFade = lastCssBlock(presetCss, '#page-presets .preset-library-card-list::after');
-  assert.ok(oldFade.includes('content: none !important;'));
-  assert.ok(oldFade.includes('display: none !important;'));
-  const fade = lastCssBlock(presetCss, 'body.preset-manager-active > .app > #page-presets.preset-library-page:not(.hidden)::after');
-  assert.ok(fade.includes('position: absolute !important;'));
-  assert.ok(fade.includes('bottom: 2px !important;'));
-  assert.ok(fade.includes('right: 0 !important;'));
-  assert.ok(fade.includes('left: 0 !important;'));
-  assert.ok(fade.includes('width: auto !important;'));
-  assert.ok(fade.includes('height: 36px !important;'));
-  assert.ok(fade.includes('pointer-events: none !important;'));
+
+test('Preset Manager fade is sticky inside the actual scrolling frame and reaches its lower edge', () => {
+  const selectors = presetCss.match(/#page-presets \.preset-library-card-list::after/g) || [];
+  assert.equal(selectors.length, 1, 'only one authoritative Preset fade selector remains');
+  const fade = lastCssBlock(presetCss, '#page-presets .preset-library-card-list::after');
+  assert.ok(fade.includes('position: sticky;'));
+  assert.ok(fade.includes('bottom: 0;'));
+  assert.ok(fade.includes('flex: 0 0 42px;'));
+  assert.ok(fade.includes('height: 42px;'));
+  assert.ok(fade.includes('margin: -42px 0 0;'));
+  assert.ok(fade.includes('width: 100%;'));
+  assert.ok(fade.includes('pointer-events: none;'));
   assert.ok(fade.includes('linear-gradient('));
   assert.ok(!fade.includes('90deg'));
+  assert.ok(!presetCss.includes('preset-library-page:not(.hidden)::after'));
 });
 
 
@@ -161,6 +162,40 @@ test('IR Collection outer scroll frame fits its allocated grid row instead of ov
 });
 
 test('Community .20 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-5'));
-  assert.ok(html.includes('preset-library-ui.css?v=card-v2'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-6'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v3'));
+});
+
+
+test('IR Collection fits one visible manager child into one bounded scroll track at every ancestor', () => {
+  const root = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam > #ir-import-content.ir-import-content {');
+  assert.ok(root.includes('grid-template-rows: minmax(0, 1fr) !important;'));
+  assert.ok(root.includes('height: auto !important;'));
+  assert.ok(!root.includes('grid-template-rows: auto minmax(0, 1fr)'));
+  assert.ok(!root.includes('height: 100%'));
+
+  const manager = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui.ir-manager-grid {');
+  assert.ok(manager.includes('grid-template-rows: minmax(0, 1fr) !important;'));
+  assert.ok(manager.includes('height: auto !important;'));
+  assert.ok(!manager.includes('height: 100%'));
+
+  const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card:nth-child(2) {');
+  assert.ok(card.includes('grid-template-rows: auto minmax(0, 1fr) auto !important;'));
+  assert.ok(card.includes('height: auto !important;'));
+  assert.ok(!card.includes('height: 100%'));
+
+  const grid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
+  assert.ok(grid.includes('height: auto !important;'));
+  assert.ok(grid.includes('min-height: 0 !important;'));
+  assert.ok(grid.includes('overflow-y: auto !important;'));
+  assert.ok(!grid.includes('height: 100%'));
+  assert.ok(irTransfer.includes("root.appendChild(ui)"));
+  assert.ok(irTransfer.includes("legacy=root.querySelector('.ir-import-panel')"));
+  assert.ok(irTransfer.includes("legacyHero=root.querySelector(':scope > .hero')"));
+  assert.ok(irTransfer.includes("for(let slot=1;slot<=24;slot++)"));
+});
+
+test('Community .21 cache tokens point to the corrected layout stylesheets', () => {
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-6'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v3'));
 });
