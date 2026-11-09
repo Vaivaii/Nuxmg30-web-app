@@ -2132,7 +2132,7 @@ function addTrackInputRoutingStyles() {
   style.textContent = `
     #page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}
     #page-studio .daw-quick-toolbar-primary{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:0!important}
-    #page-studio .daw-quick-toolbar-position{position:relative!important;z-index:80!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;min-width:0!important;min-height:34px!important}
+    #page-studio .daw-quick-toolbar-position{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;min-width:0!important;min-height:34px!important}
     #page-studio .daw-position-readout{display:grid!important;justify-items:start!important;gap:0!important;min-width:76px!important;text-align:left!important}
     #page-studio .daw-compact-menu-row{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;min-width:0!important}
     #page-studio .daw-position-readout strong{font-size:clamp(18px,4.8vw,23px)!important;line-height:1.02!important}
@@ -2208,9 +2208,7 @@ function addTrackInputRoutingStyles() {
     #page-studio .daw-output-route-native{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;opacity:0!important;pointer-events:none!important}
 
     #page-studio .daw-quick-toolbar{position:relative!important;z-index:32!important;overflow:visible!important;isolation:isolate!important}
-    /* Keep the complete top row above the Loop / Clip / Track row.
-       Raising only the popover is insufficient because action-menu children
-       create sibling stacking levels that can paint over its nested panel. */
+    /* Keep the primary tempo row above the compact secondary-action menus. */
     #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:90!important}
     #page-studio .daw-quick-toolbar-position{position:relative!important;z-index:80!important}
     #page-studio .daw-more-menu{position:relative!important;z-index:100!important}

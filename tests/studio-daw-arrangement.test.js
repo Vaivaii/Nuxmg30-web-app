@@ -87,7 +87,9 @@ test('mobile DAW controls are consolidated into the metronome card and overflow 
     assert.ok(toolbar.includes(`id="${id}"`), `${id} is available in the compact overflow menu`);
   }
   assert.ok(toolbar.includes('class="daw-more-menu-panel daw-menu-panel"'));
-  assert.ok(toolbar.includes('class="daw-section-toolbar"'));
+  assert.ok(toolbar.includes('class="daw-quick-toolbar-position"'));
+  assert.ok(toolbar.includes('class="daw-compact-menu-row"'));
+  assert.ok(toolbar.includes('class="daw-action-menu daw-section-menu"'));
   assert.equal(index.includes('class="daw-arrangement-tools"'), false);
   assert.ok(daw.includes("document.querySelectorAll('#page-studio .daw-menu-panel button')"));
   assert.ok(daw.includes('menu.open = false'));
@@ -117,7 +119,8 @@ test('main DAW card exposes selected clip trim/delete and selected track delete 
   for (const id of ['dawTrimStart','dawTrimEnd','dawSplitClip','dawDeleteClip','dawDeleteTrack']) {
     assert.ok(toolbar.includes(`id="${id}"`), `${id} is available in the DAW card`);
   }
-  assert.ok(toolbar.includes('class="daw-section-context"'));
+  assert.ok(toolbar.includes('class="daw-action-menu daw-clip-menu"'));
+  assert.ok(toolbar.includes('class="daw-action-menu daw-track-menu"'));
   assert.ok(daw.includes('function trimSelectedClipToPlayhead(edge)'));
   assert.ok(daw.includes('trimClipStart(clip, position - start, sourceDuration)'));
   assert.ok(daw.includes('trimClipEnd(clip, position - end, sourceDuration)'));
@@ -137,15 +140,21 @@ test('fade in/out controls are in the overflow menu rather than Track Settings',
   assert.ok(daw.includes('Clip trim, fade, split and delete controls are available from the main DAW card.'));
 });
 
-test('Undo/Redo flank the timer and Copy/Paste/Duplicate use the other side', () => {
-  const start = index.indexOf('<div class="daw-quick-toolbar-position">');
-  const end = index.indexOf('<div class="daw-section-toolbar"', start);
-  const positionRow = index.slice(start, end);
-  assert.ok(positionRow.indexOf('id="dawUndo"') < positionRow.indexOf('id="dawClock"'));
-  assert.ok(positionRow.indexOf('id="dawRedo"') < positionRow.indexOf('id="dawClock"'));
-  assert.ok(positionRow.indexOf('id="dawCopyClip"') > positionRow.indexOf('id="dawClock"'));
-  assert.ok(positionRow.indexOf('id="dawPasteClip"') > positionRow.indexOf('id="dawClock"'));
-  assert.ok(positionRow.indexOf('id="dawDuplicateClip"') > positionRow.indexOf('id="dawClock"'));
+test('secondary DAW actions remain discoverable in More and Clip menus outside the compact clock row', () => {
+  const start = index.indexOf('<div class="daw-quick-toolbar">');
+  const end = index.indexOf('<div class="daw-timeline-panel">', start);
+  const toolbar = index.slice(start, end);
+  const position = toolbar.slice(toolbar.indexOf('<div class="daw-quick-toolbar-position">'));
+  assert.ok(position.includes('id="dawClock"'));
+  assert.equal(position.includes('id="dawUndo"'), false);
+  assert.equal(position.includes('id="dawRedo"'), false);
+  assert.equal(position.includes('id="dawCursorStart"'), false);
+  assert.equal(position.includes('id="dawCursorEnd"'), false);
+  const more = toolbar.slice(toolbar.indexOf('id="dawMoreMenuPanel"'), toolbar.indexOf('</details>', toolbar.indexOf('id="dawMoreMenuPanel"')));
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd']) assert.ok(more.includes('id="' + id + '"'));
+  const clipStart = toolbar.indexOf('class="daw-action-menu daw-clip-menu"');
+  const clip = toolbar.slice(clipStart, toolbar.indexOf('</details>', clipStart));
+  for (const id of ['dawCopyClip','dawPasteClip','dawDuplicateClip']) assert.ok(clip.includes('id="' + id + '"'));
 });
 
 

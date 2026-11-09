@@ -4231,3 +4231,9 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Added regression tests to verify exactly two toolbar rows, every original action ID appears once in its intended menu, Timeline remains non-vertically-scrollable and track minimum sizing is retained.
 - Regression suite and signed Android release CI: pending.
 - Physical Android visual acceptance remains pending installation; confirm all four track rows fit above the transport dock while keeping their former size.
+
+
+### Community .24 CI follow-up
+- First CI run after the toolbar change: 360 passed, 3 failed. Two arrangement tests still expected the old `.daw-section-toolbar` and `.daw-section-context` wrappers; one stacking test encountered the lower-row z-index declaration before the later ancestor-order rule.
+- Updated arrangement tests to assert the new Section/Clip/Track menu containers and that all secondary controls remain discoverable. Removed the premature z-index declaration from the initial layout rule so the primary-row stacking order is explicit and regression-testable.
+- No production audio, timeline sizing, recording, clip editing, or dock-placement behavior changed in this follow-up.
