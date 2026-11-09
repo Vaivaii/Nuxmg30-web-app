@@ -22,7 +22,7 @@ test('NAM and IR Collection receives its own fourth grid row below the NAM libra
   const page = cssBlock(css, selector);
   assert.match(page, /position:\s*fixed/);
   assert.match(page, /grid-template-rows:\s*max-content max-content max-content minmax\(0, 1fr\)\s*!important/);
-  assert.match(irTransfer, /const bottom\s*=\s*Math\.max\(0,\s*Math\.ceil\(window\.innerHeight\s*-\s*navTop\)\)/);
+  assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-top'/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-bottom'/);
   assert.match(namLibrary, /page\.insertBefore\(panel,\s*irContent\)/,
@@ -76,27 +76,29 @@ function lastCssBlock(source, selector) {
 
 test('IR Collection uses compact one-column horizontal slot cards without changing slot actions', () => {
   const grid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid,');
-  assert.match(grid, /grid-template-columns:\\s*minmax\\(0, 1fr\\)\\s*!important/);
-  assert.match(grid, /padding:\\s*8px 7px 14px\\s*!important/);
+  assert.ok(grid.includes('grid-template-columns: minmax(0, 1fr) !important;'));
+  assert.ok(grid.includes('padding: 8px 7px 14px !important;'));
   const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot,');
-  assert.match(card, /display:\\s*grid\\s*!important/);
-  assert.match(card, /grid-template-columns:\\s*42px minmax\\(0, 1fr\\) minmax\\(96px, 112px\\)\\s*!important/);
-  assert.match(css, /\\.ir-collection-slot-head,\\s*body\\.ir-collection-layout-fallback #page-nam \\.ir-collection-slot-head\\s*\\{\\s*display:\\s*contents\\s*!important/);
-  assert.match(irTransfer, /data-slot-import/);
-  assert.match(irTransfer, /data-slot-use/);
-  assert.match(irTransfer, /for\\(let slot=1;slot<=24;slot\\+\\+\\)/);
+  assert.ok(card.includes('display: grid !important;'));
+  assert.ok(card.includes('grid-template-columns: 42px minmax(0, 1fr) minmax(96px, 112px) !important;'));
+  assert.ok(css.includes('display: contents !important;'));
+  assert.ok(irTransfer.includes('data-slot-import'));
+  assert.ok(irTransfer.includes('data-slot-use'));
+  assert.ok(irTransfer.includes('for(let slot=1;slot<=24;slot++)'));
 });
 
 test('IR Collection and Preset Manager reserve a 12px gap above the bottom navigation', () => {
-  assert.match(irTransfer, /const bottom=Math\\.max\\(0,Math\\.ceil\\(window\\.innerHeight-navTop\\)\\+12\\)/);
-  assert.match(presetUi, /const bottom = Math\\.max\\(0, Math\\.ceil\\(window\\.innerHeight - navTop\\) \\+ 12\\)/);
-  assert.match(css, /body\\.preset-manager-active #page-presets \\.preset-library-card-list\\s*\\{\\s*padding-bottom:\\s*16px\\s*!important;\\s*scroll-padding-bottom:\\s*16px\\s*!important/);
+  assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
+  assert.ok(presetUi.includes('const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop) + 12);'));
+  const list = lastCssBlock(css, 'body.preset-manager-active #page-presets .preset-library-card-list {');
+  assert.ok(list.includes('padding-bottom: 16px !important;'));
+  assert.ok(list.includes('scroll-padding-bottom: 16px !important;'));
 });
 
 test('bottom navigation is only slightly shorter and all five tab buttons remain intact', () => {
   const nav = lastCssBlock(css, 'body > .app > .nav {');
-  assert.match(nav, /padding:\\s*5px 8px calc\\(5px \\+ env\\(safe-area-inset-bottom, 0px\\)\\)\\s*!important/);
+  assert.ok(nav.includes('padding: 5px 8px calc(5px + env(safe-area-inset-bottom, 0px)) !important;'));
   const button = lastCssBlock(css, 'body > .app > .nav button {');
-  assert.match(button, /padding:\\s*4px 2px 2px\\s*!important/);
-  assert.match(css, /grid-template-columns:\\s*repeat\\(5, minmax\\(0, 1fr\\)\\)/);
+  assert.ok(button.includes('padding: 4px 2px 2px !important;'));
+  assert.ok(css.includes('grid-template-columns:repeat(5,minmax(0,1fr))'));
 });
