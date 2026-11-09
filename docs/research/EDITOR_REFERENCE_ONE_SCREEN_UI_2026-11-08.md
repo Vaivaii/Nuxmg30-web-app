@@ -545,3 +545,18 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Cache tokens advanced to `stable-ui-5` and `card-v2` so Android WebView reloads both corrected stylesheets.
 - Added regression tests for the IR grid's allocated height, inner overflow scroller, fixed Preset viewport fade, and both cache tokens.
 - Candidate release: `1.0.0-community.20`, versionCode 20. CI validation and package inspection pending.
+
+### Community .20 final verification — 9 November 2026
+
+- Tested application commit: `437d48692d717db9ee5cb5738cff5adbf8bb1f96`; branch `feature/editor-reference-one-screen`.
+- GitHub Actions Run #65 succeeded: [run 42587987010](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42587987010).
+- Regression suite: **360 passed, 0 failed**.
+- Gradle Release: `BUILD SUCCESSFUL in 1m 35s`.
+- Android package: `com.vaivaii.mg30studio`; versionName `1.0.0-community.20`; versionCode `20`; min SDK 24; target SDK 36.
+- APK Signature Scheme v2: verified true, one RSA 4096-bit signer. Certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- Signed APK size: **3,572,614 bytes**. SHA-256: `9b303fe16a1381ff5abeaf0fa237bc30953a3e14e412b4fe60242b91ae0749dc`. APK ZIP integrity passed; audit checksum sidecar independently matched the extracted APK.
+- Actual APK's Vite-bundled CSS inspected: final mobile IR Collection grid rule overrides the previous `height:100% !important` with `height:auto !important`, `min-height:0`, `align-self:stretch`, and border-box sizing, preserving the independently scrollable framed grid. Preset Manager's old scroll-content pseudo fade is disabled; the new fade is anchored to the fixed Preset page at `bottom:2px`, `height:36px`, `position:absolute`, with a single vertical gradient.
+- Both stylesheet cache tokens were advanced: `stable-ui-5` and `card-v2`.
+- No IR protocol/transfer, ACK/retry, WAV payload, Collection/User slot mapping, 24-slot storage, preset operation/data, NAM, TONE3000, MIDI, USB-MIDI or Studio logic changed.
+- Audit artifact ID `13659653885`; ZIP size **3,253,351 bytes**; ZIP SHA-256 `d209a518cc43448e8ce07fa77354044a4ef09acaf7d1186be1a15fe3c1f35070`.
+- Phone-side visual/touch confirmation still pending: install Community .20 on original NUX MG-30 Gen 2 firmware 6.0.x to confirm the complete frame and stationary bottom fade on the target WebView.
