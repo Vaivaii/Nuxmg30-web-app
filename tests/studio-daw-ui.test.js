@@ -665,15 +665,17 @@ test('Build 338: ruler labels retain their per-bar horizontal positions', () => 
 });
 
 
-test('DAW timeline toolbar controls have usable touch targets and Section dropdown stays inside viewport', () => {
-  assert.ok(daw.includes('gap:5px!important;min-width:0!important}\n    #page-studio .daw-toolbar-icon-btn{'));
-  assert.ok(daw.includes('flex:0 0 32px!important;width:32px!important;min-width:32px!important;height:34px!important;min-height:34px!important'));
-  assert.ok(daw.includes('flex-basis:28px!important;width:28px!important;min-width:28px!important;height:32px!important'));
+test('DAW timeline toolbar buttons fit beside the clock without overlapping Section or Clip', () => {
+  assert.ok(daw.includes('gap:3px!important;min-width:0!important}\n    #page-studio .daw-toolbar-icon-btn{'));
+  assert.ok(daw.includes('flex:0 0 26px!important;width:26px!important;min-width:26px!important;height:34px!important;min-height:34px!important'));
+  assert.ok(daw.includes('flex-basis:24px!important;width:24px!important;min-width:24px!important;height:32px!important'));
+  assert.ok(daw.includes('#page-studio .daw-action-menu>summary{display:flex;align-items:center;justify-content:center;min-height:32px;padding:4px 6px;'));
   assert.ok(daw.includes('.daw-section-menu-panel{left:auto!important;right:0!important;width:min(225px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;box-sizing:border-box!important}'));
-  assert.ok(css.includes('flex:0 0 32px!important;width:32px!important;min-width:32px!important;height:34px!important;min-height:34px!important'));
-  assert.ok(css.includes('gap:5px!important;min-width:0!important'));
-  assert.ok(html.includes('studio-daw.css?v=compact-daw-3'));
+  assert.ok(css.includes('flex:0 0 26px!important;width:26px!important;min-width:26px!important;height:34px!important;min-height:34px!important'));
+  assert.ok(css.includes('gap:3px!important;min-width:0!important'));
+  assert.ok(html.includes('studio-daw.css?v=compact-daw-4'));
   assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
+  assert.equal((html.match(/id="daw(?:Undo|Redo|CursorStart|CursorEnd|NudgeLeft|NudgeRight)"/g)||[]).length,6);
 });
 
 test('DAW overflow menu stacks above the timeline playhead and stays unclipped', () => {

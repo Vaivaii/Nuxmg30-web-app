@@ -4326,3 +4326,33 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Regression gate stopped with 1 failure: an existing Community .25 toolbar test still expected stylesheet cache token `compact-daw-2` after the implementation correctly advanced it to `compact-daw-3`.
 - Corrected the test expectation only. No application source/layout/toolbar changes were made by this follow-up.
 - The failed gate correctly skipped APK signing/build. A new full CI run will validate the updated assertion and source.
+
+### Community .26 final validation
+- GitHub Actions run [42654429292](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42654429292) — success.
+- Regression tests, Android generation, release signing, Gradle Release, APK package/signature/checksum verification and artifact upload all passed.
+- Version: `1.0.0-community.26`; versionCode: `26`; package `com.vaivaii.mg30studio`.
+- Audit artifact ID: `13691107785`.
+- Owner's device screenshot after installing this build showed the six 32px inline controls still occupied too much horizontal space; the right Nudge control collided with the Section trigger. This is a physical UI finding and overrides the earlier expectation that 32x34 targets fit.
+
+## Community .27 — compact inline controls to prevent collision with Section/Clip (9 November 2026)
+
+### User screenshot finding
+- The 32x34px buttons from Community .26 still caused the six-button group to extend into the Section control on the owner's phone.
+- The issue is horizontal fit in the playback clock row, not control logic.
+
+### Implementation
+- Reduced standard inline buttons to 26x34px with 3px spacing (from 32x34px / 5px).
+- For very narrow screens (<=380px), use 24x32px and 2px spacing, with slightly narrower clock/menu spacing.
+- Reduced Section/Clip trigger horizontal padding from 8px to 6px (and to 4px on <=380px devices).
+- Kept all six controls on the clock row and retained existing IDs, disabled states and event handlers.
+- Preserved 7px outer toolbar padding, 34px regular tap height, fixed transport dock, bottom padding, timeline/track dimensions and Section panel right anchoring.
+- Updated CSS cache token to `compact-daw-4` and release workflow to Community .27/versionCode 27.
+
+### Regression protection
+- Updated tests to assert the new standard and narrow-screen dimensions, 3px/2px spacing, compact Section/Clip triggers, exactly six unique toolbar IDs, and unchanged outer toolbar padding.
+
+### Validation
+- Source commit: pending.
+- Full regression suite: pending.
+- Signed Android Release and APK package/signature/checksum verification: pending.
+- Physical-device acceptance remains pending: install Community .27 and confirm all six controls are completely visible and individually tappable without overlap with Section/Clip.
