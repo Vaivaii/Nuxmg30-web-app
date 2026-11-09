@@ -105,6 +105,7 @@ test('bottom navigation is only slightly shorter and all five tab buttons remain
 
 
 test('IR slot number is a full-height filled rail with a separate divider, matching preset card anatomy', () => {
+  const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot,');
   const number = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot-number,');
   assert.ok(number.includes('width: 64px !important;'));
   assert.ok(number.includes('height: 100% !important;'));
