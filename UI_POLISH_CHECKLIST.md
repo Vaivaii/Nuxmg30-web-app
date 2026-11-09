@@ -4356,3 +4356,8 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Full regression suite: pending.
 - Signed Android Release and APK package/signature/checksum verification: pending.
 - Physical-device acceptance remains pending: install Community .27 and confirm all six controls are completely visible and individually tappable without overlap with Section/Clip.
+
+### Community .27 first CI attempt — stale stylesheet cache assertion
+- Run [42658502043](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42658502043) stopped at regression tests with one stale assertion: test still expected `compact-daw-3` although HTML correctly uses `compact-daw-4`.
+- Updated the assertion to the current cache token. No runtime source, sizing, toolbar, or menu CSS changed in this test-only correction.
+- Android signing/build was skipped by the test gate; a new run checks the corrected suite and full release.

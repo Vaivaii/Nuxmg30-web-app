@@ -723,7 +723,7 @@ test('Compact DAW toolbar places history/navigation beside the clock and retains
   assert.ok(daw.includes('max-height:min(64vh,460px)!important'));
   assert.ok(daw.includes('#page-studio .daw-toolbar-fade-control{grid-template-columns:repeat(2,minmax(0,1fr))'));
   assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
-  assert.ok(html.includes('studio-daw.css?v=compact-daw-3'));
+  assert.ok(html.includes('studio-daw.css?v=compact-daw-4'));
   const sectionStart = toolbar.indexOf('class="daw-action-menu daw-section-menu"');
   const sectionEnd = toolbar.indexOf('</details>', sectionStart);
   const section = toolbar.slice(sectionStart, sectionEnd);
