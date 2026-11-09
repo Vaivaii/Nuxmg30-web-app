@@ -4237,3 +4237,17 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - First CI run after the toolbar change: 360 passed, 3 failed. Two arrangement tests still expected the old `.daw-section-toolbar` and `.daw-section-context` wrappers; one stacking test encountered the lower-row z-index declaration before the later ancestor-order rule.
 - Updated arrangement tests to assert the new Section/Clip/Track menu containers and that all secondary controls remain discoverable. Removed the premature z-index declaration from the initial layout rule so the primary-row stacking order is explicit and regression-testable.
 - No production audio, timeline sizing, recording, clip editing, or dock-placement behavior changed in this follow-up.
+
+
+### Community .24 final CI / APK verification — 9 November 2026
+- Workflow: [Run 42636440386](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42636440386) — **success**.
+- Source checkout: `f42ae0273f30a86bc1e65cc6414d9db915e5fa1d` (application/layout commit `2c639f2e80af43c89ab7896ca6974d03d5c6da05`, followed by test correction `f42ae02`).
+- Regression suite: **363 passed, 0 failed**.
+- Android Gradle Release: `BUILD SUCCESSFUL` (1m 19s).
+- Package: `com.vaivaii.mg30studio`; Version Name: `1.0.0-community.24`; Version Code: `24`.
+- APK Signature Scheme v2: verified true. Package identity and checksum verification steps passed.
+- APK SHA-256: `b93e07e4e0bafed9f25a765655a7dfd9fe1794ec24d23aa16898fce84434fce0`.
+- Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- GitHub audit artifact: `MG30-Studio-Community-Signed-Candidate`, Artifact ID `13683626227`, ZIP SHA-256 `a8f2c94e2f607c6a48317ab68d8ea2379f7f00a9090528aedeb9e0bba66d74b0`.
+- The artifact ZIP was downloaded, extracted and inspected. It contains the APK, signature report, package report and SHA-256 file. The extracted APK checksum matches the checksum file and the locally computed SHA-256.
+- Physical Android review is pending installation. The new toolbar layout has not yet been visually accepted on the phone. Do not mark the Track 4 fit above the fixed dock as device-verified until the owner supplies a new screenshot.
