@@ -133,20 +133,41 @@
   font-weight: 700;
 }
 
-/* The list itself scrolls; cards contain only slot and preset name. */
+/* Bounded outer frame: the list scrolls inside it; the fade is a separate overlay sibling. */
+#page-presets .preset-library-frame {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  width: 100%;
+  height: min(66vh, 690px);
+  min-width: 0;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid #263137;
+  border-radius: 18px;
+  background: #12161a;
+  box-shadow: inset 0 1px 0 rgba(222, 237, 232, .035), 0 8px 22px rgba(0, 0, 0, .16);
+}
+
 #page-presets .preset-library-card-list {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 8px;
   width: 100%;
-  height: min(66vh, 690px);
-  min-height: 260px;
-  padding: 9px 8px 8px;
-  border: 1px solid #263137;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #151e21 0%, #12191c 58%, #101619 100%);
-  box-shadow: inset 0 1px 0 rgba(222, 237, 232, .035), 0 8px 22px rgba(0, 0, 0, .16);
-  scroll-padding: 9px 0 8px;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 9px 8px 64px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  scroll-padding: 9px 0 64px;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -154,28 +175,21 @@
   scrollbar-color: #46565a transparent;
 }
 
-/* One bottom fade, attached to the scroll frame itself. Sticky positioning pins it to the scrollport edge. */
-#page-presets .preset-library-card-list::after {
-  content: "";
-  display: block;
-  position: sticky;
+#page-presets .preset-library-fade {
+  position: absolute;
+  z-index: 20;
+  right: 0;
   bottom: 0;
-  z-index: 10;
-  flex: 0 0 42px;
+  left: 0;
   width: 100%;
-  height: 42px;
-  margin: -42px 0 0;
-  border: 0;
+  height: 56px;
   border-radius: 0 0 16px 16px;
   background: linear-gradient(
     180deg,
-    rgba(16, 22, 25, 0) 0%,
-    rgba(16, 22, 25, .24) 58%,
-    rgba(16, 22, 25, .58) 82%,
-    #101619 100%
+    rgba(18, 22, 26, 0) 0%,
+    rgba(18, 22, 26, .90) 64%,
+    #12161a 100%
   );
-  background-clip: padding-box;
-  box-shadow: none;
   pointer-events: none;
 }
 
@@ -319,12 +333,18 @@
     min-height: 37px;
     padding: 7px 10px;
   }
-  #page-presets .preset-library-card-list {
+  #page-presets .preset-library-frame {
     height: min(64vh, 620px);
     min-height: 260px;
-    gap: 8px;
-    padding: 8px 7px 7px;
     border-radius: 16px;
+  }
+  #page-presets .preset-library-card-list {
+    gap: 8px;
+    padding: 8px 7px 64px;
+    scroll-padding: 8px 0 64px;
+  }
+  #page-presets .preset-library-fade {
+    border-radius: 0 0 14px 14px;
   }
   #page-presets .preset-library-card {
     grid-template-columns: 60px 3px minmax(0, 1fr);
@@ -438,12 +458,14 @@
 
 /* Mobile fallback; the Preset Library controller measures the exact space above .nav. */
 @media (max-width: 720px) {
-  #page-presets .preset-library-card-list {
+  #page-presets .preset-library-frame {
     height: min(720px, calc(100dvh - 180px));
     min-height: 260px;
     max-height: none;
-    padding-bottom: 8px;
-    scroll-padding-bottom: 8px;
+  }
+  #page-presets .preset-library-card-list {
+    padding-bottom: 64px;
+    scroll-padding-bottom: 64px;
   }
 }
 /* Build source: Export picker hand-off and expanded Preset Manager card viewport. */
@@ -475,7 +497,7 @@
     min-height: 0;
     height: auto;
     margin: 0 auto;
-    padding: 0 0 2px;
+    padding: 0;
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -492,13 +514,23 @@
     flex: 0 0 auto;
   }
 
-  body.preset-manager-active #page-presets .preset-library-card-list {
+  body.preset-manager-active #page-presets .preset-library-frame {
     flex: 1 1 0;
     width: 100%;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     margin: 0;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-card-list {
+    flex: 1 1 0;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding-bottom: 64px !important;
+    scroll-padding-bottom: 64px !important;
   }
 
   body.preset-manager-active #page-presets .preset-library-footer {

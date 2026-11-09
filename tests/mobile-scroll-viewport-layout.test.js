@@ -18,11 +18,14 @@ function cssBlock(source, selector) {
   return source.slice(open + 1, close);
 }
 
-test('NAM and IR Collection receives its own fourth grid row below the NAM library', () => {
+test('NAM and IR Collection is a bounded fourth flex region below the NAM library', () => {
   const selector = 'body.ir-collection-manager-active > .app > #page-nam:not(.hidden)';
   const page = cssBlock(css, selector);
   assert.match(page, /position:\s*fixed/);
-  assert.match(page, /grid-template-rows:\s*max-content max-content max-content minmax\(0, 1fr\)\s*!important/);
+  assert.match(page, /display:\s*flex\s*!important/);
+  assert.match(page, /flex-direction:\s*column\s*!important/);
+  assert.match(page, /overflow:\s*hidden/);
+  assert.doesNotMatch(page, /grid-template-rows/);
   assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-top'/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-bottom'/);
@@ -30,12 +33,13 @@ test('NAM and IR Collection receives its own fourth grid row below the NAM libra
     'the Downloaded / Available NAM panel remains a direct child before Collection');
 });
 
-test('Collection grid remains the only 24-slot vertical scroller and keeps safe end spacing', () => {
+test('Collection grid remains the only 24-slot vertical scroller with a full fade-safe tail', () => {
   const grid = cssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid');
-  assert.match(grid, /min-height:\s*0/);
+  assert.match(grid, /flex:\s*1 1 0/);
+  assert.match(grid, /min-height:\s*0\s*!important/);
   assert.match(grid, /overflow-y:\s*auto\s*!important/);
-  assert.match(grid, /padding:\s*7px 6px 12px/);
-  assert.match(grid, /scroll-padding-bottom:\s*12px/);
+  assert.match(grid, /padding:\s*7px 6px 64px/);
+  assert.match(grid, /scroll-padding-bottom:\s*64px/);
   assert.match(irTransfer, /for\(let slot=1;slot<=24;slot\+\+\)/,
     'all 24 Collection records remain restored');
 });
@@ -55,13 +59,17 @@ test('Preset Manager fixed viewport consumes measured header/nav edges, not docu
   assert.match(presetUi, /page\.style\.setProperty\('--preset-manager-bottom'/);
 });
 
-test('Preset Manager card list remains independently scrollable inside the measured viewport', () => {
-  const list = cssBlock(css, 'body.preset-manager-active #page-presets .preset-library-card-list');
-  assert.match(list, /flex:\s*1 1 0\s*!important/);
-  assert.match(list, /min-height:\s*0\s*!important/);
-  assert.match(list, /overflow-y:\s*auto\s*!important/);
-  const legacyFallback = cssBlock(presetCss, '#page-presets .preset-library-card-list');
-  assert.match(legacyFallback, /overflow-y:\s*auto/);
+test('Preset Manager outer frame bounds the independently scrolling card list', () => {
+  const frame = cssBlock(presetCss, '#page-presets .preset-library-frame');
+  assert.match(frame, /position:\s*relative/);
+  assert.match(frame, /display:\s*flex/);
+  assert.match(frame, /min-height:\s*260px/);
+  assert.match(frame, /overflow:\s*hidden/);
+  const list = cssBlock(presetCss, '#page-presets .preset-library-card-list');
+  assert.match(list, /flex:\s*1 1 0/);
+  assert.match(list, /min-height:\s*0/);
+  assert.match(list, /padding:\s*9px 8px 64px/);
+  assert.match(list, /overflow-y:\s*auto/);
   assert.match(presetUi, /selected\?\.scrollIntoView\(\{ block: 'nearest', behavior: 'smooth' \}\)/);
 });
 
@@ -88,12 +96,14 @@ test('IR Collection uses compact one-column horizontal slot cards without changi
   assert.ok(irTransfer.includes('for(let slot=1;slot<=24;slot++)'));
 });
 
-test('IR Collection and Preset Manager reserve a 12px gap above the bottom navigation', () => {
+test('IR Collection and Preset Manager reserve safe space above the bottom navigation', () => {
   assert.ok(irTransfer.includes('const bottom=Math.max(0,Math.ceil(window.innerHeight-navTop)+12);'));
   assert.ok(presetUi.includes('const bottom = Math.max(0, Math.ceil(window.innerHeight - navTop) + 12);'));
   const list = lastCssBlock(css, 'body.preset-manager-active #page-presets .preset-library-card-list {');
-  assert.ok(list.includes('padding-bottom: 16px !important;'));
-  assert.ok(list.includes('scroll-padding-bottom: 16px !important;'));
+  assert.ok(list.includes('padding-bottom: 64px !important;'));
+  assert.ok(list.includes('scroll-padding-bottom: 64px !important;'));
+  const irGrid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
+  assert.ok(irGrid.includes('padding: 7px 6px 64px;'));
 });
 
 test('bottom navigation is only slightly shorter and all five tab buttons remain intact', () => {
@@ -124,20 +134,22 @@ test('IR slot number is a full-height filled rail with a separate divider, match
 });
 
 
-test('Preset Manager fade is sticky inside the actual scrolling frame and reaches its lower edge', () => {
-  const selectors = presetCss.match(/#page-presets \.preset-library-card-list::after/g) || [];
-  assert.equal(selectors.length, 1, 'only one authoritative Preset fade selector remains');
-  const fade = lastCssBlock(presetCss, '#page-presets .preset-library-card-list::after');
-  assert.ok(fade.includes('position: sticky;'));
+test('Preset Manager fade is an absolute non-interactive sibling pinned to the outer frame bottom', () => {
+  assert.equal((presetCss.match(/#page-presets \.preset-library-fade/g) || []).length, 1);
+  const fade = lastCssBlock(presetCss, '#page-presets .preset-library-fade');
+  assert.ok(fade.includes('position: absolute;'));
   assert.ok(fade.includes('bottom: 0;'));
-  assert.ok(fade.includes('flex: 0 0 42px;'));
-  assert.ok(fade.includes('height: 42px;'));
-  assert.ok(fade.includes('margin: -42px 0 0;'));
-  assert.ok(fade.includes('width: 100%;'));
+  assert.ok(fade.includes('right: 0;'));
+  assert.ok(fade.includes('left: 0;'));
+  assert.ok(fade.includes('height: 56px;'));
+  assert.ok(fade.includes('z-index: 20;'));
   assert.ok(fade.includes('pointer-events: none;'));
-  assert.ok(fade.includes('linear-gradient('));
-  assert.ok(!fade.includes('90deg'));
-  assert.ok(!presetCss.includes('preset-library-page:not(.hidden)::after'));
+  assert.ok(!presetCss.includes('.preset-library-card-list::after'));
+  const htmlFrame = html.indexOf('<div class="preset-library-frame">');
+  const htmlList = html.indexOf('id="presetLibraryCards"', htmlFrame);
+  const htmlFade = html.indexOf('class="preset-library-fade"', htmlList);
+  assert.ok(htmlFrame >= 0 && htmlList > htmlFrame && htmlFade > htmlList,
+    'the fade is a sibling after the scroll list inside the outer frame');
 });
 
 
@@ -161,50 +173,68 @@ test('IR Collection outer scroll frame fits its allocated grid row instead of ov
   assert.ok(css.includes('overflow-y: auto !important;'));
 });
 
-test('Community .21 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-6'));
-  assert.ok(html.includes('preset-library-ui.css?v=card-v3'));
+test('Community .22 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-7'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v4'));
 });
 
 
-test('IR Collection fits one visible manager child into one bounded scroll track at every ancestor', () => {
+test('IR Collection uses a bounded flex chain and a sibling fade without changing slot actions', () => {
   const root = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam > #ir-import-content.ir-import-content {');
-  assert.ok(root.includes('grid-template-rows: minmax(0, 1fr) !important;'));
+  assert.ok(root.includes('display: flex !important;'));
+  assert.ok(root.includes('flex: 1 1 0;'));
+  assert.ok(root.includes('flex-direction: column !important;'));
   assert.ok(root.includes('height: auto !important;'));
-  assert.ok(!root.includes('grid-template-rows: auto minmax(0, 1fr)'));
+  assert.ok(!root.includes('grid-template-rows'));
   assert.ok(!root.includes('height: 100%'));
 
   const manager = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui.ir-manager-grid {');
-  assert.ok(manager.includes('grid-template-rows: minmax(0, 1fr) !important;'));
-  assert.ok(manager.includes('height: auto !important;'));
+  assert.ok(manager.includes('display: flex !important;'));
+  assert.ok(manager.includes('flex: 1 1 0;'));
+  assert.ok(manager.includes('min-height: 0;'));
   assert.ok(!manager.includes('height: 100%'));
 
-  const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card:nth-child(2) {');
-  assert.ok(card.includes('grid-template-rows: auto minmax(0, 1fr) auto !important;'));
-  assert.ok(card.includes('height: auto !important;'));
-  assert.ok(!card.includes('height: 100%'));
+  const card = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam #ir-manager-ui > .ir-manager-card.ir-collection-frame {');
+  assert.ok(card.includes('position: relative;'));
+  assert.ok(card.includes('display: flex !important;'));
+  assert.ok(card.includes('flex: 1 1 0;'));
+  assert.ok(card.includes('min-height: 0;'));
+  assert.ok(card.includes('overflow: hidden;'));
 
   const grid = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-grid {');
+  assert.ok(grid.includes('flex: 1 1 0;'));
   assert.ok(grid.includes('height: auto !important;'));
   assert.ok(grid.includes('min-height: 0 !important;'));
   assert.ok(grid.includes('overflow-y: auto !important;'));
   assert.ok(!grid.includes('height: 100%'));
-  assert.ok(irTransfer.includes("root.appendChild(ui)"));
-  assert.ok(irTransfer.includes("legacy=root.querySelector('.ir-import-panel')"));
-  assert.ok(irTransfer.includes("legacyHero=root.querySelector(':scope > .hero')"));
-  assert.ok(irTransfer.includes("for(let slot=1;slot<=24;slot++)"));
+
+  const fade = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-fade {');
+  assert.ok(fade.includes('position: absolute;'));
+  assert.ok(fade.includes('bottom: 0;'));
+  assert.ok(fade.includes('pointer-events: none;'));
+  const statusIndex = irTransfer.indexOf('id="irManagerCollectionStatus"');
+  const gridIndex = irTransfer.indexOf('id="irManagerCollectionGrid"');
+  const fadeIndex = irTransfer.indexOf('class="ir-collection-fade"');
+  assert.ok(statusIndex > 0 && statusIndex < gridIndex && fadeIndex > gridIndex);
+  assert.ok(irTransfer.includes('class="ir-manager-card ir-collection-frame"'));
+  assert.ok(irTransfer.includes('data-slot-import'));
+  assert.ok(irTransfer.includes('data-slot-use'));
+  assert.ok(irTransfer.includes('for(let slot=1;slot<=24;slot++)'));
 });
 
-test('Community .21 cache tokens point to the corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-6'));
-  assert.ok(html.includes('preset-library-ui.css?v=card-v3'));
+test('Community .22 cache tokens point to the corrected layout stylesheets', () => {
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-7'));
+  assert.ok(html.includes('preset-library-ui.css?v=card-v4'));
 });
 
 
-test('Collection root selector has one authoritative sizing rule, not a later partial override', () => {
+test('Collection root selector has one authoritative flex sizing rule', () => {
   const rootSelector = 'body.ir-collection-manager-active #page-nam > #ir-import-content.ir-import-content {';
   assert.equal(css.split(rootSelector).length - 1, 1);
   const root = lastCssBlock(css, rootSelector);
-  assert.ok(root.includes('grid-row: 4;'));
-  assert.ok(root.includes('grid-template-rows: minmax(0, 1fr) !important;'));
+  assert.ok(root.includes('order: 4;'));
+  assert.ok(root.includes('display: flex !important;'));
+  assert.ok(root.includes('flex: 1 1 0;'));
+  assert.ok(!root.includes('grid-row: 4;'));
+  assert.ok(!root.includes('grid-template-rows'));
 });

@@ -591,3 +591,27 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - APK asset includes the new CSS bundle and cache-token assets. Package metadata and v2 signature were inspected from the audit ZIP, not inferred from workflow success alone.
 - Audit artifact ID `13663565160`, ZIP size **3,253,249 bytes**, ZIP SHA-256 `4722b2e3f38652cec6245284acb03a5cdd9ca4dec4dd76759b7530096f5caa3c`.
 - Phone-side visual/touch acceptance remains pending: install Community .21 on the original NUX MG-30 Gen 2 firmware 6.0.x to confirm the lower Collection frame and last slots are reachable, and the Preset fade touches the scroller's exact lower edge.
+
+
+## Community .22 — flex-bounded IR Collection and Preset frames (9 November 2026)
+
+### User request and source inspection
+- User supplied Android screenshots showing the lower IR Collection frame and slots 23–24 obscured at the bottom navigation, plus a Preset Manager fade that moved with the list rather than staying on the frame edge.
+- Confirmed the existing Preset list combined the frame and scroller on `#presetLibraryCards`, with a sticky `::after` pseudo-element on that same scroll container. This did not match the requested outer-frame / inner-scroller / sibling-overlay structure.
+- Confirmed the mobile NAM/IR page used nested grid tracks for the NAM page, `#ir-import-content`, `#ir-manager-ui`, and the Collection card. The Collection grid remained an inner scroller but had no explicit sibling fade; the viewport sizing was not expressed as a single flex-bounded chain.
+
+### Implementation
+- Added a Preset outer frame wrapper `.preset-library-frame`; `#presetLibraryCards` remains the existing listbox and is now the sole inner vertical scroller. Added an explicit `.preset-library-fade` sibling with absolute positioning at the frame bottom, z-index 20, and pointer-events disabled.
+- Changed the mobile NAM/IR page, Collection content root, manager and Collection outer card into a bounded flex-column chain. Kept the measured top-header and bottom-navigation offsets.
+- Changed IR Collection status placement so it remains in normal flow before the slot scroller. The 24-slot grid receives 64px trailing scroll space and an explicit absolute `.ir-collection-fade` sibling is pinned to the Collection card bottom.
+- Advanced WebView stylesheet cache tokens to `stable-ui-7` and `card-v4`.
+- The repository does not use Tailwind; equivalent layout semantics are implemented with scoped CSS rather than introducing a new build dependency.
+
+### Protected behavior
+- No changes to NAM transfer/readback, TONE3000, IR User/Collection SysEx command families, WAV building, ACK/retry, parameter semantics, 24-slot IDs/actions, preset read/write/import/export, MIDI mapping, USB-MIDI, signal-chain operations, Studio, or audio routing.
+- Preset listbox ID, selection/click handlers, import/export controls and existing program mapping remain intact.
+
+### Validation state
+- Regression tests updated for the flex viewport chain, explicit sibling fades, pointer-events, 64px scroll tails, preserved 24-slot controls and cache tokens.
+- CI/release build: pending at source commit time.
+- Target Android/WebView visual/touch acceptance: pending install and on-device review.

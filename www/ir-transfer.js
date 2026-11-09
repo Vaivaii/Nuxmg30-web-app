@@ -111,13 +111,13 @@ function initUI(){
   '<button class="ir-manager-upload" id="irManagerUserImport" type="button"><span class="studio-file-icon">IR</span><span class="ir-manager-upload-copy"><strong>Import IR WAV to User</strong><small>Validates the file and sends it directly to the MG-30.</small></span><span class="studio-file-arrow">↗</span></button>'+
   '<div class="ir-manager-status" id="irManagerUserStatus" role="status" aria-live="polite">No imports from MG30 Studio yet.</div>'+
  '</section>'+
- '<section class="ir-manager-card">'+
+ '<section class="ir-manager-card ir-collection-frame">'+
   '<div class="ir-manager-card-head ir-collection-card-head"><div class="ir-collection-card-title"><span class="slot-note" id="irManagerCollectionCount">Not synced</span></div><button class="btn primary" id="irManagerSyncCollection" type="button">Sync</button></div>'+
   
   ''+
-  '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
-  ''+
   '<div class="ir-manager-status hidden" id="irManagerCollectionStatus" role="status" aria-live="polite" hidden></div>'+
+  '<div class="ir-collection-grid" id="irManagerCollectionGrid"></div>'+
+  '<div class="ir-collection-fade" aria-hidden="true"></div>'+
  '</section>'+
  '<input class="hidden" type="file" id="irManagerFileInput" accept=".wav,audio/wav,audio/x-wav">';
  root.appendChild(ui);
