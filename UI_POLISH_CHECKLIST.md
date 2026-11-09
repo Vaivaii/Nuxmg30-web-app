@@ -4196,3 +4196,16 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - First .23 run was stopped at the regression-test gate. The implementation now sizes the Collection frame with `flex: 0 0 var(--ir-collection-frame-height)`, while two pre-existing test assertions still required its previous `flex: 1 1 0` rule. One cleanup assertion also looked for a local variable name not used by the safe optional-chain cleanup expression.
 - Updated these assertions to verify the actual measured-frame flex basis and the actual cleanup path. No production protocol or transfer code changed in this test-only follow-up.
 - The next complete regression run and signed APK pipeline are pending.
+
+
+### Community .23 CI and APK final result — 9 November 2026
+- Workflow: [Run 42612942163](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42612942163) — **success**.
+- Source checkout for the signed candidate: `d2cfe22fa96408c0a87fd52b7fa895b756a779fe` (includes application changes from `45aeafc254c2d343cb592e99b5c275f55e24f978` and the corrected regression assertions).
+- Regression suite: **363 passed, 0 failed**.
+- Android Gradle Release: `BUILD SUCCESSFUL` (1m 6s).
+- Package: `com.vaivaii.mg30studio`; Version Name: `1.0.0-community.23`; Version Code: `23`.
+- APK Signature Scheme v2: verified true. Package identity and checksum verification steps passed.
+- APK SHA-256: `a9e93065c3ec3e81dc0280d960ee8313a0d852aa6cf8be560a55a5911533ff3c`.
+- GitHub audit artifact: `MG30-Studio-Community-Signed-Candidate`, Artifact ID `13670139586`, ZIP SHA-256 `e30f40d8b911c1284672760bdfbc58ab21d9eb7347b0db859fa20406206d4bdf`.
+- The artifact ZIP was downloaded and inspected. It contains the APK, signature-verification report, package-info report and checksum file. The extracted APK SHA-256 matched the checksum file.
+- Physical Android visual/touch acceptance is still pending user installation and review. Do not label the screenshot issues physically resolved until this on-device check is received.
