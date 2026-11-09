@@ -4209,3 +4209,25 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - GitHub audit artifact: `MG30-Studio-Community-Signed-Candidate`, Artifact ID `13670139586`, ZIP SHA-256 `e30f40d8b911c1284672760bdfbc58ab21d9eb7347b0db859fa20406206d4bdf`.
 - The artifact ZIP was downloaded and inspected. It contains the APK, signature-verification report, package-info report and checksum file. The extracted APK SHA-256 matched the checksum file.
 - Physical Android visual/touch acceptance is still pending user installation and review. Do not label the screenshot issues physically resolved until this on-device check is received.
+
+
+## Community .24 — Compact DAW toolbar without shrinking Timeline tracks (9 November 2026)
+
+### Screenshot finding and user direction
+- Timeline / Track 4 (Vocals) is overlapped by the fixed transport dock.
+- User explicitly rejects vertical scrolling and reducing track size. The requested fix is to make the upper toolbar shorter so the existing full-size Timeline gets more of the screen.
+
+### Implementation
+- DAW quick toolbar is now two visible rows: (1) BPM, time signature, metronome and More; (2) playback clock plus Section, Clip and Track menus.
+- Existing Undo/Redo, cursor start/end, Copy/Paste/Duplicate, loop toggle/In/Out/Clear, trim/split/delete clip, delete track, Snap, Zoom, Nudge and clip-fade controls keep their original IDs and event handlers; secondary actions move into their corresponding dropdowns.
+- Toolbar padding/gaps reduced. Runtime injected style rules were updated to the same two-row structure and stacking hierarchy.
+- Timeline lane sizing rules (76px original rail rule and responsive 68px minimum), ruler alignment, horizontal timeline behavior and fixed transport dock are preserved. Timeline vertical overflow remains hidden; no vertical scrolling has been introduced.
+- CSS cache token: `studio-daw.css?v=compact-daw-1`. Signed release candidate: Community .24, Version Code 24.
+
+### Protected functionality
+- No changes to Studio audio input/output routing, native AudioRecord/AudioTrack, recording/playback engine, waveform rendering, clip editing logic, project persistence, Mixer, Track Settings, USB routing, NAM, IR, Preset, MIDI or device protocols.
+
+### Validation
+- Added regression tests to verify exactly two toolbar rows, every original action ID appears once in its intended menu, Timeline remains non-vertically-scrollable and track minimum sizing is retained.
+- Regression suite and signed Android release CI: pending.
+- Physical Android visual acceptance remains pending installation; confirm all four track rows fit above the transport dock while keeping their former size.

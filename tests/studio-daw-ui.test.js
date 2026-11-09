@@ -671,28 +671,49 @@ test('DAW overflow menu stacks above the timeline playhead and stays unclipped',
   assert.ok(daw.includes('z-index:1!important'));
 });
 
-test('cursor start and end sit beside Undo/Redo left of timer; Copy/Paste/Duplicate stay right of timer', () => {
-  const start = html.indexOf('<div class="daw-quick-toolbar-position">');
-  const end = html.indexOf('<div class="daw-section-toolbar"', start);
-  const position = html.slice(start, end);
-  const leftStart = position.indexOf('class="daw-clock-actions daw-clock-actions-left"');
-  const clock = position.indexOf('id="dawClock"');
-  const rightStart = position.indexOf('class="daw-clock-actions daw-clock-actions-right"');
-  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd']) {
-    const p = position.indexOf('id="' + id + '"');
-    assert.ok(p >= leftStart && p < clock, id + ' must be on the left side of the clock');
+test('Compact DAW toolbar uses two rows and keeps every editing action in its menu', () => {
+  const start = html.indexOf('<div class="daw-quick-toolbar">');
+  const end = html.indexOf('<div class="daw-timeline-panel">', start);
+  const toolbar = html.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.ok(toolbar.includes('class="daw-quick-toolbar-primary"'));
+  assert.ok(toolbar.includes('class="daw-quick-toolbar-position"'));
+  assert.equal((toolbar.match(/class="daw-quick-toolbar-(?:primary|position)"/g) || []).length, 2);
+  assert.equal(toolbar.includes('daw-section-toolbar'), false);
+  const ids = [
+    'dawTempo','dawTimeSignature','dawMetronome','dawClock','dawPosition',
+    'dawUndo','dawRedo','dawCursorStart','dawCursorEnd',
+    'dawLoop','dawLoopIn','dawLoopOut','dawClearLoop','dawLoopRangeReadout',
+    'dawCopyClip','dawPasteClip','dawDuplicateClip',
+    'dawTrimStart','dawTrimEnd','dawSplitClip','dawDeleteClip','dawDeleteTrack',
+    'dawSnap','dawZoom','dawNudgeLeft','dawNudgeRight','dawFadeIn','dawFadeOut'
+  ];
+  for (const id of ids) {
+    assert.equal((toolbar.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1, id + ' must remain exactly once');
   }
-  for (const id of ['dawCopyClip','dawPasteClip','dawDuplicateClip']) {
-    const p = position.indexOf('id="' + id + '"');
-    assert.ok(p > rightStart, id + ' must remain on the right side of the clock');
+  const moreStart = toolbar.indexOf('id="dawMoreMenuPanel"');
+  const moreEnd = toolbar.indexOf('</details>', moreStart);
+  const more = toolbar.slice(moreStart, moreEnd);
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawSnap','dawZoom','dawNudgeLeft','dawNudgeRight']) {
+    assert.ok(more.includes('id="' + id + '"'), id + ' must stay accessible from More');
   }
-  assert.ok(leftStart >= 0 && rightStart > clock);
-  const menuStart = html.indexOf('id="dawMoreMenuPanel"');
-  const menuEnd = html.indexOf('</details>', menuStart);
-  const menu = html.slice(menuStart, menuEnd);
-  assert.equal(menu.includes('id="dawCursorStart"'), false);
-  assert.equal(menu.includes('id="dawCursorEnd"'), false);
+  const sectionStart = toolbar.indexOf('class="daw-action-menu daw-section-menu"');
+  const sectionEnd = toolbar.indexOf('</details>', sectionStart);
+  const section = toolbar.slice(sectionStart, sectionEnd);
+  for (const id of ['dawLoop','dawLoopIn','dawLoopOut','dawClearLoop','dawLoopRangeReadout']) {
+    assert.ok(section.includes('id="' + id + '"'), id + ' must stay in Section menu');
+  }
+  const clipStart = toolbar.indexOf('class="daw-action-menu daw-clip-menu"');
+  const clipEnd = toolbar.indexOf('</details>', clipStart);
+  const clip = toolbar.slice(clipStart, clipEnd);
+  for (const id of ['dawCopyClip','dawPasteClip','dawDuplicateClip','dawTrimStart','dawTrimEnd','dawSplitClip','dawDeleteClip']) {
+    assert.ok(clip.includes('id="' + id + '"'), id + ' must stay in Clip menu');
+  }
+  assert.ok(toolbar.includes('class="daw-action-menu daw-track-menu"'));
+  assert.ok(css.includes('overflow-y:hidden!important'));
+  assert.ok(css.includes('min-height:68px!important'));
 });
+
 
 test('timeline grid supports two-finger pinch pointer gestures', () => {
   assert.ok(daw.includes("addEventListener('pointerdown', beginTimelinePinch)"));
@@ -743,10 +764,10 @@ test('USB Output Routing Test card is not mounted in the Studio Track Settings p
 
 test('three-dot dropdown row stacks above the entire Loop/Clip/Track row', () => {
   const toolbar = daw.slice(daw.indexOf('function addTrackInputRoutingStyles()'), daw.indexOf('function syncTrackInputRoutingPanel()'));
-  assert.ok(toolbar.includes('.daw-quick-toolbar-primary{position:relative!important;z-index:80!important}'));
-  assert.ok(toolbar.includes('.daw-section-toolbar{position:relative!important;z-index:20!important}'));
+  assert.ok(toolbar.includes('.daw-quick-toolbar-primary{position:relative!important;z-index:90!important}'));
+  assert.ok(toolbar.includes('.daw-quick-toolbar-position{position:relative!important;z-index:80!important}'));
   assert.ok(toolbar.includes('.daw-more-menu-panel{z-index:1000!important}'));
-  assert.ok(toolbar.indexOf('z-index:80!important') < toolbar.indexOf('z-index:20!important'));
+  assert.ok(toolbar.indexOf('z-index:90!important') < toolbar.indexOf('z-index:80!important'));
   assert.ok(toolbar.includes('isolation:isolate!important'));
 });
 
@@ -774,12 +795,12 @@ test('simulated CSS stacking paths place the main popover above Clip and Track m
     z('#page-studio .daw-more-menu-panel'),
   ];
   const clipTrackStack = [
-    z('#page-studio .daw-section-toolbar'),
+    z('#page-studio .daw-quick-toolbar-position'),
     z('#page-studio .daw-action-menu'),
     z('#page-studio .daw-action-menu-panel'),
   ];
-  assert.deepEqual(dropdownStack, [80, 100, 1000]);
-  assert.deepEqual(clipTrackStack, [20, 40, 60]);
+  assert.deepEqual(dropdownStack, [90, 100, 1000]);
+  assert.deepEqual(clipTrackStack, [80, 40, 60]);
   assert.equal(compareStackPath(dropdownStack, clipTrackStack), 1,
     'the ancestor stacking context decides paint order before descendant z-index');
 });

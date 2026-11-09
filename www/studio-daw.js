@@ -2130,28 +2130,32 @@ function addTrackInputRoutingStyles() {
   const style = document.createElement('style');
   style.id = 'dawTrackInputRoutingStyles';
   style.textContent = `
-    #page-studio .daw-quick-toolbar-position{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;gap:7px!important;min-width:0!important}
-    #page-studio .daw-position-readout{text-align:center!important;min-width:90px!important}
-    #page-studio .daw-clock-actions{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important}
-    #page-studio .daw-clock-actions-left{justify-content:flex-start!important}
-    #page-studio .daw-clock-actions-right{justify-content:flex-end!important}
-    #page-studio .daw-clock-action-btn{display:grid!important;place-items:center!important;min-width:34px!important;height:34px!important;padding:0 7px!important;border:1px solid #34413c!important;border-radius:9px!important;background:#141d1b!important;color:#e7eee5!important;font:750 10px system-ui!important}
-    #page-studio .daw-clock-action-btn:disabled{opacity:.3!important}
-    #page-studio .daw-section-toolbar{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:nowrap;padding-top:7px;border-top:1px solid rgba(148,163,184,.16)}
+    #page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}
+    #page-studio .daw-quick-toolbar-primary{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:0!important}
+    #page-studio .daw-quick-toolbar-position{position:relative!important;z-index:80!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;min-width:0!important;min-height:34px!important}
+    #page-studio .daw-position-readout{display:grid!important;justify-items:start!important;gap:0!important;min-width:76px!important;text-align:left!important}
+    #page-studio .daw-compact-menu-row{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;min-width:0!important}
+    #page-studio .daw-position-readout strong{font-size:clamp(18px,4.8vw,23px)!important;line-height:1.02!important}
+    #page-studio .daw-position-readout small{font-size:9px!important;line-height:1.05!important}
     #page-studio .daw-section-controls{display:flex;align-items:center;gap:5px;flex:0 0 auto}
-    #page-studio .daw-section-toolbar .daw-tool-btn{flex:0 0 auto;min-height:30px;padding:4px 7px;font-size:9px}
-    #page-studio .daw-section-loop-toggle{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-height:30px;padding:0 7px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#e7eee5;font-size:10px;font-weight:750;white-space:nowrap}
+    #page-studio .daw-section-loop-toggle{display:flex;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-height:34px;padding:0 8px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#e7eee5;font-size:10px;font-weight:750;white-space:nowrap}
     #page-studio .daw-section-loop-toggle input{width:14px;height:14px;margin:0;accent-color:#c5f36b}
     #page-studio .daw-section-loop-toggle:has(input:checked){border-color:#c5f36b;color:#c5f36b;background:#c5f36b12}
-    #page-studio .daw-loop-range-readout{flex:1 1 auto;min-width:30px;overflow:hidden;text-overflow:ellipsis;font-size:9px;color:#8fd7cf;white-space:nowrap;padding:0 3px}
-    #page-studio .daw-section-context{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+    #page-studio .daw-section-menu-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+    #page-studio .daw-section-menu-controls .daw-tool-btn{min-width:0;min-height:34px;padding:5px 7px;font-size:10px;text-align:center}
+    #page-studio .daw-loop-range-readout{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:9px;color:#8fd7cf;white-space:nowrap;padding:1px 2px}
     #page-studio .daw-action-menu{position:relative;flex:0 0 auto;z-index:40}
-    #page-studio .daw-action-menu>summary{display:flex;align-items:center;justify-content:center;min-height:30px;padding:4px 9px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#dce8d8;font-size:9px;font-weight:800;white-space:nowrap;cursor:pointer;list-style:none}
+    #page-studio .daw-action-menu>summary{display:flex;align-items:center;justify-content:center;min-height:32px;padding:4px 8px;border:1px solid #34413c;border-radius:8px;background:#141d1b;color:#dce8d8;font-size:9px;font-weight:800;white-space:nowrap;cursor:pointer;list-style:none}
     #page-studio .daw-action-menu>summary::-webkit-details-marker{display:none}
     #page-studio .daw-action-menu[open]>summary{border-color:#8fae60;color:#c5f36b}
-    #page-studio .daw-action-menu-panel{position:absolute;z-index:60;right:0;top:36px;width:min(220px,calc(100vw - 38px));display:grid;gap:6px;padding:9px;border:1px solid #3d4a3e;border-radius:11px;background:#111a16;box-shadow:0 8px 24px #0009}
-    #page-studio .daw-action-menu-panel .daw-tool-btn{width:100%;min-height:36px;padding:6px 9px;text-align:left;font-size:10px}
+    #page-studio .daw-action-menu-panel{position:absolute;z-index:60;right:0;top:37px;width:min(230px,calc(100vw - 34px));display:grid;gap:6px;padding:9px;border:1px solid #3d4a3e;border-radius:11px;background:#111a16;box-shadow:0 8px 24px #0009}
+    #page-studio .daw-section-menu-panel{left:0;right:auto;width:min(225px,calc(100vw - 34px))}
+    #page-studio .daw-clip-menu-panel{width:min(245px,calc(100vw - 34px))}
+    #page-studio .daw-action-menu-panel .daw-tool-btn{width:100%;min-width:0;min-height:36px;padding:6px 9px;text-align:left;font-size:10px}
     #page-studio .daw-action-menu-panel .daw-tool-btn:disabled{opacity:.35}
+    #page-studio .daw-clip-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+    #page-studio .daw-clip-quick-actions .daw-tool-btn{min-width:0;min-height:34px;padding:5px 3px;text-align:center}
+    #page-studio .daw-history-nav-grid .daw-tool-btn{min-height:34px;text-align:center}
     #page-studio .daw-danger-btn{border-color:#70423e!important;background:#2b1918!important;color:#ffb6a9!important}
     #page-studio .daw-loop-range{position:absolute;top:0;bottom:0;background:rgba(83,212,199,.18);border-left:2px solid #53d4c7;border-right:2px solid #53d4c7;pointer-events:none;z-index:1}
     #page-studio .daw-ruler-inner{position:relative}
@@ -2207,8 +2211,8 @@ function addTrackInputRoutingStyles() {
     /* Keep the complete top row above the Loop / Clip / Track row.
        Raising only the popover is insufficient because action-menu children
        create sibling stacking levels that can paint over its nested panel. */
-    #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:80!important}
-    #page-studio .daw-section-toolbar{position:relative!important;z-index:20!important}
+    #page-studio .daw-quick-toolbar-primary{position:relative!important;z-index:90!important}
+    #page-studio .daw-quick-toolbar-position{position:relative!important;z-index:80!important}
     #page-studio .daw-more-menu{position:relative!important;z-index:100!important}
     #page-studio .daw-more-menu-panel{z-index:1000!important}
     #page-studio .daw-timeline-panel{position:relative!important;z-index:1!important}
