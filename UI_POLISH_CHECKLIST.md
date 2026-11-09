@@ -4361,3 +4361,39 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Run [42658502043](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42658502043) stopped at regression tests with one stale assertion: test still expected `compact-daw-3` although HTML correctly uses `compact-daw-4`.
 - Updated the assertion to the current cache token. No runtime source, sizing, toolbar, or menu CSS changed in this test-only correction.
 - Android signing/build was skipped by the test gate; a new run checks the corrected suite and full release.
+
+## Community .28 — adaptive Studio layout for Android gesture and 3-button navigation (10 November 2026)
+
+### User request / screenshot comparison
+- The two Studio Timeline screenshots use different Android system navigation modes: gesture navigation and the native three-button navigation bar.
+- The available WebView height is different between modes. The Studio layout must use the actual safe WebView viewport instead of assuming the full display height.
+- Keep one responsive design, all four tracks, the transport dock above the app navigation, and safe vertical scrolling when a compact viewport cannot fit the minimum track height.
+
+### Existing Android inset behavior retained
+- `scripts/init-android.mjs` already generates a MainActivity that applies `WindowInsetsCompat.Type.systemBars() | displayCutout()` to the native content view and consumes them before WebView layout.
+- No Android WindowInsets implementation, manifest, audio/MIDI plugin, or device protocol code was changed.
+- Studio now reads `document.documentElement.clientHeight` as the inset-adjusted WebView viewport, matching the existing Editor viewport-fit convention.
+
+### Implementation
+- Added `www/studio-viewport-fit.js` as a pure geometry helper. It uses viewport height, measured application-nav top, measured dock height, Studio scroll position and the Timeline panel's unscrolled top.
+- Reworked `syncStudioPinnedControls()` to measure the actual nav and transport dock. The Timeline panel height is set from the space between its true top and the dock's true top, with a 320px minimum and 720px maximum.
+- The calculation restores the panel's unscrolled layout coordinate, so scrolling Studio does not cause the panel height to jump.
+- The workspace reserves the exact area behind the fixed dock + application navigation. If a short viewport cannot fit the 320px four-track minimum, the Studio page can scroll the complete Timeline above the dock rather than clipping the tracks.
+- Recalculate on window resize, orientation change, page show, visual viewport resize, visibility change, Studio navigation, and DAW subpage changes.
+- Replaced fixed `100dvh` constants in final Studio sizing rules with measured `--studio-viewport-height`; cache token advanced to `compact-daw-5`.
+- Release metadata updated to Community .28 / versionCode 28.
+
+### Protected behavior
+- Track lane/ruler structure and four-track model remain unchanged.
+- Transport/audio/recording functions, project persistence, mixer, Track Settings, USB routing, NAM, IR User/Collection, preset workflows, MIDI mapping and NUX device protocols are untouched.
+- Gesture and three-button modes use the same Studio DOM and controls.
+
+### Regression coverage
+- Added pure geometry tests for gesture viewport, three-button viewport, compact-height overflow and scroll-position invariance.
+- Added UI checks that Studio uses the inset-adjusted WebView viewport, measured dock/nav geometry, visualViewport resize and responsive CSS variables.
+
+### Validation
+- Source commit: pending.
+- Full Node regression suite: pending.
+- Android Release build, package identity, signature and checksum: pending.
+- Physical-device acceptance: install Community .28 and compare both gesture and three-button navigation. Confirm dock stays above app navigation and all four track lanes remain accessible in both modes.

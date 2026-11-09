@@ -391,6 +391,21 @@ test('Transport and DAW page dock aligns to the measured top edge of the app nav
   assert.ok(css.includes('width:var(--studio-dock-width,min(calc(100vw - 28px),1172px))!important'));
 });
 
+test('Studio Timeline uses the inset-adjusted WebView viewport and measured dock clearance in both Android navigation modes', () => {
+  assert.ok(daw.includes("import { computeStudioViewportFit } from './studio-viewport-fit.js'"));
+  assert.ok(daw.includes('document.documentElement.clientHeight || window.innerHeight || 0'));
+  assert.ok(daw.includes('const pageRect = studioPage.getBoundingClientRect()'));
+  assert.ok(daw.includes('const panelRect = timelinePanel.getBoundingClientRect()'));
+  assert.ok(daw.includes('pageScrollTop: studioPage.scrollTop'));
+  assert.ok(daw.includes('window.visualViewport?.addEventListener(\'resize\', syncStudioPinnedControls'));
+  assert.ok(daw.includes("studioPage.style.setProperty('--studio-viewport-height'"));
+  assert.ok(daw.includes("workspace.style.setProperty('--studio-workspace-bottom-reserve'"));
+  assert.ok(daw.includes("timelinePanel.style.setProperty('--studio-timeline-panel-height'"));
+  assert.ok(css.includes('min-height:var(--studio-timeline-panel-height,clamp(320px,calc(var(--studio-viewport-height,100dvh) - 560px),720px))!important'));
+  assert.ok(css.includes('padding-bottom:var(--studio-workspace-bottom-reserve,calc(92px + env(safe-area-inset-bottom,0px)))!important'));
+  assert.ok(css.includes('min-height:calc(var(--studio-viewport-height,100dvh) - 430px)!important'));
+});
+
 test('Jam / Record / DAW tabs remain pinned to the Studio scroll region below the fixed app header', () => {
   assert.ok(css.includes('#page-studio>.studio-page-hero.studio-daw-hero{'));
   assert.ok(css.includes('position:relative!important'));

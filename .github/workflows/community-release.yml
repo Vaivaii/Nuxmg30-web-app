@@ -16,10 +16,10 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Community version tag, e.g. v1.0.0-community.27"
+        description: "Community version tag, e.g. v1.0.0-community.28"
         required: true
         type: string
-        default: "v1.0.0-community.27"
+        default: "v1.0.0-community.28"
       create_draft_release:
         description: "Create a GitHub draft release after the signed APK passes verification"
         required: true
@@ -47,7 +47,7 @@ jobs:
 
       - name: Validate release tag
         env:
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.27' }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.28' }}
         run: |
           set -euo pipefail
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-community\.[0-9]+$ ]]; then
@@ -125,7 +125,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.27' }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.28' }}
         run: |
           cat > "$RUNNER_TEMP/mg30-community-signing.init.gradle" <<'GRADLE'
           gradle.beforeProject { project ->
@@ -140,7 +140,7 @@ jobs:
                 signing.keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 signing.keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
                 androidDsl.buildTypes.getByName("release").signingConfig = signing
-                androidDsl.defaultConfig.versionCode = 27
+                androidDsl.defaultConfig.versionCode = 28
                 androidDsl.defaultConfig.versionName = System.getenv("RELEASE_TAG").replaceFirst("^v", "")
               }
             }
@@ -153,7 +153,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.27' }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.28' }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease -I "$MG30_SIGNING_INIT"
@@ -203,7 +203,7 @@ jobs:
           body: |
             MG30 Studio Community Edition for the original NUX MG-30 Gen 2, firmware 6.0.x.
 
-            This is a signed Community .27 candidate for the original NUX MG-30 Gen 2, firmware 6.0.x, from the Editor reference branch. Physical installation and MG-30 hardware checks are still required before acceptance. It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
+            This is a signed Community .28 candidate for the original NUX MG-30 Gen 2, firmware 6.0.x, from the Editor reference branch. Physical installation and MG-30 hardware checks are still required before acceptance. It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
 
             Verify the SHA-256 checksum before installation. Review the compatibility and known-limitations notes before using device-write operations.
 

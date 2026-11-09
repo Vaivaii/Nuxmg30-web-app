@@ -2761,3 +2761,18 @@
     padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))!important;
   }
 }
+
+/* Community .28 — measured Studio viewport fit for Android gesture and 3-button navigation.
+   The native Android content view already consumes system-bar WindowInsets. Studio measures
+   the remaining WebView viewport plus its own fixed nav and transport dock to size the timeline. */
+#page-studio #studio-daw-workspace{
+  min-height:calc(var(--studio-viewport-height,100dvh) - 300px)!important;
+  padding-bottom:var(--studio-workspace-bottom-reserve,calc(92px + env(safe-area-inset-bottom,0px)))!important;
+}
+#page-studio #dawTimelinePage{
+  min-height:calc(var(--studio-viewport-height,100dvh) - 430px)!important;
+}
+#page-studio #dawTimelinePage .daw-timeline-panel{
+  height:var(--studio-timeline-panel-height,clamp(320px,calc(var(--studio-viewport-height,100dvh) - 560px),720px))!important;
+  min-height:var(--studio-timeline-panel-height,clamp(320px,calc(var(--studio-viewport-height,100dvh) - 560px),720px))!important;
+}

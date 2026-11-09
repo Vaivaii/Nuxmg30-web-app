@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { computeStudioViewportFit } from './studio-viewport-fit.js';
 import {
   DAW_TRACKS, DAW_INPUT_ROUTES, createDefaultProject, normalizeProject, makeId, projectDurationSeconds,
   barDurationSeconds, snapTime, selectStemTracks, safeExportName, floatStereoToPcm24, encodeWavHeader,
@@ -2342,21 +2343,51 @@ function mountTrackInputRoutingPanel() {
 function syncStudioPinnedControls() {
   const dock = $('dawStudioDock');
   const appNav = document.querySelector('.nav');
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  // MainActivity applies Android WindowInsets to the native content view before
+  // they reach WebView. clientHeight is therefore the usable viewport in both
+  // gesture and three-button navigation modes.
+  const viewportHeight = document.documentElement.clientHeight || window.innerHeight || 0;
 
   if (!dock || !appNav || !viewportHeight) return;
   const navRect = appNav.getBoundingClientRect();
   const navIsFixedAtBottom = navRect.height > 0
     && navRect.top < viewportHeight
     && Math.abs(viewportHeight - navRect.bottom) < Math.max(8, navRect.height * 0.15);
+  const navTop = navIsFixedAtBottom
+    ? navRect.top
+    : Math.max(0, viewportHeight - (appNav.offsetHeight || 72));
 
-  // The nav occupies the safe-area too. Place the dock 8px above its actual top.
-  // If the nav is not currently measurable, fall back to the known mobile nav
-  // footprint rather than using a stale Studio content width/offset.
-  const dockBottom = navIsFixedAtBottom
-    ? Math.ceil(viewportHeight - navRect.top + 8)
-    : Math.ceil((appNav.offsetHeight || 64) + 16);
+  // Align the dock to the measured top of the app navigation, not to a guessed
+  // system-navigation height. Gesture and three-button modes can have different
+  // WebView heights and different bottom insets.
+  const dockBottom = Math.ceil(viewportHeight - navTop + 8);
   dock.style.setProperty('--studio-dock-bottom', dockBottom + 'px');
+
+  const studioPage = $('page-studio');
+  const workspace = $('studio-daw-workspace');
+  const timelinePanel = studioPage?.querySelector('#dawTimelinePage .daw-timeline-panel');
+  if (!studioPage || !workspace || !timelinePanel || timelinePanel.getClientRects().length === 0) return;
+
+  // Read after updating dockBottom so the measured dock top includes the actual
+  // bottom inset. The page scroll offset is added back by the pure fit helper.
+  const pageRect = studioPage.getBoundingClientRect();
+  const panelRect = timelinePanel.getBoundingClientRect();
+  const dockRect = dock.getBoundingClientRect();
+  const fit = computeStudioViewportFit({
+    viewportHeight,
+    navTop,
+    dockHeight: dockRect.height || dock.offsetHeight,
+    pageTop: pageRect.top,
+    pageScrollTop: studioPage.scrollTop,
+    timelinePanelTop: panelRect.top,
+    minTimelineHeight: 320,
+    maxTimelineHeight: 720,
+    dockGap: 12
+  });
+
+  studioPage.style.setProperty('--studio-viewport-height', fit.viewportHeight + 'px');
+  workspace.style.setProperty('--studio-workspace-bottom-reserve', fit.workspaceBottomReserve + 'px');
+  timelinePanel.style.setProperty('--studio-timeline-panel-height', fit.timelinePanelHeight + 'px');
 }
 
 function setDawPage(page) {
@@ -2416,6 +2447,10 @@ function bindEvents() {
   mountTrackInputRoutingPanel();
   renderOutputRoutingPanel();
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
+  window.addEventListener('orientationchange', syncStudioPinnedControls, { passive: true });
+  window.addEventListener('pageshow', syncStudioPinnedControls, { passive: true });
+  window.visualViewport?.addEventListener('resize', syncStudioPinnedControls, { passive: true });
+  document.addEventListener('visibilitychange', syncStudioPinnedControls);
   document.querySelector('.nav')?.addEventListener('click', (event) => {
     if (event.target.closest('button[data-page="studio"]')) {
       window.requestAnimationFrame(syncStudioPinnedControls);
