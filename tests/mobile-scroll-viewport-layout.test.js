@@ -155,13 +155,13 @@ test('IR Collection outer scroll frame fits its allocated grid row instead of ov
   assert.ok(grid.includes('min-height: 0 !important;'));
   assert.ok(grid.includes('max-height: none !important;'));
   assert.ok(grid.includes('align-self: stretch !important;'));
-  assert.ok(grid.includes('box-sizing: border-box !important;'));
+  assert.ok(grid.includes('box-sizing: border-box;'));
   assert.ok(!grid.includes('height: 100% !important;'));
   assert.ok(css.includes('grid-template-rows: auto minmax(0, 1fr) auto;'));
   assert.ok(css.includes('overflow-y: auto !important;'));
 });
 
-test('Community .20 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
+test('Community .21 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
   assert.ok(html.includes('ui-redesign.css?v=stable-ui-6'));
   assert.ok(html.includes('preset-library-ui.css?v=card-v3'));
 });
@@ -198,4 +198,13 @@ test('IR Collection fits one visible manager child into one bounded scroll track
 test('Community .21 cache tokens point to the corrected layout stylesheets', () => {
   assert.ok(html.includes('ui-redesign.css?v=stable-ui-6'));
   assert.ok(html.includes('preset-library-ui.css?v=card-v3'));
+});
+
+
+test('Collection root selector has one authoritative sizing rule, not a later partial override', () => {
+  const rootSelector = 'body.ir-collection-manager-active #page-nam > #ir-import-content.ir-import-content {';
+  assert.equal((css.match(/body\\.ir-collection-manager-active #page-nam > #ir-import-content\\.ir-import-content \\{/g) || []).length, 1);
+  const root = lastCssBlock(css, rootSelector);
+  assert.ok(root.includes('grid-row: 4;'));
+  assert.ok(root.includes('grid-template-rows: minmax(0, 1fr) !important;'));
 });
