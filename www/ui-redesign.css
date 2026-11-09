@@ -2984,3 +2984,64 @@ body > .app > #page-editor:not(.hidden) {
     scroll-padding-bottom: 16px !important;
   }
 }
+
+
+/* Community .19 — match the Collection slot-number rail to the Preset Manager card anatomy. */
+@media (max-width: 720px) {
+  body.ir-collection-manager-active #page-nam .ir-collection-slot,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot {
+    grid-template-columns: 64px minmax(0, 1fr) minmax(96px, 112px) !important;
+    min-height: 76px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-number,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-number {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    grid-column: 1 !important;
+    grid-row: 1 / 4 !important;
+    width: 64px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 11px 0 0 11px !important;
+    background: rgba(0, 0, 0, .13) !important;
+    color: #d7dfd2 !important;
+    box-shadow: none !important;
+    font-size: 12px !important;
+    font-weight: 850 !important;
+  }
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-number::after,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-number::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 3px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #75847d !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+  }
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-status,
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-name,
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-file,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-status,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-name,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-file {
+    padding-right: 8px !important;
+  }
+  body.ir-collection-manager-active #page-nam .ir-collection-slot-actions,
+  body.ir-collection-layout-fallback #page-nam .ir-collection-slot-actions {
+    padding: 7px 8px 7px 0 !important;
+  }
+}

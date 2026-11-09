@@ -495,3 +495,15 @@ The latest screenshots show that Community .13's two-way / three-way selection c
 - Test assertion failures in first Run #56 were due to tests using pre-adjustment viewport values and over-escaped regular expressions. Corrected tests use literal assertions; final Run #57 passed. No IR/User/Collection SysEx command, ACK/retry, WAV transfer, 24-slot mapping, preset data/operations, NAM, TONE3000, MIDI mapping, USB-MIDI, or Studio functionality was changed.
 - User-side physical Android/WebView confirmation remains pending. CI and bundled APK inspection passed; the exact visual spacing/scroll feel should still be checked on the target phone.
 - Audit artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13652031696`, ZIP SHA-256 `961fd8ca6c2015dccb80f5e5b30713c93795b10b07c57f24b7cc94d104628378`.
+
+
+
+## Community .19 — IR slot rail and Preset Manager gradient consistency (9 November 2026)
+
+- User tested Community .18 and reported: the IR number tile still showed an incomplete/bright side strip rather than a full filled slot rail; Preset Manager's scrolling card-list gradient did not align with the inner frame.
+- IR Collection number tile now uses a 64px full-height dark rail matching the Preset Manager card structure. Its vertical divider is rendered separately with an absolutely positioned pseudo-element (top/bottom 0, 3px width); removed the thick border-right from the number tile itself. The slot remains full-card height, clips cleanly to the card's left radius, and preserves the red "used in current preset" class.
+- Preset Manager bottom fade override is placed in `preset-library-ui.css` (loaded after `ui-redesign.css`), restricted to the scroll frame width (`width:100%`), aligned with zero side margins and `bottom:0`, shortened to 36px, and uses one vertical gradient matching the frame's #101619 bottom color. The prior horizontal edge-darkening gradient and negative side margins are removed.
+- UI cache token advanced from `stable-ui-3` to `stable-ui-4` to prevent Android WebView from reusing old CSS.
+- Added regression tests for full-height IR number rail, independent divider, exact fade width/alignment, and vertical-only gradient.
+- No changes to Collection slot mapping/actions/data, IR User/Collection SysEx or ACK handling, WAV transfer, preset operations/data, NAM, TONE3000, MIDI mapping, USB-MIDI or Studio.
+- Candidate release advanced to `1.0.0-community.19`, versionCode 19. CI validation pending.

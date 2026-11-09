@@ -102,3 +102,32 @@ test('bottom navigation is only slightly shorter and all five tab buttons remain
   assert.ok(button.includes('padding: 4px 2px 2px !important;'));
   assert.ok(css.includes('grid-template-columns:repeat(5,minmax(0,1fr))'));
 });
+
+
+test('IR slot number is a full-height filled rail with a separate divider, matching preset card anatomy', () => {
+  const number = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot-number,');
+  assert.ok(number.includes('width: 64px !important;'));
+  assert.ok(number.includes('height: 100% !important;'));
+  assert.ok(number.includes('background: rgba(0, 0, 0, .13) !important;'));
+  assert.ok(number.includes('border: 0 !important;'));
+  assert.ok(number.includes('border-radius: 11px 0 0 11px !important;'));
+  assert.ok(!number.includes('border-right: 3px solid #7d8982'));
+  const divider = lastCssBlock(css, 'body.ir-collection-manager-active #page-nam .ir-collection-slot-number::after,');
+  assert.ok(divider.includes('top: 0 !important;'));
+  assert.ok(divider.includes('bottom: 0 !important;'));
+  assert.ok(divider.includes('width: 3px !important;'));
+  assert.ok(divider.includes('background: #75847d !important;'));
+});
+
+test('Preset Manager fade remains inside the scrolling frame and uses a single aligned vertical gradient', () => {
+  const fade = lastCssBlock(presetCss, '#page-presets .preset-library-card-list::after');
+  assert.ok(fade.includes('width: 100%;'));
+  assert.ok(fade.includes('height: 36px;'));
+  assert.ok(fade.includes('bottom: 0;'));
+  assert.ok(fade.includes('margin-left: 0;'));
+  assert.ok(fade.includes('margin-right: 0;'));
+  assert.ok(fade.includes('margin-top: -36px;'));
+  assert.ok(fade.includes('linear-gradient('));
+  assert.ok(!fade.includes('90deg'));
+  assert.ok(!fade.includes('calc(100% + 16px)'));
+});
