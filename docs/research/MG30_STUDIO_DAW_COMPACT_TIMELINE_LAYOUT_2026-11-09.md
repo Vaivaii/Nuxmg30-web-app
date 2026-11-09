@@ -75,3 +75,9 @@ CI success is not equivalent to physical Android visual/audio acceptance.
 - Full regression tests: pending.
 - Signed Android Release and APK signature/package/checksum verification: pending.
 - Physical Android visual/touch confirmation: pending installation. Verify all six toolbar controls fit between the clock and Section/Clip triggers at the user's screen width; open More and confirm it no longer extends beneath the transport dock. Verify buttons and nudge retain their existing enabled/disabled behavior.
+
+### Community .25 first CI attempt — test-only correction
+- First push workflow: [Run 42652251912](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42652251912).
+- Result: 362 passed, 1 failed. The failing test was an older second assertion in `tests/studio-daw-arrangement.test.js` that still expected Undo/Redo/Start/End inside More, although the implementation and the other UI test had already been updated.
+- Updated that stale assertion to require all six Undo/Redo/Start/End/Nudge controls in the inline toolbar beside the clock and absent from More; Snap/Zoom and Clip actions remain in their original menus.
+- No application runtime source, toolbar layout or action handlers changed in this correction. Release signing/build was skipped by the regression gate as intended.

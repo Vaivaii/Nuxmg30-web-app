@@ -157,18 +157,27 @@ test('fade in/out controls are in the overflow menu rather than Track Settings',
   assert.ok(daw.includes('Clip trim, fade, split and delete controls are available from the main DAW card.'));
 });
 
-test('secondary DAW actions remain discoverable in More and Clip menus outside the compact clock row', () => {
+test('history, navigation and nudge controls sit beside the clock outside More', () => {
   const start = index.indexOf('<div class="daw-quick-toolbar">');
   const end = index.indexOf('<div class="daw-timeline-panel">', start);
   const toolbar = index.slice(start, end);
-  const position = toolbar.slice(toolbar.indexOf('<div class="daw-quick-toolbar-position">'));
+  const positionStart = toolbar.indexOf('<div class="daw-quick-toolbar-position">');
+  const position = toolbar.slice(positionStart);
   assert.ok(position.includes('id="dawClock"'));
-  assert.equal(position.includes('id="dawUndo"'), false);
-  assert.equal(position.includes('id="dawRedo"'), false);
-  assert.equal(position.includes('id="dawCursorStart"'), false);
-  assert.equal(position.includes('id="dawCursorEnd"'), false);
-  const more = toolbar.slice(toolbar.indexOf('id="dawMoreMenuPanel"'), toolbar.indexOf('</details>', toolbar.indexOf('id="dawMoreMenuPanel"')));
-  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd']) assert.ok(more.includes('id="' + id + '"'));
+  const inlineStart = position.indexOf('class="daw-inline-history-tools"');
+  const inlineEnd = position.indexOf('</div>', inlineStart);
+  const inline = position.slice(inlineStart, inlineEnd);
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawNudgeLeft','dawNudgeRight']) {
+    assert.ok(inline.includes('id="' + id + '"'), id + ' must be directly beside the clock');
+  }
+  const moreStart = toolbar.indexOf('id="dawMoreMenuPanel"');
+  const moreEnd = toolbar.indexOf('</details>', moreStart);
+  const more = toolbar.slice(moreStart, moreEnd);
+  for (const id of ['dawUndo','dawRedo','dawCursorStart','dawCursorEnd','dawNudgeLeft','dawNudgeRight']) {
+    assert.equal(more.includes('id="' + id + '"'), false, id + ' must not remain in More');
+  }
+  assert.ok(more.includes('id="dawSnap"'));
+  assert.ok(more.includes('id="dawZoom"'));
   const clipStart = toolbar.indexOf('class="daw-action-menu daw-clip-menu"');
   const clip = toolbar.slice(clipStart, toolbar.indexOf('</details>', clipStart));
   for (const id of ['dawCopyClip','dawPasteClip','dawDuplicateClip']) assert.ok(clip.includes('id="' + id + '"'));
