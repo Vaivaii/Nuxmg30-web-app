@@ -118,3 +118,9 @@ CI success is not equivalent to physical Android visual/audio acceptance.
 - Regression tests: pending.
 - Signed Android Release / APK package, signature and checksum verification: pending.
 - Physical Android confirmation remains required: ensure toolbar buttons are comfortably tappable and all Section menu controls are visible and usable on the device.
+
+### Community .26 first CI attempt — cache-token assertion correction
+- First run: [42654283987](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42654283987).
+- Regression gate stopped with 1 failure: an existing Community .25 toolbar test still expected stylesheet cache token `compact-daw-2` after the implementation correctly advanced it to `compact-daw-3`.
+- Corrected the test expectation only. No application source/layout/toolbar changes were made by this follow-up.
+- The failed gate correctly skipped APK signing/build. A new full CI run will validate the updated assertion and source.
