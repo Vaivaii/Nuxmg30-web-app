@@ -34,8 +34,8 @@ test('NAM and IR Collection is a bounded fourth flex region below the NAM librar
   assert.match(css, /height:\s*var\(--ir-collection-frame-height, auto\) !important/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-top'/);
   assert.match(irTransfer, /page\.style\.setProperty\('--ir-collection-manager-bottom'/);
-  assert.match(namLibrary, /page\.insertBefore\(panel,\s*irContent\)/,
-    'the Downloaded / Available NAM panel remains a direct child before Collection');
+  assert.match(namLibrary, /namPane\.insertBefore\(panel,\s*legacyPanel\)/,
+    'the permanent NAM Library is mounted inside the NAM tab above the retired single-file transfer panel');
 });
 
 test('Collection grid remains the only 24-slot vertical scroller with a full fade-safe tail', () => {
