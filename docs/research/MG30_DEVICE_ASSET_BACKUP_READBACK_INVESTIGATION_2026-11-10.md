@@ -93,14 +93,15 @@ It does not currently back up device NAM model weights or device Collection WAVs
 - Collection item's Use action has an observed request/response pair `6E 01` / `6E 02` for the selected index, followed by control reset events. Exact semantics are not fully decoded.
 - QuickTone 2.6.7.16 has original-MG-30 symbols including `getIRCrcAndNameCheck`, `setIRCrcAndName`, and `deleteCollectionIRCheck`. These are strong static-analysis leads, not proof of exact packet formats.
 - Existing app IndexedDB is only a local mirror of WAVs imported through MG30 Studio. It does not enumerate items created externally in QuickTone PC.
-- Existing `6C 00` / `6C 02` two-pass readback was proposed in the Collection experiment notes as a protocol-derived candidate, but it has NOT been confirmed by a physical-device response in the submitted captures.
+- Existing Collection captures still do NOT show the `6C 00` / `6C 02` readback exchange. The request/response is now confirmed in the original QuickTone 2.6.7.16 MG30 code by static disassembly (see the new static-code section below), but an actual device response has not yet been captured.
 - The submitted Collection dialog/list captures do not include the actual initial list/name readback exchange. This is a capture-content limitation; it does not prove Collection is local.
 
-### Not confirmed
-- The actual device Collection list enumeration/readback transaction.
-- Whether a readback response can provide each item's 36-byte CRC/name metadata only, or the complete IR waveform/curve data.
-- Whether Collection WAV bytes can be requested from the device by slot.
-- A fully verified device Collection restore transaction with exact original slot placement.
+### Not confirmed (after static-code discovery)
+- Whether the physical MG-30 firmware 6.0.x unit responds successfully to these QuickTone read requests in every slot state. Current submitted captures do not include the read transactions or replies.
+- Whether QuickTone's dynamic collection count corresponds to 24 on every firmware/device configuration. The static loop reads the count stored in the Collection manager; the value and slot-index base have not yet been confirmed.
+- The exact semantic layout and byte order of the 36-byte `6C 02` record (name/CRC split remains to be verified against a response and the write-side layout).
+- Whether the 6A waveform payload and 6B curve payload together form the complete exportable WAV representation, and the exact conversion/normalization rules.
+- A fully verified device Collection restore transaction with exact original slot placement and content readback comparison.
 
 ### IR Collection investigation priority
 1. Analyze the original MG-30 QuickTone 2.6.7.16 implementation around `getIRCrcAndNameCheck`, `setIRCrcAndName`, `deleteCollectionIRCheck`, and incoming MIDI handler.
@@ -137,3 +138,57 @@ Existing analysis reports:
 - Tests cover empty slots, populated slots, slot identity, duplicate names, partial failure, cancellation/retry safety, progress event sequencing, and readback verification.
 - Existing User IR, NAM import, preset transfer, MIDI mapping, and Full Backup local-library behavior all pass regression tests.
 - Physical acceptance is performed on original MG-30 Gen 2 firmware 6.0.x. CI alone is not hardware acceptance.
+
+
+## New discovery: QuickTone 2.6.7.16 contains original-MG30 Collection readback implementation (static disassembly)
+
+Inspection target:
+- Archive: `NUX_QuickTone_V2.6.7.16_Windows.zip`
+- Archive SHA-256: `95990e1e57079439c89b13e16d19f17c1769ec0c60336b546bc7f43b4ee91f2a`
+- Extracted executable: `QuickTone.exe`
+- Executable SHA-256: `0d64728f8f0e013114c228c8e6f9a8f3c648a5f82ff54ff03081c930ebd771d6`
+- PE32 i386, vendor/version resources identify Cherub Technology / QuickTone 2.6.7.16.
+- The binary contains distinct original-MG30 and MG30MK2 transmission classes. Findings below are from the original `NuxMidiTransmissionMG30` code region, not the MK2 path.
+- Addresses below are virtual addresses from the executable's `.text` section; they are static reverse-engineering evidence, not a physical capture.
+
+### 1. Collection metadata enumeration: `6C 00` → `6C 02`
+
+- At `0x4ACCCB–0x4ACCE4`, QuickTone builds a 15-byte SysEx request:
+  `F0 43 58 70 6C 00 <index> 00 00 00 00 00 00 00 F7`.
+- The request loop begins with index 0 and increments the index by one. Its loop condition compares the index against a Collection-manager field at object offset `0x64C`; therefore the function reads the runtime Collection count rather than containing an obvious hard-coded 24 in this loop.
+- The send call at `0x4ACD41–0x4ACD5A` passes `0x3E8` (1000 ms), retry/flag value `1`, and a frame length of `0x0F` (15 bytes).
+- The response handler at `0x4ACF00`, specifically `0x4ACF3A–0x4ACF77`, matches command bytes `6C 02`, reads the index at message offset 6, then copies exactly `0x24` (36) bytes beginning at message offset 7.
+- This establishes that QuickTone expects a 36-byte per-index metadata record. It does NOT by itself establish the record's exact field layout; interpreting it as 32-byte name plus 4-byte CRC remains a hypothesis until matched to actual reply bytes and the write-side encoder.
+
+### 2. Metadata response dispatches reads for the same Collection index
+
+- In the `6C 02` handler at `0x4AD00D–0x4AD0A9`, after the record is parsed and a conditional check succeeds, QuickTone invokes both:
+  - `0x4AD7D0` with the same index (the `6A` read path).
+  - `0x4AD330` with the same index (the `6B` read path).
+- This connects metadata enumeration to per-index payload acquisition in the original QuickTone implementation; it is not merely three unrelated packet families.
+- The static branch condition and the complete UI call chain should still be traced before assuming that every metadata record (including an empty slot) will trigger both reads.
+
+### 3. IR waveform/data-block acquisition: `6A 00` → `6A 02`
+
+- Function region `0x4AD7D0–0x4AD926` builds repeated `6A 00` requests for a selected index.
+- The request carries a 16-bit block offset. The offset begins at 0 and increments by `0x20` (32) until it reaches `0x800` (2048); this yields 64 block requests for a complete 0x800-byte region.
+- Each request is sent as a 15-byte SysEx frame with the same 1000 ms timeout / flag arguments observed in the Collection metadata path.
+- The callback at `0x4AD9A0` explicitly matches `6A 02`. It copies `0x84` (132) bytes from the reply beginning at message offset 6; the first 2 bytes are used as a block offset and the remaining 128 bytes are copied into the corresponding accumulation buffer region.
+- The completion comparison checks the last block offset `0x7E0` (2016), consistent with a final 128-byte block in a 2048-byte transfer.
+- This is strong static evidence that QuickTone requests and assembles a per-index IR data payload from Collection storage. It is not yet a measured MG-30 response, and the exact payload encoding/meaning still needs validation against a captured exchange.
+
+### 4. IR curve acquisition: `6B 00` → `6B 02`
+
+- Function region `0x4AD330–0x4AD4FB` builds repeated `6B 00` requests for the same selected Collection index.
+- The 16-bit request offset advances by `0x40` (64); the loop limit is read from a manager field at offset `0x670`. The code also sizes/clears an accumulation buffer using this runtime count.
+- The callback at `0x4AD520` matches `6B 02`, copies `0x84` (132) bytes from the reply starting at message offset 6, reads the 16-bit block offset, and accumulates 128-byte blocks.
+- The callback treats offset `0x0240` (576) as the final block offset. Subsequent code builds a RIFF/WAVE header (`RIFF`, `WAVE`, `fmt `, `data`) and copies `0x12C` (300) 32-bit words = 1200 bytes from the accumulation buffer into its output buffer before calling a file-writing routine.
+- This confirms a separate curve/data acquisition and WAV-formatted output path in QuickTone. The precise semantics of this generated WAV data (and how it relates to the 6A payload) should not be assumed until the full export path and an actual export file are compared.
+
+### 5. Implications for the project
+
+- The earlier conclusion that no Collection readback implementation was evident must be revised: original QuickTone 2.6.7.16 contains static readback request/response handlers for metadata, 6A data, and 6B curve.
+- Device-side Collection acquisition now appears technically plausible through the same protocol family QuickTone uses. The next task is to capture a real read/export session and compare each request/reply against these disassembly-derived structures.
+- Do NOT implement these requests in MG30 Studio yet. First establish that the original MG-30 Gen 2 6.0.x pedal responds, determine error/empty-slot behavior, discover the true slot count and index mapping, and validate exact bytes/CRC/content.
+- The existing Collection write paths `6A 01`, `6C 01`, and `6B 01` remain untouched. No User/Third Party `10/09/11`, NAM import, MIDI, or preset code has been modified.
+- This discovery does not yet close the device Collection backup acceptance criteria: no physical readback capture or byte-identical restore comparison exists yet.
