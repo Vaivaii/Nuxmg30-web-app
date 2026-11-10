@@ -419,7 +419,7 @@ import './backup-restore.css';
     preview.hidden = false;
     preview.textContent = state.fileName + ' · ' + state.manifest.createdAt +
       '\n' + sections.length + ' restorable sections: ' + counts.join(' · ');
-    restoreButton.disabled = sections.length === 0;
+    restoreButton.disabled = true;
     restoreButton.textContent = 'Restore Selected';
   }
 
@@ -509,7 +509,7 @@ import './backup-restore.css';
     const slotMap = new Map();
     const report = [];
     for (const action of plan) {
-      if (action.action === 'skip') { slotMap.set(action.sourceSlot, action.sourceSlot); report.push(action); continue; }
+      if (action.action === 'skip') { if (conflict === 'keep-existing') slotMap.set(action.sourceSlot, action.sourceSlot); report.push(action); continue; }
       const source = section.records.find(item => Number(item.slot) === action.sourceSlot);
       const destinationSlot = action.destinationSlot;
       const record = {
