@@ -66,6 +66,11 @@ test('NAM restore plans keep, replace, or retain both without filename collision
   assert.deepEqual(planNamRestore([files[0]], ['amp.nam'], 'keep-both'), [
     { action: 'keep-both', fileName: 'amp.nam', destination: 'amp (2).nam' }
   ]);
+  assert.deepEqual(planNamRestore(
+    [{ fileName: 'amp.nam' }, { fileName: 'amp (2).nam' }],
+    ['amp.nam'],
+    'keep-both'
+  ).map(x => x.destination), ['amp (3).nam', 'amp (2).nam']);
   assert.throws(() => planNamRestore([{ fileName: '../escape.nam' }], [], 'keep-both'), /invalid file name/);
 });
 
@@ -73,7 +78,7 @@ test('IR restore keeps existing, replaces, and remaps a second copy to the next 
   const slots = [{ slot: 1 }, { slot: 2 }, { slot: 3 }];
   assert.deepEqual(planIRRestore(slots, [1, 2], 'keep-existing').map(x => x.action), ['skip', 'skip', 'create']);
   assert.deepEqual(planIRRestore(slots, [1, 2], 'replace').map(x => x.destinationSlot), [1, 2, 3]);
-  assert.deepEqual(planIRRestore(slots, [1, 2], 'keep-both').map(x => x.destinationSlot), [3, 4, 5]);
+  assert.deepEqual(planIRRestore(slots, [1, 2], 'keep-both').map(x => x.destinationSlot), [4, 5, 3]);
   const full = Array.from({ length: 24 }, (_, i) => i + 1);
   assert.equal(planIRRestore([{ slot: 1 }], full, 'keep-both')[0].action, 'skip');
   assert.throws(() => planIRRestore([{ slot: 0 }], [], 'keep-both'), /invalid IR/);
