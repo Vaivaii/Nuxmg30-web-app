@@ -25,7 +25,7 @@ test('loaded TONE3000 catalogue and model cards are constrained to the NAM libra
   ]) {
     assert.ok(css.includes(selector), 'missing width guard for ' + selector);
   }
-  assert.match(css, /body\.ir-collection-manager-active #page-nam > #namModelLibrary,[\s\S]*?max-width:\s*100% !important;[\s\S]*?box-sizing:\s*border-box !important;/);
+  assert.match(css, /body\.ir-collection-manager-active #page-nam .nam-ir-nam-pane > #namModelLibrary,[\s\S]*?max-width:\s*100% !important;[\s\S]*?box-sizing:\s*border-box !important;/);
 });
 
 test('Collection fallback also keeps the NAM page and nested TONE3000 catalogue within viewport width', () => {
