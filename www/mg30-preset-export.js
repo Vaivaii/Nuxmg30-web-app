@@ -124,22 +124,24 @@ let allExportBusy = false;
  * readback core as Export Single, then package the 128 records in one file.
  * Presets without an attached User IR are valid and keep a zeroed resource area.
  */
-async function exportAllPresets() {
+async function exportAllPresets(options = {}) {
   const bridge = window.MG30PresetExportBridge;
   if (!bridge?.isConnected?.()) {
     throw new Error('Hubungkan MG-30 melalui USB-MIDI sebelum Export All. Export All membaca bank aktif secara read-only.');
   }
 
-  const confirmed = window.confirm(
-    'EXPORT ALL PRESETS\n\n' +
-    'MG30 Studio will read all 128 presets from the MG-30 (01A–32D), including all three scenes for each preset. Resource metadata will be checked; waveform and curve data will only be read for presets that contain an IR.\n\n' +
-    'Once every record has been read and validated, the app will save one file: MG30_All_Preset.mg30patch (0x135700 bytes).\n\n' +
-    'This is a read-only operation over USB-MIDI/SysEx. No presets, NAM profiles, User IR data, or IR Collection data will be written to or changed on the pedal.\n\n' +
-    'Continue reading the entire bank?'
-  );
-  if (!confirmed) {
-    setStatus('Export All dibatalkan. Tidak ada data yang ditulis ke MG-30.', 'warn');
-    return { saved: false, cancelled: true };
+  if (options.confirm !== false) {
+    const confirmed = window.confirm(
+      'EXPORT ALL PRESETS\n\n' +
+      'MG30 Studio will read all 128 presets from the MG-30 (01A–32D), including all three scenes for each preset. Resource metadata will be checked; waveform and curve data will only be read for presets that contain an IR.\n\n' +
+      'Once every record has been read and validated, the app will save one file: MG30_All_Preset.mg30patch (0x135700 bytes).\n\n' +
+      'This is a read-only operation over USB-MIDI/SysEx. No presets, NAM profiles, User IR data, or IR Collection data will be written to or changed on the pedal.\n\n' +
+      'Continue reading the entire bank?'
+    );
+    if (!confirmed) {
+      setStatus('Export All dibatalkan. Tidak ada data yang ditulis ke MG-30.', 'warn');
+      return { saved: false, cancelled: true };
+    }
   }
 
   ensurePresetManagerSession(bridge);
@@ -229,6 +231,19 @@ async function exportAllPresets() {
   }
 
   const filename = 'MG30_All_Preset.mg30patch';
+  if (options.returnBytes === true) {
+    setStatus('Export All siap dimasukkan ke Full Backup: 128 preset tervalidasi · ' +
+      resourcePrograms.length + ' resource IR · ' + cacheHits + ' dari cache · ' +
+      liveReadbacks + ' dibaca langsung. Tidak ada data yang ditulis ke MG-30.', 'ok');
+    return {
+      exported: true,
+      fileName: filename,
+      bytes: bytes.slice(),
+      resourcePrograms: resourcePrograms.slice(),
+      cacheHits,
+      liveReadbacks
+    };
+  }
   setStatus('128 preset tervalidasi · ' + resourcePrograms.length +
     ' preset memiliki resource IR · ' + bytes.length.toLocaleString('id-ID') +
     ' byte. Memilih lokasi penyimpanan di File manager Android…');
