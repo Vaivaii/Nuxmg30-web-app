@@ -54,8 +54,12 @@ import './backup-restore.css';
     return btoa(binary);
   }
   function safeSegment(value) {
-    const name = String(value || '').split(/[\\/]/).pop().replace(/[^A-Za-z0-9._ ()-]/g, '_').trim();
-    if (!name || name === '.' || name === '..' || name.length > 180) throw new Error('A stored filename is not safe for backup.');
+    const raw = String(value || '');
+    if (raw.includes('/') || raw.includes('\\\\') || raw === '.' || raw === '..') {
+      throw new Error('A stored filename is not safe for backup.');
+    }
+    const name = raw.replace(/[^A-Za-z0-9._ ()-]/g, '_').trim();
+    if (!name || name.length > 180) throw new Error('A stored filename is not safe for backup.');
     return name;
   }
   function parseStoredJson(key, fallback) {
