@@ -605,7 +605,18 @@ public class MG30MidiPlugin extends Plugin {
                 call.reject("Folder penyimpanan model tidak dapat dibuat.");
                 return;
             }
-            File target = new File(directory, safeName);
+            String baseName = safeName;
+            File target = new File(directory, baseName);
+            if (target.exists()) {
+                int dot = baseName.lastIndexOf('.');
+                String stem = dot > 0 ? baseName.substring(0, dot) : baseName;
+                String extension = dot > 0 ? baseName.substring(dot) : "";
+                int suffix = 2;
+                do {
+                    target = new File(directory, stem + " (" + suffix++ + ")" + extension);
+                } while (target.exists());
+                safeName = target.getName();
+            }
             try (FileOutputStream output = new FileOutputStream(target)) {
                 output.write(bytes);
                 output.getFD().sync();
@@ -614,10 +625,112 @@ public class MG30MidiPlugin extends Plugin {
             result.put("fileName", safeName);
             result.put("bytes", bytes.length);
             result.put("path", target.getAbsolutePath());
-            result.put("note", "File disimpan di penyimpanan internal aplikasi untuk alur impor lanjutan.");
+            result.put("note", "File disimpan permanen di NAM Library internal aplikasi.");
             call.resolve(result);
         } catch (IllegalArgumentException | IOException error) {
             call.reject("Gagal menyimpan file model: " + error.getMessage());
+        }
+    }
+
+    private File getNamModelDirectory() throws IOException {
+        File directory = new File(getContext().getFilesDir(), "nam-models");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Folder NAM Library tidak dapat dibuat.");
+        }
+        return directory.getCanonicalFile();
+    }
+
+    private File getNamModelFile(String requestedName) throws IOException {
+        String safeName = new File(requestedName == null ? "" : requestedName)
+            .getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty() || safeName.equals(".") || safeName.equals("..")) {
+            throw new IllegalArgumentException("Nama file NAM tidak valid.");
+        }
+        File directory = getNamModelDirectory();
+        File file = new File(directory, safeName).getCanonicalFile();
+        if (!file.getParentFile().equals(directory)) {
+            throw new IllegalArgumentException("Lokasi file NAM tidak valid.");
+        }
+        return file;
+    }
+
+    @PluginMethod
+    public void listModels(PluginCall call) {
+        try {
+            File directory = getNamModelDirectory();
+            File[] entries = directory.listFiles();
+            JSArray files = new JSArray();
+            if (entries != null) {
+                Arrays.sort(entries, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+                for (File file : entries) {
+                    if (!file.isFile() || !file.getName().matches("(?i).+\\.(nam|namb|image)$")) continue;
+                    JSObject item = new JSObject();
+                    item.put("fileName", file.getName());
+                    item.put("bytes", file.length());
+                    item.put("modifiedAt", file.lastModified());
+                    files.put(item);
+                }
+            }
+            JSObject result = new JSObject();
+            result.put("files", files);
+            result.put("count", files.length());
+            call.resolve(result);
+        } catch (IOException error) {
+            call.reject("Gagal membaca NAM Library: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void readModel(PluginCall call) {
+        String fileName = call.getString("fileName", "");
+        try {
+            File file = getNamModelFile(fileName);
+            if (!file.isFile()) {
+                call.reject("File NAM tidak ditemukan di Library.");
+                return;
+            }
+            if (file.length() <= 0 || file.length() > 20L * 1024L * 1024L) {
+                call.reject("Ukuran file NAM kosong atau melebihi batas 20 MB.");
+                return;
+            }
+            byte[] bytes = new byte[(int) file.length()];
+            try (FileInputStream input = new FileInputStream(file)) {
+                int offset = 0;
+                while (offset < bytes.length) {
+                    int read = input.read(bytes, offset, bytes.length - offset);
+                    if (read < 0) throw new IOException("File NAM terpotong saat dibaca.");
+                    offset += read;
+                }
+            }
+            JSObject result = new JSObject();
+            result.put("fileName", file.getName());
+            result.put("bytes", bytes.length);
+            result.put("base64", Base64.encodeToString(bytes, Base64.NO_WRAP));
+            call.resolve(result);
+        } catch (IllegalArgumentException | IOException error) {
+            call.reject("Gagal membaca file NAM: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void deleteModel(PluginCall call) {
+        String fileName = call.getString("fileName", "");
+        try {
+            File file = getNamModelFile(fileName);
+            if (!file.isFile()) {
+                call.reject("File NAM tidak ditemukan di Library.");
+                return;
+            }
+            if (!file.delete()) {
+                call.reject("File NAM tidak dapat dihapus.");
+                return;
+            }
+            JSObject result = new JSObject();
+            result.put("deleted", true);
+            result.put("fileName", file.getName());
+            call.resolve(result);
+        } catch (IllegalArgumentException | IOException error) {
+            call.reject("Gagal menghapus file NAM: " + error.getMessage());
         }
     }
 
