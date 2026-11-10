@@ -24,6 +24,7 @@ on:
       - feature/editor-dynamic-parameter-dock
       - feature/editor-stable-ui-artwork-fit
       - feature/nam-library-persistent-cards
+      - feature/full-backup-selective-restore
       - feature/editor-card-proportions-with-dock
       - feature/editor-dock-stack-and-svg-sizing-fix
       - feature/editor-fixed-model-frame-scene-anchor
