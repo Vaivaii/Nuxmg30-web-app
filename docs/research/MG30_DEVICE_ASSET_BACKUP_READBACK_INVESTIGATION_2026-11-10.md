@@ -248,3 +248,17 @@ All available submitted PCAPNG files were parsed as USBPcap endpoint traffic and
 - The callback stores points into a 600 x 16-bit (1,200-byte) curve buffer. On the last block (offset `0x240` = 576), the code bounds writes by the manager count 600, so only the remaining 24 points of that 64-point block are retained; the trailing 40 points are outside the 600-point curve.
 - The callback constructs a RIFF/WAVE structure with `RIFF`, `WAVE`, `fmt `, audio format tag 1 (PCM), and `data`, then copies exactly `0x12C` (300) DWORDs = 1,200 bytes from the 600-point buffer before invoking its file/output writer.
 - Thus the 6B collection read is not merely a UI curve preview: it is used in a WAV serialization path. Sample rate/channel fields and whether this WAV is the full deliverable IR or a companion representation still require the full writer/caller analysis.
+
+
+## Additional executable-string evidence: Collection Export UI and NAM file picker
+
+A separate string-table pass over the same QuickTone.exe found:
+- UI text `COLLECTION EXPORT` at multiple localized resource offsets (for example file offsets `0x92CE5C`, `0x936254`, `0x93E8C8`, `0x9467E0`, `0x94C204`).
+- UI text `Export the IR File.` at multiple localized resource offsets (for example `0x92D02C`, `0x936424`, `0x93E9D8`, `0x9469B0`, `0x94C314`).
+- Export button state resources `UI_Button_Export_D`, `UI_Button_Export_O`, and `UI_Button_Export_N`.
+- NAM file chooser filter strings `*.image;*.nam;` and `.namb`, and UI labels `NamLabel`.
+
+Interpretation:
+- This corroborates that QuickTone 2.6.7.16 has a user-visible Collection Export feature in its resources, consistent with the `6A`/`6B` read-and-file-output code path.
+- The strings alone do not prove which slot selection triggers export, whether export is per-item or batch, nor the exact file extension/content. Those points must be traced through the UI event handler and confirmed with a PCAP plus exported file.
+- NAM file chooser strings establish that QuickTone can load/select local `.nam` / `.namb` files. They do not establish a device-to-PC NAM export function.
