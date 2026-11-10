@@ -403,7 +403,7 @@ import './backup-restore.css';
       row.className = 'backup-restore-option';
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.checked = true;
+      checkbox.checked = false;
       checkbox.dataset.restoreSection = key;
       const copy = document.createElement('span');
       copy.className = 'backup-restore-option-copy';
@@ -509,7 +509,7 @@ import './backup-restore.css';
     const slotMap = new Map();
     const report = [];
     for (const action of plan) {
-      if (action.action === 'skip') { report.push(action); continue; }
+      if (action.action === 'skip') { slotMap.set(action.sourceSlot, action.sourceSlot); report.push(action); continue; }
       const source = section.records.find(item => Number(item.slot) === action.sourceSlot);
       const destinationSlot = action.destinationSlot;
       const record = {
@@ -530,7 +530,7 @@ import './backup-restore.css';
     for (const [program, sourceSlotValue] of Object.entries(section.presetAssignments || {})) {
       const programNumber = Number(program);
       const sourceSlot = Number(sourceSlotValue);
-      const restoredSlot = slotMap.get(sourceSlot);
+      const restoredSlot = slotMap.has(sourceSlot) ? slotMap.get(sourceSlot) : null;
       if (Number.isInteger(programNumber) && programNumber >= 0 && programNumber < 128 && restoredSlot) {
         assignments[String(programNumber)] = restoredSlot;
       }
@@ -543,7 +543,7 @@ import './backup-restore.css';
     const safe = sanitizeBackupSettings(values);
     let restored = 0, skipped = 0;
     for (const [key, value] of Object.entries(safe)) {
-      if (conflict === 'keep-existing' && localStorage.getItem(key) !== null) { skipped++; continue; }
+      if (conflict !== 'replace' && localStorage.getItem(key) !== null) { skipped++; continue; }
       localStorage.setItem(key, value);
       restored++;
     }
