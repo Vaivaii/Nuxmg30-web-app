@@ -52,6 +52,7 @@ public class MG30MidiPlugin extends Plugin {
     private MidiManager.DeviceCallback deviceCallback;
     // Stage patch exports on disk while Android's document picker is open.
     private final Map<String, File> pendingPatchFiles = new ConcurrentHashMap<>();
+    private final Map<String, File> pendingBackupFiles = new ConcurrentHashMap<>();
     private static final int PATCH_EXPORT_CHUNK_LIMIT = 64 * 1024;
 
     private static final class PatchTransfer {
@@ -67,6 +68,8 @@ public class MG30MidiPlugin extends Plugin {
     }
 
     private final Map<String, PatchTransfer> pendingPatchTransfers = new ConcurrentHashMap<>();
+    private final Map<String, PatchTransfer> pendingBackupTransfers = new ConcurrentHashMap<>();
+    private static final int BACKUP_ARCHIVE_MAX_BYTES = 200 * 1024 * 1024;
 
     @Override
     public void load() {
@@ -255,6 +258,240 @@ public class MG30MidiPlugin extends Plugin {
         }
         return directory;
     }
+
+    private File backupExportDirectory() throws IOException {
+        File directory = new File(getContext().getFilesDir(), "mg30-backup-export");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Folder staging backup tidak dapat dibuat.");
+        }
+        return directory;
+    }
+
+    @PluginMethod
+    public void beginBackupExport(PluginCall call) {
+        Integer expectedValue = call.getInt("expectedBytes");
+        int expectedBytes = expectedValue == null ? 0 : expectedValue;
+        if (expectedBytes <= 0 || expectedBytes > BACKUP_ARCHIVE_MAX_BYTES) {
+            call.reject("Ukuran backup ZIP kosong atau melebihi batas 200 MB.");
+            return;
+        }
+        try {
+            File staged = new File(backupExportDirectory(), "transfer-" + UUID.randomUUID() + ".tmp");
+            try (FileOutputStream output = new FileOutputStream(staged, false)) {
+                output.flush();
+                output.getFD().sync();
+            }
+            String transferId = UUID.randomUUID().toString();
+            pendingBackupTransfers.put(transferId, new PatchTransfer(staged, expectedBytes));
+            JSObject result = new JSObject();
+            result.put("transferId", transferId);
+            result.put("expectedBytes", expectedBytes);
+            result.put("maxChunkBytes", PATCH_EXPORT_CHUNK_LIMIT);
+            call.resolve(result);
+        } catch (IOException | RuntimeException error) {
+            call.reject("Gagal memulai transfer backup: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void writeBackupExportChunk(PluginCall call) {
+        String transferId = call.getString("transferId", "");
+        Integer offsetValue = call.getInt("offset");
+        String base64 = call.getString("base64", "");
+        PatchTransfer transfer = pendingBackupTransfers.get(transferId);
+        if (transfer == null) {
+            call.reject("Sesi transfer backup tidak ditemukan atau sudah berakhir.");
+            return;
+        }
+        if (offsetValue == null || base64.isEmpty() || base64.length() > 96 * 1024) {
+            call.reject("Chunk backup kosong atau melebihi batas aman.");
+            return;
+        }
+        try {
+            byte[] chunk = Base64.decode(base64, Base64.DEFAULT);
+            synchronized (transfer) {
+                if (offsetValue != transfer.receivedBytes) {
+                    call.reject("Offset chunk backup tidak berurutan: diterima " + offsetValue +
+                        ", diharapkan " + transfer.receivedBytes + ".");
+                    return;
+                }
+                if (chunk.length == 0 || chunk.length > PATCH_EXPORT_CHUNK_LIMIT ||
+                    transfer.receivedBytes + chunk.length > transfer.expectedBytes) {
+                    call.reject("Ukuran chunk backup di luar batas transfer.");
+                    return;
+                }
+                try (FileOutputStream output = new FileOutputStream(transfer.file, true)) {
+                    output.write(chunk);
+                    output.flush();
+                }
+                transfer.receivedBytes += chunk.length;
+                JSObject result = new JSObject();
+                result.put("receivedBytes", transfer.receivedBytes);
+                result.put("expectedBytes", transfer.expectedBytes);
+                call.resolve(result);
+            }
+        } catch (IOException | IllegalArgumentException error) {
+            call.reject("Gagal menulis chunk backup pada offset " + offsetValue + ": " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void abortBackupExport(PluginCall call) {
+        String transferId = call.getString("transferId", "");
+        PatchTransfer transfer = pendingBackupTransfers.remove(transferId);
+        if (transfer != null && transfer.file.exists()) transfer.file.delete();
+        JSObject result = new JSObject();
+        result.put("aborted", true);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void finishBackupExport(PluginCall call) {
+        String transferId = call.getString("transferId", "");
+        String safeName = new File(call.getString("fileName", "MG30_Studio_Full_Backup.zip"))
+            .getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty()) safeName = "MG30_Studio_Full_Backup.zip";
+        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".zip")) safeName += ".zip";
+        PatchTransfer transfer = pendingBackupTransfers.get(transferId);
+        if (transfer == null) {
+            call.reject("Sesi transfer backup tidak ditemukan saat finalisasi.");
+            return;
+        }
+        File finalStage = null;
+        String callbackId = call.getCallbackId();
+        try {
+            synchronized (transfer) {
+                if (transfer.receivedBytes != transfer.expectedBytes ||
+                    !transfer.file.isFile() || transfer.file.length() != transfer.expectedBytes) {
+                    throw new IOException("Staging menerima " + transfer.receivedBytes + " dari " +
+                        transfer.expectedBytes + " byte; file fisik " + transfer.file.length() + " byte.");
+                }
+                try (FileOutputStream sync = new FileOutputStream(transfer.file, true)) {
+                    sync.getFD().sync();
+                }
+            }
+            if (callbackId == null || callbackId.isEmpty()) {
+                throw new IOException("ID callback penyimpanan backup tidak tersedia.");
+            }
+            String safeCallbackId = callbackId.replaceAll("[^A-Za-z0-9_-]", "_");
+            finalStage = new File(backupExportDirectory(), safeCallbackId + ".zip.tmp");
+            if (finalStage.exists() && !finalStage.delete()) {
+                throw new IOException("Staging callback backup sebelumnya tidak dapat dibersihkan.");
+            }
+            if (!transfer.file.renameTo(finalStage)) {
+                try (InputStream input = new FileInputStream(transfer.file);
+                     FileOutputStream output = new FileOutputStream(finalStage, false)) {
+                    long copied = copyAndCount(input, output, null);
+                    output.flush();
+                    output.getFD().sync();
+                    if (copied != transfer.expectedBytes) {
+                        throw new IOException("Pemindahan staging backup berhenti pada " + copied + " byte.");
+                    }
+                }
+                if (!transfer.file.delete()) transfer.file.deleteOnExit();
+            }
+            pendingBackupFiles.put(callbackId, finalStage);
+            pendingBackupTransfers.remove(transferId);
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/zip");
+            intent.putExtra(Intent.EXTRA_TITLE, safeName);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            startActivityForResult(call, intent, "saveBackupArchiveResult");
+        } catch (IOException | RuntimeException error) {
+            pendingBackupTransfers.remove(transferId);
+            if (transfer.file.exists()) transfer.file.delete();
+            if (finalStage != null && finalStage.exists()) finalStage.delete();
+            if (callbackId != null) pendingBackupFiles.remove(callbackId);
+            call.reject("Gagal menyiapkan backup ZIP untuk File manager: " + error.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void saveBackupArchiveResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        String requestedName = call.getString("fileName", "MG30_Studio_Full_Backup.zip");
+        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        if (safeName.isEmpty()) safeName = "MG30_Studio_Full_Backup.zip";
+        if (!safeName.toLowerCase(Locale.ROOT).endsWith(".zip")) safeName += ".zip";
+        String callbackId = call.getCallbackId();
+        File staged = callbackId == null ? null : pendingBackupFiles.remove(callbackId);
+        if (staged == null && callbackId != null) {
+            String safeCallbackId = callbackId.replaceAll("[^A-Za-z0-9_-]", "_");
+            staged = new File(new File(getContext().getFilesDir(), "mg30-backup-export"),
+                safeCallbackId + ".zip.tmp");
+        }
+        try {
+            if (result == null || result.getResultCode() != Activity.RESULT_OK ||
+                result.getData() == null || result.getData().getData() == null) {
+                JSObject cancelled = new JSObject();
+                cancelled.put("saved", false);
+                cancelled.put("cancelled", true);
+                call.resolve(cancelled);
+                return;
+            }
+            if (staged == null || !staged.isFile()) {
+                throw new IOException("Payload staging backup hilang setelah File manager ditutup.");
+            }
+            long expectedBytes = staged.length();
+            if (expectedBytes <= 0 || expectedBytes > BACKUP_ARCHIVE_MAX_BYTES) {
+                throw new IOException("Ukuran staging backup di luar batas 200 MB.");
+            }
+            long expectedCrc = crc32(staged);
+            Uri uri = result.getData().getData();
+            try (InputStream input = new FileInputStream(staged);
+                 OutputStream output = getContext().getContentResolver().openOutputStream(uri, "w")) {
+                if (output == null) throw new IOException("Android tidak dapat membuka lokasi file backup.");
+                long written = copyAndCount(input, output, null);
+                output.flush();
+                if (written != expectedBytes) {
+                    throw new IOException("Penyalinan backup berhenti pada " + written + " dari " + expectedBytes + " byte.");
+                }
+            }
+            CRC32 destinationCrc = new CRC32();
+            long verifiedBytes;
+            try (InputStream verify = getContext().getContentResolver().openInputStream(uri)) {
+                if (verify == null) throw new IOException("File backup tujuan tidak dapat dibaca ulang.");
+                verifiedBytes = copyAndCount(verify, new java.io.OutputStream() {
+                    @Override public void write(int value) { destinationCrc.update(value); }
+                    @Override public void write(byte[] buffer, int offset, int length) {
+                        destinationCrc.update(buffer, offset, length);
+                    }
+                }, null);
+            }
+            if (verifiedBytes != expectedBytes || destinationCrc.getValue() != expectedCrc) {
+                throw new IOException("Verifikasi ZIP tujuan gagal: jumlah byte atau CRC32 tidak cocok.");
+            }
+            String displayName = safeName;
+            try (android.database.Cursor cursor = getContext().getContentResolver().query(
+                uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null
+            )) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int nameColumn = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (nameColumn >= 0) displayName = cursor.getString(nameColumn);
+                }
+            } catch (Exception ignored) {}
+            JSObject saved = new JSObject();
+            saved.put("saved", true);
+            saved.put("fileName", displayName);
+            saved.put("bytes", verifiedBytes);
+            saved.put("crc32", Long.toHexString(destinationCrc.getValue()));
+            saved.put("uri", uri.toString());
+            saved.put("storage", "android-system-file-picker-verified");
+            call.resolve(saved);
+        } catch (IOException | IllegalArgumentException error) {
+            if (result != null && result.getData() != null && result.getData().getData() != null) {
+                try { android.provider.DocumentsContract.deleteDocument(
+                    getContext().getContentResolver(), result.getData().getData()
+                ); } catch (Exception ignored) {}
+            }
+            call.reject("Gagal menyimpan/verifikasi backup ZIP: " + error.getMessage());
+        } finally {
+            if (staged != null && staged.exists()) staged.delete();
+        }
+    }
+
 
     /**
      * Start a bounded native transfer. Large All-Preset Base64 data is sent in
@@ -735,6 +972,58 @@ public class MG30MidiPlugin extends Plugin {
             call.resolve(result);
         } catch (IllegalArgumentException | IOException error) {
             call.reject("Gagal menghapus file NAM: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void restoreModel(PluginCall call) {
+        String fileName = call.getString("fileName", "");
+        String base64 = call.getString("base64", "");
+        if (base64.isEmpty() || base64.length() > 28 * 1024 * 1024) {
+            call.reject("Data NAM kosong atau melebihi batas aman 20 MB.");
+            return;
+        }
+        File staged = null;
+        File previous = null;
+        try {
+            byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+            if (bytes.length == 0 || bytes.length > 20 * 1024 * 1024) {
+                call.reject("Ukuran file NAM kosong atau melebihi batas 20 MB.");
+                return;
+            }
+            File target = getNamModelFile(fileName);
+            File directory = getNamModelDirectory();
+            staged = new File(directory, ".restore-" + UUID.randomUUID() + ".tmp");
+            try (FileOutputStream output = new FileOutputStream(staged, false)) {
+                output.write(bytes);
+                output.flush();
+                output.getFD().sync();
+            }
+            if (staged.length() != bytes.length) throw new IOException("Ukuran staging NAM tidak cocok.");
+            if (target.exists()) {
+                previous = new File(directory, ".previous-" + UUID.randomUUID() + ".tmp");
+                if (!target.renameTo(previous)) throw new IOException("File lama tidak dapat diamankan sebelum replace.");
+            }
+            if (!staged.renameTo(target)) {
+                if (previous != null && previous.exists()) previous.renameTo(target);
+                throw new IOException("File NAM baru tidak dapat dipasang secara atomik.");
+            }
+            if (previous != null && previous.exists() && !previous.delete()) previous.deleteOnExit();
+            JSObject result = new JSObject();
+            result.put("fileName", target.getName());
+            result.put("bytes", bytes.length);
+            result.put("replaced", true);
+            call.resolve(result);
+        } catch (IllegalArgumentException | IOException error) {
+            if (staged != null && staged.exists()) staged.delete();
+            if (previous != null && previous.exists()) {
+                try {
+                    File target = getNamModelFile(fileName);
+                    if (!target.exists()) previous.renameTo(target);
+                    else previous.delete();
+                } catch (Exception ignored) {}
+            }
+            call.reject("Gagal memulihkan file NAM: " + error.getMessage());
         }
     }
 
