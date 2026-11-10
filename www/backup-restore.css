@@ -1,0 +1,154 @@
+.backup-page {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding-bottom: 22px;
+}
+.backup-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 2px 2px;
+}
+.backup-hero h2 { margin: 3px 0 5px; }
+.backup-hero p { max-width: 620px; }
+.backup-panel {
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+  padding: clamp(14px, 3vw, 21px);
+  border: 1px solid var(--border, #293238);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #151d20, #101719);
+}
+.backup-includes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.backup-includes span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 29px;
+  padding: 5px 9px;
+  border: 1px solid #33403d;
+  border-radius: 999px;
+  color: #c2cdc8;
+  background: rgba(255,255,255,.025);
+  font-size: 10px;
+  font-weight: 700;
+}
+.backup-primary-action {
+  width: 100%;
+  min-height: 48px;
+  font-weight: 800;
+}
+.backup-privacy-note {
+  margin: 0;
+  color: #99a6a1;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.backup-file-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+.backup-restore-preview {
+  padding: 12px;
+  border: 1px solid #3b4a43;
+  border-radius: 12px;
+  background: #101819;
+  color: #dce6e1;
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.backup-restore-preview[hidden] { display: none !important; }
+.backup-restore-selections {
+  display: grid;
+  gap: 8px;
+}
+.backup-restore-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #303d3f;
+  border-radius: 13px;
+  background: rgba(255,255,255,.025);
+  cursor: pointer;
+}
+.backup-restore-option input {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  accent-color: #c5f36b;
+}
+.backup-restore-option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.backup-restore-option-copy strong {
+  color: #e8efeb;
+  font-size: 13px;
+}
+.backup-restore-option-copy small {
+  color: #93a09b;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.backup-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.backup-selection-actions button {
+  min-height: 35px;
+  padding: 7px 12px;
+  font-size: 11px;
+}
+.backup-conflict-label {
+  display: block;
+  color: #c5cec9;
+  font-size: 11px;
+  font-weight: 750;
+}
+.backup-conflict-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #39464a;
+  border-radius: 11px;
+  background: #0d1416;
+  color: #edf3f0;
+  font: inherit;
+  font-size: 12px;
+}
+.backup-restore-status {
+  min-height: 22px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.035);
+  color: #a2b0aa;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.backup-restore-status.ok { color: #d6f2a9; }
+.backup-restore-status.warn { color: #ffd19b; }
+.backup-warning { margin-top: 2px; }
+@media (max-width: 430px) {
+  .backup-hero { gap: 9px; }
+  .backup-hero > button { width: 100%; }
+  .backup-panel { padding: 13px; border-radius: 16px; }
+  .backup-restore-option { padding: 10px; }
+  .backup-restore-option-copy strong { font-size: 12px; }
+}
