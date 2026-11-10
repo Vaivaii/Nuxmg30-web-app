@@ -106,9 +106,10 @@ import {
       list.innerHTML = rows.map((file, index) => {
         const fileName = String(file.fileName || 'NAM model');
         const safeName = escapeHtml(fileName);
-        const slotOptions = Array.from({ length: 10 }, (_, slot) =>
-          '<option value="' + (slot + 1) + '"' + (slot === 0 ? ' selected' : '') + '>Slot ' + (slot + 1) + '</option>'
-        ).join('');
+        const slotOptions = '<option value="" selected>Select Slot</option>' +
+          Array.from({ length: 10 }, (_, slot) =>
+            '<option value="' + (slot + 1) + '">Slot ' + (slot + 1) + '</option>'
+          ).join('');
         return '<article class="nam-library-item" data-nam-library-file="' + safeName + '">' +
           '<div class="nam-library-item-head"><div class="nam-library-file-icon">NAM</div>' +
           '<div class="nam-library-file-copy"><strong>' + safeName + '</strong>' +
