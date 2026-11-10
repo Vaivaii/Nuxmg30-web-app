@@ -550,7 +550,8 @@ async function saveModel(index, button) {
     if (Native()) {
       const base64 = toBase64(await blob.arrayBuffer());
       const result = await NativeMidi.saveModel({ fileName, base64 });
-      setStatus('Model saved to internal app storage: ' + result.fileName + ' (' + result.bytes + ' bytes). This location is app-private; direct device transfer will be enabled after the transfer protocol is validated.');
+      window.dispatchEvent(new Event('mg30-nam-library-updated'));
+      setStatus('Model saved to NAM Library: ' + result.fileName + ' (' + result.bytes + ' bytes). It is stored locally and can be imported again at any time.');
     } else {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
@@ -561,7 +562,7 @@ async function saveModel(index, button) {
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      setStatus('Download started: ' + fileName + '. The file has not been sent to the MG-30; direct upload will be enabled after the transfer protocol is validated.');
+      setStatus('Download started: ' + fileName + '. On the Android APK, use Download Only to save models in the persistent NAM Library.');
     }
   } catch (error) {
     setStatus('Failed to save model: ' + (error?.message || error));
@@ -606,7 +607,8 @@ async function sendModel(index, button) {
     fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
     if (!/\.(nam|namb|image)$/i.test(fileName)) fileName += '.nam';
     const saved = await NativeMidi.saveModel({ fileName, base64: toBase64(modelBytes) });
-    setStatus('A2-Lite model validated (' + weightBytes.length + ' weight bytes) and saved as ' +
+    window.dispatchEvent(new Event('mg30-nam-library-updated'));
+    setStatus('A2-Lite model validated (' + weightBytes.length + ' weight bytes) and saved in NAM Library as '
       saved.fileName + '. Connecting to USB-MIDI…');
     const connection = await window.NUXNativeMidi.connect();
     const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
@@ -815,7 +817,7 @@ async function initTone3000() {
     setTimeout(initTone3000, 250);
     return;
   }
-  initLocalNamImport();
+  // Manual file import is handled by the persistent NAM Library UI.
   if (Native()) {
     try {
       await App.addListener('appUrlOpen', event => {
