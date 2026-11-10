@@ -157,8 +157,8 @@ Inspection target:
   `F0 43 58 70 6C 00 <index> 00 00 00 00 00 00 00 F7`.
 - The request loop begins with index 0 and increments the index by one. Its loop condition compares the index against a Collection-manager field at object offset `0x64C`. The original-MG30 manager constructor at `0x4B1500` initializes that field to `0x18` (24) at `0x4B1634`; therefore the original QuickTone implementation enumerates 24 Collection indices (0–23). The UI's displayed numbering / exact zero-based-to-one-based mapping still needs to be checked against a physical reply.
 - The send call at `0x4ACD41–0x4ACD5A` passes `0x3E8` (1000 ms), retry/flag value `1`, and a frame length of `0x0F` (15 bytes).
-- The response handler at `0x4ACF00`, specifically `0x4ACF3A–0x4ACF77`, matches command bytes `6C 02`, reads the index at message offset 6, then copies exactly `0x24` (36) bytes beginning at message offset 7.
-- This establishes that QuickTone expects a 36-byte per-index metadata record. It does NOT by itself establish the record's exact field layout; interpreting it as 32-byte name plus 4-byte CRC remains a hypothesis until matched to actual reply bytes and the write-side encoder.
+- The response handler at `0x4ACF00`, specifically `0x4ACF3A–0x4ACF77`, matches command bytes `6C 02`, reads the index at message offset 6, then invokes the common 7-bit decoder for exactly `0x24` (36) raw bytes. The decoder skips a two-byte preamble, so the 36 raw bytes are encoded after message offsets 7–8 (the encoded bytes begin at message offset 9), not copied literally from offset 7.
+- This establishes that QuickTone expects a 36-byte decoded per-index metadata record. It does NOT by itself establish the record's exact field layout; interpreting it as 32-byte name plus 4-byte CRC remains a hypothesis until matched to actual reply bytes and the write-side encoder.
 
 ### 2. Metadata response dispatches reads for the same Collection index
 
@@ -173,7 +173,7 @@ Inspection target:
 - Function region `0x4AD7D0–0x4AD926` builds repeated `6A 00` requests for a selected index.
 - The request carries a 16-bit block offset. The offset begins at 0 and increments by `0x20` (32) until it reaches `0x800` (2048); this yields 64 block requests for a complete 0x800-byte region.
 - Each request is sent as a 15-byte SysEx frame with the same 1000 ms timeout / flag arguments observed in the Collection metadata path.
-- The callback at `0x4AD9A0` explicitly matches `6A 02`. It copies `0x84` (132) bytes from the reply beginning at message offset 6; the first 2 bytes are used as a block offset and the remaining 128 bytes are copied into the corresponding accumulation buffer region.
+- The callback at `0x4AD9A0` explicitly matches `6A 02` and invokes the common 7-bit decoder for `0x84` (132) raw bytes after a two-byte preamble. In the decoded buffer, bytes 0–1 are not yet semantically identified, bytes 2–3 are read as the block offset, and bytes 4–131 (128 bytes) are copied into the corresponding accumulation buffer region.
 - The completion comparison checks the last block offset `0x7E0` (2016), consistent with a final 128-byte block in a 2048-byte transfer.
 - This is strong static evidence that QuickTone requests and assembles a per-index IR data payload from Collection storage. It is not yet a measured MG-30 response, and the exact payload encoding/meaning still needs validation against a captured exchange.
 
@@ -181,7 +181,7 @@ Inspection target:
 
 - Function region `0x4AD330–0x4AD4FB` builds repeated `6B 00` requests for the same selected Collection index.
 - The 16-bit request offset advances by `0x40` (64); the loop limit is read from a manager field at offset `0x670`. The original-MG30 manager constructor initializes this field to `0x258` (600) at `0x4B168E`. The request sequence therefore starts at offsets 0, 64, ..., 576; the final 64-point block extends beyond the 600-point meaningful count and must be checked for padding/trim behavior.
-- The callback at `0x4AD520` matches `6B 02`, copies `0x84` (132) bytes from the reply starting at message offset 6, reads the 16-bit block offset, and accumulates 128-byte blocks.
+- The callback at `0x4AD520` matches `6B 02` and invokes the common 7-bit decoder for `0x84` (132) raw bytes after a two-byte preamble. In the decoded buffer, bytes 0–1 remain unidentified, bytes 2–3 hold the 16-bit block offset, and bytes 4–131 carry the 128-byte data block.
 - The callback treats offset `0x0240` (576) as the final block offset. Subsequent code builds a RIFF/WAVE header (`RIFF`, `WAVE`, `fmt `, `data`) and copies `0x12C` (300) 32-bit words = 1200 bytes from the accumulation buffer into its output buffer before calling a file-writing routine.
 - This confirms a separate curve/data acquisition and WAV-formatted output path in QuickTone. The precise semantics of this generated WAV data (and how it relates to the 6A payload) should not be assumed until the full export path and an actual export file are compared.
 
@@ -200,3 +200,30 @@ Inspection target:
 - The same constructor initializes object field `0x670` to decimal 600 (`0x258`) at `0x4B168E`. The `6B` reader uses this field as its curve-point count.
 - An adjacent field at offset `0x650` is initialized to decimal 10 at `0x4B163E`; its meaning has not yet been identified and should not be labeled NAM slots without further cross-reference.
 - These constants provide static evidence for 24 Collection indices and a 600-point curve buffer in the original-MG30 QuickTone class. They do not prove that all 24 device slots are populated.
+
+
+## Follow-up static-code detail: shared MIDI 7-bit codec and response framing
+
+- The common helper at `0x4A4910` packs a 16-bit value into three 7-bit-safe MIDI bytes: high two bits (`value >> 14`), middle seven bits (`(value >> 7) & 0x7F`), then low seven bits (`value & 0x7F`). This explains the compact encoding used for index/offset fields in the read path.
+- The inverse helper at `0x4A4970` skips a two-byte preamble in its input pointer and reconstructs pairs of raw bytes from groups of three 7-bit bytes.
+- Therefore a decoded 132-byte `6A 02` / `6B 02` response should be treated as a 132-byte raw structure: 2 leading bytes with semantics not yet identified, 2-byte block offset, and 128-byte data block. Do not parse the raw MIDI payload as though the offset is at the start of the encoded payload.
+- For `6C 02`, the decoded 36-byte record follows a two-byte preamble after the per-index header; the encoded message has 54 bytes for the 36 decoded bytes. Keep the possible name/CRC split as an explicit hypothesis only.
+
+## Full supplied-capture audit against the newly discovered read commands
+
+All available submitted PCAPNG files were parsed as USBPcap endpoint traffic and unpacked into USB-MIDI SysEx messages using the NUX USB-MIDI packet grouping (three MIDI data bytes plus the CIN/status byte per USB event packet). This pass specifically searched for Collection read requests/replies `6C 00/02`, `6A 00/02`, and `6B 00/02`.
+
+- `capkoleksi.pcapng`: 150 messages; OUT has 64 `6A 01`, 1 `6C 01`, 10 `6B 01`; IN has 64 `6A 03`, 1 `6C 03`, 10 `6B 03`. No Collection read request/reply frames.
+- `ircolectionmenu dialog dan import.pcapng`: same 150-message write/ACK profile; no Collection read request/reply frames.
+- `nam import.pcapng`: 166 messages; 63 `58 01` write frames / 63 `58 03` ACK frames, plus 20 `58 00` metadata requests / 20 `58 02` metadata replies. No Collection read request/reply frames.
+- `ir user import.pcapng`: 150 messages; 64 `10 01` / 64 `10 03`, one `09 01` / `09 03`, and ten `11 01` / `11 03`; this is the separate User/Third Party write family, not Collection.
+- The remaining supplied IR Collection menu/list and IR User captures show UI/control activity but no `6C 00/02`, `6A 00/02`, or `6B 00/02` readback frames.
+- Thus the existing PCAPNG set still does not contain a physical Collection read/export exchange. This is a limitation of what was captured, not evidence that the MG-30 firmware lacks readback; QuickTone's original-MG30 code does implement such a read path.
+
+## NAM QuickTone static-analysis checkpoint
+
+- Original QuickTone 2.6.7.16 contains NAM-related file/loader strings including `loadNamFile`, `load_and_validate_nam_model`, `setLoadNamEndCallBack`, `setNamInfoCallBack`, and `NamFileThread`, plus native NAM DSP/model loader symbols.
+- The original-MG30 MIDI transmission class exposes many named methods around preset/IR/device state handling, but the currently identified symbol/type strings do not establish a NAM device-slot read/export method or model-weight response handler.
+- The local NAM loader/file-thread symbols prove QuickTone has a NAM file loading subsystem; they do not prove device-to-PC NAM export.
+- An adjacent original-MG30 Collection-manager field at object offset `0x650` is initialized to 10, but its semantic role has not been established. Do not equate this field with the ten device NAM slots without further cross-reference.
+- Current evidence therefore remains: MG-30 NAM write/import is implemented and the project reads slot metadata only; no actual device NAM weight readback has yet been identified or proven. This is an open investigation, not proof that such a command cannot exist.
