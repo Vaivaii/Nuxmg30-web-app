@@ -77,3 +77,27 @@ test('Device preset restore reuses the existing Import All transaction with full
   assert.match(backupUi, /verifiedScenes !== 384/);
   assert.match(html, /overwrites all 128 hardware preset slots/);
 });
+
+
+test('Restore starts with no selected sections and stays disabled until an explicit checkbox selection', () => {
+  assert.ok(backupUi.includes('checkbox.checked = false;'));
+  assert.ok(backupUi.includes('restoreButton.disabled = true;'));
+  assert.ok(backupUi.includes('restoreButton.disabled = busy || !archiveState || selectedRestoreSections().length === 0;'));
+  assert.ok(backupUi.includes("backupRestoreSelections')?.addEventListener('change'"));
+});
+
+test('NAM multi-file restore journals replacements/additions and rolls back on a later failure', () => {
+  assert.ok(backupUi.includes('const journal = [];'));
+  assert.ok(backupUi.includes('NativeMidi.readModel({ fileName: action.fileName })'));
+  assert.ok(backupUi.includes("journal.push({ action: 'restore'"));
+  assert.ok(backupUi.includes("journal.push({ action: 'delete'"));
+  assert.ok(backupUi.includes('for (const item of journal.reverse())'));
+  assert.ok(backupUi.includes('All earlier NAM Library changes in this batch were rolled back.'));
+});
+
+test('Local draft/settings restore uses rollback-capable localStorage updates', () => {
+  assert.ok(backupUi.includes('function applyLocalStorageTransaction(changes)'));
+  assert.ok(backupUi.includes('previous.set(key, localStorage.getItem(key))'));
+  assert.ok(backupUi.includes('previous local values were rolled back'));
+  assert.ok(backupUi.includes('applyLocalStorageTransaction(changes)'));
+});
