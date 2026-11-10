@@ -227,3 +227,24 @@ All available submitted PCAPNG files were parsed as USBPcap endpoint traffic and
 - The local NAM loader/file-thread symbols prove QuickTone has a NAM file loading subsystem; they do not prove device-to-PC NAM export.
 - An adjacent original-MG30 Collection-manager field at object offset `0x650` is initialized to 10, but its semantic role has not been established. Do not equate this field with the ten device NAM slots without further cross-reference.
 - Current evidence therefore remains: MG-30 NAM write/import is implemented and the project reads slot metadata only; no actual device NAM weight readback has yet been identified or proven. This is an open investigation, not proof that such a command cannot exist.
+
+
+## Deeper block layout recovered from the original-MG30 response handlers
+
+### 6A waveform/data path
+
+- Request function `0x4AD7D0` creates a `6A 00` frame for the requested Collection index and a 16-bit block offset.
+- It starts at offset 0, advances by `0x20` per request, and stops after offset `0x7E0` (2016). There are exactly 64 requests.
+- The common encoder `0x4A4910` serializes the two 16-bit values (index and offset) as two 3-byte 7-bit groups. The generated 15-byte SysEx frame includes the `F0 43 58 70 6A 00` prefix, two zero preamble bytes, six encoded bytes and `F7`.
+- Each `6A 02` response is decoded to 132 raw bytes. The callback obtains the block offset from decoded bytes 2–3 and copies 128 bytes (32 x 32-bit words) into the per-Collection-item accumulation region.
+- 64 blocks x 128 bytes = 8,192 bytes (`0x2000`) for one indexed item. The callback recognizes final block offset `0x7E0`; this is the strongest static indication that the 6A read returns an 8 KiB waveform/data resource.
+- The final consumer/file serialization path after the 6A accumulation is not fully resolved yet. Do not assume these 8 KiB are a standard WAV file until the downstream serializer is traced.
+
+### 6B curve path and export serialization
+
+- Request function `0x4AD330` creates `6B 00` requests using the same two-16-bit-value / 7-bit encoding shape.
+- The offset advances by `0x40` (64) points. The manager's curve count is 600, so requests cover offsets 0, 64, ..., 576 (10 blocks).
+- Each `6B 02` reply decodes to a 132-byte raw block with an unidentified 2-byte prefix, 16-bit offset, and 128 bytes of data (64 x 16-bit points).
+- The callback stores points into a 600 x 16-bit (1,200-byte) curve buffer. On the last block (offset `0x240` = 576), the code bounds writes by the manager count 600, so only the remaining 24 points of that 64-point block are retained; the trailing 40 points are outside the 600-point curve.
+- The callback constructs a RIFF/WAVE structure with `RIFF`, `WAVE`, `fmt `, audio format tag 1 (PCM), and `data`, then copies exactly `0x12C` (300) DWORDs = 1,200 bytes from the 600-point buffer before invoking its file/output writer.
+- Thus the 6B collection read is not merely a UI curve preview: it is used in a WAV serialization path. Sample rate/channel fields and whether this WAV is the full deliverable IR or a companion representation still require the full writer/caller analysis.
