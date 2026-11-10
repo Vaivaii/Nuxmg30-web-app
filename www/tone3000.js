@@ -608,7 +608,7 @@ async function sendModel(index, button) {
     if (!/\.(nam|namb|image)$/i.test(fileName)) fileName += '.nam';
     const saved = await NativeMidi.saveModel({ fileName, base64: toBase64(modelBytes) });
     window.dispatchEvent(new Event('mg30-nam-library-updated'));
-    setStatus('A2-Lite model validated (' + weightBytes.length + ' weight bytes) and saved in NAM Library as '
+    setStatus('A2-Lite model validated (' + weightBytes.length + ' weight bytes) and saved in NAM Library as ' +
       saved.fileName + '. Connecting to USB-MIDI…');
     const connection = await window.NUXNativeMidi.connect();
     const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
