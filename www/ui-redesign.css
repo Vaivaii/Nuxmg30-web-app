@@ -3092,3 +3092,136 @@ body > .app > #page-editor:not(.hidden) {
   }
 }
 
+
+
+/* Persistent NAM Library cards: visual language follows the IR Collection cards. */
+.nam-library-panel {
+  margin: 0 0 16px;
+  padding: 15px;
+  border: 1px solid #303b3d;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #151e20, #101719);
+  color: #edf3f0;
+}
+.nam-library-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.nam-library-heading { display: grid; gap: 3px; min-width: 0; }
+.nam-library-heading strong { font-size: 17px; font-weight: 800; }
+.nam-library-heading small { color: #899795; font-size: 11px; }
+.nam-library-head-actions { display: flex; gap: 7px; }
+.nam-library-head-actions button,
+.nam-library-delete {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #39464a;
+  border-radius: 11px;
+  background: #202a2f;
+  color: #edf3f0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+}
+.nam-library-head-actions button.primary,
+.nam-library-import {
+  border-color: #c5f36b !important;
+  background: #c5f36b !important;
+  color: #11190e !important;
+}
+.nam-library-status {
+  margin: 0 0 10px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: rgba(255,255,255,.035);
+  color: #9aa8a5;
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.nam-library-status.is-success { color: #dff6b7; }
+.nam-library-status.is-error { color: #ffd2a0; }
+.nam-library-list { display: grid; gap: 9px; }
+.nam-library-item {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid #2d393b;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #111819, #101512);
+}
+.nam-library-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.nam-library-file-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  background: #1b2526;
+  color: #c5f36b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .5px;
+}
+.nam-library-file-copy { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.nam-library-file-copy strong {
+  color: #edf3f0;
+  font-size: 13px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.nam-library-file-copy small { color: #899795; font-size: 10px; }
+.nam-library-delete { min-height: 32px; padding: 5px 9px; font-size: 10px; }
+.nam-library-import {
+  width: 100%;
+  min-height: 43px;
+  border: 1px solid #c5f36b;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+.nam-library-slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #9aa8a5;
+  font-size: 11px;
+}
+.nam-library-slot-row select {
+  width: min(62%, 220px);
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid #39464a;
+  border-radius: 11px;
+  background: #0d1416;
+  color: #edf3f0;
+  font: inherit;
+  font-size: 12px;
+}
+.nam-library-empty {
+  padding: 17px 12px;
+  border: 1px dashed #39464a;
+  border-radius: 13px;
+  color: #899795;
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media (max-width: 390px) {
+  .nam-library-panel { padding: 12px; }
+  .nam-library-heading strong { font-size: 15px; }
+  .nam-library-head-actions button { min-height: 36px; padding: 7px 9px; font-size: 10px; }
+  .nam-library-item { padding: 9px; }
+  .nam-library-file-icon { flex-basis: 42px; width: 42px; height: 42px; }
+}
