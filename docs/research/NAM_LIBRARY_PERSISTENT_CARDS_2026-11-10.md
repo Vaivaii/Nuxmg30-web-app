@@ -57,3 +57,22 @@ A GitHub Actions Android build is configured for this branch. Physical Android i
 The .29 package is signed with the same certificate as .28 and has a higher versionCode, so it can be installed as an in-place update without uninstalling the previous app. This preserves app-private NAM Library files. Do not uninstall or clear app data when updating.
 
 Physical installation and MG-30 hardware acceptance remain pending. Verify that pre-existing saved NAM files appear in NAM Library after updating, add a second Tone3000 model, restart the app, and import one saved model to a selected test slot.
+
+
+## Dynamic NAM/TONE3000 workspace layout correction
+
+User review of Community .29 on-device screenshots exposed two layout issues:
+- The visible NAM/TONE3000 tool pane was capped at 128px, clipping both panels.
+- The expanded TONE3000 catalogue used a fixed-position overlay, allowing the IR Collection area to sit behind it.
+
+Correction on the feature branch:
+- Visible NAM/TONE3000 panes now participate in normal page flow with no fixed 128px cap.
+- NAM Library cards remain in the pane; only the file list scrolls internally, with a larger viewport cap.
+- Expanded TONE3000 model cards remain inside the TONE3000 pane and use their own bounded internal scroll area. The catalogue is no longer fixed-position and no longer overlaps IR Collection.
+- A ResizeObserver watches the complete tools frame. When NAM Library or TONE3000 content height changes, the Collection frame height is recalculated from the remaining viewport. Closing either tab returns Collection to the original available height.
+- The existing fallback remains in place for compact WebView layouts when Collection's remaining height becomes too small.
+- The change is presentation/layout-only. NAM transfer framing, NUX MIDI mappings, IR User/Collection transfer paths, and device communication are unchanged.
+
+Regression coverage was added for the normal-flow catalogue, independent list scrolling, and ResizeObserver-driven Collection sizing.
+
+The next signed update is Community .30 / versionCode 30 so it can be installed over the prior .29 without uninstalling or clearing app data. Physical verification on the user's Android device and MG-30 remains pending.
