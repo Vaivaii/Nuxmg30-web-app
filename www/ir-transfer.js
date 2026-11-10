@@ -262,6 +262,16 @@ function initUI(){
    });
    collectionPageObserver.observe(page,{attributes:true,attributeFilter:['class']});
   }
+  // Recalculate the Collection viewport whenever the visible NAM/TONE3000 workspace
+  // gains or loses content (e.g. saved library cards or the selected TONE3000 model list).
+  // The Collection frame stays in normal flow and receives only the remaining height.
+  let toolsResizeObserver = null;
+  if (toolsFrame && typeof ResizeObserver !== 'undefined') {
+   toolsResizeObserver = new ResizeObserver(() => {
+    if(page&&!page.classList.contains('hidden'))resizeCollectionViewport();
+   });
+   toolsResizeObserver.observe(toolsFrame);
+  }
   window.addEventListener('resize',resizeCollectionViewport,{passive:true});
   window.visualViewport?.addEventListener('resize',resizeCollectionViewport);
   resizeCollectionViewport();
