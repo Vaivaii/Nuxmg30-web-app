@@ -603,13 +603,14 @@ import './backup-restore.css';
 
   function restoreSafeSettings(values, conflict) {
     const safe = sanitizeBackupSettings(values);
-    let restored = 0, skipped = 0;
+    const changes = new Map();
+    let skipped = 0;
     for (const [key, value] of Object.entries(safe)) {
       if (conflict !== 'replace' && localStorage.getItem(key) !== null) { skipped++; continue; }
-      localStorage.setItem(key, value);
-      restored++;
+      changes.set(key, value);
     }
-    return { restored, skipped };
+    applyLocalStorageTransaction(changes);
+    return { restored: changes.size, skipped };
   }
 
   async function restoreSelected(state) {
