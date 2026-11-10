@@ -60,30 +60,30 @@ test('NAM and TONE3000 expanded content stays in normal flow and pushes Collecti
   const dynamicPane = css.lastIndexOf('body.ir-collection-manager-active #page-nam .nam-ir-tool-pane:not([hidden])');
   assert.ok(dynamicPane >= 0, 'dynamic visible-pane sizing override exists');
   const paneBlock = css.slice(dynamicPane, css.indexOf('}', dynamicPane));
-  assert.match(paneBlock, /max-height:\\s*none !important/);
-  assert.match(paneBlock, /overflow:\\s*visible !important/);
+  assert.ok(paneBlock.includes('max-height: none !important;'));
+  assert.ok(paneBlock.includes('overflow: visible !important;'));
 
   const expanded = css.lastIndexOf('body.ir-collection-manager-active #page-nam .nam-ir-tone-pane .t3k-catalogue.is-expanded {');
   assert.ok(expanded >= 0, 'expanded catalogue flow override exists');
   const expandedBlock = css.slice(expanded, css.indexOf('}', expanded));
-  assert.match(expandedBlock, /position:\\s*relative !important/);
-  assert.match(expandedBlock, /display:\\s*block !important/);
-  assert.match(expandedBlock, /height:\\s*auto !important/);
+  assert.ok(expandedBlock.includes('position: relative !important;'));
+  assert.ok(expandedBlock.includes('display: block !important;'));
+  assert.ok(expandedBlock.includes('height: auto !important;'));
   assert.doesNotMatch(expandedBlock, /position:\\s*fixed/);
 
   const modelList = css.lastIndexOf('body.ir-collection-manager-active #page-nam .nam-ir-tone-pane .t3k-catalogue.is-expanded #t3kModelList {');
   assert.ok(modelList >= 0, 'expanded model list has an internal scroll area');
   const modelBlock = css.slice(modelList, css.indexOf('}', modelList));
-  assert.match(modelBlock, /max-height:\\s*min\\(38dvh, 440px\\) !important/);
-  assert.match(modelBlock, /overflow-y:\\s*auto !important/);
+  assert.ok(modelBlock.includes('max-height: min(38dvh, 440px) !important;'));
+  assert.ok(modelBlock.includes('overflow-y: auto !important;'));
 });
 
 test('NAM Library has a larger independent list scroller and pane changes resize Collection', () => {
   const libraryList = css.lastIndexOf('body.ir-collection-manager-active #page-nam .nam-library-list {');
   assert.ok(libraryList >= 0, 'NAM Library list sizing override exists');
   const listBlock = css.slice(libraryList, css.indexOf('}', libraryList));
-  assert.match(listBlock, /max-height:\\s*min\\(38dvh, 440px\\)/);
-  assert.match(listBlock, /overflow-y:\\s*auto/);
+  assert.ok(listBlock.includes('max-height: min(38dvh, 440px);'));
+  assert.ok(listBlock.includes('overflow-y: auto;'));
   assert.ok(irTransfer.includes('new ResizeObserver(() => {'));
   assert.ok(irTransfer.includes('toolsResizeObserver.observe(toolsFrame)'));
 });
