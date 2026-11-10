@@ -40,3 +40,20 @@ Removed the obsolete statement that direct transfer would only be enabled after 
 Automated tests are added in `tests/nam-model-library-ui.test.js` for the UI contract, storage operations, collision-safe filenames, reuse of the verified transfer flow, and updated TONE3000 status copy.
 
 A GitHub Actions Android build is configured for this branch. Physical Android installation and a real MG-30 import remain required before hardware acceptance.
+
+
+## CI and signed APK verification
+
+- Debug APK workflow: [run 42761139655](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42761139655) — 369 tests passed, 0 failed; Capacitor Android generation succeeded; Gradle `BUILD SUCCESSFUL`.
+- Signed Community candidate workflow: [run 42761435635](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42761435635) — all jobs succeeded, including release keystore validation, signed APK build, APK signature/package/checksum verification, and artifact upload.
+- Signed build source commit: `1bda82f574594e547b821fae6429ed80e969fa80`.
+- Artifact ID: `13738325623`; name: `MG30-Studio-Community-Signed-Candidate`.
+- Package: `com.vaivaii.mg30studio`; version: `1.0.0-community.29`; versionCode: `29`.
+- APK size: `3,575,190 bytes`.
+- APK SHA-256: `068070f6301f5da4e41ed5f688aec77930ca9b70721d64a6320361e2aa87f3d5`.
+- APK signature: V2 valid, one RSA-4096 signer. Certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b` (same certificate used for Community .28).
+- Artifact ZIP SHA-256: `2de878ff0ca15d395496e072c042acced2a2f8a3a090c3838b30fbdc19423fb6`.
+
+The .29 package is signed with the same certificate as .28 and has a higher versionCode, so it can be installed as an in-place update without uninstalling the previous app. This preserves app-private NAM Library files. Do not uninstall or clear app data when updating.
+
+Physical installation and MG-30 hardware acceptance remain pending. Verify that pre-existing saved NAM files appear in NAM Library after updating, add a second Tone3000 model, restart the app, and import one saved model to a selected test slot.
