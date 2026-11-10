@@ -592,7 +592,7 @@ public class MG30MidiPlugin extends Plugin {
     public void saveModel(PluginCall call) {
         String fileName = call.getString("fileName", "tone-model.nam");
         String base64 = call.getString("base64", "");
-        if (base64.isEmpty() || base64.length() > 8 * 1024 * 1024) {
+        if (base64.isEmpty() || base64.length() > 28 * 1024 * 1024) {
             call.reject("Data model kosong atau terlalu besar.");
             return;
         }
@@ -600,6 +600,10 @@ public class MG30MidiPlugin extends Plugin {
         if (safeName.isEmpty()) safeName = "tone-model.nam";
         try {
             byte[] bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+            if (bytes.length == 0 || bytes.length > 20 * 1024 * 1024) {
+                call.reject("Ukuran file NAM kosong atau melebihi batas 20 MB.");
+                return;
+            }
             File directory = new File(getContext().getFilesDir(), "nam-models");
             if (!directory.exists() && !directory.mkdirs()) {
                 call.reject("Folder penyimpanan model tidak dapat dibuat.");
