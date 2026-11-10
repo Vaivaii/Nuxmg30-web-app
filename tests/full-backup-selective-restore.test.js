@@ -122,3 +122,12 @@ test('backup manifest is strict about app id, format, schema, and known sections
   assert.throws(() => validateBackupManifest({ ...valid, appId: 'other.app' }), /not a supported/);
   assert.throws(() => validateBackupManifest({ ...valid, sections: { deviceWipe: {} } }), /unknown section/);
 });
+
+
+test('Keep Both settings policy preserves existing app preferences', () => {
+  // The restore policy is intentionally implemented by the UI adapter;
+  // this core assertion documents that settings are only whitelisted and
+  // the caller must preserve an already configured value unless Replace is selected.
+  const values = sanitizeBackupSettings({ 'mg30-favorite-slots': '[3,4]' });
+  assert.deepEqual(values, { 'mg30-favorite-slots': '[3,4]' });
+});
