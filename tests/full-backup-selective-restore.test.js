@@ -66,6 +66,9 @@ test('NAM restore plans keep, replace, or retain both without filename collision
   assert.deepEqual(planNamRestore([files[0]], ['amp.nam'], 'keep-both'), [
     { action: 'keep-both', fileName: 'amp.nam', destination: 'amp (2).nam' }
   ]);
+  assert.deepEqual(planNamRestore([{ fileName: 'amp (2).nam' }], [], 'keep-both'), [
+    { action: 'create', fileName: 'amp (2).nam', destination: 'amp (2).nam' }
+  ]);
   assert.deepEqual(planNamRestore(
     [{ fileName: 'amp.nam' }, { fileName: 'amp (2).nam' }],
     ['amp.nam'],
