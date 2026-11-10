@@ -2256,7 +2256,40 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
   </div>
 </div>
 <div id="tone3000SettingsMount"></div></section>
-<section id="page-backup" class="hidden"><div class="hero"><div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup & Restore</h2><p>Ekspor atau impor draft preset dalam JSON.</p></div><button class="btn" id="backToDevice">← Device & Settings</button></div><div class="panel"><div class="panel-head"><div><h3>Backup lokal</h3><p>File ini bukan dump preset hardware.</p></div></div><button class="btn primary" id="backupBtn">Ekspor semua preset</button> <label class="btn" for="importFile">Impor JSON</label><input class="hidden" type="file" id="importFile" accept=".json,application/json"><div class="notice"><b>Catatan:</b> backup berisi format kerja prototipe MG30 Studio. Simpan file di tempat aman.</div></div></section>
+<section id="page-backup" class="hidden backup-page">
+ <header class="hero backup-hero">
+  <div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup &amp; Restore</h2><p>One verified ZIP for your MG-30 preset bank and local libraries.</p></div>
+  <button class="btn" id="backToDevice" type="button">← Device &amp; Settings</button>
+ </header>
+ <section class="panel backup-panel">
+  <div class="panel-head"><div><h3>Full App Backup</h3><p>Read the connected original MG-30 bank, then package your libraries and app data into one ZIP.</p></div></div>
+  <div class="backup-includes">
+   <span>128 device presets</span><span>NAM Library</span><span>IR Collection WAVs</span><span>Local preset drafts</span><span>Safe app settings</span>
+  </div>
+  <button class="btn primary backup-primary-action" id="fullBackupCreate" type="button">Create Full Backup (.zip)</button>
+  <p class="backup-privacy-note">Requires the original MG-30 Gen 2 connected via USB OTG. Preset bank reading is read-only. API keys and Tone3000 authentication tokens are excluded.</p>
+ </section>
+ <section class="panel backup-panel backup-restore-panel">
+  <div class="panel-head"><div><h3>Selective Restore</h3><p>Choose a Full Backup ZIP. Inspect its contents, then restore only the sections you need.</p></div></div>
+  <label class="btn backup-file-picker" for="backupRestoreFile">Choose Backup ZIP</label>
+  <input class="hidden" type="file" id="backupRestoreFile" accept=".zip,application/zip,application/x-zip-compressed">
+  <div id="backupRestorePreview" class="backup-restore-preview" hidden></div>
+  <div id="backupRestoreSelections" class="backup-restore-selections" aria-label="Backup sections to restore"></div>
+  <div class="backup-selection-actions">
+   <button class="btn" id="backupRestoreSelectAll" type="button">Select All</button>
+   <button class="btn" id="backupRestoreClearAll" type="button">Clear All</button>
+  </div>
+  <label class="backup-conflict-label" for="backupRestoreConflict">How should existing data be handled?</label>
+  <select id="backupRestoreConflict" class="backup-conflict-select">
+   <option value="keep-both" selected>Keep Both — preserve existing data</option>
+   <option value="keep-existing">Keep Existing — skip conflicts</option>
+   <option value="replace">Replace — overwrite conflicts</option>
+  </select>
+  <button class="btn primary backup-primary-action" id="backupRestoreStart" type="button" disabled>Restore Selected</button>
+  <div id="backupRestoreStatus" class="backup-restore-status" role="status" aria-live="polite">No backup selected.</div>
+  <div class="notice backup-warning"><b>Important:</b> Restoring the MG-30 Preset Bank overwrites all 128 hardware preset slots and any embedded User IR resources in the backup. NAM Library and IR Collection files are restored to this app only; they are not automatically sent to the pedal.</div>
+ </section>
+</section>
 </div><div id="toast" class="toast"></div>
 <script type="module" src="./pedal-reference-artwork.js"></script>
 <script>
@@ -4859,7 +4892,7 @@ function showPage(p){
 }
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
-document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('backupBtn').onclick=()=>download('mg30-studio-backup.json',presets);$('search').oninput=renderPresets;$('importFile').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());presets=Array.isArray(d)?d:[...presets,{id:String(Date.now()),name:d.name||'Imported preset',date:new Date().toISOString(),states:d.states||states,selected:d.selected||3}];persist();renderPresets();toast('Impor selesai')}catch{toast('File JSON tidak valid')}e.target.value=''};$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let ok='requestMIDIAccess'in navigator;$('midiSupport').textContent=ok?'API tersedia':'Tidak tersedia';toast(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API')};$('midiSupport').textContent=('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia';
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('search').oninput=renderPresets;$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let ok='requestMIDIAccess'in navigator;$('midiSupport').textContent=ok?'API tersedia':'Tidak tersedia';toast(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API')};$('midiSupport').textContent=('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia';
 
 function renderNamProfile(profile){
  const holder=$("namProfileResult");if(!holder)return;
@@ -5628,7 +5661,7 @@ window.MG30CtrlBridge=Object.freeze({
   }
 })();
 </script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
   const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];
