@@ -262,3 +262,24 @@ Interpretation:
 - This corroborates that QuickTone 2.6.7.16 has a user-visible Collection Export feature in its resources, consistent with the `6A`/`6B` read-and-file-output code path.
 - The strings alone do not prove which slot selection triggers export, whether export is per-item or batch, nor the exact file extension/content. Those points must be traced through the UI event handler and confirmed with a PCAP plus exported file.
 - NAM file chooser strings establish that QuickTone can load/select local `.nam` / `.namb` files. They do not establish a device-to-PC NAM export function.
+
+
+## Physical validation plan for the newly identified Collection Export path
+
+The existing PCAPNG set cannot validate the readback commands. The next capture should be a dedicated read-only QuickTone Collection export, not another import:
+
+1. Use the original MG-30 Gen 2 on firmware 6.0.x and QuickTone 2.6.7.16. Do not use MKII.
+2. Start USBPcap/Wireshark capture before opening the Collection view. Capture both host-to-device and device-to-host USB-MIDI endpoints.
+3. Open IR Collection and note the displayed slot number and visible IR name for one known populated slot. Do not press Use, overwrite, delete, or import.
+4. Trigger the UI action labelled `COLLECTION EXPORT` / `Export the IR File.` for that one slot only. Save the exported file unchanged.
+5. Stop capture after the export dialog reports completion. Preserve the original PCAPNG and exported file; do not trim or re-save the capture.
+6. Repeat for one known empty slot only if QuickTone permits selecting/exporting it without any write action. This will reveal empty-slot response behavior; do not create a test IR merely to fill it.
+
+Required evidence to compare:
+- `6C 00` request indices and `6C 02` replies, decoded to the expected 36-byte records.
+- Whether each metadata reply triggers `6A 00` and `6B 00` reads for the same index.
+- 64 `6A` data blocks per item (offsets 0..2016 in steps of 32) and 10 `6B` blocks (offsets 0..576 in steps of 64), including device responses and any retry/timeout behavior.
+- Exact zero-based index to UI slot-number mapping.
+- Exported file size, RIFF/WAVE header, sample format/rate/channels, and byte relationship to the accumulated `6A` and `6B` buffers.
+
+Safety: this is a read/export-only test. Do not invoke any import, delete, Use, or write action. A missing reply is a failed observation, not permission to try speculative writes. If a capture cannot be performed now, the static-code discovery remains useful but Collection device backup must remain marked as pending hardware validation.
