@@ -46,26 +46,31 @@ function uniqueName(fileName, used) {
 export function planNamRestore(files, existingNames, conflict = 'keep-both') {
   if (!Array.isArray(files)) throw new TypeError('NAM restore list must be an array.');
   if (!['keep-existing', 'replace', 'keep-both'].includes(conflict)) throw new Error('Unknown NAM conflict policy.');
-  const used = new Set(Array.from(existingNames || [], value => String(value).toLowerCase()));
+  const existing = new Set(Array.from(existingNames || [], value => String(value).toLowerCase()));
   const incoming = new Set();
-  const actions = [];
-  for (const file of files) {
+  const reserved = new Set(existing);
+  const normalized = files.map(file => {
     const fileName = safeFileName(file.fileName);
     if (!/\.(nam|namb|image)$/i.test(fileName)) throw new Error('Unsupported NAM Library file: ' + fileName);
     const lower = fileName.toLowerCase();
     if (incoming.has(lower)) throw new Error('Backup contains duplicate NAM file names: ' + fileName);
     incoming.add(lower);
-    const exists = used.has(lower);
+    reserved.add(lower);
+    return { file, fileName, lower };
+  });
+  const actions = [];
+  for (const item of normalized) {
+    const { fileName, lower } = item;
+    const exists = existing.has(lower);
     if (exists && conflict === 'keep-existing') {
       actions.push({ action: 'skip', fileName, reason: 'Existing file kept' });
     } else if (exists && conflict === 'replace') {
       actions.push({ action: 'replace', fileName });
     } else if (exists) {
-      const destination = uniqueName(fileName, used);
-      used.add(destination.toLowerCase());
+      const destination = uniqueName(fileName, reserved);
+      reserved.add(destination.toLowerCase());
       actions.push({ action: 'keep-both', fileName, destination });
     } else {
-      used.add(lower);
       actions.push({ action: 'create', fileName, destination: fileName });
     }
   }
@@ -75,15 +80,21 @@ export function planNamRestore(files, existingNames, conflict = 'keep-both') {
 export function planIRRestore(records, existingSlots, conflict = 'keep-both') {
   if (!Array.isArray(records)) throw new TypeError('IR restore list must be an array.');
   if (!['keep-existing', 'replace', 'keep-both'].includes(conflict)) throw new Error('Unknown IR conflict policy.');
-  const used = new Set(Array.from(existingSlots || [], Number).filter(slot => Number.isInteger(slot) && slot >= 1 && slot <= 24));
+  const existing = new Set(Array.from(existingSlots || [], Number).filter(slot => Number.isInteger(slot) && slot >= 1 && slot <= 24));
   const sourceSlots = new Set();
-  const actions = [];
-  for (const record of records) {
+  const normalized = records.map(record => {
     const sourceSlot = Number(record.slot);
     if (!Number.isInteger(sourceSlot) || sourceSlot < 1 || sourceSlot > 24) throw new Error('Backup contains an invalid IR Collection slot.');
     if (sourceSlots.has(sourceSlot)) throw new Error('Backup contains duplicate IR Collection slot ' + sourceSlot + '.');
     sourceSlots.add(sourceSlot);
-    if (used.has(sourceSlot)) {
+    return { record, sourceSlot };
+  });
+  // Reserve all incoming source slots before allocating duplicates. This prevents
+  // an early conflict from stealing a later record's original empty destination.
+  const reserved = new Set([...existing, ...sourceSlots]);
+  const actions = [];
+  for (const { sourceSlot } of normalized) {
+    if (existing.has(sourceSlot)) {
       if (conflict === 'keep-existing') {
         actions.push({ action: 'skip', sourceSlot, reason: 'Existing Collection slot kept' });
       } else if (conflict === 'replace') {
@@ -91,17 +102,16 @@ export function planIRRestore(records, existingSlots, conflict = 'keep-both') {
       } else {
         let destinationSlot = 0;
         for (let slot = 1; slot <= 24; slot++) {
-          if (!used.has(slot)) { destinationSlot = slot; break; }
+          if (!reserved.has(slot)) { destinationSlot = slot; break; }
         }
         if (!destinationSlot) {
           actions.push({ action: 'skip', sourceSlot, reason: 'No empty Collection slot for a second copy' });
         } else {
-          used.add(destinationSlot);
+          reserved.add(destinationSlot);
           actions.push({ action: 'keep-both', sourceSlot, destinationSlot });
         }
       }
     } else {
-      used.add(sourceSlot);
       actions.push({ action: 'create', sourceSlot, destinationSlot: sourceSlot });
     }
   }
