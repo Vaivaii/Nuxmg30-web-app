@@ -4425,3 +4425,44 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - First run [42678706851](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678706851) stopped on legacy test expectations only: two assertions expected the former inline dock arithmetic and two expected the prior cache token. The newly added viewport geometry tests passed.
 - Test-only correction commit: `c73644bfff2a90075d72062a143b6974dbecb172`.
 - Final successful run: [42678936798](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678936798).
+
+
+
+## Session resumption audit — 10 November 2026
+
+### Repository state verified before this note
+- Repository: `Vaivaii/Nuxmg30-web-app`.
+- Working branch: `feature/editor-reference-one-screen`.
+- Branch HEAD before this documentation update: `add904b0dfa72bf48157609c34491219e0c9fa32`.
+- The source/build commit immediately before that HEAD: `c73644bfff2a90075d72062a143b6974dbecb172`.
+- The single commit between the source/build commit and branch HEAD was documentation-only: it modified `UI_POLISH_CHECKLIST.md` and `docs/research/MG30_STUDIO_DAW_COMPACT_TIMELINE_LAYOUT_2026-11-09.md`. No production source changed after the .28 build.
+- Community .20 commit `437d48692d717db9ee5cb5738cff5adbf8bb1f96` is no longer the current project state. The branch contains 24 commits after that baseline, through Community .28 and its documentation/test follow-ups.
+
+### Latest verified release candidate
+- Latest successful GitHub Actions run at the time of this audit: [Run 42678936798](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678936798), run #83, testing source commit `c73644bfff2a90075d72062a143b6974dbecb172`.
+- Community version: `1.0.0-community.28`; versionCode `28`.
+- Regression suite: **370 passed, 0 failed**.
+- Android Gradle Release: `BUILD SUCCESSFUL`.
+- Package: `com.vaivaii.mg30studio`; min SDK 24; target SDK 36.
+- APK Signature Scheme v2: verified true; one RSA 4096-bit signer. Signing certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`.
+- APK SHA-256: `2f337d2a262026566fef45f89b3669ab9bf0663e6eea619829f254ccda769f56`.
+- Audit artifact: `MG30-Studio-Community-Signed-Candidate`, ID `13700419799`; artifact ZIP SHA-256: `2232bb91cb7a6e0a2973d0ed5185e00d98924ab65b9f8223f4b3e3fe606721e5`.
+- The artifact is present in the successful Actions run. This audit did not download or independently re-extract the APK again; the checksum/signature/package verification above is recorded from the run log and existing project report.
+
+### Changes after Community .20 and protected areas
+- Community .21–.23 addressed the mobile IR Collection/Preset viewport and bottom-frame layout. Community .24–.27 refined Studio DAW timeline/toolbar controls. Community .28 adapted Studio Timeline sizing to the inset-adjusted WebView viewport for Android gesture and three-button navigation.
+- Comparing .20 to the current branch shows changes in UI/CSS, tests, workflow metadata and Studio viewport/layout files. No NAM transfer implementation or MIDI mapping source file appears in the changed-file list.
+- `www/ir-transfer.js` is listed as changed because Community .22/.23 adjusted Collection viewport layout. A direct comparison of its relevant section at .20 and current HEAD shows only changes inside `clearCollectionViewport()` and `resizeCollectionViewport()`: remove the measured frame-height CSS variable on exit, and calculate/set that variable from the Collection frame top and Android navigation top. The IR packet builder/sender area was not changed by this viewport patch.
+- No changes were made during this session to application source, IR transfer protocol, ACK/retry, WAV payload generation, transfer parameter semantics, the 24-slot mapping, NAM, TONE3000, preset data operations, MIDI mappings, USB-MIDI or audio routing.
+
+### Current protected technical understanding
+- Target remains original NUX MG-30 Gen 2, firmware 6.0.x; do not use MKII assumptions.
+- Keep User/Third Party and Collection IR as separate workflows. The supplied capture analysis identifies User as `10 01 / 09 01 / 11 01` and Collection as `6A 01 / 6C 01 / 6B 01`; preserve their separate command families.
+- The IR capture validation confirms offline byte-level reproduction for the tested reference WAV/captures. It does not prove that a custom sender has completed a generic import successfully on the physical pedal. Parameter semantics and the final 40-word curve-packet tail remain unresolved as described in the IR research reports.
+- Preserve the already-working NAM import/model/library and the existing MIDI mapping. Do not refactor transfer or mapping code to address visual-only requests.
+
+### Remaining acceptance / next-session starting point
+- Physical-device visual/touch acceptance of Community .28 is still pending: install on the original MG-30 Gen 2 and compare Studio Timeline in both Android gesture-navigation and three-button-navigation modes. Verify the dock stays above app navigation, all four tracks remain reachable, and compact-height scrolling does not hide the last lane.
+- The Community .23 Collection frame correction and the current Preset frame/fade behavior also require physical WebView review if the user has not already confirmed them.
+- CI success is not physical-device acceptance. Do not claim the .28 layout is verified on the handset until the user reports the actual-device result.
+- No source build was requested or run as part of this session-resumption audit. The latest usable release candidate remains Community .28 built from `c73644bfff2a90075d72062a143b6974dbecb172`; branch HEAD was documentation-only `add904b0dfa72bf48157609c34491219e0c9fa32` before this note.
