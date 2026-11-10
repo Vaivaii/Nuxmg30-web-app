@@ -98,7 +98,7 @@ It does not currently back up device NAM model weights or device Collection WAVs
 
 ### Not confirmed (after static-code discovery)
 - Whether the physical MG-30 firmware 6.0.x unit responds successfully to these QuickTone read requests in every slot state. Current submitted captures do not include the read transactions or replies.
-- Whether QuickTone's dynamic collection count corresponds to 24 on every firmware/device configuration. The static loop reads the count stored in the Collection manager; the value and slot-index base have not yet been confirmed.
+- Whether firmware 6.0.x actually exposes all 24 initialized Collection indices as independent readable entries, including empty slots, and how the index 0–23 values map to the QuickTone UI's displayed slot numbers.
 - The exact semantic layout and byte order of the 36-byte `6C 02` record (name/CRC split remains to be verified against a response and the write-side layout).
 - Whether the 6A waveform payload and 6B curve payload together form the complete exportable WAV representation, and the exact conversion/normalization rules.
 - A fully verified device Collection restore transaction with exact original slot placement and content readback comparison.
@@ -155,7 +155,7 @@ Inspection target:
 
 - At `0x4ACCCB–0x4ACCE4`, QuickTone builds a 15-byte SysEx request:
   `F0 43 58 70 6C 00 <index> 00 00 00 00 00 00 00 F7`.
-- The request loop begins with index 0 and increments the index by one. Its loop condition compares the index against a Collection-manager field at object offset `0x64C`; therefore the function reads the runtime Collection count rather than containing an obvious hard-coded 24 in this loop.
+- The request loop begins with index 0 and increments the index by one. Its loop condition compares the index against a Collection-manager field at object offset `0x64C`. The original-MG30 manager constructor at `0x4B1500` initializes that field to `0x18` (24) at `0x4B1634`; therefore the original QuickTone implementation enumerates 24 Collection indices (0–23). The UI's displayed numbering / exact zero-based-to-one-based mapping still needs to be checked against a physical reply.
 - The send call at `0x4ACD41–0x4ACD5A` passes `0x3E8` (1000 ms), retry/flag value `1`, and a frame length of `0x0F` (15 bytes).
 - The response handler at `0x4ACF00`, specifically `0x4ACF3A–0x4ACF77`, matches command bytes `6C 02`, reads the index at message offset 6, then copies exactly `0x24` (36) bytes beginning at message offset 7.
 - This establishes that QuickTone expects a 36-byte per-index metadata record. It does NOT by itself establish the record's exact field layout; interpreting it as 32-byte name plus 4-byte CRC remains a hypothesis until matched to actual reply bytes and the write-side encoder.
@@ -180,7 +180,7 @@ Inspection target:
 ### 4. IR curve acquisition: `6B 00` → `6B 02`
 
 - Function region `0x4AD330–0x4AD4FB` builds repeated `6B 00` requests for the same selected Collection index.
-- The 16-bit request offset advances by `0x40` (64); the loop limit is read from a manager field at offset `0x670`. The code also sizes/clears an accumulation buffer using this runtime count.
+- The 16-bit request offset advances by `0x40` (64); the loop limit is read from a manager field at offset `0x670`. The original-MG30 manager constructor initializes this field to `0x258` (600) at `0x4B168E`. The request sequence therefore starts at offsets 0, 64, ..., 576; the final 64-point block extends beyond the 600-point meaningful count and must be checked for padding/trim behavior.
 - The callback at `0x4AD520` matches `6B 02`, copies `0x84` (132) bytes from the reply starting at message offset 6, reads the 16-bit block offset, and accumulates 128-byte blocks.
 - The callback treats offset `0x0240` (576) as the final block offset. Subsequent code builds a RIFF/WAVE header (`RIFF`, `WAVE`, `fmt `, `data`) and copies `0x12C` (300) 32-bit words = 1200 bytes from the accumulation buffer into its output buffer before calling a file-writing routine.
 - This confirms a separate curve/data acquisition and WAV-formatted output path in QuickTone. The precise semantics of this generated WAV data (and how it relates to the 6A payload) should not be assumed until the full export path and an actual export file are compared.
@@ -192,3 +192,11 @@ Inspection target:
 - Do NOT implement these requests in MG30 Studio yet. First establish that the original MG-30 Gen 2 6.0.x pedal responds, determine error/empty-slot behavior, discover the true slot count and index mapping, and validate exact bytes/CRC/content.
 - The existing Collection write paths `6A 01`, `6C 01`, and `6B 01` remain untouched. No User/Third Party `10/09/11`, NAM import, MIDI, or preset code has been modified.
 - This discovery does not yet close the device Collection backup acceptance criteria: no physical readback capture or byte-identical restore comparison exists yet.
+
+
+### 6. Static constants in the original-MG30 Collection manager
+
+- Constructor/disassembly at `0x4B1500–0x4B1698` initializes the Collection count field at object offset `0x64C` to decimal 24 (`0x18`) at `0x4B1634`. This is the same field used by the `6C 00` per-index enumeration loop.
+- The same constructor initializes object field `0x670` to decimal 600 (`0x258`) at `0x4B168E`. The `6B` reader uses this field as its curve-point count.
+- An adjacent field at offset `0x650` is initialized to decimal 10 at `0x4B163E`; its meaning has not yet been identified and should not be labeled NAM slots without further cross-reference.
+- These constants provide static evidence for 24 Collection indices and a 600-point curve buffer in the original-MG30 QuickTone class. They do not prove that all 24 device slots are populated.
