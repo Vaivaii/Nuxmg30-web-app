@@ -14,6 +14,7 @@ import { parseMG30AllPresetPatch } from './mg30-preset-format.js';
 import { buildMG30AllPresetImportPlan } from './mg30-preset-all-import.js';
 import { extractMG30A2LiteWeights } from './nam-transfer.js';
 import { readMG30IRWav } from './ir-transfer.js';
+import './backup-restore.css';
 
 (() => {
   'use strict';
