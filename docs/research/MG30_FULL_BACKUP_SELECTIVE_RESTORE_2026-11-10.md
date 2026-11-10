@@ -68,3 +68,22 @@ Automated coverage:
 - Existing repository protocol regression suite.
 
 Signed candidate target: Community .31 / versionCode 31 (same signing certificate lineage as the prior Community builds). Physical device and MG-30 acceptance must be recorded after installation.
+
+
+## Final signed build and regression verification
+
+- Final source commit used for APK: `6fb8e8ed639acf357dfc19288590d105fde9b5de`.
+- Final docs-only commit after packaging: recorded on branch head separately; no app code changed after the APK source commit.
+- Debug workflow: [run 42773565267](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42773565267) — tests, Android project generation, Gradle debug build and artifact upload succeeded.
+- Signed Community workflow: [run 42773565348](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42773565348) — all jobs succeeded, including keystore validation, signed Gradle release, APK identity/signature/checksum verification and audit upload.
+- Regression result: 391 passed, 0 failed.
+- Gradle: `BUILD SUCCESSFUL in 1m 40s`.
+- Package: `com.vaivaii.mg30studio`; version `1.0.0-community.31`; versionCode `31`.
+- APK size: `3,589,770 bytes`.
+- APK SHA-256: `ff3b661d41e85f4b23852a9b533575fac05ef43f2a2e07cd67830df585fb5f0c`.
+- Signature: APK Signature Scheme V2 valid; one RSA-4096 signer. Certificate SHA-256 `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`, matching the previous Community signing certificate.
+- Audit artifact ID: `13743395561`; ZIP SHA-256: `bfa14e577dcb5ef672b877cdebadb6327df640699b14280a90a61bb1a0383810`.
+
+The APK was downloaded from the Actions audit artifact, extracted, and independently checked against its SHA-256 file. Its package/version metadata and V2 signer details were inspected locally. The bundled WebView JavaScript was also checked for the Full Backup ZIP, Selective Restore UI, NAM rollback, and localStorage rollback code paths.
+
+No physical Android phone or MG-30 was connected to the build runner. Hardware acceptance remains a user-side test after installing the signed .31 update. Install over the existing app without uninstalling or clearing app data.
