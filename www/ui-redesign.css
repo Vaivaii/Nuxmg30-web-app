@@ -3250,3 +3250,10 @@ body.ir-collection-layout-fallback .nam-ir-tone-pane .t3k-card {
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+body.ir-collection-manager-active #page-nam .nam-ir-nam-pane > #namModelLibrary,
+body.ir-collection-layout-fallback #page-nam .nam-ir-nam-pane > #namModelLibrary {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
