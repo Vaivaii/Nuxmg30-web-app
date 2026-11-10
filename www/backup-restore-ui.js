@@ -442,20 +442,43 @@ import './backup-restore.css';
     return output;
   }
 
+  function applyLocalStorageTransaction(changes) {
+    const entries = Array.from(changes.entries());
+    const previous = new Map();
+    try {
+      for (const [key, value] of entries) {
+        previous.set(key, localStorage.getItem(key));
+        localStorage.setItem(key, value);
+      }
+    } catch (error) {
+      for (const [key] of entries.slice().reverse()) {
+        if (!previous.has(key)) continue;
+        const oldValue = previous.get(key);
+        try {
+          if (oldValue === null) localStorage.removeItem(key);
+          else localStorage.setItem(key, oldValue);
+        } catch {}
+      }
+      throw new Error('Local restore failed; previous local values were rolled back. ' +
+        (error?.message || error));
+    }
+  }
+
   function restoreLocalDrafts(incoming, conflict) {
     const current = parseStoredJson(DRAFTS_KEY, []);
     if (!Array.isArray(current)) throw new Error('Current local preset drafts are invalid; no drafts were changed.');
     const merged = mergePresetDrafts(current, incoming.presets, conflict);
-    localStorage.setItem(DRAFTS_KEY, JSON.stringify(merged));
+    const changes = new Map();
+    changes.set(DRAFTS_KEY, JSON.stringify(merged));
 
     const active = parseStoredJson(ACTIVE_DRAFT_KEY, null);
     if (incoming.activeDraft && typeof incoming.activeDraft === 'object') {
       if (conflict === 'replace' || !active) {
-        localStorage.setItem(ACTIVE_DRAFT_KEY, JSON.stringify(incoming.activeDraft));
+        changes.set(ACTIVE_DRAFT_KEY, JSON.stringify(incoming.activeDraft));
       } else if (conflict === 'keep-both') {
         const restored = { ...incoming.activeDraft, name: String(incoming.activeDraft.name || 'Draft') + ' (Restored Draft)' };
         merged.push({ id: 'restored-active-' + Date.now(), date: new Date().toISOString(), ...restored });
-        localStorage.setItem(DRAFTS_KEY, JSON.stringify(merged));
+        changes.set(DRAFTS_KEY, JSON.stringify(merged));
       }
     }
 
@@ -465,7 +488,7 @@ import './backup-restore.css';
       if (!Number.isInteger(slot) || slot < 0 || slot > 127 || !Array.isArray(incomingHistory)) continue;
       const key = SLOT_BACKUP_PREFIX + slot;
       if (conflict === 'replace') {
-        localStorage.setItem(key, JSON.stringify(incomingHistory.slice(0, 3)));
+        changes.set(key, JSON.stringify(incomingHistory.slice(0, 3)));
       } else {
         const currentHistory = priorBackups[slotText] || [];
         const byFingerprint = new Set(currentHistory.map(item => item?.createdAt + '|' + item?.operation));
@@ -474,9 +497,10 @@ import './backup-restore.css';
           const fingerprint = item?.createdAt + '|' + item?.operation;
           if (!byFingerprint.has(fingerprint)) { combined.push(item); byFingerprint.add(fingerprint); }
         }
-        localStorage.setItem(key, JSON.stringify(combined.slice(0, 3)));
+        changes.set(key, JSON.stringify(combined.slice(0, 3)));
       }
     }
+    applyLocalStorageTransaction(changes);
     return { drafts: incoming.presets.length, totalDrafts: merged.length };
   }
 
@@ -485,24 +509,50 @@ import './backup-restore.css';
     const current = await NativeMidi.listModels();
     const existing = (current?.files || []).map(item => item.fileName);
     const actions = planNamRestore(files, existing, conflict);
+    const journal = [];
     const results = [];
-    for (let i = 0; i < actions.length; i++) {
-      const action = actions[i];
-      if (action.action === 'skip') { results.push({ ...action }); continue; }
-      const source = files.find(item => item.fileName === action.fileName);
-      const base64 = toBase64(source.bytes);
-      if (action.action === 'replace') {
-        await NativeMidi.restoreModel({ fileName: action.fileName, base64 });
-        results.push({ fileName: action.fileName, action: 'replaced' });
-      } else {
-        const destination = action.destination || action.fileName;
-        const saved = await NativeMidi.saveModel({ fileName: destination, base64 });
-        results.push({ fileName: saved.fileName || destination, action: action.action });
+    try {
+      for (let i = 0; i < actions.length; i++) {
+        const action = actions[i];
+        if (action.action === 'skip') { results.push({ ...action }); continue; }
+        const source = files.find(item => item.fileName === action.fileName);
+        const base64 = toBase64(source.bytes);
+        if (action.action === 'replace') {
+          // Keep the exact prior bytes so a later file failure can roll back this replacement.
+          const prior = await NativeMidi.readModel({ fileName: action.fileName });
+          journal.push({ action: 'restore', fileName: action.fileName, base64: prior.base64 });
+          await NativeMidi.restoreModel({ fileName: action.fileName, base64 });
+          results.push({ fileName: action.fileName, action: 'replaced' });
+        } else {
+          const destination = action.destination || action.fileName;
+          const saved = await NativeMidi.saveModel({ fileName: destination, base64 });
+          const savedName = saved.fileName || destination;
+          journal.push({ action: 'delete', fileName: savedName });
+          results.push({ fileName: savedName, action: action.action });
+        }
+        setStatus('Restoring NAM Library… ' + (i + 1) + '/' + actions.length);
       }
-      setStatus('Restoring NAM Library… ' + (i + 1) + '/' + actions.length);
+      window.dispatchEvent(new Event('mg30-nam-library-updated'));
+      return results;
+    } catch (error) {
+      const rollbackErrors = [];
+      for (const item of journal.reverse()) {
+        try {
+          if (item.action === 'restore') {
+            await NativeMidi.restoreModel({ fileName: item.fileName, base64: item.base64 });
+          } else {
+            await NativeMidi.deleteModel({ fileName: item.fileName });
+          }
+        } catch (rollbackError) {
+          rollbackErrors.push(item.fileName + ': ' + (rollbackError?.message || rollbackError));
+        }
+      }
+      window.dispatchEvent(new Event('mg30-nam-library-updated'));
+      throw new Error('NAM restore failed: ' + (error?.message || error) +
+        (rollbackErrors.length
+          ? '. Rollback could not finish for: ' + rollbackErrors.join('; ')
+          : '. All earlier NAM Library changes in this batch were rolled back.'));
     }
-    window.dispatchEvent(new Event('mg30-nam-library-updated'));
-    return results;
   }
 
   async function restoreIRCollection(section, conflict) {
@@ -528,8 +578,6 @@ import './backup-restore.css';
       slotMap.set(action.sourceSlot, destinationSlot);
       report.push({ ...action });
     }
-    await writeIRCollection(writes);
-
     const assignments = readIRAssignments();
     for (const [program, sourceSlotValue] of Object.entries(section.presetAssignments || {})) {
       const programNumber = Number(program);
@@ -539,7 +587,17 @@ import './backup-restore.css';
         assignments[String(programNumber)] = restoredSlot;
       }
     }
+    const previousAssignments = localStorage.getItem(IR_ASSIGNMENTS_KEY);
     localStorage.setItem(IR_ASSIGNMENTS_KEY, JSON.stringify(assignments));
+    try {
+      await writeIRCollection(writes);
+    } catch (error) {
+      try {
+        if (previousAssignments === null) localStorage.removeItem(IR_ASSIGNMENTS_KEY);
+        else localStorage.setItem(IR_ASSIGNMENTS_KEY, previousAssignments);
+      } catch {}
+      throw error;
+    }
     return report;
   }
 
@@ -629,7 +687,7 @@ import './backup-restore.css';
     let archiveState = null;
     const setBusy = busy => {
       createButton.disabled = busy;
-      restoreButton.disabled = busy || !archiveState;
+      restoreButton.disabled = busy || !archiveState || selectedRestoreSections().length === 0;
       fileInput.disabled = busy;
     };
 
