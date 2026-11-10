@@ -23,6 +23,7 @@ on:
       - feature/studio-hardware-level-controls
       - feature/editor-dynamic-parameter-dock
       - feature/editor-stable-ui-artwork-fit
+      - feature/nam-library-persistent-cards
       - feature/editor-card-proportions-with-dock
       - feature/editor-dock-stack-and-svg-sizing-fix
       - feature/editor-fixed-model-frame-scene-anchor
