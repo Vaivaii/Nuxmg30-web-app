@@ -588,6 +588,84 @@ function initUI(){
   }
   return {...second,stable:true,readRounds:2};
  }
+
+ window.MG30IRCollectionBackupBridge=Object.freeze({
+  async readLocalSlots(){
+   const records=[];
+   for(let slot=1;slot<=24;slot++){
+    const record=await readSlot(slot);
+    if(!record?.blob)continue;
+    if(!(record.blob instanceof Blob))throw Error('WAV lokal Collection slot '+slot+' bukan Blob yang valid.');
+    records.push({
+     slot,
+     name:String(record.name||''),
+     fileName:String(record.fileName||('slot-'+slot+'.wav')),
+     bytes:new Uint8Array(await record.blob.arrayBuffer()),
+     updatedAt:String(record.updatedAt||''),
+     source:String(record.source||'MG30 Studio')
+    });
+   }
+   return records;
+  },
+  async readDeviceSlots(connection){
+   if(busy||syncBusy)throw Error('Operasi IR Collection lain sedang berjalan.');
+   if(!connection?.input?.addEventListener||!connection?.output?.send)throw Error('Koneksi USB-MIDI belum siap untuk membaca Collection.');
+   busy=true;setBusy(true);
+   const records=[];
+   try{
+    for(let slotIndex=0;slotIndex<24;slotIndex++){
+     const stable=await readCollectionSlotStable(connection,slotIndex);
+     deviceSlots.set(slotIndex+1,stable);
+     records.push({...stable,metadata:stable.metadata.slice()});
+     updateSlotCard(slotIndex+1,slotCache.get(slotIndex+1)||null);
+     countLabel.textContent='Backup readback · '+(slotIndex+1)+'/24';
+    }
+    renderSlotCount();
+    return records;
+   }finally{busy=false;setBusy(false);renderSlotCount()}
+  },
+  async restoreSlot({slot,name,fileName,bytes},connection){
+   const targetSlot=Number(slot);
+   if(!Number.isInteger(targetSlot)||targetSlot<1||targetSlot>24)throw Error('Tujuan IR Collection harus slot 1–24.');
+   if(!(bytes instanceof Uint8Array)||!bytes.length)throw Error('WAV backup kosong atau tidak valid.');
+   if(busy||syncBusy)throw Error('Operasi IR Collection lain sedang berjalan.');
+   busy=true;setBusy(true);
+   try{
+    const wav=readMG30IRWav(bytes);
+    const safeIrName=safeDisplayName(name||fileName||'Restored IR');
+    const plan=buildMG30IRTransferPlan({
+     samples:wav.samples,
+     fileName:fileName||safeIrName+'.wav',
+     irName:safeIrName,
+     parameter:targetSlot-1,
+     target:'collection'
+    });
+    const conn=connection||await window.NUXNativeMidi.connect();
+    const sent=await sendMG30IRTransfer(conn,plan,info=>{
+     setMessage(collectionStatus,'Restore Collection slot '+String(targetSlot).padStart(2,'0')+
+      ' · packet '+info.completed+'/75…');
+    });
+    if(!sent?.success||sent.completedFrames!==75)throw Error('Transfer Collection belum menerima seluruh 75 ACK.');
+    const device=await readCollectionSlotStable(conn,targetSlot-1);
+    if(!device.occupied||device.name!==safeIrName){
+     throw Error('Readback Collection slot '+targetSlot+' tidak cocok setelah restore (nama/occupied berbeda).');
+    }
+    const record={
+     slot:targetSlot,name:safeIrName,
+     fileName:safeSegment(fileName||safeIrName+'.wav'),
+     blob:new Blob([bytes],{type:'audio/wav'}),
+     updatedAt:new Date().toISOString(),
+     source:'MG30 Studio Full Backup'
+    };
+    await writeSlot(record);
+    slotCache.set(targetSlot,record);
+    deviceSlots.set(targetSlot,device);
+    updateSlotCard(targetSlot,record);
+    renderSlotCount();
+    return {slot:targetSlot,name:device.name,readbackStable:true,completedFrames:sent.completedFrames};
+   }finally{busy=false;setBusy(false);renderSlotCount()}
+  }
+ });
  syncButton.addEventListener('click',()=>void syncCollectionFromDevice());
  window.addEventListener('mg30-nam-sync-complete',()=>{void syncCollectionFromDevice({silent:true})});
  function safeDisplayName(value){try{return safeName(value||'Custom IR')}catch{return 'Custom IR'}}
