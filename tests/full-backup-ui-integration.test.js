@@ -66,7 +66,7 @@ test('IR Collection local restore writes to the existing app store without sendi
   assert.match(backupUi, /function writeIRCollection\(records\)/);
   assert.match(backupUi, /store\.put\(record\)/);
   assert.match(backupUi, /new Blob\(\[source\.bytes\], \{ type: 'audio\/wav' \}\)/);
-  assert.match(backupUi, /IR Collection files are restored to this app only/);
+  assert.match(backupUi, /IR Collection WAV files are restored to this app only/);
   assert.match(irTransfer, /const DB_NAME='mg30-studio-ir-collection-v1',STORE='slots'/);
 });
 
