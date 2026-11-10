@@ -3257,3 +3257,102 @@ body.ir-collection-layout-fallback #page-nam .nam-ir-nam-pane > #namModelLibrary
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+
+/* Dynamic NAM/TONE3000 workspace height.
+   The visible tool pane participates in page flow, so Collection is pushed down
+   instead of being covered by a clipped pane or a fixed catalogue overlay. */
+@media (max-width: 720px) {
+  body.ir-collection-manager-active #page-nam .nam-ir-tool-pane:not([hidden]) {
+    display: block !important;
+    flex: 0 0 auto !important;
+    max-height: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    overscroll-behavior: auto;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  body.ir-collection-manager-active #page-nam > .nam-ir-tools-frame {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Show the complete Library controls and give only the file list its own scroll. */
+  body.ir-collection-manager-active #page-nam .nam-library-panel {
+    display: block;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+  }
+  body.ir-collection-manager-active #page-nam .nam-library-list {
+    display: grid;
+    max-height: min(38dvh, 440px);
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 3px 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #46565a transparent;
+  }
+
+  /* Expanded TONE3000 details stay directly below the TONE3000 controls.
+     Never turn the result into a fixed overlay above IR Collection. */
+  body.ir-collection-manager-active #page-nam .nam-ir-tone-pane .t3k-catalogue.is-expanded {
+    position: relative !important;
+    z-index: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: block !important;
+    grid-template-rows: none !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 8px 0 0 !important;
+    overflow: hidden !important;
+    border: 1px solid #35443e !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    background: #101718 !important;
+    box-shadow: none !important;
+  }
+  body.ir-collection-manager-active #page-nam .nam-ir-tone-pane .t3k-catalogue.is-expanded #t3kCatalogueToggle {
+    display: none !important;
+  }
+  body.ir-collection-manager-active #page-nam .nam-ir-tone-pane .t3k-catalogue.is-expanded #t3kModelList {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: start !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-height: min(38dvh, 440px) !important;
+    margin: 0 !important;
+    padding: 9px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+  body.ir-collection-manager-active #page-nam .nam-ir-tone-pane .t3k-catalogue.is-expanded #t3kModelList[hidden] {
+    display: none !important;
+  }
+}
