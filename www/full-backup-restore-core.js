@@ -26,10 +26,12 @@ export function sanitizeBackupSettings(input) {
 }
 
 function safeFileName(value) {
-  const name = String(value || '').split(/[\\/]/).pop().replace(/[^A-Za-z0-9._ ()-]/g, '_').trim();
-  if (!name || name === '.' || name === '..' || name.length > 180) {
+  const raw = String(value || '');
+  if (raw.includes('/') || raw.includes('\\\\') || raw === '.' || raw === '..') {
     throw new Error('Backup contains an invalid file name.');
   }
+  const name = raw.replace(/[^A-Za-z0-9._ ()-]/g, '_').trim();
+  if (!name || name.length > 180) throw new Error('Backup contains an invalid file name.');
   return name;
 }
 
