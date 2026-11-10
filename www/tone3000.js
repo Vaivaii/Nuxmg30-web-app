@@ -567,7 +567,7 @@ async function saveModel(index, button) {
   } catch (error) {
     setStatus('Failed to save model: ' + (error?.message || error));
   } finally {
-    if (button) { button.disabled = false; button.textContent = 'Save Model in App'; }
+    if (button) { button.disabled = false; button.textContent = 'Download Only'; }
   }
 }
 
