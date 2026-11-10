@@ -14,6 +14,36 @@ Full Backup must preserve the actual contents of the pedal, not just app caches:
 - Existing 128 presets / 384 scenes remain part of backup.
 - Local NAM Library, local IR Collection mirror, drafts and safe settings may remain as additional independent sections.
 
+## New user requirements: selectable backup and visible progress
+
+The user explicitly requests the Backup flow to have independent checkboxes, analogous to Selective Restore. The user must be able to choose which sections are included before starting a backup. The selection must be explicit and clear; do not force every section to be included. Suggested sections should distinguish hardware-resident content from app-local content:
+- Hardware Preset Bank (128 presets / 384 scenes).
+- Device NAM Slots (actual model payloads, only when readback is proven).
+- Device IR Collection Slots (actual waveform/curve payloads, only when readback is proven).
+- Local NAM Library.
+- Local IR Collection mirror.
+- Local Preset Drafts / snapshots.
+- Safe App Settings.
+
+Backup UI requirements:
+- Show a checklist with section names, concise source/contents descriptions, and available item counts when known.
+- If a hardware section cannot yet be read back, show it as unavailable/not yet supported rather than silently substituting app cache data.
+- Do not silently include app-local NAM or IR files as if they were device-resident slots.
+- Show the selected section count and a clear start-backup action.
+- Preserve the current ZIP manifest, validation, CRC32 and Android document-picker verification behavior.
+
+The user also requests a visible progress popup/modal for BOTH backup and restore. Current restore behavior provides no visible indication while work is running, leaving the user unable to tell whether the operation is active. Implement a shared operation-progress UI with:
+- A clear operation title (Backup or Restore) and current stage, such as scanning, reading hardware presets, reading NAM slots, reading IR Collection, validating archive, writing selected section, verifying, and saving ZIP.
+- Progress indicator and useful progress text (completed/total items or bytes where measurable); use indeterminate progress only when the underlying operation cannot report a meaningful fraction.
+- Section/item-level progress for long hardware and file operations where possible.
+- Visible success or failure completion state, including the failed stage and actionable error detail.
+- Prevent duplicate starts while an operation is active.
+- Do not dismiss the dialog or claim completion before the underlying operation actually completes.
+- Cancellation must only be offered where the underlying operation can stop safely; never imply that cancelling rolls back already-written hardware slots.
+- Keep progress updates responsive during chunked native/USB work; avoid blocking the UI thread.
+
+These are product requirements to implement and test; they are not claims that the current .31 build already supports them.
+
 ## Guardrails
 
 - Keep original MG-30 Gen 2 6.0.x protocol only; do not substitute MKII.
@@ -102,6 +132,8 @@ Existing analysis reports:
 
 - NAM: every populated device slot's actual model data is captured, associated with its original slot, and restored to that slot. Metadata/name-only readback does not pass.
 - IR Collection: every populated Collection slot's actual WAV-equivalent waveform/curve data is captured, associated with its original slot, and restored to that slot. Name/CRC-only readback does not pass.
-- Tests cover empty slots, populated slots, slot identity, duplicate names, partial failure, cancellation/retry safety, and readback verification.
+- Backup checklist: user can independently select backup sections; hardware and app-local sources are visibly distinguished; unsupported hardware readback is never silently represented by local cache.
+- Progress UX: both backup and restore show live operation title, stage, progress, and terminal success/failure; no silent long-running restore.
+- Tests cover empty slots, populated slots, slot identity, duplicate names, partial failure, cancellation/retry safety, progress event sequencing, and readback verification.
 - Existing User IR, NAM import, preset transfer, MIDI mapping, and Full Backup local-library behavior all pass regression tests.
 - Physical acceptance is performed on original MG-30 Gen 2 firmware 6.0.x. CI alone is not hardware acceptance.
