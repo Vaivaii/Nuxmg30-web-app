@@ -76,3 +76,23 @@ Correction on the feature branch:
 Regression coverage was added for the normal-flow catalogue, independent list scrolling, and ResizeObserver-driven Collection sizing.
 
 The next signed update is Community .30 / versionCode 30 so it can be installed over the prior .29 without uninstalling or clearing app data. Physical verification on the user's Android device and MG-30 remains pending.
+
+
+## Final Community .30 build verification
+
+- Signed workflow: [run 42763776492](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42763776492) — success.
+- Signed build source commit: `cf3c7753298b88f894ea1e87a53aba6633d9d916`.
+- Test suite: 371 passed, 0 failed.
+- Android generation: success.
+- Gradle: `BUILD SUCCESSFUL in 1m 57s`.
+- APK signature: V2 verified, one RSA-4096 signer.
+- Certificate SHA-256: `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b` (same as Community .28/.29).
+- Package: `com.vaivaii.mg30studio`.
+- Version: `1.0.0-community.30`, versionCode `30`.
+- APK size: `3,575,442 bytes`.
+- APK SHA-256: `54dee9644a8fb1d1f82744033f9caf7fb45cbd43f8fc991b386d3cf8ece85c66`.
+- Artifact ID: `13738921495`; ZIP SHA-256: `8a4ebaffe6cd676d6d2f03dc9cf0cff5e9c8ce3fdc1c8f5e62b96bb748a9c12a`.
+
+Because Community .30 has versionCode 30 and the same signer as .29, it can be installed in-place over .29. Preserve the existing installation and do not clear app data so NAM Library files remain available.
+
+Still pending: physical Android UI acceptance for the NAM and TONE3000 panel expansion/collapse, then hardware import validation on the original MG-30 Gen 2. Protocol, MIDI mappings, NAM transfer framing and IR routing were not changed by this layout correction.
