@@ -11,7 +11,7 @@ const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8')
 test('NAM Library is mounted in the NAM tab and replaces the old one-file transfer card', () => {
   assert.match(ui, /namPane\.insertBefore\(panel, legacyPanel\)/);
   assert.match(ui, /legacyPanel\.hidden = true/);
-  assert.match(ui, /id="namModelLibrary"/);
+  assert.match(ui, /panel\.id = 'namModelLibrary'/);
   assert.doesNotMatch(ui, /namIrTonePane|t3kToneDetails|t3kModelList/);
   assert.match(html, /nam-model-library-ui\.js\?v=nam-library-1/);
 });
