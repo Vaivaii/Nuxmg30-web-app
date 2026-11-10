@@ -3225,3 +3225,28 @@ body > .app > #page-editor:not(.hidden) {
   .nam-library-item { padding: 9px; }
   .nam-library-file-icon { flex-basis: 42px; width: 42px; height: 42px; }
 }
+
+
+/* Keep the independent NAM Library and TONE3000 panes shrink-safe on narrow devices. */
+body.ir-collection-manager-active .nam-ir-nam-pane > #namModelLibrary,
+body.ir-collection-manager-active .nam-ir-tone-pane #tone3000Panel,
+body.ir-collection-manager-active .nam-ir-tone-pane #t3kToneDetails,
+body.ir-collection-manager-active .nam-ir-tone-pane #t3kModelList,
+body.ir-collection-manager-active .nam-ir-tone-pane .t3k-card,
+body.ir-collection-manager-active .nam-ir-tone-pane .t3k-card-head,
+body.ir-collection-manager-active .nam-ir-tone-pane .t3k-actions {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+body.ir-collection-manager-active .nam-ir-tone-pane #t3kModelList,
+body.ir-collection-layout-fallback .nam-ir-tone-pane #t3kModelList {
+  width: 100% !important;
+}
+body.ir-collection-layout-fallback .nam-ir-tone-pane #tone3000Panel,
+body.ir-collection-layout-fallback .nam-ir-tone-pane #t3kModelList,
+body.ir-collection-layout-fallback .nam-ir-tone-pane .t3k-card {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
