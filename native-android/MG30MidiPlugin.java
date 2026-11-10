@@ -245,7 +245,7 @@ public class MG30MidiPlugin extends Plugin {
     }
     private static String safePatchName(String requestedName) {
         String safeName = new File(requestedName == null ? "MG30_Preset.mg30patch" : requestedName)
-            .getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+            .getName().replaceAll("[^A-Za-z0-9._ ()-]", "_");
         if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
         return safeName;
@@ -349,7 +349,7 @@ public class MG30MidiPlugin extends Plugin {
     public void finishBackupExport(PluginCall call) {
         String transferId = call.getString("transferId", "");
         String safeName = new File(call.getString("fileName", "MG30_Studio_Full_Backup.zip"))
-            .getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+            .getName().replaceAll("[^A-Za-z0-9._ ()-]", "_");
         if (safeName.isEmpty()) safeName = "MG30_Studio_Full_Backup.zip";
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".zip")) safeName += ".zip";
         PatchTransfer transfer = pendingBackupTransfers.get(transferId);
@@ -412,7 +412,7 @@ public class MG30MidiPlugin extends Plugin {
     private void saveBackupArchiveResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
         String requestedName = call.getString("fileName", "MG30_Studio_Full_Backup.zip");
-        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ ()-]", "_");
         if (safeName.isEmpty()) safeName = "MG30_Studio_Full_Backup.zip";
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".zip")) safeName += ".zip";
         String callbackId = call.getCallbackId();
@@ -723,7 +723,7 @@ public class MG30MidiPlugin extends Plugin {
     private void savePatchResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
         String requestedName = call.getString("fileName", "MG30_Preset.mg30patch");
-        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        String safeName = new File(requestedName).getName().replaceAll("[^A-Za-z0-9._ ()-]", "_");
         if (safeName.isEmpty()) safeName = "MG30_Preset.mg30patch";
         if (!safeName.toLowerCase(Locale.ROOT).endsWith(".mg30patch")) safeName += ".mg30patch";
         String callbackId = call.getCallbackId();
@@ -833,7 +833,7 @@ public class MG30MidiPlugin extends Plugin {
             call.reject("Data model kosong atau terlalu besar.");
             return;
         }
-        String safeName = new File(fileName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+        String safeName = new File(fileName).getName().replaceAll("[^A-Za-z0-9._ ()-]", "_");
         if (safeName.isEmpty()) safeName = "tone-model.nam";
         try {
             byte[] bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
@@ -883,7 +883,7 @@ public class MG30MidiPlugin extends Plugin {
 
     private File getNamModelFile(String requestedName) throws IOException {
         String safeName = new File(requestedName == null ? "" : requestedName)
-            .getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+            .getName().replaceAll("[^A-Za-z0-9._ ()-]", "_");
         if (safeName.isEmpty() || safeName.equals(".") || safeName.equals("..")) {
             throw new IllegalArgumentException("Nama file NAM tidak valid.");
         }
