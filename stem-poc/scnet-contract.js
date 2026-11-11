@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 export const SCNET_MODEL = Object.freeze({
   id: 'audiojs/scnet',
-  file: 'scnet_int8.onnx',
+  file: 'scnet.int8.onnx',
   expectedBytes: 12900277,
   sha256: '98228931494151762a1c4ab1ec7899a894b1f81fd4a509921a9d2f9bacc50845',
   sampleRate: 44100,
