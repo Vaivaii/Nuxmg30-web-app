@@ -29,6 +29,7 @@ public class MG30StemPocPlugin extends Plugin {
     private static final String MODEL_SHA256 = "98228931494151762a1c4ab1ec7899a894b1f81fd4a509921a9d2f9bacc50845";
     private static final String MODEL_URL = "https://huggingface.co/audiojs/scnet/resolve/main/scnet.int8.onnx";
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private final Object sessionLock = new Object();
     private OrtEnvironment environment;
     private OrtSession session;
     private OrtSession.SessionOptions sessionOptions;
@@ -86,26 +87,28 @@ public class MG30StemPocPlugin extends Plugin {
                 if (!model.isFile() || model.length() != MODEL_BYTES || !MODEL_SHA256.equals(sha256(model))) {
                     call.reject("Verified SCNet model is not installed. Run downloadModel first."); return;
                 }
-                closeSessionResources();
-                if (environment == null) environment = OrtEnvironment.getEnvironment();
-                OrtSession.SessionOptions newOptions = new OrtSession.SessionOptions();
-                try {
-                    newOptions.setIntraOpNumThreads(2);
-                    OrtSession newSession = environment.createSession(model.getAbsolutePath(), newOptions);
-                    sessionOptions = newOptions;
-                    session = newSession;
-                } catch (Exception sessionError) {
-                    try { newOptions.close(); } catch (Exception ignored) {}
-                    throw sessionError;
+                synchronized (sessionLock) {
+                    closeSessionResources();
+                    if (environment == null) environment = OrtEnvironment.getEnvironment();
+                    OrtSession.SessionOptions newOptions = new OrtSession.SessionOptions();
+                    try {
+                        newOptions.setIntraOpNumThreads(2);
+                        OrtSession newSession = environment.createSession(model.getAbsolutePath(), newOptions);
+                        sessionOptions = newOptions;
+                        session = newSession;
+                    } catch (Exception sessionError) {
+                        try { newOptions.close(); } catch (Exception ignored) {}
+                        throw sessionError;
+                    }
+                    JSObject result = new JSObject(); result.put("loaded", true);
+                    result.put("modelBytes", model.length()); result.put("modelSha256", MODEL_SHA256);
+                    result.put("runtime", "ONNX Runtime Android 1.31.1");
+                    result.put("abi", Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "unknown");
+                    result.put("inputs", describeNodes(session.getInputInfo()));
+                    result.put("outputs", describeNodes(session.getOutputInfo()));
+                    result.put("note", "Metadata-only smoke test; no inference tensor allocated.");
+                    call.resolve(result);
                 }
-                JSObject result = new JSObject(); result.put("loaded", true);
-                result.put("modelBytes", model.length()); result.put("modelSha256", MODEL_SHA256);
-                result.put("runtime", "ONNX Runtime Android 1.31.1");
-                result.put("abi", Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "unknown");
-                result.put("inputs", describeNodes(session.getInputInfo()));
-                result.put("outputs", describeNodes(session.getOutputInfo()));
-                result.put("note", "Metadata-only smoke test; no inference tensor allocated.");
-                call.resolve(result);
             } catch (Exception error) { call.reject("SCNet ONNX session load failed: " + error.getMessage(), error); }
         });
     }
@@ -151,7 +154,9 @@ public class MG30StemPocPlugin extends Plugin {
     @Override
     protected void handleOnDestroy() {
         worker.shutdownNow();
-        closeSessionResources();
+        synchronized (sessionLock) {
+            closeSessionResources();
+        }
         super.handleOnDestroy();
     }
 }
