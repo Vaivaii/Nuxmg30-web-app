@@ -81,3 +81,9 @@ User currently uses a Xiaomi Redmi Note 11 and expects to buy a new phone around
 - Do not assume exact Redmi Note 11 chipset or RAM: the product has variants. Confirm the exact model/chipset and RAM before selecting model size or drawing performance conclusions.
 - Once the new phone is selected, add it as the primary performance target and rerun the same benchmark corpus.
 - Do not block all development until the new phone arrives: model/license audit, Android ONNX proof-of-concept, audio pipeline and UI can proceed independently.
+
+
+### Redmi Note 11 RAM confirmation — 2026-11-11
+- User confirmed the current Redmi Note 11 has 6 GB RAM.
+- Exact 4G/5G variant and chipset are still unconfirmed; do not assume Snapdragon 680 or Dimensity 810 until the variant is confirmed.
+- Use 6 GB RAM as the initial device memory constraint, while accounting for Android/system memory and concurrent app usage; do not assume all 6 GB is available to the model.
