@@ -31,6 +31,7 @@ public class MG30StemPocPlugin extends Plugin {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private OrtEnvironment environment;
     private OrtSession session;
+    private OrtSession.SessionOptions sessionOptions;
 
     @PluginMethod
     public void downloadModel(PluginCall call) {
@@ -85,12 +86,18 @@ public class MG30StemPocPlugin extends Plugin {
                 if (!model.isFile() || model.length() != MODEL_BYTES || !MODEL_SHA256.equals(sha256(model))) {
                     call.reject("Verified SCNet model is not installed. Run downloadModel first."); return;
                 }
-                if (session != null) { session.close(); session = null; }
+                closeSessionResources();
                 if (environment == null) environment = OrtEnvironment.getEnvironment();
-                OrtSession.SessionOptions options = new OrtSession.SessionOptions();
-                options.setIntraOpNumThreads(2);
-                try { session = environment.createSession(model.getAbsolutePath(), options); }
-                finally { options.close(); }
+                OrtSession.SessionOptions newOptions = new OrtSession.SessionOptions();
+                try {
+                    newOptions.setIntraOpNumThreads(2);
+                    OrtSession newSession = environment.createSession(model.getAbsolutePath(), newOptions);
+                    sessionOptions = newOptions;
+                    session = newSession;
+                } catch (Exception sessionError) {
+                    try { newOptions.close(); } catch (Exception ignored) {}
+                    throw sessionError;
+                }
                 JSObject result = new JSObject(); result.put("loaded", true);
                 result.put("modelBytes", model.length()); result.put("modelSha256", MODEL_SHA256);
                 result.put("runtime", "ONNX Runtime Android 1.31.1");
@@ -130,10 +137,21 @@ public class MG30StemPocPlugin extends Plugin {
         for (byte value : bytes) out.append(String.format("%02x", value & 0xff));
         return out.toString();
     }
+    private void closeSessionResources() {
+        if (session != null) {
+            try { session.close(); } catch (Exception ignored) {}
+            session = null;
+        }
+        if (sessionOptions != null) {
+            try { sessionOptions.close(); } catch (Exception ignored) {}
+            sessionOptions = null;
+        }
+    }
+
     @Override
     protected void handleOnDestroy() {
         worker.shutdownNow();
-        if (session != null) { try { session.close(); } catch (Exception ignored) {} session = null; }
+        closeSessionResources();
         super.handleOnDestroy();
     }
 }
