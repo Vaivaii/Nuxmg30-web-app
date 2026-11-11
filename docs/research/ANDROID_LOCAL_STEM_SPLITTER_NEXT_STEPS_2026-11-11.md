@@ -162,3 +162,38 @@ User currently uses a Xiaomi Redmi Note 11 and expects to buy a new phone around
 - Exact Redmi 4G SoC and Android build are not yet confirmed.
 - SCNet preprocessing/postprocessing parity and Android operator compatibility still require POC tests.
 - This audit does not modify application code, APK, NAM, IR, MIDI mapping, preset data or existing Studio modes.
+
+
+---
+
+## Progress 2026-11-11 — Android SCNet POC-1 implementation
+
+Work continued only on `feature/android-scnet-stem-poc`; production branch and existing MG-30 device features were not changed.
+
+Implemented:
+- Added isolated native Capacitor plugin `native-android/MG30StemPocPlugin.java`.
+- Added app-private first-run model acquisition from the pinned Hugging Face SCNet INT8 ONNX artifact.
+- Download streams to a temporary `.part` file, checks exact size (12,900,277 bytes) and SHA-256 (`98228931494151762a1c4ab1ec7899a894b1f81fd4a509921a9d2f9bacc50845`), then atomically renames the verified artifact. Existing valid cached model is reused.
+- Added metadata-only `inspectModel()` that creates an ONNX Runtime session and returns input/output names, tensor types and shapes. It deliberately does not allocate the large inference tensor.
+- Pinned Android dependency `com.microsoft.onnxruntime:onnxruntime-android:1.31.1` in the generated app module via `scripts/init-android.mjs`.
+- Registered and copied the plugin through the existing Android initialization script.
+- Added isolated JS bridge `www/stem-poc-bridge.js`; it is not imported by the production UI.
+- Corrected the artifact filename in the model contract to `scnet.int8.onnx`.
+
+Safety/scope:
+- No edits to NAM, IR User/Third Party, IR Collection, preset, MIDI mapping, USB audio, Loopback, Jam, Record, DAW or Studio navigation.
+- No model inference tensor allocation yet because graph input/output tensors are large and handset memory headroom must be assessed first.
+- No claim of successful Android compilation, model download, ONNX session creation, or physical-device test has been made.
+
+Next verification gates:
+1. Run Node regression tests and inspect initializer idempotence/syntax.
+2. Run Android Gradle build on CI and resolve any Java/Gradle API issues.
+3. Install on Redmi Note 11 4G; download and checksum the model; call `inspectModel()`; record actual ABI and graph metadata.
+4. Only after session load passes, implement reference STFT/segment preprocessing and one-segment inference parity.
+5. Continue to keep this POC isolated until audio output and resource benchmarks pass.
+
+Commits added in this progress:
+- `fe116d08da226c5097d326728719469af7282ee6` — native plugin registration and ORT dependency wiring
+- `ec9f787b5cf2f1384c437cefbeaf83e3b1720d88` — initializer duplicate-write correction
+- `9988834279e2234a4b61f0042e06ab3a9a97e467` — model filename alignment
+- `d6f18767a1afdb0660b61515c0320990a3b69ccc` — POC-1 status notes
