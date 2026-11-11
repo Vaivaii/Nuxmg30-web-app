@@ -1,6 +1,6 @@
 # Android SCNet Stem Splitter POC — isolated implementation
 
-Status: scaffold only; inference and audio reconstruction are not yet implemented.
+Status: POC-1 Android model acquisition/session-inspection code is committed; Android compile and device execution are not yet verified.
 
 ## Scope
 This branch is intentionally isolated from the MG-30 device feature paths. It adds a standalone Android POC contract and testable validation utilities. It does not alter NAM, IR, preset, MIDI, USB audio, Jam, Record, DAW or current Studio navigation.
@@ -45,10 +45,17 @@ This branch is intentionally isolated from the MG-30 device feature paths. It ad
 - 5-minute stereo run completes without OOM or crash and memory use is bounded.
 - CPU is baseline; accelerators are optional experiments.
 
+## POC-1 implementation notes
+- `native-android/MG30StemPocPlugin.java` downloads the pinned ONNX artifact to app-private storage, checks exact byte count and SHA-256 while streaming, and only installs a verified file.
+- `inspectModel()` creates an ONNX Runtime session and reports graph input/output metadata without allocating the large inference tensor.
+- `scripts/init-android.mjs` copies and registers the isolated plugin and pins `com.microsoft.onnxruntime:onnxruntime-android:1.31.1` in the generated Android app module.
+- `www/stem-poc-bridge.js` exposes the two native methods but is not imported by the production UI.
+- This is code implementation only. Build, model download, ONNX session load and physical handset validation remain pending.
+
 ## Current implementation status
 - [x] Isolated branch created from feature/full-backup-selective-restore.
 - [x] POC scope, model pin, boundaries and gates documented.
-- [ ] Android ONNX Runtime session load.
+- [x] Native Android ONNX Runtime session-inspection implementation (compile/runtime verification pending).
 - [ ] Reference preprocessing / postprocessing.
 - [ ] Four-stem audio inference.
 - [ ] Physical device benchmark.
