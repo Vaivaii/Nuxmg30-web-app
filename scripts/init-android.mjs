@@ -17,6 +17,7 @@ copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaD
 copyFileSync(resolve(root, 'native-android/MG30AudioOutputPlugin.java'), resolve(javaDir, 'MG30AudioOutputPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30MidiPlugin.java'), resolve(javaDir, 'MG30MidiPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30DawFilesPlugin.java'), resolve(javaDir, 'MG30DawFilesPlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30StemPocPlugin.java'), resolve(javaDir, 'MG30StemPocPlugin.java'));
 
 const mainActivityLines = [
   'package com.vaivaii.mg30studio;',
@@ -46,6 +47,7 @@ const mainActivityLines = [
   '        registerPlugin(MG30AudioOutputPlugin.class);',
   '        registerPlugin(MG30MidiPlugin.class);',
   '        registerPlugin(MG30DawFilesPlugin.class);',
+  '        registerPlugin(MG30StemPocPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
@@ -189,5 +191,17 @@ const launcherIcon = `<?xml version="1.0" encoding="utf-8"?>
 
 writeFileSync(resolve(drawableDir, 'ic_launcher.xml'), launcherIcon, 'utf8');
 
+// Isolated SCNet POC dependency; do not add this to the production branch.
+const appGradlePath = resolve(androidDir, 'app/build.gradle');
+if (existsSync(appGradlePath)) {
+  let appGradle = readFileSync(appGradlePath, 'utf8');
+  const dependency = "    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.31.1'";
+  if (!appGradle.includes('onnxruntime-android')) {
+    const deps = appGradle.match(/dependencies\s*\{[\s\S]*?\n\}/);
+    if (!deps) throw new Error('Cannot safely locate app Gradle dependencies block for ONNX Runtime');
+    appGradle = appGradle.replace(deps[0], deps[0].replace(/\n\}/, '\n' + dependency + '\n}'));
+    writeFileSync(appGradlePath, appGradle, 'utf8');
+  }
+}
 run(['cap', 'sync', 'android']);
 console.log('MG30 Studio Android platform ready. USB input recorder and USB output discovery plugins installed; playback routing still needs a real-device test.');
