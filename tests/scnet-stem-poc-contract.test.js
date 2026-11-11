@@ -4,6 +4,7 @@ import { SCNET_MODEL, validateModelArtifact, validateStemSet } from '../stem-poc
 
 test('SCNet model pin is explicit and reproducible', () => {
   assert.equal(SCNET_MODEL.expectedBytes, 12900277);
+  assert.equal(SCNET_MODEL.file, 'scnet.int8.onnx');
   assert.match(SCNET_MODEL.sha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(SCNET_MODEL.stems, ['vocals', 'drums', 'bass', 'other']);
 });
