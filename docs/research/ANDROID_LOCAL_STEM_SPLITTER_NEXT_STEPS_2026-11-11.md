@@ -87,3 +87,9 @@ User currently uses a Xiaomi Redmi Note 11 and expects to buy a new phone around
 - User confirmed the current Redmi Note 11 has 6 GB RAM.
 - Exact 4G/5G variant and chipset are still unconfirmed; do not assume Snapdragon 680 or Dimensity 810 until the variant is confirmed.
 - Use 6 GB RAM as the initial device memory constraint, while accounting for Android/system memory and concurrent app usage; do not assume all 6 GB is available to the model.
+
+
+### Redmi Note 11 variant confirmation — 2026-11-11
+- User confirmed the device is Redmi Note 11 **4G**, with **6 GB RAM**.
+- This identifies the 4G family, but exact chipset / regional hardware variant is still to be verified from device settings or Android build properties before fixing acceleration assumptions.
+- Initial benchmark target: Redmi Note 11 4G, 6 GB RAM. New phone planned next month remains the future primary performance target.
