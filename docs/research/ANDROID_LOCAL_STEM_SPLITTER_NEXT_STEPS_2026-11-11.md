@@ -197,3 +197,34 @@ Commits added in this progress:
 - `ec9f787b5cf2f1384c437cefbeaf83e3b1720d88` — initializer duplicate-write correction
 - `9988834279e2234a4b61f0042e06ab3a9a97e467` — model filename alignment
 - `d6f18767a1afdb0660b61515c0320990a3b69ccc` — POC-1 status notes
+
+
+---
+
+## Progress 2026-11-11 — POC-1 lifecycle audit and validation
+
+Further review of the Android native plugin against the official ONNX Runtime Java API found and corrected a resource-lifetime issue:
+- The first implementation closed `OrtSession.SessionOptions` immediately after session creation. The ONNX Runtime Javadoc states that SessionOptions must remain open until all sessions created from it have closed.
+- `MG30StemPocPlugin` now retains the options instance in a field for the full `OrtSession` lifetime and closes the session before closing its options.
+- Session creation/metadata inspection and plugin teardown are serialized through a lock to prevent teardown from closing a session while metadata is being read.
+- Failure while creating a session closes the newly-created options object before propagating the error.
+
+Test improvements:
+- Corrected the checksum negative test. It previously supplied a 3-byte buffer for both size and checksum assertions, so the second assertion could never reach SHA-256 verification. It now hashes a full-size 12,900,277-byte intentionally incorrect buffer to exercise the checksum rejection path.
+- Added regression assertions for SessionOptions retention/close order and one-time plugin registration/Gradle dependency injection.
+- Executed the three model contract/result-validation tests in an isolated Node harness: 3 passed, 0 failed.
+- Checked the committed plugin, initializer, contract and tests directly: 12/12 targeted source invariants passed (session lifecycle, teardown serialization, one-time registration/copy, ONNX pin, idempotent Gradle block and artifact filename alignment).
+
+Build status / limits:
+- No complete repository checkout is available in this execution environment: `git clone` failed because the sandbox could not resolve `github.com`.
+- The GitHub connector available here can read and commit repository files but does not expose a workflow-dispatch action. The latest commit has no associated Actions run, so a Gradle build has not been executed by CI in this session.
+- The local Node harness is targeted and does not represent the full repository `npm test` run.
+- Android Gradle compilation, ONNX model download/session load, APK generation, and Redmi Note 11 hardware validation remain unverified.
+- Maven Central confirms `com.microsoft.onnxruntime:onnxruntime-android:1.31.1` exists (published 2026-10-26). Official Javadocs confirm `getInputInfo()`, `getOutputInfo()`, and `setIntraOpNumThreads()`; they explicitly require SessionOptions to outlive any sessions created from them.
+
+Latest relevant commits:
+- `6afa2b7fec8df4d139b9516d4e1f2ff555d014e1` — retain SessionOptions until session teardown
+- `134434362d8032fd4cddb25cd59d0b60995633ec` — add lifecycle/initializer regression assertions
+- `9b17a721746e06aca7b07089e271e259aa0bbe62` — correct checksum negative test
+- `4fbbda7439095b7f78160b0eafc353f61da128c2` — serialize inspection and teardown
+- `eff7a96586c7784e750f45fe57a435bf14d6f81d` — update POC implementation/validation notes
