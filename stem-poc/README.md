@@ -48,9 +48,11 @@ This branch is intentionally isolated from the MG-30 device feature paths. It ad
 ## POC-1 implementation notes
 - `native-android/MG30StemPocPlugin.java` downloads the pinned ONNX artifact to app-private storage, checks exact byte count and SHA-256 while streaming, and only installs a verified file.
 - `inspectModel()` creates an ONNX Runtime session and reports graph input/output metadata without allocating the large inference tensor.
+- Retains `OrtSession.SessionOptions` for the full session lifetime and closes the session before closing its options. Inspection and teardown are serialized to avoid a concurrent close/read race.
 - `scripts/init-android.mjs` copies and registers the isolated plugin and pins `com.microsoft.onnxruntime:onnxruntime-android:1.31.1` in the generated Android app module.
 - `www/stem-poc-bridge.js` exposes the two native methods but is not imported by the production UI.
-- This is code implementation only. Build, model download, ONNX session load and physical handset validation remain pending.
+- Official ONNX Runtime Java API references confirm the session metadata APIs and the `SessionOptions` lifetime requirement. Maven Central lists Android artifact version `1.31.1`.
+- This is code implementation only. Android Gradle build, model download, ONNX session load and physical handset validation remain pending.
 
 ## Current implementation status
 - [x] Isolated branch created from feature/full-backup-selective-restore.
