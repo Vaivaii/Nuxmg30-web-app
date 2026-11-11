@@ -13,7 +13,9 @@ test('SCNet model pin is explicit and reproducible', () => {
 test('model artifact validator rejects wrong byte count and checksum', () => {
   const bytes = new Uint8Array([1, 2, 3]);
   assert.throws(() => validateModelArtifact(bytes, '00000000'), /size mismatch/i);
-  assert.throws(() => validateModelArtifact(bytes, '0000000000000000000000000000000000000000000000000000000000000000'), /sha-256 mismatch/i);
+  const fullSizeWrongModel = new Uint8Array(SCNET_MODEL.expectedBytes);
+  fullSizeWrongModel.fill(1);
+  assert.throws(() => validateModelArtifact(fullSizeWrongModel, '0000000000000000000000000000000000000000000000000000000000000000'), /sha-256 mismatch/i);
 });
 
 test('four stem result validator requires matching format and duration', () => {
