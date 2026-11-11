@@ -71,3 +71,13 @@ References:
 
 ## Immediate blocker / one needed user detail
 Need the exact Android phone model (and ideally RAM/storage) used to run NUX MG-30 Studio. This determines the first benchmark target. No model is selected as final until checkpoint license, Android conversion, quality and handset performance are verified.
+
+
+## User device planning update — 2026-11-11
+
+User currently uses a Xiaomi Redmi Note 11 and expects to buy a new phone around next month.
+- Treat Redmi Note 11 as the initial compatibility/low-end benchmark, not the final performance target.
+- Keep the implementation model/runtime configurable so a stronger future Android handset can benefit from acceleration without changing the feature architecture.
+- Do not assume exact Redmi Note 11 chipset or RAM: the product has variants. Confirm the exact model/chipset and RAM before selecting model size or drawing performance conclusions.
+- Once the new phone is selected, add it as the primary performance target and rerun the same benchmark corpus.
+- Do not block all development until the new phone arrives: model/license audit, Android ONNX proof-of-concept, audio pipeline and UI can proceed independently.
