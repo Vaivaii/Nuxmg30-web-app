@@ -60,3 +60,28 @@ No User IR cut mapping change is shipped in this correction. The current app kee
 3. Use external pedal Scene 1 → 2 → 3 → 1; app must follow after the authoritative 15/02 status response, not from CC80's value.
 4. Confirm the app no longer snaps to Scene 1 after the next 1.5-second poll.
 5. For IR User cut controls, do not claim success until each control's outgoing MIDI CC has been captured separately from QuickTone with a known baseline: move Low Cut only, restore, move High Cut only, and compare exact event bytes. Then add an executable fixture for the proven mapping.
+
+
+## Further QuickTone disassembly pass (after reconnect)
+
+The full executable disassembly was rebuilt locally from the supplied QuickTone executable. The Low/High Cut control creation path was followed further:
+
+- The UI constructor at VA `0x56826D` passes the exact UTF-8 label string `Low Cut`; the constructor at VA `0x568418` passes `High Cut`.
+- The associated label/default strings at `0xD2CFCC`, `0xD2CFE4`, `0xD2CFD4`, and `0xD2CFF0` were mapped through the PE `.rdata` section and confirmed as `Low Cut`, `High Cut`, `Low Cut`, and `High Cut`. The third string in each control setup is `Regular`.
+- QuickTone's event callback at VA `0x588270` compares the event's control pointer against three separate object members at `+0x54`, `+0x58`, and `+0x5C`. It selects the matching parameter ID from byte offsets `+0x44`, `+0x45`, and `+0x46`, respectively, then calls `0x4B2410` with that ID and the new value.
+- Function `0x4B2410` matches the supplied ID against parameter IDs in the device's parameter buffer and updates the matching packed parameter value. This confirms those bytes are actual parameter identifiers, not UI indexes or labels.
+- The widget constructor at `0x90B450` only wraps/copies the provided string; it does not assign the MIDI parameter ID. The ID source is part of the parent Third-party IR model descriptor/configuration object and is copied into the event owner by the model/controller setup path.
+- The remaining reverse-engineering target is now precise: trace the parent Third-party IR descriptor initialization and its three ID bytes, then correlate the descriptor's control-pointer ordering with Low Cut / High Cut / Level. The static captures still contain no controlled cut-knob movement, so no numeric ID is yet proven for either cut.
+
+## Build #706 artifact verification
+
+- Workflow: [Build #706](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43135844178), source head `c6fb909db714050d8765fc5311f333b51d99729d`.
+- Regression suite: **410 passed, 0 failed**.
+- Vite production bundle: passed.
+- Capacitor Android generation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- Artifact ID: `13907168493`; workflow artifact ZIP SHA-256 `ae0e3e195a2ce557f40c5f346593c3451635f8d225d10d20ae933ff04513607f`.
+- Downloaded APK extracted from that exact artifact: `4,653,552 bytes`; SHA-256 `f912cf1ceb9a5cd44c620980b51026578acd3547ce406ff03c79809a21746845`.
+- ZIP integrity and APK ZIP integrity both passed. The APK's packaged `assets/public/index.html` was inspected and contains the `body[8]` status-field comment plus the parser implementation embedded as a Vite data-URL module. The APK's compiled source therefore includes the corrected parser.
+- This is a verified build artifact, not a release candidate for the user's reported IR Cut problem. No hardware test has been performed. Do not send it as a final fix while the IR cut parameter IDs remain unproven and while external pedal scene behavior has not been confirmed on the user's physical Gen 2 unit.
+
