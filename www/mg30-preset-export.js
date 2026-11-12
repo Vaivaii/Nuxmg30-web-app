@@ -163,6 +163,9 @@ async function exportAllPresets(options = {}) {
     fastModeEnabled = true;
   for (let program = 0; program < 128; program++) {
     const label = slotLabel(program);
+    try {
+      options.onProgress?.({ phase: 'Reading preset bank', completed: program, total: 128, label, cacheHits, liveReadbacks });
+    } catch {}
     let readback = presetManagerCache.get(program);
     if (readback) {
       cacheHits += 1;
@@ -212,6 +215,9 @@ async function exportAllPresets(options = {}) {
       resourcePrograms.push(program);
     }
     records.push(record);
+    try {
+      options.onProgress?.({ phase: 'Reading preset bank', completed: records.length, total: 128, label, cacheHits, liveReadbacks });
+    } catch {}
   }
 
   if (records.length !== 128) {
