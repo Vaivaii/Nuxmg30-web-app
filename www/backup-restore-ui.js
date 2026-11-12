@@ -134,25 +134,27 @@ import './backup-restore.css';
     } finally { db.close(); }
   }
 
-  async function readNamFiles() {
+  async function readNamFiles(onProgress = () => {}) {
     if (!Capacitor.isNativePlatform()) return [];
     const result = await NativeMidi.listModels();
     const models = Array.isArray(result?.files) ? result.files : [];
+    const candidates = models.filter(model => /\.(nam|namb)$/i.test(String(model.fileName || '')));
     const files = [];
-    for (const model of models) {
+    emitProgress(onProgress, { completed: 0, total: candidates.length, fileName: '' });
+    for (const model of candidates) {
       const fileName = safeSegment(model.fileName);
-      if (!/\.(nam|namb)$/i.test(fileName)) continue;
       const record = await NativeMidi.readModel({ fileName });
       const bytes = fromBase64(record.base64);
       if (!bytes.length || bytes.length > 20 * 1024 * 1024 || bytes.length !== Number(record.bytes)) {
         throw new Error('NAM Library readback size mismatch for ' + fileName + '.');
       }
       files.push({ fileName, bytes });
+      emitProgress(onProgress, { completed: files.length, total: candidates.length, fileName });
     }
     return files;
   }
 
-  async function buildFullBackup() {
+  async function buildFullBackup(onProgress = () => {}) {
     if (!Capacitor.isNativePlatform()) throw new Error('Full Backup is supported in the Android APK so it can read the persistent NAM Library.');
     if (!window.MG30PresetExportBridge?.isConnected?.()) {
       throw new Error('Connect the original NUX MG-30 via USB OTG before creating a full backup. The device preset bank must be read through the existing Export All Presets workflow.');
@@ -161,7 +163,21 @@ import './backup-restore.css';
     if (typeof presetExporter !== 'function') throw new Error('The existing Export All Presets module is not ready. Reopen Preset Manager and try again.');
 
     setStatus('Reading the 128-preset MG-30 bank with the existing read-only Export All protocol…');
-    const presetResult = await presetExporter({ returnBytes: true, confirm: false });
+    emitProgress(onProgress, { title: 'Full Backup', step: 'Reading MG-30 preset bank', detail: 'Preparing the read-only 128-preset transfer…', percent: 0, indeterminate: true });
+    const presetResult = await presetExporter({
+      returnBytes: true,
+      confirm: false,
+      onProgress: event => {
+        const completed = Math.max(0, Math.min(128, Number(event?.completed) || 0));
+        const percent = Math.round(completed / 128 * 52);
+        emitProgress(onProgress, {
+          title: 'Full Backup',
+          step: 'Reading MG-30 preset bank',
+          detail: (event?.label ? event.label + ' · ' : '') + completed + '/128 presets',
+          percent
+        });
+      }
+    });
     if (presetResult?.exported !== true || !(presetResult.bytes instanceof Uint8Array)) {
       throw new Error('Export All Presets did not return a complete device backup.');
     }
@@ -171,7 +187,17 @@ import './backup-restore.css';
     }
 
     setStatus('Reading NAM Library files…');
-    const namFiles = await readNamFiles();
+    emitProgress(onProgress, { title: 'Full Backup', step: 'Reading NAM Library', detail: 'Listing stored NAM files…', percent: 52, indeterminate: true });
+    const namFiles = await readNamFiles(progress => {
+      const total = Number(progress.total) || 0, completed = Number(progress.completed) || 0;
+      const percent = total ? 52 + Math.round(completed / total * 10) : 62;
+      emitProgress(onProgress, {
+        title: 'Full Backup',
+        step: 'Reading NAM Library',
+        detail: total ? completed + '/' + total + ' files' + (progress.fileName ? ' · ' + progress.fileName : '') : 'No NAM files found',
+        percent
+      });
+    });
     const entries = [];
     const namDescriptors = [];
     for (const file of namFiles) {
@@ -181,9 +207,11 @@ import './backup-restore.css';
     }
 
     setStatus('Reading local IR Collection WAV files…');
+    emitProgress(onProgress, { title: 'Full Backup', step: 'Reading IR Collection', detail: 'Opening local WAV collection…', percent: 62, indeterminate: true });
     const irRecords = await readIRCollection();
     const irSlots = [];
-    for (const record of irRecords) {
+    for (let irIndex = 0; irIndex < irRecords.length; irIndex++) {
+      const record = irRecords[irIndex];
       if (!(record.blob instanceof Blob)) {
         throw new Error('IR Collection slot ' + record.slot + ' does not contain its original local WAV file. Backup stopped to avoid silently omitting it.');
       }
@@ -202,6 +230,14 @@ import './backup-restore.css';
         source: String(record.source || 'MG30 Studio'),
         bytes: bytes.length
       });
+      const completed = irIndex + 1;
+      const percent = irRecords.length ? 62 + Math.round(completed / irRecords.length * 13) : 75;
+      emitProgress(onProgress, {
+        title: 'Full Backup',
+        step: 'Reading IR Collection',
+        detail: completed + '/' + irRecords.length + ' WAV files · slot ' + slot,
+        percent
+      });
     }
     const irDescriptor = {
       schemaVersion: 1,
@@ -211,10 +247,12 @@ import './backup-restore.css';
     entries.push({ path: 'ir/collection.json', data: jsonBytes(irDescriptor) });
 
     setStatus('Collecting local preset drafts and safe app settings…');
+    emitProgress(onProgress, { title: 'Full Backup', step: 'Collecting app data', detail: 'Reading local preset drafts and safe settings…', percent: 78, indeterminate: true });
     const drafts = readLocalDrafts();
     entries.push({ path: 'presets/local-drafts.json', data: jsonBytes(drafts) });
     const settings = readSettings();
     entries.push({ path: 'settings/app-settings.json', data: jsonBytes(settings) });
+    emitProgress(onProgress, { title: 'Full Backup', step: 'Collecting app data', detail: drafts.presets.length + ' drafts · ' + Object.keys(settings).length + ' safe settings', percent: 82 });
     entries.push({ path: 'presets/MG30_All_Preset.mg30patch', data: presetResult.bytes });
 
     const manifest = {
@@ -249,14 +287,16 @@ import './backup-restore.css';
       )
     });
 
+    emitProgress(onProgress, { title: 'Full Backup', step: 'Building verified ZIP archive', detail: 'Packaging ' + entries.length + ' files…', percent: 85, indeterminate: true });
     const archive = encodeStoredZip(entries, { maxBytes: MAX_ARCHIVE_BYTES });
     if (archive.length <= 22 || archive.length > MAX_ARCHIVE_BYTES + 2 * 1024 * 1024) {
       throw new Error('The completed ZIP failed its size check.');
     }
+    emitProgress(onProgress, { title: 'Full Backup', step: 'ZIP archive ready', detail: archive.length.toLocaleString('en-US') + ' bytes · CRC32 entries prepared', percent: 88 });
     return { archive, manifest };
   }
 
-  async function saveBackupArchive(bytes) {
+  async function saveBackupArchive(bytes, onProgress = () => {}) {
     let transferId = '';
     try {
       const started = await NativeMidi.beginBackupExport({ expectedBytes: bytes.length });
@@ -269,8 +309,15 @@ import './backup-restore.css';
           offset,
           base64: toBase64(chunk)
         });
-        setStatus('Saving backup file… ' + Math.min(offset + chunk.length, bytes.length).toLocaleString('en-US') +
+        const written = Math.min(offset + chunk.length, bytes.length);
+        setStatus('Saving backup file… ' + written.toLocaleString('en-US') +
           '/' + bytes.length.toLocaleString('en-US') + ' bytes.');
+        emitProgress(onProgress, {
+          title: 'Full Backup',
+          step: 'Saving ZIP to Android',
+          detail: written.toLocaleString('en-US') + '/' + bytes.length.toLocaleString('en-US') + ' bytes',
+          percent: 88 + Math.round(written / bytes.length * 12)
+        });
       }
       const saved = await NativeMidi.finishBackupExport({
         transferId,
@@ -290,10 +337,11 @@ import './backup-restore.css';
     }
   }
 
-  async function validateArchiveFile(file) {
+  async function validateArchiveFile(file, onProgress = () => {}) {
     if (!file || !file.size || file.size > MAX_ARCHIVE_BYTES + 2 * 1024 * 1024) {
       throw new Error('Choose a non-empty backup ZIP no larger than 200 MB.');
     }
+    emitProgress(onProgress, { title: 'Selective Restore', step: 'Inspecting backup ZIP', detail: 'Reading ' + file.name + '…', percent: null, indeterminate: true });
     const bytes = new Uint8Array(await file.arrayBuffer());
     const files = decodeStoredZip(bytes, { maxBytes: MAX_ARCHIVE_BYTES });
     const manifestBytes = files.get('manifest.json');
@@ -375,6 +423,7 @@ import './backup-restore.css';
       const values = sanitizeBackupSettings(parseJsonBytes(data, 'App settings'));
       available.settings = { values, count: Object.keys(values).length };
     }
+    emitProgress(onProgress, { title: 'Selective Restore', step: 'Backup validation complete', detail: files.size + ' files · CRC32 verified', percent: 100 });
     return { fileName: file.name, manifest, available, archiveBytes: bytes.length };
   }
 
@@ -384,6 +433,46 @@ import './backup-restore.css';
     node.textContent = String(message || '');
     node.classList.remove('ok', 'warn');
     if (kind) node.classList.add(kind);
+  }
+
+  function setOperationProgress(progress = {}) {
+    const overlay = $('backupProgressOverlay');
+    const title = $('backupProgressTitle');
+    const step = $('backupProgressStep');
+    const detail = $('backupProgressDetail');
+    const bar = $('backupProgressBar');
+    const fill = $('backupProgressFill');
+    const percentText = $('backupProgressPercent');
+    if (!overlay || !bar || !fill) return;
+    if (title) title.textContent = String(progress.title || 'Working');
+    if (step) step.textContent = String(progress.step || 'Please keep the app open.');
+    if (detail) detail.textContent = String(progress.detail || '');
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    const hasPercent = Number.isFinite(progress.percent) && progress.indeterminate !== true;
+    bar.classList.toggle('is-indeterminate', !hasPercent);
+    if (hasPercent) {
+      const value = Math.max(0, Math.min(100, Math.round(progress.percent)));
+      fill.style.width = value + '%';
+      bar.setAttribute('aria-valuenow', String(value));
+      if (percentText) percentText.textContent = value + '%';
+    } else {
+      fill.style.width = '38%';
+      bar.removeAttribute('aria-valuenow');
+      if (percentText) percentText.textContent = 'Working…';
+    }
+  }
+
+  function hideOperationProgress() {
+    const overlay = $('backupProgressOverlay');
+    if (!overlay) return;
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function emitProgress(onProgress, progress) {
+    if (typeof onProgress !== 'function') return;
+    try { onProgress(progress); } catch { /* Progress UI must never interrupt a backup transaction. */ }
   }
 
   function sectionLabel(key, descriptor) {
@@ -504,7 +593,7 @@ import './backup-restore.css';
     return { drafts: incoming.presets.length, totalDrafts: merged.length };
   }
 
-  async function restoreNamFiles(files, conflict) {
+  async function restoreNamFiles(files, conflict, onProgress = () => {}) {
     if (!Capacitor.isNativePlatform()) throw new Error('NAM Library restore requires the Android APK.');
     const current = await NativeMidi.listModels();
     const existing = (current?.files || []).map(item => item.fileName);
@@ -514,7 +603,11 @@ import './backup-restore.css';
     try {
       for (let i = 0; i < actions.length; i++) {
         const action = actions[i];
-        if (action.action === 'skip') { results.push({ ...action }); continue; }
+        if (action.action === 'skip') {
+          results.push({ ...action });
+          emitProgress(onProgress, { completed: i + 1, total: actions.length, fileName: action.fileName, action: 'kept' });
+          continue;
+        }
         const source = files.find(item => item.fileName === action.fileName);
         const base64 = toBase64(source.bytes);
         if (action.action === 'replace') {
@@ -531,6 +624,7 @@ import './backup-restore.css';
           results.push({ fileName: savedName, action: action.action });
         }
         setStatus('Restoring NAM Library… ' + (i + 1) + '/' + actions.length);
+        emitProgress(onProgress, { completed: i + 1, total: actions.length, fileName: action.fileName, action: action.action });
       }
       window.dispatchEvent(new Event('mg30-nam-library-updated'));
       return results;
@@ -555,15 +649,21 @@ import './backup-restore.css';
     }
   }
 
-  async function restoreIRCollection(section, conflict) {
+  async function restoreIRCollection(section, conflict, onProgress = () => {}) {
     const current = await readIRCollection();
     const existingSlots = current.map(item => Number(item.slot));
     const plan = planIRRestore(section.records, existingSlots, conflict);
     const writes = [];
     const slotMap = new Map();
     const report = [];
-    for (const action of plan) {
-      if (action.action === 'skip') { if (conflict === 'keep-existing') slotMap.set(action.sourceSlot, action.sourceSlot); report.push(action); continue; }
+    for (let planIndex = 0; planIndex < plan.length; planIndex++) {
+      const action = plan[planIndex];
+      if (action.action === 'skip') {
+        if (conflict === 'keep-existing') slotMap.set(action.sourceSlot, action.sourceSlot);
+        report.push(action);
+        emitProgress(onProgress, { completed: planIndex + 1, total: plan.length, slot: action.sourceSlot, action: 'kept' });
+        continue;
+      }
       const source = section.records.find(item => Number(item.slot) === action.sourceSlot);
       const destinationSlot = action.destinationSlot;
       const record = {
@@ -577,6 +677,7 @@ import './backup-restore.css';
       writes.push(record);
       slotMap.set(action.sourceSlot, destinationSlot);
       report.push({ ...action });
+      emitProgress(onProgress, { completed: planIndex + 1, total: plan.length, slot: destinationSlot, action: action.action });
     }
     const assignments = readIRAssignments();
     for (const [program, sourceSlotValue] of Object.entries(section.presetAssignments || {})) {
@@ -590,6 +691,7 @@ import './backup-restore.css';
     const previousAssignments = localStorage.getItem(IR_ASSIGNMENTS_KEY);
     localStorage.setItem(IR_ASSIGNMENTS_KEY, JSON.stringify(assignments));
     try {
+      emitProgress(onProgress, { completed: plan.length, total: plan.length, stage: 'Writing collection records' });
       await writeIRCollection(writes);
     } catch (error) {
       try {
@@ -613,7 +715,7 @@ import './backup-restore.css';
     return { restored: changes.size, skipped };
   }
 
-  async function restoreSelected(state) {
+  async function restoreSelected(state, onProgress = () => {}) {
     const selected = selectedRestoreSections();
     if (!selected.length) throw new Error('Select at least one section to restore.');
     const conflict = $('backupRestoreConflict')?.value || 'keep-both';
@@ -639,31 +741,61 @@ import './backup-restore.css';
       : conflict === 'keep-existing' ? '\n\nKeep Existing skips conflicting NAM files and IR slots, and leaves current app settings/drafts in place.' :
         '\n\nKeep Both creates a second NAM filename and places conflicting IR slots in the next free Collection slot.';
     if (!window.confirm('RESTORE SELECTED BACKUP DATA?\n\n' + summary.join('\n') + bankWarning + replaceWarning +
-      '\n\nReview the preview before continuing. Selected local collections will be restored to this app; NAM and IR files are not sent to the pedal.')) return;
+      '\n\nReview the preview before continuing. Selected local collections will be restored to this app; NAM and IR files are not sent to the pedal.')) return false;
 
+    let stageIndex = 0;
+    const totalStages = Math.max(1, selected.length);
+    const reportStage = (label, completed, total, detail = '') => {
+      const local = total > 0 ? Math.max(0, Math.min(1, completed / total)) : 1;
+      const percent = Math.round(((stageIndex + local) / totalStages) * 100);
+      emitProgress(onProgress, { title: 'Selective Restore', step: label, detail, percent });
+    };
     const outcomes = [];
     if (selected.includes('nam')) {
-      const result = await restoreNamFiles(state.available.nam.files, conflict);
+      reportStage('Restoring NAM Library', 0, state.available.nam.count, 'Preparing file journal…');
+      const result = await restoreNamFiles(state.available.nam.files, conflict, progress => {
+        reportStage('Restoring NAM Library', progress.completed, progress.total,
+          progress.fileName ? progress.fileName + ' · ' + progress.action : 'Preparing…');
+      });
+      stageIndex++;
       outcomes.push('NAM Library: ' + result.filter(x => x.action !== 'skip').length + ' restored, ' + result.filter(x => x.action === 'skip').length + ' kept');
     }
     if (selected.includes('ir')) {
-      const result = await restoreIRCollection(state.available.ir, conflict);
+      reportStage('Restoring IR Collection', 0, state.available.ir.count, 'Planning destination slots…');
+      const result = await restoreIRCollection(state.available.ir, conflict, progress => {
+        reportStage('Restoring IR Collection', progress.completed, progress.total,
+          (progress.slot ? 'IR slot ' + progress.slot : 'Writing collection') + ' · ' + (progress.action || progress.stage || 'planned'));
+      });
+      stageIndex++;
       outcomes.push('IR Collection: ' + result.filter(x => x.action !== 'skip').length + ' restored, ' + result.filter(x => x.action === 'skip').length + ' kept');
     }
     if (selected.includes('presetDrafts')) {
+      reportStage('Restoring local preset drafts', 0, 1, 'Applying draft history…');
       const result = restoreLocalDrafts(state.available.presetDrafts.drafts, conflict);
+      stageIndex++;
+      reportStage('Restoring local preset drafts', 1, 1, result.drafts + ' drafts from backup');
       outcomes.push('Local drafts: ' + result.drafts + ' from backup, ' + result.totalDrafts + ' total');
     }
     if (selected.includes('settings')) {
+      reportStage('Restoring safe app settings', 0, 1, 'Applying whitelisted preferences…');
       const result = restoreSafeSettings(state.available.settings.values, conflict);
+      stageIndex++;
+      reportStage('Restoring safe app settings', 1, 1, result.restored + ' restored · ' + result.skipped + ' kept');
       outcomes.push('App settings: ' + result.restored + ' restored, ' + result.skipped + ' kept');
     }
     if (wantsBank) {
+      reportStage('Restoring 128-preset MG-30 bank', 0, 1, 'Starting verified Import All transaction…');
       setStatus('Restoring the 128-preset MG-30 bank through the existing verified Import All protocol…');
       const result = await window.MG30PresetImportBridge.importAll(importPlan, progress => {
         if (progress.phase === 'Verifying readback') {
+          const completed = Math.max(0, Math.min(128, Number(progress.verifiedPrograms) || 0));
+          reportStage('Verifying MG-30 preset readback', completed, 128,
+            completed + '/128 presets · ' + progress.verifiedScenes + '/384 scenes');
           setStatus('Verifying MG-30 preset bank… ' + progress.verifiedPrograms + '/128 presets · ' + progress.verifiedScenes + '/384 scenes.');
         } else {
+          const completed = Math.max(0, Number(progress.completed) || 0);
+          reportStage('Writing MG-30 preset bank', completed, Number(progress.total) || 1,
+            completed.toLocaleString('en-US') + '/' + Number(progress.total || 0).toLocaleString('en-US') + ' ACKs · ' + progress.phase);
           setStatus('Writing MG-30 preset bank… ' + progress.completed.toLocaleString('en-US') +
             '/' + progress.total.toLocaleString('en-US') + ' ACKs · ' + progress.phase + '.');
         }
@@ -671,6 +803,8 @@ import './backup-restore.css';
       if (result?.success !== true || result.verifiedPrograms !== 128 || result.verifiedScenes !== 384) {
         throw new Error('Device preset restore did not pass the complete 128-preset/384-scene readback.');
       }
+      stageIndex++;
+      reportStage('Restore completed', 1, 1, '128 presets / 384 scenes verified');
       outcomes.push('MG-30 bank: 128 presets / 384 scenes written and verified');
     }
     window.dispatchEvent(new Event('mg30-nam-library-updated'));
@@ -690,6 +824,7 @@ import './backup-restore.css';
       createButton.disabled = busy;
       restoreButton.disabled = busy || !archiveState || selectedRestoreSections().length === 0;
       fileInput.disabled = busy;
+      page.setAttribute('aria-busy', busy ? 'true' : 'false');
     };
 
     createButton.addEventListener('click', async () => {
@@ -699,11 +834,12 @@ import './backup-restore.css';
       );
       if (!confirmed) return;
       setBusy(true);
+      setOperationProgress({ title: 'Full Backup', step: 'Starting backup', detail: 'Preparing read-only device export…', percent: 0, indeterminate: true });
       try {
         setStatus('Starting full backup…');
-        const result = await buildFullBackup();
+        const result = await buildFullBackup(setOperationProgress);
         setStatus('Preparing ZIP archive…');
-        const saved = await saveBackupArchive(result.archive);
+        const saved = await saveBackupArchive(result.archive, setOperationProgress);
         if (saved.cancelled) {
           setStatus('Backup save was cancelled. No backup file was created.', 'warn');
           return;
@@ -715,7 +851,7 @@ import './backup-restore.css';
           result.manifest.sections.presetDrafts.count + ' local drafts.', 'ok');
       } catch (error) {
         setStatus('Full Backup failed: ' + (error?.message || error), 'warn');
-      } finally { setBusy(false); }
+      } finally { hideOperationProgress(); setBusy(false); }
     });
 
     fileInput.addEventListener('change', async () => {
@@ -723,9 +859,10 @@ import './backup-restore.css';
       fileInput.value = '';
       if (!file) return;
       setBusy(true);
+      setOperationProgress({ title: 'Selective Restore', step: 'Inspecting backup ZIP', detail: 'Loading archive and verifying its contents…', percent: null, indeterminate: true });
       try {
         setStatus('Checking ZIP directory, file sizes and CRC32…');
-        archiveState = await validateArchiveFile(file);
+        archiveState = await validateArchiveFile(file, setOperationProgress);
         renderRestorePreview(archiveState);
         setStatus('Backup validated: ' + archiveState.fileName + '. Choose exactly which sections to restore.', 'ok');
       } catch (error) {
@@ -734,7 +871,7 @@ import './backup-restore.css';
         $('backupRestoreSelections').replaceChildren();
         restoreButton.disabled = true;
         setStatus('Backup validation failed: ' + (error?.message || error), 'warn');
-      } finally { setBusy(false); }
+      } finally { hideOperationProgress(); setBusy(false); }
     });
 
     restoreButton.addEventListener('click', async () => {
@@ -742,11 +879,12 @@ import './backup-restore.css';
       setBusy(true);
       try {
         setStatus('Preparing selected restore sections…');
-        await restoreSelected(archiveState);
+        const result = await restoreSelected(archiveState, setOperationProgress);
+        if (result === false) return;
       } catch (error) {
         setStatus('Restore stopped: ' + (error?.message || error) +
           '. Review the affected section before retrying.', 'warn');
-      } finally { setBusy(false); }
+      } finally { hideOperationProgress(); setBusy(false); }
     });
 
     $('backupRestoreSelectAll')?.addEventListener('click', () => {
