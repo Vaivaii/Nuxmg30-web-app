@@ -35,7 +35,7 @@ test('Third-party LEVEL uses hardware slot 2 while LOWCUT/HIGHCUT remain on slot
 
 test('factory IR models without MIC/POSITION keep LEVEL/LOWCUT/HIGHCUT on slots 2/3/4', () => {
   const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
-  assert.ok(controls.includes('(modelIndex>=8?[2,3,4]'));
+  assert.ok(controls.includes('modelIndex>=8?[2,3,4]'));
 });
 
 test('User IR send, receive and scene read use one shared hardware parameter index', () => {
