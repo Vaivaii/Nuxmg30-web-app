@@ -2955,7 +2955,7 @@ async function readActiveBuffer(options={}){
   const sceneRevisionAtStart=sceneStateRevision;
   const preservedDraftName=options.preserveDraftName?$('presetName').value:null;
   let status=null,sceneIndex=Number.isInteger(options.sceneIndex)?options.sceneIndex:activeSceneIndex;
-  if((!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)&&!(midiConnected&&options.skipSceneStatus!==true))sceneIndex=0;
+  if((!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)&&!midiConnected)sceneIndex=0;
   if(midiConnected&&options.skipSceneStatus!==true){
    try{
     status=await readActiveProgramSceneWithRetry();
@@ -3037,7 +3037,7 @@ async function pollHardwareState(forceBuffer=false){
  hardwareSyncBusy=true;
  try{
   const sceneRevisionAtRequest=sceneStateRevision;
-  const status=await readActiveProgramScene();
+  const status=await readActiveProgramSceneWithRetry();
   // Discard a query that began before a more recent scene event/command.
   if(sceneRevisionAtRequest!==sceneStateRevision)return;
   if(sceneSwitchPending)return;
