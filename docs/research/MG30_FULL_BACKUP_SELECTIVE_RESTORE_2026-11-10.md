@@ -108,3 +108,22 @@ After the app-shell/backup UI stabilization is accepted, the next development ph
 Stem Splitter and AI Tone Preset are explicitly deferred. Do not add them to the .32 stabilization scope or alter their branches/features in this work.
 
 Acceptance boundary: the signed .32 APK can stabilize the current UI and progress feedback, but it does not yet fulfill the later device-slot NAM/IR preservation phase. That phase remains a separate reverse-engineering and hardware-validation milestone.
+
+## Signed Community .32 final-polish artifact — 2026-11-12
+
+- Source commit: `c665b483832378a37e34af85ec3da590a6ad3c2d` on `release/mg30-studio-final-polish`.
+- Signed workflow: [run #110](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43148046415) — all steps succeeded: 417 tests, keystore/alias validation, Android generation, signed `assembleRelease`, `apksigner` verification, package identity/checksum checks and audit artifact upload.
+- Regression suite: **417 passed, 0 failed**. Debug workflow [run #717](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43148046477) also passed tests, Capacitor Android generation, Gradle `assembleDebug` and artifact upload.
+- Gradle release: `BUILD SUCCESSFUL`.
+- Package: `com.vaivaii.mg30studio`; `versionCode=32`; `versionName=1.0.0-community.32`.
+- Signed artifact ID: `13912443041`; artifact ZIP SHA-256: `ada251e59e9136b3b11b965f8738e5551c239fa6d7c5da98a4316073d7eb32cf`.
+- Extracted signed APK size: `3,594,966 bytes`; APK SHA-256: `706dcb4a7ea52743f0e0303664ea6a6d622e1e0418b00847cc99e57f792c3849`.
+- APK signature: APK Signature Scheme V2 verified `true`; one RSA-4096 signer. Certificate SHA-256 `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`, same existing Community signing certificate lineage.
+- Artifact ZIP and APK ZIP integrity checks passed; extracted APK hash matched the included `.sha256` file. The exact APK's Vite JS/CSS assets were inspected and contain the progress overlay, progress stages, Backup page scroll rules and bottom-fade removal.
+- Build run #108 from source before correcting versionName was not accepted as final: its `versionCode` was 32 but `versionName` remained .31. The accepted run is #110 above, where both are .32 and the new regression assertion enforces this.
+
+### Physical acceptance and next scope
+
+- This is a signed, CI-verified Community .32 candidate. The runner did not have the user's Android phone or MG-30 connected, so Backup & Restore scrolling and progress interactions still need the user's physical-phone acceptance; no hardware behavior is claimed as physically tested.
+- .32 only stabilizes the existing Backup/Restore UI and reports progress for the current backup sections. It does not yet back up actual device-resident NAM model weights or all 24 device IR Collection slot payloads. That remains the next planned device-readback / same-slot-restore project documented above.
+- Stem Splitter and AI Tone Preset remain deferred and untouched.
