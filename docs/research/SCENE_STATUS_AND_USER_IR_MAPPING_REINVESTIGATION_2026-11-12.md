@@ -85,3 +85,16 @@ The full executable disassembly was rebuilt locally from the supplied QuickTone 
 - ZIP integrity and APK ZIP integrity both passed. The APK's packaged `assets/public/index.html` was inspected and contains the `body[8]` status-field comment plus the parser implementation embedded as a Vite data-URL module. The APK's compiled source therefore includes the corrected parser.
 - This is a verified build artifact, not a release candidate for the user's reported IR Cut problem. No hardware test has been performed. Do not send it as a final fix while the IR cut parameter IDs remain unproven and while external pedal scene behavior has not been confirmed on the user's physical Gen 2 unit.
 
+
+
+## Descriptor source tracing pass #2 (continued reverse engineering)
+
+A further call-graph pass narrowed the parameter-ID source without guessing a control order:
+
+- `0x4ABE00` obtains the model descriptor via `0x4B5750` before building the model/UI state used by the controller.
+- `0x4B5750` parses the supplied model definition into an internal model object, then calls `0x4B5EC0` three times to copy one descriptor template into three scene-specific blocks at destination offsets `+0x04`, `+0x92`, and `+0x120`. The third argument is respectively 0, 1, and 2.
+- `0x4B5EC0` copies the model descriptor fields, including parameter-ID bytes `+0x44..+0x46`, into each scene block. It also selects one of three 16-bit source values at offsets `+0x86`, `+0x88`, or `+0x8A` according to the scene index for a separate 12-byte transformation. This supports the interpretation that the IDs originate in the parsed model-definition descriptor and persist through scene-block cloning.
+- The UI constructors `0x56826D` / `0x568418` still only establish the visible Low Cut / High Cut controls. The event handler's three IDs are inherited from the model descriptor; this pass did not establish which ID byte/control-pointer member is Low Cut versus High Cut versus Level.
+- The current descriptor parsing route is not evidence that any specific numeric ID corresponds to Low Cut or High Cut. No application parameter remap was made. Next step is to identify the exact model-definition source passed into `0x4ABE00` for the Third-party IR entry, or capture isolated knob changes from QuickTone. 
+
+This pass is static disassembly only. It does not supersede the hardware/capture requirements above.
