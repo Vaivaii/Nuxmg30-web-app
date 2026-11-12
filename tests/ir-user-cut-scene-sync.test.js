@@ -12,13 +12,27 @@ function between(start, end) {
   return source.slice(first, last);
 }
 
-test('Third-party/User IR keeps original parameter order until its hardware mapping is proven', () => {
+test('IR controls use model-specific hardware parameter slots without changing global MIDI tables', () => {
   const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
-  assert.ok(controls.includes("block.models[modelIndex][1].split(',').map((raw,ccIndex)"));
-  assert.ok(controls.includes('return {param,label:param.toUpperCase(),ccIndex}'));
-  assert.ok(!controls.includes("getModelBaseName(modelName).trim().toLowerCase()==='third-party'"));
+  assert.ok(controls.includes('const irIndexes=modelIndex===19?[0,3,4]:(modelIndex>=8?[2,3,4]:[0,1,2,3,4])'));
+  assert.ok(controls.includes('control.ccIndex=irIndexes[index]??-1'));
+  assert.ok(controls.includes('legacyIndex'));
   assert.ok(source.includes("'Third-party'"));
   assert.ok(source.includes("i<8?'mic, position, level, lowcut, highcut':'level, lowcut, highcut'"));
+  assert.ok(source.includes('[66,67,68,69,70,71], // IR/CAB: base CC 66'));
+  assert.ok(source.includes('[76,77,78,79,80,81]'));
+});
+
+test('Third-party IR maps LEVEL/LOWCUT/HIGHCUT to captured parameter IDs 66/69/70', () => {
+  const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
+  assert.ok(controls.includes('modelIndex===19?[0,3,4]'));
+  // The supplied iruser and ircolectionmenu captures contain USB-MIDI CC 66, 69 and 70.
+  assert.ok(controls.includes('control.ccIndex=irIndexes[index]??-1'));
+});
+
+test('factory IR models without MIC/POSITION keep LEVEL/LOWCUT/HIGHCUT on slots 2/3/4', () => {
+  const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
+  assert.ok(controls.includes('(modelIndex>=8?[2,3,4]'));
 });
 
 test('User IR send, receive and scene read use one shared hardware parameter index', () => {
@@ -33,7 +47,7 @@ test('User IR send, receive and scene read use one shared hardware parameter ind
 
 test('legacy User IR drafts are not remapped to a speculative High Cut / Low Cut order', () => {
   const values = between('function parameterValueForControl(', 'const delay=');
-  assert.ok(values.includes('const legacy=BLOCKS[blockIndex].models[modelIndex][1].split'));
+  assert.ok(values.includes('control.legacyIndex??control.ccIndex'));
   assert.ok(!values.includes("control.param==='lowcut'"));
   assert.ok(!values.includes("control.param==='highcut'"));
 });
