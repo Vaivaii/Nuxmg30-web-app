@@ -2959,6 +2959,12 @@ async function readActiveBuffer(options={}){
   if(midiConnected&&options.skipSceneStatus!==true){
    try{
     status=await readActiveProgramSceneWithRetry();
+    // A just-received hardware/app CC80 is a newer scene signal than a query
+    // response that may still be in the device/USB queue.
+    if(lastSceneCommandAt&&Date.now()-lastSceneCommandAt<4000&&
+       Number.isInteger(activeSceneIndex)&&status.scene!==activeSceneIndex){
+     status={...status,scene:activeSceneIndex};
+    }
     sceneIndex=status.scene;
     lastReportedSceneStatus=status.scene;
     lastReportedProgram=status.program;
