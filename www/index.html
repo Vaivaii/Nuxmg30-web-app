@@ -2577,17 +2577,6 @@ function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
   return {param,label:param.toUpperCase(),ccIndex};
  });
  const modelName=block.models[modelIndex][0];
- // User/Third-party IR has its own Low Cut / High Cut hardware slot order.
- // Keep the visible labels/order; swap only the CC and packed-scene indexes.
- if(block.id==='IR'&&getModelBaseName(modelName).trim().toLowerCase()==='third-party'){
-  const lowCut=controls.find(control=>control.param==='lowcut');
-  const highCut=controls.find(control=>control.param==='highcut');
-  if(lowCut&&highCut){
-   const lowCutIndex=lowCut.ccIndex;
-   lowCut.ccIndex=highCut.ccIndex;
-   highCut.ccIndex=lowCutIndex;
-  }
- }
  const switches=EFFECT_DISCRETE_SWITCHES[block.id]?.[modelName]||[];
  return controls.map(control=>{
   const override=switches.find(item=>item.param===control.param);
@@ -2604,15 +2593,8 @@ function parameterValueForControl(blockIndex,state,modelIndex,control){
   return control.choices?.some(choice=>choice.value===Number(stored))?Number(stored):undefined;
  }
  if(Object.prototype.hasOwnProperty.call(state.values,control.param))return state.values[control.param];
- // Migrate old local amp drafts by their original parameter slot, not by label.
- // User IR uses a remapped hardware index, so its legacy key lookup stays tied
- // to the original displayed parameter order rather than the swapped CC index.
- let legacyIndex=control.ccIndex;
- if(blockIndex===9&&getModelBaseName(BLOCKS[blockIndex].models[modelIndex][0]).trim().toLowerCase()==='third-party'){
-  if(control.param==='lowcut')legacyIndex=1;
-  else if(control.param==='highcut')legacyIndex=2;
- }
- const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[legacyIndex];
+ // Migrate old local drafts by their original parameter slot, not by label.
+ const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.ccIndex];
  if(legacy&&Object.prototype.hasOwnProperty.call(state.values,legacy))return state.values[legacy];
  return undefined;
 }
@@ -2928,9 +2910,11 @@ async function readActiveProgramScene(){
   const pending=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x15&&b[4]===0x02&&b.length>=10,1800);
   const sent=await midiFrame([0x43,0x58,0x70,0x15,0x00]);
   if(!sent)throw new Error('Gagal meminta status preset/scene dari MG-30.');
-  const reply=await pending,scene=Number(reply[9]),program=Number(reply[5]); // Scene byte remains tied to the existing status reply layout.
-  if(!Number.isInteger(scene)||scene<0||scene>2)throw new Error('Indeks scene dari perangkat tidak valid: '+scene);
-  if(!Number.isInteger(program)||program<0||program>127)throw new Error('Nomor preset dari perangkat tidak valid: '+program);
+  const reply=await pending;
+  // The parser is shared with unit tests so the exact body-byte contract is
+  // covered by fixtures. waitForSysEx strips F0/F7: active scene is body[8].
+  const {parseMG30ActiveSceneStatusReply}=await import('./mg30-scene-status.js');
+  const {program,scene}=parseMG30ActiveSceneStatusReply(reply);
   return {program,scene};
  })();
  try{return await sceneStatusReadPromise}finally{sceneStatusReadPromise=null}
@@ -3218,7 +3202,41 @@ async function selectHardwareSlot(prog,fromDevice=false){
   toast('Gagal sinkron preset: '+error.message,1900,'preset');
  }
 }
-function handleMG30MidiMessage(e){if(presetImportBusy||presetExportBusy)return;const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){sceneStateRevision++;activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=Date.now();renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
+function scheduleExternalSceneStatusRefresh(){
+ if(externalSceneRefreshTimer)clearTimeout(externalSceneRefreshTimer);
+ externalSceneRefreshTimer=setTimeout(()=>{
+  externalSceneRefreshTimer=null;
+  if(!midiConnected)return;
+  if(hardwareSyncBusy||sceneSwitchPending||activeBufferReadPromise||sceneStatusReadPromise){
+   scheduleExternalSceneStatusRefresh();
+   return;
+  }
+  // CC80 is a scene-selection command/hint, not an authoritative status.
+  // Query 15/00 and let the matching 15/02 reply decide the active scene.
+  lastReportedSceneStatus=null;
+  void pollHardwareState(true);
+ },180);
+}
+function handleMG30MidiMessage(e){
+ if(presetImportBusy||presetExportBusy)return;
+ const d=Array.from(e.data),status=d[0]&0xF0;
+ if(status===0xC0&&performance.now()>suppressProgramChangeUntil){
+  const program=d[1]&127;
+  if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);
+  else selectHardwareSlot(program,true);
+ }else if(status===0xB0){
+  const cc=d[1]&127,value=d[2]&127;
+  if(cc===80&&value<=2){
+   // Do not equate the incoming CC80 payload with the active scene index.
+   // It can be echoed/issued by scene-copy and selection workflows.
+   if(!sceneSwitchPending){
+    sceneStateRevision++;
+    scheduleExternalSceneStatusRefresh();
+   }
+  }else if(cc<=10)syncIncomingBlockSwitch(cc,value);
+  else syncIncomingParameterCC(cc,value);
+ }
+}
 async function connectMG30(options={}){
  const silent=options.silent===true;
  const autoOnly=options.autoOnly===true;
@@ -3331,7 +3349,7 @@ let chainOrder=BLOCKS.map((_,i)=>i);
 presets=presets.filter(p=>!p.builtIn);
 localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
-let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0,sceneStateRevision=0;
+let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0,sceneStateRevision=0,externalSceneRefreshTimer=null;
 let targetSlot=0;
 function resetHardwareSceneSyncState(){
  sceneStateRevision++;
