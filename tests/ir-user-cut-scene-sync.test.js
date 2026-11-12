@@ -14,7 +14,7 @@ function between(start, end) {
 
 test('IR controls use model-specific hardware parameter slots without changing global MIDI tables', () => {
   const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
-  assert.ok(controls.includes('const irIndexes=modelIndex===19?[0,3,4]:(modelIndex>=8?[2,3,4]:[0,1,2,3,4])'));
+  assert.ok(controls.includes('const irIndexes=modelIndex>=8?[2,3,4]:[0,1,2,3,4]'));
   assert.ok(controls.includes('control.ccIndex=irIndexes[index]??-1'));
   assert.ok(controls.includes('legacyIndex'));
   assert.ok(source.includes("'Third-party'"));
@@ -23,11 +23,14 @@ test('IR controls use model-specific hardware parameter slots without changing g
   assert.ok(source.includes('[76,77,78,79,80,81]'));
 });
 
-test('Third-party IR maps LEVEL/LOWCUT/HIGHCUT to captured parameter IDs 66/69/70', () => {
+test('Third-party LEVEL uses hardware slot 2 while LOWCUT/HIGHCUT remain on slots 3/4', () => {
   const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
-  assert.ok(controls.includes('modelIndex===19?[0,3,4]'));
-  // The supplied iruser and ircolectionmenu captures contain USB-MIDI CC 66, 69 and 70.
+  assert.ok(controls.includes('const irIndexes=modelIndex>=8?[2,3,4]:[0,1,2,3,4]'));
   assert.ok(controls.includes('control.ccIndex=irIndexes[index]??-1'));
+  // IR CC index 2 resolves to CC 68; cut indexes 3/4 remain CC 69/70.
+  assert.ok(source.includes('[66,67,68,69,70,71], // IR/CAB: base CC 66'));
+  assert.ok(source.includes('const KNOB_SLOTS=[[11,13,14]'));
+  assert.ok(source.includes('[76,77,78,79,80,81]'));
 });
 
 test('factory IR models without MIC/POSITION keep LEVEL/LOWCUT/HIGHCUT on slots 2/3/4', () => {
