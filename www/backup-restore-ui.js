@@ -288,6 +288,7 @@ import './backup-restore.css';
     });
 
     emitProgress(onProgress, { title: 'Full Backup', step: 'Building verified ZIP archive', detail: 'Packaging ' + entries.length + ' files…', percent: 85, indeterminate: true });
+    await new Promise(resolve => requestAnimationFrame(() => resolve()));
     const archive = encodeStoredZip(entries, { maxBytes: MAX_ARCHIVE_BYTES });
     if (archive.length <= 22 || archive.length > MAX_ARCHIVE_BYTES + 2 * 1024 * 1024) {
       throw new Error('The completed ZIP failed its size check.');
@@ -691,8 +692,9 @@ import './backup-restore.css';
     const previousAssignments = localStorage.getItem(IR_ASSIGNMENTS_KEY);
     localStorage.setItem(IR_ASSIGNMENTS_KEY, JSON.stringify(assignments));
     try {
-      emitProgress(onProgress, { completed: plan.length, total: plan.length, stage: 'Writing collection records' });
+      emitProgress(onProgress, { completed: plan.length, total: plan.length, fraction: 0.9, stage: 'Writing collection records' });
       await writeIRCollection(writes);
+      emitProgress(onProgress, { completed: plan.length, total: plan.length, fraction: 1, stage: 'Collection records committed' });
     } catch (error) {
       try {
         if (previousAssignments === null) localStorage.removeItem(IR_ASSIGNMENTS_KEY);
@@ -745,10 +747,14 @@ import './backup-restore.css';
 
     let stageIndex = 0;
     const totalStages = Math.max(1, selected.length);
-    const reportStage = (label, completed, total, detail = '') => {
-      const local = total > 0 ? Math.max(0, Math.min(1, completed / total)) : 1;
+    const reportStageFraction = (label, fraction, detail = '') => {
+      const local = Math.max(0, Math.min(1, Number(fraction) || 0));
       const percent = Math.round(((stageIndex + local) / totalStages) * 100);
       emitProgress(onProgress, { title: 'Selective Restore', step: label, detail, percent });
+    };
+    const reportStage = (label, completed, total, detail = '') => {
+      const local = total > 0 ? Math.max(0, Math.min(1, completed / total)) : 1;
+      reportStageFraction(label, local, detail);
     };
     const outcomes = [];
     if (selected.includes('nam')) {
@@ -763,7 +769,10 @@ import './backup-restore.css';
     if (selected.includes('ir')) {
       reportStage('Restoring IR Collection', 0, state.available.ir.count, 'Planning destination slots…');
       const result = await restoreIRCollection(state.available.ir, conflict, progress => {
-        reportStage('Restoring IR Collection', progress.completed, progress.total,
+        const fraction = Number.isFinite(progress.fraction)
+          ? progress.fraction
+          : (progress.total > 0 ? progress.completed / progress.total : 1);
+        reportStageFraction('Restoring IR Collection', fraction,
           (progress.slot ? 'IR slot ' + progress.slot : 'Writing collection') + ' · ' + (progress.action || progress.stage || 'planned'));
       });
       stageIndex++;
@@ -789,12 +798,13 @@ import './backup-restore.css';
       const result = await window.MG30PresetImportBridge.importAll(importPlan, progress => {
         if (progress.phase === 'Verifying readback') {
           const completed = Math.max(0, Math.min(128, Number(progress.verifiedPrograms) || 0));
-          reportStage('Verifying MG-30 preset readback', completed, 128,
+          reportStageFraction('Verifying MG-30 preset readback', 0.65 + (completed / 128 * 0.35),
             completed + '/128 presets · ' + progress.verifiedScenes + '/384 scenes');
           setStatus('Verifying MG-30 preset bank… ' + progress.verifiedPrograms + '/128 presets · ' + progress.verifiedScenes + '/384 scenes.');
         } else {
           const completed = Math.max(0, Number(progress.completed) || 0);
-          reportStage('Writing MG-30 preset bank', completed, Number(progress.total) || 1,
+          const total = Math.max(1, Number(progress.total) || 1);
+          reportStageFraction('Writing MG-30 preset bank', 0.65 * Math.min(1, completed / total),
             completed.toLocaleString('en-US') + '/' + Number(progress.total || 0).toLocaleString('en-US') + ' ACKs · ' + progress.phase);
           setStatus('Writing MG-30 preset bank… ' + progress.completed.toLocaleString('en-US') +
             '/' + progress.total.toLocaleString('en-US') + ' ACKs · ' + progress.phase + '.');
