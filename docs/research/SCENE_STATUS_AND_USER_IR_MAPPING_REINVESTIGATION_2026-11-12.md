@@ -156,3 +156,16 @@ This supersedes the earlier Build #708 mapping note that assigned Third-party LE
 Code change: `www/index.html` now applies `[2,3,4]` uniformly to IR model indexes 8 onward; `legacyIndex` continues preserving old local draft names/order. Regression tests explicitly assert that Third-party LEVEL uses index 2 while LOWCUT/HIGHCUT stay on indexes 3/4, and that the global CC and packed-slot tables are unchanged.
 
 Validation: implementation and regression test commits are now on `fix/ir-user-cut-scene-sync`. CI for this follow-up is pending; no Build #709+ APK is approved until the exact latest commit passes all tests and Android build. The physical test should next verify Third-party LEVEL write and readback, then recheck LOWCUT/HIGHCUT and factory no-MIC models.
+
+## Build #711 — Third-party LEVEL-only fix
+
+- Source commit built: `334db7d873f7f149db5f7a97154cc37fd0907556`.
+- Workflow run #711: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43143698510 — success.
+- Protocol regression suite: **412 passed, 0 failed**.
+- Vite production bundle and Capacitor Android project generation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**; APK upload step passed.
+- Artifact ID `13910342849`; workflow ZIP SHA-256 `8a901b8f398d1e1ab60b06e70d847e83e7acb36746380160b10482931ddf9d9d`.
+- Extracted APK size: `4,655,128` bytes; APK SHA-256: `d53e9cfda46548eca9e471d6c40d603329c3245d42c5acd0f577e8a6f6789d84`.
+- ZIP integrity passed for the workflow artifact and extracted APK.
+- Inspected the exact packaged `assets/public/index.html`: unified IR formula `modelIndex>=8?[2,3,4]:[0,1,2,3,4]` is present, the previous Third-party `[0,3,4]` formula is absent, and the LEVEL slot 2 comment is present.
+- This build preserves LOWCUT/HIGHCUT at indexes 3/4 (CC 69/70, packed slots 79/80) while moving Third-party LEVEL to index 2 (CC 68, packed slot 78). Factory IR models without MIC/POSITION remain at `[2,3,4]`. Physical confirmation for Third-party LEVEL is pending.
