@@ -92,3 +92,21 @@ No edits were made to:
 6. Recheck one built-in factory IR and one NAM model to ensure their existing parameter layouts remain unchanged.
 
 Do not merge into the production branch or call the hardware bugs fully verified until these physical checks pass.
+
+
+## Android build validation — Build #702 (2026-11-12)
+
+- Workflow run: [43131684477](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43131684477) — **success**.
+- Source commit used by the run: `67a404a38931a0d307d11e62fd874cb6f5d3f3b6` (the subsequent commit only added this research note).
+- Node regression suite: **401 passed, 0 failed**.
+- Vite production build: successful.
+- Capacitor Android project generation: successful.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 28s**.
+- Artifact: `MG30-Studio-debug-APK`, ID `13905128367`, ZIP size 4,277,084 bytes.
+- Artifact ZIP SHA-256: `edd7aa74f77ac036c907ec797af1e4b997b3911763cbd5b2edc9fff9f7030cb9`.
+- Extracted APK: `app-debug.apk`, 4,653,552 bytes.
+- APK SHA-256: `4a02590de56d59ae8d46521a107edbbafff972106bb2a739941c522689712cb5`.
+- ZIP integrity and APK ZIP integrity checks passed. Packaged `assets/public/index.html` was inspected and contains the User IR cut-index swap, scene-state revision guard, status retry helper, unknown-scene sentinel and external CC80 timestamp logic.
+- The APK is built for the branch POC only. This build is not physical MG-30 verification; hardware checklist above is still required.
+
+The downloadable workflow artifact is available from the linked Actions run and is retained until 2026-11-26.
