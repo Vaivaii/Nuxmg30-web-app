@@ -2577,12 +2577,12 @@ function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
   return {param,label:param.toUpperCase(),ccIndex:legacyIndex,legacyIndex};
  });
  // IR hardware parameter IDs are not a compact 0..N sequence for every model.
- // Factory IRs with MIC/POSITION expose the full five-slot layout (66..70).
- // Factory IRs without those controls still keep LEVEL/LOWCUT/HIGHCUT at
- // hardware slots 2/3/4. QuickTone's Third-party descriptor is different:
- // captures show its three controls on CC 66, 69 and 70 (slots 0/3/4).
+ // Factory IRs with MIC/POSITION expose the full five-slot layout.
+ // All IR models without those two visible controls, including Third-party,
+ // expose LEVEL/LOWCUT/HIGHCUT on hardware slots 2/3/4. Keep LOW/HIGH on
+ // slots 3/4; LEVEL must use slot 2 (CC 68 / packed slot 78), not slot 0.
  if(blockIndex===9){
-  const irIndexes=modelIndex===19?[0,3,4]:(modelIndex>=8?[2,3,4]:[0,1,2,3,4]);
+  const irIndexes=modelIndex>=8?[2,3,4]:[0,1,2,3,4];
   controls.forEach((control,index)=>{control.ccIndex=irIndexes[index]??-1});
  }
  const modelName=block.models[modelIndex][0];
