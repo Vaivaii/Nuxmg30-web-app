@@ -2261,6 +2261,19 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
   <div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup &amp; Restore</h2><p>One verified ZIP for your MG-30 preset bank and local libraries.</p></div>
   <button class="btn" id="backToDevice" type="button">← Device &amp; Settings</button>
  </header>
+ <div id="backupProgressOverlay" class="backup-progress-overlay" hidden aria-hidden="true">
+  <section class="backup-progress-dialog" role="dialog" aria-modal="true" aria-labelledby="backupProgressTitle" aria-describedby="backupProgressStep backupProgressDetail">
+   <div class="backup-progress-kicker">MG30 STUDIO · DATA SAFETY</div>
+   <div class="backup-progress-spinner" aria-hidden="true"></div>
+   <h3 id="backupProgressTitle">Working…</h3>
+   <p id="backupProgressStep" aria-live="polite">Preparing operation</p>
+   <div class="backup-progress-track" id="backupProgressBar" role="progressbar" aria-label="Backup and restore progress" aria-valuemin="0" aria-valuemax="100">
+    <span id="backupProgressFill"></span>
+   </div>
+   <div class="backup-progress-meta"><small id="backupProgressDetail">Please keep the app open.</small><strong id="backupProgressPercent">Working…</strong></div>
+   <p class="backup-progress-footnote">Keep MG-30 connected and do not close MG30 Studio until the operation is complete.</p>
+  </section>
+ </div>
  <section class="panel backup-panel">
   <div class="panel-head"><div><h3>Full App Backup</h3><p>Read the connected original MG-30 bank, then package your libraries and app data into one ZIP.</p></div></div>
   <div class="backup-includes">
