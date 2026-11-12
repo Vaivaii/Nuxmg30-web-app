@@ -59,7 +59,7 @@ test('Final candidate branch is enabled for both debug validation and release si
   assert.match(buildWorkflow, /- release\/mg30-studio-final-polish/);
   assert.match(releaseWorkflow, /- release\/mg30-studio-final-polish/);
   assert.match(releaseWorkflow, /assembleRelease/);
-  assert.match(releaseWorkflow, /apksigner verify --verbose --print-certs/);
+  assert.match(releaseWorkflow, /\$APKSIGNER\" verify --verbose --print-certs/);
   assert.match(releaseWorkflow, /ANDROID_KEYSTORE_BASE64/);
   assert.match(releaseWorkflow, /ANDROID_KEY_ALIAS/);
   assert.match(releaseWorkflow, /MG30-Studio-Community\.apk\.sha256/);
