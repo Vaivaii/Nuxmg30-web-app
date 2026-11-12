@@ -2577,6 +2577,17 @@ function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
   return {param,label:param.toUpperCase(),ccIndex};
  });
  const modelName=block.models[modelIndex][0];
+ // User/Third-party IR has its own Low Cut / High Cut hardware slot order.
+ // Keep the visible labels/order; swap only the CC and packed-scene indexes.
+ if(block.id==='IR'&&getModelBaseName(modelName).trim().toLowerCase()==='third-party'){
+  const lowCut=controls.find(control=>control.param==='lowcut');
+  const highCut=controls.find(control=>control.param==='highcut');
+  if(lowCut&&highCut){
+   const lowCutIndex=lowCut.ccIndex;
+   lowCut.ccIndex=highCut.ccIndex;
+   highCut.ccIndex=lowCutIndex;
+  }
+ }
  const switches=EFFECT_DISCRETE_SWITCHES[block.id]?.[modelName]||[];
  return controls.map(control=>{
   const override=switches.find(item=>item.param===control.param);
@@ -2910,12 +2921,23 @@ async function readActiveProgramScene(){
   const pending=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===0x15&&b[4]===0x02&&b.length>=10,1800);
   const sent=await midiFrame([0x43,0x58,0x70,0x15,0x00]);
   if(!sent)throw new Error('Gagal meminta status preset/scene dari MG-30.');
-  const reply=await pending,scene=Number(reply[9]),program=Number(reply[5]); // In the SysEx body, program is byte 5; byte 6 is the following field, not the slot.
+  const reply=await pending,scene=Number(reply[9]),program=Number(reply[5]); // Scene byte remains tied to the existing status reply layout.
   if(!Number.isInteger(scene)||scene<0||scene>2)throw new Error('Indeks scene dari perangkat tidak valid: '+scene);
   if(!Number.isInteger(program)||program<0||program>127)throw new Error('Nomor preset dari perangkat tidak valid: '+program);
   return {program,scene};
  })();
  try{return await sceneStatusReadPromise}finally{sceneStatusReadPromise=null}
+}
+async function readActiveProgramSceneWithRetry(attempts=3){
+ let lastError=null;
+ for(let attempt=0;attempt<attempts;attempt++){
+  try{return await readActiveProgramScene()}
+  catch(error){
+   lastError=error;
+   if(attempt+1<attempts)await delay(180*(attempt+1));
+  }
+ }
+ throw lastError||new Error('Status preset/scene MG-30 belum terbaca.');
 }
 async function readSysExPart(cmd,prog,part){if(!midiConnected)throw new Error('Hubungkan MG-30 terlebih dahulu');await flushMidi();const reply=waitForSysEx(b=>b[0]===0x43&&b[1]===0x58&&b[2]===0x70&&b[3]===cmd&&b[4]===0x02&&b[6]===part);await midiFrame([0x43,0x58,0x70,cmd,0x00,prog,part,0,0,0,0,0,0]);return reply}
 function bitSlot(body,k){const p=6+21*Math.floor(k/2)+8*(k%2);let v=0;for(let i=0;i<7;i++){const bit=p+i,byte=body[7+Math.floor(bit/7)];v=(v<<1)|((byte>>(6-bit%7))&1)}return v}
@@ -2925,17 +2947,20 @@ async function readActiveBuffer(options={}){
  activeBufferReadPromise=(async()=>{
   const preservedDraftName=options.preserveDraftName?$('presetName').value:null;
   let status=null,sceneIndex=Number.isInteger(options.sceneIndex)?options.sceneIndex:activeSceneIndex;
-  if(sceneIndex<0||sceneIndex>2)sceneIndex=0;
+  if((!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)&&!(midiConnected&&options.skipSceneStatus!==true))sceneIndex=0;
   if(midiConnected&&options.skipSceneStatus!==true){
    try{
-    status=await readActiveProgramScene();
+    status=await readActiveProgramSceneWithRetry();
     sceneIndex=status.scene;
     lastReportedSceneStatus=status.scene;
     lastReportedProgram=status.program;
    }catch(error){
-    if(options.sceneIndex===undefined)setDeviceStatus('Status preset/scene belum terbaca: '+error.message);
+    // Never silently read Scene 1 when the active scene has not been identified.
+    if(options.sceneIndex===undefined)throw error;
+    setDeviceStatus('Status preset/scene belum terbaca: '+error.message);
    }
   }
+  if(!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)throw new Error('Scene aktif MG-30 belum diketahui; menunggu status perangkat.');
   const program=Number.isInteger(options.program)?options.program:(status?status.program:targetSlot);
   // Pro Scene stores three related parts: decode the part for the selected Scene, not always part 0.
   const parts=await readPresetParts(0x0C,program);
@@ -2986,7 +3011,10 @@ async function pollHardwareState(forceBuffer=false){
  if(!midiConnected||hardwareSyncBusy||sceneSwitchPending||ctrlEditorBusy)return;
  hardwareSyncBusy=true;
  try{
+  const sceneRevisionAtRequest=sceneStateRevision;
   const status=await readActiveProgramScene();
+  // Discard a query that began before a more recent scene event/command.
+  if(sceneRevisionAtRequest!==sceneStateRevision)return;
   if(sceneSwitchPending)return;
   const firstReport=lastReportedSceneStatus===null||lastReportedProgram===null;
   const programChanged=lastReportedProgram===null||status.program!==lastReportedProgram;
@@ -3165,7 +3193,7 @@ async function selectHardwareSlot(prog,fromDevice=false){
   toast('Gagal sinkron preset: '+error.message,1900,'preset');
  }
 }
-function handleMG30MidiMessage(e){if(presetImportBusy||presetExportBusy)return;const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=0;renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
+function handleMG30MidiMessage(e){if(presetImportBusy||presetExportBusy)return;const d=Array.from(e.data),status=d[0]&0xF0;if(status===0xC0&&performance.now()>suppressProgramChangeUntil){const program=d[1]&127;if(hardwareSyncBusy||sceneSwitchPending)setTimeout(()=>selectHardwareSlot(program,true),220);else selectHardwareSlot(program,true)}else if(status===0xB0){const cc=d[1]&127,value=d[2]&127;if(cc===80&&value<=2){if(!sceneSwitchPending){sceneStateRevision++;activeSceneIndex=value;$('sceneSelect').selectedIndex=value;lastReportedSceneStatus=value;lastSceneCommandAt=Date.now();renderSceneButtons();persist();const refresh=()=>readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot}).catch(err=>setDeviceStatus('Scene '+(value+1)+' dipilih, state belum terbaca: '+err.message));if(activeBufferReadPromise)activeBufferReadPromise.catch(()=>{}).then(refresh);else refresh();}}else if(cc<=10)syncIncomingBlockSwitch(cc,value);else syncIncomingParameterCC(cc,value)}}
 async function connectMG30(options={}){
  const silent=options.silent===true;
  const autoOnly=options.autoOnly===true;
@@ -3180,6 +3208,7 @@ async function connectMG30(options={}){
     setDeviceStatus('Mencari port USB-MIDI Android…');
     const connection=await nativeMidi.connect({autoOnly});
     midiAccess=connection.access;midiInput=connection.input;midiOutput=connection.output;midiConnected=true;
+    resetHardwareSceneSyncState();hardwareSyncBusy=true;
     midiInput.onmidimessage=handleMG30MidiMessage;
     midiAccess.onstatechange=()=>{
      const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
@@ -3189,8 +3218,12 @@ async function connectMG30(options={}){
     setDeviceStatus('Terhubung via USB-MIDI Android. Membaca preset aktif…');
     $('midiSupport').textContent='Native USB-MIDI';
     if(!silent)toast('Terhubung: '+(connection.deviceName||midiOutput.name||'NUX MG-30'));
-    await readActiveBuffer().then(n=>setDeviceStatus('Terhubung via OTG · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('USB-MIDI terhubung, baca buffer gagal: '+e.message));
-    renderChain();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
+    try{
+     const name=await readActiveBuffer();
+     setDeviceStatus('Terhubung via OTG · preset tersinkron'+(name?' · '+name:''));
+    }catch(e){setDeviceStatus('USB-MIDI terhubung, scene/preset belum tersinkron: '+e.message)}
+    finally{hardwareSyncBusy=false}
+    renderChain();renderSceneButtons();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
     if(window.NUXNativeMidi?.available&&window.NUXNAMTransfer?.readMG30NAMSlotNames){
      setTimeout(()=>{void scanNamDeviceSlots(true)},80);
     }
@@ -3224,6 +3257,7 @@ async function connectMG30(options={}){
     return;
    }
    midiInput=p.input;midiOutput=p.output;midiConnected=true;
+   resetHardwareSceneSyncState();hardwareSyncBusy=true;
    midiInput.onmidimessage=handleMG30MidiMessage;
    midiAccess.onstatechange=()=>{
     const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
@@ -3233,8 +3267,12 @@ async function connectMG30(options={}){
    setDeviceStatus('Terhubung. Membaca preset aktif…');
    $('midiSupport').textContent='API tersedia';
    if(!silent)toast('Terhubung: '+(midiOutput.name||'MIDI device'));
-   await readActiveBuffer().then(n=>setDeviceStatus('Terhubung · preset tersinkron'+(n?' · '+n:''))).catch(e=>setDeviceStatus('Terhubung, baca buffer gagal: '+e.message));
-   renderChain();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
+   try{
+    const name=await readActiveBuffer();
+    setDeviceStatus('Terhubung · preset tersinkron'+(name?' · '+name:''));
+   }catch(e){setDeviceStatus('Terhubung, scene/preset belum tersinkron: '+e.message)}
+   finally{hardwareSyncBusy=false}
+   renderChain();renderSceneButtons();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
   }catch(e){
    midiConnected=false;
    setDeviceStatus('Gagal terhubung');
@@ -3254,8 +3292,16 @@ let chainOrder=BLOCKS.map((_,i)=>i);
 presets=presets.filter(p=>!p.builtIn);
 localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
-let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0;
+let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0,sceneStateRevision=0;
 let targetSlot=0;
+function resetHardwareSceneSyncState(){
+ sceneStateRevision++;
+ activeSceneIndex=null;
+ lastReportedSceneStatus=null;
+ lastReportedProgram=null;
+ lastSceneCommandAt=0;
+ renderSceneButtons();
+}
 let lastAnnouncedActivePresetSlot=null;
 function notifyActivePresetChanged(){
  if(!Number.isInteger(targetSlot)||targetSlot<0||targetSlot>127||lastAnnouncedActivePresetSlot===targetSlot)return;
@@ -3304,9 +3350,10 @@ function renderHardwarePreset(){
 function renderSceneButtons(){
  const holder=$('sceneButtons'),picker=$('sceneSelect');
  if(!holder||!picker)return;
- picker.selectedIndex=activeSceneIndex;
+ const sceneKnown=Number.isInteger(activeSceneIndex)&&activeSceneIndex>=0&&activeSceneIndex<=2;
+ picker.selectedIndex=sceneKnown?activeSceneIndex:-1;
  const items=[['Scene 1','A · Clean'],['Scene 2','B · Rhythm'],['Scene 3','C · Lead']];
- holder.innerHTML=items.map((item,i)=>'<button type="button" class="scene-button '+(activeSceneIndex===i?'active':'')+'" data-scene="'+i+'"><strong>'+(i+1)+'</strong><small>'+item[1].split('·')[1].trim()+'</small></button>').join('');
+ holder.innerHTML=items.map((item,i)=>'<button type="button" class="scene-button '+(sceneKnown&&activeSceneIndex===i?'active':'')+'" data-scene="'+i+'"><strong>'+(i+1)+'</strong><small>'+item[1].split('·')[1].trim()+'</small></button>').join('');
  holder.querySelectorAll('[data-scene]').forEach(btn=>btn.onclick=async()=>{
   const index=Number(btn.dataset.scene);
   if(!Number.isInteger(index)||index<0||index>2||sceneSwitchPending)return;
@@ -3325,6 +3372,7 @@ function renderSceneButtons(){
    const sent=await midiSend([0xB0,80,index]);
    if(!sent)throw new Error('Port MIDI tidak aktif.');
    commandSent=true;
+   sceneStateRevision++;lastSceneCommandAt=Date.now();
    await flushMidi();await delay(220);
    activeSceneIndex=index;picker.selectedIndex=index;lastSceneCommandAt=Date.now();renderSceneButtons();persist();
    try{
