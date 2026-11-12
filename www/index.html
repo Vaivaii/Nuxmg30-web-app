@@ -2605,7 +2605,14 @@ function parameterValueForControl(blockIndex,state,modelIndex,control){
  }
  if(Object.prototype.hasOwnProperty.call(state.values,control.param))return state.values[control.param];
  // Migrate old local amp drafts by their original parameter slot, not by label.
- const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.ccIndex];
+ // User IR uses a remapped hardware index, so its legacy key lookup stays tied
+ // to the original displayed parameter order rather than the swapped CC index.
+ let legacyIndex=control.ccIndex;
+ if(blockIndex===9&&getModelBaseName(BLOCKS[blockIndex].models[modelIndex][0]).trim().toLowerCase()==='third-party'){
+  if(control.param==='lowcut')legacyIndex=1;
+  else if(control.param==='highcut')legacyIndex=2;
+ }
+ const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[legacyIndex];
  if(legacy&&Object.prototype.hasOwnProperty.call(state.values,legacy))return state.values[legacy];
  return undefined;
 }
@@ -2945,6 +2952,7 @@ async function readActiveBuffer(options={}){
  if(presetImportBusy||presetExportBusy)throw new Error('Transfer preset sedang berlangsung; pembacaan buffer ditunda.');
  if(activeBufferReadPromise)return activeBufferReadPromise;
  activeBufferReadPromise=(async()=>{
+  const sceneRevisionAtStart=sceneStateRevision;
   const preservedDraftName=options.preserveDraftName?$('presetName').value:null;
   let status=null,sceneIndex=Number.isInteger(options.sceneIndex)?options.sceneIndex:activeSceneIndex;
   if((!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)&&!(midiConnected&&options.skipSceneStatus!==true))sceneIndex=0;
@@ -2964,6 +2972,10 @@ async function readActiveBuffer(options={}){
   const program=Number.isInteger(options.program)?options.program:(status?status.program:targetSlot);
   // Pro Scene stores three related parts: decode the part for the selected Scene, not always part 0.
   const parts=await readPresetParts(0x0C,program);
+  // If a newer external/app scene event arrived while the three scene parts
+  // were being read, discard this stale buffer snapshot. The event handler
+  // schedules a fresh read for the newly selected scene.
+  if(sceneRevisionAtStart!==sceneStateRevision)return hardwarePresetName;
   const body=parts[sceneIndex]||parts[0];
   if(!body||body.length<220)throw new Error('Balasan Scene '+(sceneIndex+1)+' terlalu pendek ('+(body?body.length:0)+' byte). Format SysEx belum cocok.');
   const candidate=states.map(s=>({...s,values:{...s.values}})); 
@@ -3228,7 +3240,7 @@ async function connectMG30(options={}){
      setTimeout(()=>{void scanNamDeviceSlots(true)},80);
     }
    }catch(e){
-    midiConnected=false;
+    midiConnected=false;hardwareSyncBusy=false;
     setDeviceStatus('USB-MIDI Android belum terhubung');
     if(!silent)toast('OTG connection failed: '+(e.message||e));
    }
@@ -3274,7 +3286,7 @@ async function connectMG30(options={}){
    finally{hardwareSyncBusy=false}
    renderChain();renderSceneButtons();startHardwareStatePolling();window.dispatchEvent(new Event('mg30-midi-connected'));
   }catch(e){
-   midiConnected=false;
+   midiConnected=false;hardwareSyncBusy=false;
    setDeviceStatus('Gagal terhubung');
    if(!silent)toast('Koneksi gagal: '+e.message);
   }
