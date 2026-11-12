@@ -98,3 +98,31 @@ A further call-graph pass narrowed the parameter-ID source without guessing a co
 - The current descriptor parsing route is not evidence that any specific numeric ID corresponds to Low Cut or High Cut. No application parameter remap was made. Next step is to identify the exact model-definition source passed into `0x4ABE00` for the Third-party IR entry, or capture isolated knob changes from QuickTone. 
 
 This pass is static disassembly only. It does not supersede the hardware/capture requirements above.
+
+## IR model-specific parameter-slot correction from the supplied USB-MIDI captures
+
+The user clarified that the controls are shifted not only on Third-party/User IR but also on factory IR models that do not expose MIC and MIC POSITION. I re-opened the supplied pcapng files and compared the actual USB-MIDI event packets with the app's shared `parameterControls()` / `MIDI_PARAM_CC` / `KNOB_SLOTS` logic.
+
+### Direct capture evidence
+
+USB-MIDI event packets use the 4-byte USB-MIDI event framing; the captured CC events below are decoded from the packets, not inferred from the screenshot:
+
+- `iruser.pcapng` packet 22 contains `B0 42 00`, `B0 45 27`, and `B0 46 00` — MIDI CC decimal 66 value 0, CC 69 value 39, CC 70 value 0.
+- `ircolectionmenu.pcapng` packet 22 contains `B0 42 00`, `B0 45 00`, and `B0 46 64` — CC 66 value 0, CC 69 value 0, CC 70 value 100.
+- `deluxecapt.pcapng` packet 22 includes `B0 42 02`, `B0 43 01`, `B0 45 00`, and `B0 46 64` — CC 66, 67, 69, and 70 are present in the factory-cab setup. CC 68 is not present in that particular emitted event batch, so this capture alone does not prove its value.
+- The capture packet list contains no isolated user knob-turn experiment. The values above are emitted state/setup batches, so they prove the participating CC identifiers but do not by themselves label each of the three Third-party controls by value.
+
+### Mapping conclusion and scope
+
+- The Third-party capture consistently uses CC 66, 69, and 70 for its three-parameter state batch. The app's previous compact mapping `[0,1,2]` sent/read CC 66, 67, and 68 instead. This is a concrete index mismatch. Third-party controls are now assigned hardware parameter indexes `[0,3,4]`, which route through the existing IR CC list to CC 66/69/70 and through the existing IR packed-slot list to slots 76/79/80.
+- Factory IR models 0–7 retain the full five-control order `MIC, POSITION, LEVEL, LOWCUT, HIGHCUT` on indexes `[0,1,2,3,4]`.
+- Factory IR models 8 onward that expose only `LEVEL, LOWCUT, HIGHCUT` now use indexes `[2,3,4]`, not compact `[0,1,2]`. This preserves the hardware's MIC/POSITION-reserved positions while hiding those controls in the UI. It routes through existing CC indexes 2/3/4 and packed slots 78/79/80.
+- Third-party is model index 19 in the IR list and uses its captured special layout `[0,3,4]`; it is intentionally not treated as a generic factory IR.
+- The global `MIDI_PARAM_CC` arrays and `KNOB_SLOTS` tables are unchanged. No NAM, MIDI mapping, IR import, IR Collection, or resource-transfer code was modified.
+- `legacyIndex` is now retained separately from the hardware `ccIndex`, so saved local drafts continue to map by their original visible parameter order while device reads/writes use the model-specific hardware slot.
+
+### Validation status
+
+- Added regression tests for Third-party `[0,3,4]`, factory no-MIC/POSITION `[2,3,4]`, and unchanged global CC/packed-slot tables.
+- These mappings are grounded in the supplied capture CC IDs and the existing model-specific UI layouts. A controlled one-knob-at-a-time physical QuickTone test is still the strongest final confirmation of each label-to-ID association, especially LEVEL versus the two cut controls.
+- CI build and full tests are pending for the new mapping commit. Do not call this correction verified until that workflow succeeds; physical MG-30 Gen 2 testing remains required.
