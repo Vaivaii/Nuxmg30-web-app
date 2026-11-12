@@ -126,3 +126,15 @@ USB-MIDI event packets use the 4-byte USB-MIDI event framing; the captured CC ev
 - Added regression tests for Third-party `[0,3,4]`, factory no-MIC/POSITION `[2,3,4]`, and unchanged global CC/packed-slot tables.
 - These mappings are grounded in the supplied capture CC IDs and the existing model-specific UI layouts. A controlled one-knob-at-a-time physical QuickTone test is still the strongest final confirmation of each label-to-ID association, especially LEVEL versus the two cut controls.
 - CI build and full tests are pending for the new mapping commit. Do not call this correction verified until that workflow succeeds; physical MG-30 Gen 2 testing remains required.
+
+## Build #708 — model-specific IR parameter mapping validation
+
+- Source commit tested: `783843064b31ca976dba8729ea133b7ddf6a38bd` (includes code mapping commit `177061b2cde14f6d2d24816c029f666b9401a4ba` and mapping regression tests).
+- Workflow run #708: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43142151022 — conclusion `success`.
+- Protocol regression suite: **412 passed, 0 failed**.
+- Vite production build: passed; Capacitor Android generation: passed; Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- Artifact ID `13909857226`; workflow ZIP digest `sha256:a9f61685582071b91f5c54b3bccc9374a8f32c380b9a85824450ce4c15d73e4e`.
+- Extracted APK size: `4,655,144` bytes. APK SHA-256: `25b54c139696c782852b8899405de52efd3d17b402a668a502548d4e85133b09`.
+- ZIP integrity passed for both workflow artifact and extracted APK.
+- Inspected the exact APK's `assets/public/index.html`; it contains the compiled source markers for `modelIndex===19?[0,3,4]`, `modelIndex>=8?[2,3,4]`, and `legacyIndex`.
+- This APK is the IR mapping test candidate for the user to validate on an original MG-30 Gen 2 / firmware 6.0.x. CI does not emulate the physical MG-30; real-device confirmation is still pending. In particular, confirm Third-party LEVEL/LOWCUT/HIGHCUT and factory IR models without MIC/POSITION for both knob writes and hardware readback.
