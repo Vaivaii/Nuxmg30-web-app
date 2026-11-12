@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - release/community-prep-v2
+      - release/mg30-studio-final-polish
       - feature/editor-reference-one-screen
       - feature/nam-library-persistent-cards
       - feature/full-backup-selective-restore
@@ -21,7 +22,7 @@ on:
         description: "Community version tag, e.g. v1.0.0-community.31"
         required: true
         type: string
-        default: "v1.0.0-community.31"
+        default: "v1.0.0-community.32"
       create_draft_release:
         description: "Create a GitHub draft release after the signed APK passes verification"
         required: true
@@ -42,14 +43,14 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          if [[ "$REF_NAME" != "release/community-prep-v2" && "$REF_NAME" != "feature/editor-reference-one-screen" && "$REF_NAME" != "feature/nam-library-persistent-cards" && "$REF_NAME" != "feature/full-backup-selective-restore" ]]; then
+          if [[ "$REF_NAME" != "release/community-prep-v2" && "$REF_NAME" != "release/mg30-studio-final-polish" && "$REF_NAME" != "feature/editor-reference-one-screen" && "$REF_NAME" != "feature/nam-library-persistent-cards" && "$REF_NAME" != "feature/full-backup-selective-restore" ]]; then
             echo "Run this workflow only from an approved community preparation branch."
             exit 1
           fi
 
       - name: Validate release tag
         env:
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.31' }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.32' }}
         run: |
           set -euo pipefail
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-community\.[0-9]+$ ]]; then
@@ -142,7 +143,7 @@ jobs:
                 signing.keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 signing.keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
                 androidDsl.buildTypes.getByName("release").signingConfig = signing
-                androidDsl.defaultConfig.versionCode = 31
+                androidDsl.defaultConfig.versionCode = 32
                 androidDsl.defaultConfig.versionName = System.getenv("RELEASE_TAG").replaceFirst("^v", "")
               }
             }
@@ -205,7 +206,7 @@ jobs:
           body: |
             MG30 Studio Community Edition for the original NUX MG-30 Gen 2, firmware 6.0.x.
 
-            This is a signed Community .31 candidate for the original NUX MG-30 Gen 2, firmware 6.0.x, with dynamic NAM/TONE3000 workspace layout. Physical installation and MG-30 hardware checks are still required before acceptance. It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
+            This is a signed Community .32 candidate for the original NUX MG-30 Gen 2, firmware 6.0.x, with dynamic NAM/TONE3000 workspace layout. Physical installation and MG-30 hardware checks are still required before acceptance. It remains a draft until the owner completes signing, installation, hardware, documentation and release-readiness checks.
 
             Verify the SHA-256 checksum before installation. Review the compatibility and known-limitations notes before using device-write operations.
 
