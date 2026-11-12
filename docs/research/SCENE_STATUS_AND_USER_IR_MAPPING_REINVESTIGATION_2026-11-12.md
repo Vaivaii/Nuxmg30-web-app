@@ -138,3 +138,21 @@ USB-MIDI event packets use the 4-byte USB-MIDI event framing; the captured CC ev
 - ZIP integrity passed for both workflow artifact and extracted APK.
 - Inspected the exact APK's `assets/public/index.html`; it contains the compiled source markers for `modelIndex===19?[0,3,4]`, `modelIndex>=8?[2,3,4]`, and `legacyIndex`.
 - This APK is the IR mapping test candidate for the user to validate on an original MG-30 Gen 2 / firmware 6.0.x. CI does not emulate the physical MG-30; real-device confirmation is still pending. In particular, confirm Third-party LEVEL/LOWCUT/HIGHCUT and factory IR models without MIC/POSITION for both knob writes and hardware readback.
+
+## Follow-up: Third-party LEVEL-only correction from physical Build #708 test
+
+The user physically tested Build #708 on the original MG-30 Gen 2 and reported:
+- Factory IR models without MIC/POSITION: mapping is correct.
+- Third-party LOWCUT and HIGHCUT: both are correct.
+- Third-party LEVEL: still incorrect / not responding correctly.
+
+This physical result isolates the remaining defect to the Third-party LEVEL index. The Build #708 mapping `[0,3,4]` had correctly placed LOWCUT and HIGHCUT on hardware indexes 3/4 but incorrectly placed LEVEL at index 0. The correction is now `[2,3,4]` for every IR model without MIC/POSITION, including Third-party:
+- LEVEL: hardware index 2 → MIDI CC 68 → packed buffer slot 78.
+- LOWCUT: hardware index 3 → MIDI CC 69 → packed buffer slot 79 (unchanged).
+- HIGHCUT: hardware index 4 → MIDI CC 70 → packed buffer slot 80 (unchanged).
+
+This supersedes the earlier Build #708 mapping note that assigned Third-party LEVEL to index 0 / CC 66 / packed slot 76. The CC 66 event in the original pcap captures is not sufficient to label that parameter as LEVEL; the user's direct device test is stronger evidence for the actual control semantics. Do not revert the `[2,3,4]` layout for Third-party.
+
+Code change: `www/index.html` now applies `[2,3,4]` uniformly to IR model indexes 8 onward; `legacyIndex` continues preserving old local draft names/order. Regression tests explicitly assert that Third-party LEVEL uses index 2 while LOWCUT/HIGHCUT stay on indexes 3/4, and that the global CC and packed-slot tables are unchanged.
+
+Validation: implementation and regression test commits are now on `fix/ir-user-cut-scene-sync`. CI for this follow-up is pending; no Build #709+ APK is approved until the exact latest commit passes all tests and Android build. The physical test should next verify Third-party LEVEL write and readback, then recheck LOWCUT/HIGHCUT and factory no-MIC models.
