@@ -2572,15 +2572,24 @@ function parameterControls(blockIndex, modelIndex=states[blockIndex]?.model){
  if(blockIndex===3&&AMP_QUICKTONE_LAYOUTS[modelIndex]){
   return [...AMP_QUICKTONE_LAYOUTS[modelIndex],...(AMP_THREE_POSITION_SWITCHES[modelIndex]||[])].sort((a,b)=>a.ccIndex-b.ccIndex);
  }
- const controls=block.models[modelIndex][1].split(',').map((raw,ccIndex)=>{
+ const controls=block.models[modelIndex][1].split(',').map((raw,legacyIndex)=>{
   const param=raw.trim();
-  return {param,label:param.toUpperCase(),ccIndex};
+  return {param,label:param.toUpperCase(),ccIndex:legacyIndex,legacyIndex};
  });
+ // IR hardware parameter IDs are not a compact 0..N sequence for every model.
+ // Factory IRs with MIC/POSITION expose the full five-slot layout (66..70).
+ // Factory IRs without those controls still keep LEVEL/LOWCUT/HIGHCUT at
+ // hardware slots 2/3/4. QuickTone's Third-party descriptor is different:
+ // captures show its three controls on CC 66, 69 and 70 (slots 0/3/4).
+ if(blockIndex===9){
+  const irIndexes=modelIndex===19?[0,3,4]:(modelIndex>=8?[2,3,4]:[0,1,2,3,4]);
+  controls.forEach((control,index)=>{control.ccIndex=irIndexes[index]??-1});
+ }
  const modelName=block.models[modelIndex][0];
  const switches=EFFECT_DISCRETE_SWITCHES[block.id]?.[modelName]||[];
  return controls.map(control=>{
   const override=switches.find(item=>item.param===control.param);
-  return override?{...control,...override,ccIndex:control.ccIndex}:control;
+  return override?{...control,...override,ccIndex:control.ccIndex,legacyIndex:control.legacyIndex}:control;
  });
 }
 function isDiscreteSwitch(control){
@@ -2594,7 +2603,7 @@ function parameterValueForControl(blockIndex,state,modelIndex,control){
  }
  if(Object.prototype.hasOwnProperty.call(state.values,control.param))return state.values[control.param];
  // Migrate old local drafts by their original parameter slot, not by label.
- const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.ccIndex];
+ const legacy=BLOCKS[blockIndex].models[modelIndex][1].split(',').map(x=>x.trim())[control.legacyIndex??control.ccIndex];
  if(legacy&&Object.prototype.hasOwnProperty.call(state.values,legacy))return state.values[legacy];
  return undefined;
 }
