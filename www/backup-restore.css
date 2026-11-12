@@ -152,3 +152,143 @@
   .backup-restore-option { padding: 10px; }
   .backup-restore-option-copy strong { font-size: 12px; }
 }
+
+
+/* Full-screen operation feedback: the percentage is updated only from completed work. */
+.backup-progress-overlay {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 8, 10, .82);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.backup-progress-overlay[hidden] { display: none !important; }
+.backup-progress-dialog {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: min(100%, 430px);
+  padding: 24px 20px 20px;
+  border: 1px solid #435348;
+  border-radius: 20px;
+  background: linear-gradient(150deg, #192326, #101719 74%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .58);
+  text-align: center;
+}
+.backup-progress-kicker {
+  color: #c5f36b;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .18em;
+}
+.backup-progress-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(197, 243, 107, .18);
+  border-top-color: #c5f36b;
+  border-right-color: #c5f36b;
+  border-radius: 50%;
+  animation: backup-progress-spin .85s linear infinite;
+}
+@keyframes backup-progress-spin { to { transform: rotate(360deg); } }
+.backup-progress-dialog h3 {
+  margin: 0;
+  color: #f0f5f2;
+  font-size: 19px;
+  line-height: 1.2;
+}
+.backup-progress-dialog > p {
+  margin: 0;
+  color: #b1beb7;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.backup-progress-track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  margin-top: 5px;
+  overflow: hidden;
+  border: 1px solid #34423b;
+  border-radius: 999px;
+  background: #0a1113;
+}
+.backup-progress-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a8dc54, #d6ff82);
+  box-shadow: 0 0 15px rgba(197, 243, 107, .3);
+  transition: width .18s ease;
+}
+.backup-progress-track.is-indeterminate span {
+  width: 38% !important;
+  animation: backup-progress-sweep 1.35s ease-in-out infinite alternate;
+}
+@keyframes backup-progress-sweep { from { transform: translateX(-8%); } to { transform: translateX(175%); } }
+.backup-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+.backup-progress-meta small {
+  min-width: 0;
+  color: #94a29b;
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.backup-progress-meta strong {
+  flex: 0 0 auto;
+  color: #d6f2a9;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.backup-progress-dialog .backup-progress-footnote {
+  padding-top: 9px;
+  border-top: 1px solid rgba(255,255,255,.07);
+  color: #7f8d87;
+  font-size: 10px;
+}
+
+/* Dedicated mobile scrollport: keep the final warning and action controls above the nav. */
+@media (max-width: 720px) {
+  body > .app > #page-backup:not(.hidden) {
+    display: block !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+    scroll-padding-top: 12px !important;
+    scroll-padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  /* The fixed fade used by other tabs masked the final Backup warning on short screens. */
+  body > .app > #page-backup:not(.hidden)::after {
+    display: none !important;
+  }
+  body > .app > #page-backup > .backup-hero {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 35 !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backup-progress-spinner,
+  .backup-progress-track.is-indeterminate span {
+    animation: none !important;
+  }
+  .backup-progress-track span { transition: none !important; }
+}
