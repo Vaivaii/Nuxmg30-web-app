@@ -12,18 +12,16 @@ function between(start, end) {
   return source.slice(first, last);
 }
 
-test('Third-party/User IR swaps only Low Cut and High Cut hardware parameter indexes', () => {
+test('Third-party/User IR keeps original parameter order until its hardware mapping is proven', () => {
   const controls = between('function parameterControls(', 'function isDiscreteSwitch(');
-  assert.ok(controls.includes("block.id==='IR'&&getModelBaseName(modelName).trim().toLowerCase()==='third-party'"));
-  assert.ok(controls.includes("const lowCut=controls.find(control=>control.param==='lowcut')"));
-  assert.ok(controls.includes("const highCut=controls.find(control=>control.param==='highcut')"));
-  assert.ok(controls.includes('lowCut.ccIndex=highCut.ccIndex'));
-  assert.ok(controls.includes('highCut.ccIndex=lowCutIndex'));
+  assert.ok(controls.includes("block.models[modelIndex][1].split(',').map((raw,ccIndex)"));
+  assert.ok(controls.includes('return {param,label:param.toUpperCase(),ccIndex}'));
+  assert.ok(!controls.includes("getModelBaseName(modelName).trim().toLowerCase()==='third-party'"));
   assert.ok(source.includes("'Third-party'"));
   assert.ok(source.includes("i<8?'mic, position, level, lowcut, highcut':'level, lowcut, highcut'"));
 });
 
-test('User IR cut remap is used consistently for outgoing CC, incoming CC and scene bit slots', () => {
+test('User IR send, receive and scene read use one shared hardware parameter index', () => {
   const outgoing = between('function sendBlockParam(', 'function scheduleHardwareUiRefresh(');
   const incoming = between('function syncIncomingParameterCC(', 'function midiFrame(');
   const readBuffer = between('async function readActiveBuffer(', 'async function pollHardwareState(');
@@ -33,23 +31,37 @@ test('User IR cut remap is used consistently for outgoing CC, incoming CC and sc
   assert.ok(readBuffer.includes('bitSlot(body,slots[control.ccIndex])'));
 });
 
-test('legacy User IR draft values stay attached to visible Low Cut / High Cut names', () => {
+test('legacy User IR drafts are not remapped to a speculative High Cut / Low Cut order', () => {
   const values = between('function parameterValueForControl(', 'const delay=');
-  assert.ok(values.includes("blockIndex===9&&getModelBaseName(BLOCKS[blockIndex].models[modelIndex][0]).trim().toLowerCase()==='third-party'"));
-  assert.ok(values.includes("if(control.param==='lowcut')legacyIndex=1"));
-  assert.ok(values.includes("else if(control.param==='highcut')legacyIndex=2"));
+  assert.ok(values.includes('const legacy=BLOCKS[blockIndex].models[modelIndex][1].split'));
+  assert.ok(!values.includes("control.param==='lowcut'"));
+  assert.ok(!values.includes("control.param==='highcut'"));
 });
 
-test('external pedal CC80 is treated as the newest scene event', () => {
+test('the live active scene parser is the shared QuickTone-verified status parser', () => {
+  const status = between('async function readActiveProgramScene()', 'async function readActiveProgramSceneWithRetry(');
+  assert.ok(status.includes("await import('./mg30-scene-status.js')"));
+  assert.ok(status.includes('parseMG30ActiveSceneStatusReply(reply)'));
+  assert.ok(!status.includes('Number(reply[9])'));
+});
+
+test('incoming CC80 is a refresh hint, never assigned directly as the active scene', () => {
   const handler = between('function handleMG30MidiMessage(', 'async function connectMG30(');
   assert.ok(handler.includes('cc===80&&value<=2'));
   assert.ok(handler.includes('sceneStateRevision++'));
-  assert.ok(handler.includes('lastSceneCommandAt=Date.now()'));
-  assert.ok(handler.includes('activeSceneIndex=value'));
-  assert.ok(handler.includes('readActiveBuffer({preserveDraftName:true,skipSceneStatus:true,sceneIndex:value,program:targetSlot})'));
+  assert.ok(handler.includes('scheduleExternalSceneStatusRefresh()'));
+  assert.ok(!handler.includes('activeSceneIndex=value'));
+  assert.ok(!handler.includes('sceneIndex:value'));
 });
 
-test('an in-flight hardware status poll cannot overwrite a newer scene event', () => {
+test('external CC80 waits for current reads to settle and queries authoritative 15/02 status', () => {
+  const refresh = between('function scheduleExternalSceneStatusRefresh(', 'function handleMG30MidiMessage(');
+  assert.ok(refresh.includes('hardwareSyncBusy||sceneSwitchPending||activeBufferReadPromise||sceneStatusReadPromise'));
+  assert.ok(refresh.includes('scheduleExternalSceneStatusRefresh()'));
+  assert.ok(refresh.includes('pollHardwareState(true)'));
+});
+
+test('an in-flight status poll cannot overwrite a newer external scene event', () => {
   const poll = between('async function pollHardwareState(', 'function startHardwareStatePolling(');
   assert.ok(poll.includes('const sceneRevisionAtRequest=sceneStateRevision'));
   assert.ok(poll.includes('if(sceneRevisionAtRequest!==sceneStateRevision)return'));
@@ -63,18 +75,16 @@ test('a scene change during preset-part readback discards the stale buffer snaps
   assert.ok(readBuffer.indexOf('sceneRevisionAtStart!==sceneStateRevision') < readBuffer.indexOf('states=candidate'));
 });
 
-test('initial USB sync retries scene status and never silently chooses Scene 1 while connected', () => {
+test('initial USB sync retries active status and never silently chooses Scene 1 while connected', () => {
   const retry = between('async function readActiveProgramSceneWithRetry(', 'async function readSysExPart(');
   const readBuffer = between('async function readActiveBuffer(', 'async function pollHardwareState(');
   assert.ok(retry.includes('attempts=3'));
   assert.ok(retry.includes('readActiveProgramScene()'));
   assert.ok(readBuffer.includes('readActiveProgramSceneWithRetry()'));
-  assert.ok(readBuffer.includes('if((!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)&&!midiConnected)sceneIndex=0;'));
   assert.ok(readBuffer.includes('Scene aktif MG-30 belum diketahui'));
-  assert.ok(readBuffer.includes('if(Number.isInteger(activeSceneIndex)&&activeSceneIndex>=0&&activeSceneIndex<=2)'));
 });
 
-test('connection/reconnection invalidates unconfirmed scene state before the first hardware sync', () => {
+test('connection and reconnection invalidate unconfirmed scene state before first sync', () => {
   const reset = between('function resetHardwareSceneSyncState(', 'let lastAnnouncedActivePresetSlot');
   const connect = between('async function connectMG30(', 'let selected=');
   assert.ok(reset.includes('sceneStateRevision++'));
@@ -85,14 +95,14 @@ test('connection/reconnection invalidates unconfirmed scene state before the fir
   assert.ok(connect.includes('finally{hardwareSyncBusy=false}'));
 });
 
-test('scene UI shows no active scene before hardware scene has been identified', () => {
+test('scene UI shows no active scene until the hardware scene is identified', () => {
   const render = between('function renderSceneButtons(', 'function initSceneCopyUI(');
   assert.ok(render.includes('const sceneKnown=Number.isInteger(activeSceneIndex)&&activeSceneIndex>=0&&activeSceneIndex<=2'));
   assert.ok(render.includes('picker.selectedIndex=sceneKnown?activeSceneIndex:-1'));
   assert.ok(render.includes("sceneKnown&&activeSceneIndex===i?'active':'"));
 });
 
-test('IR factory model CC and packed-scene slot tables remain unchanged', () => {
+test('factory IR global CC and packed scene slot tables remain unchanged', () => {
   assert.ok(source.includes('[66,67,68,69,70,71], // IR/CAB: base CC 66'));
   assert.ok(source.includes('[76,77,78,79,80,81],[83,84]'));
   assert.ok(source.includes('const MIDI_PARAM_CC=['));
