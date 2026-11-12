@@ -24,7 +24,7 @@ test('Full Backup calls the existing Export All Presets serializer in read-only 
   assert.match(presetExport, /options\.returnBytes === true/);
   assert.match(presetExport, /exported: true/);
   assert.match(backupUi, /window\.MG30PresetExportAll/);
-  assert.match(backupUi, /presetExporter\(\{ returnBytes: true, confirm: false \}\)/);
+  assert.match(backupUi, /presetExporter\(\{\s*returnBytes: true,\s*confirm: false,\s*onProgress: event =>/);
   assert.match(backupUi, /parseMG30AllPresetPatch\(presetResult\.bytes\)/);
 });
 
