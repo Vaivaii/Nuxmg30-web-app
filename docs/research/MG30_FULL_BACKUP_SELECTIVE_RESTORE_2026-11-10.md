@@ -87,3 +87,24 @@ Signed candidate target: Community .31 / versionCode 31 (same signing certificat
 The APK was downloaded from the Actions audit artifact, extracted, and independently checked against its SHA-256 file. Its package/version metadata and V2 signer details were inspected locally. The bundled WebView JavaScript was also checked for the Full Backup ZIP, Selective Restore UI, NAM rollback, and localStorage rollback code paths.
 
 No physical Android phone or MG-30 was connected to the build runner. Hardware acceptance remains a user-side test after installing the signed .31 update. Install over the existing app without uninstalling or clearing app data.
+
+## Final-polish stabilization scope — Community .32 candidate
+
+User-requested work for the temporary final app build:
+- Backup & Restore mobile page must remain a complete vertical scroll area, including the final warning text and bottom controls; remove the fixed tab-fade layer from this page so it does not mask the warning.
+- Full Backup, ZIP inspection and Selective Restore must show a blocking operation dialog with current step, detail and progress. Determinate percentages are based on completed preset/file/chunk/ACK/readback counts; indeterminate animation is used only while an operation does not expose a meaningful fraction.
+- Restore progress is reported for NAM files, IR Collection records, hardware-bank write ACKs and the 128-preset / 384-scene readback. Duplicate starts are blocked while the operation is busy.
+- The candidate is prepared as signed Community .32 / versionCode 32 using the repository's existing release signing keystore workflow. Do not describe it as signed until the `apksigner verify` step succeeds and the certificate fingerprint is recorded.
+- This stabilization scope does not add device-resident IR/NAM readback; it preserves the existing and explicitly documented distinction between hardware preset bank (including embedded per-preset User IR data), local NAM Library, and local IR Collection.
+
+## Next planned Full Backup development phase (not included in .32)
+
+After the app-shell/backup UI stabilization is accepted, the next development phase is device-asset backup and slot-preserving restore:
+
+1. **Hardware IR Collection** — enumerate and read all 24 physical Collection slots, including WAV-equivalent waveform and curve payloads, names/CRC and original slot index. Backup must distinguish actual pedal slots from the app's local IndexedDB mirror. Restore writes each entry to its same original slot and performs readback verification. A slot that cannot be read completely must be reported unavailable; never substitute a local mirror silently.
+2. **Hardware NAM slots** — back up the actual model weights from each populated device slot, with its slot identity/metadata. Restore the model into the same device slot using the existing proven NAM A2-Lite write path, then verify slot metadata and model-content readback wherever the device protocol permits. The current research note still says the 7,484-byte device weight readback command is unproven, so that investigation is a prerequisite; metadata-only readback must not be called a full NAM backup.
+3. Preserve the 128 presets / 384 scenes and their embedded User IR resources as already covered by the existing preset-bank backup.
+
+Stem Splitter and AI Tone Preset are explicitly deferred. Do not add them to the .32 stabilization scope or alter their branches/features in this work.
+
+Acceptance boundary: the signed .32 APK can stabilize the current UI and progress feedback, but it does not yet fulfill the later device-slot NAM/IR preservation phase. That phase remains a separate reverse-engineering and hardware-validation milestone.
