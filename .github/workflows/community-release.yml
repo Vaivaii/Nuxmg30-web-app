@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Community version tag, e.g. v1.0.0-community.31"
+        description: "Community version tag, e.g. v1.0.0-community.32"
         required: true
         type: string
         default: "v1.0.0-community.32"
@@ -128,7 +128,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.31' }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.32' }}
         run: |
           cat > "$RUNNER_TEMP/mg30-community-signing.init.gradle" <<'GRADLE'
           gradle.beforeProject { project ->
@@ -156,7 +156,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.31' }}
+          RELEASE_TAG: ${{ inputs.release_tag || 'v1.0.0-community.32' }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease -I "$MG30_SIGNING_INIT"
