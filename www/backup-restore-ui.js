@@ -772,15 +772,15 @@ import './backup-restore.css';
     if (selected.includes('presetDrafts')) {
       reportStage('Restoring local preset drafts', 0, 1, 'Applying draft history…');
       const result = restoreLocalDrafts(state.available.presetDrafts.drafts, conflict);
-      stageIndex++;
       reportStage('Restoring local preset drafts', 1, 1, result.drafts + ' drafts from backup');
+      stageIndex++;
       outcomes.push('Local drafts: ' + result.drafts + ' from backup, ' + result.totalDrafts + ' total');
     }
     if (selected.includes('settings')) {
       reportStage('Restoring safe app settings', 0, 1, 'Applying whitelisted preferences…');
       const result = restoreSafeSettings(state.available.settings.values, conflict);
-      stageIndex++;
       reportStage('Restoring safe app settings', 1, 1, result.restored + ' restored · ' + result.skipped + ' kept');
+      stageIndex++;
       outcomes.push('App settings: ' + result.restored + ' restored, ' + result.skipped + ' kept');
     }
     if (wantsBank) {
