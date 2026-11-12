@@ -64,4 +64,6 @@ test('Final candidate branch is enabled for both debug validation and release si
   assert.match(releaseWorkflow, /ANDROID_KEY_ALIAS/);
   assert.match(releaseWorkflow, /MG30-Studio-Community\.apk\.sha256/);
   assert.match(releaseWorkflow, /versionCode = 32/);
+  assert.match(releaseWorkflow, /RELEASE_TAG: \$\{\{ inputs\.release_tag \|\| 'v1\.0\.0-community\.32' \}\}/);
+  assert.doesNotMatch(releaseWorkflow, /v1\.0\.0-community\.31/);
 });
