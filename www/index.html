@@ -2959,6 +2959,8 @@ async function readActiveBuffer(options={}){
   if(midiConnected&&options.skipSceneStatus!==true){
    try{
     status=await readActiveProgramSceneWithRetry();
+    // A hardware/app scene event newer than this read owns the next buffer sync.
+    if(sceneRevisionAtStart!==sceneStateRevision)return hardwarePresetName;
     // A just-received hardware/app CC80 is a newer scene signal than a query
     // response that may still be in the device/USB queue.
     if(lastSceneCommandAt&&Date.now()-lastSceneCommandAt<4000&&
@@ -2969,9 +2971,14 @@ async function readActiveBuffer(options={}){
     lastReportedSceneStatus=status.scene;
     lastReportedProgram=status.program;
    }catch(error){
-    // Never silently read Scene 1 when the active scene has not been identified.
-    if(options.sceneIndex===undefined)throw error;
-    setDeviceStatus('Status preset/scene belum terbaca: '+error.message);
+    // If this device session has already reported a valid CC80 scene, use that
+    // known scene. On first connection activeSceneIndex is null, so never
+    // default to Scene 1 while the device status is still unknown.
+    if(options.sceneIndex===undefined){
+     if(Number.isInteger(activeSceneIndex)&&activeSceneIndex>=0&&activeSceneIndex<=2){
+      sceneIndex=activeSceneIndex;
+     }else throw error;
+    }else setDeviceStatus('Status preset/scene belum terbaca: '+error.message);
    }
   }
   if(!Number.isInteger(sceneIndex)||sceneIndex<0||sceneIndex>2)throw new Error('Scene aktif MG-30 belum diketahui; menunggu status perangkat.');
@@ -3230,7 +3237,14 @@ async function connectMG30(options={}){
     midiInput.onmidimessage=handleMG30MidiMessage;
     midiAccess.onstatechange=()=>{
      const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
-     midiConnected=ok;window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
+     const wasConnected=midiConnected;
+     midiConnected=ok;
+     if(ok!==wasConnected){
+      resetHardwareSceneSyncState();
+      if(!ok)hardwareSyncBusy=false;
+     }
+     window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));
+     if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
      setDeviceStatus(ok?'Terhubung via USB-MIDI Android':'Perangkat MIDI terputus');
     };
     setDeviceStatus('Terhubung via USB-MIDI Android. Membaca preset aktif…');
@@ -3279,7 +3293,14 @@ async function connectMG30(options={}){
    midiInput.onmidimessage=handleMG30MidiMessage;
    midiAccess.onstatechange=()=>{
     const ok=[...midiAccess.inputs.values()].some(x=>x.id===midiInput?.id&&x.state==='connected')&&[...midiAccess.outputs.values()].some(x=>x.id===midiOutput?.id&&x.state==='connected');
-    midiConnected=ok;window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
+    const wasConnected=midiConnected;
+    midiConnected=ok;
+    if(ok!==wasConnected){
+     resetHardwareSceneSyncState();
+     if(!ok)hardwareSyncBusy=false;
+    }
+    window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));
+    if(ok)startHardwareStatePolling();else stopHardwareStatePolling();
     setDeviceStatus(ok?'Terhubung':'Perangkat terputus');
    };
    setDeviceStatus('Terhubung. Membaca preset aktif…');
