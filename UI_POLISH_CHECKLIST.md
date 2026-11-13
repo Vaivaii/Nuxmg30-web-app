@@ -4520,3 +4520,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - CI #778: updated prior assertions for the new pending capture-choice stage and compact tuple schema; restored the exact API total diagnostic label in zero-result errors. Full CI rerun pending.
 
 - CI #779: retained the established USB-MIDI status wording and capture-size diagnostic phrase used by the existing test contract. Logic unchanged.
+
+- CI #780 final two failures traced to legacy diagnostic wording expectations; source strings now retain the established messages. Candidate metadata sent to the NAM model-ranking prompt is shortened to boost/OD classification plus a capped description. Corrected validation re-prompt line breaks to be actual newlines.

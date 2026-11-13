@@ -472,7 +472,7 @@ async function init(){
   return {tone,reason:String(result.reason||'')};
  }
  async function chooseNamModel(prompt,tone,models,rejected=[]){
-  const candidates=models.filter(m=>!rejected.includes(String(m.id))).slice(0,18).map(m=>({id:String(m.id),name:m.name,size:m.size,architecture:m.architecture_version??m.architecture,description:m.description,metadata:describeNamCaptureMetadata(tone,m,tone.gear||'amp-cab'),downloadable:Boolean(m.model_url)}));
+  const candidates=models.filter(m=>!rejected.includes(String(m.id))).slice(0,18).map(m=>({id:String(m.id),name:m.name,size:m.size,architecture:m.architecture_version??m.architecture,description:m.description,metadata:(()=>{const meta=describeNamCaptureMetadata(tone,m,tone.gear||'amp-cab');return {drive:meta.driveMetadata,description:String(m.description||tone?.description||'').slice(0,180)};})(),downloadable:Boolean(m.model_url)}));
   if(!candidates.length)throw new Error('No remaining downloadable A2-Lite captures are available in the selected TONE3000 tone.');
   const system='Choose the best downloadable A2 NAM capture for the requested guitar tone from this one TONE3000 tone pack. Return JSON only: {"modelId":"123","reason":"short English reason"}. Select only an ID from CANDIDATES. Do not choose a model without a download URL. Use model description and tone metadata as backup evidence for whether boost/OD is included; do not invent this when metadata is silent. Prefer a capture appropriate to the artist tone, and let the user override the selection in the capture dropdown. Actual file validation is authoritative.';
   const result=await askNamAIJson(system,'USER REQUEST:\\n'+prompt+'\\nSELECTED TONE:\\n'+JSON.stringify({name:tone.tone?.name||tone.name,creator:tone.tone?.creator||tone.creator,description:tone.tone?.description||tone.description,gear:tone.gear})+'\\nCANDIDATES:\\n'+JSON.stringify(candidates)+'\\nREJECTED MODEL IDS:\\n'+JSON.stringify(rejected),'selecting the closest A2-Lite capture');
@@ -504,7 +504,7 @@ async function init(){
    message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', A2 NAM).');
    status('Searching the TONE3000 NAM catalog…','busy');
    const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
-   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. Capture-size filtering is deferred until model download. No file downloaded or pedal data changed.');}
+   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. Capture-size filtering is deferred until model download. No file was downloaded and no pedal data was changed.');}
    const selection=await chooseNamTone(prompt,intent.query,tones);
    message('ai','Selected TONE3000 tone: '+selection.tone.name+(selection.tone.creator?' by @'+selection.tone.creator:'')+'. '+selection.reason);
    const toneOptions=[selection.tone,...tones.filter(t=>String(t.id)!==String(selection.tone.id))].slice(0,3);
@@ -539,7 +539,7 @@ async function init(){
    }
   }
   const editor=window.MG30AIToneBridge;
-  if(!editor?.isConnected?.()){status('NAM found and validated. Connect MG-30 using USB-MIDI, then press Send again to transfer to slot 10. No pedal data has been written.','success');return {pendingConnection:true};}
+  if(!editor?.isConnected?.()){status('NAM found and validated. Connect the MG-30 via USB-MIDI, then press Send again to transfer to slot 10. No pedal data has been written.','success');return {pendingConnection:true};}
   status('Checking slot 10 and asking before overwrite if occupied…','busy');
   const imported=await bridge.importModel(selected.model.id,{slotNumber:10,confirmOverwrite:true,prepare:false});
   if(imported?.cancelled){pendingNamSelection=null;throw new Error('NAM import canceled. Slot 10 was not changed.');}
@@ -559,8 +559,8 @@ async function init(){
   const first=await askNamAIJson(system,userText(prompt,null,activeNamContext),'building your Tone Plan');
   try{return validateAiTonePlan(first,catalog);}catch(validationError){
    message('ai','The first proposal did not exactly match the MG-30 catalog ('+validationError.message+'). Asking the AI to correct the model/parameter selection before sending anything.');
-   const correctionSystem=system+'\\nMANDATORY CORRECTION: Your prior proposal failed application validation. Re-check exact block model names and parameter keys against the compact catalog. If changing a model, include every parameter listed for that exact model. Do not guess or abbreviate names. Return corrected complete JSON only.';
-   const correctionUser='USER REQUEST:\\n'+prompt+'\\nINSTALLED NAM CONTEXT:\\n'+(activeNamContext||'none')+'\\nVALIDATION ERROR:\\n'+validationError.message+'\\nPREVIOUS INVALID PLAN:\\n'+JSON.stringify(first)+'\\nReturn a corrected JSON Tone Plan using only exact catalog entries.';
+   const correctionSystem=system+'\nMANDATORY CORRECTION: Your prior proposal failed application validation. Re-check exact block model names and parameter keys against the compact catalog. If changing a model, include every parameter listed for that exact model. Do not guess or abbreviate names. Return corrected complete JSON only.';
+   const correctionUser='USER REQUEST:\n'+prompt+'\nINSTALLED NAM CONTEXT:\n'+(activeNamContext||'none')+'\nVALIDATION ERROR:\n'+validationError.message+'\nPREVIOUS INVALID PLAN:\n'+JSON.stringify(first)+'\\nReturn a corrected JSON Tone Plan using only exact catalog entries.';
    const corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
    try{return validateAiTonePlan(corrected,catalog);}catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
