@@ -5,6 +5,10 @@ import { App } from '@capacitor/app';
 import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer, safeMG30SlotLabel, readMG30NAMSlotNames } from './nam-transfer.js';
 
 const T3K = 'https://www.tone3000.com/api/v1';
+const SecureStore = registerPlugin('MG30SecureStore');
+const AUTH_FIELDS = ['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri'];
+let oauthData = null;
+let oauthDataPromise = null;
 const PREFIX = 'mg30-t3k-';
 const NativeMidi = registerPlugin('MG30Midi');
 const Native = () => Capacitor.isNativePlatform();
@@ -19,6 +23,74 @@ const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[ch]));
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// OAuth tokens and transient PKCE secrets are encrypted by the existing Android Keystore plugin.
+// The Publishable Key remains public and stays in localStorage as the OAuth client_id.
+async function loadOAuthData() {
+  if (oauthData) return oauthData;
+  if (oauthDataPromise) return oauthDataPromise;
+  oauthDataPromise = (async () => {
+    const data = {};
+    if (Capacitor.isNativePlatform()) {
+      const stored = await SecureStore.getSecret({ provider: 'tone3000' });
+      if (stored?.configured && stored.value) {
+        let parsed;
+        try { parsed = JSON.parse(stored.value); } catch { throw new Error('Encrypted TONE3000 session data is invalid. Reconnect TONE3000.'); }
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Encrypted TONE3000 session data is invalid. Reconnect TONE3000.');
+        Object.assign(data, parsed);
+      } else {
+        for (const key of AUTH_FIELDS) {
+          const legacy = localStorage.getItem(PREFIX + key);
+          if (legacy !== null) data[key] = legacy;
+        }
+        if (Object.keys(data).length) {
+          await SecureStore.setSecret({ provider: 'tone3000', value: JSON.stringify(data) });
+        }
+      }
+      // Remove plaintext tokens/PKCE values only after secure storage was read or migration succeeded.
+      for (const key of AUTH_FIELDS) localStorage.removeItem(PREFIX + key);
+    } else {
+      for (const key of AUTH_FIELDS) {
+        const value = localStorage.getItem(PREFIX + key);
+        if (value !== null) data[key] = value;
+      }
+    }
+    oauthData = data;
+    return oauthData;
+  })();
+  try { return await oauthDataPromise; }
+  catch (error) { oauthDataPromise = null; throw error; }
+}
+
+function authValue(key) {
+  return oauthData?.[key] ?? (!Capacitor.isNativePlatform() ? localStorage.getItem(PREFIX + key) : null);
+}
+
+async function saveOAuthData(patch = {}, remove = []) {
+  await loadOAuthData();
+  const next = { ...oauthData, ...patch };
+  for (const key of remove) delete next[key];
+  if (Capacitor.isNativePlatform()) {
+    if (Object.keys(next).length) {
+      await SecureStore.setSecret({ provider: 'tone3000', value: JSON.stringify(next) });
+    } else {
+      await SecureStore.deleteSecret({ provider: 'tone3000' });
+    }
+    for (const key of AUTH_FIELDS) localStorage.removeItem(PREFIX + key);
+  } else {
+    for (const key of remove) localStorage.removeItem(PREFIX + key);
+    for (const [key, value] of Object.entries(patch)) localStorage.setItem(PREFIX + key, String(value));
+  }
+  oauthData = next;
+  return oauthData;
+}
+
+async function clearOAuthData() {
+  await loadOAuthData();
+  if (Capacitor.isNativePlatform()) await SecureStore.deleteSecret({ provider: 'tone3000' });
+  for (const key of AUTH_FIELDS) localStorage.removeItem(PREFIX + key);
+  oauthData = {};
+}
 
 function stylePanel() {
   if (document.getElementById('t3k-style')) return;
@@ -168,8 +240,8 @@ function createPanel() {
     const expanded = $('t3kCatalogueToggle').getAttribute('aria-expanded') === 'true';
     setCatalogueExpanded(!expanded);
   });
-  $('t3kSignOut').addEventListener('click', signOut);
-  updateAccountStatus();
+  $('t3kSignOut').addEventListener('click', () => { void signOut().catch(error => setStatus('Could not disconnect TONE3000: ' + (error?.message || error))); });
+  void updateAccountStatus();
   return true;
 }
 
@@ -178,10 +250,14 @@ function setStatus(message) {
   if (node) node.textContent = String(message || '');
 }
 
-function updateAccountStatus() {
-  const token = localStorage.getItem(PREFIX + 'access_token');
-  if (token && $('t3kStatus')) {
-    setStatus('Your TONE3000 account is connected on this device. You can choose an A2 tone or reload the details of the tone you last selected.');
+async function updateAccountStatus() {
+  try {
+    await loadOAuthData();
+    if (authValue('access_token') && $('t3kStatus')) {
+      setStatus('Your TONE3000 account is connected on this device. You can choose an A2 tone or reload the details of the tone you last selected.');
+    }
+  } catch (error) {
+    setStatus('Secure TONE3000 session storage is unavailable: ' + (error?.message || error));
   }
 }
 
@@ -208,7 +284,8 @@ function getRedirectUri() {
   return url.href;
 }
 
-async function startSelectFlow() {
+async function startSelectFlow(options = {}) {
+  await loadOAuthData();
   const clientId = (localStorage.getItem(PREFIX + 'client_id') || $('t3kClientId')?.value || '').trim();
   if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(clientId)) {
     setStatus('Enter a valid TONE3000 publishable key before opening the catalog.');
@@ -226,9 +303,9 @@ async function startSelectFlow() {
     const challenge = await sha256Base64Url(verifier);
     const redirectUri = getRedirectUri();
     localStorage.setItem(PREFIX + 'client_id', clientId);
-    localStorage.setItem(PREFIX + 'code_verifier', verifier);
-    localStorage.setItem(PREFIX + 'state', state);
-    localStorage.setItem(PREFIX + 'redirect_uri', redirectUri);
+    const gears = options.gear === 'amp' ? 'amp' : options.gear === 'amp-cab' ? 'amp-cab' : 'amp-cab';
+    await saveOAuthData({ code_verifier: verifier, state, redirect_uri: redirectUri });
+    localStorage.setItem(PREFIX + 'gear_filter', gears);
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -239,7 +316,7 @@ async function startSelectFlow() {
       prompt: 'select_tone',
       format: 'nam',
       architecture: '2',
-      gears: 'amp-cab',
+      gears,
       menubar: 'true',
       locale: 'en',
     });
@@ -256,9 +333,10 @@ async function startSelectFlow() {
 
 
 async function exchangeAuthorizationCode(code) {
+  await loadOAuthData();
   const clientId = localStorage.getItem(PREFIX + 'client_id');
-  const verifier = localStorage.getItem(PREFIX + 'code_verifier');
-  const redirectUri = localStorage.getItem(PREFIX + 'redirect_uri');
+  const verifier = authValue('code_verifier');
+  const redirectUri = authValue('redirect_uri');
   if (!clientId || !verifier || !redirectUri) throw new Error('PKCE data is incomplete. Start the tone selection flow again.');
   const response = await fetch(T3K + '/oauth/token', {
     method: 'POST',
@@ -273,29 +351,32 @@ async function exchangeAuthorizationCode(code) {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error_description || body.error || ('HTTP ' + response.status));
-  storeTokens(body);
+  await storeTokens(body);
 }
 
-function storeTokens(body) {
-  if (!body?.access_token || !body?.refresh_token) throw new Error('The TONE3000 response did not include the required tokens.');
-  localStorage.setItem(PREFIX + 'access_token', body.access_token);
-  localStorage.setItem(PREFIX + 'refresh_token', body.refresh_token);
-  localStorage.setItem(PREFIX + 'expires_at', String(Date.now() + Number(body.expires_in || 3600) * 1000));
+async function storeTokens(body) {
+  await loadOAuthData();
+  const refreshToken = body?.refresh_token || authValue('refresh_token');
+  if (!body?.access_token || !refreshToken) throw new Error('The TONE3000 response did not include the required tokens.');
+  await saveOAuthData({
+    access_token: body.access_token,
+    refresh_token: refreshToken,
+    expires_at: String(Date.now() + Number(body.expires_in || 3600) * 1000),
+  });
 }
 
-function signOut() {
-  for (const key of ['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri']) {
-    localStorage.removeItem(PREFIX + key);
-  }
+async function signOut() {
+  await clearOAuthData();
   setStatus('TONE3000 account disconnected. Your saved tone and model list remain on this device.');
 }
 
 async function ensureAccessToken() {
-  let accessToken = localStorage.getItem(PREFIX + 'access_token');
-  const expiresAt = Number(localStorage.getItem(PREFIX + 'expires_at') || 0);
+  await loadOAuthData();
+  let accessToken = authValue('access_token');
+  const expiresAt = Number(authValue('expires_at') || 0);
   if (accessToken && Date.now() < expiresAt - 60_000) return accessToken;
 
-  const refreshToken = localStorage.getItem(PREFIX + 'refresh_token');
+  const refreshToken = authValue('refresh_token');
   const clientId = localStorage.getItem(PREFIX + 'client_id');
   if (!refreshToken || !clientId) throw new Error('Your TONE3000 session is inactive. Select a tone to sign in again.');
   const response = await fetch(T3K + '/oauth/token', {
@@ -305,10 +386,10 @@ async function ensureAccessToken() {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (body.error === 'invalid_grant') signOut();
+    if (body.error === 'invalid_grant') await signOut();
     throw new Error(body.error_description || body.error || ('Refresh token HTTP ' + response.status));
   }
-  storeTokens(body);
+  await storeTokens(body);
   accessToken = body.access_token;
   return accessToken;
 }
@@ -504,6 +585,12 @@ async function loadSelectedTone(toneId, options = {}) {
     selectedModelId = snapshot.selectedModelId;
     saveWorkspaceSnapshot(snapshot);
     renderToneCatalogue(snapshot, { expand: options.expand ?? true, persist: true });
+    window.dispatchEvent(new CustomEvent('mg30-tone3000-catalogue-loaded', { detail: {
+      toneId: snapshot.toneId, tone: snapshot.tone,
+      models: snapshot.models.map(model => ({ id: model.id, name: model.name,
+        architecture: model.architecture, architecture_version: model.architecture_version,
+        size: model.size, description: model.description }))
+    }}));
     setStatus(snapshot.models.length
       ? snapshot.models.length + ' models loaded in MG30 Studio. Select a model and choose Download & Import.'
       : 'Tone loaded, but no downloadable models were returned by the TONE3000 API.');
@@ -571,7 +658,7 @@ async function saveModel(index, button) {
   }
 }
 
-async function sendModel(index, button) {
+async function sendModel(index, button, options = {}) {
   const model = selectedTone?.models?.[index];
   if (!model?.model_url) { setStatus('The model download URL is not available.'); return false; }
   if (!Native()) { setStatus('Direct import is available only in the Android APK with USB OTG.'); return false; }
@@ -583,7 +670,7 @@ async function sendModel(index, button) {
   }
   const rawLabel = String(model.name || ('TONE3000 tone ' + selectedTone.id + ' model ' + (index + 1)))
     .replace(/\.(nam|namb)$/i, '').trim();
-  if (!window.confirm(
+  if (!options.confirmed && !window.confirm(
     'Import "' + rawLabel + '" to MG-30 slot ' + slotNumber +
     '? This will overwrite the slot. Make sure the existing model is backed up.'
   )) {
@@ -610,7 +697,7 @@ async function sendModel(index, button) {
     window.dispatchEvent(new Event('mg30-nam-library-updated'));
     setStatus('A2-Lite model validated (' + weightBytes.length + ' weight bytes) and saved in NAM Library as ' +
       saved.fileName + '. Connecting to USB-MIDI…');
-    const connection = await window.NUXNativeMidi.connect();
+    const connection = options.connection || await window.NUXNativeMidi.connect();
     const result = await sendMG30A2LiteTransfer(connection, plan, progress => {
       if (progress.stage === 'write') setStatus('Transfer to slot ' + slotNumber + ': ACK frame ' +
         progress.completed + '/' + progress.total + ' (' + progress.label + '). Do not disconnect USB OTG.');
@@ -634,6 +721,58 @@ async function sendModel(index, button) {
   }
 }
 
+
+function getTone3000CatalogueForAI() {
+  if (!selectedTone) return null;
+  return {
+    toneId: selectedTone.id,
+    tone: { ...selectedTone.tone },
+    models: selectedTone.models.map(model => ({
+      id: model.id, name: model.name, architecture: model.architecture,
+      architecture_version: model.architecture_version, size: model.size,
+      description: model.description,
+    })),
+  };
+}
+
+async function importTone3000ModelForAI(modelId, options = {}) {
+  const slotNumber = Number(options.slotNumber ?? 10);
+  if (slotNumber !== 10) throw new Error('The AI NAM destination is locked to MG-30 slot 10.');
+  if (!Native() || !window.NUXNativeMidi?.connect) throw new Error('AI NAM import requires the Android APK and USB OTG connection to MG-30.');
+  const index = selectedTone?.models?.findIndex(model => String(model.id) === String(modelId)) ?? -1;
+  if (index < 0) throw new Error('The selected TONE3000 model is no longer in the current catalogue.');
+  const model = selectedTone.models[index];
+  if (!model?.model_url) throw new Error('The selected TONE3000 model has no downloadable NAM file.');
+
+  const connection = await window.NUXNativeMidi.connect();
+  const scan = await readMG30NAMSlotNames(connection, progress => {
+    window.dispatchEvent(new CustomEvent('mg30-ai-nam-progress', { detail: progress }));
+  });
+  const slot = scan.slots.find(row => row.slotNumber === 10);
+  if (!slot?.received) throw new Error('Could not verify the current metadata of slot 10. No NAM data was written. Reconnect and read the NAM slots again.');
+  const currentName = slot.nameAvailable ? slot.name : 'No readable NAM name';
+  if (options.confirmOverwrite !== false && !window.confirm(
+    'AI NAM destination: slot 10.\nCurrent device label: ' + currentName +
+    '\nNew model: ' + (model.name || 'TONE3000 NAM') +
+    '\n\nThis will overwrite slot 10. Continue?'
+  )) return { cancelled: true, slotNumber: 10, currentName };
+
+  const imported = await sendModel(index, null, { confirmed: true, connection });
+  if (!imported) throw new Error('NAM transfer did not complete. Check the TONE3000 status and device before retrying.');
+  return { success: true, slotNumber: 10, currentName, modelName: model.name, toneId: selectedTone.id };
+}
+
+window.NUXTONE3000Bridge = Object.freeze({
+  async hasSession() { await loadOAuthData(); return Boolean(authValue('access_token') || authValue('refresh_token')); },
+  async startSelection(options = {}) {
+    const gear = options.gear;
+    if (gear !== 'amp' && gear !== 'amp-cab') throw new Error('Choose Amp Only or Amp + Cab before opening TONE3000.');
+    await startSelectFlow({ gear });
+    return { started: true, gear };
+  },
+  getCatalogue: getTone3000CatalogueForAI,
+  async importModel(modelId, options = {}) { return importTone3000ModelForAI(modelId, options); },
+});
 
 let selectedLocalNamFile = null;
 
@@ -773,7 +912,8 @@ async function processCallback(rawUrl) {
   if (!panelReady && !createPanel()) return;
   if (state && handledCallbackStates.has(state)) return;
 
-  const expected = localStorage.getItem(PREFIX + 'state');
+  await loadOAuthData();
+  const expected = authValue('state');
   if (!state || !expected || state !== expected) {
     setStatus('A TONE3000 callback was received, but its state parameter does not match. The process was stopped for security. Reopen TONE3000 from the app.');
     return;
@@ -786,8 +926,7 @@ async function processCallback(rawUrl) {
   try {
     if (error) throw new Error(errorDescription || error);
     if (code) await exchangeAuthorizationCode(code);
-    localStorage.removeItem(PREFIX + 'state');
-    localStorage.removeItem(PREFIX + 'code_verifier');
+    await saveOAuthData({}, ['state', 'code_verifier']);
     if (Native()) {
       try { await Browser.close(); } catch {}
     } else {
@@ -846,10 +985,14 @@ async function initTone3000() {
       console.warn('TONE3000 appStateChange listener failed', error);
     }
   }
+  try { await loadOAuthData(); } catch (error) {
+    setStatus('TONE3000 secure session storage is unavailable: ' + (error?.message || error));
+    return;
+  }
   const cached = restoreCachedCatalogue();
   await processCallback(window.location.href);
   const savedId = localStorage.getItem(PREFIX + 'selected_tone_id') || cached?.toneId;
-  if (savedId && !callbackLoadedTone && localStorage.getItem(PREFIX + 'access_token') &&
+  if (savedId && !callbackLoadedTone && authValue('access_token') &&
       !new URL(window.location.href).search && !window.location.hash.includes('tone_id=')) {
     await loadSelectedTone(savedId, {
       expand: localStorage.getItem(PREFIX + 'catalogue_expanded') === '1',
