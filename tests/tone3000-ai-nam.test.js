@@ -59,12 +59,12 @@ test('AI import cannot bypass the validated original MG-30 Gen 2 A2-Lite transfe
   assert.match(tone3000, /sendMG30A2LiteTransfer\(connection, plan/);
   assert.match(namTransfer, /const WEIGHT_COUNT = 1871/);
   assert.match(namTransfer, /A2-Lite WaveNet/i);
-  assert.match(namTransfer, /1,871 bobot/);
+  assert.match(namTransfer, /1\\.871 bobot/);
   assert.match(namTransfer, /does not read back model weights/i);
 });
 
 test('AI slot-10 destination leaves manual NAM import target selection unchanged', () => {
-  assert.match(tone3000, /const slotNumber = Number\(options\.slotNumber \?\? \$\('t3kTargetSlot'\)/);
+  assert.match(tone3000, /const slotNumber = Number\(options\.slotNumber \?\? \(\$\('t3kTargetSlot'\)/);
   assert.match(tone3000, /const slotNumber = Number\(options\.slotNumber \?\? 10\)/);
   assert.match(aiStudio, /bridge\.importModel\(modelId,\{slotNumber:10,confirmOverwrite:true\}\)/);
 });
