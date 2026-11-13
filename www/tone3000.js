@@ -324,8 +324,10 @@ async function startSelectFlow(options = {}) {
     setStatus('Opening TONE3000 with redirect URI ' + redirectUri + '. After you select a tone, the app will return and import the compatible model into slot ' + (targetSlot || 'the selected slot') + '. Make sure this exact URI is registered for your API key.');
     if (Native()) await Browser.open({ url, presentationStyle: 'fullscreen' });
     else window.location.assign(url);
+    return true;
   } catch (error) {
     setStatus('Could not open TONE3000: ' + (error?.message || error));
+    return false;
   } finally {
     if ($('t3kChooseTone')) $('t3kChooseTone').disabled = false;
   }
@@ -662,7 +664,7 @@ async function sendModel(index, button, options = {}) {
   const model = selectedTone?.models?.[index];
   if (!model?.model_url) { setStatus('The model download URL is not available.'); return false; }
   if (!Native()) { setStatus('Direct import is available only in the Android APK with USB OTG.'); return false; }
-  const slotNumber = Number($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0);
+  const slotNumber = Number(options.slotNumber ?? $('t3kTargetSlot')?.value ?? localStorage.getItem(PREFIX + 'target_slot') ?? 0);
   if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
     setStatus('Select an MG-30 target slot from 1 to 10.');
     $('t3kTargetSlot')?.focus();
@@ -757,7 +759,7 @@ async function importTone3000ModelForAI(modelId, options = {}) {
     '\n\nThis will overwrite slot 10. Continue?'
   )) return { cancelled: true, slotNumber: 10, currentName };
 
-  const imported = await sendModel(index, null, { confirmed: true, connection });
+  const imported = await sendModel(index, null, { confirmed: true, connection, slotNumber: 10 });
   if (!imported) throw new Error('NAM transfer did not complete. Check the TONE3000 status and device before retrying.');
   return { success: true, slotNumber: 10, currentName, modelName: model.name, toneId: selectedTone.id };
 }
@@ -767,7 +769,8 @@ window.NUXTONE3000Bridge = Object.freeze({
   async startSelection(options = {}) {
     const gear = options.gear;
     if (gear !== 'amp' && gear !== 'amp-cab') throw new Error('Choose Amp Only or Amp + Cab before opening TONE3000.');
-    await startSelectFlow({ gear });
+    const started = await startSelectFlow({ gear });
+    if (!started) throw new Error('TONE3000 did not open. Check the Publishable Key and registered Redirect URI.');
     return { started: true, gear };
   },
   getCatalogue: getTone3000CatalogueForAI,
