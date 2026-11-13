@@ -5869,7 +5869,7 @@ async function aiApplyPrepared(prepared){
  let started=false;
  try{
   await aiWaitForDeviceIdle();
-  hardwareSyncBusy=true;started=true;
+  hardwareSyncBusy=true;started=true;document.body.classList.add('ai-tone-midi-transaction');
   for(const item of prepared){
    const state=states[item.blockIndex];
    if(item.modelChanged){state.model=item.modelIndex;state.values={};}
@@ -5901,7 +5901,7 @@ async function aiApplyPrepared(prepared){
   }else rollbackNote=' Pedal terputus; state editor dipulihkan lokal. Sambungkan ulang dan baca ulang preset sebelum melanjutkan.';
   throw new Error((error?.message||String(error))+rollbackNote);
  }finally{
-  if(started)hardwareSyncBusy=false;
+  if(started){hardwareSyncBusy=false;document.body.classList.remove('ai-tone-midi-transaction');}
   if(midiConnected)startHardwareStatePolling();
  }
 }
@@ -5928,7 +5928,7 @@ window.MG30AIToneBridge=Object.freeze({
   const selectedIndexes=restored.map(id=>indexById.get(id));
   let started=false;
   try{
-   await aiWaitForDeviceIdle();hardwareSyncBusy=true;started=true;
+   await aiWaitForDeviceIdle();hardwareSyncBusy=true;started=true;document.body.classList.add('ai-tone-midi-transaction');
    for(const index of selectedIndexes)states[index]={...before[index],values:{...before[index].values}};
    render();persist();await flushMidi();
    for(const index of selectedIndexes)await aiSendBlockState(index,states[index]);
@@ -5940,7 +5940,7 @@ window.MG30AIToneBridge=Object.freeze({
    for(const index of selectedIndexes)states[index]={...current[index],values:{...current[index].values}};
    render();persist();
    throw new Error((error?.message||String(error))+' State editor lokal dipulihkan; periksa pedal sebelum melanjutkan.');
-  }finally{if(started)hardwareSyncBusy=false;if(midiConnected)startHardwareStatePolling();}
+  }finally{if(started){hardwareSyncBusy=false;document.body.classList.remove('ai-tone-midi-transaction');}if(midiConnected)startHardwareStatePolling();}
  }
 });
 
