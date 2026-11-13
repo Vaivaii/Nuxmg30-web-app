@@ -190,4 +190,20 @@ const launcherIcon = `<?xml version="1.0" encoding="utf-8"?>
 writeFileSync(resolve(drawableDir, 'ic_launcher.xml'), launcherIcon, 'utf8');
 
 run(['cap', 'sync', 'android']);
-console.log('MG30 Studio Android platform ready. USB input recorder and USB output discovery plugins installed; playback routing still needs a real-device test.');
+
+// AI Tone Studio is installed side-by-side with the stable Community app.
+// Keep the Capacitor namespace/native Java package unchanged, but assign a
+// distinct Android applicationId so Android treats this as a separate app.
+const gradlePath = resolve(androidDir, 'app/build.gradle');
+if (existsSync(gradlePath)) {
+  let gradle = readFileSync(gradlePath, 'utf8');
+  const appIdPattern = /(applicationId\\s+["'])com\\.vaivaii\\.mg30studio(["'])/;
+  if (appIdPattern.test(gradle)) {
+    gradle = gradle.replace(appIdPattern, '$1com.vaivaii.mg30studio.ai$2');
+  } else if (!gradle.includes('com.vaivaii.mg30studio.ai')) {
+    throw new Error('Could not safely set the isolated AI applicationId in android/app/build.gradle');
+  }
+  writeFileSync(gradlePath, gradle, 'utf8');
+}
+
+console.log('MG30 Studio AI Android platform ready. Separate applicationId: com.vaivaii.mg30studio.ai.');
