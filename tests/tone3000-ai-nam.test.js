@@ -97,7 +97,7 @@ test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloa
   assert.match(tone3000, /sizes: 'lite'/);
   assert.match(tone3000, /buildMG30A2LiteTransferPlan\(weightBytes, label, 10\)/);
   assert.match(tone3000, /modelBytes = options\.modelBytes \|\| null/);
-  assert.match(tone3000, /options\.modelBytes \? \{ modelBytes: prepared\.modelBytes \}/);
+  assert.match(tone3000, /prepared\?\.modelBytes \? \{ modelBytes: prepared\.modelBytes \}/);
   assert.match(tone3000, /preparedAiNamFiles\.delete\(cacheKey\)/);
   assert.match(tone3000, /async loadTone\(toneId, options = \{\}\)/);
 });
