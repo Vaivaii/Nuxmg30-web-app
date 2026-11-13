@@ -212,7 +212,7 @@ test('AI defaults to automatic fastest-ready provider and model selection while 
   assert.match(source, /let mode='auto'/);
   assert.match(source, /value="auto" selected>Auto · fastest available/);
   assert.match(source, /fastestReadyProviderOrder/);
-  assert.match(source, /Automatically selected for each request/);
+  assert.match(source, /Auto · provider and model selected per request/);
   assert.match(source, /Auto selected .*probe/);
   assert.match(source, /mode==='auto'\|\|ui\.autoFallback\.checked/);
   for (const provider of ['gemini','groq','openrouter','gpt']) assert.match(source, new RegExp('value="'+provider+'"'));
@@ -221,7 +221,7 @@ test('AI defaults to automatic fastest-ready provider and model selection while 
 test('automatic provider probes use a short timeout and cache the fastest healthy order', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /autoProviderHealthCache\.expires=Date\.now\(\)\+45_000/);
-  assert.match(source, /model,12000/);
+  assert.match(source, /model,10000/);
   assert.match(source, /Promise\.all\(candidates\.map/);
   assert.match(source, /sort\(\(a,b\)=>a\.latency-b\.latency\)/);
 });

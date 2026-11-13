@@ -419,9 +419,10 @@ async function init(){
   if(mode==='collab'){
    const g=await secret('openai'),m=await secret('gemini');
    if(!g||!m)throw new Error('Collaboration mode requires both GPT and Gemini API keys.');
-   status('GPT is '+stage+'…','busy');const draft=await openai(g,system,user,selectedModel('gpt'));
+   const gm=await fastestReadyModel('gpt',g),mm=await fastestReadyModel('gemini',m);
+   status('GPT is '+stage+'…','busy');const draft=await openai(g,system,user,gm);
    status('Gemini is reviewing GPT’s '+stage+'…','busy');
-   return gemini(m,system+'\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\n\nGPT PROPOSAL:\n'+JSON.stringify(draft),selectedModel('gemini'));
+   return gemini(m,system+'\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\n\nGPT PROPOSAL:\n'+JSON.stringify(draft),mm);
   }
   const auto=mode==='auto'||ui.autoFallback.checked,order=mode==='auto'?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
   let lastError=null;
