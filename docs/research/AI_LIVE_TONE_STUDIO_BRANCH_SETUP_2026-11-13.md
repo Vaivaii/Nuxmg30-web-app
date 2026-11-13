@@ -235,3 +235,6 @@ No changes were made to:
 - Large provider buttons and four simultaneous model dropdowns are replaced by two compact dropdowns: provider and active model. Saved IDs for each provider remain available to the automatic fallback path; GPT + Gemini collaboration remains supported.
 - No changes to original MG-30 Gen 2 A2-Lite transfer codec, slot-10-only automatic destination, manual NAM import target, NAM Library storage, IR User/Collection protocol or MIDI mappings.
 - Regression tests cover the JSON instruction, compact dropdown UI, relaxed A2 catalogue search, and zero-result diagnostics. CI and hardware validation are pending.
+
+
+- CI follow-up: aligned TONE3000 search parameter source formatting with the existing static regression assertion; behavior unchanged.

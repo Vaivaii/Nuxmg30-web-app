@@ -526,7 +526,7 @@ async function searchTone3000ForAI(query, gear = 'amp-cab') {
   for(const candidate of [...new Set(queries)]){
     const params=new URLSearchParams({
       page:'1',page_size:'25',sort:candidate?'best-match':'trending',
-      gears:gear,format:'nam',architecture:'2',
+      gears: gear,format:'nam',architecture:'2',
     });
     if(candidate)params.set('query',candidate);
     const body=await apiJSON('/tones/search?'+params.toString());
