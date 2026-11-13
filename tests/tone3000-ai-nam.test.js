@@ -105,8 +105,8 @@ test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloa
 test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
   assert.match(aiStudio, /pendingNamSelection/);
-  assert.match(aiStudio, /if\(namModeActive\)\{const namResult=await automaticNamImportForPrompt\(prompt\);if\(namResult\?\.pendingConnection\)return;\}/);
-  assert.match(aiStudio, /bridge\.prepareModel\(choice\.model\.id\)/);
+  assert.match(aiStudio, /if\(namModeActive\)\{const namResult=await automaticNamImportForPrompt\(prompt\);if\(namResult\?\.pendingConnection\|\|namResult\?\.pendingSelection\)return;\}/);
+  assert.match(aiStudio, /bridge\.prepareModel\(selected\.model\.id\)/);
   assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
 });
 
@@ -121,7 +121,7 @@ test('TONE3000 provides a separate connect-only account sign-in flow', () => {
 
 test('AI NAM search and A2-Lite preflight are allowed before USB-MIDI connection', () => {
   assert.match(aiStudio, /if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)/);
-  assert.match(aiStudio, /NAM found and validated\. Connect the MG-30 using USB-MIDI/);
+  assert.match(aiStudio, /NAM found and validated\. Connect the MG-30 via USB-MIDI/);
   assert.match(aiStudio, /pendingNamSelection/);
 });
 

@@ -287,3 +287,5 @@ No changes were made to:
 - If the selected TONE3000 tone has multiple downloadable A2 models, AI recommends one and the panel displays all downloadable models from that tone in a dropdown. The user may override the recommendation. Only the selected file is downloaded and passed through the unchanged Gen-2 weight validator before slot-10 overwrite confirmation/import.
 - AI receives TONE3000 source metadata (tone/model name, creator, description, makes/tags, architecture, size and gear). Explicit boost/OD evidence is distinguished from unknown metadata; silent metadata is never treated as proof of clean or boosted capture. Metadata is supporting evidence, not a verified pedal-chain inventory.
 - NAM transfer, slot-10 scan, overwrite confirmation, persistent NAM Library save, manual NAM destination, IR User/Third Party/Collection, and MIDI mappings are unchanged. CI and physical-device verification pending.
+
+- CI #778: updated prior assertions for the new pending capture-choice stage and compact tuple schema; restored the exact API total diagnostic label in zero-result errors. Full CI rerun pending.
