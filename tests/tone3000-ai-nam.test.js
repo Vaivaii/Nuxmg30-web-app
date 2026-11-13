@@ -20,7 +20,7 @@ test('TONE3000 OAuth uses the one existing Publishable Key and PKCE flow for bot
 });
 
 test('TONE3000 OAuth tokens and transient PKCE values migrate to Android secure storage', () => {
-  assert.match(tone3000, /AUTH_FIELDS = \['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri'\]/);
+  assert.match(tone3000, /AUTH_FIELDS = \['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri', 'oauth_flow'\]/);
   assert.match(tone3000, /SecureStore\.getSecret\(\{ provider: 'tone3000' \}\)/);
   assert.match(tone3000, /SecureStore\.setSecret\(\{ provider: 'tone3000'/);
   assert.match(tone3000, /Remove plaintext tokens\/PKCE values only after secure storage was read or migration succeeded/);
@@ -104,7 +104,8 @@ test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloa
 
 test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
-  assert.match(aiStudio, /if\(namModeActive\)await automaticNamImportForPrompt\(prompt\)/);
+  assert.match(aiStudio, /pendingNamSelection/);
+  assert.match(aiStudio, /if\(namModeActive\)\{const namResult=await automaticNamImportForPrompt\(prompt\);if\(namResult\?\.pendingConnection\)return;\}/);
   assert.match(aiStudio, /bridge\.prepareModel\(choice\.model\.id\)/);
   assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
 });

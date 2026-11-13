@@ -4451,3 +4451,6 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 
 
 - CI correction follow-up: fixed the Gemini request JSON object closure detected by the first regression run; rerun is required before treating this branch as build-verified.
+
+
+- CI test maintenance: existing source-string regression expectations updated for the connect-only OAuth field and staged NAM preflight/transfer path. Hardware verification remains pending.

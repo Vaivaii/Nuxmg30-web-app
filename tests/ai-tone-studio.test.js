@@ -133,7 +133,7 @@ test('AI assistant UI is taller, keeps chat readable and exposes a visible worki
 test('AI assistant interface and generated tone summaries are English', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /Keep the summary and notes in English/);
-  assert.match(source, /Waiting for MG-30 connection/);
+  assert.match(source, /AI ready. MG-30 connection is required for live preset transfer/);
   assert.match(source, /Save API Keys/);
   assert.match(source, /Undo AI Changes/);
   assert.match(source, /Parameters sent to:/);
@@ -161,7 +161,7 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.ok(html.includes('parameters:namProfile?{}:{...states[index].values}'));
   assert.ok(source.includes('namModeActive=true;activeNamGear=gear'));
-  assert.ok(source.includes('if(namModeActive)await automaticNamImportForPrompt(prompt)'));
+  assert.ok(source.includes('if(namModeActive){const namResult=await automaticNamImportForPrompt(prompt);if(namResult?.pendingConnection)return;}'));
 });
 
 
