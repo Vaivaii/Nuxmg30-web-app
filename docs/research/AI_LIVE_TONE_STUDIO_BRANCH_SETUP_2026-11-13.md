@@ -259,3 +259,5 @@ No changes were made to:
 - Fallback remains temporary-error-only; invalid keys and malformed requests are not treated as temporary. No edits to original MG-30 Gen 2 NAM transfer codec, slot-10-only AI import destination, manual NAM import target selector, NAM Library persistence, IR User/Third Party/Collection, or MIDI mappings.
 - Regression tests added for numeric tone ID validation, no early size-label rejection, high-demand fallback classification, and automatic provider/model selection. CI and physical MG-30 testing are pending.
 
+
+- CI follow-up: updated the pre-existing provider-default assertion from Gemini to the newly requested Auto fastest-ready default; the initial CI run showed only this stale expectation (455/456 passed), not a runtime or syntax failure.

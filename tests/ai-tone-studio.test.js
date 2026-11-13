@@ -165,9 +165,10 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 });
 
 
-test('Gemini is the default AI provider and provider model options are dropdowns', () => {
+test('Auto is the default AI provider and provider model options are dropdowns', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /let mode='gemini'/);
+  assert.match(source, /let mode='auto'/);
+  assert.match(source, /value="auto" selected>Auto · fastest available/);
   assert.match(source, /id="aiToneActiveModel"/);
   assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
