@@ -1,0 +1,62 @@
+name: IR Collection Experiment APK
+
+on:
+  push:
+    branches:
+      - android/ir-collection-experiment
+      - android/collection-working-restore
+      - android/ir-name-cache-fix
+      - android/movable-signal-chain
+      - android/movable-signal-chain-editmode
+    paths:
+      - "www/**"
+      - "native-android/**"
+      - "scripts/**"
+      - "package.json"
+      - "capacitor.config.ts"
+      - ".github/workflows/ir-collection-experiment.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out isolated experiment branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+          accept-android-sdk-licenses: true
+          # "tools" is a retired SDK package and makes sdkmanager exit 1.
+          # Install the supported command-line platform/build packages explicitly.
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check JavaScript syntax
+        run: |
+          node --check www/ir-transfer.js
+          node --input-type=module --check < www/ir-transfer.js
+          node --input-type=module -e "import fs from 'node:fs'; const html=fs.readFileSync('www/index.html','utf8'); let rest=html, count=0; while(true){ const a=rest.indexOf('<script'); if(a<0)break; const gt=rest.indexOf('>',a); const end=rest.indexOf('</script>',gt); if(gt<0||end<0)throw new Error('Unclosed inline script tag'); const attrs=rest.slice(a,gt); if(!attrs.includes('src=')){ count++; try{new Function(rest.slice(gt+1,end))}catch(e){console.error('Inline script '+count+': '+e.message);process.exitCode=1;} } rest=rest.slice(end+9); } console.log('Validated '+count+' inline scripts');"
+      - name: Build debug APK
+        run: npm run android:build
+      - name: Upload experimental APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MG30-Studio-IR-Collection-Experiment
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

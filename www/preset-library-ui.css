@@ -1,0 +1,813 @@
+/* Preset Library only. Keep every selector scoped to #page-presets. */
+#page-presets.preset-library-page {
+  min-width: 0;
+  padding-bottom: 18px;
+}
+
+#page-presets .preset-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 2px 16px;
+}
+
+#page-presets .preset-library-header h2 {
+  margin: 0;
+  font-size: clamp(23px, 5vw, 30px);
+  line-height: 1.08;
+  letter-spacing: -.8px;
+}
+
+#page-presets .preset-library-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+#page-presets .preset-library-actions .btn {
+  min-height: 39px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+#page-presets #presetImportChoose {
+  min-width: 72px;
+}
+
+#page-presets #presetExportStart {
+  min-width: 72px;
+  font-size: 0;
+}
+
+#page-presets #presetExportStart::after {
+  content: "Export";
+  font-size: 11px;
+}
+
+/* Compact Import follow-through appears only after a file is chosen. */
+#page-presets .preset-library-import-bar {
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+#page-presets .preset-library-import-bar.has-file {
+  display: flex;
+}
+
+#page-presets #presetImportFileInfo {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#page-presets #presetImportTarget {
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  color: #c5f36b;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+#page-presets .preset-library-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+#page-presets .preset-library-title .eyebrow {
+  margin: 0;
+}
+
+/* Keep Import validation warnings available, but suppress duplicate success/technical banners. */
+#page-presets #presetImportStatus {
+  display: none;
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+#page-presets #presetImportStatus.warn:not(:empty) {
+  display: block;
+  border-color: rgba(220, 164, 94, .5);
+  color: #e6c99b;
+}
+#page-presets #presetExportStatus {
+  display: none !important;
+}
+
+#page-presets #presetExportTarget,
+#page-presets #presetImportTarget,
+#page-presets #presetExportDiagnosticsDetails[hidden] {
+  display: none;
+}
+
+#page-presets #presetExportDiagnosticsDetails:not([hidden]) {
+  display: block;
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid #655332;
+  border-radius: 10px;
+  background: #111611;
+}
+
+#page-presets #presetExportDiagnosticsDetails summary {
+  color: #e6c99b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The list itself scrolls; cards contain only slot and preset name. */
+#page-presets .preset-library-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: min(66vh, 690px);
+  min-height: 260px;
+  padding: 9px 8px 8px;
+  border: 1px solid #263137;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #151e21 0%, #12191c 58%, #101619 100%);
+  box-shadow: inset 0 1px 0 rgba(222, 237, 232, .035), 0 8px 22px rgba(0, 0, 0, .16);
+  scroll-padding: 9px 0 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #46565a transparent;
+}
+
+/* Bottom fade: cards visually sink into the frame while the list keeps scrolling. */
+#page-presets .preset-library-card-list::after {
+  content: "";
+  display: block;
+  position: sticky;
+  bottom: -8px;
+  z-index: 5;
+  flex: 0 0 64px;
+  width: calc(100% + 16px);
+  height: 64px;
+  margin-top: -64px;
+  margin-right: -8px;
+  margin-bottom: -8px;
+  margin-left: -8px;
+  border-radius: 0 0 17px 17px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(16, 22, 25, .96) 0%,
+      rgba(16, 22, 25, 0) 5%,
+      rgba(16, 22, 25, 0) 95%,
+      rgba(16, 22, 25, .96) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(16, 22, 25, 0) 0%,
+      rgba(16, 22, 25, .52) 38%,
+      rgba(16, 22, 25, .88) 72%,
+      #101619 100%
+    );
+  background-clip: padding-box;
+  box-shadow: 0 -8px 18px rgba(9, 13, 15, .12);
+  pointer-events: none;
+}
+
+
+#page-presets .preset-library-card {
+  display: grid;
+  grid-template-columns: 64px 3px minmax(0, 1fr);
+  align-items: stretch;
+  flex: 0 0 66px;
+  width: 100%;
+  height: 66px;
+  min-height: 66px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #28353a;
+  border-radius: 14px;
+  background: #172024;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+
+#page-presets .preset-library-card:active {
+  transform: scale(.992);
+}
+
+#page-presets .preset-library-card-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: rgba(0, 0, 0, .13);
+  color: #d7dfd2;
+  font-size: 14px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .15px;
+}
+
+#page-presets .preset-library-card-divider {
+  display: block;
+  width: 3px;
+  background: #75847d;
+}
+
+#page-presets .preset-library-card-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 12px;
+  overflow: hidden;
+  color: #e2e9e7;
+  font-size: 14px;
+  font-weight: 720;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#page-presets .preset-library-card.is-selected {
+  border: 2px solid #a6d368;
+  background: #243126;
+  box-shadow: 0 0 0 1px rgba(166, 211, 104, .08);
+}
+
+#page-presets .preset-library-card.is-selected .preset-library-card-slot {
+  color: #d1f69b;
+  background: rgba(0, 0, 0, .2);
+}
+
+#page-presets .preset-library-card.is-selected .preset-library-card-divider {
+  background: #a6d368;
+}
+
+#page-presets .preset-library-card.is-selected .preset-library-card-name {
+  color: #f0f8e9;
+}
+
+#page-presets .preset-library-card:disabled {
+  opacity: .75;
+  cursor: wait;
+}
+
+#page-presets #presetLibraryScanStatus {
+  display: none !important;
+}
+
+#page-presets .preset-library-drafts {
+  margin-top: 14px;
+  padding: 0 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+#page-presets .preset-library-drafts > summary {
+  padding: 12px 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#page-presets .preset-library-drafts[open] > summary {
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+#page-presets .preset-library-draft-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#page-presets .preset-library-draft-tools #search {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+#page-presets .preset-library-draft-tools #newPresetBtn {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 10px;
+}
+
+@media (max-width: 420px) {
+  #page-presets .preset-library-header {
+    gap: 7px;
+    margin-bottom: 13px;
+  }
+  #page-presets .preset-library-header h2 {
+    font-size: 24px;
+  }
+  #page-presets .preset-library-actions {
+    gap: 5px;
+  }
+  #page-presets .preset-library-actions .btn {
+    min-height: 37px;
+    padding: 7px 10px;
+  }
+  #page-presets .preset-library-card-list {
+    height: min(64vh, 620px);
+    min-height: 260px;
+    gap: 8px;
+    padding: 8px 7px 7px;
+    border-radius: 16px;
+  }
+  #page-presets .preset-library-card {
+    grid-template-columns: 60px 3px minmax(0, 1fr);
+    flex-basis: 62px;
+    height: 62px;
+    min-height: 62px;
+    border-radius: 12px;
+  }
+  #page-presets .preset-library-card-slot {
+    font-size: 12px;
+  }
+  #page-presets .preset-library-card-divider {
+    width: 3px;
+  }
+  #page-presets .preset-library-card-name {
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  #page-presets .preset-library-import-bar {
+    gap: 7px;
+    padding: 8px 9px;
+  }
+  #page-presets #presetImportSend {
+    padding: 7px 9px;
+  }
+}
+
+
+
+/* Compact shared Import / Export progress dialog. All styles stay within Preset Manager. */
+#page-presets .preset-import-progress-dialog {
+  width: min(340px, calc(100% - 44px));
+  max-width: 340px;
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 21px 19px 18px;
+  overflow: auto;
+  border: 1px solid rgba(166, 211, 104, .48);
+  border-radius: 19px;
+  background: #151b15;
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+}
+#page-presets .preset-import-progress-dialog[open] { display: block; }
+#page-presets .preset-import-progress-dialog::backdrop {
+  background: rgba(3, 7, 5, .78);
+  backdrop-filter: blur(3px);
+}
+#page-presets .preset-import-progress-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+}
+#page-presets .preset-import-progress-dialog h3 {
+  margin: 0 0 18px;
+  color: #eef4e8;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 750;
+}
+#page-presets .preset-import-progress-meter {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #303a2c;
+  border-radius: 12px;
+  background: #101510;
+}
+#page-presets .preset-import-progress-track {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #2a3327;
+}
+#page-presets #presetImportProgressFill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: #c5f36b;
+  transition: width .18s ease;
+}
+#page-presets .preset-import-progress-track.is-indeterminate #presetImportProgressFill {
+  width: 38%;
+  animation: preset-feedback-indeterminate 1.05s ease-in-out infinite alternate;
+}
+#page-presets .preset-import-progress-note {
+  margin: 13px 0 0;
+  color: #889482;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
+}
+#page-presets .preset-import-progress-note:empty { display: none; }
+@keyframes preset-feedback-indeterminate {
+  from { transform: translateX(0); }
+  to { transform: translateX(155%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #page-presets #presetImportProgressFill { animation: none; transition: none; }
+}
+/* Build source: compact shared Import / Export feedback dialog. */
+
+
+/* Mobile fallback; the Preset Library controller measures the exact space above .nav. */
+@media (max-width: 720px) {
+  #page-presets .preset-library-card-list {
+    height: min(720px, calc(100dvh - 180px));
+    min-height: 260px;
+    max-height: none;
+    padding-bottom: 8px;
+    scroll-padding-bottom: 8px;
+  }
+}
+/* Build source: Export picker hand-off and expanded Preset Manager card viewport. */
+
+/* Approved APK build trigger: framed Preset Manager viewport. */
+
+/* Build trigger: package current Preset Manager compact palette and sync-toast refinement. */
+
+/* Build trigger: package Preset Manager bottom fade refinement. */
+
+/* Package current Preset Manager UI for the approved Android build. */
+
+/* Build trigger: compile the bottom-edge fade correction for Android. */
+
+/* Isolate the Preset Manager from the document scroll used by the other tabs. */
+@media (max-width: 720px) {
+  body.preset-manager-active > .app > #page-presets.preset-library-page:not(.hidden) {
+    position: fixed;
+    z-index: 50;
+    top: var(--preset-manager-top, 166px);
+    right: 10px;
+    bottom: var(--preset-manager-bottom, 107px);
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: 1100px;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    margin: 0 auto;
+    padding: 0 0 2px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body.preset-manager-active > .app > .footer {
+    display: none !important;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-header {
+    flex: 0 0 auto;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-import-bar.has-file {
+    flex: 0 0 auto;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-card-list {
+    flex: 1 1 0;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0;
+  }
+
+  body.preset-manager-active #page-presets .preset-library-footer {
+    flex: 0 0 auto;
+    margin: 4px 0 0;
+    padding: 1px 0 2px;
+    text-align: center;
+    color: #6d7b7e;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+}
+
+/* Build checkpoint: user-approved build for Preset Manager scroll isolation. */
+
+/* Fixed two-column header geometry prevents Export from overflowing the viewport. */
+@media (max-width: 720px) {
+  #page-presets .preset-library-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 126px;
+    align-items: center;
+    column-gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 4px 0 16px;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  #page-presets .preset-library-title {
+    min-width: 0;
+  }
+
+  #page-presets .preset-library-header h2 {
+    min-width: 0;
+    font-size: clamp(19px, 5.2vw, 22px);
+    letter-spacing: -.65px;
+    white-space: nowrap;
+  }
+
+  #page-presets .preset-library-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 60px);
+    justify-content: end;
+    align-items: center;
+    gap: 6px;
+    width: 126px;
+    min-width: 126px;
+    margin: 0;
+  }
+
+  #page-presets .preset-library-actions .btn,
+  #page-presets #presetImportChoose,
+  #page-presets #presetExportStart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    flex: 0 0 60px;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    height: 38px;
+    min-height: 38px;
+    padding: 6px 3px;
+    overflow: hidden;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  #page-presets #presetExportStart::after {
+    font-size: 10px;
+  }
+}
+
+/* Keep the short visual Export label while preserving the dynamic runtime text and handler. */
+@media (max-width: 720px) {
+  #page-presets #presetExportStart {
+    font-size: 0 !important;
+    color: transparent !important;
+  }
+
+  #page-presets #presetExportStart::after {
+    font-size: 10px !important;
+    line-height: 1 !important;
+    color: #13180d !important;
+  }
+}
+
+/* Rename and Save As controls; scoped to the Preset Library only. */
+#page-presets .preset-library-ops-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: -7px 2px 10px;
+}
+#page-presets .preset-library-ops-actions .btn {
+  min-width: 0;
+  min-height: 37px;
+  padding: 7px 11px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 800;
+}
+#page-presets .preset-library-ops-dialog {
+  width: min(420px, calc(100% - 34px));
+  max-width: 420px;
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid rgba(166, 211, 104, .5);
+  border-radius: 18px;
+  background: #141b16;
+  color: var(--text);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, .58);
+}
+#page-presets .preset-library-ops-dialog[open] {
+  display: block;
+}
+#page-presets .preset-library-ops-dialog::backdrop {
+  background: rgba(3, 7, 5, .78);
+  backdrop-filter: blur(3px);
+}
+#page-presets .preset-library-ops-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 20px 18px 17px;
+}
+#page-presets .preset-library-ops-shell h3 {
+  margin: 0;
+  color: #edf5e6;
+  font-size: 17px;
+  line-height: 1.25;
+}
+#page-presets #presetLibraryOpsSummary {
+  margin: 0;
+  color: #aab8a4;
+  font-size: 11px;
+  line-height: 1.5;
+}
+#page-presets .preset-library-ops-shell label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: #dce6d7;
+  font-size: 10px;
+  font-weight: 750;
+}
+#page-presets .preset-library-ops-shell label[hidden] {
+  display: none !important;
+}
+#page-presets .preset-library-ops-shell input,
+#page-presets .preset-library-ops-shell select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #3a493b;
+  border-radius: 10px;
+  outline: none;
+  background: #0e1510;
+  color: #eff4eb;
+  font: inherit;
+  font-size: 13px;
+}
+#page-presets .preset-library-ops-shell input:focus,
+#page-presets .preset-library-ops-shell select:focus {
+  border-color: #a6d368;
+  box-shadow: 0 0 0 2px rgba(166, 211, 104, .13);
+}
+#page-presets .preset-library-ops-dialog-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 8px;
+}
+#page-presets .preset-library-ops-dialog-actions .btn {
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+
+/* Compact Import / Export dropdown actions. */
+#page-presets .preset-library-header {
+  position: relative;
+  z-index: 80;
+  overflow: visible;
+}
+#page-presets .preset-library-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 60px);
+  justify-content: end;
+  align-items: start;
+  gap: 6px;
+  width: 126px;
+  min-width: 126px;
+  flex: 0 0 126px;
+  overflow: visible;
+}
+#page-presets .preset-action-menu {
+  position: relative;
+  z-index: 85;
+  min-width: 0;
+  overflow: visible;
+}
+#page-presets .preset-action-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  min-height: 39px;
+  padding: 7px 4px;
+  overflow: visible;
+  font-size: 10px !important;
+  line-height: 1;
+  white-space: nowrap;
+}
+#page-presets .preset-action-menu-dropdown[hidden] {
+  display: none !important;
+}
+#page-presets .preset-action-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 130;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  width: 154px;
+  min-width: 154px;
+  padding: 6px;
+  border: 1px solid #46564b;
+  border-radius: 12px;
+  background: #141d1a;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .48);
+}
+#page-presets .preset-action-menu-dropdown .btn,
+#page-presets .preset-action-menu-dropdown #presetImportChoose,
+#page-presets .preset-action-menu-dropdown #presetImportAllChoose,
+#page-presets .preset-action-menu-dropdown #presetExportStart,
+#page-presets .preset-action-menu-dropdown #presetExportAllStart {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 39px;
+  height: auto;
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  overflow: visible;
+  border-radius: 8px;
+  font-size: 11px !important;
+  line-height: 1.2;
+  text-align: left;
+  white-space: nowrap;
+}
+#page-presets .preset-action-menu-dropdown #presetExportStart {
+  color: var(--text) !important;
+}
+#page-presets .preset-action-menu-dropdown #presetExportStart::after {
+  content: none !important;
+  display: none !important;
+}
+#page-presets .preset-action-menu-dropdown button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+@media (max-width: 720px) {
+  #page-presets .preset-library-actions {
+    grid-template-columns: repeat(2, 60px);
+    width: 126px;
+    min-width: 126px;
+  }
+  #page-presets .preset-action-menu-dropdown {
+    width: 154px;
+    min-width: 154px;
+    right: 0;
+    left: auto;
+  }
+}
