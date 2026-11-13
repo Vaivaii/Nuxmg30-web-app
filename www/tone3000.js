@@ -554,7 +554,7 @@ async function searchTone3000ForAI(query, gear = 'amp-cab') {
 }
 async function loadTone3000ForAI(toneId, options = {}) {
   const id = String(toneId || '').trim();
-  if (!/^\\d+$/.test(id)) throw new Error('The selected TONE3000 tone ID is invalid.');
+  if (!/^\d+$/.test(id)) throw new Error('The selected TONE3000 tone ID is invalid.');
   const snapshot = await loadSelectedTone(id, { expand: true, silent: options.silent === true });
   if (!snapshot || !Array.isArray(snapshot.models)) throw new Error('TONE3000 did not return its A2 NAM model list.');
   return snapshot;

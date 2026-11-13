@@ -47,8 +47,8 @@ function geminiOutput(data){
  const a=data?.candidates?.[0]?.content?.parts||[],s=a.map(x=>x?.text||'').filter(Boolean).join('\n');
  if(!s)throw new Error('Gemini returned no text output.');return s;
 }
-async function postJson(url,options){
- const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),90000);
+async function postJson(url,options,timeoutMs=90000){
+ const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),timeoutMs);
  try{
   const r=await fetch(url,{...options,signal:ctl.signal}),raw=await r.text();let data={};
   try{data=raw?JSON.parse(raw):{}}catch{data={rawText:raw}}
@@ -75,17 +75,17 @@ function systemPrompt(catalog,snapshot,review){
 }
 function userText(prompt,candidate,namContext){return 'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider){const r=await SecureStore.getSecret({provider});return String(r?.value||'');}
-async function openai(key,sys,user,model){
+async function openai(key,sys,user,model,timeoutMs=90000){
  if(!model)throw new Error('Choose an available GPT model in AI Settings.');
  const d=await postJson('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
- body:JSON.stringify({model,input:[{role:'system',content:[{type:'input_text',text:sys}]},{role:'user',content:[{type:'input_text',text:user}]}],text:{format:{type:'json_object'}},max_output_tokens:2600})});
+ body:JSON.stringify({model,input:[{role:'system',content:[{type:'input_text',text:sys}]},{role:'user',content:[{type:'input_text',text:user}]}],text:{format:{type:'json_object'}},max_output_tokens:2600})},timeoutMs);
  return parseJson(outputText(d));
 }
-async function gemini(key,sys,user,model){
+async function gemini(key,sys,user,model,timeoutMs=90000){
  if(!model)throw new Error('Choose an available Gemini model in AI Settings.');
  const m=encodeURIComponent(model);
  const d=await postJson('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
- body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600}})});
+ body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600}})},timeoutMs);
  return parseJson(geminiOutput(d));
 }
 function compatibleChatText(data,provider){
@@ -94,11 +94,11 @@ function compatibleChatText(data,provider){
  if(!text.trim())throw new Error((provider==='groq'?'Groq':'OpenRouter')+' returned no text output.');
  return text;
 }
-async function openAiCompatible(key,sys,user,model,provider){
+async function openAiCompatible(key,sys,user,model,provider,timeoutMs=90000){
  if(!model)throw new Error('Choose an available '+(provider==='groq'?'Groq':'OpenRouter')+' model in AI Settings.');
  const base=provider==='groq'?'https://api.groq.com/openai/v1':'https://openrouter.ai/api/v1';
  const data=await postJson(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
- body:JSON.stringify({model,messages:[{role:'system',content:sys+'\nReturn a valid JSON object only. The response must be JSON.'},{role:'user',content:user}],response_format:{type:'json_object'},temperature:.35,max_tokens:2600})});
+ body:JSON.stringify({model,messages:[{role:'system',content:sys+'\nReturn a valid JSON object only. The response must be JSON.'},{role:'user',content:user}],response_format:{type:'json_object'},temperature:.35,max_tokens:2600})},timeoutMs);
  return parseJson(compatibleChatText(data,provider));
 }
 async function getProviderJson(url,headers){
@@ -144,7 +144,7 @@ export function providerFallbackOrder(primary='gemini'){
 }
 export function isRetryableProviderError(error){
  const value=String(error?.message||error||'');
- return /\b(408|425|429|498|500|502|503|504)\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|timed? out|network|failed to fetch|server busy/i.test(value);
+ return /\b(408|425|429|498|500|502|503|504)\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|high demand|demand spike|server busy|temporarily busy|timed? out|network|failed to fetch/i.test(value);
 }
 function niceError(e,provider){
  const s=String(e?.message||e||'Unknown error');
@@ -176,7 +176,7 @@ async function init(){
  '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter → GPT when a provider is temporarily busy</small></span></label>',
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Save API Keys</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneDeleteOpenAi" type="button">Delete GPT</button><button id="aiToneDeleteGemini" type="button">Delete Gemini</button><button id="aiToneDeleteGroq" type="button">Delete Groq</button><button id="aiToneDeleteOpenRouter" type="button">Delete OpenRouter</button></div>',
  '<p class="ai-tone-note">Free-model quotas still apply. Fallback handles temporary rate-limit, capacity, timeout, network and server failures only. Invalid keys and invalid requests are not retried. API keys are sent directly to providers during requests.</p></div>',
-'<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="gemini" selected>Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT</option><option value="collab">GPT + Gemini</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Save API key to load models</option></select></label></div>',
+'<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · fastest available</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT</option><option value="collab">GPT + Gemini</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Save API key to load models</option></select></label></div>',
  '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live preset transfer.</div>',
  '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
@@ -188,7 +188,7 @@ async function init(){
  ].join('');
  document.body.append(shade,sheet);
  const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),gpt:$('aiOpenAiKey'),gemini:$('aiGeminiKey'),groq:$('aiGroqKey'),openrouter:$('aiOpenRouterKey'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
- let mode='gemini',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
+ let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button').forEach(b=>b.disabled=busy);};
@@ -288,7 +288,8 @@ async function init(){
  const providerNames={gpt:'GPT',gemini:'Gemini',groq:'Groq',openrouter:'OpenRouter'};
  const providerModels={gpt:[],gemini:[],groq:[],openrouter:[]};
  const modelStorageKey=p=>'mg30-ai-model-'+p;
- const activeModelProvider=()=>mode==='collab'?'gpt':mode;
+ const autoProviderHealthCache={expires:0,order:[],errors:[]};
+ const activeModelProvider=()=>mode==='collab'?'gpt':mode==='auto'?'gemini':mode;
  function selectedModel(provider){
   const key=provider==='collab'?'gpt':provider;
   const active=key===activeModelProvider()?ui.activeModel.value:'';
@@ -317,7 +318,8 @@ async function init(){
    option.textContent='Save '+providerNames[provider]+' key to load models';
    select.append(option);select.disabled=true;
   }
-  ui.activeModelLabel.textContent=mode==='collab'?'GPT Model (Gemini reviewer uses its saved model)':'Model';
+  ui.activeModelLabel.textContent=mode==='collab'?'GPT Model (Gemini reviewer uses its saved model)':mode==='auto'?'Auto selects the fastest ready model':'Model';
+  if(mode==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='';option.textContent='Automatically selected for each request';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
@@ -371,10 +373,32 @@ async function init(){
   try{await SecureStore.deleteSecret({provider:providerKeyId(provider)});await keyStates();status(providerNames[provider]+' API key deleted.','success');}
   catch(error){status(error.message,'error');}
  }
- async function invokeProvider(provider,key,system,user,model){
-  if(provider==='gpt')return openai(key,system,user,model);
-  if(provider==='gemini')return gemini(key,system,user,model);
-  return openAiCompatible(key,system,user,model,provider);
+ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
+  if(provider==='gpt')return openai(key,system,user,model,timeoutMs);
+  if(provider==='gemini')return gemini(key,system,user,model,timeoutMs);
+  return openAiCompatible(key,system,user,model,provider,timeoutMs);
+ }
+ async function fastestReadyProviderOrder(){
+  if(Date.now()<autoProviderHealthCache.expires&&autoProviderHealthCache.order.length)return autoProviderHealthCache.order.slice();
+  await refreshAllProviderModels(true);
+  const candidates=[];
+  for(const provider of ['gemini','groq','openrouter','gpt']){
+   const key=await secret(providerKeyId(provider));const model=selectedModel(provider);
+   if(key&&model)candidates.push({provider,key,model});
+  }
+  if(!candidates.length)throw new Error('Auto mode found no saved AI provider keys and models. Save at least one provider API key in AI Settings.');
+  status('Checking which saved AI provider responds fastest…','busy');
+  const probes=await Promise.all(candidates.map(async candidate=>{
+   const started=Date.now();
+   try{await invokeProvider(candidate.provider,candidate.key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',candidate.model,12000);return {...candidate,latency:Date.now()-started,ok:true};}
+   catch(error){return {...candidate,latency:Date.now()-started,ok:false,error};}
+  }));
+  const ready=probes.filter(item=>item.ok).sort((a,b)=>a.latency-b.latency);
+  autoProviderHealthCache.expires=Date.now()+45_000;autoProviderHealthCache.order=ready.map(item=>item.provider);
+  autoProviderHealthCache.errors=probes.filter(item=>!item.ok).map(item=>({provider:item.provider,message:String(item.error?.message||item.error)}));
+  if(!ready.length){const detail=probes.map(item=>providerNames[item.provider]+': '+(item.error?.message||'unavailable')).join(' · ');throw new Error('No saved AI provider is responding right now. '+detail);}
+  message('ai','Auto selected '+providerNames[ready[0].provider]+' / '+ready[0].model+' ('+ready[0].latency+' ms probe). Other available providers remain ready as fallback.');
+  return autoProviderHealthCache.order.slice();
  }
  async function testProvider(provider){
   setBusy(true);status('Testing '+providerNames[provider]+' API…','busy');
@@ -393,12 +417,12 @@ async function init(){
    status('Gemini is reviewing GPT’s '+stage+'…','busy');
    return gemini(m,system+'\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\n\nGPT PROPOSAL:\n'+JSON.stringify(draft),selectedModel('gemini'));
   }
-  const auto=ui.autoFallback.checked,order=auto?providerFallbackOrder(mode):[mode],missing=[];
+  const auto=mode==='auto'||ui.autoFallback.checked,order=mode==='auto'?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
    if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' key');continue;}
-   const model=selectedModel(provider);
+   const model=selectedModel(provider)||String(providerModels[provider]?.[0]?.id||'');
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
     status(providerNames[provider]+' is '+stage+'…','busy');
@@ -409,6 +433,7 @@ async function init(){
     lastError=error;
     const next=order.slice(index+1).find(candidate=>candidate!==provider);
     if(!auto||!next||!isRetryableProviderError(error))throw new Error(niceError(error,provider));
+    if(mode==='auto'){autoProviderHealthCache.order=autoProviderHealthCache.order.filter(item=>item!==provider);autoProviderHealthCache.expires=Date.now()+45_000;}
     message('ai',providerNames[provider]+' is temporarily busy ('+(error.message||error)+'). Switching to '+providerNames[next]+'.');
     status(providerNames[provider]+' unavailable. Trying '+providerNames[next]+'…','busy');
    }
@@ -448,7 +473,7 @@ async function init(){
   let selected=pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear?pendingNamSelection.selected:null;
   if(!selected){
    const intent=await deriveNamSearchQuery(prompt);
-   message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', NAM A2 Lite).');
+   message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', A2 NAM).');
    status('Searching the TONE3000 NAM catalog…','busy');
    const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
    if(!tones.length){const meta=tones.searchMeta||{};const tried=(meta.queriesTried||[intent.query]).join(' → ');const total=Number(meta.total||0);throw new Error('TONE3000 account is connected, but the catalog returned 0 matching NAM A2 tones. Search terms tried: '+tried+'. API total for last search: '+total+'. Capture-size filtering is deferred until model download, so this is not an A2-Lite file rejection. Try a shorter amp name, or check TONE3000 catalog/search access. No file was downloaded and no pedal data was changed.');}
@@ -462,8 +487,7 @@ async function init(){
     try{snapshot=await bridge.loadTone(toneChoice.id,{silent:true});}catch(error){lastError=error;continue;}
     const candidates=(snapshot?.models||[]).filter(model=>{
      const arch=String(model.architecture_version??model.architecture??'2').trim().toLowerCase();
-     const size=String(model.size?.name||model.size?.label||model.size||'').trim().toLowerCase();
-     return Boolean(model.model_url)&&/^(2|a2)$/.test(arch)&&(!size||size==='lite');
+     return Boolean(model.model_url)&&/^(2|a2)$/.test(arch);
     });
     if(!candidates.length){lastError=new Error('No downloadable A2-Lite captures in '+toneChoice.name+'.');continue;}
     const rejected=[];
@@ -477,7 +501,7 @@ async function init(){
     }
     if(selected)break;
    }
-   if(!selected)throw new Error('No candidate from the top TONE3000 results passed the MG-30 Gen-2 A2-Lite validator. '+(lastError?.message||'Try another search phrase.'));
+   if(!selected)throw new Error('No downloadable TONE3000 A2 NAM candidate could be prepared for MG-30 Gen 2. '+(lastError?.message||'Try another search phrase.'));
    pendingNamSelection={prompt,gear:activeNamGear,selected};
    message('ai','A2-Lite validation passed: '+selected.model.name+' ('+selected.prepared.weightBytes.toLocaleString()+' weight bytes). Download is ready for slot 10.');
   }else{

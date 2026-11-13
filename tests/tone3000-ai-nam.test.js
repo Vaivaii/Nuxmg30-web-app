@@ -152,3 +152,22 @@ test('AI exposes TONE3000 zero-result query diagnostics and distinguishes catalo
   assert.match(aiStudio, /Capture-size filtering is deferred until model download/);
   assert.match(aiStudio, /No file was downloaded and no pedal data was changed/);
 });
+
+
+test('AI TONE3000 tone loader accepts numeric tone IDs using the same digit regex as the existing loader', () => {
+  const start = tone3000.indexOf('async function loadTone3000ForAI');
+  const end = tone3000.indexOf('function saveWorkspaceSnapshot', start);
+  const loader = tone3000.slice(start, end);
+  assert.ok(loader.includes("if (!/^\\d+$/.test(id))"));
+  assert.ok(!loader.includes("if (!/^\\\\d+$/.test(id))"));
+});
+
+test('AI candidate discovery does not reject A2 models based on a TONE3000 size label before file extraction', () => {
+  const start = aiStudio.indexOf('const candidates=(snapshot?.models||[])');
+  const end = aiStudio.indexOf('if(!candidates.length)', start);
+  const filter = aiStudio.slice(start, end);
+  assert.match(filter, /Boolean\(model\.model_url\)/);
+  assert.match(filter, /\^\(2\|a2\)\$/);
+  assert.doesNotMatch(filter, /model\.size|size==='lite'/);
+});
+
