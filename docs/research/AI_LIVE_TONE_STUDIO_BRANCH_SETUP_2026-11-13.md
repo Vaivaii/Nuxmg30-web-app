@@ -271,3 +271,5 @@ No changes were made to:
 - Compact context preserves validator schema and discrete choices. NAM transfer, slot 10, manual NAM target, IR User/Third Party/Collection and MIDI mappings are untouched. CI and hardware verification pending.
 
 - Follow-up test maintenance: automatic-model dropdown and probe timeout assertions updated to the per-provider Auto model implementation. GPT + Gemini collaboration now also resolves the fastest ready model independently for both providers.
+
+- CI #774 stale test expectations corrected: English summary assertion follows updated concise wording, and short-probe timeout assertion now matches row.id,10000.
