@@ -84,4 +84,9 @@ Based on the first successful device-use screenshots:
 - Localized the complete AI assistant interface, statuses, errors, provider settings and button labels to English. AI system instructions now require English summaries and notes even when the user's prompt is written in another language.
 - Added automated assertions for taller mobile layout, chat readability, visible busy indicator, larger AI entry button and English UI copy.
 - No device protocol, MIDI mapping, NAM handling, IR import/collection code, or Community .32 release branch was changed.
-- Rebuild and regression test verification for this refinement is pending in GitHub Actions. Physical device check of the updated visual layout is also pending.
+- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43396949653 (success).
+- Regression tests: **428 passed, 0 failed**.
+- Capacitor Android generation/plugin registration and Gradle `assembleDebug`: passed.
+- Artifact ID: `14023172073`; artifact name: `MG30-Studio-debug-APK`.
+- Extracted APK: 4,672,344 bytes; SHA-256: `ac8469103e32e20ebbafbfb98ce17383da7d788d8dfb04d0fb0bcc32e1f876af`.
+- The updated visual layout has not yet been physically checked on the user's phone. Earlier live MIDI operation was confirmed by the user with the previous AI build; this UI-only update has no hardware protocol changes.
