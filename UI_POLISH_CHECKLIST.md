@@ -4504,3 +4504,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - CI #774 stale test expectations corrected: English summary assertion follows updated concise wording, and short-probe timeout assertion now matches row.id,10000.
 
 - CI #775 confirmed the remaining two failures were regex-escaping in test assertions, not runtime code. Assertions now use literal source inclusion for row.id,10000.
+
+- CI #776 exposed one remaining duplicate static assertion in the added model-dropdown test; changed it to a literal source inclusion check. The other 459 tests passed in that run.
