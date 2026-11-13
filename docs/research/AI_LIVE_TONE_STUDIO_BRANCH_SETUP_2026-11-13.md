@@ -42,5 +42,13 @@ Date: 2026-11-13
 - Parallel-install application ID and app display name configured in the Android initializer/config.
 - Build workflow branch trigger added.
 - No AI feature code has been implemented yet.
-- No APK build or installation test has been run yet.
-- Next: inspect and verify generated Gradle applicationId, run npm tests and Android build, verify APK package ID and signing certificate, then begin AI catalog/interface-contract phase.
+- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43381833858 (success, 2026-11-13).
+- Automated regression suite: 417 passed, 0 failed.
+- Capacitor Android initialization: passed.
+- Gradle `assembleDebug`: passed.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14016657843`, 4,280,565-byte ZIP.
+- APK: `MG30-Studio-AI-debug.apk`, 4,658,284 bytes, SHA-256 `bc0f92e69df7e8b42b373ef54475fe492061285210431dc926aa201ee30c00d5`.
+- APK Android manifest package verified as `com.vaivaii.mg30studio.ai`.
+- APK signing block v2 present; signer certificate subject is `C=US, O=Android, CN=Android Debug`, SHA-256 fingerprint `9ef79cc2eab0cf88074ce2c6e5d0f0a9bea43b00aa867604d826ce6e75801976`. This differs from the Community release signing identity. It is a CI debug certificate; future CI builds may use a newly generated debug certificate, so seamless in-place updates between AI debug builds are not guaranteed unless a persistent dedicated AI keystore is configured.
+- The APK has been built and its package/signing metadata inspected. Physical installation on the user's phone and physical MG-30 hardware regression have not been performed here.
+- Next: begin AI catalog/interface-contract phase without modifying verified device communication paths.
