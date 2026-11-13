@@ -50,7 +50,7 @@ test('validates a partial parameter refinement on the current model', () => {
 test('requires every writable parameter when AI changes a model', () => {
   assert.throws(() => validateAiTonePlan({
     blocks: [{ id: 'AMP', model: 'Twin Rvb', parameters: { gain: 40 } }]
-  }, catalog), /semua kontrol|semua parameter|semua/i);
+  }, catalog), /requires all parameters/);
 });
 
 test('accepts a complete model change and multiple blocks', () => {
@@ -65,22 +65,22 @@ test('accepts a complete model change and multiple blocks', () => {
 });
 
 test('rejects unknown blocks, models and parameter names', () => {
-  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'IR', model: 'Third-party', parameters: { level: 50 } }] }, catalog), /tidak diizinkan/);
-  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Fake Amp', parameters: { gain: 50 } }] }, catalog), /tidak ada di katalog/);
-  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { magic: 50 } }] }, catalog), /tidak tersedia/);
+  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'IR', model: 'Third-party', parameters: { level: 50 } }] }, catalog), /not allowed/);
+  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Fake Amp', parameters: { gain: 50 } }] }, catalog), /not available in the .* catalog/);
+  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { magic: 50 } }] }, catalog), /not available/);
 });
 
 test('rejects values outside the normalized range and invalid discrete choices', () => {
-  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 101 } }] }, catalog), /rentang/);
-  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'MOD', model: 'CE-1', parameters: { subd: 7 } }] }, catalog), /pilihan|rentang/i);
+  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 101 } }] }, catalog), /outside the supported choices\/range/);
+  assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'MOD', model: 'CE-1', parameters: { subd: 7 } }] }, catalog), /outside the supported choices\/range/i);
 });
 
 test('rejects duplicate blocks and plans with no changes', () => {
   assert.throws(() => validateAiTonePlan({ blocks: [
     { id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 40 } },
     { id: 'AMP', model: 'Deluxe Rvb', parameters: { bass: 45 } }
-  ] }, catalog), /duplikat/);
-  assert.throws(() => validateAiTonePlan({ blocks: [] }, catalog), /tidak valid|kosong/);
+  ] }, catalog), /duplicate block/);
+  assert.throws(() => validateAiTonePlan({ blocks: [] }, catalog), /invalid|no changes/);
 });
 
 test('AI UI has no Apply-to-Editor action and exposes the three provider modes plus Undo', () => {
@@ -111,4 +111,27 @@ test('Android credential plugin uses Android Keystore and authenticated encrypti
   assert.match(java, /GCMParameterSpec/);
   assert.match(java, /MODE_PRIVATE/);
   assert.doesNotMatch(java, /Log\.[diwe].*value/);
+});
+
+
+test('AI assistant UI is taller, keeps chat readable and exposes a visible working indicator', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(source, /height:91dvh/);
+  assert.match(source, /min-height:84dvh/);
+  assert.match(source, /\.ai-tone-messages[^}]*min-height:165px/);
+  assert.match(source, /\.ai-tone-message[^}]*font-size:14px/);
+  assert.match(source, /#aiToneOpenButton[^}]*font-size:17px/);
+  assert.match(source, /ai-tone-status\[data-state=busy\]::before/);
+  assert.match(source, /@keyframes aiToneSpin/);
+  assert.match(source, /busy\?'Working…':'Send ↗'/);
+});
+
+test('AI assistant interface and generated tone summaries are English', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(source, /Keep the summary and notes in English/);
+  assert.match(source, /Waiting for MG-30 connection/);
+  assert.match(source, /Save API Keys/);
+  assert.match(source, /Undo AI Changes/);
+  assert.match(source, /Parameters sent to:/);
+  assert.doesNotMatch(source, /Menunggu koneksi|Simpan API Key|Kirim ↗|Parameter dikirim|Undo gagal|berhasil merespons/);
 });
