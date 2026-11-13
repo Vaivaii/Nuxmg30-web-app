@@ -194,3 +194,14 @@ No changes were made to:
 - This is applied immediately before validation/MIDI send; no provider output can silently substitute a built-in amp once the imported-NAM context is active.
 - If the imported model is not present in the live AMP catalog as the verified slot-10 model, the operation aborts before any preset MIDI writes.
 - NAM internal parameters remain locked. Other allowed blocks are preserved from the AI plan. Undo remains available through the existing block transaction.
+
+
+## 2026-11-13 — Prompt-Driven TONE3000 NAM Automation
+
+- Choosing TONE3000 NAM and Amp Only/Amp + Cab configures the mode only. The next Send starts the full process.
+- AI derives concise amplifier search terms, queries TONE3000 using `format=nam`, `architecture=2`, `sizes=lite`, and the selected gear, then selects a matching tone pack and model.
+- The model downloads in the background and is validated by the MG-30 Gen-2 A2-Lite 1,871-weight validator and transfer-plan builder before slot metadata is read or overwrite confirmation is displayed.
+- The exact validated bytes are cached and reused for transfer; a library copy is retained.
+- After transfer succeeds, AI creates the Tone Plan and the app forces AMP to slot 10. Any failed search, validation, slot scan, confirmation, or transfer stops the preset stage.
+- AI snapshots omit NAM internals. Slot 10 is selection-only; NAM internals, slots 1–9, IR paths, and MIDI mappings remain protected.
+- TONE3000 Search Tones is heavily rate-limited. Their Commercial Terms reserve full search API for commercial-tier integrations; obtain approval before publicly distributing this full-search feature. Official documentation: https://www.tone3000.com/api.

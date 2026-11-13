@@ -152,3 +152,11 @@ test('after NAM import AI deterministically forces AMP to verified slot 10', () 
   assert.match(source, /if\(existing>=0\)plan\.blocks\[existing\]=ampChange;else plan\.blocks\.unshift\(ampChange\)/);
   assert.match(source, /No preset changes were sent/);
 });
+
+test('AI editor snapshot omits NAM internals and NAM mode triggers automatic import on Send', () => {
+  const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.ok(html.includes('parameters:namProfile?{}:{...states[index].values}'));
+  assert.ok(source.includes('namModeActive=true;activeNamGear=gear'));
+  assert.ok(source.includes('if(namModeActive)await automaticNamImportForPrompt(prompt)'));
+});

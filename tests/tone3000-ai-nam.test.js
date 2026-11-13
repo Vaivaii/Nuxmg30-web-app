@@ -66,7 +66,7 @@ test('AI import cannot bypass the validated original MG-30 Gen 2 A2-Lite transfe
 test('AI slot-10 destination leaves manual NAM import target selection unchanged', () => {
   assert.match(tone3000, /const slotNumber = Number\(options\.slotNumber \?\? \(\$\('t3kTargetSlot'\)/);
   assert.match(tone3000, /const slotNumber = Number\(options\.slotNumber \?\? 10\)/);
-  assert.ok(aiStudio.includes('bridge.searchTones(query,{gear})'));
+  assert.ok(aiStudio.includes('bridge.searchTones(intent.query,{gear:activeNamGear})'));
 });
 
 test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening Select', () => {
@@ -78,8 +78,9 @@ test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening S
   assert.match(tone3000, /async function loadTone3000ForAI/);
   assert.ok(tone3000.includes('searchTones(query, options = {})'));
   assert.match(aiStudio, /async function beginNamSearch/);
+  assert.match(aiStudio, /async function automaticNamImportForPrompt/);
   assert.match(aiStudio, /data-ai-nam-tone=/);
-  assert.ok(aiStudio.includes('bridge.searchTones(query,{gear})'));
+  assert.ok(aiStudio.includes('bridge.searchTones(intent.query,{gear:activeNamGear})'));
   assert.match(tone3000, /TONE3000 API search rate limit reached/);
 });
 
@@ -87,4 +88,20 @@ test('AI NAM automation preserves only slot 10 as an available destination', () 
   assert.match(aiStudio, /installed NAM context/i);
   assert.match(aiStudio, /kind==='nam-slot-selection'&&model.slot===10/);
   assert.match(tone3000, /aiToneSearchCache/);
+});
+
+test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloaded binary', () => {
+  assert.match(tone3000, /async function prepareTone3000ModelForAI/);
+  assert.match(tone3000, /sizes: 'lite'/);
+  assert.match(tone3000, /buildMG30A2LiteTransferPlan\(weightBytes, label, 10\)/);
+  assert.match(tone3000, /modelBytes: options\.modelBytes/);
+  assert.match(tone3000, /preparedAiNamFiles\.delete\(cacheKey\)/);
+  assert.match(tone3000, /async loadTone\(toneId, options = \{\}\)/);
+});
+
+test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
+  assert.match(aiStudio, /async function automaticNamImportForPrompt/);
+  assert.match(aiStudio, /if\(namModeActive\)await automaticNamImportForPrompt\(prompt\)/);
+  assert.match(aiStudio, /bridge\.prepareModel\(choice\.model\.id\)/);
+  assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
 });

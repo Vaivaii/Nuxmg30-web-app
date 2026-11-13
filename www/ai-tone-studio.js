@@ -29,7 +29,7 @@ export function validateAiTonePlan(plan,catalog){
    const missing=model.parameters.filter(x=>!Object.prototype.hasOwnProperty.call(parameters,x.key));
    if(missing.length)throw new Error('Changing model '+id+' requires all parameters: '+missing.map(x=>x.key).join(', '));
   }
-  if(!Object.keys(parameters).length&&modelName===block.currentModel&&p.enabled===undefined)throw new Error('Block '+id+' has no changes.');
+  if(!Object.keys(parameters).length&&modelName===block.currentModel&&p.enabled===undefined&&model.kind!=='nam-slot-selection')throw new Error('Block '+id+' has no changes.');
   blocks.push({id,model:modelName,enabled:p.enabled,parameters});
  }
  return {summary:String(plan.summary||'Tone updated by AI.').slice(0,420),blocks,notes:Array.isArray(plan.notes)?plan.notes.map(x=>String(x).slice(0,180)).slice(0,5):[]};

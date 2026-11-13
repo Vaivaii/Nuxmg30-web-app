@@ -5797,10 +5797,11 @@ function aiGetCatalog(){
  });
 }
 function aiGetEditorSnapshot(){
- return BLOCKS.slice(0,9).map((block,index)=>({
-  id:block.id,model:block.models[states[index].model]?.[0]||'',
-  enabled:states[index].on,parameters:{...states[index].values}
- }));
+ return BLOCKS.slice(0,9).map((block,index)=>{
+  const namProfile=index===3?ampNamProfileForModelIndex(states[index].model):null;
+  return {id:block.id,model:block.models[states[index].model]?.[0]||'',
+   enabled:states[index].on,parameters:namProfile?{}:{...states[index].values}};
+ });
 }
 function aiPreparePlan(plan){
  if(!plan||!Array.isArray(plan.blocks)||plan.blocks.length<1||plan.blocks.length>9)throw new Error('Tone Plan kosong atau jumlah blok tidak valid.');
