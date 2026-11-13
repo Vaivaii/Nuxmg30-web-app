@@ -60,7 +60,7 @@ test('AI import cannot bypass the validated original MG-30 Gen 2 A2-Lite transfe
   assert.match(namTransfer, /const WEIGHT_COUNT = 1871/);
   assert.match(namTransfer, /A2-Lite WaveNet/i);
   assert.match(namTransfer, /WEIGHT_BYTES = WEIGHT_COUNT \* 4/);
-  assert.match(namTransfer, /does not read back model weights/i);
+  assert.match(namTransfer, /does not read model weights/i);
 });
 
 test('AI slot-10 destination leaves manual NAM import target selection unchanged', () => {
