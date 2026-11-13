@@ -144,3 +144,11 @@ test('AI AMP catalog exposes only NAM slot 10 as selection-only with no internal
   assert.ok(html.includes('NAM slot 10 is selection-only'));
   assert.ok(html.includes('if(blockIndex===3&&ampNamProfileForModelIndex(state.model))return'));
 });
+
+test('after NAM import AI deterministically forces AMP to verified slot 10', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(source, /const installed=amp\?\.models\?\.find\(model=>model\.kind==='nam-slot-selection'&&model\.slot===10&&model\.name===activeNamModelName\)/);
+  assert.match(source, /const ampChange=\{id:'AMP',model:installed\.name,enabled:true,parameters:\{\}\}/);
+  assert.match(source, /if\(existing>=0\)plan\.blocks\[existing\]=ampChange;else plan\.blocks\.unshift\(ampChange\)/);
+  assert.match(source, /No preset changes were sent/);
+});

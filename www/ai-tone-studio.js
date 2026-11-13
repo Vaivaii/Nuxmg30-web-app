@@ -128,7 +128,7 @@ async function init(){
  ].join('');
  document.body.append(shade,sheet);
  const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),gpt:$('aiOpenAiKey'),gemini:$('aiGeminiKey'),gptModel:$('aiOpenAiModel'),geminiModel:$('aiGeminiModel'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
- let mode='gpt',busy=false,last=null,namFlowActive=false,namImportBusy=false,activeNamContext='';const history=[];
+ let mode='gpt',busy=false,last=null,namFlowActive=false,namImportBusy=false,activeNamContext='',activeNamModelName='';const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;document.querySelectorAll('[data-ai-provider]').forEach(b=>b.disabled=busy);ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button').forEach(b=>b.disabled=busy);};
@@ -209,6 +209,7 @@ async function init(){
    namFlowActive=false;ui.namWizard.hidden=true;ui.namResults.hidden=true;
    const ampCatalog=window.MG30AIToneBridge?.getCatalog?.().find(block=>block.id==='AMP');
    const slotTenModel=ampCatalog?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10)?.name||'NAM Slot 10';
+   activeNamModelName=slotTenModel;
    activeNamContext='The TONE3000 NAM model "'+(result.modelName||'selected A2 capture')+'" was validated and imported into MG-30 NAM slot 10 (tone ID '+result.toneId+'). For the AMP block, select the exact selection-only catalog model "'+slotTenModel+'" with parameters:{} so the preset uses slot 10. Never change NAM internal parameters. Build the requested tone around this installed capture; adjust only the other permitted tone blocks.';
    autoCreatePreset=Boolean(ui.prompt.value.trim());
    message('ai','Imported '+(result.modelName||'the selected NAM')+' to MG-30 slot 10. A copy is retained in NAM Library. I will now build the requested tone using the slot-10 NAM capture. Device write ACKs and slot metadata were confirmed; model weights are not read back by this protocol.');
@@ -262,8 +263,18 @@ async function init(){
   if(busy)return;const prompt=ui.prompt.value.trim();if(!prompt){status('Enter a tone request first.','error');return;}
   const bridge=window.MG30AIToneBridge;if(!bridge?.isConnected?.()){status('Failed: MG-30 is disconnected. AI was not called and no parameters were changed.','error');return;}
   setBusy(true);message('user',prompt);status('Checking USB-MIDI connection…','busy');
-  try{const plan=await makePlan(prompt,bridge);if(!bridge.isConnected())throw new Error('The MG-30 disconnected before changes could be sent.');
-   status('Tone Plan validated. Updating the editor and sending MIDI…','busy');const result=await bridge.applyPlan(plan);
+  try{const plan=await makePlan(prompt,bridge);
+   if(activeNamContext){
+    const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
+    const installed=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10&&model.name===activeNamModelName);
+    if(!installed)throw new Error('The imported NAM is not visible as a verified AMP slot-10 model. No preset changes were sent. Re-read the pedal slot metadata and try again.');
+    const ampChange={id:'AMP',model:installed.name,enabled:true,parameters:{}};
+    const existing=plan.blocks.findIndex(block=>block.id==='AMP');
+    if(existing>=0)plan.blocks[existing]=ampChange;else plan.blocks.unshift(ampChange);
+    plan.summary=(plan.summary||'AI tone')+' using the imported NAM capture in slot 10.';
+   }
+   if(!bridge.isConnected())throw new Error('The MG-30 disconnected before changes could be sent.');
+   status('Tone Plan validated. Updating the editor and sending MIDI…', 'busy');const result=await bridge.applyPlan(plan);
    last={before:result.before,after:result.after,blocks:result.blocks};ui.undo.disabled=false;
    message('ai',plan.summary+'\nParameters sent to: '+result.blocks.join(', ')+(plan.notes.length?'\n'+plan.notes.join(' · '):''));
    ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');

@@ -185,3 +185,12 @@ No changes were made to:
 - Automated tests and Android build must pass before distribution.
 - TONE3000 documents the Search Tones endpoint as heavily rate-limited by default and lists a default global rate limit of 100 requests/minute. Contact TONE3000 for production rate-limit approval; local caching does not replace approval.
 - Physical-device verification is required for AMP slot-10 selection after import, automatic preset generation, Undo, and disconnect handling. The pedal protocol confirms write ACKs and slot metadata/name, but does not read back model weights byte-for-byte.
+
+
+## 2026-11-13 — Mandatory AMP NAM Slot-10 Enforcement
+
+- User testing showed that AI could still produce a built-in AMP model after the NAM import flow. Prompt instructions alone were not sufficient.
+- AI Studio now deterministically replaces the proposed AMP block with the exact verified selection-only NAM slot-10 catalog model after a successful import, with `parameters:{}`.
+- This is applied immediately before validation/MIDI send; no provider output can silently substitute a built-in amp once the imported-NAM context is active.
+- If the imported model is not present in the live AMP catalog as the verified slot-10 model, the operation aborts before any preset MIDI writes.
+- NAM internal parameters remain locked. Other allowed blocks are preserved from the AI plan. Undo remains available through the existing block transaction.
