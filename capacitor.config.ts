@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.vaivaii.mg30studio',
-  appName: 'MG30 Studio',
+  appName: 'MG30 Studio AI',
   webDir: 'dist',
   android: {
     allowMixedContent: false
