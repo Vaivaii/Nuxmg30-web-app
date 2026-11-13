@@ -37,18 +37,39 @@ Date: 2026-11-13
 - AI must not generate raw device bytes or create a parallel device protocol.
 - Preserve the existing device core as the sole owner of USB-MIDI and preset transfer.
 
-## Current work status
-- Branch created from the Community .32 release branch.
-- Parallel-install application ID and app display name configured in the Android initializer/config.
-- Build workflow branch trigger added.
-- No AI feature code has been implemented yet.
-- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43381833858 (success, 2026-11-13).
-- Automated regression suite: 417 passed, 0 failed.
-- Capacitor Android initialization: passed.
+## AI Live Tone Studio implementation status — 2026-11-13
+
+### Implemented
+- AI entry point is inserted in the Tone Editor header immediately before CTRL / EXP; assistant opens as a bottom sheet and leaves the editor mounted.
+- Provider modes: GPT, Gemini, and GPT + Gemini collaboration (GPT proposes, Gemini reviews and returns the final proposal).
+- Two API key fields and editable model IDs; defaults are `gpt-6-astra` and `gemini-3.8-flash`.
+- Android `MG30SecureStorePlugin` encrypts API keys using AES-256-GCM; its non-exportable key is held by Android Keystore. Ciphertext and IV are stored in app-private SharedPreferences.
+- AI returns a structured Tone Plan. The app validates block/model/parameter identities and normalized ranges or discrete choices against the live editor catalog before any hardware write.
+- AI catalog is intentionally restricted to the first nine tone blocks (WAH, CMP, EFX, AMP, EQ, GATE, MOD, DLY, RVB). IR, NAM, S/R, VOL, presets, scenes and chain order are excluded from AI writes.
+- Device writes use the editor's existing `midiSend` / serialized MIDI queue and the existing parameter CC maps. No new SysEx or device protocol path was introduced.
+- There is no Apply-to-Editor button. A validated plan updates the editor immediately and queues parameter CC commands to the connected MG-30.
+- Undo AI Changes captures pre-change block state. Undo skips any block changed after the AI transaction, protecting later manual tweaks.
+- If USB-MIDI disconnects before/during writes, the UI reports failure. Code attempts best-effort MIDI rollback when still connected; if disconnected, it restores local editor state and tells the user to reconnect/read back before proceeding.
+- The UI states parameter CC has no per-parameter ACK/readback. A successful send means the existing MIDI queue/write returned without error; it is not full hardware readback confirmation.
+
+### Automated verification and APK
+- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43385387532 (success).
+- Regression tests: **426 passed, 0 failed** (417 existing + 9 AI tests).
+- Capacitor Android generation and plugin registration: passed.
 - Gradle `assembleDebug`: passed.
-- Artifact: `MG30-Studio-debug-APK`, artifact ID `14016657843`, 4,280,565-byte ZIP.
-- APK: `MG30-Studio-AI-debug.apk`, 4,658,284 bytes, SHA-256 `bc0f92e69df7e8b42b373ef54475fe492061285210431dc926aa201ee30c00d5`.
-- APK Android manifest package verified as `com.vaivaii.mg30studio.ai`.
-- APK signing block v2 present; signer certificate subject is `C=US, O=Android, CN=Android Debug`, SHA-256 fingerprint `9ef79cc2eab0cf88074ce2c6e5d0f0a9bea43b00aa867604d826ce6e75801976`. This differs from the Community release signing identity. It is a CI debug certificate; future CI builds may use a newly generated debug certificate, so seamless in-place updates between AI debug builds are not guaranteed unless a persistent dedicated AI keystore is configured.
-- The APK has been built and its package/signing metadata inspected. Physical installation on the user's phone and physical MG-30 hardware regression have not been performed here.
-- Next: begin AI catalog/interface-contract phase without modifying verified device communication paths.
+- Artifact ID: `14018815994`; artifact name: `MG30-Studio-debug-APK`.
+- APK size: 4,671,936 bytes.
+- APK SHA-256: `d55d926b6980e2d8bceee5eb674b4b7e3752ac846ff19ba05f589a4c56ef0dbf`.
+- APK manifest package verified: `com.vaivaii.mg30studio.ai`; Community .32 package remains `com.vaivaii.mg30studio`.
+- APK Signature Scheme v2 verified. AI debug certificate SHA-256: `a0c882d803b1d92655f052b8f809cdac212962d31a83f48dea4ad55ccbf1f128`.
+- Community .32 release certificate SHA-256 (verified from its signed artifact): `3cb91a0f76d2a1eb38a5c311a2bf1c08051ab8bf41c4a00401693f062c6bf85b`. Package IDs and signing certificates differ, so these APKs are eligible to install side-by-side.
+- This is a CI debug-signed APK. The runner's debug key can be regenerated in later runs; a persistent dedicated AI signing keystore stored as protected CI secrets is needed to guarantee future in-place upgrades. Never commit keystore files or passwords.
+- Physical Android installation and physical MG-30 USB-MIDI live-tone tests have not been performed. Do not describe the feature as hardware-validated.
+
+### Next validation tasks
+1. Install on the physical phone alongside Community .32 and verify both remain installed.
+2. Connect the original MG-30 Gen 2 firmware 6.0.x and hardware-test prompt-to-CC, model changes, disconnect mid-send, Undo, manual-tweak preservation and Save to Device.
+3. Verify OpenAI and Gemini connectivity using the user's keys. API usage billing remains separate from ChatGPT Go.
+4. Improve transaction semantics only after hardware evidence. MIDI CC has no per-parameter ACK in this integration; do not promise guaranteed hardware application beyond the observed send result.
+5. Consider a backend gateway before public distribution so provider credentials are not sent from the client directly. Local Android Keystore encryption only protects keys at rest.
+6. Configure a persistent dedicated AI signing key through protected GitHub Actions secrets before regular distribution/upgrades.
