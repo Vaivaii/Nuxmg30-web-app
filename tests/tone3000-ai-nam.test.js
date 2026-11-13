@@ -94,7 +94,7 @@ test('AI NAM automation preserves only slot 10 as an available destination', () 
 
 test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloaded binary', () => {
   assert.match(tone3000, /async function prepareTone3000ModelForAI/);
-  assert.match(tone3000, /sizes: 'lite'/);
+  assert.match(tone3000, /normalizeToneSearchRows/);
   assert.match(tone3000, /buildMG30A2LiteTransferPlan\(weightBytes, label, 10\)/);
   assert.match(tone3000, /modelBytes = options\.modelBytes \|\| null/);
   assert.match(tone3000, /prepared\?\.modelBytes \? \{ modelBytes: prepared\.modelBytes \}/);
@@ -134,4 +134,21 @@ test('Groq and OpenRouter credentials use existing encrypted Android Keystore st
   assert.match(secureStore, /"groq"\.equals\(value\)/);
   assert.match(secureStore, /"openrouter"\.equals\(value\)/);
   assert.match(aiStudio, /SecureStore\.setSecret\(\{provider:providerKeyId\(provider\)/);
+});
+
+
+test('TONE3000 search broadens the AI phrase once and defers Lite filtering to downloadable model metadata', () => {
+  const start = tone3000.indexOf('async function searchTone3000ForAI');
+  const end = tone3000.indexOf('async function loadTone3000ForAI', start);
+  const source = tone3000.slice(start, end);
+  assert.match(source, /const queries=\[text,terms\.length>1\?terms\[terms\.length-1\]:''\]/);
+  assert.match(source, /format:'nam',architecture:'2'/);
+  assert.doesNotMatch(source, /sizes:'lite'/);
+  assert.match(source, /rowsReturned/);
+});
+
+test('AI exposes TONE3000 zero-result query diagnostics and distinguishes catalogue emptiness from file validation', () => {
+  assert.match(aiStudio, /API total for last search/);
+  assert.match(aiStudio, /Capture-size filtering is deferred until model download/);
+  assert.match(aiStudio, /No file was downloaded and no pedal data was changed/);
 });

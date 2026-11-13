@@ -225,3 +225,13 @@ No changes were made to:
 
 
 - CI test maintenance: existing source-string regression expectations updated for the connect-only OAuth field and staged NAM preflight/transfer path. Hardware verification remains pending.
+
+
+## Follow-up from Android field report — TONE3000 search, Groq JSON and compact AI selectors
+
+- User confirmed TONE3000 account connection succeeds on the installed APK. Search still returned zero rows for AI-derived query “Fender Deluxe” using Amp + Cab / NAM A2 Lite. This is an API success-with-no-rows symptom, not an OAuth failure; field re-test is still needed after the code change.
+- Catalog search no longer forces `sizes=lite` before a tone is selected. It requests selected gear + NAM + A2, tries the full AI-derived phrase, then one shorter final keyword. A2-Lite compatibility remains checked on the actual model metadata and downloaded file before pedal writes. Search diagnostics retain attempted terms, page total and rows returned.
+- Groq/OpenRouter chat-completions now explicitly append “Return a valid JSON object only. The response must be JSON.” to the system message whenever `response_format: json_object` is used, including Test Groq/Test OpenRouter.
+- Large provider buttons and four simultaneous model dropdowns are replaced by two compact dropdowns: provider and active model. Saved IDs for each provider remain available to the automatic fallback path; GPT + Gemini collaboration remains supported.
+- No changes to original MG-30 Gen 2 A2-Lite transfer codec, slot-10-only automatic destination, manual NAM import target, NAM Library storage, IR User/Collection protocol or MIDI mappings.
+- Regression tests cover the JSON instruction, compact dropdown UI, relaxed A2 catalogue search, and zero-result diagnostics. CI and hardware validation are pending.

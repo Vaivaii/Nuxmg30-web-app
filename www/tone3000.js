@@ -491,39 +491,67 @@ function extractToneRows(body) {
 }
 
 const aiToneSearchCache = new Map();
-async function searchTone3000ForAI(query, gear = 'amp-cab') {
-  const text = String(query || '').trim().replace(/\\s+/g, ' ').slice(0, 160);
-  if (text.length < 2) throw new Error('Enter an amplifier name or tone description in the prompt before searching TONE3000.');
-  if (gear !== 'amp' && gear !== 'amp-cab') throw new Error('Choose Amp Only or Amp + Cab before searching.');
-  const cacheKey = gear + '|' + text.toLowerCase();
-  const cached = aiToneSearchCache.get(cacheKey);
-  if (cached && Date.now() - cached.time < 60_000) return cached.rows;
-  const params = new URLSearchParams({
-    query: text, page: '1', page_size: '12', sort: 'best-match',
-    gears: gear, sizes: 'lite', format: 'nam', architecture: '2',
-  });
-  const body = await apiJSON('/tones/search?' + params.toString());
-  const rows = extractToneRows(body).map(tone => {
-    const user = tone?.user?.username || tone?.creator?.username || tone?.username ||
-      (typeof tone?.creator === 'string' ? tone.creator : '');
-    return {
-      id: String(tone?.id ?? tone?.tone_id ?? ''),
-      name: String(tone?.title || tone?.name || tone?.tone_name || 'Untitled tone'),
-      creator: String(user || ''),
-      description: String(tone?.description || ''),
-      makes: Array.isArray(tone?.makes) ? tone.makes.slice(0, 5).map(item => String(item?.name || item)) : [],
-      tags: Array.isArray(tone?.tags) ? tone.tags.slice(0, 6).map(item => String(item?.name || item)) : [],
-      sizes: Array.isArray(tone?.sizes) ? tone.sizes.map(item => String(item?.name || item)) : [],
-      format: String(tone?.format || 'nam'),
-      a2ModelsCount: Number(tone?.a2_models_count ?? tone?.models_count ?? 0),
-      gear: String(tone?.gear || gear),
-    };
-  }).filter(tone => /^\\d+$/.test(tone.id));
-  aiToneSearchCache.set(cacheKey, { time: Date.now(), rows });
-  if (aiToneSearchCache.size > 20) aiToneSearchCache.delete(aiToneSearchCache.keys().next().value);
-  return rows;
+function normalizeToneSearchQuery(value){
+  return String(value||'').trim().replace(/\s+/g,' ').slice(0,160);
 }
-
+function normalizeToneSearchRows(body, gear){
+  return extractToneRows(body).map(tone=>{
+    const user=tone?.user?.username||tone?.creator?.username||tone?.username||
+      (typeof tone?.creator==='string'?tone.creator:'');
+    return {
+      id:String(tone?.id??tone?.tone_id??''),
+      name:String(tone?.title||tone?.name||tone?.tone_name||'Untitled tone'),
+      creator:String(user||''),
+      description:String(tone?.description||''),
+      makes:Array.isArray(tone?.makes)?tone.makes.slice(0,5).map(item=>String(item?.name||item)) : [],
+      tags:Array.isArray(tone?.tags)?tone.tags.slice(0,6).map(item=>String(item?.name||item)) : [],
+      sizes:Array.isArray(tone?.sizes)?tone.sizes.map(item=>String(item?.name||item)) : [],
+      format:String(tone?.format||'nam'),
+      a2ModelsCount:Number(tone?.a2_models_count??0),
+      gear:String(tone?.gear||gear),
+    };
+  }).filter(tone=>/^\d+$/.test(tone.id));
+}
+async function searchTone3000ForAI(query, gear = 'amp-cab') {
+  const text=normalizeToneSearchQuery(query);
+  if(text.length<2)throw new Error('Enter an amplifier name or tone description in the prompt before searching TONE3000.');
+  if(gear!=='amp'&&gear!=='amp-cab')throw new Error('Choose Amp Only or Amp + Cab before searching.');
+  const cacheKey=gear+'|'+text.toLowerCase();
+  const cached=aiToneSearchCache.get(cacheKey);
+  if(cached&&Date.now()-cached.time<60_000)return Object.assign(cached.rows.slice(),{searchMeta:cached.searchMeta});
+  const terms=text.split(/\s+/).filter(Boolean);
+  const queries=[text,terms.length>1?terms[terms.length-1]:''];
+  const tried=[],attempts=[];
+  let rows=[],searchMeta={requestedQuery:text,queriesTried:[],total:0,totalPages:0};
+  for(const candidate of [...new Set(queries)]){
+    const params=new URLSearchParams({
+      page:'1',page_size:'25',sort:candidate?'best-match':'trending',
+      gears:gear,format:'nam',architecture:'2',
+    });
+    if(candidate)params.set('query',candidate);
+    const body=await apiJSON('/tones/search?'+params.toString());
+    const pageRows=normalizeToneSearchRows(body,gear);
+    const meta={
+      query:candidate||'(broad A2 NAM catalogue)',
+      total:Number(body?.total??pageRows.length),
+      page:Number(body?.page??1),
+      pageSize:Number(body?.page_size??25),
+      totalPages:Number(body?.total_pages??0),
+      rowsReturned:pageRows.length,
+    };
+    tried.push(candidate||'(broad)');
+    attempts.push(meta);
+    if(pageRows.length){
+      rows=pageRows;
+      searchMeta={requestedQuery:text,queriesTried:tried,attempts,matchedQuery:candidate||'',...meta};
+      break;
+    }
+    searchMeta={requestedQuery:text,queriesTried:tried,attempts,...meta};
+  }
+  aiToneSearchCache.set(cacheKey,{time:Date.now(),rows,searchMeta});
+  if(aiToneSearchCache.size>20)aiToneSearchCache.delete(aiToneSearchCache.keys().next().value);
+  return Object.assign(rows.slice(),{searchMeta});
+}
 async function loadTone3000ForAI(toneId, options = {}) {
   const id = String(toneId || '').trim();
   if (!/^\\d+$/.test(id)) throw new Error('The selected TONE3000 tone ID is invalid.');

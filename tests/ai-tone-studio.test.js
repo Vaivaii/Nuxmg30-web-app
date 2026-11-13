@@ -83,11 +83,11 @@ test('rejects duplicate blocks and plans with no changes', () => {
   assert.throws(() => validateAiTonePlan({ blocks: [] }, catalog), /invalid|no changes/);
 });
 
-test('AI UI has no Apply-to-Editor action and exposes the three provider modes plus Undo', () => {
+test('AI UI has no Apply-to-Editor action and exposes compact provider/model dropdowns plus Undo', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /data-ai-provider="gpt"/);
-  assert.match(source, /data-ai-provider="gemini"/);
-  assert.match(source, /data-ai-provider="collab"/);
+  assert.match(source, /id="aiToneProviderSelect"/);
+  assert.match(source, /id="aiToneActiveModel"/);
+  assert.doesNotMatch(source, /data-ai-provider=/);
   assert.match(source, /Undo AI Changes/);
   assert.doesNotMatch(source, /Terapkan ke Editor|Apply to Editor/i);
 });
@@ -168,7 +168,8 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 test('Gemini is the default AI provider and provider model options are dropdowns', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='gemini'/);
-  for (const provider of ['gpt','gemini','groq','openrouter']) assert.match(source, new RegExp('data-ai-model="'+provider+'"'));
+  assert.match(source, /id="aiToneActiveModel"/);
+  assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
   assert.match(source, /api\.groq\.com\/openai\/v1\/models/);
   assert.match(source, /openrouter\.ai\/api\/v1\/models/);
@@ -183,4 +184,19 @@ test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transi
   assert.equal(isRetryableProviderError(new Error('request timed out')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 401 invalid API key')), false);
   assert.equal(isRetryableProviderError(new Error('HTTP 400 invalid request')), false);
+});
+
+
+test('Groq and OpenRouter JSON-object requests explicitly include JSON in the messages', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(source, /Return a valid JSON object only\. The response must be JSON/);
+  assert.match(source, /response_format:\{type:'json_object'\}/);
+});
+
+test('provider and active model selection use compact dropdown controls instead of large button rows', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(source, /id="aiToneProviderSelect"/);
+  assert.match(source, /id="aiToneActiveModel"/);
+  assert.match(source, /\.ai-tone-provider-row\{display:grid/);
+  assert.doesNotMatch(source, /class="ai-tone-provider on"/);
 });
