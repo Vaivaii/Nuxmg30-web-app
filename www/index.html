@@ -5762,6 +5762,188 @@ window.MG30CtrlBridge=Object.freeze({
  }
 });
 
+
+function aiCloneEditorStates(){
+ return states.slice(0,9).map(st=>({model:st.model,on:st.on,values:{...st.values}}));
+}
+function aiIsWritableControl(blockIndex,control){
+ const list=MIDI_PARAM_CC[blockIndex]||[];
+ return Number.isInteger(control.ccIndex)&&control.ccIndex>=0&&control.ccIndex<list.length&&Number.isInteger(list[control.ccIndex]);
+}
+function aiGetCatalog(){
+ return BLOCKS.slice(0,9).map((block,blockIndex)=>{
+  const current=states[blockIndex];
+  const models=[];
+  block.models.forEach((pair,modelIndex)=>{
+   if(String(pair[0]).endsWith('· IMAGE'))return;
+   if(blockIndex===3&&modelIndex>=AMP_STANDARD_MODEL_COUNT)return;
+   const params=parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control)).map(control=>({
+    key:control.param,label:control.label||control.param.toUpperCase(),
+    kind:isDiscreteSwitch(control)?'discrete':'range',
+    choices:isDiscreteSwitch(control)?(control.choices||[]).map(choice=>({label:String(choice.label||choice.name||choice.value),value:Number(choice.value)})):undefined,
+    min:isDiscreteSwitch(control)?undefined:0,max:isDiscreteSwitch(control)?undefined:100
+   }));
+   models.push({name:String(pair[0]),parameters:params});
+  });
+  const currentControls=parameterControls(blockIndex,current.model).filter(control=>aiIsWritableControl(blockIndex,control));
+  const currentValues={};
+  currentControls.forEach(control=>{
+   const value=parameterValueForControl(blockIndex,current,current.model,control);
+   if(value!==undefined)currentValues[control.param]=value;
+  });
+  return {id:block.id,currentModel:block.models[current.model]?.[0]||'',currentEnabled:current.on,currentValues,models};
+ });
+}
+function aiGetEditorSnapshot(){
+ return BLOCKS.slice(0,9).map((block,index)=>({
+  id:block.id,model:block.models[states[index].model]?.[0]||'',
+  enabled:states[index].on,parameters:{...states[index].values}
+ }));
+}
+function aiPreparePlan(plan){
+ if(!plan||!Array.isArray(plan.blocks)||plan.blocks.length<1||plan.blocks.length>9)throw new Error('Tone Plan kosong atau jumlah blok tidak valid.');
+ const seen=new Set(),prepared=[];
+ for(const proposed of plan.blocks){
+  const blockIndex=BLOCKS.findIndex((item,index)=>index<9&&item.id===String(proposed.id||'').toUpperCase());
+  if(blockIndex<0)throw new Error('AI mengusulkan blok yang tidak diizinkan: '+proposed.id);
+  if(seen.has(blockIndex))throw new Error('Blok '+proposed.id+' duplikat dalam Tone Plan.');
+  seen.add(blockIndex);
+  const block=BLOCKS[blockIndex],state=states[blockIndex],modelName=String(proposed.model||'').trim();
+  const modelIndex=block.models.findIndex((pair,index)=>pair[0]===modelName&&!String(pair[0]).endsWith('· IMAGE')&&(blockIndex!==3||index<AMP_STANDARD_MODEL_COUNT));
+  if(modelIndex<0)throw new Error('Model '+modelName+' bukan model hardware yang diizinkan untuk '+block.id+'.');
+  if(proposed.enabled!==undefined&&typeof proposed.enabled!=='boolean')throw new Error('Status blok '+block.id+' tidak valid.');
+  const modelChanged=modelIndex!==state.model,controls=parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control));
+  if(!proposed.parameters||typeof proposed.parameters!=='object'||Array.isArray(proposed.parameters))throw new Error('Parameter blok '+block.id+' tidak valid.');
+  const allowed=new Map(controls.map(control=>[control.param,control])),parameters=[];
+  for(const [key,raw] of Object.entries(proposed.parameters)){
+   const control=allowed.get(key),value=Number(raw);
+   if(!control)throw new Error('Parameter '+key+' tidak tersedia pada '+block.id+'/'+modelName+'.');
+   if(!Number.isFinite(value))throw new Error('Nilai '+key+' bukan angka.');
+   if(isDiscreteSwitch(control)){
+    if(!control.choices?.some(choice=>Number(choice.value)===value))throw new Error('Pilihan '+value+' tidak valid untuk '+block.id+'.'+key+'.');
+   }else if(value<0||value>100)throw new Error('Nilai '+block.id+'.'+key+' harus 0–100.');
+   if(!modelChanged&&!Object.prototype.hasOwnProperty.call(state.values,key))throw new Error('Nilai sebelumnya untuk '+block.id+'.'+key+' belum terbaca dari pedal. Sinkronkan preset lebih dulu agar Undo aman.');
+   const cc=MIDI_PARAM_CC[blockIndex][control.ccIndex];
+   parameters.push({key,control,value,cc,rawValue:isDiscreteSwitch(control)?value:encodeParameterValue(key,value)});
+  }
+  if(modelChanged){
+   const missing=controls.filter(control=>!Object.prototype.hasOwnProperty.call(proposed.parameters,control.param));
+   if(missing.length)throw new Error('Penggantian model '+block.id+' harus mengirim semua kontrol: '+missing.map(x=>x.param).join(', ')+'.');
+  }
+  const nextEnabled=proposed.enabled===undefined?state.on:proposed.enabled;
+  const hasSwitch=modelChanged||nextEnabled!==state.on;
+  const modelValue=deviceModelValue(blockIndex,modelIndex);
+  if(hasSwitch&&(!Number.isInteger(MIDI_SW[blockIndex])||!Number.isInteger(modelValue)))throw new Error('Pemetaan model '+block.id+' belum tersedia.');
+  if(!modelChanged&&!hasSwitch&&parameters.every(item=>state.values[item.key]===item.value))throw new Error('Blok '+block.id+' tidak memiliki perubahan nilai.');
+  prepared.push({blockIndex,id:block.id,modelIndex,modelChanged,enabled:nextEnabled,hasSwitch,modelValue,parameters});
+ }
+ return prepared;
+}
+async function aiSendCC(cc,value){
+ if(!midiConnected||!midiInput||!midiOutput)throw new Error('USB-MIDI MG-30 terputus. Pengiriman AI dihentikan.');
+ const sent=await midiSend([0xB0,cc,Math.max(0,Math.min(127,Number(value)||0))]);
+ if(!sent||!midiConnected||!midiInput||!midiOutput)throw new Error('Perintah MIDI tidak terkirim atau koneksi MG-30 terputus.');
+}
+async function aiSendBlockState(blockIndex,state){
+ if(!midiConnected)throw new Error('Koneksi USB-MIDI terputus saat rollback.');
+ const modelValue=deviceModelValue(blockIndex,state.model),switchCc=MIDI_SW[blockIndex];
+ if(!Number.isInteger(modelValue)||!Number.isInteger(switchCc))throw new Error('Model rollback tidak memiliki pemetaan MIDI.');
+ await aiSendCC(switchCc,modelValue+(state.on?0:64));
+ const controls=parameterControls(blockIndex,state.model).filter(control=>aiIsWritableControl(blockIndex,control));
+ for(const control of controls){
+  if(!Object.prototype.hasOwnProperty.call(state.values,control.param))continue;
+  const raw=isDiscreteSwitch(control)?Number(state.values[control.param]):encodeParameterValue(control.param,state.values[control.param]);
+  await aiSendCC(MIDI_PARAM_CC[blockIndex][control.ccIndex],raw);
+ }
+}
+async function aiWaitForDeviceIdle(){
+ stopHardwareStatePolling();
+ const deadline=Date.now()+6500;
+ while((hardwareSyncBusy||activeBufferReadPromise||sceneSwitchPending||ctrlEditorBusy||copySceneBusy)&&Date.now()<deadline)await delay(25);
+ if(hardwareSyncBusy||activeBufferReadPromise||sceneSwitchPending||ctrlEditorBusy||copySceneBusy)throw new Error('MG-30 sedang menjalankan sinkronisasi/operasi lain. Coba lagi setelah selesai.');
+ if(presetImportBusy||presetExportBusy||window.MG30IRTransferBusy)throw new Error('Transfer preset/IR sedang berlangsung. Tunggu sampai selesai.');
+ if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 tidak terhubung melalui USB-MIDI.');
+}
+async function aiApplyPrepared(prepared){
+ const before=aiCloneEditorStates(),ids=prepared.map(item=>item.id),indexes=prepared.map(item=>item.blockIndex);
+ let started=false;
+ try{
+  await aiWaitForDeviceIdle();
+  hardwareSyncBusy=true;started=true;
+  for(const item of prepared){
+   const state=states[item.blockIndex];
+   if(item.modelChanged){state.model=item.modelIndex;state.values={};}
+   state.on=item.enabled;
+   item.parameters.forEach(parameter=>{state.values[parameter.key]=parameter.value;});
+  }
+  render();persist();
+  await flushMidi();
+  for(const item of prepared){
+   if(item.hasSwitch)await aiSendCC(MIDI_SW[item.blockIndex],item.modelValue+(item.enabled?0:64));
+   for(const parameter of item.parameters){
+    const old=before[item.blockIndex].values[parameter.key];
+    if(item.modelChanged||old!==parameter.value)await aiSendCC(parameter.cc,parameter.rawValue);
+   }
+  }
+  if(!midiConnected)throw new Error('Koneksi MG-30 terputus sebelum seluruh perintah MIDI selesai.');
+  await flushMidi();
+  const after=aiCloneEditorStates();
+  render();persist();
+  setDeviceStatus('AI Tone: perintah parameter terkirim melalui USB-MIDI.');
+  return {before,after,blocks:ids};
+ }catch(error){
+  states=BLOCKS.map((block,index)=>index<9?({...before[index],values:{...before[index].values}}):states[index]);
+  render();persist();
+  let rollbackNote='';
+  if(midiConnected){
+   try{for(const index of indexes)await aiSendBlockState(index,before[index]);rollbackNote=' State pedal dipulihkan melalui MIDI.';}
+   catch(rollbackError){rollbackNote=' Rollback MIDI tidak lengkap: '+(rollbackError?.message||rollbackError);}
+  }else rollbackNote=' Pedal terputus; state editor dipulihkan lokal. Sambungkan ulang dan baca ulang preset sebelum melanjutkan.';
+  throw new Error((error?.message||String(error))+rollbackNote);
+ }finally{
+  if(started)hardwareSyncBusy=false;
+  if(midiConnected)startHardwareStatePolling();
+ }
+}
+window.MG30AIToneBridge=Object.freeze({
+ isConnected:()=>Boolean(midiConnected&&midiInput&&midiOutput),
+ getCatalog:aiGetCatalog,
+ getSnapshot:aiGetEditorSnapshot,
+ async applyPlan(plan){
+  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung via USB-MIDI.');
+  const prepared=aiPreparePlan(plan);
+  return aiApplyPrepared(prepared);
+ },
+ async restoreBlocks(before,after,blockIds){
+  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung via USB-MIDI.');
+  const current=aiCloneEditorStates(),restored=[],skipped=[];
+  const indexById=new Map(BLOCKS.slice(0,9).map((block,index)=>[block.id,index]));
+  for(const id of blockIds){
+   const index=indexById.get(id);
+   if(index===undefined||!before[index]||!after[index]){skipped.push(id);continue;}
+   if(JSON.stringify(current[index])!==JSON.stringify(after[index])){skipped.push(id);continue;}
+   restored.push(id);
+  }
+  if(!restored.length)return {restored,skipped};
+  const selectedIndexes=restored.map(id=>indexById.get(id));
+  let started=false;
+  try{
+   await aiWaitForDeviceIdle();hardwareSyncBusy=true;started=true;
+   for(const index of selectedIndexes)states[index]={...before[index],values:{...before[index].values}};
+   render();persist();await flushMidi();
+   for(const index of selectedIndexes)await aiSendBlockState(index,states[index]);
+   await flushMidi();
+   if(!midiConnected)throw new Error('Koneksi MG-30 terputus sebelum Undo selesai.');
+   render();persist();setDeviceStatus('Undo AI: parameter yang aman berhasil dikembalikan.');
+   return {restored,skipped};
+  }catch(error){
+   for(const index of selectedIndexes)states[index]={...current[index],values:{...current[index].values}};
+   render();persist();
+   throw new Error((error?.message||String(error))+' State editor lokal dipulihkan; periksa pedal sebelum melanjutkan.');
+  }finally{if(started)hardwareSyncBusy=false;if(midiConnected)startHardwareStatePolling();}
+ }
+});
+
 </script>
 <script>
 (function mergeNamAndIr(){
@@ -5805,4 +5987,5 @@ window.MG30CtrlBridge=Object.freeze({
 })();
 </script>
 
+<script type="module" src="./ai-tone-studio.js"></script>
 </body></html>
