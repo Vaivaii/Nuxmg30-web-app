@@ -47,12 +47,19 @@ function geminiOutput(data){
  const a=data?.candidates?.[0]?.content?.parts||[],s=a.map(x=>x?.text||'').filter(Boolean).join('\n');
  if(!s)throw new Error('Gemini returned no text output.');return s;
 }
+function providerHttpError(data,status){
+ const api=data?.error||{},failed=api.failed_generation;
+ const detail=typeof failed==='string'?failed:failed&&typeof failed==='object'?[failed.reason,failed.message].filter(Boolean).join('; '):'';
+ const error=new Error(String(api.message||data?.message||('HTTP '+status))+(detail?' Details: '+detail.slice(0,360):''));
+ error.status=status;error.failedGeneration=Boolean(failed);error.providerErrorType=String(api.type||api.code||'');
+ return error;
+}
 async function postJson(url,options,timeoutMs=90000){
  const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),timeoutMs);
  try{
   const r=await fetch(url,{...options,signal:ctl.signal}),raw=await r.text();let data={};
   try{data=raw?JSON.parse(raw):{}}catch{data={rawText:raw}}
-  if(!r.ok)throw new Error(data?.error?.message||data?.message||('HTTP '+r.status));
+  if(!r.ok)throw providerHttpError(data,r.status);
   return data;
  }catch(e){if(e?.name==='AbortError')throw new Error('The AI request timed out after 90 seconds.');throw e;}
  finally{window.clearTimeout(timer);}
@@ -93,18 +100,53 @@ async function gemini(key,sys,user,model,timeoutMs=90000){
  body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600}})},timeoutMs);
  return parseJson(geminiOutput(d));
 }
-function compatibleChatText(data,provider){
- const content=data?.choices?.[0]?.message?.content;
- const text=typeof content==='string'?content:Array.isArray(content)?content.map(part=>part?.text||'').filter(Boolean).join('\n'):'';
- if(!text.trim())throw new Error((provider==='groq'?'Groq':'OpenRouter')+' returned no text output.');
+export function compatibleChatText(data,provider){
+ const choice=data?.choices?.[0]||{},message=choice.message||{};
+ const content=message.content;
+ const parts=Array.isArray(content)?content.map(part=>typeof part==='string'?part:(typeof part?.text==='string'?part.text:typeof part?.content==='string'?part.content:typeof part?.output_text==='string'?part.output_text:'')).filter(Boolean):[];
+ const text=typeof content==='string'?content:parts.join('\n')||String(message.output_text||choice.text||data?.output_text||'');
+ if(!text.trim()){
+  const finish=String(choice.finish_reason||'unknown'),providerName=String(data?.provider||data?.provider_name||'');
+  const reasonOnly=Boolean(message.reasoning||message.reasoning_details?.length);
+  const refusal=typeof message.refusal==='string'&&message.refusal?'; refusal returned':'';
+  const error=new Error((provider==='groq'?'Groq':'OpenRouter')+' returned no final text output (finish_reason: '+finish+(providerName?'; route: '+providerName:'')+(reasonOnly?'; reasoning-only response':'')+refusal+').');
+  error.code='AI_NO_TEXT_OUTPUT';error.finishReason=finish;error.reasoningOnly=reasonOnly;
+  throw error;
+ }
  return text;
+}
+function isGroqJsonValidationError(error){
+ return Boolean(error?.failedGeneration)||error?.code==='AI_NO_TEXT_OUTPUT'||error instanceof SyntaxError||/failed to validate json|failed_generation|generated json.{0,50}(valid|syntax)|does not contain a json tone plan|unexpected token|unexpected end of json/i.test(String(error?.message||error||''));
+}
+function appendJsonContract(messages){
+ const rows=messages.map(row=>({...row}));
+ const last=rows[rows.length-1];
+ last.content=String(last.content||'')+'\n\nFINAL OUTPUT CONTRACT: Return exactly one complete JSON object and nothing else. Do not use Markdown fences, commentary, or tool calls. Required top-level keys: summary (string), blocks (array), notes (array).';
+ return rows;
 }
 async function openAiCompatible(key,sys,user,model,provider,timeoutMs=90000){
  if(!model)throw new Error('Choose an available '+(provider==='groq'?'Groq':'OpenRouter')+' model in AI Settings.');
- const base=provider==='groq'?'https://api.groq.com/openai/v1':'https://openrouter.ai/api/v1';
- const data=await postJson(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
- body:JSON.stringify({model,messages:[{role:'system',content:sys+'\nReturn a valid JSON object only. The response must be JSON.'},{role:'user',content:user}],response_format:{type:'json_object'},temperature:.25,max_tokens:1200})},timeoutMs);
- return parseJson(compatibleChatText(data,provider));
+ const isGroq=provider==='groq',isGroqGptOss=isGroq&&String(model).toLowerCase().startsWith('openai/gpt-oss-');
+ const base=isGroq?'https://api.groq.com/openai/v1':'https://openrouter.ai/api/v1';
+ const messages=isGroqGptOss?[{role:'user',content:sys+'\n\n'+user}]:[{role:'system',content:sys+'\nReturn a valid JSON object only. The response must be JSON.'},{role:'user',content:user}];
+ const body={model,messages,response_format:{type:'json_object'},...(isGroq?{max_completion_tokens:2600}: {max_tokens:2600,reasoning:{effort:'low',exclude:true}}),...(isGroqGptOss?{reasoning_effort:'low',include_reasoning:false}:{temperature:.2})};
+ const run=async requestBody=>{const data=await postJson(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(requestBody)},timeoutMs);return parseJson(compatibleChatText(data,provider));};
+ try{return await run(body);}
+ catch(error){
+  if(isGroq&&isGroqJsonValidationError(error)){
+   const retryBody={...body,messages:appendJsonContract(body.messages)};
+   delete retryBody.response_format;
+   try{return await run(retryBody);}
+   catch(retryError){const combined=new Error('Groq rejected JSON mode and its plain-text JSON retry also failed: '+String(retryError?.message||retryError));combined.cause=retryError;throw combined;}
+  }
+  if(provider==='openrouter'&&error?.code==='AI_NO_TEXT_OUTPUT'){
+   const retryBody={...body,messages:appendJsonContract(body.messages),reasoning:{effort:'low',exclude:true},max_tokens:3200};
+   delete retryBody.response_format;
+   try{return await run(retryBody);}
+   catch(retryError){const combined=new Error('OpenRouter returned no final text on the first attempt; the text-only JSON retry also failed: '+String(retryError?.message||retryError));combined.cause=retryError;throw combined;}
+  }
+  throw error;
+ }
 }
 async function getProviderJson(url,headers){
  const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),30000);
@@ -480,19 +522,20 @@ async function init(){
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
   return {model,reason:String(result.reason||'')};
  }
- function renderAiNamCapturePicker(pending){
-  const choices=Array.isArray(pending?.choices)?pending.choices:[];
-  ui.namResults.hidden=false;ui.namWizard.hidden=true;
-  if(!choices.length){ui.namResults.innerHTML='<p>No downloadable A2 NAM captures remain to choose.</p>';return;}
-  const options=choices.map(item=>'<option value="'+esc(item.model.id)+'" '+(String(item.model.id)===String(pending.selected.model.id)?'selected':'')+'>'+esc((item.model.name||'Unnamed capture')+' — '+item.metadata.driveMetadata)+'</option>').join('');
-  const meta=pending.selected.metadata;
-  ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>AI-recommended NAM capture</strong><small>'+esc(pending.selected.tone.name)+' · '+esc(pending.selected.tone.creator?'@'+pending.selected.tone.creator:'TONE3000')+' · slot 10</small></div></div>'+
-   '<p>AI selected the best match. '+choices.length+' downloadable A2 models are available in this tone pack. You can choose another; only the selected file will be downloaded and validated.</p>'+
-   '<label class="ai-tone-key-field" for="aiToneNamCaptureSelect">Available amp captures</label><select id="aiToneNamCaptureSelect" style="width:100%;margin:7px 0 9px;padding:11px;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8">'+options+'</select>'+
-   '<p id="aiToneNamCaptureMeta">'+esc(meta.summary)+' Source: '+esc(meta.source)+'. Metadata is supporting evidence, not a verified pedal-chain inventory.</p>'+
-   '<button class="ai-tone-nam-import" type="button" data-ai-nam-continue>Use selected capture & continue</button>';
- }
- async function automaticNamImportForPrompt(prompt){
+   function renderAiNamCapturePicker(pending){
+   const choices=Array.isArray(pending?.choices)?pending.choices:[];
+   ui.namResults.hidden=false;ui.namWizard.hidden=true;
+   if(!choices.length){ui.namResults.innerHTML='<p>No downloadable A2 NAM captures remain to choose.</p>';return;}
+   const recommendedId=String(pending.selected.model.id);
+   const options=choices.map(item=>'<option value="'+esc(item.model.id)+'" '+(String(item.model.id)===recommendedId?'selected':'')+'>'+esc((item.model.name||'Unnamed capture')+(String(item.model.id)===recommendedId?' · AI recommended':''))+'</option>').join('');
+   const reason=String(pending.selected.reason||'').trim().slice(0,180);
+   ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>AI-recommended NAM capture</strong><small>'+esc(pending.selected.tone.name)+' · '+esc(pending.selected.tone.creator?'@'+pending.selected.tone.creator:'TONE3000')+' · slot 10</small></div></div>'+
+    '<p><strong>'+esc(pending.selected.model.name)+'</strong> is the AI top match. '+choices.length+' downloadable A2 captures are available; you can choose another below.</p>'+
+    (reason?'<p class="ai-tone-nam-reason">Why AI recommends it: '+esc(reason)+'</p>':'')+
+    '<label class="ai-tone-key-field" for="aiToneNamCaptureSelect">Choose NAM capture</label><select id="aiToneNamCaptureSelect" style="width:100%;margin:7px 0 9px;padding:11px;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8">'+options+'</select>'+
+    '<button class="ai-tone-nam-import" type="button" data-ai-nam-continue>Use selected capture & continue</button>';
+  }
+async function automaticNamImportForPrompt(prompt){
   const bridge=window.NUXTONE3000Bridge;
   if(!activeNamGear)throw new Error('Choose Amp Only or Amp + Cab in the NAM source menu before sending this tone request.');
   if(!bridge?.searchTones||!bridge?.loadTone||!bridge?.prepareModel||!bridge?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update the AI Studio app.');
