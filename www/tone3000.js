@@ -17,6 +17,7 @@ let panelReady = false;
 let selectedTone = null;
 let selectedModelId = '';
 let callbackLoadedTone = false;
+const preparedAiNamFiles = new Map();
 window.NUXNAMTransfer = Object.freeze({ readMG30NAMSlotNames });
 
 const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -459,7 +460,7 @@ async function searchTone3000ForAI(query, gear = 'amp-cab') {
   if (cached && Date.now() - cached.time < 60_000) return cached.rows;
   const params = new URLSearchParams({
     query: text, page: '1', page_size: '12', sort: 'best-match',
-    gears: gear, format: 'nam', architecture: '2',
+    gears: gear, sizes: 'lite', format: 'nam', architecture: '2',
   });
   const body = await apiJSON('/tones/search?' + params.toString());
   const rows = extractToneRows(body).map(tone => {
@@ -470,8 +471,10 @@ async function searchTone3000ForAI(query, gear = 'amp-cab') {
       name: String(tone?.title || tone?.name || tone?.tone_name || 'Untitled tone'),
       creator: String(user || ''),
       description: String(tone?.description || ''),
-      makes: Array.isArray(tone?.makes) ? tone.makes.slice(0, 5).map(String) : [],
-      tags: Array.isArray(tone?.tags) ? tone.tags.slice(0, 6).map(String) : [],
+      makes: Array.isArray(tone?.makes) ? tone.makes.slice(0, 5).map(item => String(item?.name || item)) : [],
+      tags: Array.isArray(tone?.tags) ? tone.tags.slice(0, 6).map(item => String(item?.name || item)) : [],
+      sizes: Array.isArray(tone?.sizes) ? tone.sizes.map(item => String(item?.name || item)) : [],
+      format: String(tone?.format || 'nam'),
       a2ModelsCount: Number(tone?.a2_models_count ?? tone?.models_count ?? 0),
       gear: String(tone?.gear || gear),
     };
@@ -481,10 +484,10 @@ async function searchTone3000ForAI(query, gear = 'amp-cab') {
   return rows;
 }
 
-async function loadTone3000ForAI(toneId) {
+async function loadTone3000ForAI(toneId, options = {}) {
   const id = String(toneId || '').trim();
   if (!/^\\d+$/.test(id)) throw new Error('The selected TONE3000 tone ID is invalid.');
-  const snapshot = await loadSelectedTone(id, { expand: true });
+  const snapshot = await loadSelectedTone(id, { expand: true, silent: options.silent === true });
   if (!snapshot || !Array.isArray(snapshot.models)) throw new Error('TONE3000 did not return its A2 NAM model list.');
   return snapshot;
 }
@@ -624,8 +627,8 @@ async function loadSelectedTone(toneId, options = {}) {
   if (!/^\d+$/.test(id)) return;
   const cached = readToneCatalogue(localStorage);
   const matchingCache = cached?.toneId === id ? cached : null;
-  if (matchingCache) renderToneCatalogue(matchingCache, { expand: options.expand ?? false, persist: false });
-  setStatus('Loading tone details and all available models…');
+  if (matchingCache && !options.silent) renderToneCatalogue(matchingCache, { expand: options.expand ?? false, persist: false });
+  if (!options.silent) setStatus('Loading tone details and all available models…');
   try {
     const [toneBody, models] = await Promise.all([
       apiJSON('/tones/' + encodeURIComponent(id) + '?architecture=2'),
@@ -638,25 +641,34 @@ async function loadSelectedTone(toneId, options = {}) {
     if (previous && snapshot.models.some(model => model.id === previous)) snapshot.selectedModelId = previous;
     selectedModelId = snapshot.selectedModelId;
     saveWorkspaceSnapshot(snapshot);
-    renderToneCatalogue(snapshot, { expand: options.expand ?? true, persist: true });
-    window.dispatchEvent(new CustomEvent('mg30-tone3000-catalogue-loaded', { detail: {
-      toneId: snapshot.toneId, tone: snapshot.tone,
-      models: snapshot.models.map(model => ({ id: model.id, name: model.name,
-        architecture: model.architecture, architecture_version: model.architecture_version,
-        size: model.size, description: model.description, downloadable: Boolean(model.model_url) }))
-    }}));
-    setStatus(snapshot.models.length
-      ? snapshot.models.length + ' models loaded in MG30 Studio. Select a model and choose Download & Import.'
-      : 'Tone loaded, but no downloadable models were returned by the TONE3000 API.');
+    if (options.silent) {
+      selectedTone = { id: snapshot.toneId, tone: { name: snapshot.tone.name, username: snapshot.tone.creator, description: snapshot.tone.description }, models: snapshot.models };
+      selectedModelId = snapshot.selectedModelId || '';
+    } else {
+      renderToneCatalogue(snapshot, { expand: options.expand ?? true, persist: true });
+      window.dispatchEvent(new CustomEvent('mg30-tone3000-catalogue-loaded', { detail: {
+        toneId: snapshot.toneId, tone: snapshot.tone,
+        models: snapshot.models.map(model => ({ id: model.id, name: model.name,
+          architecture: model.architecture, architecture_version: model.architecture_version,
+          size: model.size, description: model.description, downloadable: Boolean(model.model_url) }))
+      }}));
+      setStatus(snapshot.models.length
+        ? snapshot.models.length + ' models loaded in MG30 Studio. Select a model and choose Download & Import.'
+        : 'Tone loaded, but no downloadable models were returned by the TONE3000 API.');
+    }
     return snapshot;
   } catch (error) {
     if (matchingCache) {
-      renderToneCatalogue(matchingCache, { expand: options.expand ?? false, persist: false });
-      setStatus('Could not refresh TONE3000. Your saved model list is still available; reconnect and select Refresh Models to try again. ' +
-        (error?.message || error));
+      if (options.silent) {
+        selectedTone = { id: matchingCache.toneId, tone: { name: matchingCache.tone.name, username: matchingCache.tone.creator, description: matchingCache.tone.description }, models: matchingCache.models };
+        selectedModelId = matchingCache.selectedModelId || '';
+      } else {
+        renderToneCatalogue(matchingCache, { expand: options.expand ?? false, persist: false });
+        setStatus('Could not refresh TONE3000. Your saved model list is still available; reconnect and select Refresh Models to try again. ' + (error?.message || error));
+      }
       return matchingCache;
     }
-    setStatus('Failed to load tone/models: ' + (error?.message || error));
+    if (!options.silent) setStatus('Failed to load tone/models: ' + (error?.message || error));
     throw error;
   }
 }
@@ -735,13 +747,16 @@ async function sendModel(index, button, options = {}) {
   const slotControl = $('t3kTargetSlot');
   if (slotControl) slotControl.disabled = true;
   try {
-    setStatus('Downloading the selected model from TONE3000…');
-    const token = await ensureAccessToken();
-    const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
-    if (!response.ok) throw new Error('Model download HTTP ' + response.status);
-    const blob = await response.blob();
-    if (!blob.size) throw new Error('The downloaded model file is empty.');
-    const modelBytes = await blob.arrayBuffer();
+    let modelBytes = options.modelBytes || null;
+    if (!modelBytes) {
+      setStatus('Downloading the selected model from TONE3000…');
+      const token = await ensureAccessToken();
+      const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+      if (!response.ok) throw new Error('Model download HTTP ' + response.status);
+      const blob = await response.blob();
+      if (!blob.size) throw new Error('The downloaded model file is empty.');
+      modelBytes = await blob.arrayBuffer();
+    }
     const weightBytes = extractMG30A2LiteWeights(modelBytes);
     const plan = buildMG30A2LiteTransferPlan(weightBytes, rawLabel, slotNumber);
     let fileName = String(model.name || ('tone-' + selectedTone.id + '-model-' + (index + 1) + '.nam')).trim();
@@ -789,6 +804,31 @@ function getTone3000CatalogueForAI() {
   };
 }
 
+async function prepareTone3000ModelForAI(modelId) {
+  if (!Native()) throw new Error('Automatic NAM download and validation require the MG30 Studio Android APK.');
+  const index = selectedTone?.models?.findIndex(model => String(model.id) === String(modelId)) ?? -1;
+  if (index < 0) throw new Error('The selected TONE3000 model is no longer in the current catalogue.');
+  const model = selectedTone.models[index];
+  if (!model?.model_url) throw new Error('The selected TONE3000 model has no downloadable NAM file.');
+  const cacheKey = String(selectedTone.id) + ':' + String(model.id);
+  if (preparedAiNamFiles.has(cacheKey)) {
+    const cached = preparedAiNamFiles.get(cacheKey);
+    return { toneId: selectedTone.id, modelId: model.id, modelName: model.name, bytes: cached.modelBytes.byteLength, weightBytes: cached.weightBytes.length, cached: true };
+  }
+  setStatus('Downloading and validating ' + (model.name || 'the A2-Lite NAM') + ' in the background…');
+  const token = await ensureAccessToken();
+  const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+  if (!response.ok) throw new Error('TONE3000 model download HTTP ' + response.status);
+  const blob = await response.blob();
+  if (!blob.size || blob.size > 20 * 1024 * 1024) throw new Error('The NAM download is empty or exceeds the 20 MB safety limit.');
+  const modelBytes = await blob.arrayBuffer();
+  const weightBytes = extractMG30A2LiteWeights(modelBytes);
+  const label = String(model.name || ('tone-' + selectedTone.id + '-model-' + (index + 1))).replace(/\\.(nam|namb)$/i, '').trim();
+  buildMG30A2LiteTransferPlan(weightBytes, label, 10);
+  preparedAiNamFiles.set(cacheKey, { modelBytes, weightBytes, toneId: selectedTone.id, modelId: model.id });
+  return { toneId: selectedTone.id, modelId: model.id, modelName: model.name, bytes: modelBytes.byteLength, weightBytes: weightBytes.length, cached: false };
+}
+
 async function importTone3000ModelForAI(modelId, options = {}) {
   const slotNumber = Number(options.slotNumber ?? 10);
   if (slotNumber !== 10) throw new Error('The AI NAM destination is locked to MG-30 slot 10.');
@@ -797,6 +837,12 @@ async function importTone3000ModelForAI(modelId, options = {}) {
   if (index < 0) throw new Error('The selected TONE3000 model is no longer in the current catalogue.');
   const model = selectedTone.models[index];
   if (!model?.model_url) throw new Error('The selected TONE3000 model has no downloadable NAM file.');
+  const cacheKey = String(selectedTone.id) + ':' + String(model.id);
+  let prepared = preparedAiNamFiles.get(cacheKey);
+  if (!prepared && options.prepare !== false) {
+    await prepareTone3000ModelForAI(modelId);
+    prepared = preparedAiNamFiles.get(cacheKey);
+  }
 
   const connection = await window.NUXNativeMidi.connect();
   const scan = await readMG30NAMSlotNames(connection, progress => {
@@ -809,10 +855,17 @@ async function importTone3000ModelForAI(modelId, options = {}) {
     'AI NAM destination: slot 10.\nCurrent device label: ' + currentName +
     '\nNew model: ' + (model.name || 'TONE3000 NAM') +
     '\n\nThis will overwrite slot 10. Continue?'
-  )) return { cancelled: true, slotNumber: 10, currentName };
+  )) {
+    preparedAiNamFiles.delete(cacheKey);
+    return { cancelled: true, slotNumber: 10, currentName };
+  }
 
-  const imported = await sendModel(index, null, { confirmed: true, connection, slotNumber: 10 });
+  const imported = await sendModel(index, null, {
+    confirmed: true, connection, slotNumber: 10,
+    ...(prepared?.modelBytes ? { modelBytes: prepared.modelBytes } : {}),
+  });
   if (!imported) throw new Error('NAM transfer did not complete. Check the TONE3000 status and device before retrying.');
+  preparedAiNamFiles.delete(cacheKey);
   return { success: true, slotNumber: 10, currentName, modelName: model.name, toneId: selectedTone.id };
 }
 
@@ -827,7 +880,8 @@ window.NUXTONE3000Bridge = Object.freeze({
   },
   getCatalogue: getTone3000CatalogueForAI,
   async searchTones(query, options = {}) { return searchTone3000ForAI(query, options.gear); },
-  async loadTone(toneId) { return loadTone3000ForAI(toneId); },
+  async loadTone(toneId, options = {}) { return loadTone3000ForAI(toneId, options); },
+  async prepareModel(modelId) { return prepareTone3000ModelForAI(modelId); },
   async importModel(modelId, options = {}) { return importTone3000ModelForAI(modelId, options); },
 });
 
