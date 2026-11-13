@@ -6,7 +6,7 @@ import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTr
 
 const T3K = 'https://www.tone3000.com/api/v1';
 const SecureStore = registerPlugin('MG30SecureStore');
-const AUTH_FIELDS = ['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri'];
+const AUTH_FIELDS = ['access_token', 'refresh_token', 'expires_at', 'code_verifier', 'state', 'redirect_uri', 'oauth_flow'];
 let oauthData = null;
 let oauthDataPromise = null;
 const PREFIX = 'mg30-t3k-';
@@ -199,6 +199,7 @@ function createPanel() {
         </div>
         <small class="t3k-redirect-note">This URI must exactly match one of the URIs registered in TONE3000 → Settings → API Keys.</small>
         <div class="t3k-actions">
+          <button id="t3kConnectAccount" class="primary" type="button">Connect TONE3000 Account</button>
           <button id="t3kSignOut" type="button">Disconnect TONE3000 Account</button>
         </div>
         <p><a class="t3k-link" href="https://www.tone3000.com/api" target="_blank" rel="noopener noreferrer">TONE3000 API Documentation</a> · <a class="t3k-link" href="https://www.tone3000.com/api/terms" target="_blank" rel="noopener noreferrer">API Terms</a></p>
@@ -233,6 +234,7 @@ function createPanel() {
     setStatus('Publishable key saved. Return to the NAM tab to choose a tone.');
   });
   $('t3kChooseTone').addEventListener('click', startSelectFlow);
+  $('t3kConnectAccount').addEventListener('click', () => { void startConnectAccountFlow(); });
   $('t3kRefreshModels').addEventListener('click', () => {
     const toneId = selectedTone?.id || localStorage.getItem(PREFIX + 'selected_tone_id');
     if (toneId) void loadSelectedTone(toneId, { expand: true });
@@ -254,11 +256,14 @@ function setStatus(message) {
 async function updateAccountStatus() {
   try {
     await loadOAuthData();
-    if (authValue('access_token') && $('t3kStatus')) {
-      setStatus('Your TONE3000 account is connected on this device. You can choose an A2 tone or reload the details of the tone you last selected.');
+    if (authValue('access_token') || authValue('refresh_token')) {
+      await ensureAccessToken();
+      setStatus('Your TONE3000 account is connected on this device. Automatic NAM search and model downloads are available.');
+    } else {
+      setStatus('Publishable Key identifies this app only. Tap Connect TONE3000 Account and sign in before using automatic NAM search.');
     }
   } catch (error) {
-    setStatus('Secure TONE3000 session storage is unavailable: ' + (error?.message || error));
+    setStatus('TONE3000 account is not connected or the session expired: ' + (error?.message || error) + ' Use Connect TONE3000 Account to sign in again.');
   }
 }
 
@@ -335,6 +340,40 @@ async function startSelectFlow(options = {}) {
 }
 
 
+async function startConnectAccountFlow() {
+  const clientId = (localStorage.getItem(PREFIX + 'client_id') || $('t3kClientId')?.value || '').trim();
+  if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(clientId)) {
+    setStatus('Save a valid TONE3000 Publishable Key first. It must start with t3k_pub_.');
+    return false;
+  }
+  try {
+    await loadOAuthData();
+    const verifier = makeRandomToken();
+    const state = makeRandomToken();
+    const challenge = await sha256Base64Url(verifier);
+    const redirectUri = getRedirectUri();
+    localStorage.setItem(PREFIX + 'client_id', clientId);
+    await saveOAuthData({ code_verifier: verifier, state, redirect_uri: redirectUri, oauth_flow: 'connect' });
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      code_challenge: challenge,
+      code_challenge_method: 'S256',
+      state,
+      locale: 'en',
+    });
+    const url = 'https://www.tone3000.com/api/v1/oauth/authorize?' + params.toString();
+    setStatus('Opening TONE3000 sign-in. Finish authorization to enable automatic NAM search.');
+    if (Native()) await Browser.open({ url, presentationStyle: 'fullscreen' });
+    else window.location.assign(url);
+    return true;
+  } catch (error) {
+    setStatus('Could not connect TONE3000 account: ' + (error?.message || error));
+    return false;
+  }
+}
+
 async function exchangeAuthorizationCode(code) {
   await loadOAuthData();
   const clientId = localStorage.getItem(PREFIX + 'client_id');
@@ -405,7 +444,8 @@ async function apiJSON(path) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 429) throw new Error('TONE3000 API search rate limit reached. Wait briefly and try again; no pedal changes were made.');
-    if (response.status === 401 || response.status === 403) throw new Error('TONE3000 authorization was rejected. Reconnect your account from the existing TONE3000 settings.');
+    if (response.status === 403 && String(path).startsWith('/tones/search')) throw new Error('TONE3000 denied full-catalog search for this API client. Check your API access tier or ask TONE3000 support for search permission. The app will not bypass service access limits.');
+    if (response.status === 401 || response.status === 403) throw new Error('TONE3000 authorization was rejected. Reconnect your account from Device → TONE3000 Settings.');
     throw new Error(body.error_description || body.message || body.error || ('API HTTP ' + response.status));
   }
   return body;
@@ -870,7 +910,8 @@ async function importTone3000ModelForAI(modelId, options = {}) {
 }
 
 window.NUXTONE3000Bridge = Object.freeze({
-  async hasSession() { await loadOAuthData(); return Boolean(authValue('access_token') || authValue('refresh_token')); },
+  async hasSession() { try { await ensureAccessToken(); return true; } catch { return false; } },
+  async connectAccount() { const started = await startConnectAccountFlow(); if (!started) throw new Error('TONE3000 account sign-in could not be started. Check the Publishable Key and registered Redirect URI.'); return { started: true }; },
   async startSelection(options = {}) {
     const gear = options.gear;
     if (gear !== 'amp' && gear !== 'amp-cab') throw new Error('Choose Amp Only or Amp + Cab before opening TONE3000.');
@@ -1028,6 +1069,7 @@ async function processCallback(rawUrl) {
     return;
   }
   const expected = authValue('state');
+  const oauthFlow = authValue('oauth_flow') || 'select';
   if (!state || !expected || state !== expected) {
     setStatus('A TONE3000 callback was received, but its state parameter does not match. The process was stopped for security. Reopen TONE3000 from the app.');
     return;
@@ -1040,7 +1082,7 @@ async function processCallback(rawUrl) {
   try {
     if (error) throw new Error(errorDescription || error);
     if (code) await exchangeAuthorizationCode(code);
-    await saveOAuthData({}, ['state', 'code_verifier']);
+    await saveOAuthData({}, ['state', 'code_verifier', 'oauth_flow']);
     if (Native()) {
       try { await Browser.close(); } catch {}
     } else {
@@ -1050,7 +1092,12 @@ async function processCallback(rawUrl) {
       history.replaceState({}, document.title, clean.href);
     }
     if (canceled) {
-      setStatus('Tone selection canceled. No model was written to the device.');
+      setStatus('TONE3000 authorization canceled. No model was written to the device.');
+      return;
+    }
+    if (oauthFlow === 'connect' && code && !toneId) {
+      await updateAccountStatus();
+      setStatus('TONE3000 account connected successfully. Return to AI Live Tone Assistant and send the NAM request again.');
       return;
     }
     if (toneId) {

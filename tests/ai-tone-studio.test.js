@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -162,4 +162,25 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
   assert.ok(html.includes('parameters:namProfile?{}:{...states[index].values}'));
   assert.ok(source.includes('namModeActive=true;activeNamGear=gear'));
   assert.ok(source.includes('if(namModeActive)await automaticNamImportForPrompt(prompt)'));
+});
+
+
+test('Gemini is the default AI provider and provider model options are dropdowns', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(source, /let mode='gemini'/);
+  for (const provider of ['gpt','gemini','groq','openrouter']) assert.match(source, new RegExp('data-ai-model="'+provider+'"'));
+  assert.match(source, /listAiProviderModels/);
+  assert.match(source, /api\.groq\.com\/openai\/v1\/models/);
+  assert.match(source, /openrouter\.ai\/api\/v1\/models/);
+  assert.match(source, /supportedGenerationMethods/);
+});
+
+test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transient errors', () => {
+  assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','groq','openrouter','gpt']);
+  assert.deepEqual(providerFallbackOrder('groq'), ['groq','gemini','openrouter','gpt']);
+  assert.equal(isRetryableProviderError(new Error('HTTP 429 rate limit')), true);
+  assert.equal(isRetryableProviderError(new Error('HTTP 503 service unavailable')), true);
+  assert.equal(isRetryableProviderError(new Error('request timed out')), true);
+  assert.equal(isRetryableProviderError(new Error('HTTP 401 invalid API key')), false);
+  assert.equal(isRetryableProviderError(new Error('HTTP 400 invalid request')), false);
 });

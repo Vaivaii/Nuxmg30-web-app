@@ -205,3 +205,17 @@ No changes were made to:
 - After transfer succeeds, AI creates the Tone Plan and the app forces AMP to slot 10. Any failed search, validation, slot scan, confirmation, or transfer stops the preset stage.
 - AI snapshots omit NAM internals. Slot 10 is selection-only; NAM internals, slots 1–9, IR paths, and MIDI mappings remain protected.
 - TONE3000 Search Tones is heavily rate-limited. Their Commercial Terms reserve full search API for commercial-tier integrations; obtain approval before publicly distributing this full-search feature. Official documentation: https://www.tone3000.com/api.
+
+
+## Follow-up implementation — TONE3000 authentication, NAM preflight staging and provider selection
+
+- Work remains isolated to `feature/ai-live-tone-studio`; target remains original MG-30 Gen 2 firmware 6.0.x.
+- Device → TONE3000 Settings adds a **Connect TONE3000 Account** action. The Publishable Key is only the OAuth client_id and does not itself authorize the user's TONE3000 account. Connect-only sign-in reuses Authorization Code + PKCE and the existing encrypted session bundle without opening the Select tone picker.
+- OAuth callback distinguishes connect-only completion from a selected-tone callback. Session checks refresh the access token before declaring a connection. A 403 from `/tones/search` is reported as an API access-tier/endpoint-permission issue, not an invalid login; service restrictions are not bypassed.
+- AI NAM catalog search, tone/model ranking, download and A2-Lite preflight can complete before USB-MIDI is connected. A validated candidate is retained for the same prompt and capture type. USB-MIDI remains mandatory before slot-10 metadata read, overwrite confirmation, NAM transfer and live preset writes.
+- Gemini is the default provider. GPT/OpenAI, Gemini, Groq and OpenRouter model lists are fetched into dropdowns from the provider model-list APIs. Groq and OpenRouter credentials use the existing Android Keystore AES-GCM implementation; only the provider allow-list is extended.
+- Automatic fallback order is Gemini → Groq → OpenRouter → GPT. It retries temporary capacity/rate-limit, network, timeout and server failures only; invalid credentials and malformed requests do not trigger failover. GPT + Gemini collaboration remains separate.
+- OpenRouter dropdown is filtered to zero-priced text models and includes `openrouter/free`; free-tier quotas and model availability still apply.
+- No modifications to manual NAM import target selection, `www/nam-transfer.js` codec/ACK/retry/readback, IR User/Third Party/Collection or MIDI mappings, or Community .32.
+- Added tests for provider dropdown options, fallback order/error classification, connect-only OAuth, search-before-USB staging and secure provider namespaces.
+- CI and physical-device checks remain required. Hardware acceptance must confirm TONE3000 sign-in, catalog search, a compatible download, slot-10 overwrite prompt/ACK/name readback, and audio audition on original MG-30 Gen 2.

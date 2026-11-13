@@ -4437,3 +4437,14 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - `feature/editor-reference-one-screen` is an older, diverged line. It remains a historical UI baseline only; do not treat it as the current working branch unless explicitly requested.
 - The resumption audit commit `9dc1ff0e1b666f68d339ac84ae0a69615977e63b` was documentation-only and was written to the older branch before this correction. No application source was changed by that audit.
 - Going forward, inspect and continue from `feature/ai-live-tone-studio`; preserve the existing original MG-30 Gen 2 NAM A2-Lite transfer path, IR User/Collection protocol separation, MIDI mappings, and Studio routing.
+
+
+## AI Live Tone Studio — TONE3000 NAM and provider follow-up
+
+- Continue on `feature/ai-live-tone-studio`.
+- Device → TONE3000 Settings has a dedicated Connect TONE3000 Account action; the Publishable Key is only the OAuth client_id and is not account sign-in.
+- NAM catalog search and A2-Lite download/preflight are independent of USB-MIDI. A validated pending candidate is reused after the original MG-30 connects. Slot-10 metadata read, overwrite confirmation, transfer and live preset apply still require USB-MIDI.
+- Gemini is default. GPT, Gemini, Groq and OpenRouter model selections are dropdowns populated by provider model-list APIs. Automatic fallback: Gemini → Groq → OpenRouter → GPT for temporary capacity/rate-limit, network, timeout or server failures only.
+- OpenRouter dropdown includes zero-price text models and `openrouter/free`; all free services still have quotas and can be busy.
+- Protected: manual NAM import/target selection, Gen-2 A2-Lite codec, NAM Library persistence, IR User/Third Party/Collection mapping, MIDI mapping and Community .32.
+- CI and physical NAM import/audio audition validation pending.

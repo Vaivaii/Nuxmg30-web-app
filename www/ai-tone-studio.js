@@ -1,6 +1,5 @@
 import { registerPlugin } from '@capacitor/core';
 const SecureStore=registerPlugin('MG30SecureStore');
-const OPENAI_MODEL='gpt-6-luna',GEMINI_MODEL='gemini-3.8-flash';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -77,15 +76,75 @@ function systemPrompt(catalog,snapshot,review){
 function userText(prompt,candidate,namContext){return 'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider){const r=await SecureStore.getSecret({provider});return String(r?.value||'');}
 async function openai(key,sys,user,model){
+ if(!model)throw new Error('Choose an available GPT model in AI Settings.');
  const d=await postJson('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
- body:JSON.stringify({model:model||OPENAI_MODEL,input:[{role:'system',content:[{type:'input_text',text:sys}]},{role:'user',content:[{type:'input_text',text:user}]}],text:{format:{type:'json_object'}},max_output_tokens:2600})});
+ body:JSON.stringify({model,input:[{role:'system',content:[{type:'input_text',text:sys}]},{role:'user',content:[{type:'input_text',text:user}]}],text:{format:{type:'json_object'}},max_output_tokens:2600})});
  return parseJson(outputText(d));
 }
 async function gemini(key,sys,user,model){
- const m=encodeURIComponent(model||GEMINI_MODEL);
+ if(!model)throw new Error('Choose an available Gemini model in AI Settings.');
+ const m=encodeURIComponent(model);
  const d=await postJson('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
- body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600}})});
+ body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600})});
  return parseJson(geminiOutput(d));
+}
+function compatibleChatText(data,provider){
+ const content=data?.choices?.[0]?.message?.content;
+ const text=typeof content==='string'?content:Array.isArray(content)?content.map(part=>part?.text||'').filter(Boolean).join('\n'):'';
+ if(!text.trim())throw new Error((provider==='groq'?'Groq':'OpenRouter')+' returned no text output.');
+ return text;
+}
+async function openAiCompatible(key,sys,user,model,provider){
+ if(!model)throw new Error('Choose an available '+(provider==='groq'?'Groq':'OpenRouter')+' model in AI Settings.');
+ const base=provider==='groq'?'https://api.groq.com/openai/v1':'https://openrouter.ai/api/v1';
+ const data=await postJson(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+ body:JSON.stringify({model,messages:[{role:'system',content:sys},{role:'user',content:user}],response_format:{type:'json_object'},temperature:.35,max_tokens:2600})});
+ return parseJson(compatibleChatText(data,provider));
+}
+async function getProviderJson(url,headers){
+ const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),30000);
+ try{
+  const response=await fetch(url,{method:'GET',headers,signal:ctl.signal});
+  const raw=await response.text();let body={};
+  try{body=raw?JSON.parse(raw):{};}catch{body={rawText:raw};}
+  if(!response.ok)throw new Error(body?.error?.message||body?.message||body?.error_description||('HTTP '+response.status));
+  return body;
+ }catch(error){if(error?.name==='AbortError')throw new Error('Model list request timed out.');throw error;}
+ finally{window.clearTimeout(timer);}
+}
+function isTextChatModel(id){
+ return Boolean(id)&&!/(embed|whisper|audio|speech|transcri|\btts\b|image|video|moderation|guard|rerank|realtime|robotics)/i.test(id);
+}
+export async function listAiProviderModels(provider,key){
+ if(!key)throw new Error('Save this provider API key before loading its models.');
+ let rows=[];
+ if(provider==='gpt'){
+  const body=await getProviderJson('https://api.openai.com/v1/models',{Authorization:'Bearer '+key});
+  rows=(body.data||[]).filter(row=>/^(gpt-|o[134]-|chatgpt-)/i.test(row.id||'')&&isTextChatModel(row.id)).map(row=>({id:row.id,name:row.id}));
+ }else if(provider==='gemini'){
+  const body=await getProviderJson('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',{'x-goog-api-key':key});
+  rows=(body.models||[]).filter(row=>(row.supportedGenerationMethods||[]).includes('generateContent')&&isTextChatModel(row.name||''))
+   .map(row=>({id:String(row.name||'').replace(/^models\//,''),name:row.displayName||String(row.name||'').replace(/^models\//,'')}));
+ }else if(provider==='groq'){
+  const body=await getProviderJson('https://api.groq.com/openai/v1/models',{Authorization:'Bearer '+key});
+  rows=(body.data||[]).filter(row=>isTextChatModel(row.id||'')).map(row=>({id:row.id,name:row.id}));
+ }else if(provider==='openrouter'){
+  const body=await getProviderJson('https://openrouter.ai/api/v1/models',{Authorization:'Bearer '+key});
+  rows=(body.data||[]).filter(row=>isTextChatModel(row.id||'')&&Number(row?.pricing?.prompt)===0&&Number(row?.pricing?.completion)===0)
+   .map(row=>({id:row.id,name:row.name||row.id}));
+  rows.unshift({id:'openrouter/free',name:'Auto Free Model Router'});
+ }else throw new Error('Unknown AI provider.');
+ const seen=new Set();
+ return rows.filter(row=>row.id&&!seen.has(row.id)&&seen.add(row.id)).slice(0,100);
+}
+export function providerFallbackOrder(primary='gemini'){
+ const priority=['gemini','groq','openrouter','gpt'];
+ const first=priority.includes(primary)?primary:'gemini';
+ return [first,...priority.filter(provider=>provider!==first)];
+}
+export function isRetryableProviderError(error){
+ const value=String(error?.message||error||'');
+ return /\b(408|425|429|498|500|502|503|504)\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|timed? out|network|failed to fetch|server busy/i.test(value);
 }
 function niceError(e,provider){
  const s=String(e?.message||e||'Unknown error');
@@ -97,7 +156,7 @@ function niceError(e,provider){
 function style(){
  if($('aiToneCss'))return;
  const s=document.createElement('style');s.id='aiToneCss';
- s.textContent='.ai-tone-midi-transaction #page-editor{pointer-events:none!important;opacity:.92}.ai-tone-open{border-color:#769b3d!important;color:#c5f36b!important;background:#c5f36b12!important}.ai-tone-backdrop{position:fixed;inset:0;z-index:12000;background:#0009;opacity:0;pointer-events:none;transition:opacity .2s}.ai-tone-backdrop.on{opacity:1;pointer-events:auto}.ai-tone-sheet{--ai-tone-max-height:82dvh;position:fixed;z-index:12001;left:50%;bottom:0;transform:translate(-50%,105%);width:min(720px,100%);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden;border:1px solid #3b4935;border-bottom:0;border-radius:22px 22px 0 0;background:linear-gradient(155deg,#172018,#0d1210);box-shadow:0 -18px 70px #000a;transition:transform .24s ease;padding-bottom:env(safe-area-inset-bottom,0px)}.ai-tone-sheet.on{transform:translate(-50%,0)}.ai-tone-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #2d382b}.ai-tone-head strong{font-size:18px;letter-spacing:.1px}.ai-tone-head small{display:block;color:#96a28e;font-size:10px}.ai-tone-body{padding:12px 14px;flex:0 1 auto;min-height:0;max-height:calc(var(--ai-tone-max-height) - 66px);overflow-y:auto;overscroll-behavior:contain}.ai-tone-provider-row{display:flex;gap:7px;margin-bottom:10px}.ai-tone-provider{flex:1;border:1px solid #354331;border-radius:10px;background:#101710;color:#aeb9a5;padding:11px 5px;font-size:13px;font-weight:800}.ai-tone-provider.on{border-color:#9cc84f;background:#c5f36b16;color:#d8f8a1}.ai-tone-status{display:flex;align-items:center;gap:9px;font-size:13px;line-height:1.4;color:#aab5a2;margin:7px 1px 10px;min-height:38px;padding:8px 11px;border:1px solid #303c2b;border-radius:11px;background:#0e150f}.ai-tone-status[data-state=busy]{color:#d8f4ac;border-color:#607d39;background:#172316}.ai-tone-status[data-state=busy]::before{content:"";width:16px;height:16px;flex:0 0 16px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}@keyframes aiToneSpin{to{transform:rotate(360deg)}}.ai-tone-status[data-state=success]{color:#b9ec7b}.ai-tone-status[data-state=error]{color:#ff938c}.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0;max-height:28dvh;overflow-y:auto;overscroll-behavior:contain;margin-bottom:10px;padding:2px 1px;scrollbar-width:thin}.ai-tone-message{max-width:96%;padding:12px 14px;border:1px solid #303c2b;border-radius:13px;background:#141c14;color:#e1e9dc;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.ai-tone-message.user{align-self:flex-end;background:#24311d;border-color:#516b32}.ai-tone-message.ai{align-self:flex-start}.ai-tone-message small{display:block;color:#9ead91;font-size:10px;font-weight:850;letter-spacing:.45px;margin-bottom:5px}.ai-tone-prompt{width:100%;min-height:62px;max-height:120px;resize:vertical;border:1px solid #3b4934;border-radius:13px;background:#0b110d;color:#f1f5ed;padding:12px;font:13px/1.45 system-ui}.ai-tone-compose{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:8px}.ai-tone-hint{color:#819078;font-size:10px}.ai-tone-send{border:1px solid #b7e65e;border-radius:11px;background:#c5f36b;color:#12170c;font-weight:850;padding:10px 15px}.ai-tone-undo{border:1px solid #536142;border-radius:10px;background:#192218;color:#dce8d2;padding:9px 12px;font-size:11px}.ai-tone-send:disabled,.ai-tone-undo:disabled{opacity:.55}.ai-tone-send:disabled{cursor:progress}#aiToneOpenButton{min-width:62px;min-height:48px;padding:10px 13px!important;font-size:17px!important;font-weight:950!important;letter-spacing:.2px}.ai-tone-icon{border:1px solid #33402e;border-radius:10px;background:#121912;color:#dce8d2;padding:9px 12px}.ai-tone-settings{display:none;border:1px solid #354330;border-radius:13px;background:#101710;padding:12px;margin:2px 0 12px}.ai-tone-settings.on{display:block}.ai-tone-settings h4{margin:0 0 5px;font-size:12px}.ai-tone-settings p{margin:0 0 10px;color:#9ca992;font-size:10px;line-height:1.45}.ai-tone-key-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ai-tone-key-field label{display:block;color:#b8c5af;font-size:10px;margin:0 0 5px}.ai-tone-key-field input{width:100%;min-width:0;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8;padding:9px;font-size:11px}.ai-tone-key-state{display:block;color:#9baa91;font-size:9px;margin-top:5px;min-height:13px}.ai-tone-setting-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.ai-tone-setting-actions button{border:1px solid #3d4a35;border-radius:9px;background:#192218;color:#dce8d2;padding:8px 10px;font-size:10px}.ai-tone-setting-actions .primary{background:#c5f36b;color:#10160b}.ai-tone-note{margin-top:9px!important;color:#d3c18d!important;font-size:9px!important}@media(max-width:520px){.ai-tone-key-grid{grid-template-columns:1fr}.ai-tone-sheet{--ai-tone-max-height:84dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height)}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 62px)}.ai-tone-messages{min-height:0;max-height:25dvh}.ai-tone-provider{font-size:12px}}';
+ s.textContent='.ai-tone-midi-transaction #page-editor{pointer-events:none!important;opacity:.92}.ai-tone-open{border-color:#769b3d!important;color:#c5f36b!important;background:#c5f36b12!important}.ai-tone-backdrop{position:fixed;inset:0;z-index:12000;background:#0009;opacity:0;pointer-events:none;transition:opacity .2s}.ai-tone-backdrop.on{opacity:1;pointer-events:auto}.ai-tone-sheet{--ai-tone-max-height:82dvh;position:fixed;z-index:12001;left:50%;bottom:0;transform:translate(-50%,105%);width:min(720px,100%);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden;border:1px solid #3b4935;border-bottom:0;border-radius:22px 22px 0 0;background:linear-gradient(155deg,#172018,#0d1210);box-shadow:0 -18px 70px #000a;transition:transform .24s ease;padding-bottom:env(safe-area-inset-bottom,0px)}.ai-tone-sheet.on{transform:translate(-50%,0)}.ai-tone-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #2d382b}.ai-tone-head strong{font-size:18px;letter-spacing:.1px}.ai-tone-head small{display:block;color:#96a28e;font-size:10px}.ai-tone-body{padding:12px 14px;flex:0 1 auto;min-height:0;max-height:calc(var(--ai-tone-max-height) - 66px);overflow-y:auto;overscroll-behavior:contain}.ai-tone-provider-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}.ai-tone-provider{flex:1 1 28%;min-width:82px;border:1px solid #354331;border-radius:10px;background:#101710;color:#aeb9a5;padding:11px 5px;font-size:13px;font-weight:800}.ai-tone-provider.on{border-color:#9cc84f;background:#c5f36b16;color:#d8f8a1}.ai-tone-status{display:flex;align-items:center;gap:9px;font-size:13px;line-height:1.4;color:#aab5a2;margin:7px 1px 10px;min-height:38px;padding:8px 11px;border:1px solid #303c2b;border-radius:11px;background:#0e150f}.ai-tone-status[data-state=busy]{color:#d8f4ac;border-color:#607d39;background:#172316}.ai-tone-status[data-state=busy]::before{content:"";width:16px;height:16px;flex:0 0 16px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}@keyframes aiToneSpin{to{transform:rotate(360deg)}}.ai-tone-status[data-state=success]{color:#b9ec7b}.ai-tone-status[data-state=error]{color:#ff938c}.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0;max-height:28dvh;overflow-y:auto;overscroll-behavior:contain;margin-bottom:10px;padding:2px 1px;scrollbar-width:thin}.ai-tone-message{max-width:96%;padding:12px 14px;border:1px solid #303c2b;border-radius:13px;background:#141c14;color:#e1e9dc;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.ai-tone-message.user{align-self:flex-end;background:#24311d;border-color:#516b32}.ai-tone-message.ai{align-self:flex-start}.ai-tone-message small{display:block;color:#9ead91;font-size:10px;font-weight:850;letter-spacing:.45px;margin-bottom:5px}.ai-tone-prompt{width:100%;min-height:62px;max-height:120px;resize:vertical;border:1px solid #3b4934;border-radius:13px;background:#0b110d;color:#f1f5ed;padding:12px;font:13px/1.45 system-ui}.ai-tone-compose{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:8px}.ai-tone-hint{color:#819078;font-size:10px}.ai-tone-send{border:1px solid #b7e65e;border-radius:11px;background:#c5f36b;color:#12170c;font-weight:850;padding:10px 15px}.ai-tone-undo{border:1px solid #536142;border-radius:10px;background:#192218;color:#dce8d2;padding:9px 12px;font-size:11px}.ai-tone-send:disabled,.ai-tone-undo:disabled{opacity:.55}.ai-tone-send:disabled{cursor:progress}#aiToneOpenButton{min-width:62px;min-height:48px;padding:10px 13px!important;font-size:17px!important;font-weight:950!important;letter-spacing:.2px}.ai-tone-icon{border:1px solid #33402e;border-radius:10px;background:#121912;color:#dce8d2;padding:9px 12px}.ai-tone-settings{display:none;border:1px solid #354330;border-radius:13px;background:#101710;padding:12px;margin:2px 0 12px}.ai-tone-settings.on{display:block}.ai-tone-settings h4{margin:0 0 5px;font-size:12px}.ai-tone-settings p{margin:0 0 10px;color:#9ca992;font-size:10px;line-height:1.45}.ai-tone-key-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ai-tone-key-field label{display:block;color:#b8c5af;font-size:10px;margin:0 0 5px}.ai-tone-key-field input,.ai-tone-key-field select{width:100%;min-width:0;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8;padding:9px;font-size:11px}.ai-tone-model-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.ai-tone-fallback-toggle{display:flex;align-items:center;gap:9px;margin-top:10px;padding:9px;border:1px solid #354330;border-radius:9px;background:#0d150e;color:#dce8d2;font-size:11px}.ai-tone-fallback-toggle input{accent-color:#c5f36b;width:17px;height:17px}.ai-tone-fallback-toggle small{display:block;margin-top:3px;color:#9ca992;font-size:9px;line-height:1.4}.ai-tone-key-state{display:block;color:#9baa91;font-size:9px;margin-top:5px;min-height:13px}.ai-tone-setting-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.ai-tone-setting-actions button{border:1px solid #3d4a35;border-radius:9px;background:#192218;color:#dce8d2;padding:8px 10px;font-size:10px}.ai-tone-setting-actions .primary{background:#c5f36b;color:#10160b}.ai-tone-note{margin-top:9px!important;color:#d3c18d!important;font-size:9px!important}@media(max-width:520px){.ai-tone-key-grid,.ai-tone-model-grid{grid-template-columns:1fr}.ai-tone-sheet{--ai-tone-max-height:84dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height)}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 62px)}.ai-tone-messages{min-height:0;max-height:25dvh}.ai-tone-provider{font-size:12px}}';
  s.textContent += '.ai-tone-nam-toolbar{display:flex;align-items:center;gap:8px;margin:0 0 10px}.ai-tone-nam-action{border:1px solid #566e37;border-radius:10px;background:#182317;color:#d8f4ac;padding:9px 12px;font-size:12px;font-weight:800}.ai-tone-nam-wizard,.ai-tone-nam-results{margin:0 0 12px;padding:11px;border:1px solid #34422e;border-radius:12px;background:#101710}.ai-tone-nam-wizard[hidden],.ai-tone-nam-results[hidden]{display:none!important}.ai-tone-nam-wizard p,.ai-tone-nam-results p{margin:0 0 9px;color:#aab69f;font-size:11px;line-height:1.45}.ai-tone-nam-choice-row{display:flex;flex-wrap:wrap;gap:7px}.ai-tone-nam-choice,.ai-tone-nam-import{border:1px solid #435438;border-radius:9px;background:#1a2518;color:#dce8d2;padding:8px 10px;font-size:11px;font-weight:750}.ai-tone-nam-results-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}.ai-tone-nam-results-head strong{font-size:12px}.ai-tone-nam-results-head small{display:block;margin-top:3px;color:#90a184;font-size:10px}.ai-tone-nam-model{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:9px 0;border-top:1px solid #2a3627}.ai-tone-nam-model-copy{min-width:0;flex:1}.ai-tone-nam-model-copy strong{display:block;font-size:11px;overflow-wrap:anywhere}.ai-tone-nam-model-copy small{display:block;margin-top:3px;color:#91a08a;font-size:10px}.ai-tone-nam-import{flex:0 0 auto;background:#c5f36b;border-color:#c5f36b;color:#11170b}.ai-tone-nam-import:disabled,.ai-tone-nam-choice:disabled{opacity:.5}@media(max-width:430px){.ai-tone-nam-model{align-items:flex-start;flex-direction:column}.ai-tone-nam-import{width:100%}}';
  document.head.appendChild(s);
 }
@@ -110,14 +169,15 @@ async function init(){
  const sheet=document.createElement('section');sheet.className='ai-tone-sheet';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','AI Live Tone Assistant');
  sheet.innerHTML=[
  '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div><button class="ai-tone-icon" id="aiToneSettingsToggle" type="button">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button">×</button></div></div>',
- '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>API Provider</h4><p>API keys are encrypted on this Android device with Android Keystore.</p>',
- '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiKey">OpenAI API Key (GPT)</label><input id="aiOpenAiKey" type="password" autocomplete="off" placeholder="sk-…"><span class="ai-tone-key-state" id="aiOpenAiKeyState">Not checked</span></div>',
- '<div class="ai-tone-key-field"><label for="aiGeminiKey">Gemini API Key</label><input id="aiGeminiKey" type="password" autocomplete="off" placeholder="AIza…"><span class="ai-tone-key-state" id="aiGeminiKeyState">Not checked</span></div></div>',
- '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiModel">GPT Model</label><input id="aiOpenAiModel" value="gpt-6-luna"></div><div class="ai-tone-key-field"><label for="aiGeminiModel">Gemini Model</label><input id="aiGeminiModel" value="gemini-3.8-flash"></div></div>',
- '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Save API Keys</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneDeleteOpenAi" type="button">Delete GPT</button><button id="aiToneDeleteGemini" type="button">Delete Gemini</button></div>',
- '<p class="ai-tone-note">Encryption protects API keys at rest. During requests, keys are used temporarily and sent directly to the provider. Public distribution should use a backend gateway.</p></div>',
- '<div class="ai-tone-provider-row"><button class="ai-tone-provider on" data-ai-provider="gpt" type="button">GPT</button><button class="ai-tone-provider" data-ai-provider="gemini" type="button">Gemini</button><button class="ai-tone-provider" data-ai-provider="collab" type="button">GPT + Gemini</button></div>',
- '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">Waiting for MG-30 connection.</div>',
+ '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>AI Providers & Models</h4><p>Provider API keys are encrypted on this Android device with Android Keystore. Model lists are loaded from each provider using the saved key.</p>',
+ '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiKey">OpenAI API Key (GPT)</label><input id="aiOpenAiKey" type="password" autocomplete="off" placeholder="sk-…"><span class="ai-tone-key-state" id="aiOpenAiKeyState">Not checked</span></div><div class="ai-tone-key-field"><label for="aiGeminiKey">Gemini API Key</label><input id="aiGeminiKey" type="password" autocomplete="off" placeholder="AIza…"><span class="ai-tone-key-state" id="aiGeminiKeyState">Not checked</span></div></div>',
+ '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiGroqKey">Groq API Key</label><input id="aiGroqKey" type="password" autocomplete="off" placeholder="Groq API key"><span class="ai-tone-key-state" id="aiGroqKeyState">Not checked</span></div><div class="ai-tone-key-field"><label for="aiOpenRouterKey">OpenRouter API Key</label><input id="aiOpenRouterKey" type="password" autocomplete="off" placeholder="OpenRouter API key"><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Not checked</span></div></div>',
+ '<div class="ai-tone-model-grid"><div class="ai-tone-key-field"><label for="aiGeminiModel">Gemini Model</label><select id="aiGeminiModel" data-ai-model="gemini"><option value="">Save key to load models</option></select></div><div class="ai-tone-key-field"><label for="aiGroqModel">Groq Model</label><select id="aiGroqModel" data-ai-model="groq"><option value="">Save key to load models</option></select></div><div class="ai-tone-key-field"><label for="aiOpenRouterModel">OpenRouter Free Model</label><select id="aiOpenRouterModel" data-ai-model="openrouter"><option value="">Save key to load models</option></select></div><div class="ai-tone-key-field"><label for="aiOpenAiModel">GPT Model</label><select id="aiOpenAiModel" data-ai-model="gpt"><option value="">Save key to load models</option></select></div></div>',
+ '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter → GPT when a provider is temporarily busy</small></span></label>',
+ '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Save API Keys</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneDeleteOpenAi" type="button">Delete GPT</button><button id="aiToneDeleteGemini" type="button">Delete Gemini</button><button id="aiToneDeleteGroq" type="button">Delete Groq</button><button id="aiToneDeleteOpenRouter" type="button">Delete OpenRouter</button></div>',
+ '<p class="ai-tone-note">Free-model quotas still apply. Fallback handles temporary rate-limit, capacity, timeout, network and server failures only. Invalid keys and invalid requests are not retried. API keys are sent directly to providers during requests.</p></div>',
+'<div class="ai-tone-provider-row"><button class="ai-tone-provider" data-ai-provider="gpt" type="button">GPT</button><button class="ai-tone-provider on" data-ai-provider="gemini" type="button">Gemini</button><button class="ai-tone-provider" data-ai-provider="groq" type="button">Groq</button><button class="ai-tone-provider" data-ai-provider="openrouter" type="button">OpenRouter</button><button class="ai-tone-provider" data-ai-provider="collab" type="button">GPT + Gemini</button></div>',
+ '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live preset transfer.</div>',
  '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
  '<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
@@ -127,11 +187,11 @@ async function init(){
  '<p class="ai-tone-hint">Use the editor’s Save to Device button to store the tone. Success confirms MIDI commands were sent; it does not confirm full pedal ACK/readback.</p></div>'
  ].join('');
  document.body.append(shade,sheet);
- const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),gpt:$('aiOpenAiKey'),gemini:$('aiGeminiKey'),gptModel:$('aiOpenAiModel'),geminiModel:$('aiGeminiModel'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
- let mode='gpt',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='';const history=[];
+ const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),gpt:$('aiOpenAiKey'),gemini:$('aiGeminiKey'),groq:$('aiGroqKey'),openrouter:$('aiOpenRouterKey'),gptModel:$('aiOpenAiModel'),geminiModel:$('aiGeminiModel'),groqModel:$('aiGroqModel'),openrouterModel:$('aiOpenRouterModel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
+ let mode='gemini',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
- const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;document.querySelectorAll('[data-ai-provider]').forEach(b=>b.disabled=busy);ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button').forEach(b=>b.disabled=busy);};
+ const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;document.querySelectorAll('[data-ai-provider],[data-ai-model]').forEach(b=>b.disabled=busy);ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button').forEach(b=>b.disabled=busy);};
  const setMode=v=>{mode=v;document.querySelectorAll('[data-ai-provider]').forEach(b=>b.classList.toggle('on',b.dataset.aiProvider===v));};
  const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');window.setTimeout(()=>ui.prompt.focus(),150);};
  const closePanel=()=>{shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
@@ -152,8 +212,8 @@ async function init(){
   if(gear!=='amp'&&gear!=='amp-cab')throw new Error('Choose Amp Only or Amp + Cab.');
   const bridge=window.NUXTONE3000Bridge;
   if(!bridge?.searchTones||!bridge?.loadTone||!bridge?.prepareModel||!bridge?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update MG30 Studio.');
-  if(!await bridge.hasSession())throw new Error('Connect TONE3000 once from Device → TONE3000 Settings before using automatic NAM search.');
-  namModeActive=true;activeNamGear=gear;namFlowActive=false;activeNamContext='';activeNamModelName='';
+  const gearChanged=activeNamGear!==gear;namModeActive=true;activeNamGear=gear;namFlowActive=false;activeNamContext='';activeNamModelName='';if(gearChanged)pendingNamSelection=null;
+  if(!await bridge.hasSession())throw new Error('TONE3000 account is not authenticated. Open Device → TONE3000 Settings → Connect TONE3000 Account, finish sign-in, then press Send again.');
   ui.namResults.hidden=true;ui.namWizard.hidden=true;
   const capture=gear==='amp'?'Amp Only':'Amp + Cab';
   message('ai','Automatic TONE3000 NAM mode is ready ('+capture+'). Press Send with your tone request. AI will search, choose an A2-Lite capture, download, validate and import it to slot 10 before creating the preset.');
@@ -170,7 +230,7 @@ async function init(){
  ui.namWizard.addEventListener('click',async event=>{
   const source=event.target.closest('[data-ai-nam-source]')?.dataset.aiNamSource;
   if(source==='builtin'){
-   namFlowActive=false;namModeActive=false;activeNamGear='';activeNamContext='';activeNamModelName='';ui.namWizard.hidden=true;
+   namFlowActive=false;namModeActive=false;activeNamGear='';activeNamContext='';activeNamModelName='';pendingNamSelection=null;ui.namWizard.hidden=true;
    ui.prompt.value=(ui.prompt.value.trim()?ui.prompt.value.trim()+'\n\n':'')+'Use a built-in MG-30 amp model, not a NAM capture. ';$('aiToneCount').textContent=ui.prompt.value.length+'/1400';ui.prompt.focus();
    message('ai','Built-in MG-30 Amp selected. Describe the sound you want, then send your tone request.');return;
   }
@@ -224,38 +284,101 @@ async function init(){
   else if(p.stage==='write')status('Writing NAM to slot 10: ACK '+p.completed+'/'+p.total+'…','busy');
   else if(p.stage==='readback')status('Verifying device slot names: pass '+p.round+'/2, slot '+p.slot+'/10…','busy');
  });
+ const providerKeyId=p=>p==='gpt'?'openai':p;
+ const providerNames={gpt:'GPT',gemini:'Gemini',groq:'Groq',openrouter:'OpenRouter'};
+ const modelSelects={gpt:ui.gptModel,gemini:ui.geminiModel,groq:ui.groqModel,openrouter:ui.openrouterModel};
+ const modelStorageKey=p=>'mg30-ai-model-'+p;
+ function selectedModel(p){return String(modelSelects[p]?.value||localStorage.getItem(modelStorageKey(p))||'').trim();}
+ async function refreshProviderModels(provider,quiet=true){
+  const select=modelSelects[provider];if(!select)return [];
+  const saved=selectedModel(provider),stored=await secret(providerKeyId(provider));
+  if(!stored){select.replaceChildren();const o=document.createElement('option');o.value='';o.textContent='Save API key to load models';select.append(o);select.disabled=true;return [];}
+  select.disabled=true;
+  try{
+   const models=await listAiProviderModels(provider,stored);
+   if(!models.length)throw new Error('No text-generation models were returned by '+providerNames[provider]+'.');
+   select.replaceChildren();
+   for(const row of models){const o=document.createElement('option');o.value=row.id;o.textContent=row.name===row.id?row.id:(row.name+' · '+row.id);select.append(o);}
+   let chosen=models.some(row=>row.id===saved)?saved:'';
+   if(!chosen){
+    if(provider==='openrouter')chosen=models.some(row=>row.id==='openrouter/free')?'openrouter/free':models[0].id;
+    else if(provider==='gemini')chosen=(models.find(row=>/flash/i.test(row.id)&&!/live|image|tts|audio/i.test(row.id))||models[0]).id;
+    else if(provider==='groq')chosen=(models.find(row=>/openai\/gpt-oss-20b/i.test(row.id))||models[0]).id;
+    else chosen=(models.find(row=>/mini/i.test(row.id))||models[0]).id;
+   }
+   select.value=chosen;select.disabled=false;localStorage.setItem(modelStorageKey(provider),chosen);return models;
+  }catch(error){
+   select.replaceChildren();const o=document.createElement('option');o.value=saved;o.textContent=saved?'Saved model (list refresh failed): '+saved:'Could not load models — tap Refresh Models';select.append(o);select.value=saved;select.disabled=!saved;
+   if(!quiet)status(providerNames[provider]+' model list failed: '+(error.message||error),'error');
+   return [];
+  }
+ }
+ async function refreshAllProviderModels(quiet=true){
+  await Promise.all(['gpt','gemini','groq','openrouter'].map(provider=>refreshProviderModels(provider,quiet)));
+ }
  async function keyStates(){
-  try{const v=await Promise.all([SecureStore.getSecret({provider:'openai'}),SecureStore.getSecret({provider:'gemini'})]);
-   $('aiOpenAiKeyState').textContent=v[0]?.configured?'Encrypted on this device':'No API key saved';$('aiGeminiKeyState').textContent=v[1]?.configured?'Encrypted on this device':'No API key saved';
-  }catch(e){$('aiOpenAiKeyState').textContent='Secure storage unavailable';$('aiGeminiKeyState').textContent='Secure storage unavailable';status(e.message,'error');}
+  try{
+   const providers=['gpt','gemini','groq','openrouter'];
+   const values=await Promise.all(providers.map(provider=>SecureStore.getSecret({provider:providerKeyId(provider)})));
+   providers.forEach((provider,index)=>{const id=provider==='gpt'?'aiOpenAiKeyState':provider==='gemini'?'aiGeminiKeyState':provider==='groq'?'aiGroqKeyState':'aiOpenRouterKeyState';$(id).textContent=values[index]?.configured?'Encrypted on this device':'No API key saved';});
+   await refreshAllProviderModels(true);
+  }catch(error){['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState'].forEach(id=>{if($(id))$(id).textContent='Secure storage unavailable';});status(error.message,'error');}
  }
  async function saveKeys(){
-  try{if(ui.gpt.value.trim())await SecureStore.setSecret({provider:'openai',value:ui.gpt.value.trim()});if(ui.gemini.value.trim())await SecureStore.setSecret({provider:'gemini',value:ui.gemini.value.trim()});
-   ui.gpt.value='';ui.gemini.value='';await keyStates();status('API keys securely saved on this device.','success');
-  }catch(e){status(e.message||'Failed to save API keys.','error');}
+  try{
+   const fields={gpt:ui.gpt,gemini:ui.gemini,groq:ui.groq,openrouter:ui.openrouter};let saved=0;
+   for(const [provider,input] of Object.entries(fields)){if(input.value.trim()){await SecureStore.setSecret({provider:providerKeyId(provider),value:input.value.trim()});input.value='';saved++;}}
+   await keyStates();status(saved?'API keys securely saved. Provider model lists refreshed.':'No new key entered; checking saved keys and model lists.','success');
+  }catch(error){status(error.message||'Failed to save API keys.','error');}
  }
- async function deleteKey(p){try{await SecureStore.deleteSecret({provider:p});await keyStates();status('The '+p+' API key was deleted.','success');}catch(e){status(e.message,'error');}}
- async function testProvider(p){
-  setBusy(true);status('Testing '+p+' API…','busy');
-  try{const k=await secret(p);if(!k)throw new Error('API key has not been saved.');
-   const prompt='Return exactly {"status":"ok"}.';
-   if(p==='openai')await openai(k,prompt,prompt,ui.gptModel.value.trim());else await gemini(k,prompt,prompt,ui.geminiModel.value.trim());
-   status('The '+p+' API responded successfully.','success');
-  }catch(e){status(niceError(e,p),'error');}finally{setBusy(false);}
+ async function deleteKey(provider){
+  try{await SecureStore.deleteSecret({provider:providerKeyId(provider)});await keyStates();status(providerNames[provider]+' API key deleted.','success');}
+  catch(error){status(error.message,'error');}
+ }
+ async function invokeProvider(provider,key,system,user,model){
+  if(provider==='gpt')return openai(key,system,user,model);
+  if(provider==='gemini')return gemini(key,system,user,model);
+  return openAiCompatible(key,system,user,model,provider);
+ }
+ async function testProvider(provider){
+  setBusy(true);status('Testing '+providerNames[provider]+' API…','busy');
+  try{
+   const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' API key has not been saved.');
+   await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',selectedModel(provider));
+   status(providerNames[provider]+' API responded successfully.','success');
+  }catch(error){status(niceError(error,provider),'error');}
+  finally{setBusy(false);}
  }
  async function askNamAIJson(system,user,stage){
-  if(mode==='gpt'){
-   const k=await secret('openai');if(!k)throw new Error('The GPT API key has not been saved.');
-   status('GPT is '+stage+'…','busy');return openai(k,system,user,ui.gptModel.value.trim());
+  if(mode==='collab'){
+   const g=await secret('openai'),m=await secret('gemini');
+   if(!g||!m)throw new Error('Collaboration mode requires both GPT and Gemini API keys.');
+   status('GPT is '+stage+'…','busy');const draft=await openai(g,system,user,selectedModel('gpt'));
+   status('Gemini is reviewing GPT’s '+stage+'…','busy');
+   return gemini(m,system+'\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\n\nGPT PROPOSAL:\n'+JSON.stringify(draft),selectedModel('gemini'));
   }
-  if(mode==='gemini'){
-   const k=await secret('gemini');if(!k)throw new Error('The Gemini API key has not been saved.');
-   status('Gemini is '+stage+'…','busy');return gemini(k,system,user,ui.geminiModel.value.trim());
+  const auto=ui.autoFallback.checked,order=auto?providerFallbackOrder(mode):[mode],missing=[];
+  let lastError=null;
+  for(let index=0;index<order.length;index++){
+   const provider=order[index],key=await secret(providerKeyId(provider));
+   if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' key');continue;}
+   const model=selectedModel(provider);
+   if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
+   try{
+    status(providerNames[provider]+' is '+stage+'…','busy');
+    const result=await invokeProvider(provider,key,system,user,model);
+    if(provider!==mode)message('ai','Automatic fallback used '+providerNames[provider]+' after '+providerNames[mode]+' was unavailable.');
+    return result;
+   }catch(error){
+    lastError=error;
+    const next=order.slice(index+1).find(candidate=>candidate!==provider);
+    if(!auto||!next||!isRetryableProviderError(error))throw new Error(niceError(error,provider));
+    message('ai',providerNames[provider]+' is temporarily busy ('+(error.message||error)+'). Switching to '+providerNames[next]+'.');
+    status(providerNames[provider]+' unavailable. Trying '+providerNames[next]+'…','busy');
+   }
   }
-  const g=await secret('openai'),m=await secret('gemini');if(!g||!m)throw new Error('Collaboration mode requires both API keys.');
-  status('GPT is '+stage+'…','busy');const draft=await openai(g,system,user,ui.gptModel.value.trim());
-  status('Gemini is reviewing GPT’s '+stage+'…','busy');
-  return gemini(m,system+'\\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\\n\\nGPT PROPOSAL:\\n'+JSON.stringify(draft),ui.geminiModel.value.trim());
+  if(lastError)throw new Error('All configured fallback providers were unavailable. Last error: '+(lastError.message||lastError));
+  throw new Error('No configured AI provider/model is available. Save a Gemini, Groq, OpenRouter, or GPT API key. Missing: '+missing.join(', '));
  }
  async function deriveNamSearchQuery(prompt){
   const system='You select search terms for the TONE3000 NAM catalog. Return JSON only: {"query":"short search phrase","reason":"brief English reason"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
@@ -285,48 +408,56 @@ async function init(){
   const bridge=window.NUXTONE3000Bridge;
   if(!activeNamGear)throw new Error('Choose Amp Only or Amp + Cab in the NAM source menu before sending this tone request.');
   if(!bridge?.searchTones||!bridge?.loadTone||!bridge?.prepareModel||!bridge?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update the AI Studio app.');
-  if(!await bridge.hasSession())throw new Error('Connect your TONE3000 account once in Device → TONE3000 Settings. No TONE3000 page will open during automated search.');
-  const intent=await deriveNamSearchQuery(prompt);
-  message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', NAM A2 Lite).');
-  status('Searching the TONE3000 NAM catalog…','busy');
-  const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
-  if(!tones.length)throw new Error('TONE3000 returned no matching NAM A2 Lite tones for “'+intent.query+'”. Try a more specific amp name or another capture type.');
-  const selection=await chooseNamTone(prompt,intent.query,tones);
-  message('ai','Selected TONE3000 tone: '+selection.tone.name+(selection.tone.creator?' by @'+selection.tone.creator:'')+'. '+selection.reason);
-  const toneChoices=[selection.tone,...tones.filter(t=>String(t.id)!==String(selection.tone.id))].slice(0,3);
-  let selected=null,lastPreparationError=null;
-  for(const toneChoice of toneChoices){
-   status('Loading A2-Lite capture metadata for '+toneChoice.name+'…','busy');
-   let snapshot;
-   try{snapshot=await bridge.loadTone(toneChoice.id,{silent:true});}
-   catch(error){lastPreparationError=error;continue;}
-   const modelCandidates=(snapshot?.models||[]).filter(model=>{
-    const arch=String(model.architecture_version??model.architecture??'2');
-    const size=String(model.size?.name||model.size?.label||model.size||'').toLowerCase();
-    return Boolean(model.model_url)&&arch==='2'&&(!size||size==='lite');
-   });
-   if(!modelCandidates.length){lastPreparationError=new Error('No downloadable A2-Lite captures in '+toneChoice.name+'.');continue;}
-   const rejected=[];
-   for(let attempt=0;attempt<Math.min(3,modelCandidates.length);attempt++){
-    const choice=await chooseNamModel(prompt,snapshot,modelCandidates,rejected);
-    status('Downloading '+choice.model.name+' in the background and checking MG-30 A2-Lite compatibility…','busy');
-    try{
-     const prepared=await bridge.prepareModel(choice.model.id);
-     selected={tone:toneChoice,model:choice.model,prepared,snapshot,reason:choice.reason};break;
-    }catch(error){
-     rejected.push(String(choice.model.id));lastPreparationError=error;
-     message('ai','Capture '+choice.model.name+' did not pass A2-Lite preflight. Trying another candidate. '+(error.message||error));
+  if(!await bridge.hasSession())throw new Error('TONE3000 account is not authenticated. Open Device → TONE3000 Settings → Connect TONE3000 Account, finish sign-in, then press Send again.');
+  let selected=pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear?pendingNamSelection.selected:null;
+  if(!selected){
+   const intent=await deriveNamSearchQuery(prompt);
+   message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', NAM A2 Lite).');
+   status('Searching the TONE3000 NAM catalog…','busy');
+   const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
+   if(!tones.length)throw new Error('TONE3000 returned no matching NAM A2 Lite tones for “'+intent.query+'”. Try a more specific amp name or another capture type.');
+   const selection=await chooseNamTone(prompt,intent.query,tones);
+   message('ai','Selected TONE3000 tone: '+selection.tone.name+(selection.tone.creator?' by @'+selection.tone.creator:'')+'. '+selection.reason);
+   const choices=[selection.tone,...tones.filter(t=>String(t.id)!==String(selection.tone.id))].slice(0,3);
+   let lastError=null;
+   for(const toneChoice of choices){
+    status('Loading A2-Lite capture metadata for '+toneChoice.name+'…','busy');
+    let snapshot;
+    try{snapshot=await bridge.loadTone(toneChoice.id,{silent:true});}catch(error){lastError=error;continue;}
+    const candidates=(snapshot?.models||[]).filter(model=>{
+     const arch=String(model.architecture_version??model.architecture??'2').trim().toLowerCase();
+     const size=String(model.size?.name||model.size?.label||model.size||'').trim().toLowerCase();
+     return Boolean(model.model_url)&&/^(2|a2)$/.test(arch)&&(!size||size==='lite');
+    });
+    if(!candidates.length){lastError=new Error('No downloadable A2-Lite captures in '+toneChoice.name+'.');continue;}
+    const rejected=[];
+    for(let attempt=0;attempt<Math.min(3,candidates.length);attempt++){
+     const choice=await chooseNamModel(prompt,snapshot,candidates,rejected);
+     status('Downloading '+choice.model.name+' in the background and checking MG-30 A2-Lite compatibility…','busy');
+     try{
+      const prepared=await bridge.prepareModel(choice.model.id);
+      selected={tone:toneChoice,model:choice.model,prepared,snapshot,reason:choice.reason};break;
+     }catch(error){rejected.push(String(choice.model.id));lastError=error;message('ai','Capture '+choice.model.name+' did not pass A2-Lite preflight. Trying another candidate. '+(error.message||error));}
     }
+    if(selected)break;
    }
-   if(selected)break;
+   if(!selected)throw new Error('No candidate from the top TONE3000 results passed the MG-30 Gen-2 A2-Lite validator. '+(lastError?.message||'Try another search phrase.'));
+   pendingNamSelection={prompt,gear:activeNamGear,selected};
+   message('ai','A2-Lite validation passed: '+selected.model.name+' ('+selected.prepared.weightBytes.toLocaleString()+' weight bytes). Download is ready for slot 10.');
+  }else{
+   message('ai','Resuming the validated NAM download prepared for slot 10: '+selected.model.name+'.');
   }
-  if(!selected)throw new Error('No candidate from the top TONE3000 results passed the MG-30 Gen-2 A2-Lite validator. '+(lastPreparationError?.message||'Try another search phrase.'));
-  message('ai','A2-Lite validation passed: '+selected.model.name+' ('+selected.prepared.weightBytes.toLocaleString()+' weight bytes). Preparing slot 10 import.');
+  const editor=window.MG30AIToneBridge;
+  if(!editor?.isConnected?.()){
+   status('NAM found and validated. Connect the MG-30 using USB-MIDI, then press Send again to transfer to slot 10 and build the live preset. No pedal data has been written yet.','success');
+   return {pendingConnection:true};
+  }
   status('Checking slot 10 and asking before overwrite if occupied…','busy');
   const imported=await bridge.importModel(selected.model.id,{slotNumber:10,confirmOverwrite:true,prepare:false});
-  if(imported?.cancelled)throw new Error('NAM import canceled. Slot 10 was not changed and no preset was sent.');
+  if(imported?.cancelled){pendingNamSelection=null;throw new Error('NAM import canceled. Slot 10 was not changed and no preset was sent.');}
   if(!imported?.success)throw new Error('The automatic NAM import did not complete.');
-  const amp=window.MG30AIToneBridge?.getCatalog?.().find(block=>block.id==='AMP');
+  pendingNamSelection=null;
+  const amp=editor.getCatalog?.().find(block=>block.id==='AMP');
   const slotModel=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10);
   if(!slotModel)throw new Error('NAM imported, but the editor cannot verify AMP NAM Slot 10. No AI preset parameters were sent. Re-read slot metadata.');
   activeNamModelName=slotModel.name;
@@ -338,20 +469,16 @@ async function init(){
  }
  async function makePlan(prompt,bridge){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
-  const sys=systemPrompt(catalog,snapshot,false);
-  if(mode==='gpt'){const k=await secret('openai');if(!k)throw new Error('The GPT API key has not been saved.');status('GPT is building your Tone Plan…','busy');return validateAiTonePlan(await openai(k,sys,userText(prompt,null,activeNamContext),ui.gptModel.value.trim()),catalog);}
-  if(mode==='gemini'){const k=await secret('gemini');if(!k)throw new Error('The Gemini API key has not been saved.');status('Gemini is building your Tone Plan…','busy');return validateAiTonePlan(await gemini(k,sys,userText(prompt,null,activeNamContext),ui.geminiModel.value.trim()),catalog);}
-  const g=await secret('openai'),m=await secret('gemini');if(!g||!m)throw new Error('Collaboration mode requires both API keys.');
-  status('GPT is drafting the initial tone…','busy');const first=validateAiTonePlan(await openai(g,sys,userText(prompt,null,activeNamContext),ui.gptModel.value.trim()),catalog);
-  status('Gemini is reviewing and refining GPT’s draft…','busy');
-  return validateAiTonePlan(await gemini(m,systemPrompt(catalog,snapshot,true),userText(prompt,first,activeNamContext),ui.geminiModel.value.trim()),catalog);
+  const proposal=await askNamAIJson(systemPrompt(catalog,snapshot,false),userText(prompt,null,activeNamContext),'building your Tone Plan');
+  return validateAiTonePlan(proposal,catalog);
  }
  async function submit(){
   if(busy)return;const prompt=ui.prompt.value.trim();if(!prompt){status('Enter a tone request first.','error');return;}
-  const bridge=window.MG30AIToneBridge;if(!bridge?.isConnected?.()){status('Failed: MG-30 is disconnected. AI was not called and no parameters were changed.','error');return;}
-  setBusy(true);message('user',prompt);status('Checking USB-MIDI connection…','busy');
+  const bridge=window.MG30AIToneBridge;if(!bridge){status('The MG-30 editor bridge is unavailable. Reload MG30 Studio.','error');return;}if(!namModeActive&&!bridge.isConnected?.()){status('Failed: MG-30 is disconnected. Connect USB-MIDI before generating a built-in amp live preset.','error');return;}
+  setBusy(true);message('user',prompt);status(namModeActive?'Preparing the TONE3000 NAM search…':'Checking USB-MIDI connection…','busy');
   try{
-   if(namModeActive)await automaticNamImportForPrompt(prompt);
+   if(namModeActive){const namResult=await automaticNamImportForPrompt(prompt);if(namResult?.pendingConnection)return;}
+   if(!bridge.isConnected?.())throw new Error('The MG-30 is disconnected. Connect USB-MIDI before applying the live preset.');
    const plan=await makePlan(prompt,bridge);
    if(activeNamContext){
     const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
@@ -387,16 +514,22 @@ async function init(){
  }
  open.addEventListener('click',()=>sheet.classList.contains('on')?closePanel():openPanel());
  $('aiToneClose').addEventListener('click',closePanel);shade.addEventListener('click',closePanel);
- $('aiToneSettingsToggle').addEventListener('click',()=>ui.settings.classList.toggle('on'));
+ $('aiToneSettingsToggle').addEventListener('click',()=>{ui.settings.classList.toggle('on');if(ui.settings.classList.contains('on'))void refreshAllProviderModels(true);});
  $('aiToneSaveKeys').addEventListener('click',saveKeys);
- $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('openai'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));
- $('aiToneDeleteOpenAi').addEventListener('click',()=>deleteKey('openai'));$('aiToneDeleteGemini').addEventListener('click',()=>deleteKey('gemini'));
+ $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
+ $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));
+ $('aiToneTestGroq').addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter').addEventListener('click',()=>testProvider('openrouter'));
+ $('aiToneDeleteOpenAi').addEventListener('click',()=>deleteKey('gpt'));$('aiToneDeleteGemini').addEventListener('click',()=>deleteKey('gemini'));
+ $('aiToneDeleteGroq').addEventListener('click',()=>deleteKey('groq'));$('aiToneDeleteOpenRouter').addEventListener('click',()=>deleteKey('openrouter'));
+ Object.entries(modelSelects).forEach(([provider,select])=>select.addEventListener('change',()=>{if(select.value)localStorage.setItem(modelStorageKey(provider),select.value);}));
+ ui.autoFallback.checked=localStorage.getItem('mg30-ai-auto-fallback')!=='0';
+ ui.autoFallback.addEventListener('change',()=>localStorage.setItem('mg30-ai-auto-fallback',ui.autoFallback.checked?'1':'0'));
  $('aiToneUndo').addEventListener('click',undo);$('aiToneSend').addEventListener('click',submit);
  ui.prompt.addEventListener('input',()=>{$('aiToneCount').textContent=ui.prompt.value.length+'/1400';});
  ui.prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
  document.querySelectorAll('[data-ai-provider]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.aiProvider)));
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on')&&!busy)closePanel();});
- window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. AI operations are paused until the pedal reconnects.','error');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
+ window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. TONE3000 search can still run; connect MG-30 before slot-10 import or live preset send.','idle');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
  window.addEventListener('mg30-midi-connected',()=>{if(!busy)status('MG-30 connected. AI live editing is ready.','success');});
  await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
 }

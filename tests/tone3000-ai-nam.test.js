@@ -108,3 +108,29 @@ test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
   assert.match(aiStudio, /bridge\.prepareModel\(choice\.model\.id\)/);
   assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
 });
+
+
+test('TONE3000 provides a separate connect-only account sign-in flow', () => {
+  assert.match(tone3000, /t3kConnectAccount/);
+  assert.match(tone3000, /async function startConnectAccountFlow/);
+  assert.match(tone3000, /oauth_flow: 'connect'/);
+  assert.match(tone3000, /oauthFlow === 'connect' && code && !toneId/);
+  assert.match(tone3000, /Connect TONE3000 Account/);
+});
+
+test('AI NAM search and A2-Lite preflight are allowed before USB-MIDI connection', () => {
+  assert.match(aiStudio, /if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)/);
+  assert.match(aiStudio, /NAM found and validated\. Connect the MG-30 using USB-MIDI/);
+  assert.match(aiStudio, /pendingNamSelection/);
+});
+
+test('TONE3000 session check refreshes the OAuth access token and separates app key from account auth', () => {
+  assert.match(tone3000, /async hasSession\(\) \{ try \{ await ensureAccessToken\(\); return true; \} catch \{ return false; \} \}/);
+  assert.match(aiStudio, /Publishable Key identifies this app only/);
+});
+
+test('Groq and OpenRouter credentials use existing encrypted Android Keystore storage', () => {
+  assert.match(secureStore, /"groq"\.equals\(value\)/);
+  assert.match(secureStore, /"openrouter"\.equals\(value\)/);
+  assert.match(aiStudio, /SecureStore\.setSecret\(\{provider:providerKeyId\(provider\)/);
+});
