@@ -157,3 +157,31 @@ No changes were made to:
 - A TONE3000 model tagged architecture A2 is only a catalog candidate. File-level A2-Lite validation remains mandatory and can reject a candidate before transfer.
 - The device protocol confirms write ACK frames and two-pass slot-name/metadata readback. It does **not** read back model weights, so a successful status is not a byte-for-byte weight verification.
 - No physical MG-30 transfer or audio audition was performed by CI. Install this APK on Android, reconnect the original MG-30 Gen 2 firmware 6.0.x, run one controlled import to slot 10, confirm a pre-existing slot-10 name triggers an overwrite prompt, then audition the result. Do not use the MKII for acceptance.
+
+
+## 2026-11-13 — AI Studio Full TONE3000 Catalog Search + Dynamic Conversation Window
+
+### Implementation
+- AI Studio now searches the authenticated TONE3000 REST catalog directly through `GET /api/v1/tones/search`; it no longer opens the TONE3000 Select browser when searching from the AI panel.
+- Search reuses the stored OAuth session and sends `format=nam`, `architecture=2`, the selected `gears=amp` or `gears=amp-cab`, `page=1`, `page_size=12`, and best-match ordering.
+- Search results are displayed inside AI Studio. Selecting a tone loads its detail and A2 model candidates via the existing TONE3000 endpoints; candidate downloads continue to use the authenticated `model_url`.
+- Identical searches are cached in memory for 60 seconds. HTTP 429 produces a clear rate-limit status; no pedal write occurs from a search failure.
+- Candidate transfer retains the existing slot-10 metadata read, explicit overwrite confirmation, A2-Lite 1,871-weight validation, NAM Library save, and existing MG-30 transfer codec.
+- After a successful slot-10 transfer, AI Studio automatically generates the requested Tone Plan when a prompt is present.
+- The original TONE3000 Select flow, manual NAM import UI, and normal NAM slot target selection remain intact.
+
+### NAM safety boundary
+- The AI editor catalog exposes only NAM slot 10 as an AMP model, marked selection-only with an empty parameter list.
+- AI may switch the AMP block to slot 10. AI may not modify the NAM capture's internal gain/bass/middle/treble/master controls or slots 1–9.
+- Undo restores AMP model selection; when the previous AMP model is a NAM slot, rollback sends only its model-selection CC and does not send NAM internal parameters.
+- IR collection/user paths, NAM Library logic, and MIDI mappings are not changed.
+
+### Conversation window sizing
+- The AI sheet is now content-sized and has a viewport maximum rather than a fixed near-full-screen height.
+- The message area grows with the conversation, then caps at 30dvh and scrolls internally. The prompt composer starts at 62px and may grow up to 120px.
+- On mobile the sheet remains capped at 91dvh to preserve room for Android navigation and keyboard behavior.
+
+### Validation caveats
+- Automated tests and Android build must pass before distribution.
+- TONE3000 documents the Search Tones endpoint as heavily rate-limited by default and lists a default global rate limit of 100 requests/minute. Contact TONE3000 for production rate-limit approval; local caching does not replace approval.
+- Physical-device verification is required for AMP slot-10 selection after import, automatic preset generation, Undo, and disconnect handling. The pedal protocol confirms write ACKs and slot metadata/name, but does not read back model weights byte-for-byte.

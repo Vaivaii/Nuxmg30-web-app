@@ -66,14 +66,15 @@ function systemPrompt(catalog,snapshot,review){
  'Rotary/selector values are normalized 0..100. Discrete controls must use an exact numeric choice from the catalog.',
  'When changing model, include every writable parameter for that model. When keeping the current model, include only parameters to change.',
  'Never invent models, parameter names, effect identifiers, MIDI CC values or unsupported features.',
- 'Never change IR/User/Third Party/Collection IR, NAM, Send/Return, Volume, scene, preset slot, MIDI mapping or signal-chain order.',
+ 'Never change IR/User/Third Party/Collection IR, NAM internal parameters, Send/Return, Volume, scene, preset slot, MIDI mapping or signal-chain order.',
+ 'The AMP catalog may expose NAM Slot 10 as a selection-only model with an empty parameter list. When installed NAM context is supplied, select that exact AMP model with parameters:{}; never write NAM internal controls and never select NAM slots 1–9.',
  'Do not output MIDI, SysEx, preset bytes or import instructions. The app validates and writes parameter changes through its current editor path.',
  'Preserve every block not listed. Provide sensible moderate tone settings. Keep the summary and notes in English. Always respond in English, regardless of the language used in the user prompt.'
  ];
  if(review)lines.push('You are the Gemini reviewer in collaboration mode. Critique the GPT proposal for tone balance and catalog correctness, then return the complete final changed-block proposal, not commentary only.');
  return lines.join('\n')+'\n\nAPP CATALOG:\n'+JSON.stringify(catalog)+'\n\nCURRENT EDITOR:\n'+JSON.stringify(snapshot);
 }
-function userText(prompt,candidate){return 'USER REQUEST:\n'+prompt+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
+function userText(prompt,candidate,namContext){return 'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider){const r=await SecureStore.getSecret({provider});return String(r?.value||'');}
 async function openai(key,sys,user,model){
  const d=await postJson('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
@@ -96,7 +97,7 @@ function niceError(e,provider){
 function style(){
  if($('aiToneCss'))return;
  const s=document.createElement('style');s.id='aiToneCss';
- s.textContent='.ai-tone-midi-transaction #page-editor{pointer-events:none!important;opacity:.92}.ai-tone-open{border-color:#769b3d!important;color:#c5f36b!important;background:#c5f36b12!important}.ai-tone-backdrop{position:fixed;inset:0;z-index:12000;background:#0009;opacity:0;pointer-events:none;transition:opacity .2s}.ai-tone-backdrop.on{opacity:1;pointer-events:auto}.ai-tone-sheet{position:fixed;z-index:12001;left:50%;bottom:0;transform:translate(-50%,105%);width:min(720px,100%);height:88dvh;min-height:74dvh;max-height:96dvh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #3b4935;border-bottom:0;border-radius:22px 22px 0 0;background:linear-gradient(155deg,#172018,#0d1210);box-shadow:0 -18px 70px #000a;transition:transform .24s ease;padding-bottom:env(safe-area-inset-bottom,0px)}.ai-tone-sheet.on{transform:translate(-50%,0)}.ai-tone-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #2d382b}.ai-tone-head strong{font-size:18px;letter-spacing:.1px}.ai-tone-head small{display:block;color:#96a28e;font-size:10px}.ai-tone-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}.ai-tone-provider-row{display:flex;gap:7px;margin-bottom:10px}.ai-tone-provider{flex:1;border:1px solid #354331;border-radius:10px;background:#101710;color:#aeb9a5;padding:11px 5px;font-size:13px;font-weight:800}.ai-tone-provider.on{border-color:#9cc84f;background:#c5f36b16;color:#d8f8a1}.ai-tone-status{display:flex;align-items:center;gap:9px;font-size:13px;line-height:1.4;color:#aab5a2;margin:7px 1px 10px;min-height:38px;padding:8px 11px;border:1px solid #303c2b;border-radius:11px;background:#0e150f}.ai-tone-status[data-state=busy]{color:#d8f4ac;border-color:#607d39;background:#172316}.ai-tone-status[data-state=busy]::before{content:"";width:16px;height:16px;flex:0 0 16px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}@keyframes aiToneSpin{to{transform:rotate(360deg)}}.ai-tone-status[data-state=success]{color:#b9ec7b}.ai-tone-status[data-state=error]{color:#ff938c}.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:190px;max-height:38dvh;overflow-y:auto;overscroll-behavior:contain;margin-bottom:12px;padding:2px 1px}.ai-tone-message{max-width:96%;padding:12px 14px;border:1px solid #303c2b;border-radius:13px;background:#141c14;color:#e1e9dc;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.ai-tone-message.user{align-self:flex-end;background:#24311d;border-color:#516b32}.ai-tone-message.ai{align-self:flex-start}.ai-tone-message small{display:block;color:#9ead91;font-size:10px;font-weight:850;letter-spacing:.45px;margin-bottom:5px}.ai-tone-prompt{width:100%;min-height:92px;max-height:150px;resize:vertical;border:1px solid #3b4934;border-radius:13px;background:#0b110d;color:#f1f5ed;padding:12px;font:13px/1.45 system-ui}.ai-tone-compose{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:8px}.ai-tone-hint{color:#819078;font-size:10px}.ai-tone-send{border:1px solid #b7e65e;border-radius:11px;background:#c5f36b;color:#12170c;font-weight:850;padding:10px 15px}.ai-tone-undo{border:1px solid #536142;border-radius:10px;background:#192218;color:#dce8d2;padding:9px 12px;font-size:11px}.ai-tone-send:disabled,.ai-tone-undo:disabled{opacity:.55}.ai-tone-send:disabled{cursor:progress}#aiToneOpenButton{min-width:62px;min-height:48px;padding:10px 13px!important;font-size:17px!important;font-weight:950!important;letter-spacing:.2px}.ai-tone-icon{border:1px solid #33402e;border-radius:10px;background:#121912;color:#dce8d2;padding:9px 12px}.ai-tone-settings{display:none;border:1px solid #354330;border-radius:13px;background:#101710;padding:12px;margin:2px 0 12px}.ai-tone-settings.on{display:block}.ai-tone-settings h4{margin:0 0 5px;font-size:12px}.ai-tone-settings p{margin:0 0 10px;color:#9ca992;font-size:10px;line-height:1.45}.ai-tone-key-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ai-tone-key-field label{display:block;color:#b8c5af;font-size:10px;margin:0 0 5px}.ai-tone-key-field input{width:100%;min-width:0;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8;padding:9px;font-size:11px}.ai-tone-key-state{display:block;color:#9baa91;font-size:9px;margin-top:5px;min-height:13px}.ai-tone-setting-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.ai-tone-setting-actions button{border:1px solid #3d4a35;border-radius:9px;background:#192218;color:#dce8d2;padding:8px 10px;font-size:10px}.ai-tone-setting-actions .primary{background:#c5f36b;color:#10160b}.ai-tone-note{margin-top:9px!important;color:#d3c18d!important;font-size:9px!important}@media(max-width:520px){.ai-tone-key-grid{grid-template-columns:1fr}.ai-tone-sheet{height:91dvh;min-height:84dvh}.ai-tone-messages{min-height:165px;max-height:34dvh}.ai-tone-provider{font-size:12px}}';
+ s.textContent='.ai-tone-midi-transaction #page-editor{pointer-events:none!important;opacity:.92}.ai-tone-open{border-color:#769b3d!important;color:#c5f36b!important;background:#c5f36b12!important}.ai-tone-backdrop{position:fixed;inset:0;z-index:12000;background:#0009;opacity:0;pointer-events:none;transition:opacity .2s}.ai-tone-backdrop.on{opacity:1;pointer-events:auto}.ai-tone-sheet{--ai-tone-max-height:88dvh;position:fixed;z-index:12001;left:50%;bottom:0;transform:translate(-50%,105%);width:min(720px,100%);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden;border:1px solid #3b4935;border-bottom:0;border-radius:22px 22px 0 0;background:linear-gradient(155deg,#172018,#0d1210);box-shadow:0 -18px 70px #000a;transition:transform .24s ease;padding-bottom:env(safe-area-inset-bottom,0px)}.ai-tone-sheet.on{transform:translate(-50%,0)}.ai-tone-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #2d382b}.ai-tone-head strong{font-size:18px;letter-spacing:.1px}.ai-tone-head small{display:block;color:#96a28e;font-size:10px}.ai-tone-body{padding:12px 14px;flex:0 1 auto;min-height:0;max-height:calc(var(--ai-tone-max-height) - 66px);overflow-y:auto;overscroll-behavior:contain}.ai-tone-provider-row{display:flex;gap:7px;margin-bottom:10px}.ai-tone-provider{flex:1;border:1px solid #354331;border-radius:10px;background:#101710;color:#aeb9a5;padding:11px 5px;font-size:13px;font-weight:800}.ai-tone-provider.on{border-color:#9cc84f;background:#c5f36b16;color:#d8f8a1}.ai-tone-status{display:flex;align-items:center;gap:9px;font-size:13px;line-height:1.4;color:#aab5a2;margin:7px 1px 10px;min-height:38px;padding:8px 11px;border:1px solid #303c2b;border-radius:11px;background:#0e150f}.ai-tone-status[data-state=busy]{color:#d8f4ac;border-color:#607d39;background:#172316}.ai-tone-status[data-state=busy]::before{content:"";width:16px;height:16px;flex:0 0 16px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}@keyframes aiToneSpin{to{transform:rotate(360deg)}}.ai-tone-status[data-state=success]{color:#b9ec7b}.ai-tone-status[data-state=error]{color:#ff938c}.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0;max-height:32dvh;overflow-y:auto;overscroll-behavior:contain;margin-bottom:10px;padding:2px 1px}.ai-tone-message{max-width:96%;padding:12px 14px;border:1px solid #303c2b;border-radius:13px;background:#141c14;color:#e1e9dc;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.ai-tone-message.user{align-self:flex-end;background:#24311d;border-color:#516b32}.ai-tone-message.ai{align-self:flex-start}.ai-tone-message small{display:block;color:#9ead91;font-size:10px;font-weight:850;letter-spacing:.45px;margin-bottom:5px}.ai-tone-prompt{width:100%;min-height:62px;max-height:120px;resize:vertical;border:1px solid #3b4934;border-radius:13px;background:#0b110d;color:#f1f5ed;padding:12px;font:13px/1.45 system-ui}.ai-tone-compose{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:8px}.ai-tone-hint{color:#819078;font-size:10px}.ai-tone-send{border:1px solid #b7e65e;border-radius:11px;background:#c5f36b;color:#12170c;font-weight:850;padding:10px 15px}.ai-tone-undo{border:1px solid #536142;border-radius:10px;background:#192218;color:#dce8d2;padding:9px 12px;font-size:11px}.ai-tone-send:disabled,.ai-tone-undo:disabled{opacity:.55}.ai-tone-send:disabled{cursor:progress}#aiToneOpenButton{min-width:62px;min-height:48px;padding:10px 13px!important;font-size:17px!important;font-weight:950!important;letter-spacing:.2px}.ai-tone-icon{border:1px solid #33402e;border-radius:10px;background:#121912;color:#dce8d2;padding:9px 12px}.ai-tone-settings{display:none;border:1px solid #354330;border-radius:13px;background:#101710;padding:12px;margin:2px 0 12px}.ai-tone-settings.on{display:block}.ai-tone-settings h4{margin:0 0 5px;font-size:12px}.ai-tone-settings p{margin:0 0 10px;color:#9ca992;font-size:10px;line-height:1.45}.ai-tone-key-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ai-tone-key-field label{display:block;color:#b8c5af;font-size:10px;margin:0 0 5px}.ai-tone-key-field input{width:100%;min-width:0;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8;padding:9px;font-size:11px}.ai-tone-key-state{display:block;color:#9baa91;font-size:9px;margin-top:5px;min-height:13px}.ai-tone-setting-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.ai-tone-setting-actions button{border:1px solid #3d4a35;border-radius:9px;background:#192218;color:#dce8d2;padding:8px 10px;font-size:10px}.ai-tone-setting-actions .primary{background:#c5f36b;color:#10160b}.ai-tone-note{margin-top:9px!important;color:#d3c18d!important;font-size:9px!important}@media(max-width:520px){.ai-tone-key-grid{grid-template-columns:1fr}.ai-tone-sheet{--ai-tone-max-height:91dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height)}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 62px)}.ai-tone-messages{min-height:0;max-height:30dvh}.ai-tone-provider{font-size:12px}}';
  s.textContent += '.ai-tone-nam-toolbar{display:flex;align-items:center;gap:8px;margin:0 0 10px}.ai-tone-nam-action{border:1px solid #566e37;border-radius:10px;background:#182317;color:#d8f4ac;padding:9px 12px;font-size:12px;font-weight:800}.ai-tone-nam-wizard,.ai-tone-nam-results{margin:0 0 12px;padding:11px;border:1px solid #34422e;border-radius:12px;background:#101710}.ai-tone-nam-wizard[hidden],.ai-tone-nam-results[hidden]{display:none!important}.ai-tone-nam-wizard p,.ai-tone-nam-results p{margin:0 0 9px;color:#aab69f;font-size:11px;line-height:1.45}.ai-tone-nam-choice-row{display:flex;flex-wrap:wrap;gap:7px}.ai-tone-nam-choice,.ai-tone-nam-import{border:1px solid #435438;border-radius:9px;background:#1a2518;color:#dce8d2;padding:8px 10px;font-size:11px;font-weight:750}.ai-tone-nam-results-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}.ai-tone-nam-results-head strong{font-size:12px}.ai-tone-nam-results-head small{display:block;margin-top:3px;color:#90a184;font-size:10px}.ai-tone-nam-model{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:9px 0;border-top:1px solid #2a3627}.ai-tone-nam-model-copy{min-width:0;flex:1}.ai-tone-nam-model-copy strong{display:block;font-size:11px;overflow-wrap:anywhere}.ai-tone-nam-model-copy small{display:block;margin-top:3px;color:#91a08a;font-size:10px}.ai-tone-nam-import{flex:0 0 auto;background:#c5f36b;border-color:#c5f36b;color:#11170b}.ai-tone-nam-import:disabled,.ai-tone-nam-choice:disabled{opacity:.5}@media(max-width:430px){.ai-tone-nam-model{align-items:flex-start;flex-direction:column}.ai-tone-nam-import{width:100%}}';
  document.head.appendChild(s);
 }
@@ -117,7 +118,7 @@ async function init(){
  '<p class="ai-tone-note">Encryption protects API keys at rest. During requests, keys are used temporarily and sent directly to the provider. Public distribution should use a backend gateway.</p></div>',
  '<div class="ai-tone-provider-row"><button class="ai-tone-provider on" data-ai-provider="gpt" type="button">GPT</button><button class="ai-tone-provider" data-ai-provider="gemini" type="button">Gemini</button><button class="ai-tone-provider" data-ai-provider="collab" type="button">GPT + Gemini</button></div>',
  '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">Waiting for MG-30 connection.</div>',
- '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Find a TONE3000 NAM</button></div>',
+ '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
  '<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
  '<div class="ai-tone-messages" id="aiToneMessages"><div class="ai-tone-message ai"><small>AI ASSISTANT</small>Describe the tone you want. Validated results update the editor controls and send parameters over USB-MIDI immediately. There is no Apply step.</div></div>',
@@ -127,7 +128,7 @@ async function init(){
  ].join('');
  document.body.append(shade,sheet);
  const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),gpt:$('aiOpenAiKey'),gemini:$('aiGeminiKey'),gptModel:$('aiOpenAiModel'),geminiModel:$('aiGeminiModel'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
- let mode='gpt',busy=false,last=null,namFlowActive=false,namImportBusy=false;const history=[];
+ let mode='gpt',busy=false,last=null,namFlowActive=false,namImportBusy=false,activeNamContext='';const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;document.querySelectorAll('[data-ai-provider]').forEach(b=>b.disabled=busy);ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button').forEach(b=>b.disabled=busy);};
@@ -141,16 +142,27 @@ async function init(){
  function showNamGearChoice(){
   ui.namWizard.innerHTML='<p>Choose the NAM capture type. This controls the official TONE3000 catalog filter.</p><div class="ai-tone-nam-choice-row"><button class="ai-tone-nam-choice" data-ai-nam-gear="amp" type="button">Amp Only</button><button class="ai-tone-nam-choice" data-ai-nam-gear="amp-cab" type="button">Amp + Cab</button></div>';
  }
- async function beginNamSelection(gear){
-  const bridge=window.NUXTONE3000Bridge;
-  if(!bridge?.startSelection)throw new Error('The TONE3000 integration bridge is unavailable.');
-  namFlowActive=true;ui.namResults.hidden=true;
-  ui.namWizard.hidden=false;
-  ui.namWizard.innerHTML='<p>Opening TONE3000 Select with the '+(gear==='amp'?'Amp Only':'Amp + Cab')+' filter. Complete the selection in TONE3000 and return to MG30 Studio. Compatible model candidates will appear here.</p>';
-  message('ai','Opening TONE3000. Select a tone, then return here to review its A2 model candidates. The selected file will be validated before any pedal write.');
-  setBusy(true);status('Opening TONE3000 Select…','busy');
-  try{await bridge.startSelection({gear});status('TONE3000 Select opened. Waiting for your tone selection…','success');}
-  catch(error){namFlowActive=false;ui.namWizard.hidden=true;throw error;}
+ function renderNamSearchResults(rows, query){
+  ui.namResults.hidden=false;ui.namWizard.hidden=true;
+  ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>TONE3000 NAM Search</strong><small>Query: '+esc(query)+' · A2 · AI destination: slot 10</small></div></div>'+
+   '<p>Search results are filtered to NAM architecture A2 and your selected capture type. Choose a tone to load its compatible A2 model candidates.</p>'+
+   (rows.length?rows.map(tone=>'<div class="ai-tone-nam-model"><div class="ai-tone-nam-model-copy"><strong>'+esc(tone.name)+'</strong><small>'+(tone.creator?'@'+esc(tone.creator)+' · ':'')+esc((tone.makes||[]).join(', ')||tone.gear||'NAM')+' · '+(tone.a2ModelsCount?esc(tone.a2ModelsCount)+' A2 models':'A2 models available')+'</small></div><button class="ai-tone-nam-choice" type="button" data-ai-nam-tone="'+esc(tone.id)+'">Load A2 Models</button></div>').join(''):'<p>No matching NAM tones were found. Try a shorter amplifier name, such as “Deluxe Reverb”, or adjust the search phrase.</p>');
+ }
+ async function beginNamSearch(gear){
+  const bridge=window.NUXTONE3000Bridge,query=ui.prompt.value.trim();
+  if(!bridge?.searchTones||!bridge?.loadTone)throw new Error('The TONE3000 in-app search bridge is unavailable. Update MG30 Studio and reopen AI Studio.');
+  if(query.length<2)throw new Error('Enter an amplifier name or tone description in the prompt first, then search TONE3000.');
+  if(!await bridge.hasSession())throw new Error('Connect your TONE3000 account once using the existing TONE3000 connection flow. After that, AI Studio can search without opening the TONE3000 page.');
+  namFlowActive=true;ui.namResults.hidden=true;ui.namWizard.hidden=false;
+  ui.namWizard.innerHTML='<p>Searching TONE3000 directly from AI Studio. No browser page will open. Results are restricted to NAM A2 and '+(gear==='amp'?'Amp Only':'Amp + Cab')+'.</p>';
+  message('ai','Searching the TONE3000 NAM catalog for: '+query);
+  setBusy(true);status('Searching TONE3000 NAM catalog…','busy');
+  try{
+   const rows=await bridge.searchTones(query,{gear});
+   renderNamSearchResults(rows,query);
+   message('ai',rows.length?'Found '+rows.length+' matching TONE3000 tones. Choose one to load its A2 captures.':'No matching TONE3000 NAM tones were found. Try a shorter amp/model name.');
+   status(rows.length?'TONE3000 search completed. Select a tone to inspect its A2 models.':'No matching TONE3000 tones. Adjust the search phrase.','success');
+  }catch(error){namFlowActive=false;ui.namWizard.hidden=true;throw error;}
   finally{setBusy(false);}
  }
  function renderNamCandidates(detail){
@@ -164,30 +176,45 @@ async function init(){
  ui.namWizard.addEventListener('click',async event=>{
   const source=event.target.closest('[data-ai-nam-source]')?.dataset.aiNamSource;
   if(source==='builtin'){
-   namFlowActive=false;ui.namWizard.hidden=true;
+   namFlowActive=false;activeNamContext='';ui.namWizard.hidden=true;
    ui.prompt.value=(ui.prompt.value.trim()?ui.prompt.value.trim()+'\n\n':'')+'Use a built-in MG-30 amp model, not a NAM capture. ';$('aiToneCount').textContent=ui.prompt.value.length+'/1400';ui.prompt.focus();
    message('ai','Built-in MG-30 Amp selected. Describe the sound you want, then send your tone request.');return;
   }
   if(source==='nam'){showNamGearChoice();message('ai','TONE3000 NAM selected. Choose Amp Only or Amp + Cab.');return;}
   const gear=event.target.closest('[data-ai-nam-gear]')?.dataset.aiNamGear;
   if(gear==='amp'||gear==='amp-cab'){
-   try{await beginNamSelection(gear);}catch(error){status('TONE3000 could not start: '+(error.message||error),'error');message('ai','TONE3000 selection failed: '+(error.message||error));}
+   try{await beginNamSearch(gear);}catch(error){status('TONE3000 search failed: '+(error.message||error),'error');message('ai','TONE3000 search failed: '+(error.message||error));}
   }
  });
  ui.namResults.addEventListener('click',async event=>{
+  const toneButton=event.target.closest('[data-ai-nam-tone]');
+  if(toneButton&&!busy&&!namImportBusy){
+   const toneId=toneButton.dataset.aiNamTone,bridge=window.NUXTONE3000Bridge;
+   if(!bridge?.loadTone){status('The TONE3000 tone loader is unavailable.','error');return;}
+   namFlowActive=true;setBusy(true);ui.namResults.innerHTML='<p>Loading tone details and A2 capture candidates from TONE3000…</p>';status('Loading TONE3000 A2 models…','busy');
+   try{await bridge.loadTone(toneId);}
+   catch(error){namFlowActive=false;ui.namResults.innerHTML='<p>Could not load this tone: '+esc(error.message||error)+'</p>';status('Could not load TONE3000 tone: '+(error.message||error),'error');}
+   finally{setBusy(false);}
+   return;
+  }
   const button=event.target.closest('[data-ai-nam-import]');if(!button||namImportBusy)return;
   const modelId=button.dataset.aiNamImport,bridge=window.NUXTONE3000Bridge;
   if(!bridge?.importModel){status('The TONE3000 import bridge is unavailable.','error');return;}
+  let autoCreatePreset=false;
   namImportBusy=true;setBusy(true);status('Checking slot 10 and preparing the NAM download…','busy');
   try{
    const result=await bridge.importModel(modelId,{slotNumber:10,confirmOverwrite:true});
    if(result?.cancelled){message('ai','NAM import canceled. Slot 10 was not changed.');status('Import canceled.','idle');return;}
    if(!result?.success)throw new Error('The NAM import did not complete.');
    namFlowActive=false;ui.namWizard.hidden=true;ui.namResults.hidden=true;
-   message('ai','Imported '+(result.modelName||'the selected NAM')+' to MG-30 slot 10. A copy is retained in NAM Library. The device protocol confirms write ACKs and slot metadata/name, but does not read back model weights; audition the sound on the pedal.');
-   status('NAM imported to slot 10. Play the guitar to verify the capture.','success');
+   const ampCatalog=window.MG30AIToneBridge?.getCatalog?.().find(block=>block.id==='AMP');
+   const slotTenModel=ampCatalog?.models?.find(model=>/NAM Slot 10/i.test(model.name))?.name||'NAM Slot 10';
+   activeNamContext='The TONE3000 NAM model "'+(result.modelName||'selected A2 capture')+'" was validated and imported into MG-30 NAM slot 10 (tone ID '+result.toneId+'). For the AMP block, select the exact selection-only catalog model "'+slotTenModel+'" with parameters:{} so the preset uses slot 10. Never change NAM internal parameters. Build the requested tone around this installed capture; adjust only the other permitted tone blocks.';
+   autoCreatePreset=Boolean(ui.prompt.value.trim());
+   message('ai','Imported '+(result.modelName||'the selected NAM')+' to MG-30 slot 10. A copy is retained in NAM Library. I will now build the requested tone using the slot-10 NAM capture. Device write ACKs and slot metadata were confirmed; model weights are not read back by this protocol.');
+   status('NAM imported to slot 10. Preparing the tone from the installed capture…','success');
   }catch(error){message('ai','NAM import failed: '+(error.message||error));status('NAM import failed: '+(error.message||error),'error');}
-  finally{namImportBusy=false;setBusy(false);}
+  finally{namImportBusy=false;setBusy(false);if(autoCreatePreset)await submit();}
  });
  window.addEventListener('mg30-tone3000-catalogue-loaded',event=>{
   if(!namFlowActive)return;
@@ -224,12 +251,12 @@ async function init(){
  async function makePlan(prompt,bridge){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
   const sys=systemPrompt(catalog,snapshot,false);
-  if(mode==='gpt'){const k=await secret('openai');if(!k)throw new Error('The GPT API key has not been saved.');status('GPT is building your Tone Plan…','busy');return validateAiTonePlan(await openai(k,sys,userText(prompt),ui.gptModel.value.trim()),catalog);}
-  if(mode==='gemini'){const k=await secret('gemini');if(!k)throw new Error('The Gemini API key has not been saved.');status('Gemini is building your Tone Plan…','busy');return validateAiTonePlan(await gemini(k,sys,userText(prompt),ui.geminiModel.value.trim()),catalog);}
+  if(mode==='gpt'){const k=await secret('openai');if(!k)throw new Error('The GPT API key has not been saved.');status('GPT is building your Tone Plan…','busy');return validateAiTonePlan(await openai(k,sys,userText(prompt,null,activeNamContext),ui.gptModel.value.trim()),catalog);}
+  if(mode==='gemini'){const k=await secret('gemini');if(!k)throw new Error('The Gemini API key has not been saved.');status('Gemini is building your Tone Plan…','busy');return validateAiTonePlan(await gemini(k,sys,userText(prompt,null,activeNamContext),ui.geminiModel.value.trim()),catalog);}
   const g=await secret('openai'),m=await secret('gemini');if(!g||!m)throw new Error('Collaboration mode requires both API keys.');
-  status('GPT is drafting the initial tone…','busy');const first=validateAiTonePlan(await openai(g,sys,userText(prompt),ui.gptModel.value.trim()),catalog);
+  status('GPT is drafting the initial tone…','busy');const first=validateAiTonePlan(await openai(g,sys,userText(prompt,null,activeNamContext),ui.gptModel.value.trim()),catalog);
   status('Gemini is reviewing and refining GPT’s draft…','busy');
-  return validateAiTonePlan(await gemini(m,systemPrompt(catalog,snapshot,true),userText(prompt,first),ui.geminiModel.value.trim()),catalog);
+  return validateAiTonePlan(await gemini(m,systemPrompt(catalog,snapshot,true),userText(prompt,first,activeNamContext),ui.geminiModel.value.trim()),catalog);
  }
  async function submit(){
   if(busy)return;const prompt=ui.prompt.value.trim();if(!prompt){status('Enter a tone request first.','error');return;}

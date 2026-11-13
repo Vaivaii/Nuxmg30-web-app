@@ -116,9 +116,10 @@ test('Android credential plugin uses Android Keystore and authenticated encrypti
 
 test('AI assistant UI is taller, keeps chat readable and exposes a visible working indicator', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /height:91dvh/);
-  assert.match(source, /min-height:84dvh/);
-  assert.match(source, /\.ai-tone-messages[^}]*min-height:165px/);
+  assert.match(source, /height:auto;min-height:0;max-height:var\\(--ai-tone-max-height\\)/);
+  assert.match(source, /--ai-tone-max-height:91dvh/);
+  assert.match(source, /\.ai-tone-messages[^}]*min-height:0/);
+  assert.match(source, /max-height:30dvh/);
   assert.match(source, /\.ai-tone-message[^}]*font-size:14px/);
   assert.match(source, /#aiToneOpenButton[^}]*font-size:17px/);
   assert.match(source, /ai-tone-status\[data-state=busy\]::before/);
@@ -134,4 +135,12 @@ test('AI assistant interface and generated tone summaries are English', () => {
   assert.match(source, /Undo AI Changes/);
   assert.match(source, /Parameters sent to:/);
   assert.doesNotMatch(source, /Menunggu koneksi|Simpan API Key|Kirim ↗|Parameter dikirim|Undo gagal|berhasil merespons/);
+});
+
+test('AI AMP catalog exposes only NAM slot 10 as selection-only with no internal controls', () => {
+  const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
+  assert.match(html, /namProfile\\?\\.slot!==10\\)return/);
+  assert.match(html, /namProfile\\?\\.slot===10\\?\\[\\]/);
+  assert.match(html, /NAM slot 10 is selection-only/);
+  assert.match(html, /if\\(blockIndex===3&&ampNamProfileForModelIndex\\(state\\.model\\)\\)return/);
 });

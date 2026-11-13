@@ -402,7 +402,11 @@ async function apiJSON(path) {
     headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' },
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error_description || body.message || body.error || ('API HTTP ' + response.status));
+  if (!response.ok) {
+    if (response.status === 429) throw new Error('TONE3000 API search rate limit reached. Wait briefly and try again; no pedal changes were made.');
+    if (response.status === 401 || response.status === 403) throw new Error('TONE3000 authorization was rejected. Reconnect your account from the existing TONE3000 settings.');
+    throw new Error(body.error_description || body.message || body.error || ('API HTTP ' + response.status));
+  }
   return body;
 }
 
@@ -435,6 +439,54 @@ async function fetchAllToneModels(toneId) {
     if (rows.length < pageSize || added === 0 || (totalPages > 0 && page >= totalPages)) break;
   }
   return collected;
+}
+
+function extractToneRows(body) {
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body?.tones)) return body.tones;
+  if (Array.isArray(body?.items)) return body.items;
+  if (Array.isArray(body?.data?.items)) return body.data.items;
+  return [];
+}
+
+const aiToneSearchCache = new Map();
+async function searchTone3000ForAI(query, gear = 'amp-cab') {
+  const text = String(query || '').trim().replace(/\\s+/g, ' ').slice(0, 160);
+  if (text.length < 2) throw new Error('Enter an amplifier name or tone description in the prompt before searching TONE3000.');
+  if (gear !== 'amp' && gear !== 'amp-cab') throw new Error('Choose Amp Only or Amp + Cab before searching.');
+  const cacheKey = gear + '|' + text.toLowerCase();
+  const cached = aiToneSearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < 60_000) return cached.rows;
+  const params = new URLSearchParams({
+    query: text, page: '1', page_size: '12', sort: 'best-match',
+    gears: gear, format: 'nam', architecture: '2',
+  });
+  const body = await apiJSON('/tones/search?' + params.toString());
+  const rows = extractToneRows(body).map(tone => {
+    const user = tone?.user?.username || tone?.creator?.username || tone?.username ||
+      (typeof tone?.creator === 'string' ? tone.creator : '');
+    return {
+      id: String(tone?.id ?? tone?.tone_id ?? ''),
+      name: String(tone?.title || tone?.name || tone?.tone_name || 'Untitled tone'),
+      creator: String(user || ''),
+      description: String(tone?.description || ''),
+      makes: Array.isArray(tone?.makes) ? tone.makes.slice(0, 5).map(String) : [],
+      tags: Array.isArray(tone?.tags) ? tone.tags.slice(0, 6).map(String) : [],
+      a2ModelsCount: Number(tone?.a2_models_count ?? tone?.models_count ?? 0),
+      gear: String(tone?.gear || gear),
+    };
+  }).filter(tone => /^\\d+$/.test(tone.id));
+  aiToneSearchCache.set(cacheKey, { time: Date.now(), rows });
+  if (aiToneSearchCache.size > 20) aiToneSearchCache.delete(aiToneSearchCache.keys().next().value);
+  return rows;
+}
+
+async function loadTone3000ForAI(toneId) {
+  const id = String(toneId || '').trim();
+  if (!/^\\d+$/.test(id)) throw new Error('The selected TONE3000 tone ID is invalid.');
+  const snapshot = await loadSelectedTone(id, { expand: true });
+  if (!snapshot || !Array.isArray(snapshot.models)) throw new Error('TONE3000 did not return its A2 NAM model list.');
+  return snapshot;
 }
 
 function saveWorkspaceSnapshot(snapshot) {
@@ -774,6 +826,8 @@ window.NUXTONE3000Bridge = Object.freeze({
     return { started: true, gear };
   },
   getCatalogue: getTone3000CatalogueForAI,
+  async searchTones(query, options = {}) { return searchTone3000ForAI(query, options.gear); },
+  async loadTone(toneId) { return loadTone3000ForAI(toneId); },
   async importModel(modelId, options = {}) { return importTone3000ModelForAI(modelId, options); },
 });
 

@@ -68,3 +68,22 @@ test('AI slot-10 destination leaves manual NAM import target selection unchanged
   assert.match(tone3000, /const slotNumber = Number\(options\.slotNumber \?\? 10\)/);
   assert.match(aiStudio, /bridge\.importModel\(modelId,\{slotNumber:10,confirmOverwrite:true\}\)/);
 });
+
+test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening Select', () => {
+  assert.match(tone3000, /async function searchTone3000ForAI/);
+  assert.match(tone3000, /\\/tones\\/search\\?/);
+  assert.match(tone3000, /format: 'nam'/);
+  assert.match(tone3000, /architecture: '2'/);
+  assert.match(tone3000, /gears: gear/);
+  assert.match(tone3000, /async function loadTone3000ForAI/);
+  assert.match(tone3000, /searchTones\\(query, options = \\{\\}\\)/);
+  assert.match(aiStudio, /async function beginNamSearch/);
+  assert.match(aiStudio, /data-ai-nam-tone=/);
+  assert.match(aiStudio, /bridge\\.searchTones\\(query,\\{gear\\}\\)/);
+  assert.match(tone3000, /TONE3000 API search rate limit reached/);
+});
+
+test('AI NAM automation preserves only slot 10 as an available destination', () => {
+  assert.match(aiStudio, /installed NAM context/i);
+  assert.match(tone3000, /aiToneSearchCache/);
+});

@@ -5776,16 +5776,18 @@ function aiGetCatalog(){
   const models=[];
   block.models.forEach((pair,modelIndex)=>{
    if(String(pair[0]).endsWith('· IMAGE'))return;
-   if(blockIndex===3&&modelIndex>=AMP_STANDARD_MODEL_COUNT)return;
-   const params=parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control)).map(control=>({
+   const namProfile=blockIndex===3?ampNamProfileForModelIndex(modelIndex):null;
+   if(blockIndex===3&&modelIndex>=AMP_STANDARD_MODEL_COUNT&&namProfile?.slot!==10)return;
+   const params=namProfile?.slot===10?[]:parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control)).map(control=>({
     key:control.param,label:control.label||control.param.toUpperCase(),
     kind:isDiscreteSwitch(control)?'discrete':'range',
     choices:isDiscreteSwitch(control)?(control.choices||[]).map(choice=>({label:String(choice.label||choice.name||choice.value),value:Number(choice.value)})):undefined,
     min:isDiscreteSwitch(control)?undefined:0,max:isDiscreteSwitch(control)?undefined:100
    }));
-   models.push({name:String(pair[0]),parameters:params});
+   models.push({name:String(pair[0]),parameters:params,...(namProfile?.slot===10?{kind:'nam-slot-selection',slot:10}:{})});
   });
-  const currentControls=parameterControls(blockIndex,current.model).filter(control=>aiIsWritableControl(blockIndex,control));
+  const currentNamProfile=blockIndex===3?ampNamProfileForModelIndex(current.model):null;
+  const currentControls=currentNamProfile?[]:parameterControls(blockIndex,current.model).filter(control=>aiIsWritableControl(blockIndex,control));
   const currentValues={};
   currentControls.forEach(control=>{
    const value=parameterValueForControl(blockIndex,current,current.model,control);
@@ -5809,11 +5811,23 @@ function aiPreparePlan(plan){
   if(seen.has(blockIndex))throw new Error('Blok '+proposed.id+' duplikat dalam Tone Plan.');
   seen.add(blockIndex);
   const block=BLOCKS[blockIndex],state=states[blockIndex],modelName=String(proposed.model||'').trim();
-  const modelIndex=block.models.findIndex((pair,index)=>pair[0]===modelName&&!String(pair[0]).endsWith('· IMAGE')&&(blockIndex!==3||index<AMP_STANDARD_MODEL_COUNT));
+  const modelIndex=block.models.findIndex((pair,index)=>pair[0]===modelName&&!String(pair[0]).endsWith('· IMAGE')&&(blockIndex!==3||index<AMP_STANDARD_MODEL_COUNT||ampNamProfileForModelIndex(index)?.slot===10));
   if(modelIndex<0)throw new Error('Model '+modelName+' bukan model hardware yang diizinkan untuk '+block.id+'.');
   if(proposed.enabled!==undefined&&typeof proposed.enabled!=='boolean')throw new Error('Status blok '+block.id+' tidak valid.');
-  const modelChanged=modelIndex!==state.model,controls=parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control));
+  const modelChanged=modelIndex!==state.model;
   if(!proposed.parameters||typeof proposed.parameters!=='object'||Array.isArray(proposed.parameters))throw new Error('Parameter blok '+block.id+' tidak valid.');
+  const namProfile=blockIndex===3?ampNamProfileForModelIndex(modelIndex):null;
+  if(namProfile?.slot===10){
+   if(Object.keys(proposed.parameters).length)throw new Error('NAM slot 10 is selection-only. Its internal parameters are locked and cannot be changed by AI.');
+   const nextEnabled=proposed.enabled===undefined?state.on:proposed.enabled;
+   const hasSwitch=modelChanged||nextEnabled!==state.on;
+   if(!hasSwitch)throw new Error('NAM slot 10 has no model-selection change to apply.');
+   const modelValue=deviceModelValue(blockIndex,modelIndex);
+   if(!Number.isInteger(MIDI_SW[blockIndex])||!Number.isInteger(modelValue))throw new Error('NAM slot 10 does not have a verified AMP model-selection mapping.');
+   prepared.push({blockIndex,id:block.id,modelIndex,modelChanged,enabled:nextEnabled,hasSwitch,modelValue,parameters:[],namSlotSelection:true});
+   continue;
+  }
+  const controls=parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control));
   const allowed=new Map(controls.map(control=>[control.param,control])),parameters=[];
   for(const [key,raw] of Object.entries(proposed.parameters)){
    const control=allowed.get(key),value=Number(raw);
@@ -5849,6 +5863,7 @@ async function aiSendBlockState(blockIndex,state){
  const modelValue=deviceModelValue(blockIndex,state.model),switchCc=MIDI_SW[blockIndex];
  if(!Number.isInteger(modelValue)||!Number.isInteger(switchCc))throw new Error('Model rollback tidak memiliki pemetaan MIDI.');
  await aiSendCC(switchCc,modelValue+(state.on?0:64));
+ if(blockIndex===3&&ampNamProfileForModelIndex(state.model))return;
  const controls=parameterControls(blockIndex,state.model).filter(control=>aiIsWritableControl(blockIndex,control));
  for(const control of controls){
   if(!Object.prototype.hasOwnProperty.call(state.values,control.param))continue;
