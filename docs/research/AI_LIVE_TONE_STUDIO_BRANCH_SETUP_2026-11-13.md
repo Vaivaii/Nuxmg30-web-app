@@ -90,3 +90,17 @@ Based on the first successful device-use screenshots:
 - Artifact ID: `14023172073`; artifact name: `MG30-Studio-debug-APK`.
 - Extracted APK: 4,672,344 bytes; SHA-256: `ac8469103e32e20ebbafbfb98ce17383da7d788d8dfb04d0fb0bcc32e1f876af`.
 - The updated visual layout has not yet been physically checked on the user's phone. Earlier live MIDI operation was confirmed by the user with the previous AI build; this UI-only update has no hardware protocol changes.
+
+## TONE3000 + AI NAM integration audit — 2026-11-13
+
+Detailed audit saved at `docs/research/TONE3000_AI_NAM_INTEGRATION_AUDIT_2026-11-13.md`.
+
+Key verified findings:
+- Existing OAuth PKCE, callback/deep-link handling, code exchange, token refresh, selected-tone loading, model listing, model download, NAM Library save, and direct import are already present in `www/tone3000.js`, `www/nam-model-library-ui.js`, and `native-android/MG30MidiPlugin.java`.
+- TONE3000 functions are module-private; AI Tone Studio currently has no reusable TONE3000 bridge. The later implementation must add a narrow facade owned by `tone3000.js`, not duplicate OAuth/API logic in AI.
+- Current Select OAuth flow hardcodes `gears=amp-cab`. Official TONE3000 API docs support both `amp` and `amp-cab`; AI can pass the user's choice through the existing flow.
+- OAuth access/refresh tokens currently live in WebView localStorage. The existing Android Keystore secure-storage plugin is not yet used for TONE3000 tokens. Add a backward-compatible migration before expanding AI token use; Publishable Key remains the one public `client_id`.
+- Current MG-30 transfer path validates only A2-Lite WaveNet with exactly 1,871 weights (or the supported native `.namb` equivalent). Every AI candidate must pass `extractMG30A2LiteWeights()`; architecture 2 alone is not sufficient.
+- Existing transfer builder accepts slots 1–10 and can be reused for AI slot 10. Slot 10 is not currently reserved for AI; manual import target behavior must remain unchanged. AI must read names and ask before overwrite.
+- Existing `/tones/search` is not used by the app. TONE3000 recommends Select for catalog browsing/search, and unrestricted search is rate-limited / subject to API tier terms. Initial AI workflow should filter the official Select experience by Amp or Amp + Cab; autonomous global search requires confirmation of permitted API access.
+- No application source, TONE3000 OAuth, NAM transfer, IR transfer, MIDI mapping, or Community .32 release code was changed during this audit.
