@@ -197,7 +197,7 @@ run(['cap', 'sync', 'android']);
 const gradlePath = resolve(androidDir, 'app/build.gradle');
 if (existsSync(gradlePath)) {
   let gradle = readFileSync(gradlePath, 'utf8');
-  const appIdPattern = /(applicationId\\s+["'])com\\.vaivaii\\.mg30studio(["'])/;
+  const appIdPattern = /(applicationId\\s*=?\\s*["'])com\\.vaivaii\\.mg30studio(["'])/;
   if (appIdPattern.test(gradle)) {
     gradle = gradle.replace(appIdPattern, '$1com.vaivaii.mg30studio.ai$2');
   } else if (!gradle.includes('com.vaivaii.mg30studio.ai')) {
