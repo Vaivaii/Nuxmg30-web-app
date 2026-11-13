@@ -117,9 +117,12 @@ test('Android credential plugin uses Android Keystore and authenticated encrypti
 test('AI assistant UI is taller, keeps chat readable and exposes a visible working indicator', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.ok(source.includes('height:auto;min-height:0;max-height:var(--ai-tone-max-height)'));
-  assert.ok(source.includes('--ai-tone-max-height:91dvh'));
+  assert.ok(source.includes('--ai-tone-max-height:84dvh'));
+  assert.ok(source.includes('--ai-tone-max-height:82dvh'));
   assert.ok(source.includes('.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0'));
-  assert.ok(source.includes('max-height:30dvh'));
+  assert.ok(source.includes('max-height:25dvh'));
+  assert.ok(source.includes('max-height:28dvh'));
+  assert.ok(source.includes('scrollbar-width:thin'));
   assert.match(source, /\.ai-tone-message[^}]*font-size:14px/);
   assert.match(source, /#aiToneOpenButton[^}]*font-size:17px/);
   assert.match(source, /ai-tone-status\[data-state=busy\]::before/);
