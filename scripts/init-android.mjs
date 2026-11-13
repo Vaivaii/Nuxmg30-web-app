@@ -17,6 +17,7 @@ copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaD
 copyFileSync(resolve(root, 'native-android/MG30AudioOutputPlugin.java'), resolve(javaDir, 'MG30AudioOutputPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30MidiPlugin.java'), resolve(javaDir, 'MG30MidiPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30DawFilesPlugin.java'), resolve(javaDir, 'MG30DawFilesPlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30SecureStorePlugin.java'), resolve(javaDir, 'MG30SecureStorePlugin.java'));
 
 const mainActivityLines = [
   'package com.vaivaii.mg30studio;',
@@ -46,6 +47,7 @@ const mainActivityLines = [
   '        registerPlugin(MG30AudioOutputPlugin.class);',
   '        registerPlugin(MG30MidiPlugin.class);',
   '        registerPlugin(MG30DawFilesPlugin.class);',
+  '        registerPlugin(MG30SecureStorePlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
