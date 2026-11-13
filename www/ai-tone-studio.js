@@ -208,7 +208,7 @@ async function init(){
    if(!result?.success)throw new Error('The NAM import did not complete.');
    namFlowActive=false;ui.namWizard.hidden=true;ui.namResults.hidden=true;
    const ampCatalog=window.MG30AIToneBridge?.getCatalog?.().find(block=>block.id==='AMP');
-   const slotTenModel=ampCatalog?.models?.find(model=>/NAM Slot 10/i.test(model.name))?.name||'NAM Slot 10';
+   const slotTenModel=ampCatalog?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10)?.name||'NAM Slot 10';
    activeNamContext='The TONE3000 NAM model "'+(result.modelName||'selected A2 capture')+'" was validated and imported into MG-30 NAM slot 10 (tone ID '+result.toneId+'). For the AMP block, select the exact selection-only catalog model "'+slotTenModel+'" with parameters:{} so the preset uses slot 10. Never change NAM internal parameters. Build the requested tone around this installed capture; adjust only the other permitted tone blocks.';
    autoCreatePreset=Boolean(ui.prompt.value.trim());
    message('ai','Imported '+(result.modelName||'the selected NAM')+' to MG-30 slot 10. A copy is retained in NAM Library. I will now build the requested tone using the slot-10 NAM capture. Device write ACKs and slot metadata were confirmed; model weights are not read back by this protocol.');
