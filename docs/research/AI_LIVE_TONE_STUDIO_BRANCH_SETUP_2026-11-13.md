@@ -293,3 +293,13 @@ No changes were made to:
 - CI #779: retained the established USB-MIDI status wording and capture-size diagnostic phrase used by the existing test contract. Logic unchanged.
 
 - CI #780 final two failures traced to legacy diagnostic wording expectations; source strings now retain the established messages. Candidate metadata sent to the NAM model-ranking prompt is shortened to boost/OD classification plus a capped description. Corrected validation re-prompt line breaks to be actual newlines.
+
+
+## Build verification — NAM capture selector, Groq payload, artist tone corrections — 2026-11-13
+
+- Source commit built: ba96e973b86bad5176ff403ce0655d1923dd0c18 on feature/ai-live-tone-studio.
+- GitHub Actions run #781 / run ID 43469679246: success. Regression tests: 465 passed, 0 failed. Android initializer syntax, Capacitor generation and USB audio plugin setup, Gradle assembleDebug, and artifact upload all passed.
+- Artifact MG30-Studio-debug-APK, ID 14060091243. ZIP size 4,312,886 bytes; ZIP SHA-256 ff229ab6de695aaab9f766c6619f2c4e6e3cd69b7524b0c6c23966102390ceac. Extracted app-debug.apk size 4,690,484 bytes; APK SHA-256 14577e0e5edbdeef1fc48e316bf350c9d96318c9cb156842d6ca3bc2cf9c6309.
+- Artifact archive integrity checked; exactly one app-debug.apk was extracted. This is a debug APK, not a signed Community release APK.
+- Physical-device acceptance remains pending: repeat a Groq long-request test and verify fallback, create two artist-specific tones and compare selected models/effects, select/override multiple TONE3000 captures in the dropdown, validate source metadata behavior, and complete a controlled slot-10 overwrite/ACK/name readback plus audio audition on original MG-30 Gen 2 firmware 6.0.x.
+- No changes to Gen-2 NAM extraction/transfer codec, manual NAM slot selection, persistent Library transfer flow, IR User/Third Party/Collection mappings, or MIDI mappings.
