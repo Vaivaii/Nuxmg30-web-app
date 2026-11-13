@@ -74,3 +74,14 @@ Date: 2026-11-13
 4. Improve transaction semantics only after hardware evidence. MIDI CC has no per-parameter ACK in this integration; do not promise guaranteed hardware application beyond the observed send result.
 5. Consider a backend gateway before public distribution so provider credentials are not sent from the client directly. Local Android Keystore encryption only protects keys at rest.
 6. Configure a persistent dedicated AI signing key through protected GitHub Actions secrets before regular distribution/upgrades.
+
+## AI assistant UI refinement — 2026-11-13
+
+Based on the first successful device-use screenshots:
+- Increased the mobile bottom-sheet height (91dvh on narrow screens; minimum 84dvh) so the conversation and composer are not pushed into a short, partially hidden panel.
+- Increased chat message typography to 14px and provider controls to 13px; enlarged the Tone Editor AI entry button to 17px with a larger touch target.
+- Added a visible animated spinner to the live status row while the provider is working. The Send control changes to “Working…” and is disabled during requests; stage text reports GPT drafting, Gemini drafting, or Gemini reviewing GPT in collaboration mode.
+- Localized the complete AI assistant interface, statuses, errors, provider settings and button labels to English. AI system instructions now require English summaries and notes even when the user's prompt is written in another language.
+- Added automated assertions for taller mobile layout, chat readability, visible busy indicator, larger AI entry button and English UI copy.
+- No device protocol, MIDI mapping, NAM handling, IR import/collection code, or Community .32 release branch was changed.
+- Rebuild and regression test verification for this refinement is pending in GitHub Actions. Physical device check of the updated visual layout is also pending.
