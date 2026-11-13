@@ -732,7 +732,7 @@ function getTone3000CatalogueForAI() {
     models: selectedTone.models.map(model => ({
       id: model.id, name: model.name, architecture: model.architecture,
       architecture_version: model.architecture_version, size: model.size,
-      description: model.description,
+      description: model.description, downloadable: Boolean(model.model_url),
     })),
   };
 }
