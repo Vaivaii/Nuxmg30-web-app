@@ -54,8 +54,8 @@ public class MG30SecureStorePlugin extends Plugin {
 
     private String provider(PluginCall call) {
         String value = call.getString("provider", "");
-        if (!"openai".equals(value) && !"gemini".equals(value)) {
-            throw new IllegalArgumentException("Provider AI tidak valid.");
+        if (!"openai".equals(value) && !"gemini".equals(value) && !"tone3000".equals(value)) {
+            throw new IllegalArgumentException("Secure-store namespace is invalid.");
         }
         return value;
     }
