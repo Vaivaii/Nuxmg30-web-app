@@ -85,7 +85,7 @@ async function gemini(key,sys,user,model){
  if(!model)throw new Error('Choose an available Gemini model in AI Settings.');
  const m=encodeURIComponent(model);
  const d=await postJson('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
- body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600})});
+ body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600}})});
  return parseJson(geminiOutput(d));
 }
 function compatibleChatText(data,provider){

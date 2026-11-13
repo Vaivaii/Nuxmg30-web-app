@@ -4448,3 +4448,6 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - OpenRouter dropdown includes zero-price text models and `openrouter/free`; all free services still have quotas and can be busy.
 - Protected: manual NAM import/target selection, Gen-2 A2-Lite codec, NAM Library persistence, IR User/Third Party/Collection mapping, MIDI mapping and Community .32.
 - CI and physical NAM import/audio audition validation pending.
+
+
+- CI correction follow-up: fixed the Gemini request JSON object closure detected by the first regression run; rerun is required before treating this branch as build-verified.

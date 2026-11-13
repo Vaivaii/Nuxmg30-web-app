@@ -219,3 +219,6 @@ No changes were made to:
 - No modifications to manual NAM import target selection, `www/nam-transfer.js` codec/ACK/retry/readback, IR User/Third Party/Collection or MIDI mappings, or Community .32.
 - Added tests for provider dropdown options, fallback order/error classification, connect-only OAuth, search-before-USB staging and secure provider namespaces.
 - CI and physical-device checks remain required. Hardware acceptance must confirm TONE3000 sign-in, catalog search, a compatible download, slot-10 overwrite prompt/ACK/name readback, and audio audition on original MG-30 Gen 2.
+
+
+- CI correction follow-up: fixed the Gemini request JSON object closure detected by the first regression run; rerun is required before treating this branch as build-verified.
