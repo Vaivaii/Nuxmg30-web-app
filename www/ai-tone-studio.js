@@ -68,7 +68,7 @@ function systemPrompt(catalog,snapshot,review){
  'Never invent models, parameter names, effect identifiers, MIDI CC values or unsupported features.',
  'Never change IR/User/Third Party/Collection IR, NAM, Send/Return, Volume, scene, preset slot, MIDI mapping or signal-chain order.',
  'Do not output MIDI, SysEx, preset bytes or import instructions. The app validates and writes parameter changes through its current editor path.',
- 'Preserve every block not listed. Provide sensible moderate tone settings. Keep summary and notes in Indonesian.'
+ 'Preserve every block not listed. Provide sensible moderate tone settings. Keep the summary and notes in English. Always respond in English, regardless of the language used in the user prompt.'
  ];
  if(review)lines.push('You are the Gemini reviewer in collaboration mode. Critique the GPT proposal for tone balance and catalog correctness, then return the complete final changed-block proposal, not commentary only.');
  return lines.join('\n')+'\n\nAPP CATALOG:\n'+JSON.stringify(catalog)+'\n\nCURRENT EDITOR:\n'+JSON.stringify(snapshot);
@@ -88,9 +88,9 @@ async function gemini(key,sys,user,model){
 }
 function niceError(e,provider){
  const s=String(e?.message||e||'Unknown error');
- if(/401|unauthorized|invalid.*key|api key not valid/i.test(s))return provider+': API key ditolak.';
- if(/429|quota|rate.?limit|resource_exhausted/i.test(s))return provider+': kuota/rate limit tercapai; tidak ada perubahan pedal dikirim.';
- if(/failed to fetch|network|cors|internet/i.test(s))return provider+': jaringan/provider tidak dapat dijangkau; tidak ada perubahan pedal dikirim.';
+ if(/401|unauthorized|invalid.*key|api key not valid/i.test(s))return provider+': API key was rejected.';
+ if(/429|quota|rate.?limit|resource_exhausted/i.test(s))return provider+': quota or rate limit reached; no pedal changes were sent.';
+ if(/failed to fetch|network|cors|internet/i.test(s))return provider+': network or provider unavailable; no pedal changes were sent.';
  return provider+': '+s;
 }
 function style(){
@@ -115,7 +115,7 @@ async function init(){
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Save API Keys</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneDeleteOpenAi" type="button">Delete GPT</button><button id="aiToneDeleteGemini" type="button">Delete Gemini</button></div>',
  '<p class="ai-tone-note">Encryption protects API keys at rest. During requests, keys are used temporarily and sent directly to the provider. Public distribution should use a backend gateway.</p></div>',
  '<div class="ai-tone-provider-row"><button class="ai-tone-provider on" data-ai-provider="gpt" type="button">GPT</button><button class="ai-tone-provider" data-ai-provider="gemini" type="button">Gemini</button><button class="ai-tone-provider" data-ai-provider="collab" type="button">GPT + Gemini</button></div>',
- '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status">Waiting for MG-30 connection.</div>',
+ '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">Waiting for MG-30 connection.</div>',
  '<div class="ai-tone-messages" id="aiToneMessages"><div class="ai-tone-message ai"><small>AI ASSISTANT</small>Describe the tone you want. Validated results update the editor controls and send parameters over USB-MIDI immediately. There is no Apply step.</div></div>',
  '<textarea class="ai-tone-prompt" id="aiTonePrompt" maxlength="1400" placeholder="Example: Create a warm blues-rock tone with mild breakup, low-to-medium gain, present mids, short delay, and light reverb."></textarea>',
  '<div class="ai-tone-compose"><button class="ai-tone-undo" id="aiToneUndo" type="button" disabled>↶ Undo AI Changes</button><div><span class="ai-tone-hint" id="aiToneCount">0/1400</span> <button class="ai-tone-send" id="aiToneSend" type="button">Send ↗</button></div></div>',
@@ -192,7 +192,7 @@ async function init(){
  ui.prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
  document.querySelectorAll('[data-ai-provider]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.aiProvider)));
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on')&&!busy)closePanel();});
- window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI terputus. AI berhenti sampai pedal tersambung kembali.','error');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
+ window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. AI operations are paused until the pedal reconnects.','error');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
  window.addEventListener('mg30-midi-connected',()=>{if(!busy)status('MG-30 connected. AI live editing is ready.','success');});
  await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
 }
