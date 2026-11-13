@@ -4466,3 +4466,40 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - The Community .23 Collection frame correction and the current Preset frame/fade behavior also require physical WebView review if the user has not already confirmed them.
 - CI success is not physical-device acceptance. Do not claim the .28 layout is verified on the handset until the user reports the actual-device result.
 - No source build was requested or run as part of this session-resumption audit. The latest usable release candidate remains Community .28 built from `c73644bfff2a90075d72062a143b6974dbecb172`; branch HEAD was documentation-only `add904b0dfa72bf48157609c34491219e0c9fa32` before this note.
+
+
+## Session resumption audit — 13 November 2026
+
+### Target branch state
+- Repository: `Vaivaii/Nuxmg30-web-app`.
+- Working branch: `feature/editor-reference-one-screen`.
+- Branch HEAD at audit start: `cdaecee65d65468b58f21cd919573642a8393efe`.
+- Latest source/build commit on this branch: `c73644bfff2a90075d72062a143b6974dbecb172`.
+- The two commits after that build are documentation-only. Comparing source commit to HEAD shows only `UI_POLISH_CHECKLIST.md` and `docs/research/MG30_STUDIO_DAW_COMPACT_TIMELINE_LAYOUT_2026-11-09.md`; no application source changed after Community .28.
+- The attached `NUX_MG30_Studio_Dokumen_Induk.md` available in this session is dated 29 October 2026 and is not present at repository root on this branch. Treat the repository checklist and research docs as the newer continuation record.
+
+### Latest verified build on the target branch
+- Community: `1.0.0-community.28`; versionCode `28`; package `com.vaivaii.mg30studio`.
+- GitHub Actions [run 42678936798](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678936798), run #83, built exact source commit `c73644bfff2a90075d72062a143b6974dbecb172`.
+- Regression suite: **370 passed, 0 failed**; Gradle Release succeeded; APK Signature Scheme v2 verified; package identity and checksum verification steps succeeded.
+- APK SHA-256: `2f337d2a262026566fef45f89b3669ab9bf0663e6eea619829f254ccda769f56`.
+- Signed audit artifact ID `13700419799`, name `MG30-Studio-Community-Signed-Candidate`; artifact ZIP digest `2232bb91cb7a6e0a2973d0ed5185e00d98924ab65b9f8223f4b3e3fe606721e5`.
+- This session verified the Actions job steps and artifact metadata. The APK was not downloaded and independently re-extracted in this session.
+- Physical-device visual/touch acceptance remains separate from CI and is still pending in the prior record: check Studio Timeline with gesture and 3-button Android navigation, and confirm IR Collection/Preset frame behavior on the phone.
+
+### Separate newer development branch — do not merge implicitly
+- Repository activity also exists on `feature/ai-live-tone-studio`, HEAD `758e64dd796f2694022a7cfcd911137f36a507f1` (13 November 2026).
+- This branch is **diverged**, not a fast-forward continuation, relative to `feature/editor-reference-one-screen` (compare reports 172 commits ahead and 1 behind). Do not switch, merge, cherry-pick, or replace the target branch without a task-specific review.
+- Its latest build is GitHub Actions [run 43424035768](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43424035768), build #765, a **debug APK** build from `758e64dd796f2694022a7cfcd911137f36a507f1`: **441 passed, 0 failed**, Android generation succeeded, `assembleDebug` succeeded. Artifact ID `14035069137`; ZIP digest `ca16fb6368f72850c00a22a8bfbbbf415c4dc8a8611b8fb3c6d1f9bc915ae788`. This is not a signed Community release candidate.
+- This separate line contains later work for persistent NAM Library storage/cards, TONE3000/AI NAM flow, full/selective backup, and scene-status / IR User parameter investigations. Its source diffs include `www/index.html`, `www/ir-transfer.js`, `native-android/MG30MidiPlugin.java`, NAM UI code, and scene-status code.
+- The AI/NAM audit says the AI path reuses the existing Gen 2 A2-Lite functions `extractMG30A2LiteWeights`, `buildMG30A2LiteTransferPlan`, and `sendMG30A2LiteTransfer`; it uses AI-only slot 10 while preserving the manual NAM target selector. It does not read back NAM model weights; success is checked through slot metadata/name readback. Physical library persistence and MG-30 import validation remain pending.
+- A separate Community .30 signed build is recorded in the NAM Library research note: version `1.0.0-community.30`, versionCode `30`, 371 tests passed, APK SHA-256 `54dee9644a8fb1d1f82744033f9caf7fb45cbd43f8fc991b386d3cf8ece85c66`. Do not confuse that signed .30 artifact with the latest debug build #765.
+
+### New scene-status and IR mapping findings on the separate branch
+- Scene-status investigation reports the active scene is parsed from the authoritative `15 02` status response; incoming CC80 is treated as a trigger to query status, not as authoritative scene state. Physical confirmation of external footswitch and reconnect behavior remains required.
+- The IR User cut investigation superseded an earlier speculative parameter swap. The later Build #711 note records model-specific `[2,3,4]` control indexes for IR models without MIC/POSITION: LEVEL index 2 / CC68 / packed slot 78, LOWCUT index 3 / CC69 / slot 79, HIGHCUT index 4 / CC70 / slot 80. Factory no-MIC models and Third-party LOWCUT/HIGHCUT were reported correct in the Build #708 physical test; Third-party LEVEL after the Build #711 correction still requires physical confirmation.
+- These mapping and scene-state changes belong to the separate development line. Do not backport them to this branch merely because their automated tests pass. First review the exact diff and the physical-device evidence, and preserve the existing global MIDI/CC tables unless a controlled test proves a specific correction is required.
+
+### Audit scope
+- No application source, NAM transfer codec, IR transfer protocol, Collection/User routing, ACK/retry behavior, 24-slot mapping, preset data operations, global MIDI/CC tables, USB-MIDI, Studio audio routing, or Android project configuration was changed during this resumption audit.
+- This note is documentation-only. No APK build was triggered because no application source changed.
