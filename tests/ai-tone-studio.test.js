@@ -94,6 +94,7 @@ test('AI UI has no Apply-to-Editor action and exposes the three provider modes p
 
 test('live bridge keeps AI writes inside existing parameter CC path and excludes IR/NAM blocks', () => {
   const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(html, /window\.MG30AIToneBridge=Object\.freeze/);
   assert.match(html, /BLOCKS\.slice\(0,9\)/);
   assert.match(html, /await midiSend\(\[0xB0,cc/);
