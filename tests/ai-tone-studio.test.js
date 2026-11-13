@@ -191,7 +191,8 @@ test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transi
 test('Groq and OpenRouter JSON-object requests explicitly include JSON in the messages', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /Return a valid JSON object only\. The response must be JSON/);
-  assert.match(source, /response_format:\{type:'json_object'\}/);\n  assert.match(source, /max_completion_tokens:2600/);\n  assert.match(source, /reasoning_effort:'low',include_reasoning:false/);
+  assert.match(source, /response_format:\{type:'json_object'\}/);
+  assert.match(source, /max_completion_tokens:2600/);\n  assert.match(source, /reasoning_effort:'low',include_reasoning:false/);
 });
 
 test('provider and active model selection use compact dropdown controls instead of large button rows', () => {
