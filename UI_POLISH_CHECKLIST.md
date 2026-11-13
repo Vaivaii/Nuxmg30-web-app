@@ -4467,3 +4467,12 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 
 
 - CI follow-up: aligned TONE3000 search parameter source formatting with the existing static regression assertion; behavior unchanged.
+
+
+## Build verification — AI provider dropdown + TONE3000 catalogue search follow-up
+
+- Source commit built: `8295f8dff2f76e75ed116080c37b4ffe4711aea0` on `feature/ai-live-tone-studio`.
+- GitHub Actions run #770: success. Protocol regression suite: **451 passed, 0 failed**. Android `assembleDebug` and artifact upload: success.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14049073273`, APK size 4,686,024 bytes; archive SHA-256 `16828044dc61fadf5e1659ec372ecc0525ea7a68ceeb63a2646dcb85ae49fda4`; APK SHA-256 `0a97f21da1538d526b68a6b7a44e0af8328fe04814b0e2f071bbe09ae3afc707`.
+- Verified delivery file is an Android APK extracted from the current Actions artifact. This is a debug build, not a signed Community release.
+- On-device verification is still required for Groq Test, actual TONE3000 query results, model download/preflight, slot-10 transfer ACK/name readback, and guitar audio. No hardware NAM import is claimed.
