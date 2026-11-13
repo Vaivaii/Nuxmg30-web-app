@@ -166,7 +166,7 @@ async function init(){
   try{const plan=await makePlan(prompt,bridge);if(!bridge.isConnected())throw new Error('The MG-30 disconnected before changes could be sent.');
    status('Tone Plan validated. Updating the editor and sending MIDI…','busy');const result=await bridge.applyPlan(plan);
    last={before:result.before,after:result.after,blocks:result.blocks};ui.undo.disabled=false;
-   message('ai',plan.summary+'\nParameter dikirim ke blok '+result.blocks.join(', ')+(plan.notes.length?'\n'+plan.notes.join(' · '):''));
+   message('ai',plan.summary+'\nParameters sent to: '+result.blocks.join(', ')+(plan.notes.length?'\n'+plan.notes.join(' · '):''));
    ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
   }catch(e){message('ai','Failed: '+(e.message||e));status('Failed: '+(e.message||e),'error');}
   finally{setBusy(false);ui.undo.disabled=!last;}
