@@ -915,7 +915,10 @@ async function processCallback(rawUrl) {
   if (!panelReady && !createPanel()) return;
   if (state && handledCallbackStates.has(state)) return;
 
-  await loadOAuthData();
+  try { await loadOAuthData(); } catch (error) {
+    setStatus('Secure TONE3000 session storage is unavailable: ' + (error?.message || error));
+    return;
+  }
   const expected = authValue('state');
   if (!state || !expected || state !== expected) {
     setStatus('A TONE3000 callback was received, but its state parameter does not match. The process was stopped for security. Reopen TONE3000 from the app.');
