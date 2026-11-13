@@ -4506,3 +4506,13 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - CI #775 confirmed the remaining two failures were regex-escaping in test assertions, not runtime code. Assertions now use literal source inclusion for row.id,10000.
 
 - CI #776 exposed one remaining duplicate static assertion in the added model-dropdown test; changed it to a literal source inclusion check. The other 459 tests passed in that run.
+
+
+## User field report — Groq request length, NAM refresh, metadata, and exact catalog validation
+
+- Groq message-length errors are now classified as fallback-eligible, including the exact phrase about reducing the length of messages or completion. Groq/OpenAI-compatible completion cap is reduced from 2,600 to 1,200 tokens. AI editor catalog and snapshot context is serialized as compact arrays while retaining exact model and parameter names plus discrete numeric choices.
+- Tone Plan generation retries once when a model/effect name or parameter schema fails local validation. The correction request includes the exact validation error and prior invalid proposal. A second failure aborts before MIDI writes.
+- TONE3000 NAM source remains selected after successful import. Each subsequent Send performs a fresh TONE3000 search for the new prompt; previous slot-10 capture is no longer silently reused. Choosing Built-in MG-30 Amp still clears NAM state.
+- If the selected TONE3000 tone has multiple downloadable A2 models, AI recommends one and the panel displays all downloadable models from that tone in a dropdown. The user may override the recommendation. Only the selected file is downloaded and passed through the unchanged Gen-2 weight validator before slot-10 overwrite confirmation/import.
+- AI receives TONE3000 source metadata (tone/model name, creator, description, makes/tags, architecture, size and gear). Explicit boost/OD evidence is distinguished from unknown metadata; silent metadata is never treated as proof of clean or boosted capture. Metadata is supporting evidence, not a verified pedal-chain inventory.
+- NAM transfer, slot-10 scan, overwrite confirmation, persistent NAM Library save, manual NAM destination, IR User/Third Party/Collection, and MIDI mappings are unchanged. CI and physical-device verification pending.
