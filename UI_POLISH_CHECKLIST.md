@@ -4425,3 +4425,15 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - First run [42678706851](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678706851) stopped on legacy test expectations only: two assertions expected the former inline dock arithmetic and two expected the prior cache token. The newly added viewport geometry tests passed.
 - Test-only correction commit: `c73644bfff2a90075d72062a143b6974dbecb172`.
 - Final successful run: [42678936798](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/42678936798).
+
+
+## Working-branch correction — 13 November 2026
+
+- Confirmed from the repository-wide latest GitHub Actions run: the active/latest development line for this work is `feature/ai-live-tone-studio`, not `feature/editor-reference-one-screen`.
+- Current branch HEAD: `758e64dd796f2694022a7cfcd911137f36a507f1` — `Test compact adaptive AI conversation panel sizing`.
+- Latest Actions run: [#765](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43424035768), run ID `43424035768`, exact same HEAD SHA, completed successfully on 13 November 2026.
+- CI evidence: **441 tests passed, 0 failed**; Android `assembleDebug` succeeded; debug APK uploaded as artifact `MG30-Studio-debug-APK`, artifact ID `14035069137`. Artifact ZIP digest: `ca16fb6368f72850c00a22a8bfbbbf415c4dc8a8611b8fb3c6d1f9bc915ae788`.
+- This is a debug APK, not a signed Community release. Do not label it as a signed release or infer physical MG-30 validation from CI.
+- `feature/editor-reference-one-screen` is an older, diverged line. It remains a historical UI baseline only; do not treat it as the current working branch unless explicitly requested.
+- The resumption audit commit `9dc1ff0e1b666f68d339ac84ae0a69615977e63b` was documentation-only and was written to the older branch before this correction. No application source was changed by that audit.
+- Going forward, inspect and continue from `feature/ai-live-tone-studio`; preserve the existing original MG-30 Gen 2 NAM A2-Lite transfer path, IR User/Collection protocol separation, MIDI mappings, and Studio routing.
