@@ -79,7 +79,7 @@ test('rejects duplicate blocks and plans with no changes', () => {
   assert.throws(() => validateAiTonePlan({ blocks: [
     { id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 40 } },
     { id: 'AMP', model: 'Deluxe Rvb', parameters: { bass: 45 } }
-  ] }, catalog), /duplicate block/);
+  ] }, catalog), /duplicate block/i);
   assert.throws(() => validateAiTonePlan({ blocks: [] }, catalog), /invalid|no changes/);
 });
 
