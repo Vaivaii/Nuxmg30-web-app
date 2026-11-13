@@ -285,7 +285,6 @@ function getRedirectUri() {
 }
 
 async function startSelectFlow(options = {}) {
-  await loadOAuthData();
   const clientId = (localStorage.getItem(PREFIX + 'client_id') || $('t3kClientId')?.value || '').trim();
   if (!/^t3k_pub_[A-Za-z0-9_-]+$/.test(clientId)) {
     setStatus('Enter a valid TONE3000 publishable key before opening the catalog.');
@@ -297,6 +296,7 @@ async function startSelectFlow(options = {}) {
   }
   try {
     $('t3kChooseTone').disabled = true;
+    await loadOAuthData();
     setStatus('Preparing TONE3000 authentication…');
     const verifier = makeRandomToken();
     const state = makeRandomToken();
@@ -591,7 +591,7 @@ async function loadSelectedTone(toneId, options = {}) {
       toneId: snapshot.toneId, tone: snapshot.tone,
       models: snapshot.models.map(model => ({ id: model.id, name: model.name,
         architecture: model.architecture, architecture_version: model.architecture_version,
-        size: model.size, description: model.description }))
+        size: model.size, description: model.description, downloadable: Boolean(model.model_url) }))
     }}));
     setStatus(snapshot.models.length
       ? snapshot.models.length + ' models loaded in MG30 Studio. Select a model and choose Download & Import.'
@@ -664,7 +664,7 @@ async function sendModel(index, button, options = {}) {
   const model = selectedTone?.models?.[index];
   if (!model?.model_url) { setStatus('The model download URL is not available.'); return false; }
   if (!Native()) { setStatus('Direct import is available only in the Android APK with USB OTG.'); return false; }
-  const slotNumber = Number(options.slotNumber ?? $('t3kTargetSlot')?.value ?? localStorage.getItem(PREFIX + 'target_slot') ?? 0);
+  const slotNumber = Number(options.slotNumber ?? ($('t3kTargetSlot')?.value || localStorage.getItem(PREFIX + 'target_slot') || 0));
   if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 10) {
     setStatus('Select an MG-30 target slot from 1 to 10.');
     $('t3kTargetSlot')?.focus();
