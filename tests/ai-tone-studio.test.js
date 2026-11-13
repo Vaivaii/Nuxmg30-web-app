@@ -221,7 +221,7 @@ test('AI defaults to automatic fastest-ready provider and model selection while 
 test('automatic provider probes use a short timeout and cache the fastest healthy order', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /autoProviderHealthCache\.expires=Date\.now\(\)\+45_000/);
-  assert.match(source, /row\\.id,10000/);
+  assert.ok(source.includes('row.id,10000'));
   assert.match(source, /Promise\.all\(candidates\.map/);
   assert.match(source, /sort\(\(a,b\)=>a\.latency-b\.latency\)/);
 });

@@ -4502,3 +4502,5 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 - Follow-up test maintenance: automatic-model dropdown and probe timeout assertions updated to the per-provider Auto model implementation. GPT + Gemini collaboration now also resolves the fastest ready model independently for both providers.
 
 - CI #774 stale test expectations corrected: English summary assertion follows updated concise wording, and short-probe timeout assertion now matches row.id,10000.
+
+- CI #775 confirmed the remaining two failures were regex-escaping in test assertions, not runtime code. Assertions now use literal source inclusion for row.id,10000.
