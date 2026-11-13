@@ -165,7 +165,7 @@ async function init(){
   const source=event.target.closest('[data-ai-nam-source]')?.dataset.aiNamSource;
   if(source==='builtin'){
    namFlowActive=false;ui.namWizard.hidden=true;
-   ui.prompt.value=(ui.prompt.value.trim()?ui.prompt.value.trim()+'\\n\\n':'')+'Use a built-in MG-30 amp model, not a NAM capture. ';$('aiToneCount').textContent=ui.prompt.value.length+'/1400';ui.prompt.focus();
+   ui.prompt.value=(ui.prompt.value.trim()?ui.prompt.value.trim()+'\n\n':'')+'Use a built-in MG-30 amp model, not a NAM capture. ';$('aiToneCount').textContent=ui.prompt.value.length+'/1400';ui.prompt.focus();
    message('ai','Built-in MG-30 Amp selected. Describe the sound you want, then send your tone request.');return;
   }
   if(source==='nam'){showNamGearChoice();message('ai','TONE3000 NAM selected. Choose Amp Only or Amp + Cab.');return;}
