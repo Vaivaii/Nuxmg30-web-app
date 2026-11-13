@@ -104,3 +104,56 @@ Key verified findings:
 - Existing transfer builder accepts slots 1–10 and can be reused for AI slot 10. Slot 10 is not currently reserved for AI; manual import target behavior must remain unchanged. AI must read names and ask before overwrite.
 - Existing `/tones/search` is not used by the app. TONE3000 recommends Select for catalog browsing/search, and unrestricted search is rate-limited / subject to API tier terms. Initial AI workflow should filter the official Select experience by Amp or Amp + Cab; autonomous global search requires confirmation of permitted API access.
 - No application source, TONE3000 OAuth, NAM transfer, IR transfer, MIDI mapping, or Community .32 release code was changed during this audit.
+
+## TONE3000 / AI NAM integration implementation — 2026-11-13
+
+**Implementation branch:** `feature/ai-live-tone-studio`  
+**Build commit:** `f98a5566a6dfc4db4af62807b950206352aa5de1`  
+**Workflow:** [run 43406308926 / build #755](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43406308926)
+
+### Implemented
+
+- Reused the existing TONE3000 OAuth Authorization Code + PKCE flow and Publishable Key. No second TONE3000 credential field or OAuth session was added.
+- Extended the existing `MG30SecureStorePlugin` namespace to accept `tone3000`. TONE3000 access token, refresh token, expiry, PKCE verifier, state, and redirect URI are now stored as one encrypted bundle using the existing Android Keystore AES-GCM key.
+- Added one-time backward-compatible migration from the old `mg30-t3k-*` localStorage token/PKCE keys. Plaintext keys are removed only after encrypted storage reads successfully or migration is saved. The Publishable Key/client_id remains in its existing public client-side setting.
+- Added the AI source-choice wizard: **Built-in MG-30 Amp** or **TONE3000 NAM**. The existing built-in AI Tone Plan catalog continues to exclude NAM slot models via `AMP_STANDARD_MODEL_COUNT`.
+- Added the capture-type choice **Amp Only** (`gears=amp`) or **Amp + Cab** (`gears=amp-cab`) to the existing TONE3000 Select flow. The flow still requests `format=nam` and `architecture=2`.
+- Exposed a narrow `window.NUXTONE3000Bridge` from `tone3000.js`. AI does not contain a duplicate OAuth implementation and does not receive access/refresh tokens.
+- After a tone is selected and its A2 model list has loaded, the bridge publishes candidate metadata to the AI UI. Candidates with no model download URL are disabled.
+- AI import is fixed to **MG-30 NAM Slot 10**. Before downloading or writing, it connects and runs the existing two-pass slot metadata/name read. If slot 10 metadata is not successfully readable, the write is blocked. When readable, the confirmation dialog identifies its current device label and the candidate model before any overwrite.
+- A candidate file is downloaded and validated through the existing `extractMG30A2LiteWeights()` A2-Lite validator before being saved to NAM Library or transferred. The same `buildMG30A2LiteTransferPlan()` and `sendMG30A2LiteTransfer()` functions perform the device transfer.
+- Successful AI import keeps the downloaded file in the persistent NAM Library and closes the candidate list to prevent accidental repeated imports.
+- The manual NAM/TONE3000 target-slot selector remains independent and continues to use the user's selected slot; only the AI bridge enforces slot 10.
+
+### Files changed
+
+- `www/tone3000.js`
+- `www/ai-tone-studio.js`
+- `native-android/MG30SecureStorePlugin.java`
+- `tests/tone3000-ai-nam.test.js`
+
+No changes were made to:
+- `www/nam-transfer.js` (the verified original Gen 2 transfer codec)
+- `www/nam-model-library-ui.js` (manual NAM Library workflow)
+- `www/ir-transfer.js` or IR User / Third Party / Collection mapping
+- Existing NUX MIDI mappings or native MIDI communication
+- The live AI tone-block editor MIDI bridge/Undo behavior
+- Community .32 release branch
+
+### Automated build result
+
+- GitHub Actions run: **43406308926**, build #755, conclusion **success**.
+- Regression test suite: **434 passed, 0 failed**.
+- Capacitor Android generation and native plugin registration: **passed**.
+- Gradle `assembleDebug`: **passed**.
+- APK upload: **passed**, artifact ID `14027322527`.
+- Artifact ZIP size: **4,298,128 bytes**; SHA-256 `3578b851d357aa0875e13b0547230aed1d4ddb632479efd8f8b9664a5565841c`.
+- Extracted APK size: **4,676,400 bytes**; SHA-256 `7104746493f907770f3accfa9bf4d8c8c52fc579f9699457c44d27e767bf2bda`.
+- The APK ZIP archive passed integrity testing, and the packaged JS bundle contains `NUXTONE3000Bridge`, the two capture types, and slot-10 import UI.
+
+### Known scope limits / pending verification
+
+- This first integration uses the official TONE3000 **Select** catalog flow: the user still browses/selects a tone inside TONE3000. The app then displays the A2 models from that selected tone. Autonomous AI-driven search across the entire TONE3000 catalog by prompt is not implemented; the API documentation recommends Select for browse/search and places extra rate-limit/API-tier conditions on direct search.
+- A TONE3000 model tagged architecture A2 is only a catalog candidate. File-level A2-Lite validation remains mandatory and can reject a candidate before transfer.
+- The device protocol confirms write ACK frames and two-pass slot-name/metadata readback. It does **not** read back model weights, so a successful status is not a byte-for-byte weight verification.
+- No physical MG-30 transfer or audio audition was performed by CI. Install this APK on Android, reconnect the original MG-30 Gen 2 firmware 6.0.x, run one controlled import to slot 10, confirm a pre-existing slot-10 name triggers an overwrite prompt, then audition the result. Do not use the MKII for acceptance.
