@@ -1,6 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 const SecureStore=registerPlugin('MG30SecureStore');
-const OPENAI_MODEL='gpt-6-astra',GEMINI_MODEL='gemini-3.8-flash';
+const OPENAI_MODEL='gpt-6-luna',GEMINI_MODEL='gemini-3.8-flash';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -111,7 +111,7 @@ async function init(){
  '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>API Provider</h4><p>API key disimpan terenkripsi di perangkat Android menggunakan Android Keystore.</p>',
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiKey">OpenAI API Key (GPT)</label><input id="aiOpenAiKey" type="password" autocomplete="off" placeholder="sk-…"><span class="ai-tone-key-state" id="aiOpenAiKeyState">Belum diperiksa</span></div>',
  '<div class="ai-tone-key-field"><label for="aiGeminiKey">Gemini API Key</label><input id="aiGeminiKey" type="password" autocomplete="off" placeholder="AIza…"><span class="ai-tone-key-state" id="aiGeminiKeyState">Belum diperiksa</span></div></div>',
- '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiModel">Model GPT</label><input id="aiOpenAiModel" value="gpt-6-astra"></div><div class="ai-tone-key-field"><label for="aiGeminiModel">Model Gemini</label><input id="aiGeminiModel" value="gemini-3.8-flash"></div></div>',
+ '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiModel">Model GPT</label><input id="aiOpenAiModel" value="gpt-6-luna"></div><div class="ai-tone-key-field"><label for="aiGeminiModel">Model Gemini</label><input id="aiGeminiModel" value="gemini-3.8-flash"></div></div>',
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Simpan API Key</button><button id="aiToneTestOpenAi" type="button">Tes GPT</button><button id="aiToneTestGemini" type="button">Tes Gemini</button><button id="aiToneDeleteOpenAi" type="button">Hapus GPT</button><button id="aiToneDeleteGemini" type="button">Hapus Gemini</button></div>',
  '<p class="ai-tone-note">Enkripsi melindungi key saat tersimpan. Saat permintaan, key digunakan sementara dan dikirim langsung ke provider. Distribusi publik sebaiknya memakai gateway backend.</p></div>',
  '<div class="ai-tone-provider-row"><button class="ai-tone-provider on" data-ai-provider="gpt" type="button">GPT</button><button class="ai-tone-provider" data-ai-provider="gemini" type="button">Gemini</button><button class="ai-tone-provider" data-ai-provider="collab" type="button">GPT + Gemini</button></div>',
