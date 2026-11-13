@@ -183,7 +183,7 @@ async function init(){
    const result=await bridge.importModel(modelId,{slotNumber:10,confirmOverwrite:true});
    if(result?.cancelled){message('ai','NAM import canceled. Slot 10 was not changed.');status('Import canceled.','idle');return;}
    if(!result?.success)throw new Error('The NAM import did not complete.');
-   namFlowActive=false;ui.namWizard.hidden=true;
+   namFlowActive=false;ui.namWizard.hidden=true;ui.namResults.hidden=true;
    message('ai','Imported '+(result.modelName||'the selected NAM')+' to MG-30 slot 10. A copy is retained in NAM Library. The device protocol confirms write ACKs and slot metadata/name, but does not read back model weights; audition the sound on the pedal.');
    status('NAM imported to slot 10. Play the guitar to verify the capture.','success');
   }catch(error){message('ai','NAM import failed: '+(error.message||error));status('NAM import failed: '+(error.message||error),'error');}
