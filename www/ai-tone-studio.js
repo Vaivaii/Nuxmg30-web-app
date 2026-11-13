@@ -57,7 +57,9 @@ async function postJson(url,options,timeoutMs=90000){
  }catch(e){if(e?.name==='AbortError')throw new Error('The AI request timed out after 90 seconds.');throw e;}
  finally{window.clearTimeout(timer);}
 }
-function systemPrompt(catalog,snapshot,review){
+export function compactToneContext(catalog,snapshot){const c=(catalog||[]).map(b=>({id:b.id,currentModel:b.currentModel,models:(b.models||[]).map(m=>({name:m.name,kind:m.kind,slot:m.slot,parameters:(m.parameters||[]).map(p=>p.kind==='discrete'?{key:p.key,kind:p.kind,choices:(p.choices||[]).map(x=>x.value)}:{key:p.key,kind:p.kind})}))}));const s=(snapshot||[]).map(b=>({id:b.id,model:b.model,enabled:b.enabled,parameters:b.parameters||{}}));return {catalog:c,snapshot:s};}
+export function artistToneGuidance(prompt){const p=String(prompt||'').toLowerCase();if(/\b(john\s*mayer|mayer)\b/.test(p))return 'ARTIST TONE: John Mayer-inspired blues/pop lead. Prefer touch-sensitive clean to edge-of-breakup response, warm lows, present mids, restrained treble, subtle modulation, short/medium delay and tasteful spring/plate/hall reverb. Avoid high-gain metal voicing. This is a stylistic target, not a claim about exact studio gear.';if(/\b(john\s*petrucci|petrucci|dream\s*theater)\b/.test(p))return 'ARTIST TONE: John Petrucci / progressive-metal lead. Prefer tight high gain, controlled low end, focused upper mids, articulate sustain, noise control if available, lead delay and restrained reverb. Do not default to blues edge-of-breakup.';if(/\b(joe\s*satriani|satriani)\b/.test(p))return 'ARTIST TONE: Joe Satriani-inspired melodic rock lead. Prefer expressive saturated singing mids, smooth highs, sustain, rhythmic delay, subtle modulation and moderate reverb. Do not reuse a Petrucci metal or Mayer low-gain chain unchanged.';return 'ARTIST / STYLE INTENT: infer gain, dynamics, amp voicing and ambience from this request. Avoid a generic chain by default.';}
+function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
  'You are a live tone editor for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII.',
  'Return only JSON: {"summary":"English summary","blocks":[{"id":"AMP","model":"Deluxe Rvb","enabled":true,"parameters":{"gain":35}}],"notes":[]}.',
@@ -68,10 +70,12 @@ function systemPrompt(catalog,snapshot,review){
  'Never change IR/User/Third Party/Collection IR, NAM internal parameters, Send/Return, Volume, scene, preset slot, MIDI mapping or signal-chain order.',
  'The AMP catalog may expose NAM Slot 10 as a selection-only model. When installed NAM context is supplied, do not propose any AMP block; the application selects imported slot 10 deterministically. Never write NAM internal controls and never select NAM slots 1–9.',
  'Do not output MIDI, SysEx, preset bytes or import instructions. The app validates and writes parameter changes through its current editor path.',
- 'Preserve every block not listed. Provide sensible moderate tone settings. Keep the summary and notes in English. Always respond in English, regardless of the language used in the user prompt.'
+ 'Preserve every block not listed. Make amp, gain, EQ, modulation, delay and reverb choices specific to the requested artist/style, not generic moderate settings. Different artists should not receive the same default amp/effect chain unless the catalog and request justify it. Change actual models where musically necessary, not only numeric values. Never claim an exact artist rig; describe it as inspired by the sound. Keep summary and notes in English.'
  ];
- if(review)lines.push('You are the Gemini reviewer in collaboration mode. Critique the GPT proposal for tone balance and catalog correctness, then return the complete final changed-block proposal, not commentary only.');
- return lines.join('\n')+'\n\nAPP CATALOG:\n'+JSON.stringify(catalog)+'\n\nCURRENT EDITOR:\n'+JSON.stringify(snapshot);
+ if(toneGuidance)lines.push(toneGuidance);
+ if(review)lines.push('You are the Gemini reviewer in collaboration mode. Check artist/style specificity and catalog correctness, then return the complete final changed-block proposal.');
+ const compact=compactToneContext(catalog,snapshot);
+ return lines.join('\n')+'\n\nAPP CATALOG (compact):\n'+JSON.stringify(compact.catalog)+'\n\nCURRENT EDITOR (compact):\n'+JSON.stringify(compact.snapshot);
 }
 function userText(prompt,candidate,namContext){return 'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider){const r=await SecureStore.getSecret({provider});return String(r?.value||'');}
@@ -144,11 +148,12 @@ export function providerFallbackOrder(primary='gemini'){
 }
 export function isRetryableProviderError(error){
  const value=String(error?.message||error||'');
- return /\b(408|425|429|498|500|502|503|504)\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|high demand|demand spike|server busy|temporarily busy|timed? out|network|failed to fetch/i.test(value);
+ return /\b(408|425|429|498|500|502|503|504)\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|high demand|demand spike|server busy|temporarily busy|timed? out|network|failed to fetch|tokens? per minute|\bTPM\b|request too large|reduce your message size|requested \d+.*limit \d+/i.test(value);
 }
 function niceError(e,provider){
  const s=String(e?.message||e||'Unknown error');
  if(/401|unauthorized|invalid.*key|api key not valid/i.test(s))return provider+': API key was rejected.';
+ if(/tokens? per minute|\bTPM\b|request too large|reduce your message size/i.test(s))return provider+': request exceeds this model token-throughput limit; trying another model/provider may help. No pedal changes were sent.';
  if(/429|quota|rate.?limit|resource_exhausted/i.test(s))return provider+': quota or rate limit reached; no pedal changes were sent.';
  if(/failed to fetch|network|cors|internet/i.test(s))return provider+': network or provider unavailable; no pedal changes were sent.';
  return provider+': '+s;
@@ -289,26 +294,30 @@ async function init(){
  const providerModels={gpt:[],gemini:[],groq:[],openrouter:[]};
  const modelStorageKey=p=>'mg30-ai-model-'+p;
  const autoProviderHealthCache={expires:0,order:[],errors:[]};
+ const autoModelHealthCache={};
  const activeModelProvider=()=>mode==='collab'?'gpt':mode==='auto'?'gemini':mode;
  function selectedModel(provider){
   const key=provider==='collab'?'gpt':provider;
+  if(localStorage.getItem('mg30-ai-model-manual-'+key)!=='1')return '';
   const active=key===activeModelProvider()?ui.activeModel.value:'';
-  return String(active||localStorage.getItem(modelStorageKey(key))||'').trim();
+  return String((active&&active!=='__auto__'?active:'')||localStorage.getItem(modelStorageKey(key))||'').trim();
  }
  function renderActiveModelSelect(){
   const provider=activeModelProvider(),select=ui.activeModel;
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
   const models=providerModels[provider]||[];
   select.replaceChildren();
+  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent='Auto · fastest available';select.append(autoOption);
   if(models.length){
    for(const row of models){
     const option=document.createElement('option');option.value=row.id;
     option.textContent=row.name===row.id?row.id:(row.name+' · '+row.id);
     select.append(option);
    }
-   const chosen=models.some(row=>row.id===saved)?saved:(models[0]?.id||'');
+   const manual=localStorage.getItem('mg30-ai-model-manual-'+provider)==='1';
+   const chosen=manual&&models.some(row=>row.id===saved)?saved:'__auto__';
    select.value=chosen;select.disabled=false;
-   if(chosen)localStorage.setItem(modelStorageKey(provider),chosen);
+   if(chosen!=='__auto__')localStorage.setItem(modelStorageKey(provider),chosen);
   }else if(saved){
    const option=document.createElement('option');option.value=saved;
    option.textContent='Saved model (catalog refresh unavailable): '+saved;
@@ -318,8 +327,8 @@ async function init(){
    option.textContent='Save '+providerNames[provider]+' key to load models';
    select.append(option);select.disabled=true;
   }
-  ui.activeModelLabel.textContent=mode==='collab'?'GPT Model (Gemini reviewer uses its saved model)':mode==='auto'?'Auto selects the fastest ready model':'Model';
-  if(mode==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='';option.textContent='Automatically selected for each request';select.append(option);select.disabled=true;}
+  ui.activeModelLabel.textContent=mode==='collab'?'GPT Model (Gemini reviewer uses its saved model)':mode==='auto'?'Auto provider + fastest model':'Model';
+  if(mode==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent='Auto · provider and model selected per request';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
@@ -378,33 +387,30 @@ async function init(){
   if(provider==='gemini')return gemini(key,system,user,model,timeoutMs);
   return openAiCompatible(key,system,user,model,provider,timeoutMs);
  }
+ async function fastestReadyModel(provider,key){
+  if(selectedModel(provider))return selectedModel(provider);
+  const cached=autoModelHealthCache[provider];if(cached&&Date.now()<cached.expires)return cached.model;
+  let models=providerModels[provider]||[];if(!models.length)models=await refreshProviderModels(provider,true);
+  const score=id=>{const v=String(id).toLowerCase();if(provider==='gemini')return /flash-lite/.test(v)?0:/flash/.test(v)?1:4;if(provider==='groq')return /llama-3.1-8b-instant|llama-3.3-70b-versatile|qwen.*32b/.test(v)?0:/instant|8b/.test(v)?1:4;if(provider==='openrouter')return v==='openrouter/free'?0:/free/.test(v)?1:4;return /gpt-4.1-mini|gpt-4o-mini|gpt-5-mini/.test(v)?0:/mini/.test(v)?1:4;};
+  const candidates=models.slice().sort((a,b)=>score(a.id)-score(b.id)).slice(0,3);if(!candidates.length)throw new Error('No text model is available for '+providerNames[provider]+'.');
+  const probes=await Promise.all(candidates.map(async row=>{const started=Date.now();try{await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',row.id,10000);return {id:row.id,latency:Date.now()-started};}catch(error){return {id:row.id,error,latency:Date.now()-started};}}));
+  const ready=probes.filter(x=>!x.error).sort((a,b)=>a.latency-b.latency);if(!ready.length)throw new Error(providerNames[provider]+' has no responding model: '+probes.map(x=>x.id+' '+(x.error?.message||'')).join('; '));
+  autoModelHealthCache[provider]={model:ready[0].id,expires:Date.now()+45_000};return ready[0].id;
+ }
  async function fastestReadyProviderOrder(){
   if(Date.now()<autoProviderHealthCache.expires&&autoProviderHealthCache.order.length)return autoProviderHealthCache.order.slice();
-  await refreshAllProviderModels(true);
-  const candidates=[];
-  for(const provider of ['gemini','groq','openrouter','gpt']){
-   const key=await secret(providerKeyId(provider));const model=selectedModel(provider);
-   if(key&&model)candidates.push({provider,key,model});
-  }
-  if(!candidates.length)throw new Error('Auto mode found no saved AI provider keys and models. Save at least one provider API key in AI Settings.');
-  status('Checking which saved AI provider responds fastest…','busy');
-  const probes=await Promise.all(candidates.map(async candidate=>{
-   const started=Date.now();
-   try{await invokeProvider(candidate.provider,candidate.key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',candidate.model,12000);return {...candidate,latency:Date.now()-started,ok:true};}
-   catch(error){return {...candidate,latency:Date.now()-started,ok:false,error};}
-  }));
-  const ready=probes.filter(item=>item.ok).sort((a,b)=>a.latency-b.latency);
-  autoProviderHealthCache.expires=Date.now()+45_000;autoProviderHealthCache.order=ready.map(item=>item.provider);
-  autoProviderHealthCache.errors=probes.filter(item=>!item.ok).map(item=>({provider:item.provider,message:String(item.error?.message||item.error)}));
-  if(!ready.length){const detail=probes.map(item=>providerNames[item.provider]+': '+(item.error?.message||'unavailable')).join(' · ');throw new Error('No saved AI provider is responding right now. '+detail);}
-  message('ai','Auto selected '+providerNames[ready[0].provider]+' / '+ready[0].model+' ('+ready[0].latency+' ms probe). Other available providers remain ready as fallback.');
-  return autoProviderHealthCache.order.slice();
+  await refreshAllProviderModels(true);const providers=['gemini','groq','openrouter','gpt'];
+  const probes=await Promise.all(providers.map(async provider=>{const key=await secret(providerKeyId(provider));if(!key)return {provider,ok:false,error:new Error('API key not saved')};const started=Date.now();try{const model=await fastestReadyModel(provider,key);return {provider,model,latency:Date.now()-started,ok:true};}catch(error){return {provider,latency:Date.now()-started,ok:false,error};}}));
+  const ready=probes.filter(x=>x.ok).sort((a,b)=>a.latency-b.latency);autoProviderHealthCache.expires=Date.now()+45_000;autoProviderHealthCache.order=ready.map(x=>x.provider);autoProviderHealthCache.errors=probes.filter(x=>!x.ok).map(x=>({provider:x.provider,message:String(x.error?.message||x.error)}));
+  if(!ready.length)throw new Error('No saved AI provider/model is responding right now. '+probes.map(x=>providerNames[x.provider]+': '+(x.error?.message||'unavailable')).join(' · '));
+  message('ai','Auto selected '+providerNames[ready[0].provider]+' / '+ready[0].model+' ('+ready[0].latency+' ms model probe).');return autoProviderHealthCache.order.slice();
  }
  async function testProvider(provider){
   setBusy(true);status('Testing '+providerNames[provider]+' API…','busy');
   try{
    const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' API key has not been saved.');
-   await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',selectedModel(provider));
+   const model=await fastestReadyModel(provider,key);
+   await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',model);
    status(providerNames[provider]+' API responded successfully.','success');
   }catch(error){status(niceError(error,provider),'error');}
   finally{setBusy(false);}
@@ -422,7 +428,7 @@ async function init(){
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
    if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' key');continue;}
-   const model=selectedModel(provider)||String(providerModels[provider]?.[0]?.id||'');
+   const model=await fastestReadyModel(provider,key);
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
     status(providerNames[provider]+' is '+stage+'…','busy');
@@ -459,7 +465,7 @@ async function init(){
  async function chooseNamModel(prompt,tone,models,rejected=[]){
   const candidates=models.filter(m=>!rejected.includes(String(m.id))).slice(0,18).map(m=>({id:String(m.id),name:m.name,size:m.size,architecture:m.architecture_version??m.architecture,description:m.description,downloadable:Boolean(m.model_url)}));
   if(!candidates.length)throw new Error('No remaining downloadable A2-Lite captures are available in the selected TONE3000 tone.');
-  const system='Choose the best downloadable A2-Lite NAM capture for the requested guitar tone from this one TONE3000 tone pack. Return JSON only: {"modelId":"123","reason":"short English reason"}. Select only an ID from CANDIDATES. Do not choose a model without a download URL. Prefer size lite; the file will still be validated against the MG-30 Gen-2 A2-Lite 1,871-weight format before device writes.';
+  const system='Choose the best downloadable A2 NAM capture for the requested guitar tone from this one TONE3000 tone pack. Return JSON only: {"modelId":"123","reason":"short English reason"}. Select only an ID from CANDIDATES. Do not choose a model without a download URL. Prefer a capture whose downloaded file can be extracted and validated by the MG-30 Gen-2 weight extractor. Do not assume catalogue size labels determine compatibility; the actual file validator is authoritative.';
   const result=await askNamAIJson(system,'USER REQUEST:\\n'+prompt+'\\nSELECTED TONE:\\n'+JSON.stringify({name:tone.tone?.name||tone.name,creator:tone.tone?.creator||tone.creator,description:tone.tone?.description||tone.description,gear:tone.gear})+'\\nCANDIDATES:\\n'+JSON.stringify(candidates)+'\\nREJECTED MODEL IDS:\\n'+JSON.stringify(rejected),'selecting the closest A2-Lite capture');
   const model=models.find(m=>String(m.id)===String(result?.modelId||'')&&m.model_url);
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
@@ -529,7 +535,7 @@ async function init(){
  }
  async function makePlan(prompt,bridge){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
-  const proposal=await askNamAIJson(systemPrompt(catalog,snapshot,false),userText(prompt,null,activeNamContext),'building your Tone Plan');
+  const proposal=await askNamAIJson(systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt)),userText(prompt,null,activeNamContext),'building your Tone Plan');
   return validateAiTonePlan(proposal,catalog);
  }
  async function submit(){
@@ -585,7 +591,7 @@ async function init(){
  ui.autoFallback.checked=localStorage.getItem('mg30-ai-auto-fallback')!=='0';
  ui.autoFallback.addEventListener('change',()=>localStorage.setItem('mg30-ai-auto-fallback',ui.autoFallback.checked?'1':'0'));
  ui.providerSelect.value=mode;ui.providerSelect.addEventListener('change',()=>setMode(ui.providerSelect.value));
- ui.activeModel.addEventListener('change',()=>{const provider=activeModelProvider();if(ui.activeModel.value)localStorage.setItem(modelStorageKey(provider),ui.activeModel.value);});
+ ui.activeModel.addEventListener('change',()=>{const provider=activeModelProvider();if(ui.activeModel.value==='__auto__'){localStorage.setItem('mg30-ai-model-manual-'+provider,'0');delete autoModelHealthCache[provider];}else if(ui.activeModel.value){localStorage.setItem(modelStorageKey(provider),ui.activeModel.value);localStorage.setItem('mg30-ai-model-manual-'+provider,'1');}autoProviderHealthCache.expires=0;});
  $('aiToneUndo').addEventListener('click',undo);$('aiToneSend').addEventListener('click',submit);
  ui.prompt.addEventListener('input',()=>{$('aiToneCount').textContent=ui.prompt.value.length+'/1400';});
  ui.prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});

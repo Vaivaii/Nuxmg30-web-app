@@ -4490,3 +4490,11 @@ User confirmed the NAM Model Library panel now appears and requested only visual
 
 
 - CI follow-up: updated the pre-existing provider-default assertion from Gemini to the newly requested Auto fastest-ready default; the initial CI run showed only this stale expectation (455/456 passed), not a runtime or syntax failure.
+
+
+## User field report follow-up — Groq TPM, automatic model selection and artist-specific tone planning — 2026-11-13
+
+- Groq reported TPM limit 8,000 versus 12,508 requested tokens. AI context is compacted to model names, parameter keys/discrete choices and current values; TPM/request-too-large errors are fallback eligible. No pedal writes occur on a rejected request.
+- Model selection defaults to Auto · fastest available for each provider, including manually selected Gemini/Groq/OpenRouter/GPT. Up to three candidate models are probed with short requests; the fastest successful model is cached 45 seconds. Selecting a concrete dropdown model is an explicit manual override. Auto provider mode ranks providers using their fastest-ready model.
+- Artist-specific guidance differentiates Mayer clean/edge-of-breakup, Petrucci tight high-gain, and Satriani singing saturated melodic-rock lead. These are stylistic targets, not claims about exact artist studio rigs. Prompt instructs AI to choose catalog-supported models/effects rather than repeat one generic chain.
+- Compact context preserves validator schema and discrete choices. NAM transfer, slot 10, manual NAM target, IR User/Third Party/Collection and MIDI mappings are untouched. CI and hardware verification pending.
