@@ -79,7 +79,7 @@ test('rejects duplicate blocks and plans with no changes', () => {
   assert.throws(() => validateAiTonePlan({ blocks: [
     { id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 40 } },
     { id: 'AMP', model: 'Deluxe Rvb', parameters: { bass: 45 } }
-  ] }, catalog), /duplikat/);
+  ] }, catalog), /lebih dari sekali/);
   assert.throws(() => validateAiTonePlan({ blocks: [] }, catalog), /tidak valid|kosong/);
 });
 
@@ -98,6 +98,8 @@ test('live bridge keeps AI writes inside existing parameter CC path and excludes
   assert.match(html, /BLOCKS\.slice\(0,9\)/);
   assert.match(html, /await midiSend\(\[0xB0,cc/);
   assert.match(html, /aiSendCC\(parameter\.cc,parameter\.rawValue\)/);
+  assert.match(html, /ai-tone-midi-transaction/);
+  assert.match(source, /ai-tone-midi-transaction #page-editor/);
   assert.doesNotMatch(html.slice(html.indexOf('window.MG30AIToneBridge=Object.freeze'), html.indexOf('window.MG30CtrlBridge=Object.freeze')), /sendMg30SysEx|midiFrame\(/);
 });
 
