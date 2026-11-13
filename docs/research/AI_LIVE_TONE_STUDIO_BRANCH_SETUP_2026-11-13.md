@@ -289,3 +289,5 @@ No changes were made to:
 - NAM transfer, slot-10 scan, overwrite confirmation, persistent NAM Library save, manual NAM destination, IR User/Third Party/Collection, and MIDI mappings are unchanged. CI and physical-device verification pending.
 
 - CI #778: updated prior assertions for the new pending capture-choice stage and compact tuple schema; restored the exact API total diagnostic label in zero-result errors. Full CI rerun pending.
+
+- CI #779: retained the established USB-MIDI status wording and capture-size diagnostic phrase used by the existing test contract. Logic unchanged.

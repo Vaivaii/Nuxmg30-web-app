@@ -504,7 +504,7 @@ async function init(){
    message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', A2 NAM).');
    status('Searching the TONE3000 NAM catalog…','busy');
    const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
-   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. No file downloaded or pedal data changed.');}
+   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. Capture-size filtering is deferred until model download. No file downloaded or pedal data changed.');}
    const selection=await chooseNamTone(prompt,intent.query,tones);
    message('ai','Selected TONE3000 tone: '+selection.tone.name+(selection.tone.creator?' by @'+selection.tone.creator:'')+'. '+selection.reason);
    const toneOptions=[selection.tone,...tones.filter(t=>String(t.id)!==String(selection.tone.id))].slice(0,3);
@@ -539,7 +539,7 @@ async function init(){
    }
   }
   const editor=window.MG30AIToneBridge;
-  if(!editor?.isConnected?.()){status('NAM found and validated. Connect MG-30 via USB-MIDI, then press Send again to transfer to slot 10. No pedal data has been written.','success');return {pendingConnection:true};}
+  if(!editor?.isConnected?.()){status('NAM found and validated. Connect MG-30 using USB-MIDI, then press Send again to transfer to slot 10. No pedal data has been written.','success');return {pendingConnection:true};}
   status('Checking slot 10 and asking before overwrite if occupied…','busy');
   const imported=await bridge.importModel(selected.model.id,{slotNumber:10,confirmOverwrite:true,prepare:false});
   if(imported?.cancelled){pendingNamSelection=null;throw new Error('NAM import canceled. Slot 10 was not changed.');}
