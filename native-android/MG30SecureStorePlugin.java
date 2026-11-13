@@ -20,7 +20,7 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 
 /**
- * Encrypted at-rest storage for user-supplied AI provider keys.
+ * Encrypted at-rest storage for user-supplied AI provider keys and TONE3000 OAuth session data.
  * The AES key is non-exportable and held by Android Keystore; only ciphertext
  * and the GCM IV are stored in app-private SharedPreferences.
  */
