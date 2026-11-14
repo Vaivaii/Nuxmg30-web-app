@@ -4,6 +4,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import './native-midi.js';
 import './tone3000.js';
 import './ir-transfer.js';
+import { cloudApiRequest } from './cloud-api.js';
 
 const MG30Audio = registerPlugin('MG30Audio');
 const $ = (id) => document.getElementById(id);
@@ -16,8 +17,8 @@ let takeNumber = 0;
 const takes = [];
 let selectedRenameIndex = -1;
 let activePlaybackPath = "";
-const YOUTUBE_API_KEY_STORAGE = 'mg30-youtube-data-api-key';
 let youtubeSearchController = null;
+let youtubeCloudConfigured = false;
 async function applyNativeStatusBar() {
   if (!isNative() || Capacitor.getPlatform() !== 'android') return;
   try {
@@ -484,22 +485,28 @@ $('backingVolume')?.addEventListener('input', (event) => {
   $('backingAudio').volume = value / 100;
 });
 $('backingAudio') && ($('backingAudio').volume = 0.8);
-function savedYoutubeKey() {
-  try { return localStorage.getItem(YOUTUBE_API_KEY_STORAGE) || ''; } catch (_) { return ''; }
-}
-function setYoutubeKeyStatus(saved) {
+function setYoutubeKeyStatus(configured) {
+  youtubeCloudConfigured = !!configured;
   const node = $('youtubeKeyStatus');
   if (node) {
-    node.textContent = saved ? 'API key saved on this device' : 'API key is not configured';
-    node.classList.toggle('is-configured', !!saved);
+    node.textContent = configured ? 'Configured in Cloudflare Worker' : 'Not configured in Cloudflare Worker';
+    node.classList.toggle('is-configured', !!configured);
   }
   const searchHint = $('youtubeSearchHint');
-  if (searchHint) searchHint.textContent = saved ? 'API key siap digunakan' : 'API key diatur dari Device';
+  if (searchHint) searchHint.textContent = configured ? 'Cloud search is ready' : 'Cloudflare Worker secret required';
+}
+async function refreshYoutubeCloudStatus() {
+  try {
+    const data = await cloudApiRequest('/api/v1/youtube/status');
+    setYoutubeKeyStatus(!!data.configured);
+  } catch (error) {
+    setYoutubeKeyStatus(false);
+    if ($('youtubeSearchHint')) $('youtubeSearchHint').textContent = error.message || 'Connect Cloud Account';
+  }
 }
 function showYoutubeApiSettings(show = true) {
   $('youtubeApiSettings')?.classList.toggle('hidden', !show);
   $('youtubeApiToggle')?.setAttribute('aria-expanded', String(!!show));
-  if (show && $('youtubeApiKeyInput')) $('youtubeApiKeyInput').value = savedYoutubeKey();
 }
 function loadYoutubeVideo(videoId) {
   if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId || '')) return;
@@ -538,13 +545,10 @@ function renderYoutubeResults(items) {
 async function searchYoutubeInStudio() {
   const query = $('youtubeSearchInput').value.trim();
   if (!query) { $('youtubeSearchInput').focus(); return; }
-  const key = savedYoutubeKey();
-  if (!key) {
-    setYoutubeKeyStatus(false);
-    const hint = $('youtubeSearchHint');
-    if (hint) hint.textContent = 'Atur API key pada tab Device';
+  if (!youtubeCloudConfigured) await refreshYoutubeCloudStatus();
+  if (!youtubeCloudConfigured) {
     $('youtubeResults').classList.remove('hidden');
-    $('youtubeResults').innerHTML = '<div class="studio-empty">Atur YouTube Data API v3 pada tab Device, lalu cari lagi. Hasil video akan bisa diketuk langsung di sini.</div>';
+    $('youtubeResults').innerHTML = '<div class="studio-empty">Connect Cloud Account and configure YOUTUBE_DATA_API_KEY in the Cloudflare Worker before searching. No API key is stored in this app.</div>';
     return;
   }
   if (youtubeSearchController) youtubeSearchController.abort();
@@ -553,31 +557,14 @@ async function searchYoutubeInStudio() {
   button.disabled = true;
   button.textContent = 'Mencari…';
   $('youtubeResults').classList.remove('hidden');
-  $('youtubeResults').innerHTML = '<div class="studio-empty">Mencari video di YouTube…</div>';
+  $('youtubeResults').innerHTML = '<div class="studio-empty">Searching YouTube through MG30 Cloud…</div>';
   try {
-    const params = new URLSearchParams({
-      part: 'snippet', type: 'video', maxResults: '12', q: query,
-      videoEmbeddable: 'true', key
-    });
-    const response = await fetch('https://www.googleapis.com/youtube/v3/search?' + params.toString(), {
-      method: 'GET', signal: youtubeSearchController.signal
-    });
-    const data = await response.json();
-    if (!response.ok || data.error) {
-      const reason = data.error?.errors?.[0]?.reason || '';
-      const message = data.error?.message || ('HTTP ' + response.status);
-      $('youtubeResults').classList.remove('hidden');
-      $('youtubeResults').innerHTML = '<div class="studio-empty">YouTube search failed: ' + safeText(message) +
-        (reason === 'keyInvalid' ? '<br>Check your API key.' : '') +
-        (reason === 'quotaExceeded' ? '<br>The YouTube Data API daily quota has been exceeded.' : '') +
-        '</div>';
-      return;
-    }
+    const data = await cloudApiRequest('/api/v1/youtube/search?q=' + encodeURIComponent(query), { signal: youtubeSearchController.signal });
     renderYoutubeResults(data.items || []);
   } catch (error) {
     if (error?.name !== 'AbortError') {
       $('youtubeResults').classList.remove('hidden');
-      $('youtubeResults').innerHTML = '<div class="studio-empty">Cannot reach the YouTube Data API. Check your connection, API key and YouTube Data API v3 activation.</div>';
+      $('youtubeResults').innerHTML = '<div class="studio-empty">YouTube Cloud search failed: ' + safeText(error.message || 'Check Cloudflare Worker configuration and YouTube API quota.') + '</div>';
     }
   } finally {
     button.disabled = false;
@@ -585,26 +572,11 @@ async function searchYoutubeInStudio() {
   }
 }
 $('youtubeApiToggle')?.addEventListener('click', () => showYoutubeApiSettings($('youtubeApiSettings').classList.contains('hidden')));
-$('youtubeApiSaveBtn')?.addEventListener('click', () => {
-  const key = $('youtubeApiKeyInput').value.trim();
-  if (!key) { $('youtubeApiKeyInput').focus(); return; }
-  try { localStorage.setItem(YOUTUBE_API_KEY_STORAGE, key); } catch (_) {}
-  setYoutubeKeyStatus(true);
-  showYoutubeApiSettings(false);
-  $('youtubeResults').innerHTML = '<div class="studio-empty">API key saved. Search for a song title or artist again.</div>';
-});
-$('youtubeApiClearBtn')?.addEventListener('click', () => {
-  try { localStorage.removeItem(YOUTUBE_API_KEY_STORAGE); } catch (_) {}
-  $('youtubeApiKeyInput').value = '';
-  setYoutubeKeyStatus(false);
-  $('youtubeResults').innerHTML = '<div class="studio-empty">API key removed from this device.</div>';
-});
-$('youtubeApiConsoleBtn')?.addEventListener('click', () => openExternal('https://console.cloud.google.com/apis/credentials'));
 $('youtubeSearchBtn')?.addEventListener('click', searchYoutubeInStudio);
 $('youtubeSearchInput')?.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') searchYoutubeInStudio();
 });
-setYoutubeKeyStatus(!!savedYoutubeKey());
+void refreshYoutubeCloudStatus();
 $('youtubeLoadBtn')?.addEventListener('click', () => {
   const id = parseYoutubeId($('youtubeUrlInput').value);
   if (!id) {
