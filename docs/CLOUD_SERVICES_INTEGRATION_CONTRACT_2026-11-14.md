@@ -314,3 +314,16 @@ Following device screenshots showing provider test success but model picker rema
 - Changes are limited to `www/ai-tone-studio.js` and its tests. No edits to NAM/IR transfer, collection/user IR semantics, MIDI_PARAM_CC, KNOB_SLOTS, preset codec, or Worker auth/proxy routes.
 
 Build and on-device verification are pending. The new APK must be installed and checked with the original MG-30 Gen 2 connected; a model listing and actual Send/Tone Plan request need separate confirmation.
+
+
+## 20. AI provider picker / Send fix Build #817 (2026-11-14)
+
+- Source commit: `2adef7431efa7721b343719528e96418a649acdb`.
+- Build #817 / run ID `43613794509`: success.
+- Validation: syntax checks passed; **484 tests passed, 0 failed**; Android debug Gradle build and artifact upload succeeded.
+- APK artifact ID: `14121640190`; extracted APK size 4,691,364 bytes.
+- APK SHA-256: `0badaa20f4e0fa61ea729402e967aa98b849b7c4f3ac214662fd90186343fdf5`.
+- APK inspection confirmed the updated UI code is included, including visible AI plan-generation stage and provider selection handler.
+- On-device verification is still pending; user must install this build and verify provider models appear and Send either completes or displays a specific stage error.
+- No Worker deployment or secret changes are required for this UI/app-side correction.
+- No NAM, IR, preset codec, MIDI mapping, or transfer code was modified.
