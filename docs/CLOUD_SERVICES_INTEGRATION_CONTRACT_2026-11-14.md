@@ -290,3 +290,13 @@ User reported the same `Cloud API HTTP 404` for every provider. Source compariso
 - The APK bundle was inspected and contains only `https://nux-mg30-studio-api.vaivai851.workers.dev` as the Cloud gateway host.
 - The APK has not yet been installed/validated on the user's phone. Live provider model-list / Tone Plan calls remain pending that install and authenticated test.
 - This change does not edit NAM, IR transfer, MIDI_PARAM_CC, KNOB_SLOTS, preset codec, or physical MG-30 transfer paths.
+
+
+## 19. AI provider/model selector correction (2026-11-14)
+
+- Updated `www/ai-tone-studio.js` so the currently displayed provider selector is the source of truth for active model selection and model-label rendering; this prevents stale `mode` state from forcing the model dropdown to remain in Auto mode after a provider selection.
+- Selecting Gemini, Groq, OpenRouter or GPT now immediately refreshes that provider's model catalogue. Selecting Auto retains automatic provider/model selection; collaboration mode refreshes GPT and Gemini catalogues.
+- Manual model refresh now reports which provider catalogues returned no models instead of silently leaving an Auto-only dropdown. Provider model fetch failures continue to be isolated per provider.
+- Commit: `ece190846ebdab8536e8470b1e2854a23c6e143f`.
+- CI Build #815 (`43611160084`) was triggered for this source commit; its result and APK artifact are pending at the time of this note.
+- This is an app UI/cloud-catalogue change only. NAM, IR, preset, USB-MIDI and MIDI mapping paths were not edited. Live provider catalogue behavior and physical MG-30 testing still require validation on the installed APK.
