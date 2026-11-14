@@ -77,7 +77,7 @@ async function requireAccount(request, env) {
   const token = bearer(request);
   if (!token) return { ok: false, response: json({ ok: false, error: "Cloud Account login is required." }, 401) };
   if (!env.APP_AUTH_SECRET || !String(env.APP_AUTH_SECRET).trim()) return { ok: false, response: json({ ok: false, error: "Cloud authentication is not configured." }, 503) };
-  const payload = await verifyToken(token.replace(/^Bearer\\s+/i, ""), env.APP_AUTH_SECRET);
+  const payload = await verifyToken(token.slice(7), env.APP_AUTH_SECRET);
   if (!payload) return { ok: false, response: json({ ok: false, error: "Cloud Account session is invalid or expired." }, 401) };
   return { ok: true, user: { username: payload.sub } };
 }
@@ -316,7 +316,7 @@ export default {
       } else if (url.pathname === "/auth/me" && request.method === "GET") {
         if (!String(env.APP_AUTH_SECRET || "").trim()) response = json({ ok: false, code: "AUTH_NOT_CONFIGURED", error: "Server authentication is not configured" }, 500);
         else {
-          const token = bearer(request).replace(/^Bearer\\s+/i, "");
+          const token = bearer(request).slice(7);
           const payload = token ? await verifyToken(token, String(env.APP_AUTH_SECRET).trim()) : null;
           if (!payload) response = json({ ok: false, error: "Unauthorized" }, 401);
           else response = json({ ok: true, user: { username: payload.sub }, expires_at: payload.exp });
@@ -393,23 +393,19 @@ export default {
           response = await proxyTone3000(request, env, url);
         } else if (url.pathname === "/api/v1/tone3000/download" && request.method === "GET") {
           response = await downloadToneModel(request, env, url);
+        } else if (/^\\/api\\/v1\\/tone3000\\/tones\\/\\d+$/.test(url.pathname) && request.method === "GET") {
+          const toneId = url.pathname.split("/").pop();
+          const alias = new URL(url.toString());
+          alias.searchParams.set("path", "/tones/" + toneId + (url.search ? url.search : ""));
+          response = await proxyTone3000(request, env, alias);
+        } else if (url.pathname === "/api/v1/tone3000/models" && request.method === "GET") {
+          const params = new URLSearchParams(url.searchParams); params.delete("path");
+          const alias = new URL(url.toString()); alias.searchParams.set("path", "/models?" + params.toString());
+          response = await proxyTone3000(request, env, alias);
+        } else if (url.pathname === "/api/v1/tone3000/model-download" && request.method === "GET") {
+          const alias = new URL(url.toString()); alias.searchParams.set("url", url.searchParams.get("url") || "");
+          response = await downloadToneModel(request, env, alias);
         } else response = json({ ok: false, error: "Cloud API route not found." }, 404);
-      } else if (/^\\/api\\/v1\\/tone3000\\/tones\\/\\d+$/.test(url.pathname) && request.method === "GET") {
-        const toneId = url.pathname.split("/").pop();
-        const alias = new URL(url.toString());
-        alias.searchParams.set("path", "/tones/" + toneId + (url.search ? url.search : ""));
-        response = await proxyTone3000(request, env, alias);
-      } else if (url.pathname === "/api/v1/tone3000/tones" && request.method === "GET") {
-        const path = "/tones/" + encodeURIComponent(String(url.searchParams.get("id") || "")) + url.search.replace(/^\\?/, "").replace(/(^|&)id=[^&]*/,"").replace(/^&|&$/g,"");
-        const alias = new URL(url.toString()); alias.searchParams.set("path", path);
-        response = await proxyTone3000(request, env, alias);
-      } else if (url.pathname === "/api/v1/tone3000/models" && request.method === "GET") {
-        const params = new URLSearchParams(url.searchParams); params.delete("path");
-        const alias = new URL(url.toString()); alias.searchParams.set("path", "/models?" + params.toString());
-        response = await proxyTone3000(request, env, alias);
-      } else if (url.pathname === "/api/v1/tone3000/model-download" && request.method === "GET") {
-        const alias = new URL(url.toString()); alias.searchParams.set("url", url.searchParams.get("url") || "");
-        response = await downloadToneModel(request, env, alias);
       } else response = json({ ok: false, error: "Not found." }, 404);
     } catch (error) {
       response = json({ ok: false, error: error.message || "Request failed." }, 400);
