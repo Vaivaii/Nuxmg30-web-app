@@ -275,3 +275,18 @@ After the first standalone file was reported to have a syntax error, the source 
 - CI workflow now includes `cloud-worker/**` and explicit `node --check` steps for both Worker entry files.
 
 **Verification boundary:** parser check is confirmed. The Node/CI test suite and Cloudflare dashboard deployment have not yet been confirmed successful. Do not paste/deploy a stale copy. If Cloudflare still reports a syntax error for the current file, capture the exact first error text and line/column; this is needed to distinguish a stale/incomplete paste from an editor/module-mode issue.
+
+
+## 18. All-provider HTTP 404 investigation and APK correction (2026-11-14)
+
+User reported the same `Cloud API HTTP 404` for every provider. Source comparison established:
+- Current `www/cloud-api.js` targets `https://nux-mg30-studio-api.vaivai851.workers.dev`.
+- The earlier installed Build #802 APK was produced before the source gateway base was changed from the separate `nux-mg30-cloud-api` host to the merged `nux-mg30-studio-api` host. Thus the phone could continue requesting the stale service URL even though repository source and Cloudflare dashboard had moved to the merged Worker. This explains why all providers fail in the same way; it is not evidence that all provider keys are invalid.
+- `cloud-worker/worker.js` and `cloud-worker/src/index.js` were checked to be byte-identical; Wrangler uses `main = "worker.js"`.
+- Worker diagnostics bumped to version `1.1.0`; `/health` now reports booleans describing gateway route presence; provider/model responses identify the Worker version and distinguish an upstream model-catalogue 404 from a missing Worker route.
+- `www/cloud-api.js` now reports the requested gateway path and separates upstream provider status from Worker status on errors.
+- CI Build #813 run ID `43606427125`, source commit `6b366bda3b0673bd23b83d22e0c9c11c5c84ef28`: syntax checks passed, **482 tests passed, 0 failed**, Android debug build succeeded, APK artifact `14118670661`.
+- Built APK SHA-256: `b508397457318b915f50a1269d2bdeb642d47ddbffdd3531cccbe2a647ddc27e`.
+- The APK bundle was inspected and contains only `https://nux-mg30-studio-api.vaivai851.workers.dev` as the Cloud gateway host.
+- The APK has not yet been installed/validated on the user's phone. Live provider model-list / Tone Plan calls remain pending that install and authenticated test.
+- This change does not edit NAM, IR transfer, MIDI_PARAM_CC, KNOB_SLOTS, preset codec, or physical MG-30 transfer paths.
