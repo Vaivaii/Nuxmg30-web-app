@@ -356,3 +356,18 @@ Build and on-device verification are pending. The new APK must be installed and 
 - Added tests for stale missing DOM listeners, runtime error rendering, duplicate HTML IDs, TONE3000 service fallback precedence, YouTube key alias, and ensuring the TONE3000 service credential is never forwarded to an external CDN.
 - No edits to NAM transfer, IR transfer/User-vs-Collection semantics, preset codec, `MIDI_PARAM_CC`, `KNOB_SLOTS`, or MG-30 firmware-specific transfer logic.
 - Build, test results, and physical WebView verification are pending the next CI run and installation.
+
+
+## 22. Build #833: AI initialization crash and Worker credential fallbacks verified (2026-11-14)
+
+- Source commit: `725a00d4daa178905513c605fa831b40a043f059`.
+- GitHub Actions Build #833 / run ID `43616166396`: success.
+- JavaScript syntax validation passed; **490 tests passed, 0 failed**; Android Gradle debug build succeeded.
+- APK artifact ID: `14122017148`; extracted APK size 4,691,988 bytes.
+- APK copied to `/mnt/data/MG30-Studio-AI-Startup-Runtime-Audit-build833.apk`.
+- APK SHA-256: `9c71f58a4a53922cda0306f0eda2971b291503c47a16d00bbe03e48506308fac`.
+- APK bundle inspection confirmed the stale `aiToneDeleteOpenAi` selector string is absent, runtime error reporter is present, and the Cloud account token storage key is present.
+- The source Worker was bumped to version `1.2.0`; `cloud-worker/worker.js` and `cloud-worker/src/index.js` are identical. Cloudflare deployment is **not** performed by the CI build.
+- To activate the Worker-side fallback changes, deploy the new `cloud-worker/worker.js` to the existing `nux-mg30-studio-api` Worker and retain the existing login secrets. Optional `TONE3000_API_KEY` is used only if per-user OAuth is not supplied; YouTube accepts `YOUTUBE_API_KEY` first and the legacy `YOUTUBE_DATA_API_KEY` second.
+- Physical Android WebView behavior and actual pedal Send behavior still need confirmation after installing this APK. The code-level failure that prevented AI panel initialization was found and fixed; no physical hardware test is claimed.
+- No NAM import, IR User/Third Party vs Collection handling, MIDI_PARAM_CC, KNOB_SLOTS, preset codec, or MG-30 device transfer implementation was changed.
