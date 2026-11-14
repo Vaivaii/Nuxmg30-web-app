@@ -215,3 +215,28 @@ Cloud outage, missing account session or provider quota must not disable local M
 ## 15. Final status boundary
 
 The app and Worker source integration is committed and an APK candidate is built. The remaining release blocker is deployment/configuration of the separate `nux-mg30-cloud-api` Worker and addition of the required provider secrets using Cloudflare. The connected execution environment has no Cloudflare deployment credentials or dashboard action; the source code cannot be deployed from this session. After deployment and secret configuration, perform authenticated status checks, one live AI prompt, one YouTube search, one TONE3000 catalogue query and model download (checking the exact CDN host), then user-side MG-30 Gen 2 hardware regression.
+
+
+## 14. Build #802 evidence and continuation checkpoint (2026-11-14)
+
+- Branch: `feature/ai-live-tone-studio`.
+- Source commit tested: `941943f40deb9846135ec13ba5d48fd964d43b3d`.
+- GitHub Actions Build #802 / run `43583384685`: completed successfully.
+- Automated Node test summary from the job log: **477 passed, 0 failed**.
+- Android debug build and artifact upload steps both completed successfully.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14109147938`, ZIP size 4,313,056 bytes.
+- Extracted APK: `app-debug.apk`, size 4,690,704 bytes.
+- Extracted APK SHA-256: `3cea098cf51c37471680c8b5dc5bcb3cbf40b98500b19793bd6fb7ae921a7513`.
+- APK bundle inspection confirms the AI Tone Plan, YouTube search and TONE3000 proxy routes are present; direct OpenAI, Gemini, Groq and OpenRouter provider URLs and the former local YouTube API-key storage key are absent from the bundled JavaScript.
+- This proves build/package integration and mocked automated behavior only. It does not prove that the new Cloud Worker is deployed or that live provider calls work.
+
+## 15. Exact remaining work
+
+1. Deploy `cloud-worker/` as a separate Worker named `nux-mg30-cloud-api`; retain `nux-mg30-studio-api` as the existing login/auth Worker.
+2. Configure exact web/Capacitor origins in `APP_ORIGINS`.
+3. Add the chosen provider secrets directly to the new Worker: `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, and `YOUTUBE_DATA_API_KEY` as applicable. Do not send secrets in chat or commit them.
+4. Verify TONE3000 OAuth/API access using the user's own account. If the returned model download URL redirects to a CDN outside `tone3000.com`, verify that exact hostname and add it to `TONE3000_ASSET_HOSTS`; token forwarding to third-party CDN hosts is intentionally disabled.
+5. After Worker deployment, test live AI model listing and Tone Plan generation, YouTube search, TONE3000 catalogue and NAM download/import on the app.
+6. Run physical-device regression on original MG-30 Gen 2 firmware 6.0.x. Specifically confirm NAM import, IR User/Third Party, IR Collection, MIDI mappings and existing local/offline features remain unchanged.
+
+**Do not call the Cloud integration production-ready until steps 1–5 pass.** The debug APK is a test build, not a signed public release.
