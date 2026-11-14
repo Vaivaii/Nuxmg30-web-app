@@ -167,3 +167,32 @@ Cloud outage, missing account session or provider quota must not disable local M
 - 2026-11-14: Confirmed TONE3000 OAuth/PKCE, catalogue and NAM download/import already exist in `www/tone3000.js`; current API calls are direct from the app.
 - 2026-11-14: Confirmed YouTube Data API search is called directly from `www/main.js`; a client-side localStorage key identifier exists.
 - 2026-11-14: No application source, device protocol or Worker deployment code changed in this inventory step.
+
+
+## 11. Implementation completed in app repository (2026-11-14)
+
+- Added a separate Cloudflare Worker service source at `cloud-worker/src/index.js`, with deployment configuration at `cloud-worker/wrangler.toml`.
+- The new gateway validates the existing Cloud Account session by calling the already deployed `nux-mg30-studio-api/auth/me`. It does not replace or modify the login Worker.
+- Added `www/cloud-api.js`, which attaches the saved Cloud Account JWT to versioned Worker requests.
+- AI Tone Studio now requests configured provider status, model catalogues and Tone Plans through the Cloud gateway. No AI provider API key input or Android SecureStore copy remains in AI Tone Studio. The existing local MG-30 catalog validator and live editor bridge are unchanged.
+- YouTube search now uses the Cloud gateway and no longer reads or sends a YouTube API key from app localStorage. YouTube playback still uses the existing official privacy-enhanced embed URL.
+- TONE3000 catalogue search, tone metadata, model list and model download calls now use restricted Cloud Worker routes. Official OAuth Authorization Code + PKCE, refresh and the user's per-account TONE3000 session remain unchanged; the app forwards that user's OAuth token in a dedicated header for each Worker request.
+- The Worker rejects arbitrary TONE3000 paths and arbitrary download hosts. The default model-file allow-list is `tone3000.com`; if actual account-specific TONE3000 `model_url` values use a separate CDN hostname, verify that hostname and add it to the Worker variable `TONE3000_ASSET_HOSTS`. The download must fail closed until then.
+- Added tests for Cloud API bearer attachment, login-required routes, Worker auth introspection, provider secret visibility, model-list filtering and TONE3000 proxy path restrictions.
+- Updated existing tests that previously assumed AI/YouTube provider API keys were stored in local app storage.
+
+## 12. Deployment and verification state
+
+- **Source implementation:** committed to `feature/ai-live-tone-studio`.
+- **Existing login Worker:** unchanged; the user's previously confirmed login still uses `nux-mg30-studio-api`.
+- **New Cloud gateway deployment:** not performed from this environment; no Cloudflare deployment credential/dashboard connection is available here.
+- **Provider secrets:** not configured or tested here. Set them directly using the deployment commands in `cloud-worker/README.md`.
+- **AI provider live API calls, YouTube live search and TONE3000 proxied catalogue/download:** pending deployment and secrets. Automated mocked tests do not count as provider acceptance.
+- **APK build:** CI is the authoritative source for test/build outcome. An APK that has the new gateway client must not be considered a service-ready release until the new Worker is deployed and required secrets/allowed origins are configured.
+- **Hardware tests:** no pedal protocol or transfer source was intentionally changed; physical regression still requires the user's original MG-30 Gen 2 firmware 6.0.x.
+
+## 13. Preservation checks
+
+- No edits to `www/nam-transfer.js`, `www/ir-transfer.js`, preset codec, MIDI mapping tables, `MIDI_PARAM_CC`, or `KNOB_SLOTS` as part of Cloud gateway migration.
+- TONE3000 A2-Lite validation and slot-10 import continue to use the existing `extractMG30A2LiteWeights`, `buildMG30A2LiteTransferPlan`, `sendMG30A2LiteTransfer` and NAM storage paths.
+- Cloud provider output is still an untrusted proposal and must pass the current app-side catalog validator before editor updates.
