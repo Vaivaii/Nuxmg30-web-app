@@ -1,7 +1,7 @@
 # Multi-AI Real-Time Tone Studio — Architecture Decision
 Date: 2026-11-15
 Branch: feature/ai-live-tone-studio
-Status: **Architecture decision recorded; implementation not started**
+Status: **First free-first orchestration implementation committed; CI #834 and Android debug build passed; physical MG-30 verification pending**
 
 ## User-approved decisions
 
@@ -35,8 +35,9 @@ Provider/model assignment must remain configurable. OpenAI, Gemini, Groq, OpenRo
 
 - The **Lead AI** owns final AI synthesis and produces the final proposed Tone Plan.
 - The **MG-30 Tone Validator** remains the technical authority for device compatibility: catalogue IDs, available blocks/effects, parameter names, ranges, ordering, and supported firmware/device constraints.
-- The **user** retains control of auditioning, accepting revisions, and explicitly sending a preset to the pedal.
-- No agent may bypass the validator or directly issue pedal commands.
+- The **user** controls the musical direction and provides audition feedback. Validated live AI edits are applied immediately through the existing `MG30AIToneBridge.applyPlan()` and existing serialized MIDI parameter dispatcher; there is no extra manual Apply/Send gate for live editing.
+- Saving the resulting tone as a device preset remains the existing Save-to-Device action.
+- No agent may bypass the validator or directly issue pedal commands. Only the Lead AI result reaches the existing application dispatcher after deterministic validation.
 
 ## Shared session context
 
@@ -67,7 +68,7 @@ Agents should return machine-readable proposals rather than unconstrained prose 
 ## Protected existing functionality
 
 This architecture must not regress or alter unrelated working functionality:
-- existing AI Tone Studio generation and Send-to-Pedal path;
+- existing AI Tone Studio generation and direct real-time MIDI editing path (`MG30AIToneBridge.applyPlan()`);
 - original NUX MG-30 Gen 2 firmware 6.0.x targeting (not MG-30 MKII);
 - NAM functionality already working;
 - IR import and User/Collection mapping;
@@ -78,19 +79,19 @@ Multi-AI agents must work through the existing Tone Plan/validation boundary and
 
 ## Non-goals for this decision
 
-- No code changes, API/Worker changes, database changes, UI changes, branch changes, builds, or deployments are authorized by this decision.
+- Do not change the Cloudflare Worker/backend API, cloud API routes, authentication, secrets, provider adapters, database/storage, or deployment. The current Worker endpoints remain the only provider API path.
+- Do not rewrite the existing live MIDI dispatcher or change parameter CC mappings.
+- Do not change the NAM import, IR User/Third Party/Collection import, preset codec, or firmware-specific device transfer paths.
 - No fixed provider-to-role mapping is approved.
 - No claim is made that subjective tone quality can be objectively guaranteed from model reasoning alone; audio/user feedback may be needed for reliable audition-based refinement.
 
-## Next design work (not implementation authorization)
+## Implementation authorization update — 2026-11-15
 
-1. Map the current AI Tone Studio request → Worker → provider → Tone Plan → validator → pedal flow.
-2. Define agent task contracts and the shared session/Tone Plan schema.
-3. Design adaptive orchestration triggers, bounded review rounds, cancellation, and provider-failure behavior.
-4. Design the live collaboration UI and user controls.
-5. Define regression tests proving NAM, IR, MIDI, preset, and Send-to-Pedal behavior remains unchanged.
+The user explicitly authorized implementation on a separate branch, while prohibiting changes to already-working functions and the deployed cloud backend. This supersedes the earlier “implementation not authorized” status above.
 
-**Decision summary:** Adaptive Collaboration + Lead AI final synthesis, with mandatory MG-30 validation and explicit user control over sending the resulting preset.
+See `docs/research/MULTI_AI_FREE_FIRST_TONE_ARCHITECT_IMPLEMENTATION_2026-11-15.md` for the first implementation, token budget, validation and protected-file record.
+
+**Corrected product behavior:** Adaptive Collaboration + Lead AI final synthesis, mandatory Tone Architect musical analysis, deterministic MG-30 Tone Plan validation, and direct live editing through the existing dispatcher. There is no extra manual Apply/Send approval step for live AI edits; Save-to-Device remains the user's existing preset-save action.
 
 
 ## Free-API-first provider policy (user clarification, 2026-11-15)

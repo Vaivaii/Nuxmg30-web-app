@@ -96,3 +96,16 @@ test('Global English copy covers all remaining visible Indonesian interface labe
   assert.match(html, /<html lang="en">/);
   assert.equal(html.includes("toast('Preset '+slotName()+' dibaca ke aplikasi'"), false);
 });
+
+
+test('Cloud Account module ships English-only interface text and status messages', async () => {
+  const cloud = await read('../www/cloud-account.js');
+  assert.match(cloud, /A personal account for Cloud services/);
+  assert.match(cloud, /Cloud Account connected/);
+  assert.match(cloud, /Checking session…/);
+  assert.ok(cloud.includes('<span>Account</span>'));
+  assert.match(cloud, /Cloud services are online-only/);
+  for (const leaked of ['Akun pribadi', 'Cloud Account aktif', 'Memeriksa sesi', '<span>Akun</span>', 'Cloud hanya untuk layanan online']) {
+    assert.equal(cloud.includes(leaked), false, leaked);
+  }
+});

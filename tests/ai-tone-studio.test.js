@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -130,9 +130,11 @@ test('AI assistant UI is taller, keeps chat readable and exposes a visible worki
   assert.match(source, /busy\?'Working…':'Send ↗'/);
 });
 
-test('AI assistant interface and generated tone summaries are English', () => {
+test('AI assistant interface stays English while generated tone summaries follow the request language', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /Keep summary and notes in English/);
+  assert.match(source, /same language as the USER REQUEST/);
+  assert.match(source, /same language as the USER MUSICAL REQUEST/);
+  assert.doesNotMatch(source, /Keep summary and notes in English/);
   assert.match(source, /AI ready. MG-30 connection is required for live preset transfer/);
   assert.match(source, /Refresh Cloud Status/);
   assert.match(source, /Undo AI Changes/);
@@ -168,7 +170,7 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 test('Auto is the default AI provider and provider model options are dropdowns', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · fastest available/);
+  assert.match(source, /value="auto" selected>Auto · Free Multi-AI/);
   assert.match(source, /id="aiToneActiveModel"/);
   assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
@@ -176,16 +178,20 @@ test('Auto is the default AI provider and provider model options are dropdowns',
   assert.match(source, /cloudApiRequest/);
 });
 
-test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transient errors', () => {
-  assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','groq','openrouter','gpt']);
-  assert.deepEqual(providerFallbackOrder('groq'), ['groq','gemini','openrouter','gpt']);
+test('AI fallback is free-first and GPT is only used after explicit manual selection', () => {
+  assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','groq','openrouter']);
+  assert.deepEqual(providerFallbackOrder('groq'), ['groq','gemini','openrouter']);
+  assert.deepEqual(providerFallbackOrder('openrouter'), ['openrouter','gemini','groq']);
+  assert.deepEqual(providerFallbackOrder('auto'), ['gemini','groq','openrouter']);
+  assert.deepEqual(providerFallbackOrder('gpt'), ['gpt','gemini','groq','openrouter']);
   assert.equal(isRetryableProviderError(new Error('HTTP 429 rate limit')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 503 service unavailable')), true);
+  assert.equal(isRetryableProviderError(new Error('Provider rejected the request. Check the selected model and request settings. [404 /api/v1/ai/tone-plan]')), true);
+  assert.equal(isRetryableProviderError(new Error('Cloud API route not found. [404 /api/v1/ai/tone-plan]')), false);
   assert.equal(isRetryableProviderError(new Error('request timed out')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 401 invalid API key')), false);
   assert.equal(isRetryableProviderError(new Error('HTTP 400 invalid request')), false);
 });
-
 
 test('AI provider requests use the authenticated Worker and keep vendor endpoints out of the app', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
@@ -213,31 +219,34 @@ test('Gemini high-demand errors are classified as temporary and eligible for fal
   assert.equal(isRetryableProviderError(new Error('This model is currently experiencing high demand. Spikes in demand are usually temporary.')), true);
 });
 
-test('AI defaults to automatic fastest-ready provider and model selection while preserving manual providers', () => {
+test('AI defaults to a free Multi-AI team while keeping GPT manual-only', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · fastest available/);
+  assert.match(source, /value="auto" selected>Auto · Free Multi-AI/);
   assert.match(source, /fastestReadyProviderOrder/);
-  assert.match(source, /Auto · provider and model selected per request/);
-  assert.match(source, /Auto selected .*probe/);
-  assert.match(source, /mode==='auto'\|\|ui\.autoFallback\.checked/);
+  assert.match(source, /Auto · free providers and models selected per request/);
+  assert.match(source, /No GPT model was probed or selected/);
+  assert.match(source, /mode==='auto'\|\|mode==='collab'\|\|ui\.autoFallback\.checked/);
+  assert.match(source, /const providers=\['gemini','groq','openrouter'\]/);
+  assert.match(source, /GPT · manual \(may be paid\)/);
   for (const provider of ['gemini','groq','openrouter','gpt']) assert.match(source, new RegExp('value="'+provider+'"'));
 });
 
-test('automatic provider probes use a short timeout and cache the fastest healthy order', () => {
+test('automatic model selection uses the model catalogue without spending generation tokens on probes', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /autoProviderHealthCache\.expires=Date\.now\(\)\+45_000/);
-  assert.ok(source.includes('row.id,10000'));
-  assert.match(source, /Promise\.all\(candidates\.map/);
-  assert.match(source, /sort\(\(a,b\)=>a\.latency-b\.latency\)/);
+  const selection = source.slice(source.indexOf('async function fastestReadyModel'), source.indexOf('async function testProvider'));
+  assert.match(selection, /autoProviderHealthCache\.expires=Date\.now\(\)\+45_000/);
+  assert.match(selection, /providerModels\[provider\]/);
+  assert.match(selection, /localStorage\.setItem\(modelStorageKey\(provider\),chosen\)/);
+  assert.doesNotMatch(selection, /row\.id,10000|invokeProvider\(/);
+  assert.match(selection, /const providers=\['gemini','groq','openrouter'\]/);
+  assert.doesNotMatch(selection, /'gpt'/);
 });
-
-
 
 test('Groq TPM and oversized-request errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Request too large: tokens per minute (TPM) Limit 8000, Requested 12508')),true);assert.equal(isRetryableProviderError(new Error('Please reduce your message size and try again')),true);});
 test('artist tone guidance differentiates Mayer, Petrucci and Satriani',async()=>{const {artistToneGuidance}=await import('../www/ai-tone-studio.js');const a=artistToneGuidance('John Mayer lead tone'),b=artistToneGuidance('John Petrucci lead tone'),c=artistToneGuidance('Joe Satriani lead tone');assert.match(a,/edge-of-breakup/);assert.match(b,/tight high gain/);assert.match(c,/expressive saturated/);assert.notEqual(a,b);assert.notEqual(b,c);});
 test('compact tuple tone context preserves discrete choices and drops irrelevant snapshot fields',async()=>{const {compactToneContext}=await import('../www/ai-tone-studio.js');const c=compactToneContext(catalog,[{id:'AMP',model:'Deluxe Rvb',enabled:true,parameters:{gain:30},extra:'drop'}]);assert.deepEqual(c.snapshot,[['AMP','Deluxe Rvb',1,{gain:30}]]);assert.deepEqual(c.catalog.find(x=>x[0]==='MOD')[2][0][3][1],['subd',[0,1]]);});
-test('provider model dropdown defaults to auto and permits explicit manual override',()=>{const s=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(s,/Auto · fastest available/);assert.match(s,/fastestReadyModel\(provider,key\)/);assert.match(s,/mg30-ai-model-manual-/);assert.ok(s.includes('row.id,10000'));});
+test('provider model dropdown defaults to auto and permits explicit manual override',()=>{const s=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(s,/Auto · Free Multi-AI/);assert.match(s,/fastestReadyModel\(provider,key\)/);assert.match(s,/mg30-ai-model-manual-/);assert.doesNotMatch(s,/row.id,10000/);});
 
 
 test('Groq length-of-messages errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Please reduce the length of the messages or completion.')),true);assert.equal(isRetryableProviderError(new Error('tokens per minute (TPM) Limit 8000, Requested 12508')),true);});
@@ -254,7 +263,7 @@ test('manual provider selection refreshes the matching model catalogue and keeps
  assert.match(source,/const handleProviderSelection=\(\)=>\{const selected=ui\.providerSelect\.value;if\(selected!==mode\)setMode\(selected\);\}/);
  assert.match(source,/ui\.providerSelect\.addEventListener\('input',handleProviderSelection\)/);
  assert.match(source,/ui\.providerSelect\.addEventListener\('change',handleProviderSelection\)/);
- assert.match(source,/if\(currentMode\(\)==='auto'\)\{select\.replaceChildren\(\)/);
+ assert.match(source,/if\(currentMode\(\)==='auto'\|\|currentMode\(\)==='collab'\)\{select\.replaceChildren\(\)/);
  assert.doesNotMatch(source,/if\(mode==='auto'\)\{select\.replaceChildren\(\)/);
  assert.match(source,/if\(next!=='auto'&&next!=='collab'\)void refreshProviderModels\(next,false\)/);
 });
@@ -300,4 +309,81 @@ test('HTML has no duplicate static IDs and AI interactive IDs are created exactl
  for(const id of ['aiToneProviderSelect','aiToneActiveModel','aiTonePrompt','aiToneSend','aiToneMessages','aiToneStatus']){
   assert.equal([...source.matchAll(new RegExp('id="' + id + '"','g'))].length,1,id+' should be created once');
  }
+});
+
+
+test('Tone Architect is mandatory and hands compact musical intent to Lead AI', () => {
+  const architect = toneArchitectSystemPrompt();
+  const lead = toneLeadInstruction({ style: 'blues rock', feel: 'touch-sensitive' });
+  assert.match(architect, /Tone Architect/);
+  assert.match(architect, /do not choose device models/);
+  assert.match(lead, /Tone Architect is mandatory/);
+  assert.match(lead, /Gear Specialist and Parameter Engineer/);
+  assert.match(lead, /blues rock/);
+});
+
+test('Tone Architect intent is compact and missing confidence remains unknown', () => {
+  const intent = compactToneArchitectIntent({
+    tone_intent: {
+      reference: 'John Mayer',
+      style: 'blues pop',
+      feel: 'touch sensitive',
+      dynamics: 'volume-knob responsive',
+      gain_character: 'clean edge of breakup',
+      tonal_balance: 'warm lows, present mids',
+      ambience: 'short delay and spring reverb',
+      avoid: ['high gain metal', 'excessive treble', 'long wash', 'extra item', 'discard'],
+      summary: 'Warm expressive lead'
+    }
+  }, 'John Mayer lead');
+  assert.equal(intent.reference, 'John Mayer');
+  assert.equal(intent.style, 'blues pop');
+  assert.equal(intent.confidence, null);
+  assert.equal(intent.avoid.length, 4);
+  assert.ok(Object.keys(intent).length <= 11);
+});
+
+test('Tone Architect context is reused for local refinements and rebuilt for new musical goals', () => {
+  assert.equal(isLocalToneRefinement('make the delay a little shorter and reduce reverb'), true);
+  assert.equal(isLocalToneRefinement('more gain and a warmer tone'), true);
+  assert.equal(isLocalToneRefinement('change the style to jazz'), false);
+  assert.equal(isLocalToneRefinement('create a new John Mayer lead preset'), false);
+});
+
+test('Critical Reviewer triggers only for explicit uncertainty, low confidence or coupled material changes', () => {
+  assert.equal(shouldInvokeCriticalReviewer({ confidence: null, blocks: [{}, {}] }), false);
+  assert.equal(shouldInvokeCriticalReviewer({ confidence: 0.9, blocks: [{}, {}] }), false);
+  assert.equal(shouldInvokeCriticalReviewer({ review_required: true, confidence: 0.9, blocks: [] }), true);
+  assert.equal(shouldInvokeCriticalReviewer({ confidence: 0.4, blocks: [{}, {}] }), true);
+  assert.equal(shouldInvokeCriticalReviewer({ conflicts: ['amp and drive mismatch'], blocks: [] }), true);
+  assert.equal(shouldInvokeCriticalReviewer({ confidence: 0.9, blocks: [{}, {}, {}, {}] }), true);
+});
+
+test('live orchestration retains direct applyPlan MIDI path with no manual Apply gate', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  const submit = source.slice(source.indexOf(' async function submit(){'), source.indexOf(' async function undo(){'));
+  assert.match(submit, /await makePlan\(prompt,bridge\)/);
+  assert.match(submit, /await bridge\.applyPlan\(plan\)/);
+  assert.doesNotMatch(submit, /manual approval|confirm.*apply|Apply to Pedal/i);
+});
+
+test('Auto orchestration excludes paid GPT while existing Cloud API gateway remains the Tone Plan route', () => {
+  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  const auto = source.slice(source.indexOf('async function fastestReadyProviderOrder'), source.indexOf('async function testProvider'));
+  const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
+  const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
+  assert.match(auto, /\['gemini','groq','openrouter'\]/);
+  assert.doesNotMatch(auto, /['\"]gpt['\"]|openai/i);
+  assert.match(source, /GPT · manual \(may be paid\)/);
+  assert.match(source, /\/api\/v1\/ai\/tone-plan/);
+  assert.match(worker, /\/api\/v1\/ai\/tone-plan/);
+  assert.match(cloudApi, /CLOUD_API_BASE/);
+});
+
+
+test('Tone Architect fallback text preserves the language of the user request', () => {
+  const request = 'Buat tone blues yang hangat dengan gain rendah dan reverb tipis.';
+  const intent = compactToneArchitectIntent({}, request);
+  assert.equal(intent.summary, request);
+  assert.equal(intent.focus, request);
 });
