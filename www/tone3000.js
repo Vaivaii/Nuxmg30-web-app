@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { normalizeToneCatalogue, parseToneCatalogue, readToneCatalogue, writeToneCatalogue, selectToneModel } from './tone3000-workspace.js';
 import { Browser } from '@capacitor/browser';
+import { cloudApiFetch, cloudApiRequest } from './cloud-api.js';
 import { App } from '@capacitor/app';
 import { extractMG30A2LiteWeights, buildMG30A2LiteTransferPlan, sendMG30A2LiteTransfer, safeMG30SlotLabel, readMG30NAMSlotNames } from './nam-transfer.js';
 
@@ -438,17 +439,23 @@ async function ensureAccessToken() {
 
 async function apiJSON(path) {
   const token = await ensureAccessToken();
-  const response = await fetch(T3K + path, {
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' },
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    if (response.status === 429) throw new Error('TONE3000 API search rate limit reached. Wait briefly and try again; no pedal changes were made.');
-    if (response.status === 403 && String(path).startsWith('/tones/search')) throw new Error('TONE3000 denied full-catalog search for this API client. Check your API access tier or ask TONE3000 support for search permission. The app will not bypass service access limits.');
-    if (response.status === 401 || response.status === 403) throw new Error('TONE3000 authorization was rejected. Reconnect your account from Device → TONE3000 Settings.');
-    throw new Error(body.error_description || body.message || body.error || ('API HTTP ' + response.status));
+  try {
+    return await cloudApiRequest('/api/v1/tone3000/proxy?path=' + encodeURIComponent(path), {
+      headers: { 'X-TONE3000-Authorization': 'Bearer ' + token }
+    });
+  } catch (error) {
+    if (error.status === 429) throw new Error('TONE3000 API rate limit reached. Wait briefly and try again; no pedal changes were made.');
+    if (error.status === 403 && String(path).startsWith('/tones/search')) throw new Error('TONE3000 denied full-catalog search for this API client. Check your API access tier or ask TONE3000 support for search permission. The app will not bypass service access limits.');
+    if (error.status === 401 || error.status === 403) throw new Error('TONE3000 authorization or Worker asset/API access was rejected. Reconnect TONE3000 or verify its configured API access.');
+    throw error;
   }
-  return body;
+}
+
+async function fetchTone3000Model(url) {
+  const token = await ensureAccessToken();
+  return cloudApiFetch('/api/v1/tone3000/download?url=' + encodeURIComponent(url), {
+    headers: { 'X-TONE3000-Authorization': 'Bearer ' + token }
+  });
 }
 
 function extractToneModels(body) {
@@ -759,8 +766,7 @@ async function saveModel(index, button) {
   }
   if (button) { button.disabled = true; button.textContent = 'Downloading…'; }
   try {
-    const token = await ensureAccessToken();
-    const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+    const response = await fetchTone3000Model(model.model_url);
     if (!response.ok) throw new Error('Model download HTTP ' + response.status);
     const blob = await response.blob();
     if (!blob.size) throw new Error('The downloaded model file is empty.');
@@ -818,8 +824,7 @@ async function sendModel(index, button, options = {}) {
     let modelBytes = options.modelBytes || null;
     if (!modelBytes) {
       setStatus('Downloading the selected model from TONE3000…');
-      const token = await ensureAccessToken();
-      const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+      const response = await fetchTone3000Model(model.model_url);
       if (!response.ok) throw new Error('Model download HTTP ' + response.status);
       const blob = await response.blob();
       if (!blob.size) throw new Error('The downloaded model file is empty.');
@@ -884,8 +889,7 @@ async function prepareTone3000ModelForAI(modelId) {
     return { toneId: selectedTone.id, modelId: model.id, modelName: model.name, bytes: cached.modelBytes.byteLength, weightBytes: cached.weightBytes.length, cached: true };
   }
   setStatus('Downloading and validating ' + (model.name || 'the A2-Lite NAM') + ' in the background…');
-  const token = await ensureAccessToken();
-  const response = await fetch(model.model_url, { headers: { Authorization: 'Bearer ' + token } });
+  const response = await fetchTone3000Model(model.model_url);
   if (!response.ok) throw new Error('TONE3000 model download HTTP ' + response.status);
   const blob = await response.blob();
   if (!blob.size || blob.size > 20 * 1024 * 1024) throw new Error('The NAM download is empty or exceeds the 20 MB safety limit.');
