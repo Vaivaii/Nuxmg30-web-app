@@ -195,19 +195,37 @@ async function proxyTone3000(request, env, url) {
   try { body = bodyText ? JSON.parse(bodyText) : {}; } catch { return json({ ok: false, error: "TONE3000 returned invalid JSON." }, 502); }
   return json(body, upstream.status);
 }
+function toneOfficialHost(host) {
+  return host === "tone3000.com" || host.endsWith(".tone3000.com");
+}
 function toneAssetAllowed(host, env) {
   const configured = String(env.TONE3000_ASSET_HOSTS || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean);
-  const allowed = ["tone3000.com", ...configured];
-  return allowed.some(domain => host === domain || host.endsWith("." + domain));
+  return toneOfficialHost(host) || configured.includes(host);
 }
 async function downloadToneModel(request, env, url) {
   const token = toneAuth(request);
   if (!token) return json({ ok: false, error: "TONE3000 account authorization is required." }, 401);
   let target;
   try { target = new URL(url.searchParams.get("url") || ""); } catch { return json({ ok: false, error: "Invalid model download URL." }, 400); }
-  if (target.protocol !== "https:" || !toneAssetAllowed(target.hostname, env)) return json({ ok: false, error: "TONE3000 model host is not in the Worker allow-list. Add the verified asset host to TONE3000_ASSET_HOSTS." }, 403);
-  const upstream = await timedFetch(target.toString(), { headers: { Authorization: token } }, 60_000);
-  if (!upstream.ok) return json({ ok: false, error: "TONE3000 model download failed.", upstreamStatus: upstream.status }, upstream.status);
+  if (target.protocol !== "https:" || !toneAssetAllowed(target.hostname.toLowerCase(), env)) {
+    return json({ ok: false, error: "TONE3000 model host is not in the Worker allow-list. Add the verified asset hostname to TONE3000_ASSET_HOSTS." }, 403);
+  }
+
+  let upstream = null;
+  for (let hop = 0; hop < 4; hop++) {
+    const headers = { Accept: "*/*" };
+    // Never forward a user's TONE3000 OAuth token to a third-party asset/CDN host.
+    if (toneOfficialHost(target.hostname.toLowerCase())) headers.Authorization = token;
+    upstream = await timedFetch(target.toString(), { headers }, 60_000);
+    if (![301, 302, 303, 307, 308].includes(upstream.status)) break;
+    const location = upstream.headers.get("Location");
+    if (!location) return json({ ok: false, error: "TONE3000 model redirect did not include a destination." }, 502);
+    try { target = new URL(location, target); } catch { return json({ ok: false, error: "TONE3000 model redirect URL is invalid." }, 502); }
+    if (target.protocol !== "https:" || !toneAssetAllowed(target.hostname.toLowerCase(), env)) {
+      return json({ ok: false, error: "TONE3000 redirected the model to a host that is not allow-listed. Verify and add its exact hostname to TONE3000_ASSET_HOSTS." }, 403);
+    }
+  }
+  if (!upstream || !upstream.ok) return json({ ok: false, error: "TONE3000 model download failed.", upstreamStatus: upstream?.status || 502 }, 502);
   const headers = new Headers();
   headers.set("Content-Type", upstream.headers.get("Content-Type") || "application/octet-stream");
   headers.set("Cache-Control", "no-store");
