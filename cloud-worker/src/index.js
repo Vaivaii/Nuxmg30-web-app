@@ -1,4 +1,49 @@
-const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
+
+const VERSION = "1.0.4";
+const TOKEN_TTL_SECONDS = 604800;
+const enc = new TextEncoder();
+
+function equal(a, b) {
+  const x = enc.encode(String(a));
+  const y = enc.encode(String(b));
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] || 0) ^ (y[i] || 0);
+  return diff === 0;
+}
+function b64url(bytes) {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+function fromB64url(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  s += "=".repeat((4 - s.length % 4) % 4);
+  return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+async function importHmac(secret, usages) {
+  return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, usages);
+}
+async function createToken(username, secret) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = { sub: username, iat: now, exp: now + TOKEN_TTL_SECONDS, iss: "nux-mg30-studio" };
+  const part = b64url(enc.encode(JSON.stringify(payload)));
+  const key = await importHmac(secret, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(part)));
+  return part + "." + b64url(sig);
+}
+async function verifyToken(token, secret) {
+  try {
+    const p = token.split(".");
+    if (p.length !== 2) return null;
+    const key = await importHmac(secret, ["verify"]);
+    const valid = await crypto.subtle.verify("HMAC", key, fromB64url(p[1]), enc.encode(p[0]));
+    if (!valid) return null;
+    const data = JSON.parse(new TextDecoder().decode(fromB64url(p[0])));
+    if (!data.sub || data.iss !== "nux-mg30-studio" || !Number.isFinite(data.exp) || data.exp <= Math.floor(Date.now() / 1000)) return null;
+    return data;
+  } catch { return null; }
+}
+\nconst JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 const PROVIDERS = {
   gpt: { secret: "OPENAI_API_KEY", api: "openai" },
   openai: { secret: "OPENAI_API_KEY", api: "openai" },
@@ -31,16 +76,10 @@ function bearer(request) {
 async function requireAccount(request, env) {
   const token = bearer(request);
   if (!token) return { ok: false, response: json({ ok: false, error: "Cloud Account login is required." }, 401) };
-  const authBase = String(env.AUTH_API_BASE || "").replace(/\/+$/, "");
-  if (!authBase) return { ok: false, response: json({ ok: false, error: "Cloud auth validation is not configured." }, 503) };
-  try {
-    const response = await fetch(authBase + "/auth/me", { method: "GET", headers: { Authorization: token, Accept: "application/json" }, redirect: "manual" });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok || body?.ok === false || !body?.user) return { ok: false, response: json({ ok: false, error: "Cloud Account session is invalid or expired." }, 401) };
-    return { ok: true, user: body.user };
-  } catch {
-    return { ok: false, response: json({ ok: false, error: "Cloud Account validation service is unavailable." }, 503) };
-  }
+  if (!env.APP_AUTH_SECRET || !String(env.APP_AUTH_SECRET).trim()) return { ok: false, response: json({ ok: false, error: "Cloud authentication is not configured." }, 503) };
+  const payload = await verifyToken(token.slice(7), env.APP_AUTH_SECRET);
+  if (!payload) return { ok: false, response: json({ ok: false, error: "Cloud Account session is invalid or expired." }, 401) };
+  return { ok: true, user: { username: payload.sub } };
 }
 async function readBody(request, maxBytes = 256_000) {
   const declared = Number(request.headers.get("Content-Length") || 0);
@@ -83,7 +122,7 @@ function modelRows(provider, body) {
 async function listModels(provider, env) {
   const config = PROVIDERS[provider];
   if (!config) return json({ ok: false, error: "Unknown AI provider." }, 400);
-  const key = env[config.secret];
+  const key = String(env[config.secret] || "").trim();
   if (!key) return json({ ok: false, error: "Provider is not configured in Cloudflare Worker." }, 503);
   let url, headers = {};
   if (config.api === "openai") { url = "https://api.openai.com/v1/models"; headers.Authorization = "Bearer " + key; }
@@ -119,7 +158,7 @@ function safeProviderError(status) {
 async function generateTonePlan(provider, model, system, prompt, env) {
   const config = PROVIDERS[provider];
   if (!config) throw Object.assign(new Error("Unknown AI provider."), { status: 400 });
-  const key = env[config.secret];
+  const key = String(env[config.secret] || "").trim();
   if (!key) throw Object.assign(new Error("Provider is not configured in Cloudflare Worker."), { status: 503 });
   if (!model || model.length > 200) throw Object.assign(new Error("A valid model must be selected."), { status: 400 });
   let upstream, body;
@@ -234,7 +273,7 @@ async function downloadToneModel(request, env, url) {
   return new Response(upstream.body, { status: 200, headers });
 }
 async function youtubeSearch(url, env) {
-  const key = env.YOUTUBE_DATA_API_KEY;
+  const key = String(env.YOUTUBE_DATA_API_KEY || "").trim();
   if (!key) return json({ ok: false, error: "YouTube Data API is not configured in Cloudflare Worker." }, 503);
   const q = String(url.searchParams.get("q") || "").trim();
   if (q.length < 2 || q.length > 200) return json({ ok: false, error: "Search query must contain 2 to 200 characters." }, 400);
@@ -255,8 +294,52 @@ export default {
     if (request.method === "OPTIONS") return withCors(new Response(null, { status: 204 }), request, env);
     let response;
     try {
-      if (url.pathname === "/health" && request.method === "GET") {
-        response = json({ ok: true, service: "nux-mg30-cloud-api", version: 1 });
+      if (url.pathname === "/auth/login" && request.method === "POST") {
+        if (!String(env.APP_LOGIN_USERNAME || "").trim() || !String(env.APP_LOGIN_PASSWORD || "").trim() || !String(env.APP_AUTH_SECRET || "").trim()) {
+          response = json({ ok: false, code: "AUTH_NOT_CONFIGURED", error: "Server authentication is not configured" }, 500);
+        } else {
+          let body;
+          try { body = await request.json(); } catch { body = null; }
+          if (!body || typeof body !== "object" || Array.isArray(body)) response = json({ ok: false, code: "INVALID_BODY", error: "Request body must contain username and password" }, 400);
+          else {
+            const username = typeof body.username === "string" ? body.username.trim() : "";
+            const password = typeof body.password === "string" ? body.password : "";
+            const usernameMatch = equal(username, String(env.APP_LOGIN_USERNAME).trim());
+            const passwordMatch = equal(password, String(env.APP_LOGIN_PASSWORD).trim());
+            if (!usernameMatch || !passwordMatch) response = json({ ok: false, code: "INVALID_CREDENTIALS", error: "Username or password is incorrect" }, 401);
+            else {
+              const token = await createToken(String(env.APP_LOGIN_USERNAME).trim(), String(env.APP_AUTH_SECRET).trim());
+              response = json({ ok: true, version: VERSION, token, token_type: "Bearer", expires_in: TOKEN_TTL_SECONDS, user: { username: String(env.APP_LOGIN_USERNAME).trim() } });
+            }
+          }
+        }
+      } else if (url.pathname === "/auth/me" && request.method === "GET") {
+        if (!String(env.APP_AUTH_SECRET || "").trim()) response = json({ ok: false, code: "AUTH_NOT_CONFIGURED", error: "Server authentication is not configured" }, 500);
+        else {
+          const token = bearer(request).slice(7);
+          const payload = token ? await verifyToken(token, String(env.APP_AUTH_SECRET).trim()) : null;
+          if (!payload) response = json({ ok: false, error: "Unauthorized" }, 401);
+          else response = json({ ok: true, user: { username: payload.sub }, expires_at: payload.exp });
+        }
+      } else if (url.pathname === "/auth/logout" && request.method === "POST") {
+        response = json({ ok: true, message: "Discard the client token to log out" });
+      } else if (url.pathname === "/health" && request.method === "GET") {
+        response = json({
+          ok: true, service: "nux-mg30-studio-api", version: VERSION,
+          auth_configured: Boolean(String(env.APP_LOGIN_USERNAME || "").trim() && String(env.APP_LOGIN_PASSWORD || "").trim() && String(env.APP_AUTH_SECRET || "").trim()),
+          secret_checks: {
+            APP_LOGIN_USERNAME: Boolean(String(env.APP_LOGIN_USERNAME || "").trim()),
+            APP_LOGIN_PASSWORD: Boolean(String(env.APP_LOGIN_PASSWORD || "").trim()),
+            APP_AUTH_SECRET: Boolean(String(env.APP_AUTH_SECRET || "").trim()),
+            GEMINI_API_KEY: Boolean(String(env.GEMINI_API_KEY || "").trim()),
+            GROQ_API_KEY: Boolean(String(env.GROQ_API_KEY || "").trim()),
+            OPENROUTER_API_KEY: Boolean(String(env.OPENROUTER_API_KEY || "").trim()),
+            OPENAI_API_KEY: Boolean(String(env.OPENAI_API_KEY || "").trim()),
+            YOUTUBE_DATA_API_KEY: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim())
+          },
+          ai: { gemini: Boolean(env.GEMINI_API_KEY), groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY), gpt: Boolean(env.OPENAI_API_KEY) },
+          youtube: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim()), tone3000_oauth_proxy: true
+        });
       } else if (url.pathname === "/api/v1/status" && request.method === "GET") {
         const auth = await requireAccount(request, env);
         if (!auth.ok) response = auth.response;
@@ -274,18 +357,33 @@ export default {
           response = await listModels(url.searchParams.get("provider") || "", env);
         } else if (url.pathname === "/api/v1/ai/tone-plan" && request.method === "POST") {
           const body = await readBody(request);
-          const provider = String(body.provider || "");
-          const model = String(body.model || "");
+          const requestedProvider = String(body.provider || "auto").toLowerCase();
           const system = String(body.system || "");
           const prompt = String(body.prompt || "");
           if (system.length > 180_000 || prompt.length > 40_000 || !system || !prompt) response = json({ ok: false, error: "AI request content is missing or exceeds the allowed size." }, 400);
           else {
-            try {
-              const tonePlan = await generateTonePlan(provider, model, system, prompt, env);
-              response = json({ ok: true, provider, model, tonePlan, requestId: crypto.randomUUID() });
-            } catch (error) {
-              response = json({ ok: false, error: error.message || "AI provider request failed.", requestId: crypto.randomUUID() }, error.status || 502);
+            const order = requestedProvider === "auto" ? ["gemini", "groq", "openrouter"] : [requestedProvider];
+            const failures = [];
+            let completed = null;
+            for (const candidate of order) {
+              const keyName = PROVIDERS[candidate]?.secret;
+              if (!keyName || !String(env[keyName] || "").trim()) { failures.push(candidate + ": not configured"); continue; }
+              const defaultModels = { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", openrouter: "openrouter/free" };
+              const selectedModel = String(body.model || "").trim() || defaultModels[candidate];
+              try {
+                const tonePlan = await generateTonePlan(candidate, selectedModel, system, prompt, env);
+                completed = { ok: true, provider: candidate, model: selectedModel, tonePlan, requestId: crypto.randomUUID() };
+                break;
+              } catch (error) {
+                failures.push(candidate + ": " + (error.message || "provider error"));
+                if (requestedProvider !== "auto" || !(error.retryable || error.status === 429 || error.status >= 500 || !error.status)) {
+                  if (requestedProvider !== "auto") { response = json({ ok: false, error: error.message || "AI provider request failed.", requestId: crypto.randomUUID() }, error.status || 502); }
+                  break;
+                }
+              }
             }
+            if (completed) response = json(completed);
+            else if (!response) response = json({ ok: false, error: "All automatic AI providers failed or are not configured.", failures, requestId: crypto.randomUUID() }, 503);
           }
         } else if (url.pathname === "/api/v1/youtube/status" && request.method === "GET") {
           response = json({ ok: true, configured: Boolean(env.YOUTUBE_DATA_API_KEY) });
@@ -295,6 +393,18 @@ export default {
           response = await proxyTone3000(request, env, url);
         } else if (url.pathname === "/api/v1/tone3000/download" && request.method === "GET") {
           response = await downloadToneModel(request, env, url);
+        } else if (/^\\/api\\/v1\\/tone3000\\/tones\\/\\d+$/.test(url.pathname) && request.method === "GET") {
+          const toneId = url.pathname.split("/").pop();
+          const alias = new URL(url.toString());
+          alias.searchParams.set("path", "/tones/" + toneId + (url.search ? url.search : ""));
+          response = await proxyTone3000(request, env, alias);
+        } else if (url.pathname === "/api/v1/tone3000/models" && request.method === "GET") {
+          const params = new URLSearchParams(url.searchParams); params.delete("path");
+          const alias = new URL(url.toString()); alias.searchParams.set("path", "/models?" + params.toString());
+          response = await proxyTone3000(request, env, alias);
+        } else if (url.pathname === "/api/v1/tone3000/model-download" && request.method === "GET") {
+          const alias = new URL(url.toString()); alias.searchParams.set("url", url.searchParams.get("url") || "");
+          response = await downloadToneModel(request, env, alias);
         } else response = json({ ok: false, error: "Cloud API route not found." }, 404);
       } else response = json({ ok: false, error: "Not found." }, 404);
     } catch (error) {
