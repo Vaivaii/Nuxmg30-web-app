@@ -23,3 +23,6 @@ The previous APK was built from the correct AI Live Tone branch, but that branch
 
 ## Guardrails
 Do not move this work to `feature/cloud-account-auth` or replace the working branch. Preserve AI Live Tone behavior and existing NAM, IR, local device, and MIDI functionality.
+
+## Packaging correction
+An initial successful APK build (run #787) still omitted the Cloud Account JavaScript file because the HTML referenced it as a classic external script. Inspection of the APK archive showed no packaged `cloud-account.js`. The call was changed to a Vite-processed module script in commit `f1a4d7aca28a42275c2a994f60b4126a207ecf87`. Run #788 is the authoritative build. Do not distribute run #787; verify that the run #788 APK contains the Cloud Account code in its packaged web assets before release.
