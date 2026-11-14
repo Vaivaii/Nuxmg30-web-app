@@ -225,8 +225,12 @@ async function proxyTone3000(request, env, url) {
   if (!token) return json({ ok: false, error: "TONE3000 account authorization is required." }, 401);
   const rawPath = url.searchParams.get("path") || "";
   let upstreamUrl;
-  try { upstreamUrl = new URL(rawPath, "https://www.tone3000.com/api/v1"); } catch { return json({ ok: false, error: "Invalid TONE3000 API path." }, 400); }
-  if (upstreamUrl.origin !== "https://www.tone3000.com" || !tonePathAllowed(upstreamUrl.pathname)) return json({ ok: false, error: "TONE3000 API path is not allowed through this gateway." }, 400);
+  try {
+    const relativePath = rawPath.startsWith("/") ? rawPath : "/" + rawPath;
+    upstreamUrl = new URL("https://www.tone3000.com/api/v1" + relativePath);
+  } catch { return json({ ok: false, error: "Invalid TONE3000 API path." }, 400); }
+  const apiPath = upstreamUrl.pathname.slice("/api/v1".length) || "/";
+  if (upstreamUrl.origin !== "https://www.tone3000.com" || !tonePathAllowed(apiPath)) return json({ ok: false, error: "TONE3000 API path is not allowed through this gateway." }, 400);
   const allowedQuery = new Set(["page", "page_size", "sort", "gears", "format", "architecture", "query", "tone_id"]);
   for (const key of upstreamUrl.searchParams.keys()) if (!allowedQuery.has(key)) return json({ ok: false, error: "Unsupported TONE3000 query parameter." }, 400);
   const upstream = await timedFetch(upstreamUrl.toString(), { headers: { Authorization: token, Accept: "application/json" } }, 45_000);
