@@ -103,7 +103,9 @@ test('Cloud Account module ships English-only interface text and status messages
   assert.match(cloud, /A personal account for Cloud services/);
   assert.match(cloud, /Cloud Account connected/);
   assert.match(cloud, /Checking session…/);
-  assert.match(cloud, /<span>Account<\\/span>/);
+  assert.ok(cloud.includes('<span>Account</span>'));
   assert.match(cloud, /Cloud services are online-only/);
-  assert.doesNotMatch(cloud, /Akun pribadi|Cloud Account aktif|Memeriksa sesi|<span>Akun<\\/span>|Cloud hanya untuk layanan online/);
+  for (const leaked of ['Akun pribadi', 'Cloud Account aktif', 'Memeriksa sesi', '<span>Akun</span>', 'Cloud hanya untuk layanan online']) {
+    assert.equal(cloud.includes(leaked), false, leaked);
+  }
 });
