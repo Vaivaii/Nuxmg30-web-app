@@ -269,3 +269,35 @@ test('Send wraps bridge checks, AI planning and MIDI apply in visible error hand
  assert.match(submit,/catch\(e\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
  assert.match(source,/aiToneSend'\)\.addEventListener\('click',\(\)=>\{void submit\(\)\.catch/);
 });
+
+
+test('AI initialization does not bind listeners to missing legacy provider-delete buttons',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ for(const id of ['aiToneDeleteOpenAi','aiToneDeleteGemini','aiToneDeleteGroq','aiToneDeleteOpenRouter']){
+  assert.doesNotMatch(source,new RegExp("\\$\\('" + id + "'\\)\\.addEventListener"));
+ }
+ assert.match(source,/await keyStates\(\)/);
+ assert.match(source,/window\.onerror\s*=/);
+ assert.match(source,/addEventListener\('unhandledrejection'/);
+ assert.match(source,/AI assistant startup/);
+});
+
+test('AI runtime failures are rendered into the dynamically created assistant chat',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/document\.getElementById\('aiToneMessages'\)/);
+ assert.match(source,/RUNTIME ERROR/);
+ assert.match(source,/flushAiRuntimeErrors\(\)/);
+ assert.match(source,/showAiRuntimeError\('window\.onerror'/);
+ assert.match(source,/showAiRuntimeError\('unhandledrejection'/);
+});
+
+test('HTML has no duplicate static IDs and AI interactive IDs are created exactly once by the assistant module',()=>{
+ const html=readFileSync(new URL('../www/index.html',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const ids=[...html.matchAll(/\\bid\\s*=\\s*["']([^"']+)["']/g)].map(match=>match[1]);
+ const duplicates=ids.filter((id,index)=>ids.indexOf(id)!==index);
+ assert.deepEqual([...new Set(duplicates)],[]);
+ for(const id of ['aiToneProviderSelect','aiToneActiveModel','aiTonePrompt','aiToneSend','aiToneMessages','aiToneStatus']){
+  assert.equal([...source.matchAll(new RegExp('id="' + id + '"','g'))].length,1,id+' should be created once');
+ }
+});
