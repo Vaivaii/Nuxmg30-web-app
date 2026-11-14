@@ -5,7 +5,7 @@ let aiRuntimeErrorHandlersInstalled = false;
 function safeAiRuntimeError(value) {
  const raw = value instanceof Error ? (value.stack || value.message) : String(value ?? 'Unknown JavaScript error');
  return raw
-  .replace(/Bearer\s+[A-Za-z0-9._~+\\/-]+=*/gi, 'Bearer [redacted]')
+  .replace(/Bearer\s+[A-Za-z0-9._~+-]+=*/gi, 'Bearer [redacted]')
   .replace(/(?:api[_-]?key|token|secret)(\s*[:=]\s*)[^\s,;]+/gi, '$1[redacted]')
   .slice(0, 1800);
 }
