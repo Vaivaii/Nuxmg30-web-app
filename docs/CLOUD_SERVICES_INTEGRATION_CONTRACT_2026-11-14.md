@@ -300,3 +300,17 @@ User reported the same `Cloud API HTTP 404` for every provider. Source compariso
 - Commit: `ece190846ebdab8536e8470b1e2854a23c6e143f`.
 - CI Build #815 (`43611160084`) was triggered for this source commit; its result and APK artifact are pending at the time of this note.
 - This is an app UI/cloud-catalogue change only. NAM, IR, preset, USB-MIDI and MIDI mapping paths were not edited. Live provider catalogue behavior and physical MG-30 testing still require validation on the installed APK.
+
+
+## 19. AI provider picker and Send flow correction (2026-11-14)
+
+Following device screenshots showing provider test success but model picker remaining on Auto and Send appearing unresponsive:
+- Fixed the model-picker Auto reset condition to use the selected UI mode (`currentMode()`) instead of a stale local `mode` value. This prevents a manual provider's just-loaded model list from being erased when the UI still evaluates the previous mode.
+- Provider selection now listens to both `input` and `change` events, synchronizes the selected mode, invalidates Auto provider-order cache and loads that provider's model catalogue.
+- `submit()` now places editor-bridge checks, pedal connection checks, AI Tone Plan generation, catalog validation, and MIDI apply inside one visible error handler. The status area and AI chat receive the exact failure message, and the button always exits its busy state.
+- The Send click handler also catches any unexpected rejected promise and surfaces it in the status/chat instead of leaving the screen apparently idle.
+- Cloud provider test remains a connectivity/model probe; it is not treated as proof that a full preset Tone Plan is valid or that the MG-30 accepted the resulting MIDI writes.
+- Added regression tests for manual provider-to-model list synchronization and visible Send failure handling.
+- Changes are limited to `www/ai-tone-studio.js` and its tests. No edits to NAM/IR transfer, collection/user IR semantics, MIDI_PARAM_CC, KNOB_SLOTS, preset codec, or Worker auth/proxy routes.
+
+Build and on-device verification are pending. The new APK must be installed and checked with the original MG-30 Gen 2 connected; a model listing and actual Send/Tone Plan request need separate confirmation.
