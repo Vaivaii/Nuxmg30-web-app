@@ -588,7 +588,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
  }
  async function chooseNamTone(prompt,searchQuery,tones){
   const candidates=tones.slice(0,12).map(t=>({id:String(t.id),name:t.name,creator:t.creator,description:t.description,makes:t.makes,tags:t.tags,gear:t.gear,sizes:t.sizes,a2ModelsCount:t.a2ModelsCount,format:t.format}));
-  const system='Choose the single best TONE3000 NAM tone pack for the user request. Return JSON only: {"toneId":"123","reason":"short reason in the same language as the USER REQUEST"}. Select only an ID present in CANDIDATES. Prefer direct amp make/model and compatible gear/size. If none are meaningfully relevant return {"toneId":"","reason":"no relevant match"}. Never invent a tone or assert capture details not in metadata.';
+  const system='Choose the single best TONE3000 NAM tone pack for the user request. Return JSON only: {"toneId":"123","reason":"short reason in the same language as the USER REQUEST"}. Select only an ID present in CANDIDATES. Prefer direct amp make/model and compatible gear/size. If none are meaningfully relevant return {"toneId":"","reason":"no relevant match, explained in the USER REQUEST language"}. Never invent a tone or assert capture details not in metadata.';
   const result=await askNamAIJson(system,'USER REQUEST:\n'+prompt+'\nAI SEARCH QUERY:\n'+searchQuery+'\nCANDIDATES:\n'+JSON.stringify(candidates),'choosing the closest NAM tone');
   const tone=tones.find(t=>String(t.id)===String(result?.toneId||''));
   if(!tone)throw new Error('No TONE3000 tone result was relevant enough for this request. Nothing was downloaded or written to the pedal.');
