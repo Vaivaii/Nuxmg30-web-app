@@ -130,9 +130,11 @@ test('AI assistant UI is taller, keeps chat readable and exposes a visible worki
   assert.match(source, /busy\?'Working…':'Send ↗'/);
 });
 
-test('AI assistant interface and generated tone summaries are English', () => {
+test('AI assistant interface stays English while generated tone summaries follow the request language', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /Keep summary and notes in English/);
+  assert.match(source, /same language as the USER REQUEST/);
+  assert.match(source, /same language as the USER MUSICAL REQUEST/);
+  assert.doesNotMatch(source, /Keep summary and notes in English/);
   assert.match(source, /AI ready. MG-30 connection is required for live preset transfer/);
   assert.match(source, /Refresh Cloud Status/);
   assert.match(source, /Undo AI Changes/);
@@ -376,4 +378,12 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
   assert.match(worker, /\/api\/v1\/ai\/tone-plan/);
   assert.match(cloudApi, /CLOUD_API_BASE/);
+});
+
+
+test('Tone Architect fallback text preserves the language of the user request', () => {
+  const request = 'Buat tone blues yang hangat dengan gain rendah dan reverb tipis.';
+  const intent = compactToneArchitectIntent({}, request);
+  assert.equal(intent.summary, request);
+  assert.equal(intent.focus, request);
 });
