@@ -222,7 +222,7 @@ export function compactToneArchitectIntent(raw,prompt=''){
   avoid:list(source.avoid||source.avoid_list),
   focus:short(source.focus||source.priority,short(prompt,artistToneGuidance(prompt))),
   summary:short(source.summary||source.reasoning_summary,artistToneGuidance(prompt)),
-  confidence:Number.isFinite(Number(source.confidence))?Math.max(0,Math.min(1,Number(source.confidence))):null
+  confidence:source.confidence!==undefined&&source.confidence!==null&&Number.isFinite(Number(source.confidence))?Math.max(0,Math.min(1,Number(source.confidence))):null
  };
 }
 export function shouldInvokeCriticalReviewer(plan){
@@ -230,7 +230,7 @@ export function shouldInvokeCriticalReviewer(plan){
  if(plan.review_required===true||plan.reviewRequired===true)return true;
  if((Array.isArray(plan.conflicts)&&plan.conflicts.length)||(Array.isArray(plan.uncertainties)&&plan.uncertainties.length))return true;
  const confidence=Number(plan.confidence);
- if(Number.isFinite(confidence)&&confidence<0.62)return true;
+ if(plan.confidence!==undefined&&plan.confidence!==null&&Number.isFinite(confidence)&&confidence<0.62)return true;
  return Array.isArray(plan.blocks)&&plan.blocks.length>=4;
 }
 export function toneArchitectSystemPrompt(){
