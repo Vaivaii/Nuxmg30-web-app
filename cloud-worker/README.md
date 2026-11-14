@@ -1,67 +1,78 @@
-# NUX MG30 Studio Cloud API Worker
+# NUX MG30 Studio Combined Cloud Worker
 
-This is a **separate** Worker named `nux-mg30-cloud-api`. It does not replace the existing `nux-mg30-studio-api` Worker that handles account login.
+This Worker combines the existing Cloud Account authentication routes and the authenticated Cloud services gateway in one deployment named **nux-mg30-studio-api**.
 
 ## Deploy
 
-Run from the repository root:
+From the repository root:
 
 ```bash
 npx wrangler deploy --config cloud-worker/wrangler.toml
 ```
 
-The app gateway URL in `www/cloud-api.js` is configured for the default workers.dev hostname:
-`https://nux-mg30-cloud-api.vaivai851.workers.dev`.
+The Wrangler config uses `cloud-worker/worker.js` as the complete standalone Worker entry point. `cloud-worker/src/index.js` is kept synchronized for source/test tooling.
 
-## Configure provider secrets
+**Important:** deploy this merged code to the existing `nux-mg30-studio-api` Worker. Do not paste it into a different Worker and do not overwrite it with the former cloud-only Worker. The app's Cloud Account and Cloud API clients now use this same host.
 
-Set each key directly in Cloudflare Worker secret storage. Never paste provider keys into this chat, the app, GitHub source, or a committed file.
+## Secrets
+
+Set secrets on the **nux-mg30-studio-api** Worker, not on `nux-mg30-cloud-api`. Keep existing account secrets unchanged. If provider keys currently exist only on the old cloud Worker, add them again to this Worker directly in Cloudflare:
 
 ```bash
-npx wrangler secret put OPENAI_API_KEY --config cloud-worker/wrangler.toml
+npx wrangler secret put APP_LOGIN_USERNAME --config cloud-worker/wrangler.toml
+npx wrangler secret put APP_LOGIN_PASSWORD --config cloud-worker/wrangler.toml
+npx wrangler secret put APP_AUTH_SECRET --config cloud-worker/wrangler.toml
 npx wrangler secret put GEMINI_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put GROQ_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put OPENROUTER_API_KEY --config cloud-worker/wrangler.toml
+npx wrangler secret put OPENAI_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put YOUTUBE_DATA_API_KEY --config cloud-worker/wrangler.toml
 ```
 
-Only configure the providers actually being used. A missing secret is reported as `configured: false`; its value is never returned.
+Wrangler prompts for each value. Never paste keys, passwords, signing secrets, or OAuth tokens into chat, source files, or GitHub. Do not change the values of the three existing account secrets: the HMAC signing secret must remain the same or existing app sessions will no longer validate.
 
-## TONE3000 asset hosts
-
-OAuth Authorization Code + PKCE and refresh remain with the official TONE3000 OAuth endpoints, using the user's own account. Metadata/search and model file requests are sent through this gateway with the user's TONE3000 bearer token in the `X-TONE3000-Authorization` header. The Worker never stores a shared TONE3000 user token.
-
-Model downloads are limited to HTTPS hosts under `tone3000.com` by default. If TONE3000 model catalogue responses supply a CDN hostname outside that domain, verify the hostname from an actual `model_url` and add that exact domain to `TONE3000_ASSET_HOSTS` as a comma-separated Worker variable before attempting downloads. Do not broaden this to arbitrary hosts; this endpoint must not become an open proxy.
-
-TONE3000 `403` and `429` responses remain meaningful. This Worker does not bypass account entitlements, search limits, or API terms.
+`/health` reports only boolean presence checks. TONE3000 does not use a global Worker API key: the app continues its official per-user OAuth Authorization Code + PKCE flow and sends that user's access token in `X-TONE3000-Authorization` for each proxied request.
 
 ## Routes
 
-- `GET /health` — deployment health only; no secrets.
-- `GET /api/v1/status` — authenticated feature configuration status.
-- `GET /api/v1/ai/providers` — authenticated configured/not-configured state.
-- `GET /api/v1/ai/models?provider=gpt|gemini|groq|openrouter` — list available text models.
-- `POST /api/v1/ai/tone-plan` — authenticated provider call returning a Tone Plan proposal.
-- `GET /api/v1/youtube/status` and `GET /api/v1/youtube/search?q=...`.
-- `GET /api/v1/tone3000/proxy?path=...` — restricted metadata/search proxy.
-- `GET /api/v1/tone3000/download?url=...` — allow-listed HTTPS model file proxy.
+Unauthenticated:
+- `GET /health` — service/version and boolean secret-presence checks.
+- `POST /auth/login`
+- `GET /auth/me`
+- `POST /auth/logout`
 
-All `/api/v1/*` routes validate the app's JWT by calling the existing Worker `/auth/me`. This avoids duplicating or changing the current authentication implementation. Set `AUTH_API_BASE` to the existing auth Worker origin in `wrangler.toml` if it changes.
+All `/api/v1/*` routes require the app JWT in `Authorization: Bearer <token>`, verified locally with the same `APP_AUTH_SECRET` used by the original login flow:
+- `GET /api/v1/status`
+- `GET /api/v1/ai/providers`
+- `GET /api/v1/ai/models?provider=gpt|gemini|groq|openrouter`
+- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Gemini, then Groq, then OpenRouter; explicit provider selection is also supported. OpenAI remains available as an explicit provider.
+- `GET /api/v1/youtube/status`
+- `GET /api/v1/youtube/search?q=...`
+- `GET /api/v1/tone3000/proxy?path=...` — app-compatible restricted metadata proxy.
+- `GET /api/v1/tone3000/download?url=...` — app-compatible allow-listed model-file proxy.
+- `GET /api/v1/tone3000/tones/:id?architecture=2`
+- `GET /api/v1/tone3000/models?tone_id=...&architecture=2&page=...&page_size=...`
+- `GET /api/v1/tone3000/model-download?url=...`
 
-## CORS and deployment configuration
+The TONE3000 route aliases and app-compatible proxy routes are all authenticated and restricted to approved API paths/HTTPS asset hosts. The user's OAuth token is never forwarded to third-party CDN hosts.
 
-Set `APP_ORIGINS` in `wrangler.toml` to a comma-separated list of exact origins used by the web app/PWA and Capacitor. The defaults cover common Capacitor localhost origins; add the real web origin if deployed elsewhere. Do not use wildcard CORS with authenticated requests.
+## TONE3000 model asset hosts
 
-## Security and limits
+Downloads are limited to HTTPS hosts under `tone3000.com` by default. If a real catalogue `model_url` redirects to a CDN outside that domain, verify the exact hostname and add it to `TONE3000_ASSET_HOSTS` in the Worker variables. Do not use arbitrary hosts or a global shared TONE3000 credential. Provider 403/429 responses and user entitlements are respected.
 
-- Provider keys are Worker secrets only.
-- App JWT is required for all application service routes.
-- TONE3000 OAuth tokens are forwarded only per user request and are not logged or persisted by this Worker.
-- Provider output is untrusted. The app must still run its original MG-30 firmware 6.0.x catalog validator before MIDI changes.
-- The Worker does not generate raw preset/SysEx data and has no device protocol access.
-- The current gateway has payload limits and bounded upstream timeouts. Before a public launch, add Cloudflare Rate Limiting rules/account quotas and operational monitoring. Expensive AI calls should not be left open to unmetered public traffic.
-- Audio-reference analysis and AI Stem Studio are not implemented by this text-generation gateway; they need separate upload/job infrastructure, storage retention and compute service.
+## Origins and operations
 
-## Known staged dependency
+Set `APP_ORIGINS` in `wrangler.toml` to exact deployed web/PWA origins plus required Capacitor origins. Do not use wildcard CORS for authenticated traffic. Add Cloudflare rate limits/quotas before public release; provider keys are billable credentials.
 
-The actual hostname used by TONE3000's downloadable model URLs must be checked against the user's authenticated catalogue. If it is outside `tone3000.com`, add that verified hostname to `TONE3000_ASSET_HOSTS`; downloads intentionally fail closed until it is allow-listed.
+AI output remains an untrusted proposal. The app must run its existing original MG-30 Gen 2 firmware 6.0.x catalogue validator before any editor update. No raw preset/SysEx writes are performed by this Worker. NAM A2-Lite validation/import, IR User/Third Party, IR Collection, MIDI mappings, USB-MIDI and offline functions remain app-side and must not be changed by this gateway.
+
+## Deployment verification
+
+After deploy:
+1. Open `https://nux-mg30-studio-api.vaivai851.workers.dev/health`; expect `service: "nux-mg30-studio-api"` and boolean secret checks.
+2. Sign in through the app.
+3. Refresh AI provider status, list models and run one Tone Plan.
+4. Test YouTube search.
+5. Test TONE3000 catalogue and model download using the user's existing OAuth session, then confirm the existing app-side A2-Lite validator before import.
+
+A successful `/health` does not prove provider keys are valid. Live provider calls must be tested separately. No deployment is performed by this repository update.
