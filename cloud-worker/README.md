@@ -26,7 +26,9 @@ npx wrangler secret put GEMINI_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put GROQ_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put OPENROUTER_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put OPENAI_API_KEY --config cloud-worker/wrangler.toml
+npx wrangler secret put YOUTUBE_API_KEY --config cloud-worker/wrangler.toml
 npx wrangler secret put YOUTUBE_DATA_API_KEY --config cloud-worker/wrangler.toml
+npx wrangler secret put TONE3000_API_KEY --config cloud-worker/wrangler.toml
 ```
 
 Wrangler prompts for each value. Never paste keys, passwords, signing secrets, or OAuth tokens into chat, source files, or GitHub. Do not change the values of the three existing account secrets: the HMAC signing secret must remain the same or existing app sessions will no longer validate.
@@ -76,3 +78,11 @@ After deploy:
 5. Test TONE3000 catalogue and model download using the user's existing OAuth session, then confirm the existing app-side A2-Lite validator before import.
 
 A successful `/health` does not prove provider keys are valid. Live provider calls must be tested separately. No deployment is performed by this repository update.
+
+
+### TONE3000 and YouTube credential compatibility
+
+- TONE3000 first uses the signed-in user's `X-TONE3000-Authorization: Bearer ...` OAuth token. When that header is absent/invalid, the Worker may use the optional `TONE3000_API_KEY` secret as a service-level Bearer credential. This fallback shares the Worker credential across app users; per-user OAuth is preferred where user-specific entitlements/account attribution matter.
+- The service-level TONE3000 credential is sent only to official TONE3000 hosts. It is not forwarded to external model/CDN hosts during redirects.
+- YouTube accepts `YOUTUBE_API_KEY` first, then falls back to the legacy `YOUTUBE_DATA_API_KEY`. When both exist, `YOUTUBE_API_KEY` takes precedence.
+- `/health` reports boolean presence flags for both YouTube variable names and `TONE3000_API_KEY`; it never returns secret values.
