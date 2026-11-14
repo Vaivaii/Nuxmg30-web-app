@@ -33,7 +33,7 @@ test('standalone Worker parses and retains original auth health route with boole
   assert.deepEqual(body.secret_checks, {
     APP_LOGIN_USERNAME: true, APP_LOGIN_PASSWORD: true, APP_AUTH_SECRET: true,
     GEMINI_API_KEY: false, GROQ_API_KEY: false, OPENROUTER_API_KEY: false,
-    OPENAI_API_KEY: false, YOUTUBE_DATA_API_KEY: false
+    OPENAI_API_KEY: false, TONE3000_API_KEY: false, YOUTUBE_API_KEY: false, YOUTUBE_DATA_API_KEY: false
   });
   assert.equal(JSON.stringify(body).includes(APP_SECRET), false);
 });
@@ -210,5 +210,63 @@ test('AI auto fallback advances from Gemini to Groq and returns the successful p
     assert.equal(body.provider, 'groq');
     assert.equal(body.model, 'openai/gpt-oss-20b');
     assert.equal(calls.length, 2);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test('TONE3000 optional Worker API secret is used only when the app sends no user OAuth header', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), authorization: new Headers(options.headers).get('Authorization') });
+    return jsonResponse({ data: [] });
+  };
+  try {
+    const env = { ...baseEnv, TONE3000_API_KEY: 'service-tone-key' };
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/proxy?path=%2Ftones%2Fsearch', {
+      headers: authHeaders()
+    }), env);
+    assert.equal(response.status, 200);
+    assert.equal(calls[0].authorization, 'Bearer service-tone-key');
+
+    const oauthResponse = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/proxy?path=%2Ftones%2Fsearch', {
+      headers: { ...authHeaders(), 'X-TONE3000-Authorization': 'Bearer per-user-oauth' }
+    }), env);
+    assert.equal(oauthResponse.status, 200);
+    assert.equal(calls[1].authorization, 'Bearer per-user-oauth');
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('YouTube accepts YOUTUBE_API_KEY as the preferred secret alias', async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = '';
+  globalThis.fetch = async url => {
+    requestedUrl = String(url);
+    return jsonResponse({ items: [] });
+  };
+  try {
+    const env = { ...baseEnv, YOUTUBE_API_KEY: 'youtube-alias-secret' };
+    const status = await worker.fetch(new Request('https://studio.example.test/api/v1/youtube/status', { headers: authHeaders() }), env);
+    assert.deepEqual(await status.json(), { ok: true, configured: true });
+    const search = await worker.fetch(new Request('https://studio.example.test/api/v1/youtube/search?q=test', { headers: authHeaders() }), env);
+    assert.equal(search.status, 200);
+    assert.ok(requestedUrl.includes('key=youtube-alias-secret'));
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('TONE3000 global service token is never forwarded to an external model CDN', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), authorization: new Headers(options.headers).get('Authorization') });
+    return new Response(null, { status: 302, headers: { Location: 'https://cdn.unknown.example/model.nam' } });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/download?url=' + encodeURIComponent('https://api.tone3000.com/model/1.nam'), {
+      headers: authHeaders()
+    }), { ...baseEnv, TONE3000_API_KEY: 'service-tone-key' });
+    assert.equal(response.status, 403);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].authorization, 'Bearer service-tone-key');
   } finally { globalThis.fetch = originalFetch; }
 });
