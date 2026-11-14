@@ -444,7 +444,7 @@ async function apiJSON(path) {
       headers: { 'X-TONE3000-Authorization': 'Bearer ' + token }
     });
   } catch (error) {
-    if (error.status === 429) throw new Error('TONE3000 API rate limit reached. Wait briefly and try again; no pedal changes were made.');
+    if (error.status === 429) throw new Error('TONE3000 API search rate limit reached. Wait briefly and try again; no pedal changes were made.');
     if (error.status === 403 && String(path).startsWith('/tones/search')) throw new Error('TONE3000 denied full-catalog search for this API client. Check your API access tier or ask TONE3000 support for search permission. The app will not bypass service access limits.');
     if (error.status === 401 || error.status === 403) throw new Error('TONE3000 authorization or Worker asset/API access was rejected. Reconnect TONE3000 or verify its configured API access.');
     throw error;
