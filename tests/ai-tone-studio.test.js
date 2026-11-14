@@ -134,7 +134,7 @@ test('AI assistant interface and generated tone summaries are English', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /Keep summary and notes in English/);
   assert.match(source, /AI ready. MG-30 connection is required for live preset transfer/);
-  assert.match(source, /Save API Keys/);
+  assert.match(source, /Refresh Cloud Status/);
   assert.match(source, /Undo AI Changes/);
   assert.match(source, /Parameters sent to:/);
   assert.doesNotMatch(source, /Menunggu koneksi|Simpan API Key|Kirim ↗|Parameter dikirim|Undo gagal|berhasil merespons/);
@@ -172,9 +172,8 @@ test('Auto is the default AI provider and provider model options are dropdowns',
   assert.match(source, /id="aiToneActiveModel"/);
   assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
-  assert.match(source, /api\.groq\.com\/openai\/v1\/models/);
-  assert.match(source, /openrouter\.ai\/api\/v1\/models/);
-  assert.match(source, /supportedGenerationMethods/);
+  assert.match(source, /\/api\/v1\/ai\/models/);
+  assert.match(source, /cloudApiRequest/);
 });
 
 test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transient errors', () => {
@@ -188,11 +187,17 @@ test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transi
 });
 
 
-test('Groq and OpenRouter JSON-object requests explicitly include JSON in the messages', () => {
+test('AI provider requests use the authenticated Worker and keep vendor endpoints out of the app', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /Return a valid JSON object only\. The response must be JSON/);
-  assert.match(source, /response_format:\{type:'json_object'\}/);
-  assert.match(source, /max_completion_tokens:2600/);  assert.match(source, /reasoning_effort:'low',include_reasoning:false/);
+  const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
+  assert.match(source, /\/api\/v1\/ai\/tone-plan/);
+  assert.match(source, /cloudApiRequest/);
+  assert.doesNotMatch(source, /api\.openai\.com|generativelanguage\.googleapis\.com|api\.groq\.com|openrouter\.ai/);
+  assert.match(worker, /OPENAI_API_KEY/);
+  assert.match(worker, /GEMINI_API_KEY/);
+  assert.match(worker, /GROQ_API_KEY/);
+  assert.match(worker, /OPENROUTER_API_KEY/);
+  assert.match(worker, /X-TONE3000-Authorization/);
 });
 
 test('provider and active model selection use compact dropdown controls instead of large button rows', () => {
@@ -239,6 +244,6 @@ test('Groq length-of-messages errors are fallback eligible',()=>{assert.equal(is
 test('TONE3000 metadata differentiates explicit boost/OD from unknown',async()=>{const {describeNamCaptureMetadata}=await import('../www/ai-tone-studio.js');const boosted=describeNamCaptureMetadata({name:'Lead amp',description:'Captured with Tube Screamer boost'},{name:'Mesa capture',description:'Overdrive pedal before amp'},'amp-cab');const clean=describeNamCaptureMetadata({name:'Clean direct',description:'No boost or overdrive used'},{name:'Clean capture'},'amp');const unknown=describeNamCaptureMetadata({name:'Studio NAM'},{name:'Capture 1'},'amp-cab');assert.match(boosted.driveMetadata,/mentions boost\/overdrive/);assert.match(clean.driveMetadata,/explicitly indicates no boost/);assert.match(unknown.driveMetadata,/does not specify/);});
 test('TONE3000 NAM keeps AI recommendation and user dropdown while hiding long metadata from the picker',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(source,/namModeActive=true;\s*return \{success:true,tone:selected\.tone/);assert.ok(source.includes('id="aiToneNamCaptureSelect"'));assert.ok(source.includes('data-ai-nam-continue'));assert.match(source,/const choices=candidates\.map/);assert.ok(source.includes('SOURCE METADATA (TONE3000, supporting evidence only)'));const picker=source.slice(source.indexOf('function renderAiNamCapturePicker('),source.indexOf('async function automaticNamImportForPrompt'));assert.ok(picker.includes('AI-recommended NAM capture'));assert.ok(picker.includes('pending.selected.model.name'));assert.ok(picker.includes('pending.selected.reason'));assert.ok(!picker.includes('meta.summary'));assert.ok(!picker.includes('item.metadata.driveMetadata'));});
 test('AI retries one invalid Tone Plan against exact catalog before MIDI apply',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.ok(source.includes('first proposal did not exactly match the MG-30 catalog'));assert.ok(source.includes('correcting the catalog validation'));assert.ok(source.includes('No MIDI changes were sent'));});
-test('Groq GPT-OSS hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.ok(source.includes("reasoning_effort:'low',include_reasoning:false"));assert.ok(source.includes('max_completion_tokens:2600'));assert.ok(source.includes('isGroqJsonValidationError(error)'));assert.ok(source.includes('delete retryBody.response_format'));});
-test('OpenRouter no-final-text responses retry without JSON mode and exclude reasoning',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.ok(source.includes("reasoning:{effort:'low',exclude:true}"));assert.ok(source.includes("error?.code==='AI_NO_TEXT_OUTPUT'"));assert.ok(source.includes('OpenRouter returned no final text on the first attempt'));});
+test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: retry ? 3200 : 2600'));assert.ok(source.includes('error.failedGeneration'));assert.ok(source.includes('retry ? {} : { response_format'));});
+test('OpenRouter server adapter excludes reasoning and retries empty or malformed JSON output',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning: { effort: "low", exclude: true }'));assert.ok(source.includes('config.api === "openrouter"'));assert.ok(source.includes('JSON Tone Plan|invalid response'));});
 test('OpenAI-compatible response parser handles text parts and diagnoses reasoning-only responses',async()=>{const {compatibleChatText}=await import('../www/ai-tone-studio.js');assert.equal(compatibleChatText({choices:[{message:{content:[{type:'text',text:'{"status":"ok"}'}]}}]},'openrouter'),'{"status":"ok"}');assert.throws(()=>compatibleChatText({choices:[{finish_reason:'length',message:{content:null,reasoning:'hidden'}}]},'openrouter'),/no final text output.*reasoning-only/);});
