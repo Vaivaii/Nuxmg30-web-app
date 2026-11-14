@@ -247,3 +247,25 @@ test('AI retries one invalid Tone Plan against exact catalog before MIDI apply',
 test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: retry ? 3200 : 2600'));assert.ok(source.includes('error.failedGeneration'));assert.ok(source.includes('retry ? {} : { response_format'));});
 test('OpenRouter server adapter excludes reasoning and retries empty or malformed JSON output',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning: { effort: "low", exclude: true }'));assert.ok(source.includes('config.api === "openrouter"'));assert.ok(source.includes('JSON Tone Plan|invalid response'));});
 test('OpenAI-compatible response parser handles text parts and diagnoses reasoning-only responses',async()=>{const {compatibleChatText}=await import('../www/ai-tone-studio.js');assert.equal(compatibleChatText({choices:[{message:{content:[{type:'text',text:'{"status":"ok"}'}]}}]},'openrouter'),'{"status":"ok"}');assert.throws(()=>compatibleChatText({choices:[{finish_reason:'length',message:{content:null,reasoning:'hidden'}}]},'openrouter'),/no final text output.*reasoning-only/);});
+
+
+test('manual provider selection refreshes the matching model catalogue and keeps its models visible outside Auto mode',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/const handleProviderSelection=\(\)=>\{const selected=ui\.providerSelect\.value;if\(selected!==mode\)setMode\(selected\);\}/);
+ assert.match(source,/ui\.providerSelect\.addEventListener\('input',handleProviderSelection\)/);
+ assert.match(source,/ui\.providerSelect\.addEventListener\('change',handleProviderSelection\)/);
+ assert.match(source,/if\(currentMode\(\)==='auto'\)\{select\.replaceChildren\(\)/);
+ assert.doesNotMatch(source,/if\(mode==='auto'\)\{select\.replaceChildren\(\)/);
+ assert.match(source,/if\(next!=='auto'&&next!=='collab'\)void refreshProviderModels\(next,false\)/);
+});
+
+test('Send wraps bridge checks, AI planning and MIDI apply in visible error handling',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
+ assert.ok(submit.indexOf('try{')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
+ assert.match(submit,/Preparing the MG-30 catalog and requesting an AI Tone Plan/);
+ assert.match(submit,/await makePlan\(prompt,bridge\)/);
+ assert.match(submit,/await bridge\.applyPlan\(plan\)/);
+ assert.match(submit,/catch\(e\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
+ assert.match(source,/aiToneSend'\)\.addEventListener\('click',\(\)=>\{void submit\(\)\.catch/);
+});
