@@ -409,6 +409,8 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
    const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' is not configured in Cloudflare Worker.');
    const model=await fastestReadyModel(provider,key);
    await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',model);
+   const stateId=({gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'})[provider];
+   if($(stateId))$(stateId).textContent='Configured in Cloudflare Worker · API test successful';
    status(providerNames[provider]+' API responded successfully.','success');
   }catch(error){status(niceError(error,provider),'error');}
   finally{setBusy(false);}
@@ -598,7 +600,7 @@ async function automaticNamImportForPrompt(prompt){
  }
  open.addEventListener('click',()=>sheet.classList.contains('on')?closePanel():openPanel());
  $('aiToneClose').addEventListener('click',closePanel);shade.addEventListener('click',closePanel);
- $('aiToneSettingsToggle').addEventListener('click',()=>{ui.settings.classList.toggle('on');if(ui.settings.classList.contains('on'))void refreshAllProviderModels(true);});
+ $('aiToneSettingsToggle').addEventListener('click',()=>{ui.settings.classList.toggle('on');if(ui.settings.classList.contains('on'))void keyStates();});
  $('aiToneSaveKeys').addEventListener('click',saveKeys);
  $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
  $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));
