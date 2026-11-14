@@ -41,3 +41,18 @@ test('Cloud API client restricts requests to versioned service routes', async ()
     await assert.rejects(() => cloudApiFetch('https://example.com/'), /Invalid Cloud API path/);
   } finally { restore(); }
 });
+
+test('Cloud API reports the exact gateway path when a stale or wrong Worker returns 404', async () => {
+  const restore = setStorage('test-session-token');
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response('<html>Not found</html>', { status: 404, headers: { 'Content-Type': 'text/html' } });
+  try {
+    await assert.rejects(
+      () => cloudApiFetch('/api/v1/ai/models?provider=gemini'),
+      error => error.status === 404 && error.message.includes('/api/v1/ai/models?provider=gemini') && error.requestUrl === CLOUD_API_BASE + '/api/v1/ai/models?provider=gemini'
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    restore();
+  }
+});
