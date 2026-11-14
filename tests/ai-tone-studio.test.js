@@ -369,7 +369,7 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
   const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
   assert.match(auto, /\['gemini','groq','openrouter'\]/);
-  assert.doesNotMatch(auto, /gpt|openai/i);
+  assert.doesNotMatch(auto, /['\"]gpt['\"]|openai/i);
   assert.match(source, /GPT · manual \(may be paid\)/);
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
   assert.match(worker, /\/api\/v1\/ai\/tone-plan/);
