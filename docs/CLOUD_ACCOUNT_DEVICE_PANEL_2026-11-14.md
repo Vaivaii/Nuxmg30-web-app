@@ -26,3 +26,11 @@ Do not move this work to `feature/cloud-account-auth` or replace the working bra
 
 ## Packaging correction
 An initial successful APK build (run #787) still omitted the Cloud Account JavaScript file because the HTML referenced it as a classic external script. Inspection of the APK archive showed no packaged `cloud-account.js`. The call was changed to a Vite-processed module script in commit `f1a4d7aca28a42275c2a994f60b4126a207ecf87`. Run #788 is the authoritative build. Do not distribute run #787; verify that the run #788 APK contains the Cloud Account code in its packaged web assets before release.
+
+## Final APK verification
+- Authoritative run: GitHub Actions #788, run ID `43580446637`, conclusion `success`.
+- Built from integration commit: `f1a4d7aca28a42275c2a994f60b4126a207ecf87`.
+- Artifact ID: `14108711025` (`MG30-Studio-debug-APK`).
+- APK web bundle inspection confirms the generated `assets/public/assets/index-CDYKmJC2.js` contains the Cloud login identifiers `mg30CloudPanel`, `Connect Cloud Account`, and `mg30-cloud-auth-token`.
+- APK SHA-256: `5ca4ba0f63ddd669d29964d58e3773f6d4eaa17f30c7e2522a7e62e3bec03910`.
+- Automated protocol regression tests, Android initializer validation, Android APK assembly, and artifact upload all passed. Physical installation and live login on the user's phone remain untested.
