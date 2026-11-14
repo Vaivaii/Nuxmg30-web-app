@@ -398,15 +398,15 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
  async function fastestReadyProviderOrder(){
   if(Date.now()<autoProviderHealthCache.expires&&autoProviderHealthCache.order.length)return autoProviderHealthCache.order.slice();
   await refreshAllProviderModels(true);const providers=['gemini','groq','openrouter','gpt'];
-  const probes=await Promise.all(providers.map(async provider=>{const key=await secret(providerKeyId(provider));if(!key)return {provider,ok:false,error:new Error('API key not saved')};const started=Date.now();try{const model=await fastestReadyModel(provider,key);return {provider,model,latency:Date.now()-started,ok:true};}catch(error){return {provider,latency:Date.now()-started,ok:false,error};}}));
+  const probes=await Promise.all(providers.map(async provider=>{const key=await secret(providerKeyId(provider));if(!key)return {provider,ok:false,error:new Error('Provider not configured in Cloudflare Worker')};const started=Date.now();try{const model=await fastestReadyModel(provider,key);return {provider,model,latency:Date.now()-started,ok:true};}catch(error){return {provider,latency:Date.now()-started,ok:false,error};}}));
   const ready=probes.filter(x=>x.ok).sort((a,b)=>a.latency-b.latency);autoProviderHealthCache.expires=Date.now()+45_000;autoProviderHealthCache.order=ready.map(x=>x.provider);autoProviderHealthCache.errors=probes.filter(x=>!x.ok).map(x=>({provider:x.provider,message:String(x.error?.message||x.error)}));
-  if(!ready.length)throw new Error('No saved AI provider/model is responding right now. '+probes.map(x=>providerNames[x.provider]+': '+(x.error?.message||'unavailable')).join(' · '));
+  if(!ready.length)throw new Error('No configured Cloud AI provider/model is responding right now. '+probes.map(x=>providerNames[x.provider]+': '+(x.error?.message||'unavailable')).join(' · '));
   message('ai','Auto selected '+providerNames[ready[0].provider]+' / '+ready[0].model+' ('+ready[0].latency+' ms model probe).');return autoProviderHealthCache.order.slice();
  }
  async function testProvider(provider){
   setBusy(true);status('Testing '+providerNames[provider]+' API…','busy');
   try{
-   const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' API key has not been saved.');
+   const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' is not configured in Cloudflare Worker.');
    const model=await fastestReadyModel(provider,key);
    await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',model);
    status(providerNames[provider]+' API responded successfully.','success');
@@ -416,7 +416,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
  async function askNamAIJson(system,user,stage){
   if(mode==='collab'){
    const g=await secret('openai'),m=await secret('gemini');
-   if(!g||!m)throw new Error('Collaboration mode requires both GPT and Gemini API keys.');
+   if(!g||!m)throw new Error('Collaboration mode requires both GPT and Gemini credentials configured in Cloudflare Worker.');
    const gm=await fastestReadyModel('gpt',g),mm=await fastestReadyModel('gemini',m);
    status('GPT is '+stage+'…','busy');const draft=await openai(g,system,user,gm);
    status('Gemini is reviewing GPT’s '+stage+'…','busy');
@@ -426,7 +426,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
-   if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' key');continue;}
+   if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' Worker secret');continue;}
    const model=await fastestReadyModel(provider,key);
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
@@ -444,7 +444,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
    }
   }
   if(lastError)throw new Error('All configured fallback providers were unavailable. Last error: '+(lastError.message||lastError));
-  throw new Error('No configured AI provider/model is available. Save a Gemini, Groq, OpenRouter, or GPT API key. Missing: '+missing.join(', '));
+  throw new Error('No configured AI provider/model is available. Configure a Gemini, Groq, OpenRouter, or OpenAI secret in Cloudflare Worker. Missing: '+missing.join(', '));
  }
  async function deriveNamSearchQuery(prompt){
   const system='You select search terms for the TONE3000 NAM catalog. Return JSON only: {"query":"short search phrase","reason":"brief English reason"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
