@@ -23,6 +23,11 @@ No changes to:
 - MIDI CC mappings, live MIDI dispatcher, editor/pedal synchronization, preset codec, or device transfer protocol.
 
 ## Validation status
-- Source and regression tests were updated.
-- Automated test/build status must be checked from the GitHub Actions run triggered by this branch update.
-- No physical MG-30 hardware verification is claimed by this change record.
+- GitHub Actions run #843 (ID `43627968959`) completed successfully for code commit `74484299c1bb843538074b2fe5a1f8cb1c45474f`.
+- JavaScript syntax checks passed.
+- `npm test` passed.
+- Capacitor Android project generation passed.
+- Gradle `assembleDebug` passed and the APK artifact uploaded successfully.
+- Artifact: `MG30-Studio-debug-APK`, ID `14126958001`, SHA-256 `7922011b02506aea136f3459221c6ff73cfa94ffce26c5ba2744ff22a4b65f53`.
+- A subsequent documentation-only commit records this result; it does not change the tested application code.
+- No physical MG-30 Gen 2 firmware 6.0.x hardware verification is claimed by this change record.
