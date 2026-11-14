@@ -184,6 +184,8 @@ test('AI fallback is free-first and GPT is only used after explicit manual selec
   assert.deepEqual(providerFallbackOrder('gpt'), ['gpt','gemini','groq','openrouter']);
   assert.equal(isRetryableProviderError(new Error('HTTP 429 rate limit')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 503 service unavailable')), true);
+  assert.equal(isRetryableProviderError(new Error('Provider rejected the request. Check the selected model and request settings. [404 /api/v1/ai/tone-plan]')), true);
+  assert.equal(isRetryableProviderError(new Error('Cloud API route not found. [404 /api/v1/ai/tone-plan]')), false);
   assert.equal(isRetryableProviderError(new Error('request timed out')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 401 invalid API key')), false);
   assert.equal(isRetryableProviderError(new Error('HTTP 400 invalid request')), false);
