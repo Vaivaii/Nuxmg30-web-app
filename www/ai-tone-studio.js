@@ -5,12 +5,12 @@ let aiRuntimeErrorHandlersInstalled = false;
 function safeAiRuntimeError(value) {
  const raw = value instanceof Error ? (value.stack || value.message) : String(value ?? 'Unknown JavaScript error');
  return raw
-  .replace(/Bearer\\s+[A-Za-z0-9._~+\\/-]+=*/gi, 'Bearer [redacted]')
-  .replace(/(?:api[_-]?key|token|secret)(\\s*[:=]\\s*)[^\\s,;]+/gi, '$1[redacted]')
+  .replace(/Bearer\s+[A-Za-z0-9._~+\\/-]+=*/gi, 'Bearer [redacted]')
+  .replace(/(?:api[_-]?key|token|secret)(\s*[:=]\s*)[^\s,;]+/gi, '$1[redacted]')
   .slice(0, 1800);
 }
 function showAiRuntimeError(kind, value, location = '') {
- const detail = safeAiRuntimeError(value) + (location ? '\\n' + location : '');
+ const detail = safeAiRuntimeError(value) + (location ? '\n' + location : '');
  const node = typeof document !== 'undefined' ? document.getElementById('aiToneMessages') : null;
  const statusNode = typeof document !== 'undefined' ? document.getElementById('aiToneStatus') : null;
  if (!node) { aiRuntimeErrorQueue.push({ kind, detail }); return; }
@@ -24,7 +24,7 @@ function showAiRuntimeError(kind, value, location = '') {
  node.appendChild(item);
  node.scrollTop = node.scrollHeight;
  if (statusNode) {
-  statusNode.textContent = 'JavaScript ' + kind + ': ' + detail.split('\\n')[0];
+  statusNode.textContent = 'JavaScript ' + kind + ': ' + detail.split('\n')[0];
   statusNode.dataset.state = 'error';
   statusNode.setAttribute('aria-busy', 'false');
  }
@@ -520,15 +520,15 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
  }
  async function deriveNamSearchQuery(prompt){
   const system='You select search terms for the TONE3000 NAM catalog. Return JSON only: {"query":"short search phrase","reason":"brief English reason"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
-  const result=await askNamAIJson(system,'USER TONE REQUEST:\\n'+prompt,'deriving TONE3000 search terms');
-  const query=String(result?.query||'').trim().replace(/\\s+/g,' ').slice(0,60);
+  const result=await askNamAIJson(system,'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms');
+  const query=String(result?.query||'').trim().replace(/\s+/g,' ').slice(0,60);
   if(query.length<2)throw new Error('AI could not derive useful amplifier search terms. Add an amplifier name or a clearer tone description.');
   return {query,reason:String(result?.reason||'')};
  }
  async function chooseNamTone(prompt,searchQuery,tones){
   const candidates=tones.slice(0,12).map(t=>({id:String(t.id),name:t.name,creator:t.creator,description:t.description,makes:t.makes,tags:t.tags,gear:t.gear,sizes:t.sizes,a2ModelsCount:t.a2ModelsCount,format:t.format}));
   const system='Choose the single best TONE3000 NAM tone pack for the user request. Return JSON only: {"toneId":"123","reason":"short English reason"}. Select only an ID present in CANDIDATES. Prefer direct amp make/model and compatible gear/size. If none are meaningfully relevant return {"toneId":"","reason":"no relevant match"}. Never invent a tone or assert capture details not in metadata.';
-  const result=await askNamAIJson(system,'USER REQUEST:\\n'+prompt+'\\nAI SEARCH QUERY:\\n'+searchQuery+'\\nCANDIDATES:\\n'+JSON.stringify(candidates),'choosing the closest NAM tone');
+  const result=await askNamAIJson(system,'USER REQUEST:\n'+prompt+'\nAI SEARCH QUERY:\n'+searchQuery+'\nCANDIDATES:\n'+JSON.stringify(candidates),'choosing the closest NAM tone');
   const tone=tones.find(t=>String(t.id)===String(result?.toneId||''));
   if(!tone)throw new Error('No TONE3000 tone result was relevant enough for this request. Nothing was downloaded or written to the pedal.');
   return {tone,reason:String(result.reason||'')};
@@ -537,7 +537,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   const candidates=models.filter(m=>!rejected.includes(String(m.id))).slice(0,18).map(m=>({id:String(m.id),name:m.name,size:m.size,architecture:m.architecture_version??m.architecture,description:m.description,metadata:(()=>{const meta=describeNamCaptureMetadata(tone,m,tone.gear||'amp-cab');return {drive:meta.driveMetadata,description:String(m.description||tone?.description||'').slice(0,180)};})(),downloadable:Boolean(m.model_url)}));
   if(!candidates.length)throw new Error('No remaining downloadable A2-Lite captures are available in the selected TONE3000 tone.');
   const system='Choose the best downloadable A2 NAM capture for the requested guitar tone from this one TONE3000 tone pack. Return JSON only: {"modelId":"123","reason":"short English reason"}. Select only an ID from CANDIDATES. Do not choose a model without a download URL. Use model description and tone metadata as backup evidence for whether boost/OD is included; do not invent this when metadata is silent. Prefer a capture appropriate to the artist tone, and let the user override the selection in the capture dropdown. Actual file validation is authoritative.';
-  const result=await askNamAIJson(system,'USER REQUEST:\\n'+prompt+'\\nSELECTED TONE:\\n'+JSON.stringify({name:tone.tone?.name||tone.name,creator:tone.tone?.creator||tone.creator,description:tone.tone?.description||tone.description,gear:tone.gear})+'\\nCANDIDATES:\\n'+JSON.stringify(candidates)+'\\nREJECTED MODEL IDS:\\n'+JSON.stringify(rejected),'selecting the closest A2-Lite capture');
+  const result=await askNamAIJson(system,'USER REQUEST:\n'+prompt+'\nSELECTED TONE:\n'+JSON.stringify({name:tone.tone?.name||tone.name,creator:tone.tone?.creator||tone.creator,description:tone.tone?.description||tone.description,gear:tone.gear})+'\nCANDIDATES:\n'+JSON.stringify(candidates)+'\nREJECTED MODEL IDS:\n'+JSON.stringify(rejected),'selecting the closest A2-Lite capture');
   const model=models.find(m=>String(m.id)===String(result?.modelId||'')&&m.model_url);
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
   return {model,reason:String(result.reason||'')};
@@ -623,7 +623,7 @@ async function automaticNamImportForPrompt(prompt){
   try{return validateAiTonePlan(first,catalog);}catch(validationError){
    message('ai','The first proposal did not exactly match the MG-30 catalog ('+validationError.message+'). Asking the AI to correct the model/parameter selection before sending anything.');
    const correctionSystem=system+'\nMANDATORY CORRECTION: Your prior proposal failed application validation. Re-check exact block model names and parameter keys against the compact catalog. If changing a model, include every parameter listed for that exact model. Do not guess or abbreviate names. Return corrected complete JSON only.';
-   const correctionUser='USER REQUEST:\n'+prompt+'\nINSTALLED NAM CONTEXT:\n'+(activeNamContext||'none')+'\nVALIDATION ERROR:\n'+validationError.message+'\nPREVIOUS INVALID PLAN:\n'+JSON.stringify(first)+'\\nReturn a corrected JSON Tone Plan using only exact catalog entries.';
+   const correctionUser='USER REQUEST:\n'+prompt+'\nINSTALLED NAM CONTEXT:\n'+(activeNamContext||'none')+'\nVALIDATION ERROR:\n'+validationError.message+'\nPREVIOUS INVALID PLAN:\n'+JSON.stringify(first)+'\nReturn a corrected JSON Tone Plan using only exact catalog entries.';
    const corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
    try{return validateAiTonePlan(corrected,catalog);}catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
