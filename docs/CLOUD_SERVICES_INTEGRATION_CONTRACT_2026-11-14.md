@@ -261,3 +261,17 @@ A merged standalone Worker source was added at `cloud-worker/worker.js`:
 **Deployment is not performed by this source update.** The user must deploy the merged Worker to the existing `nux-mg30-studio-api` Worker, preserving the existing values of `APP_LOGIN_USERNAME`, `APP_LOGIN_PASSWORD`, and especially `APP_AUTH_SECRET`. Provider secrets that were previously stored only on `nux-mg30-cloud-api` must be added to `nux-mg30-studio-api` as well. Do not remove the old cloud Worker until the merged service has passed live verification.
 
 Automated syntax/runtime/contract tests and live provider tests have not yet been run against this newly merged Worker source. Do not describe the merged Worker as deployed or production-ready until the user deploys it and the acceptance checks pass.
+
+
+## 17. Worker syntax follow-up (2026-11-14)
+
+After the first standalone file was reported to have a syntax error, the source was re-fetched from the branch and corrected. A JavaScript parser check using the current standalone module body completed successfully. Also confirmed:
+- `cloud-worker/worker.js` and `cloud-worker/src/index.js` are identical.
+- The accidental literal escaped newline before `JSON_HEADERS` is no longer present.
+- The deployed entry in Wrangler is `worker.js`.
+- `www/cloud-api.js` now targets `https://nux-mg30-studio-api.vaivai851.workers.dev`, so a fresh app build is required after Worker deployment.
+- The TONE3000 proxy now preserves the `/api/v1` prefix when constructing official upstream URLs.
+- Worker tests now import the actual standalone `worker.js` entry and cover old login/session validation, JWT protection, provider flags/model listing, YouTube result shape, TONE3000 OAuth routing and Gemini-to-Groq fallback.
+- CI workflow now includes `cloud-worker/**` and explicit `node --check` steps for both Worker entry files.
+
+**Verification boundary:** parser check is confirmed. The Node/CI test suite and Cloudflare dashboard deployment have not yet been confirmed successful. Do not paste/deploy a stale copy. If Cloudflare still reports a syntax error for the current file, capture the exact first error text and line/column; this is needed to distinguish a stale/incomplete paste from an editor/module-mode issue.
