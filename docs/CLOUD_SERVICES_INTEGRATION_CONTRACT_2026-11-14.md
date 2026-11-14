@@ -196,3 +196,22 @@ Cloud outage, missing account session or provider quota must not disable local M
 - No edits to `www/nam-transfer.js`, `www/ir-transfer.js`, preset codec, MIDI mapping tables, `MIDI_PARAM_CC`, or `KNOB_SLOTS` as part of Cloud gateway migration.
 - TONE3000 A2-Lite validation and slot-10 import continue to use the existing `extractMG30A2LiteWeights`, `buildMG30A2LiteTransferPlan`, `sendMG30A2LiteTransfer` and NAM storage paths.
 - Cloud provider output is still an untrusted proposal and must pass the current app-side catalog validator before editor updates.
+
+
+## 14. Latest CI and APK verification
+
+- Latest integration/test commit: `941943f40deb9846135ec13ba5d48fd964d43b3d`.
+- GitHub Actions build run: **#802**, run ID `43583384685`, conclusion `success`.
+- Automated suite: 475 tests; the job's test step passed.
+- Android initializer syntax validation passed.
+- Capacitor Android project generation passed.
+- Gradle `assembleDebug` passed.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14109147938`.
+- Downloaded and inspected APK: 4,690,704 bytes; SHA-256 `3cea098cf51c37471680c8b5dc5bcb3cbf40b98500b19793bd6fb7ae921a7513`.
+- APK bundle checks: contains the configured Cloud gateway URL and AI Tone Plan, YouTube search, and TONE3000 proxy routes; direct OpenAI, Gemini, Groq, OpenRouter, and YouTube Data API search URLs are absent.
+- Added Worker tests proving an unapproved TONE3000 redirect host fails closed and that an allowed external CDN does not receive the user's OAuth Bearer token.
+- CI success is automated software/build validation only. It does not prove that the separate Worker is deployed, that provider secrets exist, that live provider API calls succeed, or that the APK has been field-tested on the user's phone/pedal.
+
+## 15. Final status boundary
+
+The app and Worker source integration is committed and an APK candidate is built. The remaining release blocker is deployment/configuration of the separate `nux-mg30-cloud-api` Worker and addition of the required provider secrets using Cloudflare. The connected execution environment has no Cloudflare deployment credentials or dashboard action; the source code cannot be deployed from this session. After deployment and secret configuration, perform authenticated status checks, one live AI prompt, one YouTube search, one TONE3000 catalogue query and model download (checking the exact CDN host), then user-side MG-30 Gen 2 hardware regression.
