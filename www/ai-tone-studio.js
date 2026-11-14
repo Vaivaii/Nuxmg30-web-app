@@ -1,4 +1,60 @@
 import { cloudApiRequest } from './cloud-api.js';
+
+const aiRuntimeErrorQueue = [];
+let aiRuntimeErrorHandlersInstalled = false;
+function safeAiRuntimeError(value) {
+ const raw = value instanceof Error ? (value.stack || value.message) : String(value ?? 'Unknown JavaScript error');
+ return raw
+  .replace(/Bearer\\s+[A-Za-z0-9._~+\\/-]+=*/gi, 'Bearer [redacted]')
+  .replace(/(?:api[_-]?key|token|secret)(\\s*[:=]\\s*)[^\\s,;]+/gi, '$1[redacted]')
+  .slice(0, 1800);
+}
+function showAiRuntimeError(kind, value, location = '') {
+ const detail = safeAiRuntimeError(value) + (location ? '\\n' + location : '');
+ const node = typeof document !== 'undefined' ? document.getElementById('aiToneMessages') : null;
+ const statusNode = typeof document !== 'undefined' ? document.getElementById('aiToneStatus') : null;
+ if (!node) { aiRuntimeErrorQueue.push({ kind, detail }); return; }
+ const item = document.createElement('div');
+ item.className = 'ai-tone-message ai';
+ const label = document.createElement('small');
+ label.textContent = 'RUNTIME ERROR · ' + kind;
+ const body = document.createElement('div');
+ body.textContent = detail;
+ item.append(label, body);
+ node.appendChild(item);
+ node.scrollTop = node.scrollHeight;
+ if (statusNode) {
+  statusNode.textContent = 'JavaScript ' + kind + ': ' + detail.split('\\n')[0];
+  statusNode.dataset.state = 'error';
+  statusNode.setAttribute('aria-busy', 'false');
+ }
+}
+function flushAiRuntimeErrors() {
+ while (aiRuntimeErrorQueue.length) {
+  const entry = aiRuntimeErrorQueue.shift();
+  showAiRuntimeError(entry.kind, entry.detail);
+ }
+}
+function installAiRuntimeErrorHandlers() {
+ if (typeof window === 'undefined' || aiRuntimeErrorHandlersInstalled) return;
+ aiRuntimeErrorHandlersInstalled = true;
+ const previous = window.onerror;
+ window.onerror = function(message, source, line, column, error) {
+  const location = [source, line ? 'line ' + line : '', column ? 'column ' + column : ''].filter(Boolean).join(': ');
+  showAiRuntimeError('window.onerror', error || message, location);
+  if (typeof previous === 'function') {
+   try { return previous.call(this, message, source, line, column, error); } catch (handlerError) {
+    showAiRuntimeError('previous window.onerror handler', handlerError);
+   }
+  }
+  return false;
+ };
+ window.addEventListener('unhandledrejection', event => {
+  showAiRuntimeError('unhandledrejection', event.reason || 'Unhandled promise rejection');
+ });
+}
+installAiRuntimeErrorHandlers();
+
 let cloudAiStatusCache = null;
 let cloudAiStatusAt = 0;
 async function getCloudAiStatus(refresh = false) {
@@ -188,6 +244,7 @@ async function init(){
  '<p class="ai-tone-hint">Use the editor’s Save to Device button to store the tone. Success confirms MIDI commands were sent; it does not confirm full pedal ACK/readback.</p></div>'
  ].join('');
  document.body.append(shade,sheet);
+ flushAiRuntimeErrors();
  const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
  let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
@@ -631,8 +688,7 @@ async function automaticNamImportForPrompt(prompt){
  $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
  $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));
  $('aiToneTestGroq').addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter').addEventListener('click',()=>testProvider('openrouter'));
- $('aiToneDeleteOpenAi').addEventListener('click',()=>deleteKey('gpt'));$('aiToneDeleteGemini').addEventListener('click',()=>deleteKey('gemini'));
- $('aiToneDeleteGroq').addEventListener('click',()=>deleteKey('groq'));$('aiToneDeleteOpenRouter').addEventListener('click',()=>deleteKey('openrouter'));
+ // Provider keys are server-managed; no client-side delete buttons are rendered.
  
  ui.autoFallback.checked=localStorage.getItem('mg30-ai-auto-fallback')!=='0';
  ui.autoFallback.addEventListener('change',()=>localStorage.setItem('mg30-ai-auto-fallback',ui.autoFallback.checked?'1':'0'));
@@ -652,5 +708,6 @@ async function automaticNamImportForPrompt(prompt){
  await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
 }
 if(typeof window!=='undefined'&&typeof document!=='undefined'){
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{void init();},{once:true});else void init();
+ const startAiToneStudio=()=>{void init().catch(error=>showAiRuntimeError('AI assistant startup',error));};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startAiToneStudio,{once:true});else startAiToneStudio();
 }
