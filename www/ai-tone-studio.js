@@ -132,6 +132,9 @@ export function artistToneGuidance(prompt){const p=String(prompt||'').toLowerCas
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
  'You are a live tone editor for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII.',
+ 'Perform the Tone Architect role first: interpret the musical reference, style, feel, dynamics, gain character, tonal balance, ambience and things to avoid before choosing any gear or parameters.',
+ 'Then perform Gear Specialist and Parameter Engineer work, and act as Lead AI / Preset Composer: select only compatible catalog models and concrete values, preserve unaffected blocks, and produce one coherent final Tone Plan.',
+ 'Include compact orchestration metadata at the top level when possible: tone_intent (object), confidence (0..1), review_required (boolean), and review_reason (short string). These metadata fields do not replace or bypass application validation.',
  'Return only JSON: {"summary":"English summary","blocks":[{"id":"AMP","model":"Deluxe Rvb","enabled":true,"parameters":{"gain":35}}],"notes":[]}.',
  'Only include blocks you intend to change. Use exact block ids, model names and parameter keys from the app catalog.',
  'Rotary/selector values are normalized 0..100. Discrete controls must use an exact numeric choice from the catalog.',
@@ -194,9 +197,47 @@ export async function listAiProviderModels(provider, _credential) {
  return Array.isArray(data.models) ? data.models : [];
 }
 export function providerFallbackOrder(primary='gemini'){
- const priority=['gemini','groq','openrouter','gpt'];
- const first=priority.includes(primary)?primary:'gemini';
- return [first,...priority.filter(provider=>provider!==first)];
+ const freePriority=['gemini','groq','openrouter'];
+ const first=freePriority.includes(primary)?primary:(primary==='gpt'?'gpt':'gemini');
+ return first==='gpt'?['gpt',...freePriority]:[first,...freePriority.filter(provider=>provider!==first)];
+}
+export function isLocalToneRefinement(prompt){
+ const p=String(prompt||'').toLowerCase();
+ if(!p.trim())return false;
+ if(/\b(genre|style|artist|musisi|lagu|referensi|reference|vibe|feel|karakter musikal|tone baru|preset baru|from scratch|mulai dari awal|reset|john\s*mayer|petrucci|satriani|jazz|blues|metal|country|funk|ambient|progressive rock)\b/.test(p))return false;
+ return /\b(more|less|slightly|a little|reduce|increase|raise|lower|shorter|longer|warmer|brighter|darker|tighter|softer|wetter|drier|kurangi|kurangin|tambah|naikkan|turunkan|lebih|sedikit|agak|pendekkan|panjangkan|hangat|terang|gelap|gain|bass|middle|treble|presence|delay|reverb|mix|depth|rate|attack|level)\b/.test(p);
+}
+export function compactToneArchitectIntent(raw,prompt=''){
+ const source=raw?.tone_intent||raw?.toneIntent||raw?.intent||raw||{};
+ const short=(value,fallback='')=>String(value??fallback).replace(/\s+/g,' ').trim().slice(0,120);
+ const list=value=>Array.isArray(value)?value.map(x=>short(x)).filter(Boolean).slice(0,4):[];
+ return {
+  reference:short(source.reference||source.artist_reference||source.artist),
+  style:short(source.style||source.genre),
+  feel:short(source.feel||source.playing_feel),
+  dynamics:short(source.dynamics||source.response),
+  gainCharacter:short(source.gain_character||source.gain||source.saturation),
+  tonalBalance:short(source.tonal_balance||source.eq||source.frequency_balance),
+  ambience:short(source.ambience||source.effects_space),
+  avoid:list(source.avoid||source.avoid_list),
+  focus:short(source.focus||source.priority,short(prompt,artistToneGuidance(prompt))),
+  summary:short(source.summary||source.reasoning_summary,artistToneGuidance(prompt)),
+  confidence:Number.isFinite(Number(source.confidence))?Math.max(0,Math.min(1,Number(source.confidence))):null
+ };
+}
+export function shouldInvokeCriticalReviewer(plan){
+ if(!plan||typeof plan!=='object')return false;
+ if(plan.review_required===true||plan.reviewRequired===true)return true;
+ if((Array.isArray(plan.conflicts)&&plan.conflicts.length)||(Array.isArray(plan.uncertainties)&&plan.uncertainties.length))return true;
+ const confidence=Number(plan.confidence);
+ if(Number.isFinite(confidence)&&confidence<0.62)return true;
+ return Array.isArray(plan.blocks)&&plan.blocks.length>=4;
+}
+export function toneArchitectSystemPrompt(){
+ return 'You are the Tone Architect for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). Analyze only the musical intent; do not choose device models, blocks, parameter values, MIDI or transfer operations. Return JSON only: {"tone_intent":{"reference":"","style":"","feel":"","dynamics":"","gain_character":"","tonal_balance":"","ambience":"","avoid":[],"focus":"","summary":"","confidence":0.0}}. Keep every field short and specific. Interpret the user\'s musical goal, not an imagined exact artist rig.';
+}
+export function toneLeadInstruction(intent){
+ return 'ROLE HANDOFF: Tone Architect is mandatory and its musical intent is authoritative. You are now Lead AI / Preset Composer, combining Gear Specialist and Parameter Engineer duties. Use this compact Tone Architect intent: '+JSON.stringify(intent||{})+'. Choose compatible MG-30 models and parameter values using only the supplied compact catalog. Preserve unaffected blocks. Set review_required=true only when you detect a material conflict, low confidence, uncertain mapping, or coupled changes that deserve independent critique; add a short review_reason and confidence (0..1). Return the normal Tone Plan JSON plus these metadata fields.';
 }
 export function isRetryableProviderError(error){
  const value=String(error?.message||error||'');
@@ -230,10 +271,10 @@ async function init(){
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking Cloud configuration…</span></div></div>',
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking Cloud configuration…</span></div></div>',
  
- '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter → GPT when a provider is temporarily busy</small></span></label>',
+ '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter only. GPT is never used automatically and must be selected manually.</small></span></label>',
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Cloud Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button></div>',
  '<p class="ai-tone-note">Provider secrets never leave the Worker. Free-model quotas still apply. Automatic fallback retries only temporary rate-limit, capacity, timeout, network and server failures. Tone Plans are checked against the verified original MG-30 Gen 2 catalog before editor MIDI changes.</p></div>',
-'<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · fastest available</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT</option><option value="collab">GPT + Gemini</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>',
+'<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · Free Multi-AI</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>',
  '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live preset transfer.</div>',
  '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
@@ -249,13 +290,14 @@ async function init(){
  let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
+ const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
   const next=['auto','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'auto';
   mode=next;ui.providerSelect.value=next;autoProviderHealthCache.expires=0;
   renderActiveModelSelect();
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
-  else if(next==='collab')void Promise.all([refreshProviderModels('gpt',false),refreshProviderModels('gemini',false)]);
+  else if(next==='collab')void refreshAllProviderModels(true);
  };
  const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');window.setTimeout(()=>ui.prompt.focus(),150);};
  const closePanel=()=>{shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
@@ -362,7 +404,7 @@ async function init(){
  const autoProviderHealthCache={expires:0,order:[],errors:[]};
  const autoModelHealthCache={};
  const currentMode=()=>String(ui.providerSelect.value||mode||'auto');
- const activeModelProvider=()=>currentMode()==='collab'?'gpt':currentMode()==='auto'?'gemini':currentMode();
+ const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'gemini':currentMode();
  function selectedModel(provider){
   const key=provider==='collab'?'gpt':provider;
   if(localStorage.getItem('mg30-ai-model-manual-'+key)!=='1')return '';
@@ -394,8 +436,8 @@ async function init(){
    option.textContent='Configure '+providerNames[provider]+' in Worker to load models';
    select.append(option);select.disabled=true;
   }
-  ui.activeModelLabel.textContent=currentMode()==='collab'?'GPT Model (Gemini reviewer uses its saved model)':currentMode()==='auto'?'Auto provider + fastest model':'Model';
-  if(currentMode()==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent='Auto · provider and model selected per request';select.append(option);select.disabled=true;}
+  ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto free team + models':'Model';
+  if(currentMode()==='auto'||currentMode()==='collab'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent=currentMode()==='collab'?'Free providers assigned by role':'Auto · free providers and models selected per request';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
@@ -427,13 +469,14 @@ async function init(){
   }
  }
  async function refreshAllProviderModels(quiet=true){
-  const results=await Promise.all(['gpt','gemini','groq','openrouter'].map(provider=>refreshProviderModels(provider,quiet)));
+  const providers=['gemini','groq','openrouter'];
+  const results=await Promise.all(providers.map(provider=>refreshProviderModels(provider,quiet)));
   renderActiveModelSelect();
-  const failures=results.map((rows,index)=>({provider:['gpt','gemini','groq','openrouter'][index],rows})).filter(x=>!x.rows.length);
+  const failures=results.map((rows,index)=>({provider:providers[index],rows})).filter(x=>!x.rows.length);
   if(!quiet&&failures.length){
    const details=failures.map(x=>providerNames[x.provider]+': no models returned (check Worker model route, provider key and upstream permissions)').join(' · ');
-   status('Model catalogue incomplete — '+details,'error');
-  }else if(!quiet){status('Model catalogues refreshed. Select a provider to see its available models.','success');}
+   status('Free model catalogue incomplete — '+details,'error');
+  }else if(!quiet){status('Free provider model catalogues refreshed. GPT is available only when selected manually.','success');}
   return results;
  }
  async function keyStates(){
@@ -457,21 +500,46 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
  }
  async function fastestReadyModel(provider,key){
   if(selectedModel(provider))return selectedModel(provider);
-  const cached=autoModelHealthCache[provider];if(cached&&Date.now()<cached.expires)return cached.model;
-  let models=providerModels[provider]||[];if(!models.length)models=await refreshProviderModels(provider,true);
-  const score=id=>{const v=String(id).toLowerCase();if(provider==='gemini')return /flash-lite/.test(v)?0:/flash/.test(v)?1:4;if(provider==='groq')return /llama-3.1-8b-instant|llama-3.3-70b-versatile|qwen.*32b/.test(v)?0:/instant|8b/.test(v)?1:4;if(provider==='openrouter')return v==='openrouter/free'?0:/free/.test(v)?1:4;return /gpt-4.1-mini|gpt-4o-mini|gpt-5-mini/.test(v)?0:/mini/.test(v)?1:4;};
-  const candidates=models.slice().sort((a,b)=>score(a.id)-score(b.id)).slice(0,3);if(!candidates.length)throw new Error('No text model is available for '+providerNames[provider]+'.');
-  const probes=await Promise.all(candidates.map(async row=>{const started=Date.now();try{await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',row.id,10000);return {id:row.id,latency:Date.now()-started};}catch(error){return {id:row.id,error,latency:Date.now()-started};}}));
-  const ready=probes.filter(x=>!x.error).sort((a,b)=>a.latency-b.latency);if(!ready.length)throw new Error(providerNames[provider]+' has no responding model: '+probes.map(x=>x.id+' '+(x.error?.message||'')).join('; '));
-  autoModelHealthCache[provider]={model:ready[0].id,expires:Date.now()+45_000};return ready[0].id;
+  const cached=autoModelHealthCache[provider];
+  if(cached&&Date.now()<cached.expires)return cached.model;
+  let models=providerModels[provider]||[];
+  if(!models.length)models=await refreshProviderModels(provider,true);
+  const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
+  if(saved&&models.some(row=>row.id===saved)){
+   autoModelHealthCache[provider]={model:saved,expires:Date.now()+45_000};
+   return saved;
+  }
+  const score=id=>{
+   const value=String(id).toLowerCase();
+   if(provider==='gemini')return /flash-lite/.test(value)?0:/flash/.test(value)?1:4;
+   if(provider==='groq')return /llama-3.1-8b-instant|llama-3.3-70b-versatile|qwen.*32b|gpt-oss-20b/.test(value)?0:/instant|8b|20b/.test(value)?1:4;
+   if(provider==='openrouter')return value==='openrouter/free'?0:/free/.test(value)?1:4;
+   return /mini/.test(value)?0:4;
+  };
+  const chosen=models.slice().sort((a,b)=>score(a.id)-score(b.id))[0]?.id;
+  if(!chosen)throw new Error('No text model is available for '+providerNames[provider]+'.');
+  localStorage.setItem(modelStorageKey(provider),chosen);
+  autoModelHealthCache[provider]={model:chosen,expires:Date.now()+45_000};
+  return chosen;
  }
  async function fastestReadyProviderOrder(){
   if(Date.now()<autoProviderHealthCache.expires&&autoProviderHealthCache.order.length)return autoProviderHealthCache.order.slice();
-  await refreshAllProviderModels(true);const providers=['gemini','groq','openrouter','gpt'];
-  const probes=await Promise.all(providers.map(async provider=>{const key=await secret(providerKeyId(provider));if(!key)return {provider,ok:false,error:new Error('Provider not configured in Cloudflare Worker')};const started=Date.now();try{const model=await fastestReadyModel(provider,key);return {provider,model,latency:Date.now()-started,ok:true};}catch(error){return {provider,latency:Date.now()-started,ok:false,error};}}));
-  const ready=probes.filter(x=>x.ok).sort((a,b)=>a.latency-b.latency);autoProviderHealthCache.expires=Date.now()+45_000;autoProviderHealthCache.order=ready.map(x=>x.provider);autoProviderHealthCache.errors=probes.filter(x=>!x.ok).map(x=>({provider:x.provider,message:String(x.error?.message||x.error)}));
-  if(!ready.length)throw new Error('No configured Cloud AI provider/model is responding right now. '+probes.map(x=>providerNames[x.provider]+': '+(x.error?.message||'unavailable')).join(' · '));
-  message('ai','Auto selected '+providerNames[ready[0].provider]+' / '+ready[0].model+' ('+ready[0].latency+' ms model probe).');return autoProviderHealthCache.order.slice();
+  const providers=['gemini','groq','openrouter'];
+  const rows=await Promise.all(providers.map(async provider=>{
+   const key=await secret(providerKeyId(provider));
+   if(!key)return {provider,ok:false,error:new Error('Free provider is not configured in Cloudflare Worker.')};
+   try{
+    const model=await fastestReadyModel(provider,key);
+    return {provider,model,ok:true};
+   }catch(error){return {provider,ok:false,error};}
+  }));
+  const ready=rows.filter(item=>item.ok).map(item=>item.provider);
+  autoProviderHealthCache.expires=Date.now()+45_000;
+  autoProviderHealthCache.order=ready;
+  autoProviderHealthCache.errors=rows.filter(item=>!item.ok).map(item=>({provider:item.provider,message:String(item.error?.message||item.error)}));
+  if(!ready.length)throw new Error('No free Gemini, Groq, or OpenRouter model is configured and available. Select a provider manually or check Cloud AI settings.');
+  message('ai','Free-first Multi-AI team ready: '+rows.filter(item=>item.ok).map(item=>item.provider+' / '+item.model).join(' · ')+'. No GPT model was probed or selected.');
+  return ready.slice();
  }
  async function testProvider(provider){
   setBusy(true);status('Testing '+providerNames[provider]+' API…','busy');
@@ -487,14 +555,12 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
  }
  async function askNamAIJson(system,user,stage){
   if(mode==='collab'){
-   const g=await secret('openai'),m=await secret('gemini');
-   if(!g||!m)throw new Error('Collaboration mode requires both GPT and Gemini credentials configured in Cloudflare Worker.');
-   const gm=await fastestReadyModel('gpt',g),mm=await fastestReadyModel('gemini',m);
-   status('GPT is '+stage+'…','busy');const draft=await openai(g,system,user,gm);
-   status('Gemini is reviewing GPT’s '+stage+'…','busy');
-   return gemini(m,system+'\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\n\nGPT PROPOSAL:\n'+JSON.stringify(draft),mm);
+   const order=await fastestReadyProviderOrder();
+   const provider=order[0],key=await secret(providerKeyId(provider)),model=await fastestReadyModel(provider,key);
+   status(providerNames[provider]+' is '+stage+'…','busy');
+   return invokeProvider(provider,key,system,user,model);
   }
-  const auto=mode==='auto'||ui.autoFallback.checked,order=mode==='auto'?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
+  const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,order=(mode==='auto'||mode==='collab')?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
@@ -504,7 +570,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
    try{
     status(providerNames[provider]+' is '+stage+'…','busy');
     const result=await invokeProvider(provider,key,system,user,model);
-    if(provider!==mode)message('ai','Automatic fallback used '+providerNames[provider]+' after '+providerNames[mode]+' was unavailable.');
+    if(provider!==mode&&providerNames[mode])message('ai','Automatic fallback used '+providerNames[provider]+' after '+providerNames[mode]+' was unavailable.');
     return result;
    }catch(error){
     lastError=error;
@@ -616,17 +682,103 @@ async function automaticNamImportForPrompt(prompt){
   status('NAM installed in slot 10. Building the preset around the imported amp…','busy');namModeActive=true;
   return {success:true,tone:selected.tone,model:selected.model,slotModel:slotModel.name};
  }
+ async function resolveFreeProviderTeam(){
+  const order=await fastestReadyProviderOrder(),team=[];
+  for(const provider of order){
+   const key=await secret(providerKeyId(provider));
+   if(!key)continue;
+   try{const model=await fastestReadyModel(provider,key);if(model)team.push({provider,key,model});}
+   catch(error){message('ai',providerNames[provider]+' model unavailable: '+(error.message||error));}
+  }
+  return team;
+ }
+ async function invokeFreeTeam(team,system,user,stage,preferredProvider=''){
+  const preferred=team.find(item=>item.provider===preferredProvider);
+  const ordered=preferred?[preferred,...team.filter(item=>item!==preferred)]:team.slice();
+  let lastError=null;
+  for(let index=0;index<ordered.length;index++){
+   const member=ordered[index];
+   try{
+    status(providerNames[member.provider]+' is '+stage+'…','busy');
+    const result=await invokeProvider(member.provider,member.key,system,user,member.model);
+    return {result,member};
+   }catch(error){
+    lastError=error;
+    const next=ordered[index+1];
+    if(!next||!ui.autoFallback.checked||!isRetryableProviderError(error))throw new Error(niceError(error,member.provider));
+    message('ai',providerNames[member.provider]+' hit a temporary limit. Trying '+providerNames[next.provider]+' using the existing free-provider team.');
+   }
+  }
+  throw new Error(lastError?.message||'No free AI provider completed the task.');
+ }
  async function makePlan(prompt,bridge){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
   const system=systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt));
-  const first=await askNamAIJson(system,userText(prompt,null,activeNamContext),'building your Tone Plan');
-  try{return validateAiTonePlan(first,catalog);}catch(validationError){
-   message('ai','The first proposal did not exactly match the MG-30 catalog ('+validationError.message+'). Asking the AI to correct the model/parameter selection before sending anything.');
-   const correctionSystem=system+'\nMANDATORY CORRECTION: Your prior proposal failed application validation. Re-check exact block model names and parameter keys against the compact catalog. If changing a model, include every parameter listed for that exact model. Do not guess or abbreviate names. Return corrected complete JSON only.';
-   const correctionUser='USER REQUEST:\n'+prompt+'\nINSTALLED NAM CONTEXT:\n'+(activeNamContext||'none')+'\nVALIDATION ERROR:\n'+validationError.message+'\nPREVIOUS INVALID PLAN:\n'+JSON.stringify(first)+'\nReturn a corrected JSON Tone Plan using only exact catalog entries.';
-   const corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
-   try{return validateAiTonePlan(corrected,catalog);}catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
+  const multiMode=mode==='auto'||mode==='collab';
+  const localRefinement=Boolean(toneSession.intent&&isLocalToneRefinement(prompt));
+  let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent;
+  if(multiMode){
+   team=await resolveFreeProviderTeam();
+   if(!team.length)throw new Error('No free Gemini, Groq, or OpenRouter provider is ready. Choose a configured free provider in AI Settings.');
+   if(team.length>=2&&!localRefinement){
+    const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),'USER MUSICAL REQUEST:\n'+prompt,'defining the musical direction');
+    architectMember=architect.member;
+    toneIntent=compactToneArchitectIntent(architect.result,prompt);
+    toneSession.intent=toneIntent;toneSession.architectProvider=architectMember.provider;toneSession.sourcePrompt=prompt;
+    message('ai','Tone Architect · '+providerNames[architectMember.provider]+': '+(toneIntent.summary||toneIntent.style||'Musical direction established.'));
+   }else if(localRefinement){
+    message('ai','Tone Architect context reused for this focused refinement; no duplicate intent-analysis request was sent.');
+   }
+   const preferredLead=team.find(item=>item.provider!==architectMember?.provider&&item.provider!==toneSession.architectProvider)||team.find(item=>item.provider!==architectMember?.provider)||team[0];
+   const leadCandidates=[preferredLead,...team.filter(item=>item!==preferredLead)];
+   const leadSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
+   const leadUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nNo prior Tone Architect context is available. Perform Tone Architect analysis internally before making gear and parameter decisions.');
+   const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'');
+   first=lead.result;leadMember=lead.member;
+   if(!toneIntent){
+    toneIntent=compactToneArchitectIntent(first,prompt);
+    toneSession.intent=toneIntent;toneSession.architectProvider='';toneSession.sourcePrompt=prompt;
+   }
+   if(team.length===1&&!localRefinement)message('ai','One free provider is available. Tone Architect, Gear Specialist, Parameter Engineer and Lead AI were combined into one token-efficient request.');
+  }else{
+   const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
+   const singleUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nPerform the Tone Architect role internally before the Lead AI / Gear Specialist / Parameter Engineer synthesis.');
+   first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
+   if(!localRefinement||!toneSession.intent){
+    toneSession.intent=compactToneArchitectIntent(first,prompt);
+    toneSession.sourcePrompt=prompt;
+   }
   }
+  let validated;
+  try{validated=validateAiTonePlan(first,catalog);}
+  catch(validationError){
+   message('ai','The first proposal did not exactly match the MG-30 catalog ('+validationError.message+'). Requesting one compact correction before sending anything.');
+   const correctionSystem=system+'\nMANDATORY CORRECTION: Re-check exact block model names and parameter keys against the compact catalog. If changing a model, include every parameter listed for that exact model. Do not guess or abbreviate names. Return corrected complete JSON only.';
+   const correctionUser='USER REQUEST:\n'+prompt+'\nINSTALLED NAM CONTEXT:\n'+(activeNamContext||'none')+'\nTONE ARCHITECT INTENT:\n'+JSON.stringify(toneSession.intent||{})+'\nVALIDATION ERROR:\n'+validationError.message+'\nPREVIOUS INVALID PLAN:\n'+JSON.stringify(first)+'\nReturn a corrected Tone Plan and preserve unaffected blocks.';
+   let corrected;
+   if(multiMode&&team.length){
+    const candidates=leadMember?[leadMember,...team.filter(item=>item!==leadMember)]:team;
+    corrected=(await invokeFreeTeam(candidates,correctionSystem,correctionUser,'correcting the catalog validation',leadMember?.provider||'')).result;
+   }else corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
+   try{validated=validateAiTonePlan(corrected,catalog);first=corrected;}
+   catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
+  }
+  if(multiMode&&team.length>=2&&shouldInvokeCriticalReviewer(first)){
+   const reviewerCandidates=team.filter(item=>item.provider!==leadMember?.provider);
+   if(reviewerCandidates.length){
+    try{
+     const reviewerSystem=system+'\n\nROLE: Critical Reviewer. Inspect the proposed Tone Plan for musical contradictions, coupled amp/effect changes, uncertain choices, or catalog mistakes. Return one corrected complete Tone Plan in the same JSON schema. Keep unaffected blocks and do not invent catalogue entries.';
+     const reviewerUser='USER REQUEST:\n'+prompt+'\nTONE ARCHITECT INTENT:\n'+JSON.stringify(toneSession.intent||{})+'\nPROPOSED PLAN:\n'+JSON.stringify(first)+'\nREVIEW REASON:\n'+String(first.review_reason||first.reviewReason||'The Lead AI flagged a conflict, uncertainty or materially coupled change.')+'\nReturn the reviewed plan only.';
+     const reviewed=(await invokeFreeTeam(reviewerCandidates,reviewerSystem,reviewerUser,'checking a material conflict or coupled change')).result;
+     const reviewedPlan=validateAiTonePlan(reviewed,catalog);
+     first=reviewed;validated=reviewedPlan;
+     message('ai','Critical Reviewer · '+reviewerCandidates[0].provider+' checked the flagged trade-off. The reviewed plan passed the MG-30 catalog validator.');
+    }catch(reviewError){
+     message('ai','Critical Reviewer was unavailable or returned an invalid revision; the original Lead AI plan remains in use. '+(reviewError.message||reviewError));
+    }
+   }
+  }
+  return validated;
  }
  async function submit(){
   if(busy)return;
