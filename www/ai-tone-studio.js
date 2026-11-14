@@ -1,5 +1,11 @@
-import { registerPlugin } from '@capacitor/core';
-const SecureStore=registerPlugin('MG30SecureStore');
+import { cloudApiRequest } from './cloud-api.js';
+let cloudAiStatusCache = null;
+let cloudAiStatusAt = 0;
+async function getCloudAiStatus(refresh = false) {
+ if (!refresh && cloudAiStatusCache && Date.now() - cloudAiStatusAt < 15000) return cloudAiStatusCache;
+ const data = await cloudApiRequest('/api/v1/ai/providers');
+ cloudAiStatusCache = data; cloudAiStatusAt = Date.now(); return data;
+}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -86,20 +92,20 @@ function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  return lines.join('\n')+'\n\nAPP CATALOG (compact):\n'+JSON.stringify(compact.catalog)+'\n\nCURRENT EDITOR (compact):\n'+JSON.stringify(compact.snapshot);
 }
 function userText(prompt,candidate,namContext){return 'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
-async function secret(provider){const r=await SecureStore.getSecret({provider});return String(r?.value||'');}
-async function openai(key,sys,user,model,timeoutMs=90000){
- if(!model)throw new Error('Choose an available GPT model in AI Settings.');
- const d=await postJson('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
- body:JSON.stringify({model,input:[{role:'system',content:[{type:'input_text',text:sys}]},{role:'user',content:[{type:'input_text',text:user}]}],text:{format:{type:'json_object'}},max_output_tokens:2600})},timeoutMs);
- return parseJson(outputText(d));
+async function secret(provider) {
+ const key = provider === 'openai' ? 'gpt' : provider;
+ const status = await getCloudAiStatus();
+ return status?.providers?.[key] ? 'cloud-managed' : '';
 }
-async function gemini(key,sys,user,model,timeoutMs=90000){
- if(!model)throw new Error('Choose an available Gemini model in AI Settings.');
- const m=encodeURIComponent(model);
- const d=await postJson('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
- body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json',temperature:.35,maxOutputTokens:2600}})},timeoutMs);
- return parseJson(geminiOutput(d));
+async function cloudTonePlan(provider, system, prompt, model) {
+ if (!model) throw new Error('Choose an available model in AI Settings.');
+ const result = await cloudApiRequest('/api/v1/ai/tone-plan', { method: 'POST', body: { provider, model, system, prompt } });
+ if (!result?.tonePlan || typeof result.tonePlan !== 'object') throw new Error('Cloud AI did not return a valid Tone Plan response.');
+ return result.tonePlan;
 }
+async function openai(_credential, system, prompt, model) { return cloudTonePlan('gpt', system, prompt, model); }
+async function gemini(_credential, system, prompt, model) { return cloudTonePlan('gemini', system, prompt, model); }
+
 export function compatibleChatText(data,provider){
  const choice=data?.choices?.[0]||{},message=choice.message||{};
  const content=message.content;
@@ -124,65 +130,12 @@ function appendJsonContract(messages){
  last.content=String(last.content||'')+'\n\nFINAL OUTPUT CONTRACT: Return exactly one complete JSON object and nothing else. Do not use Markdown fences, commentary, or tool calls. Required top-level keys: summary (string), blocks (array), notes (array).';
  return rows;
 }
-async function openAiCompatible(key,sys,user,model,provider,timeoutMs=90000){
- if(!model)throw new Error('Choose an available '+(provider==='groq'?'Groq':'OpenRouter')+' model in AI Settings.');
- const isGroq=provider==='groq',isGroqGptOss=isGroq&&String(model).toLowerCase().startsWith('openai/gpt-oss-');
- const base=isGroq?'https://api.groq.com/openai/v1':'https://openrouter.ai/api/v1';
- const messages=isGroqGptOss?[{role:'user',content:sys+'\n\n'+user}]:[{role:'system',content:sys+'\nReturn a valid JSON object only. The response must be JSON.'},{role:'user',content:user}];
- const body={model,messages,response_format:{type:'json_object'},...(isGroq?{max_completion_tokens:2600}: {max_tokens:2600,reasoning:{effort:'low',exclude:true}}),...(isGroqGptOss?{reasoning_effort:'low',include_reasoning:false}:{temperature:.2})};
- const run=async requestBody=>{const data=await postJson(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(requestBody)},timeoutMs);return parseJson(compatibleChatText(data,provider));};
- try{return await run(body);}
- catch(error){
-  if(isGroq&&isGroqJsonValidationError(error)){
-   const retryBody={...body,messages:appendJsonContract(body.messages)};
-   delete retryBody.response_format;
-   try{return await run(retryBody);}
-   catch(retryError){const combined=new Error('Groq rejected JSON mode and its plain-text JSON retry also failed: '+String(retryError?.message||retryError));combined.cause=retryError;throw combined;}
-  }
-  if(provider==='openrouter'&&error?.code==='AI_NO_TEXT_OUTPUT'){
-   const retryBody={...body,messages:appendJsonContract(body.messages),reasoning:{effort:'low',exclude:true},max_tokens:3200};
-   delete retryBody.response_format;
-   try{return await run(retryBody);}
-   catch(retryError){const combined=new Error('OpenRouter returned no final text on the first attempt; the text-only JSON retry also failed: '+String(retryError?.message||retryError));combined.cause=retryError;throw combined;}
-  }
-  throw error;
- }
+async function openAiCompatible(_credential, system, prompt, model, provider) {
+ return cloudTonePlan(provider, system, prompt, model);
 }
-async function getProviderJson(url,headers){
- const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),30000);
- try{
-  const response=await fetch(url,{method:'GET',headers,signal:ctl.signal});
-  const raw=await response.text();let body={};
-  try{body=raw?JSON.parse(raw):{};}catch{body={rawText:raw};}
-  if(!response.ok)throw new Error(body?.error?.message||body?.message||body?.error_description||('HTTP '+response.status));
-  return body;
- }catch(error){if(error?.name==='AbortError')throw new Error('Model list request timed out.');throw error;}
- finally{window.clearTimeout(timer);}
-}
-function isTextChatModel(id){
- return Boolean(id)&&!/(embed|whisper|audio|speech|transcri|\btts\b|image|video|moderation|guard|rerank|realtime|robotics)/i.test(id);
-}
-export async function listAiProviderModels(provider,key){
- if(!key)throw new Error('Save this provider API key before loading its models.');
- let rows=[];
- if(provider==='gpt'){
-  const body=await getProviderJson('https://api.openai.com/v1/models',{Authorization:'Bearer '+key});
-  rows=(body.data||[]).filter(row=>/^(gpt-|o[134]-|chatgpt-)/i.test(row.id||'')&&isTextChatModel(row.id)).map(row=>({id:row.id,name:row.id}));
- }else if(provider==='gemini'){
-  const body=await getProviderJson('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',{'x-goog-api-key':key});
-  rows=(body.models||[]).filter(row=>(row.supportedGenerationMethods||[]).includes('generateContent')&&isTextChatModel(row.name||''))
-   .map(row=>({id:String(row.name||'').replace(/^models\//,''),name:row.displayName||String(row.name||'').replace(/^models\//,'')}));
- }else if(provider==='groq'){
-  const body=await getProviderJson('https://api.groq.com/openai/v1/models',{Authorization:'Bearer '+key});
-  rows=(body.data||[]).filter(row=>isTextChatModel(row.id||'')).map(row=>({id:row.id,name:row.id}));
- }else if(provider==='openrouter'){
-  const body=await getProviderJson('https://openrouter.ai/api/v1/models',{Authorization:'Bearer '+key});
-  rows=(body.data||[]).filter(row=>isTextChatModel(row.id||'')&&Number(row?.pricing?.prompt)===0&&Number(row?.pricing?.completion)===0)
-   .map(row=>({id:row.id,name:row.name||row.id}));
-  rows.unshift({id:'openrouter/free',name:'Auto Free Model Router'});
- }else throw new Error('Unknown AI provider.');
- const seen=new Set();
- return rows.filter(row=>row.id&&!seen.has(row.id)&&seen.add(row.id)).slice(0,100);
+export async function listAiProviderModels(provider, _credential) {
+ const data = await cloudApiRequest('/api/v1/ai/models?provider=' + encodeURIComponent(provider === 'gpt' ? 'gpt' : provider));
+ return Array.isArray(data.models) ? data.models : [];
 }
 export function providerFallbackOrder(primary='gemini'){
  const priority=['gemini','groq','openrouter','gpt'];
@@ -217,14 +170,14 @@ async function init(){
  const sheet=document.createElement('section');sheet.className='ai-tone-sheet';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','AI Live Tone Assistant');
  sheet.innerHTML=[
  '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div><button class="ai-tone-icon" id="aiToneSettingsToggle" type="button">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button">×</button></div></div>',
- '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>AI Providers & Models</h4><p>Provider API keys are encrypted on this Android device with Android Keystore. Model lists are loaded from each provider using the saved key.</p>',
- '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiOpenAiKey">OpenAI API Key (GPT)</label><input id="aiOpenAiKey" type="password" autocomplete="off" placeholder="sk-…"><span class="ai-tone-key-state" id="aiOpenAiKeyState">Not checked</span></div><div class="ai-tone-key-field"><label for="aiGeminiKey">Gemini API Key</label><input id="aiGeminiKey" type="password" autocomplete="off" placeholder="AIza…"><span class="ai-tone-key-state" id="aiGeminiKeyState">Not checked</span></div></div>',
- '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><label for="aiGroqKey">Groq API Key</label><input id="aiGroqKey" type="password" autocomplete="off" placeholder="Groq API key"><span class="ai-tone-key-state" id="aiGroqKeyState">Not checked</span></div><div class="ai-tone-key-field"><label for="aiOpenRouterKey">OpenRouter API Key</label><input id="aiOpenRouterKey" type="password" autocomplete="off" placeholder="OpenRouter API key"><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Not checked</span></div></div>',
+ '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>Cloud AI Providers & Models</h4><p>Provider credentials are stored only as Cloudflare Worker secrets. This app requests provider status, model lists and Tone Plans through the authenticated Cloud gateway.</p>',
+ '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking Cloud configuration…</span></div></div>',
+ '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking Cloud configuration…</span></div></div>',
  
  '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter → GPT when a provider is temporarily busy</small></span></label>',
- '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Save API Keys</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneDeleteOpenAi" type="button">Delete GPT</button><button id="aiToneDeleteGemini" type="button">Delete Gemini</button><button id="aiToneDeleteGroq" type="button">Delete Groq</button><button id="aiToneDeleteOpenRouter" type="button">Delete OpenRouter</button></div>',
- '<p class="ai-tone-note">Free-model quotas still apply. Fallback handles temporary rate-limit, capacity, timeout, network and server failures only. Invalid keys and invalid requests are not retried. API keys are sent directly to providers during requests.</p></div>',
-'<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · fastest available</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT</option><option value="collab">GPT + Gemini</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Save API key to load models</option></select></label></div>',
+ '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Cloud Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button></div>',
+ '<p class="ai-tone-note">Provider secrets never leave the Worker. Free-model quotas still apply. Automatic fallback retries only temporary rate-limit, capacity, timeout, network and server failures. Tone Plans are checked against the verified original MG-30 Gen 2 catalog before editor MIDI changes.</p></div>',
+'<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · fastest available</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT</option><option value="collab">GPT + Gemini</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>',
  '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live preset transfer.</div>',
  '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
@@ -235,7 +188,7 @@ async function init(){
  '<p class="ai-tone-hint">Use the editor’s Save to Device button to store the tone. Success confirms MIDI commands were sent; it does not confirm full pedal ACK/readback.</p></div>'
  ].join('');
  document.body.append(shade,sheet);
- const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),gpt:$('aiOpenAiKey'),gemini:$('aiGeminiKey'),groq:$('aiGroqKey'),openrouter:$('aiOpenRouterKey'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
+ const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
  let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
@@ -374,7 +327,7 @@ async function init(){
    select.append(option);select.value=saved;select.disabled=false;
   }else{
    const option=document.createElement('option');option.value='';
-   option.textContent='Save '+providerNames[provider]+' key to load models';
+   option.textContent='Configure '+providerNames[provider]+' in Worker to load models';
    select.append(option);select.disabled=true;
   }
   ui.activeModelLabel.textContent=mode==='collab'?'GPT Model (Gemini reviewer uses its saved model)':mode==='auto'?'Auto provider + fastest model':'Model';
@@ -414,25 +367,20 @@ async function init(){
   renderActiveModelSelect();
  }
  async function keyStates(){
-  try{
-   const providers=['gpt','gemini','groq','openrouter'];
-   const values=await Promise.all(providers.map(provider=>SecureStore.getSecret({provider:providerKeyId(provider)})));
-   providers.forEach((provider,index)=>{const id=provider==='gpt'?'aiOpenAiKeyState':provider==='gemini'?'aiGeminiKeyState':provider==='groq'?'aiGroqKeyState':'aiOpenRouterKeyState';$(id).textContent=values[index]?.configured?'Encrypted on this device':'No API key saved';});
+  try {
+   const data=await getCloudAiStatus(true),providers=data?.providers||{};
+   const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'};
+   for(const [provider,id] of Object.entries(labels)){const node=$(id);if(node)node.textContent=providers[provider]?'Configured in Cloudflare Worker':'Not configured in Cloudflare Worker';}
    await refreshAllProviderModels(true);
-  }catch(error){['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState'].forEach(id=>{if($(id))$(id).textContent='Secure storage unavailable';});status(error.message,'error');}
- }
- async function saveKeys(){
-  try{
-   const fields={gpt:ui.gpt,gemini:ui.gemini,groq:ui.groq,openrouter:ui.openrouter};let saved=0;
-   for(const [provider,input] of Object.entries(fields)){if(input.value.trim()){await SecureStore.setSecret({provider:providerKeyId(provider),value:input.value.trim()});input.value='';saved++;}}
-   await keyStates();status(saved?'API keys securely saved. Provider model lists refreshed.':'No new key entered; checking saved keys and model lists.','success');
-  }catch(error){status(error.message||'Failed to save API keys.','error');}
- }
- async function deleteKey(provider){
-  try{await SecureStore.deleteSecret({provider:providerKeyId(provider)});await keyStates();status(providerNames[provider]+' API key deleted.','success');}
-  catch(error){status(error.message,'error');}
- }
- async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
+  } catch(error) {
+   ['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState'].forEach(id=>{if($(id))$(id).textContent='Connect Cloud Account / check Cloud API';});
+   providerModels.gpt=[];providerModels.gemini=[];providerModels.groq=[];providerModels.openrouter=[];renderActiveModelSelect();
+   status(error.message||'Cloud AI configuration is unavailable.','error');
+  }
+}
+async function saveKeys(){await keyStates();status('Provider credentials are managed as Cloudflare Worker secrets. Cloud status and model lists refreshed.','success');}
+async function deleteKey(provider){status('Manage '+providerNames[provider]+' credentials in Cloudflare Worker secrets. The app cannot read or delete server-side keys.','idle');}
+async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   if(provider==='gpt')return openai(key,system,user,model,timeoutMs);
   if(provider==='gemini')return gemini(key,system,user,model,timeoutMs);
   return openAiCompatible(key,system,user,model,provider,timeoutMs);
