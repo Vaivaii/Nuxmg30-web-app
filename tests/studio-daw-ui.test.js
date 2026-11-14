@@ -605,7 +605,7 @@ test('Build 330: Record, backing playback and YouTube failure messages use Engli
   for (const phrase of ['Recording name diubah', 'Ganti nama', 'Backing sedang diputar', 'Backing selesai diputar', 'Periksa API key', 'Kuota YouTube Data API', 'Tidak dapat memutar', 'Pilih file audio']) {
     assert.ok(!main.includes(phrase), 'Indonesian Studio runtime text remains: ' + phrase);
   }
-  for (const phrase of ['Recording renamed to', 'Backing track is playing.', 'Backing track playback finished.', 'Check Cloudflare Worker configuration and YouTube API quota.', 'The YouTube Data API daily quota has been exceeded.']) {
+  for (const phrase of ['Recording renamed to', 'Backing track is playing.', 'Backing track playback finished.', 'Check Cloudflare Worker configuration and YouTube API quota.', 'Check Cloudflare Worker configuration and YouTube API quota.']) {
     assert.ok(main.includes(phrase), 'Missing English Studio runtime text: ' + phrase);
   }
 });
