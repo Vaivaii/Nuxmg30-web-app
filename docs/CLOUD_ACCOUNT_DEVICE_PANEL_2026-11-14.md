@@ -34,3 +34,7 @@ An initial successful APK build (run #787) still omitted the Cloud Account JavaS
 - APK web bundle inspection confirms the generated `assets/public/assets/index-CDYKmJC2.js` contains the Cloud login identifiers `mg30CloudPanel`, `Connect Cloud Account`, and `mg30-cloud-auth-token`.
 - APK SHA-256: `5ca4ba0f63ddd669d29964d58e3773f6d4eaa17f30c7e2522a7e62e3bec03910`.
 - Automated protocol regression tests, Android initializer validation, Android APK assembly, and artifact upload all passed. Physical installation and live login on the user's phone remain untested.
+
+
+## Follow-up field confirmation
+- 2026-11-14: User confirmed successful Cloud Account connection from the installed APK. This confirms the app login flow against the existing Worker auth endpoints; it does not confirm any AI, TONE3000 proxy, or YouTube Worker service.
