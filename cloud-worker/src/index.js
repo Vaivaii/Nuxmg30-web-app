@@ -155,12 +155,19 @@ async function generateTonePlan(provider, model, system, prompt, env) {
     };
     const response = await timedFetch(base + "/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key }, body: JSON.stringify(payload) });
     const data = await responseJson(response);
-    if (!response.ok) throw Object.assign(new Error(safeProviderError(response.status)), { status: response.status, retryable: response.status === 429 || response.status >= 500 });
+    if (!response.ok) {
+      const failedGeneration = Boolean(data?.error?.failed_generation);
+      throw Object.assign(new Error(safeProviderError(response.status)), {
+        status: response.status, failedGeneration,
+        retryable: response.status === 429 || response.status >= 500
+      });
+    }
     return extractJsonObject(chatText(data));
   };
   try { return await request(false); }
   catch (error) {
-    if ((isGroq || config.api === "openrouter") && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message))) {
+    if ((isGroq && (error instanceof SyntaxError || error.failedGeneration || (error.status === 400 && /rejected the request/i.test(error.message)))) ||
+        (config.api === "openrouter" && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message)))) {
       try { return await request(true); } catch (retryError) { throw retryError; }
     }
     throw error;
