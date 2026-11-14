@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import worker from '../cloud-worker/src/index.js';
+import worker from '../cloud-worker/worker.js';
 
 const APP_SECRET = 'worker-test-secret';
 const baseEnv = {
@@ -180,5 +180,32 @@ test('TONE3000 contract aliases are protected by app JWT and route to official A
     }), baseEnv);
     assert.equal(response.status, 200);
     assert.ok(calls[0].url.includes('/api/v1/tones/123?architecture=2'));
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('AI auto fallback advances from Gemini to Groq and returns the successful provider', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    const target = String(url);
+    calls.push(target);
+    if (target.includes('generativelanguage.googleapis.com')) return jsonResponse({ error: { message: 'temporarily unavailable' } }, 503);
+    if (target.includes('api.groq.com')) return jsonResponse({
+      choices: [{ message: { content: JSON.stringify({ summary: 'Test tone', blocks: [], notes: [] }) } }]
+    });
+    throw new Error('Unexpected provider URL: ' + target);
+  };
+  try {
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/tone-plan', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'auto', system: 'System contract', prompt: 'Create a test tone' })
+    }), { ...baseEnv, GEMINI_API_KEY: 'gemini-secret', GROQ_API_KEY: 'groq-secret', OPENROUTER_API_KEY: 'router-secret' });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.ok, true);
+    assert.equal(body.provider, 'groq');
+    assert.equal(body.model, 'openai/gpt-oss-20b');
+    assert.equal(calls.length, 2);
   } finally { globalThis.fetch = originalFetch; }
 });
