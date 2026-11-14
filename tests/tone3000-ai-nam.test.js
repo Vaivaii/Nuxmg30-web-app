@@ -130,10 +130,11 @@ test('TONE3000 session check refreshes the OAuth access token and separates app 
   assert.match(aiStudio, /Publishable Key identifies this app only/);
 });
 
-test('Groq and OpenRouter credentials use existing encrypted Android Keystore storage', () => {
-  assert.match(secureStore, /"groq"\.equals\(value\)/);
-  assert.match(secureStore, /"openrouter"\.equals\(value\)/);
-  assert.match(aiStudio, /SecureStore\.setSecret\(\{provider:providerKeyId\(provider\)/);
+test('AI provider credentials are managed only by Cloudflare Worker secrets, not local Android storage', () => {
+  assert.match(aiStudio, /cloudApiRequest\('\/api\/v1\/ai\/providers'\)/);
+  assert.match(aiStudio, /Provider credentials are stored only as Cloudflare Worker secrets/);
+  assert.doesNotMatch(aiStudio, /SecureStore|registerPlugin/);
+  assert.match(tone3000, /SecureStore\.setSecret\(\{ provider: 'tone3000'/);
 });
 
 
