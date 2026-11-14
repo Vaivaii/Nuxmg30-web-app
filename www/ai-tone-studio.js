@@ -242,7 +242,7 @@ export function toneLeadInstruction(intent){
 }
 export function isRetryableProviderError(error){
  const value=String(error?.message||error||'');
- return /\b(408|425|429|498|500|502|503|504)\b|provider rejected the request.*\\b404\\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|high demand|demand spike|server busy|temporarily busy|timed? out|network|failed to fetch|tokens? per minute|\bTPM\b|request too large|reduce your message size|reduce the length of (the )?messages|completion.{0,30}(length|long)|requested \d+.*limit \d+/i.test(value);
+ return /\b(408|425|429|498|500|502|503|504)\b|provider rejected the request.*\b404\b|rate.?limit|resource_exhausted|overloaded|capacity.?exceeded|temporarily unavailable|high demand|demand spike|server busy|temporarily busy|timed? out|network|failed to fetch|tokens? per minute|\bTPM\b|request too large|reduce your message size|reduce the length of (the )?messages|completion.{0,30}(length|long)|requested \d+.*limit \d+/i.test(value);
 }
 function niceError(e,provider){
  const s=String(e?.message||e||'Unknown error');
