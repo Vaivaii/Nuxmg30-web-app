@@ -327,3 +327,32 @@ Build and on-device verification are pending. The new APK must be installed and 
 - On-device verification is still pending; user must install this build and verify provider models appear and Send either completes or displays a specific stage error.
 - No Worker deployment or secret changes are required for this UI/app-side correction.
 - No NAM, IR, preset codec, MIDI mapping, or transfer code was modified.
+
+
+## 21. AI startup selector audit, WebView runtime capture, and credential fallbacks (2026-11-14)
+
+### DOM / module audit
+- Audited `www/index.html`: 324 static IDs, **0 duplicate IDs**.
+- The AI panel controls `aiToneProviderSelect`, `aiToneActiveModel`, `aiTonePrompt`, `aiToneSend`, `aiToneMessages`, and `aiToneStatus` are generated once by `www/ai-tone-studio.js`; they are not static IDs in `index.html`.
+- Audit found a concrete startup crash: `init()` unconditionally attached click listeners to four legacy IDs (`aiToneDeleteOpenAi`, `aiToneDeleteGemini`, `aiToneDeleteGroq`, `aiToneDeleteOpenRouter`) which no longer exist in the current Cloud-managed credentials UI. The first missing element returned `null`; calling `.addEventListener` threw before provider selection handlers, Send handler, and the initial `await keyStates()` could be installed/run. This directly explains the persistent “Checking Cloud configuration…” labels and unresponsive Send button.
+- Removed those obsolete listener registrations. These controls are not rendered because provider secrets are Worker-managed.
+- `www/app.js` does not exist in this repository. The actual application entry module is `www/main.js`, loaded by `www/index.html`; `www/ai-tone-studio.js` is loaded as a separate module. The Cloud token storage key `mg30-cloud-auth-token` matches between `www/cloud-account.js` and `www/cloud-api.js`.
+- No DOM ID duplication or mismatch was found for the provider selector, model selector, prompt input, or Send button in the generated AI panel.
+
+### Runtime error visibility
+- Added `window.onerror` and `unhandledrejection` handlers in `www/ai-tone-studio.js`.
+- Startup errors from `init()` are caught and rendered into the AI chat/status panel.
+- Errors occurring before the chat is created are buffered and flushed after the panel is appended.
+- Error text is bounded and sensitive authorization/API-key patterns are redacted before display.
+
+### Worker credential fallback
+- `toneAuth(request, env)` prefers the app's per-user OAuth header. If it is absent or invalid, the optional `TONE3000_API_KEY` Worker secret is used as a service-level Bearer credential.
+- The service-level TONE3000 credential is only sent to official TONE3000 hosts; it is never forwarded to a third-party model/CDN host during redirects.
+- YouTube key resolution is now `YOUTUBE_API_KEY || YOUTUBE_DATA_API_KEY`, with `YOUTUBE_API_KEY` preferred.
+- `/health` exposes boolean presence flags for `TONE3000_API_KEY`, `YOUTUBE_API_KEY`, and `YOUTUBE_DATA_API_KEY`, without revealing secret values.
+- Worker is versioned `1.2.0`; both `cloud-worker/worker.js` and `cloud-worker/src/index.js` must stay synchronized.
+
+### Regression tests / preservation
+- Added tests for stale missing DOM listeners, runtime error rendering, duplicate HTML IDs, TONE3000 service fallback precedence, YouTube key alias, and ensuring the TONE3000 service credential is never forwarded to an external CDN.
+- No edits to NAM transfer, IR transfer/User-vs-Collection semantics, preset codec, `MIDI_PARAM_CC`, `KNOB_SLOTS`, or MG-30 firmware-specific transfer logic.
+- Build, test results, and physical WebView verification are pending the next CI run and installation.
