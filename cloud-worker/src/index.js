@@ -305,12 +305,14 @@ export default {
           else {
             const username = typeof body.username === "string" ? body.username.trim() : "";
             const password = typeof body.password === "string" ? body.password : "";
-            const usernameMatch = equal(username, env.APP_LOGIN_USERNAME);
-            const passwordMatch = equal(password, env.APP_LOGIN_PASSWORD);
+            const configuredUsername = String(env.APP_LOGIN_USERNAME).trim();
+            const configuredPassword = String(env.APP_LOGIN_PASSWORD).trim();
+            const usernameMatch = equal(username, configuredUsername);
+            const passwordMatch = equal(password, configuredPassword);
             if (!usernameMatch || !passwordMatch) response = json({ ok: false, code: "INVALID_CREDENTIALS", error: "Username or password is incorrect" }, 401);
             else {
-              const token = await createToken(env.APP_LOGIN_USERNAME, env.APP_AUTH_SECRET);
-              response = json({ ok: true, version: VERSION, token, token_type: "Bearer", expires_in: TOKEN_TTL_SECONDS, user: { username: env.APP_LOGIN_USERNAME } });
+              const token = await createToken(String(env.APP_LOGIN_USERNAME).trim(), env.APP_AUTH_SECRET);
+              response = json({ ok: true, version: VERSION, token, token_type: "Bearer", expires_in: TOKEN_TTL_SECONDS, user: { username: String(env.APP_LOGIN_USERNAME).trim() } });
             }
           }
         }
