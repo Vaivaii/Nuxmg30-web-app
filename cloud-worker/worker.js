@@ -1,5 +1,5 @@
 
-const VERSION = "1.0.4";
+const VERSION = "1.1.0";
 const TOKEN_TTL_SECONDS = 604800;
 const enc = new TextEncoder();
 
@@ -132,8 +132,19 @@ async function listModels(provider, env) {
   if (config.api === "openrouter") { url = "https://openrouter.ai/api/v1/models"; headers.Authorization = "Bearer " + key; }
   const upstream = await timedFetch(url, { headers }, 30_000);
   const body = await responseJson(upstream);
-  if (!upstream.ok) return json({ ok: false, error: "Provider model catalogue request failed.", upstreamStatus: upstream.status }, upstream.status >= 500 ? 502 : upstream.status);
-  return json({ ok: true, provider: config.api, models: modelRows(config.api, body) });
+  if (!upstream.ok) {
+    const providerMessage = String(body?.error?.message || body?.error?.status || body?.message || "").slice(0, 240);
+    return json({
+      ok: false,
+      provider: config.api,
+      error: "Provider model catalogue request failed.",
+      upstreamStatus: upstream.status,
+      upstreamMessage: providerMessage || null,
+      worker: "nux-mg30-studio-api",
+      workerVersion: VERSION
+    }, 502);
+  }
+  return json({ ok: true, service: "nux-mg30-studio-api", workerVersion: VERSION, provider: config.api, models: modelRows(config.api, body) });
 }
 function extractJsonObject(value) {
   const text = String(value || "").trim();
@@ -333,6 +344,10 @@ export default {
       } else if (url.pathname === "/health" && request.method === "GET") {
         response = json({
           ok: true, service: "nux-mg30-studio-api", version: VERSION,
+          gateway_routes: {
+            status: true, ai_providers: true, ai_models: true, ai_tone_plan: true,
+            youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true
+          },
           auth_configured: Boolean(String(env.APP_LOGIN_USERNAME || "").trim() && String(env.APP_LOGIN_PASSWORD || "").trim() && String(env.APP_AUTH_SECRET || "").trim()),
           secret_checks: {
             APP_LOGIN_USERNAME: Boolean(String(env.APP_LOGIN_USERNAME || "").trim()),
@@ -357,9 +372,13 @@ export default {
         const auth = await requireAccount(request, env);
         if (!auth.ok) response = auth.response;
         else if (url.pathname === "/api/v1/ai/providers" && request.method === "GET") {
-          response = json({ ok: true, providers: {
-            gpt: Boolean(env.OPENAI_API_KEY), gemini: Boolean(env.GEMINI_API_KEY), groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY)
-          } });
+          response = json({
+            ok: true, service: "nux-mg30-studio-api", workerVersion: VERSION,
+            providers: {
+              gpt: Boolean(env.OPENAI_API_KEY), gemini: Boolean(env.GEMINI_API_KEY),
+              groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY)
+            }
+          });
         } else if (url.pathname === "/api/v1/ai/models" && request.method === "GET") {
           response = await listModels(url.searchParams.get("provider") || "", env);
         } else if (url.pathname === "/api/v1/ai/tone-plan" && request.method === "POST") {
