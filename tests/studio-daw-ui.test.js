@@ -584,7 +584,7 @@ test('Build 329: Studio Record, backing and YouTube runtime messages are English
   }
   assert.ok(main.includes('Could not start USB recording.'));
   assert.ok(main.includes('Backing track is ready.'));
-  assert.ok(main.includes('YouTube search failed:'));
+  assert.ok(main.includes('YouTube Cloud search failed:'));
 });
 
 
@@ -605,7 +605,7 @@ test('Build 330: Record, backing playback and YouTube failure messages use Engli
   for (const phrase of ['Recording name diubah', 'Ganti nama', 'Backing sedang diputar', 'Backing selesai diputar', 'Periksa API key', 'Kuota YouTube Data API', 'Tidak dapat memutar', 'Pilih file audio']) {
     assert.ok(!main.includes(phrase), 'Indonesian Studio runtime text remains: ' + phrase);
   }
-  for (const phrase of ['Recording renamed to', 'Backing track is playing.', 'Backing track playback finished.', 'Check your API key.', 'The YouTube Data API daily quota has been exceeded.']) {
+  for (const phrase of ['Recording renamed to', 'Backing track is playing.', 'Backing track playback finished.', 'Check Cloudflare Worker configuration and YouTube API quota.', 'The YouTube Data API daily quota has been exceeded.']) {
     assert.ok(main.includes(phrase), 'Missing English Studio runtime text: ' + phrase);
   }
 });
