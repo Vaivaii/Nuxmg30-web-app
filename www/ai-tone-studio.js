@@ -554,12 +554,6 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   finally{setBusy(false);}
  }
  async function askNamAIJson(system,user,stage){
-  if(mode==='collab'){
-   const order=await fastestReadyProviderOrder();
-   const provider=order[0],key=await secret(providerKeyId(provider)),model=await fastestReadyModel(provider,key);
-   status(providerNames[provider]+' is '+stage+'…','busy');
-   return invokeProvider(provider,key,system,user,model);
-  }
   const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,order=(mode==='auto'||mode==='collab')?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
   let lastError=null;
   for(let index=0;index<order.length;index++){
