@@ -36,6 +36,7 @@ on:
     paths:
       - 'www/**'
       - 'tests/**'
+      - 'cloud-worker/**'
       - 'native-android/**'
       - 'scripts/**'
       - 'package.json'
@@ -66,8 +67,11 @@ jobs:
           java-version: '21'
       - name: Install JavaScript dependencies
         run: npm install
-      - name: Validate Android initializer syntax
-        run: node --check scripts/init-android.mjs
+      - name: Validate JavaScript syntax
+        run: |
+          node --check scripts/init-android.mjs
+          node --check cloud-worker/worker.js
+          node --check cloud-worker/src/index.js
       - name: Run protocol regression tests
         run: npm test
       - name: Generate Capacitor Android project and install USB audio plugin
