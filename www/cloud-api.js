@@ -1,4 +1,5 @@
 export const CLOUD_API_BASE = 'https://nux-mg30-studio-api.vaivai851.workers.dev';
+export const CLOUD_API_DEPLOYMENT = 'nux-mg30-studio-api';
 
 function getToken() {
   try { return localStorage.getItem('mg30-cloud-auth-token') || ''; }
@@ -14,13 +15,18 @@ export async function cloudApiFetch(path, options = {}) {
   if (options.body && !(options.body instanceof Blob) && !(options.body instanceof ArrayBuffer) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const response = await fetch(CLOUD_API_BASE + path, { ...options, headers, cache: 'no-store' });
+  const requestUrl = CLOUD_API_BASE + path;
+  const response = await fetch(requestUrl, { ...options, headers, cache: 'no-store' });
   if (!response.ok) {
     let data = {};
     try { data = await response.clone().json(); } catch {}
-    const error = new Error(data.error || ('Cloud API HTTP ' + response.status));
+    const label = data.error || ('HTTP ' + response.status);
+    const upstream = data.upstreamStatus ? ' (provider HTTP ' + data.upstreamStatus + ')' : '';
+    const error = new Error(label + upstream + ' [' + response.status + ' ' + requestUrl.replace(CLOUD_API_BASE, '') + ']');
     error.status = response.status;
+    error.upstreamStatus = Number(data.upstreamStatus || 0) || null;
     error.reason = data.reason || '';
+    error.requestUrl = requestUrl;
     throw error;
   }
   return response;
