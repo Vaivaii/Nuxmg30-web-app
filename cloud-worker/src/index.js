@@ -224,15 +224,21 @@ async function generateTonePlan(provider, model, system, prompt, env) {
     throw error;
   }
 }
-function toneAuth(request) {
+function toneAuth(request, env) {
+  // Prefer the signed-in user's OAuth token. Use the optional Worker service secret
+  // only when the app did not send a valid per-user OAuth header.
   const value = request.headers.get("X-TONE3000-Authorization") || "";
-  return /^Bearer\s+\S+$/i.test(value) ? value : "";
+  if (/^Bearer\s+\S+$/i.test(value)) return value;
+  const serviceKey = String(env.TONE3000_API_KEY || "").trim();
+  if (!serviceKey) return "";
+  const serviceAuthorization = /^Bearer\s+\S+$/i.test(serviceKey) ? serviceKey : "Bearer " + serviceKey;
+  return /^Bearer\s+\S+$/i.test(serviceAuthorization) ? serviceAuthorization : "";
 }
 function tonePathAllowed(value) {
   return value === "/tones/search" || value === "/models" || /^\/tones\/\d+$/.test(value);
 }
 async function proxyTone3000(request, env, url) {
-  const token = toneAuth(request);
+  const token = toneAuth(request, env);
   if (!token) return json({ ok: false, error: "TONE3000 account authorization is required." }, 401);
   const rawPath = url.searchParams.get("path") || "";
   let upstreamUrl;
@@ -288,8 +294,11 @@ async function downloadToneModel(request, env, url) {
   if (length) headers.set("Content-Length", length);
   return new Response(upstream.body, { status: 200, headers });
 }
+function youtubeApiKey(env) {
+  return String(env.YOUTUBE_API_KEY || env.YOUTUBE_DATA_API_KEY || "").trim();
+}
 async function youtubeSearch(url, env) {
-  const key = String(env.YOUTUBE_DATA_API_KEY || "").trim();
+  const key = youtubeApiKey(env);
   if (!key) return json({ ok: false, error: "YouTube Data API is not configured in Cloudflare Worker." }, 503);
   const q = String(url.searchParams.get("q") || "").trim();
   if (q.length < 2 || q.length > 200) return json({ ok: false, error: "Search query must contain 2 to 200 characters." }, 400);
@@ -357,17 +366,18 @@ export default {
             GROQ_API_KEY: Boolean(String(env.GROQ_API_KEY || "").trim()),
             OPENROUTER_API_KEY: Boolean(String(env.OPENROUTER_API_KEY || "").trim()),
             OPENAI_API_KEY: Boolean(String(env.OPENAI_API_KEY || "").trim()),
-            YOUTUBE_DATA_API_KEY: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim())
+            YOUTUBE_API_KEY: Boolean(String(env.YOUTUBE_API_KEY || "").trim()),
+            YOUTUBE_DATA_API_KEY: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim()),\n            TONE3000_API_KEY: Boolean(String(env.TONE3000_API_KEY || "").trim())
           },
           ai: { gemini: Boolean(env.GEMINI_API_KEY), groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY), gpt: Boolean(env.OPENAI_API_KEY) },
-          youtube: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim()), tone3000_oauth_proxy: true
+          youtube: Boolean(youtubeApiKey(env)), tone3000_oauth_proxy: true, tone3000_service_key_fallback: Boolean(String(env.TONE3000_API_KEY || "").trim())
         });
       } else if (url.pathname === "/api/v1/status" && request.method === "GET") {
         const auth = await requireAccount(request, env);
         if (!auth.ok) response = auth.response;
         else response = json({ ok: true, user: { username: auth.user.username || null }, ai: {
           gpt: Boolean(env.OPENAI_API_KEY), gemini: Boolean(env.GEMINI_API_KEY), groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY)
-        }, youtube: Boolean(env.YOUTUBE_DATA_API_KEY), tone3000Proxy: true });
+        }, youtube: Boolean(youtubeApiKey(env)), tone3000Proxy: true });
       } else if (url.pathname.startsWith("/api/v1/")) {
         const auth = await requireAccount(request, env);
         if (!auth.ok) response = auth.response;
@@ -412,7 +422,7 @@ export default {
             else if (!response) response = json({ ok: false, error: "All automatic AI providers failed or are not configured.", failures, requestId: crypto.randomUUID() }, 503);
           }
         } else if (url.pathname === "/api/v1/youtube/status" && request.method === "GET") {
-          response = json({ ok: true, configured: Boolean(env.YOUTUBE_DATA_API_KEY) });
+          response = json({ ok: true, configured: Boolean(youtubeApiKey(env)) });
         } else if (url.pathname === "/api/v1/youtube/search" && request.method === "GET") {
           response = await youtubeSearch(url, env);
         } else if (url.pathname === "/api/v1/tone3000/proxy" && request.method === "GET") {
