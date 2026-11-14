@@ -1,0 +1,10 @@
+name = "nux-mg30-cloud-api"
+main = "src/index.js"
+compatibility_date = "2026-11-14"
+workers_dev = true
+
+[vars]
+AUTH_API_BASE = "https://nux-mg30-studio-api.vaivai851.workers.dev"
+APP_ORIGINS = "capacitor://localhost,https://localhost,http://localhost,http://localhost:5173"
+# If TONE3000 returns model files from a non-tone3000.com CDN, add its exact hostname here after verifying the model_url.
+TONE3000_ASSET_HOSTS = ""
