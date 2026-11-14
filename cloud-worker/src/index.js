@@ -43,7 +43,8 @@ async function verifyToken(token, secret) {
     return data;
   } catch { return null; }
 }
-\nconst JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
+
+const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 const PROVIDERS = {
   gpt: { secret: "OPENAI_API_KEY", api: "openai" },
   openai: { secret: "OPENAI_API_KEY", api: "openai" },
