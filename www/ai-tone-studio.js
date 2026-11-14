@@ -193,7 +193,13 @@ async function init(){
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
- const setMode=v=>{mode=v;ui.providerSelect.value=v;renderActiveModelSelect();if(v!=='auto'&&v!=='collab')void refreshProviderModels(v,false);else if(v==='collab')void Promise.all([refreshProviderModels('gpt',false),refreshProviderModels('gemini',false)]);};
+ const setMode=v=>{
+  const next=['auto','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'auto';
+  mode=next;ui.providerSelect.value=next;autoProviderHealthCache.expires=0;
+  renderActiveModelSelect();
+  if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
+  else if(next==='collab')void Promise.all([refreshProviderModels('gpt',false),refreshProviderModels('gemini',false)]);
+ };
  const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');window.setTimeout(()=>ui.prompt.focus(),150);};
  const closePanel=()=>{shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
  function showNamSourceChoice(){
@@ -332,7 +338,7 @@ async function init(){
    select.append(option);select.disabled=true;
   }
   ui.activeModelLabel.textContent=currentMode()==='collab'?'GPT Model (Gemini reviewer uses its saved model)':currentMode()==='auto'?'Auto provider + fastest model':'Model';
-  if(mode==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent='Auto · provider and model selected per request';select.append(option);select.disabled=true;}
+  if(currentMode()==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent='Auto · provider and model selected per request';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
@@ -378,7 +384,7 @@ async function init(){
    const data=await getCloudAiStatus(true),providers=data?.providers||{};
    const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'};
    for(const [provider,id] of Object.entries(labels)){const node=$(id);if(node)node.textContent=providers[provider]?'Configured in Cloudflare Worker':'Not configured in Cloudflare Worker';}
-   await refreshAllProviderModels(true);
+   await refreshAllProviderModels(false);
   } catch(error) {
    ['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState'].forEach(id=>{if($(id))$(id).textContent='Connect Cloud Account / check Cloud API';});
    providerModels.gpt=[];providerModels.gemini=[];providerModels.groq=[];providerModels.openrouter=[];renderActiveModelSelect();
@@ -566,12 +572,18 @@ async function automaticNamImportForPrompt(prompt){
   }
  }
  async function submit(){
-  if(busy)return;const prompt=ui.prompt.value.trim();if(!prompt){status('Enter a tone request first.','error');return;}
-  const bridge=window.MG30AIToneBridge;if(!bridge){status('The MG-30 editor bridge is unavailable. Reload MG30 Studio.','error');return;}if(!namModeActive&&!bridge.isConnected?.()){status('Failed: MG-30 is disconnected. Connect USB-MIDI before generating a built-in amp live preset.','error');return;}
-  setBusy(true);message('user',prompt);status(namModeActive?'Preparing the TONE3000 NAM search…':'Checking USB-MIDI connection…','busy');
+  if(busy)return;
+  const prompt=ui.prompt.value.trim();
+  if(!prompt){status('Enter a tone request first.','error');return;}
+  setBusy(true);message('user',prompt);
   try{
+   const bridge=window.MG30AIToneBridge;
+   if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
+   if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before generating a built-in amp live preset.');
+   status(namModeActive?'Preparing the TONE3000 NAM search…':'Checking USB-MIDI connection…','busy');
    if(namModeActive){const namResult=await automaticNamImportForPrompt(prompt);if(namResult?.pendingConnection||namResult?.pendingSelection)return;}
-   if(!bridge.isConnected?.())throw new Error('The MG-30 is disconnected. Connect USB-MIDI before applying the live preset.');
+   if(!bridge.isConnected?.())throw new Error('The MG-30 disconnected before applying the live preset.');
+   status('Preparing the MG-30 catalog and requesting an AI Tone Plan…','busy');
    const plan=await makePlan(prompt,bridge);
    if(activeNamContext){
     const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
@@ -588,12 +600,19 @@ async function automaticNamImportForPrompt(prompt){
     plan.summary=(plan.summary||'AI tone')+' using the imported NAM capture in slot 10.';
    }
    if(!bridge.isConnected())throw new Error('The MG-30 disconnected before changes could be sent.');
-   status('Tone Plan validated. Updating the editor and sending MIDI…', 'busy');const result=await bridge.applyPlan(plan);
+   status('Tone Plan validated. Updating the editor and sending MIDI…', 'busy');
+   const result=await bridge.applyPlan(plan);
    last={before:result.before,after:result.after,blocks:result.blocks};ui.undo.disabled=false;
    message('ai',plan.summary+'\nParameters sent to: '+result.blocks.join(', ')+(plan.notes.length?'\n'+plan.notes.join(' · '):''));
-   ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
-  }catch(e){message('ai','Failed: '+(e.message||e));status('Failed: '+(e.message||e),'error');}
-  finally{setBusy(false);ui.undo.disabled=!last;}
+   ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+   status('Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
+  }catch(e){
+   const detail=e?.message||String(e);
+   message('ai','Failed: '+detail);
+   status('Failed: '+detail,'error');
+  }finally{
+   setBusy(false);ui.undo.disabled=!last;
+  }
  }
  async function undo(){
   if(busy||!last)return;const bridge=window.MG30AIToneBridge;if(!bridge?.isConnected?.()){status('Undo failed: MG-30 is not connected.','error');return;}
@@ -619,7 +638,11 @@ async function automaticNamImportForPrompt(prompt){
  ui.autoFallback.addEventListener('change',()=>localStorage.setItem('mg30-ai-auto-fallback',ui.autoFallback.checked?'1':'0'));
  ui.providerSelect.value=mode;ui.providerSelect.addEventListener('change',()=>setMode(ui.providerSelect.value));
  ui.activeModel.addEventListener('change',()=>{const provider=activeModelProvider();if(ui.activeModel.value==='__auto__'){localStorage.setItem('mg30-ai-model-manual-'+provider,'0');delete autoModelHealthCache[provider];}else if(ui.activeModel.value){localStorage.setItem(modelStorageKey(provider),ui.activeModel.value);localStorage.setItem('mg30-ai-model-manual-'+provider,'1');}autoProviderHealthCache.expires=0;});
- $('aiToneUndo').addEventListener('click',undo);$('aiToneSend').addEventListener('click',submit);
+ $('aiToneUndo').addEventListener('click',undo);
+ const handleProviderSelection=()=>{const selected=ui.providerSelect.value;if(selected!==mode)setMode(selected);};
+ ui.providerSelect.addEventListener('input',handleProviderSelection);
+ ui.providerSelect.addEventListener('change',handleProviderSelection);
+ $('aiToneSend').addEventListener('click',()=>{void submit().catch(error=>{const text=error?.message||String(error);message('ai','Failed: '+text);status('Failed: '+text,'error');setBusy(false);});});
  ui.prompt.addEventListener('input',()=>{$('aiToneCount').textContent=ui.prompt.value.length+'/1400';});
  ui.prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
  
