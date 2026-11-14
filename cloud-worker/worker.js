@@ -304,12 +304,12 @@ export default {
           else {
             const username = typeof body.username === "string" ? body.username.trim() : "";
             const password = typeof body.password === "string" ? body.password : "";
-            const usernameMatch = equal(username, String(env.APP_LOGIN_USERNAME).trim());
-            const passwordMatch = equal(password, String(env.APP_LOGIN_PASSWORD).trim());
+            const usernameMatch = equal(username, env.APP_LOGIN_USERNAME);
+            const passwordMatch = equal(password, env.APP_LOGIN_PASSWORD);
             if (!usernameMatch || !passwordMatch) response = json({ ok: false, code: "INVALID_CREDENTIALS", error: "Username or password is incorrect" }, 401);
             else {
-              const token = await createToken(String(env.APP_LOGIN_USERNAME).trim(), String(env.APP_AUTH_SECRET).trim());
-              response = json({ ok: true, version: VERSION, token, token_type: "Bearer", expires_in: TOKEN_TTL_SECONDS, user: { username: String(env.APP_LOGIN_USERNAME).trim() } });
+              const token = await createToken(env.APP_LOGIN_USERNAME, env.APP_AUTH_SECRET);
+              response = json({ ok: true, version: VERSION, token, token_type: "Bearer", expires_in: TOKEN_TTL_SECONDS, user: { username: env.APP_LOGIN_USERNAME } });
             }
           }
         }
@@ -317,7 +317,7 @@ export default {
         if (!String(env.APP_AUTH_SECRET || "").trim()) response = json({ ok: false, code: "AUTH_NOT_CONFIGURED", error: "Server authentication is not configured" }, 500);
         else {
           const token = bearer(request).slice(7);
-          const payload = token ? await verifyToken(token, String(env.APP_AUTH_SECRET).trim()) : null;
+          const payload = token ? await verifyToken(token, env.APP_AUTH_SECRET) : null;
           if (!payload) response = json({ ok: false, error: "Unauthorized" }, 401);
           else response = json({ ok: true, user: { username: payload.sub }, expires_at: payload.exp });
         }
