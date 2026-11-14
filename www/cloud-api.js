@@ -1,4 +1,4 @@
-export const CLOUD_API_BASE = 'https://nux-mg30-cloud-api.vaivai851.workers.dev';
+export const CLOUD_API_BASE = 'https://nux-mg30-studio-api.vaivai851.workers.dev';
 
 function getToken() {
   try { return localStorage.getItem('mg30-cloud-auth-token') || ''; }
