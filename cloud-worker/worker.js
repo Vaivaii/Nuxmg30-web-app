@@ -394,6 +394,11 @@ export default {
         } else if (url.pathname === "/api/v1/tone3000/download" && request.method === "GET") {
           response = await downloadToneModel(request, env, url);
         } else response = json({ ok: false, error: "Cloud API route not found." }, 404);
+      } else if (/^\\/api\\/v1\\/tone3000\\/tones\\/\\d+$/.test(url.pathname) && request.method === "GET") {
+        const toneId = url.pathname.split("/").pop();
+        const alias = new URL(url.toString());
+        alias.searchParams.set("path", "/tones/" + toneId + (url.search ? url.search : ""));
+        response = await proxyTone3000(request, env, alias);
       } else if (url.pathname === "/api/v1/tone3000/tones" && request.method === "GET") {
         const path = "/tones/" + encodeURIComponent(String(url.searchParams.get("id") || "")) + url.search.replace(/^\\?/, "").replace(/(^|&)id=[^&]*/,"").replace(/^&|&$/g,"");
         const alias = new URL(url.toString()); alias.searchParams.set("path", path);
