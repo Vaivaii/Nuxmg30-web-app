@@ -366,7 +366,8 @@ export default {
             GROQ_API_KEY: Boolean(String(env.GROQ_API_KEY || "").trim()),
             OPENROUTER_API_KEY: Boolean(String(env.OPENROUTER_API_KEY || "").trim()),
             OPENAI_API_KEY: Boolean(String(env.OPENAI_API_KEY || "").trim()),
-            YOUTUBE_API_KEY: Boolean(String(env.YOUTUBE_API_KEY || "").trim()),\n            YOUTUBE_DATA_API_KEY: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim()),\n            TONE3000_API_KEY: Boolean(String(env.TONE3000_API_KEY || "").trim())
+            YOUTUBE_API_KEY: Boolean(String(env.YOUTUBE_API_KEY || "").trim()),
+            YOUTUBE_DATA_API_KEY: Boolean(String(env.YOUTUBE_DATA_API_KEY || "").trim()),\n            TONE3000_API_KEY: Boolean(String(env.TONE3000_API_KEY || "").trim())
           },
           ai: { gemini: Boolean(env.GEMINI_API_KEY), groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY), gpt: Boolean(env.OPENAI_API_KEY) },
           youtube: Boolean(youtubeApiKey(env)), tone3000_oauth_proxy: true, tone3000_service_key_fallback: Boolean(String(env.TONE3000_API_KEY || "").trim())
