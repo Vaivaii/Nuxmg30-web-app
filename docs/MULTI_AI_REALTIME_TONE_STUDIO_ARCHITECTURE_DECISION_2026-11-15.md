@@ -91,3 +91,30 @@ Multi-AI agents must work through the existing Tone Plan/validation boundary and
 5. Define regression tests proving NAM, IR, MIDI, preset, and Send-to-Pedal behavior remains unchanged.
 
 **Decision summary:** Adaptive Collaboration + Lead AI final synthesis, with mandatory MG-30 validation and explicit user control over sending the resulting preset.
+
+
+## Free-API-first provider policy (user clarification, 2026-11-15)
+
+Current app/provider situation confirmed by the user:
+- Gemini: active; user is using the free API tier.
+- Groq: active; user is using the free API tier.
+- OpenRouter: active; user is using free API/model access.
+- OpenAI/GPT: integration is present, but the user does not currently use it because API access requires paid usage for their setup.
+
+Architecture implications:
+1. **Free-first by default.** Multi-AI collaboration must be designed around the currently active free Gemini, Groq, and OpenRouter access. Paid GPT must not be a required dependency or silently selected.
+2. **Optional paid providers.** Paid models/providers may be offered only when the user explicitly configures/enables them; do not assume paid billing or route requests to paid models by fallback.
+3. **Quota-aware orchestration.** Track provider/model request and token limits where exposed; honor rate-limit headers and retry-after signals; handle HTTP 429, 5xx, timeouts, and model unavailability with bounded backoff and graceful degradation.
+4. **Adaptive call budget.** Do not call all agents for every user message. Parallelize only independent, high-value tasks; use targeted agents for local edits; invoke Critical Reviewer only for conflicts, uncertainty, or materially coupled changes; cap critique rounds and output tokens.
+5. **Role flexibility.** Keep logical agent roles separate from provider identity. Assign roles dynamically among the active free models based on availability, task suitability, and current quota. Do not hard-code Gemini/Groq/OpenRouter to fixed roles.
+6. **Graceful reduced-team operation.** If one provider reaches quota or is unavailable, continue with remaining active providers and tell the user which roles were skipped or reassigned. Never silently claim that all providers participated.
+7. **Transparent cost guard.** Show which providers/models will be called and whether a selected model is marked free or paid before any paid route is used. Default behavior must never incur a charge.
+8. **Current catalogue is dynamic.** Free model availability, limits, and eligibility change. Discover/refresh model catalogues and price/free status rather than hard-coding a permanent list.
+
+External documentation checked for design context (limits are dynamic and account/model-specific):
+- Gemini documents free-tier model availability and per-model RPM/TPM/RPD limits.
+- Groq documents per-model RPM/RPD/TPM/TPD limits and rate-limit response headers.
+- OpenRouter documents free model variants and rate limits; its free catalogue and limits can change.
+These references inform quota-aware design only; they do not establish the user's exact account quota.
+
+**Updated decision:** Adaptive Collaboration + Lead AI final synthesis remains unchanged, with a **free-API-first, no-surprise-billing** operating policy.
