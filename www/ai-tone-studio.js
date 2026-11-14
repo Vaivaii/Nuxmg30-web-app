@@ -193,7 +193,7 @@ async function init(){
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
- const setMode=v=>{mode=v;ui.providerSelect.value=v;renderActiveModelSelect();};
+ const setMode=v=>{mode=v;ui.providerSelect.value=v;renderActiveModelSelect();if(v!=='auto'&&v!=='collab')void refreshProviderModels(v,false);else if(v==='collab')void Promise.all([refreshProviderModels('gpt',false),refreshProviderModels('gemini',false)]);};
  const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');window.setTimeout(()=>ui.prompt.focus(),150);};
  const closePanel=()=>{shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
  function showNamSourceChoice(){
@@ -298,7 +298,8 @@ async function init(){
  const modelStorageKey=p=>'mg30-ai-model-'+p;
  const autoProviderHealthCache={expires:0,order:[],errors:[]};
  const autoModelHealthCache={};
- const activeModelProvider=()=>mode==='collab'?'gpt':mode==='auto'?'gemini':mode;
+ const currentMode=()=>String(ui.providerSelect.value||mode||'auto');
+ const activeModelProvider=()=>currentMode()==='collab'?'gpt':currentMode()==='auto'?'gemini':currentMode();
  function selectedModel(provider){
   const key=provider==='collab'?'gpt':provider;
   if(localStorage.getItem('mg30-ai-model-manual-'+key)!=='1')return '';
@@ -330,7 +331,7 @@ async function init(){
    option.textContent='Configure '+providerNames[provider]+' in Worker to load models';
    select.append(option);select.disabled=true;
   }
-  ui.activeModelLabel.textContent=mode==='collab'?'GPT Model (Gemini reviewer uses its saved model)':mode==='auto'?'Auto provider + fastest model':'Model';
+  ui.activeModelLabel.textContent=currentMode()==='collab'?'GPT Model (Gemini reviewer uses its saved model)':currentMode()==='auto'?'Auto provider + fastest model':'Model';
   if(mode==='auto'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent='Auto · provider and model selected per request';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
@@ -363,8 +364,14 @@ async function init(){
   }
  }
  async function refreshAllProviderModels(quiet=true){
-  await Promise.all(['gpt','gemini','groq','openrouter'].map(provider=>refreshProviderModels(provider,quiet)));
+  const results=await Promise.all(['gpt','gemini','groq','openrouter'].map(provider=>refreshProviderModels(provider,quiet)));
   renderActiveModelSelect();
+  const failures=results.map((rows,index)=>({provider:['gpt','gemini','groq','openrouter'][index],rows})).filter(x=>!x.rows.length);
+  if(!quiet&&failures.length){
+   const details=failures.map(x=>providerNames[x.provider]+': no models returned (check Worker model route, provider key and upstream permissions)').join(' · ');
+   status('Model catalogue incomplete — '+details,'error');
+  }else if(!quiet){status('Model catalogues refreshed. Select a provider to see its available models.','success');}
+  return results;
  }
  async function keyStates(){
   try {
