@@ -240,3 +240,24 @@ The app and Worker source integration is committed and an APK candidate is built
 6. Run physical-device regression on original MG-30 Gen 2 firmware 6.0.x. Specifically confirm NAM import, IR User/Third Party, IR Collection, MIDI mappings and existing local/offline features remain unchanged.
 
 **Do not call the Cloud integration production-ready until steps 1–5 pass.** The debug APK is a test build, not a signed public release.
+
+
+## 16. Architecture decision and merged Worker update (2026-11-14)
+
+The user selected the original per-user TONE3000 OAuth approach (not a global `TONE3000_API_KEY`). This preserves the existing official Authorization Code + PKCE and refresh flow; the user's OAuth Bearer token is sent only in `X-TONE3000-Authorization` for an authenticated proxy request. No shared TONE3000 credential is introduced.
+
+A merged standalone Worker source was added at `cloud-worker/worker.js`:
+- Preserves `json`, `equal`, `createToken`, `verifyToken` and routes `/health`, `/auth/login`, `/auth/me`, `/auth/logout`.
+- Trims the configured username/password values for presence checks and comparison.
+- Verifies the app JWT locally with the same `APP_AUTH_SECRET` for every `/api/v1/*` route. No call to a second auth Worker is required.
+- Adds AI provider/model/Tone Plan routes. Automatic provider fallback order is Gemini -> Groq -> OpenRouter. OpenAI remains available as an explicitly selected provider.
+- Adds authenticated YouTube Data API search using `YOUTUBE_DATA_API_KEY`.
+- Adds authenticated TONE3000 metadata/model proxy routes using each user's OAuth Bearer token; no global TONE3000 API key.
+- `/health` returns boolean presence only for account and provider secrets; it never returns secret values.
+- `cloud-worker/wrangler.toml` now targets the existing `nux-mg30-studio-api` Worker and uses `cloud-worker/worker.js` as its entry point.
+- `www/cloud-api.js` now uses the same Worker origin for authenticated Cloud service calls.
+- `cloud-worker/src/index.js` is synchronized with the standalone Worker source; README contains the new deployment and secret instructions.
+
+**Deployment is not performed by this source update.** The user must deploy the merged Worker to the existing `nux-mg30-studio-api` Worker, preserving the existing values of `APP_LOGIN_USERNAME`, `APP_LOGIN_PASSWORD`, and especially `APP_AUTH_SECRET`. Provider secrets that were previously stored only on `nux-mg30-cloud-api` must be added to `nux-mg30-studio-api` as well. Do not remove the old cloud Worker until the merged service has passed live verification.
+
+Automated syntax/runtime/contract tests and live provider tests have not yet been run against this newly merged Worker source. Do not describe the merged Worker as deployed or production-ready until the user deploys it and the acceptance checks pass.
