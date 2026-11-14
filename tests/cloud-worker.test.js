@@ -71,3 +71,43 @@ test('TONE3000 proxy rejects paths outside the narrow official API allow-list', 
     assert.equal(response.status, 400);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test('TONE3000 download refuses unapproved redirect hosts before forwarding OAuth token', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), authorization: new Headers(options.headers).get('Authorization') });
+    if (String(url) === baseEnv.AUTH_API_BASE + '/auth/me') return jsonResponse({ ok: true, user: { username: 'tester' } });
+    return new Response(null, { status: 302, headers: { Location: 'https://cdn.unknown.example/model.nam' } });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://cloud.example.test/api/v1/tone3000/download?url=' + encodeURIComponent('https://api.tone3000.com/model/1.nam'), {
+      headers: { Authorization: 'Bearer app-jwt', 'X-TONE3000-Authorization': 'Bearer private-tone-token' }
+    }), baseEnv);
+    assert.equal(response.status, 403);
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].authorization, 'Bearer private-tone-token');
+    assert.equal(calls.some(x => x.url.includes('cdn.unknown.example')), false);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('TONE3000 download never forwards the user OAuth token to an explicitly allow-listed external CDN', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), authorization: new Headers(options.headers).get('Authorization') });
+    if (String(url) === baseEnv.AUTH_API_BASE + '/auth/me') return jsonResponse({ ok: true, user: { username: 'tester' } });
+    if (String(url) === 'https://cdn.verified.example/model.nam') return new Response('nam-model-bytes', { status: 200, headers: { 'Content-Type': 'application/octet-stream' } });
+    return new Response(null, { status: 302, headers: { Location: 'https://cdn.verified.example/model.nam' } });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://cloud.example.test/api/v1/tone3000/download?url=' + encodeURIComponent('https://api.tone3000.com/model/1.nam'), {
+      headers: { Authorization: 'Bearer app-jwt', 'X-TONE3000-Authorization': 'Bearer private-tone-token' }
+    }), { ...baseEnv, TONE3000_ASSET_HOSTS: 'cdn.verified.example' });
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), 'nam-model-bytes');
+    const cdnCall = calls.find(x => x.url === 'https://cdn.verified.example/model.nam');
+    assert.ok(cdnCall);
+    assert.equal(cdnCall.authorization, null);
+  } finally { globalThis.fetch = originalFetch; }
+});
