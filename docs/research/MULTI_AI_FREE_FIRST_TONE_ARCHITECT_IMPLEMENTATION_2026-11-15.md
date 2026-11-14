@@ -100,7 +100,7 @@ This first implementation deliberately prioritizes token/cost safety and determi
 ## Validation status
 
 GitHub Actions workflow: Build MG30 Studio Android APK, run #834, run ID `43622323162`, triggered by commit `77d43373796acce31fce40591ed46588faed488c`.
-Status when this record was written: in progress. The workflow runs JavaScript syntax checks, `npm test`, Capacitor Android generation, Gradle `assembleDebug` and APK artifact upload. Final status must be recorded separately; do not infer a successful build or hardware test from a running workflow.
+Final status: **success**. All workflow steps completed successfully: JavaScript syntax checks, `npm test`, Capacitor Android generation, Gradle `assembleDebug`, and APK artifact upload. Artifact `MG30-Studio-debug-APK`, ID `14124199070`, ZIP size 4,316,301 bytes, SHA-256 `74d12fe90b51a34eb7a61358792e8a5df18a57a7ff1be3fec54e34e559380587`. This confirms automated CI/build only; it does not replace physical-device verification.
 
 Not yet verified by this record:
 - real provider live calls under the user's Gemini/Groq/OpenRouter quotas;
