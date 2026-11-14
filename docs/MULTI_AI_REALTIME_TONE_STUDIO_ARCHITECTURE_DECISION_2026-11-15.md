@@ -1,7 +1,7 @@
 # Multi-AI Real-Time Tone Studio — Architecture Decision
 Date: 2026-11-15
 Branch: feature/ai-live-tone-studio
-Status: **Architecture decision recorded; first free-first orchestration implementation committed on `feature/multi-ai-free-tone-architect`; validation pending**
+Status: **First free-first orchestration implementation committed; CI #834 and Android debug build passed; physical MG-30 verification pending**
 
 ## User-approved decisions
 
