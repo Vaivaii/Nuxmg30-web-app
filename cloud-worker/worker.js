@@ -393,7 +393,7 @@ export default {
           response = await proxyTone3000(request, env, url);
         } else if (url.pathname === "/api/v1/tone3000/download" && request.method === "GET") {
           response = await downloadToneModel(request, env, url);
-        } else if (/^\\/api\\/v1\\/tone3000\\/tones\\/\\d+$/.test(url.pathname) && request.method === "GET") {
+        } else if (/^\/api\/v1\/tone3000\/tones\/\d+$/.test(url.pathname) && request.method === "GET") {
           const toneId = url.pathname.split("/").pop();
           const alias = new URL(url.toString());
           alias.searchParams.set("path", "/tones/" + toneId + (url.search ? url.search : ""));
