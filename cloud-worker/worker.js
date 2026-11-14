@@ -264,7 +264,7 @@ function toneAssetAllowed(host, env) {
   return toneOfficialHost(host) || configured.includes(host);
 }
 async function downloadToneModel(request, env, url) {
-  const token = toneAuth(request);
+  const token = toneAuth(request, env);
   if (!token) return json({ ok: false, error: "TONE3000 account authorization is required." }, 401);
   let target;
   try { target = new URL(url.searchParams.get("url") || ""); } catch { return json({ ok: false, error: "Invalid model download URL." }, 400); }
