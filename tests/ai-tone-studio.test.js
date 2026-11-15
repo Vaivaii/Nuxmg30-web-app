@@ -454,9 +454,9 @@ test('Audio Listening is collapsed behind a dedicated header toggle and only con
  assert.match(source,/aria-controls="aiToneAudioPanel"/);
  assert.ok(source.includes(String.raw`id=\"aiToneAudioPanel\" hidden`));
  assert.ok(source.includes('setAudioPanelExpanded(ui.audioPanel.hidden)'));
- assert.match(source,/\\.ai-tone-messages\\{display:flex;flex:1 1 auto/);
- assert.match(source,/\\.ai-tone-audio-panel\\{flex:0 0 auto/);
- assert.match(source,/\\.ai-tone-composer\\{display:flex;flex:0 0 auto/);
+ assert.ok(source.includes('.ai-tone-messages{display:flex;flex:1 1 auto'));
+ assert.ok(source.includes('.ai-tone-audio-panel{flex:0 0 auto'));
+ assert.ok(source.includes('.ai-tone-composer{display:flex;flex:0 0 auto'));
 });
 test('TONE3000 NAM is always visible with Amp + Cab active by default and a persistent ON/OFF button',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
