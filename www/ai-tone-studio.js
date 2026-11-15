@@ -624,12 +624,10 @@ async function init(){
  function showNamGearChoice(){
   ui.namWizard.innerHTML='<p>Choose the NAM capture type. This controls the official TONE3000 catalog filter.</p><div class="ai-tone-nam-choice-row"><button class="ai-tone-nam-choice" data-ai-nam-gear="amp" type="button">Amp Only</button><button class="ai-tone-nam-choice" data-ai-nam-gear="amp-cab" type="button">Amp + Cab</button></div>';
  }
- function renderNamSearchResults(rows, query, recommendation=null){
-  ui.settings.classList.add('on');ui.namResults.hidden=false;ui.namWizard.hidden=true;
-  ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>TONE3000 NAM Search</strong><small>Query: '+esc(query)+' · A2 · '+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+' · slot 10</small></div></div>'+
-   (recommendation?'<p class="ai-tone-nam-reason"><strong>AI recommendation:</strong> '+esc(recommendation.tone.name)+(recommendation.reason?' — '+esc(recommendation.reason):'')+'</p>':'')+
-   '<p>Choose a tone pack to inspect its compatible A2 captures. Nothing is imported until you choose an individual capture and press Import.</p>'+
-   (rows.length?rows.map(tone=>'<div class="ai-tone-nam-model '+(recommendation&&String(tone.id)===String(recommendation.tone.id)?'recommended':'')+'"><div class="ai-tone-nam-model-copy"><strong>'+esc(tone.name)+'</strong><small>'+(recommendation&&String(tone.id)===String(recommendation.tone.id)?'AI recommended · ':'')+(tone.creator?'@'+esc(tone.creator)+' · ':'')+esc((tone.makes||[]).join(', ')||tone.gear||'NAM')+' · '+(tone.a2ModelsCount?esc(tone.a2ModelsCount)+' A2 models':'A2 models available')+'</small></div><button class="ai-tone-nam-choice" type="button" data-ai-nam-tone="'+esc(tone.id)+'">Load A2 Models</button></div>').join(''):'<p>No matching NAM tones were found. Try a shorter amplifier name, such as “Deluxe Reverb”, or adjust the search phrase.</p>');
+ function renderNamSearchResults(rows,query,recommendation=null,purpose='search',prompt='',conversation=''){
+  const best=recommendation?.tone||null;
+  pendingNamSelection={purpose,prompt,conversation,gear:activeNamGear,query,tones:rows.slice(),recommendedToneId:best?String(best.id):'',phase:'profiles'};
+  chatCard('nam-profiles',{query,gear:activeNamGear,tones:rows.map(tone=>({...tone})),recommendedId:best?String(best.id):'',recommendation:best?{name:best.name,creator:best.creator,reason:recommendation.reason||''}:null});
  }
  async function beginNamSearch(gear){
   if(gear!=='amp'&&gear!=='amp-cab')throw new Error('Choose Amp Only or Amp + Cab.');
@@ -653,14 +651,16 @@ async function init(){
   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 returned no matching A2 NAM profiles for '+intent.query+'. Try another amp name or capture type. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'.');}
   let recommendation=null;
   try{recommendation=await chooseNamTone(prompt,intent.query,tones,conversation);}
-  catch(error){message('ai','Matching NAM profiles were found, but AI could not rank them reliably: '+(error.message||error)+'. You can still inspect every result and choose manually.');}
+  catch(error){message('ai','Profiles were found, but AI ranking was unavailable: '+(error.message||error)+'. You can still inspect every matching result and choose manually.');}
   const rows=recommendation?[recommendation.tone,...tones.filter(tone=>String(tone.id)!==String(recommendation.tone.id))]:tones;
-  renderNamSearchResults(rows,intent.query,recommendation);
-  const reply=recommendation?'TONE3000 found '+tones.length+' matching profile(s). My top recommendation is '+recommendation.tone.name+(recommendation.reason?' — '+recommendation.reason:'')+'. Open Settings → TONE3000 NAM to inspect its A2 captures. Nothing has been imported.':'TONE3000 found '+tones.length+' matching profile(s). Open Settings → TONE3000 NAM to inspect results and choose an A2 capture. Nothing has been imported.';
-  message('ai',reply);rememberConversation('assistant',reply);status('TONE3000 search complete. No NAM was imported and no preset was changed.','success');
+  renderNamSearchResults(rows,intent.query,recommendation,'search',prompt,conversation);
+  message('ai','TONE3000 found '+tones.length+' matching NAM profile(s). Choose a profile below to view its A2 captures. Nothing has been imported.');
+  rememberConversation('assistant','TONE3000 profiles are ready. Choose a profile to view A2 captures.');
+  status('NAM profiles are shown in the conversation. Select View A2 Captures to continue.','success');
   ui.prompt.value='';$('aiToneCount').textContent='0/1400';
  }
- async function answerToneConversation(prompt,conversation='',bridge=null){
+
+  async function answerToneConversation(prompt,conversation='',bridge=null){
   const system='You are a conversational guitar tone assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The user may discuss guitar tone, amp models, NAM, IR, EQ, effect behavior, gain staging, playing dynamics and signal-chain choices. Answer naturally and contextually as a knowledgeable guitar tone engineer. Use recent conversation and current editor context when provided. Explain trade-offs and practical experiments. Do not create a Tone Plan, do not generate a preset, do not write MIDI, and do not claim that any device setting was changed. Answer questions directly; ask one concise follow-up only when important information is missing. Return JSON only: {"reply":"complete conversational answer"}.';
   const snapshot=bridge?.getSnapshot?.()||[];
   const user=(conversation?'RECENT CONVERSATION (oldest first):\n'+conversation+'\n\n':'')+'CURRENT MG-30 EDITOR STATE:\n'+JSON.stringify(snapshot.slice(0,12))+'\n\nUSER MESSAGE:\n'+prompt+'\n\nReply conversationally. No device changes.';
