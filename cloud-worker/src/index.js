@@ -167,7 +167,42 @@ function safeProviderError(status) {
   if (status >= 500) return "Provider is temporarily unavailable.";
   return "Provider rejected the request. Check the selected model and request settings.";
 }
-async function generateTonePlan(provider, model, system, prompt, env) {
+function clampOutputTokenLimit(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1200;
+  return Math.max(96, Math.min(2048, Math.floor(parsed)));
+}
+function normalizeProviderUsage(body, provider) {
+  const raw = provider === "gemini" ? body?.usageMetadata : body?.usage;
+  if (!raw || typeof raw !== "object") return null;
+  const read = (...keys) => {
+    for (const key of keys) {
+      if (raw[key] === undefined || raw[key] === null || raw[key] === "") continue;
+      const value = Number(raw[key]);
+      if (Number.isFinite(value) && value >= 0) return value;
+    }
+    return null;
+  };
+  const prompt_tokens = read("prompt_tokens", "input_tokens", "promptTokenCount");
+  const completion_tokens = read("completion_tokens", "output_tokens", "candidatesTokenCount");
+  const total_tokens = read("total_tokens", "totalTokenCount") ??
+    (prompt_tokens !== null && completion_tokens !== null ? prompt_tokens + completion_tokens : null);
+  if (prompt_tokens === null && completion_tokens === null && total_tokens === null) return null;
+  return { prompt_tokens, completion_tokens, total_tokens };
+}
+function mergeProviderUsage(...rows) {
+  const values = rows.filter(Boolean);
+  if (!values.length) return null;
+  const sum = key => {
+    const present = values.map(row => row[key]).filter(value => Number.isFinite(value));
+    return present.length ? present.reduce((total, value) => total + value, 0) : null;
+  };
+  const prompt_tokens = sum("prompt_tokens"), completion_tokens = sum("completion_tokens");
+  const total_tokens = sum("total_tokens") ??
+    (prompt_tokens !== null && completion_tokens !== null ? prompt_tokens + completion_tokens : null);
+  return { prompt_tokens, completion_tokens, total_tokens };
+}
+async function generateTonePlan(provider, model, system, prompt, env, maxOutputTokens = 1200) {
   const config = PROVIDERS[provider];
   if (!config) throw Object.assign(new Error("Unknown AI provider."), { status: 400 });
   const key = String(env[config.secret] || "").trim();
@@ -177,19 +212,23 @@ async function generateTonePlan(provider, model, system, prompt, env) {
   if (config.api === "gemini") {
     const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent";
     upstream = await timedFetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.35, maxOutputTokens: 2600 } }) });
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.25, maxOutputTokens: clampOutputTokenLimit(maxOutputTokens) } }) });
     body = await responseJson(upstream);
     if (!upstream.ok) throw Object.assign(new Error(safeProviderError(upstream.status)), { status: upstream.status });
-    return extractJsonObject(geminiText(body));
+    const usage = normalizeProviderUsage(body, provider);
+    try { return { tonePlan: extractJsonObject(geminiText(body)), usage }; }
+    catch (error) { error.usage = usage; throw error; }
   }
   if (config.api === "openai") {
     upstream = await timedFetch("https://api.openai.com/v1/responses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-      body: JSON.stringify({ model, input: [{ role: "system", content: [{ type: "input_text", text: system }] }, { role: "user", content: [{ type: "input_text", text: prompt }] }], text: { format: { type: "json_object" } }, max_output_tokens: 2600 }) });
+      body: JSON.stringify({ model, input: [{ role: "system", content: [{ type: "input_text", text: system }] }, { role: "user", content: [{ type: "input_text", text: prompt }] }], text: { format: { type: "json_object" } }, max_output_tokens: clampOutputTokenLimit(maxOutputTokens) }) });
     body = await responseJson(upstream);
     if (!upstream.ok) throw Object.assign(new Error(safeProviderError(upstream.status)), { status: upstream.status });
     const output = typeof body.output_text === "string" ? body.output_text :
       (body.output || []).flatMap(x => x.content || []).map(x => x.text || "").filter(Boolean).join("\n");
-    return extractJsonObject(output);
+    const usage = normalizeProviderUsage(body, provider);
+    try { return { tonePlan: extractJsonObject(output), usage }; }
+    catch (error) { error.usage = usage; throw error; }
   }
   const isGroq = config.api === "groq";
   const isGptOss = isGroq && model.toLowerCase().startsWith("openai/gpt-oss-");
@@ -201,7 +240,7 @@ async function generateTonePlan(provider, model, system, prompt, env) {
       model, messages: retry ? [...messages.slice(0, -1), { role: "user", content: messages[messages.length - 1].content +
         "\n\nFINAL OUTPUT CONTRACT: Return one complete JSON object only with summary, blocks, and notes." }] : messages,
       ...(retry ? {} : { response_format: { type: "json_object" } }),
-      ...(isGroq ? { max_completion_tokens: retry ? 3200 : 2600 } : { max_tokens: retry ? 3200 : 2600, reasoning: { effort: "low", exclude: true } }),
+      ...(isGroq ? { max_completion_tokens: clampOutputTokenLimit(maxOutputTokens) } : { max_tokens: clampOutputTokenLimit(maxOutputTokens), reasoning: { effort: "low", exclude: true } }),
       ...(isGptOss ? { reasoning_effort: "low", include_reasoning: false } : { temperature: 0.2 })
     };
     const response = await timedFetch(base + "/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key }, body: JSON.stringify(payload) });
@@ -213,13 +252,21 @@ async function generateTonePlan(provider, model, system, prompt, env) {
         retryable: response.status === 429 || response.status >= 500
       });
     }
-    return extractJsonObject(chatText(data));
+    const usage = normalizeProviderUsage(data, provider);
+    try { return { tonePlan: extractJsonObject(chatText(data)), usage }; }
+    catch (error) { error.usage = usage; throw error; }
   };
   try { return await request(false); }
   catch (error) {
     if ((isGroq && (error instanceof SyntaxError || error.failedGeneration || (error.status === 400 && /rejected the request/i.test(error.message)))) ||
         (config.api === "openrouter" && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message)))) {
-      try { return await request(true); } catch (retryError) { throw retryError; }
+      try {
+        const retryResult = await request(true);
+        return { ...retryResult, usage: mergeProviderUsage(error.usage, retryResult.usage) };
+      } catch (retryError) {
+        retryError.usage = mergeProviderUsage(error.usage, retryError.usage);
+        throw retryError;
+      }
     }
     throw error;
   }
@@ -397,6 +444,7 @@ export default {
           const requestedProvider = String(body.provider || "auto").toLowerCase();
           const system = String(body.system || "");
           const prompt = String(body.prompt || "");
+          const maxOutputTokens = clampOutputTokenLimit(body.maxOutputTokens);
           if (system.length > 180_000 || prompt.length > 40_000 || !system || !prompt) response = json({ ok: false, error: "AI request content is missing or exceeds the allowed size." }, 400);
           else {
             const order = requestedProvider === "auto" ? ["gemini", "groq", "openrouter"] : [requestedProvider];
@@ -408,8 +456,8 @@ export default {
               const defaultModels = { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", openrouter: "openrouter/free" };
               const selectedModel = String(body.model || "").trim() || defaultModels[candidate];
               try {
-                const tonePlan = await generateTonePlan(candidate, selectedModel, system, prompt, env);
-                completed = { ok: true, provider: candidate, model: selectedModel, tonePlan, requestId: crypto.randomUUID() };
+                const generated = await generateTonePlan(candidate, selectedModel, system, prompt, env, maxOutputTokens);
+                completed = { ok: true, provider: candidate, model: selectedModel, tonePlan: generated.tonePlan, usage: generated.usage, maxOutputTokens, requestId: crypto.randomUUID() };
                 break;
               } catch (error) {
                 failures.push(candidate + ": " + (error.message || "provider error"));

@@ -186,6 +186,54 @@ test('TONE3000 contract aliases are protected by app JWT and route to official A
   } finally { globalThis.fetch = originalFetch; }
 });
 
+
+test('AI tone-plan forwards bounded output tokens and returns normalized Gemini usage', async () => {
+  const originalFetch = globalThis.fetch;
+  let upstreamRequest = null;
+  globalThis.fetch = async (url, options = {}) => {
+    const target = String(url);
+    upstreamRequest = { url: target, body: JSON.parse(options.body || '{}') };
+    return jsonResponse({
+      candidates: [{ content: { parts: [{ text: JSON.stringify({ summary: 'Test tone', blocks: [{ id: 'AMP', model: 'Deluxe Rvb', enabled: true, parameters: { gain: 30 } }], notes: [] }) }] } }],
+      usageMetadata: { promptTokenCount: 321, candidatesTokenCount: 74, totalTokenCount: 395 }
+    });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/tone-plan', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'gemini', model: 'gemini-3.1-flash-lite-preview', system: 'Compact system', prompt: 'Create a tone', maxOutputTokens: 180 })
+    }), { ...baseEnv, GEMINI_API_KEY: 'gemini-secret' });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(upstreamRequest.body.generationConfig.maxOutputTokens, 180);
+    assert.equal(body.maxOutputTokens, 180);
+    assert.deepEqual(body.usage, { prompt_tokens: 321, completion_tokens: 74, total_tokens: 395 });
+    assert.equal(body.provider, 'gemini');
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('AI tone-plan output-token limits are clamped to the safe provider maximum', async () => {
+  const originalFetch = globalThis.fetch;
+  let limit = 0;
+  globalThis.fetch = async (_url, options = {}) => {
+    limit = JSON.parse(options.body || '{}').generationConfig.maxOutputTokens;
+    return jsonResponse({
+      candidates: [{ content: { parts: [{ text: JSON.stringify({ summary: 'Compact', blocks: [{ id: 'AMP', model: 'Deluxe Rvb', enabled: true, parameters: { gain: 30 } }], notes: [] }) }] } }],
+      usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 }
+    });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/tone-plan', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'gemini', model: 'gemini-3.1-flash-lite-preview', system: 'S', prompt: 'P', maxOutputTokens: 99999 })
+    }), { ...baseEnv, GEMINI_API_KEY: 'gemini-secret' });
+    assert.equal(response.status, 200);
+    assert.equal(limit, 2048);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
 test('AI auto fallback advances from Gemini to Groq and returns the successful provider', async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];
