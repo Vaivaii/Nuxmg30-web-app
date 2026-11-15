@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -512,4 +512,35 @@ test('automatic NAM search synchronizes the visible capture choice with explicit
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("namCaptureType=inferNamCaptureType(prompt,namCaptureType)"));
  assert.ok(source.includes("if(namModeActive){activeNamGear=namCaptureType;updateNamControlState();}"));
+});
+
+
+test('Indonesian Tone3000 amp search phrases route to the NAM search tool, not conversational AI',()=>{
+ assert.equal(classifyAssistantIntent('Cari ampnya di tone3000'),'nam_search');
+ assert.equal(classifyAssistantIntent('Carikan amp-nya di Tone3000'),'nam_search');
+ assert.equal(classifyAssistantIntent('Tolong cariin amplifier di Tone3000'),'nam_search');
+ assert.equal(classifyAssistantIntent('Find the amp profile on TONE3000'),'nam_search');
+});
+test('every new preset searches a fresh NAM while same-preset tweaks reuse the installed NAM',()=>{
+ assert.equal(shouldAutoImportNamForTone('tone_create',true,true),true);
+ assert.equal(shouldAutoImportNamForTone('tone_create',true,false),true);
+ assert.equal(shouldAutoImportNamForTone('tone_create',false,true),false);
+ assert.equal(shouldAutoImportNamForTone('tone_refine',true,true),false);
+ assert.equal(shouldAutoImportNamForTone('tone_refine',true,false),true);
+ assert.equal(shouldAutoImportNamForTone('consultation',true,true),false);
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("if(intent==='tone_create'){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}"));
+ assert.ok(source.includes("intent==='tone_create'&&!pendingMatchesThisRequest"));
+});
+test('NAM-backed tone summaries cannot claim that an unrelated built-in amp was applied',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("Tone updated using the installed TONE3000 NAM capture in slot 10."));
+ assert.ok(source.includes('The installed NAM capture remained the amp source'));
+ assert.ok(source.includes('AUTHORITATIVE AMP SOURCE: TONE3000 NAM is already installed'));
+});
+test('Audio Listening header uses a waveform icon and shares the Settings frame dimensions',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('<svg viewBox="0 0 24 24" width="22" height="22"'));
+ assert.ok(source.includes('.ai-tone-head-actions .ai-tone-icon{width:56px;height:56px;min-width:56px;flex:0 0 56px'));
+ assert.equal(source.includes('>♫</button>'),false);
 });

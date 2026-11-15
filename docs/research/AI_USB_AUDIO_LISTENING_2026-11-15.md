@@ -42,3 +42,13 @@
 - Explicit requests to find an amp/NAM/capture can search TONE3000 independently of preset creation. AI ranks matching tone packs; the user opens A2 model candidates and manually chooses Import. Search itself does not import or change the preset.
 - Manual NAM import no longer auto-generates a preset from the search sentence. The installed slot-10 NAM can be used later by an explicit create/refine request.
 - Existing automatic NAM import for tone creation retains A2 validation and slot-10 installation. No Cloudflare Worker/API, USB-MIDI mapping, MIDI CC, IR import or preset-transfer code changed.
+
+
+## Fix: repeated NAM reuse, direct Indonesian search and waveform header — 2026-11-16
+- The intent classifier now recognizes Indonesian variants such as "Cari ampnya di Tone3000", "Carikan amp-nya", and "cariin amplifier" as a direct NAM search request instead of a generic AI conversation.
+- A new preset request while TONE3000 NAM mode is ON always begins a fresh TONE3000 search, even when an earlier preset already left a NAM installed in slot 10. The pending capture is preserved only when resuming the exact same request after capture selection/USB connection.
+- A tone refinement continues to reuse the already-installed slot-10 NAM. If NAM mode is ON but no verified NAM context is installed, the app runs the NAM search before applying the refinement.
+- A new preset clears the previous Tone Architect intent/provider/source prompt so an artist reference from the previous preset cannot leak into a later preset request.
+- When a NAM is the authoritative amp source, system instructions and the final response explicitly identify the installed slot-10 capture rather than claiming that an unrelated built-in amp such as SLO-100 was applied.
+- Replaced the Audio Listening music-note glyph with a waveform SVG and normalized Audio, Settings and Close header buttons to the same 56×56 CSS-pixel frame.
+- No Cloudflare Worker/API, MIDI CC mapping, IR collection import, NAM codec or slot-10 transfer protocol was changed.

@@ -141,8 +141,8 @@ export function findDefaultGeminiModel(models){
 export function classifyAssistantIntent(prompt){
  const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim();
  if(!value)return 'consultation';
- const searchVerb=/\b(cari(?:kan)?|temukan|find|search|look for|help me find|recommend(?: me)?)\b/i;
- const namSubject=/\b(nam|capture|amp|amplifier|head|cab(?:inet)?|profil|profile|pedal)\b/i;
+ const searchVerb=/\b(cari(?:kan|in)?|temukan|telusuri|find|search|look for|help me find|recommend(?: me)?)\b/i;
+ const namSubject=/\b(nam|tone\s*3000|amp(?:-?nya)?|amplifier(?:-?nya)?|head(?:-?nya)?|cab(?:inet)?(?:-?nya)?|capture|profil(?:e)?|profile|pedal(?:-?nya)?)\b/i;
  if(searchVerb.test(value)&&namSubject.test(value))return 'nam_search';
  const analysis=/\b(analy[sz](?:e|ing|is|a)?|analysis|analisa|analisis|dengar|listen|evaluasi|evaluate|diagnos(?:e|is))\b/i.test(value);
  const audioTopic=/\b(audio|tone|suara|gitar|guitar|current|sekarang|ini|rekaman|recording)\b/i.test(value);
@@ -161,6 +161,11 @@ export function inferNamCaptureType(prompt,fallback='amp-cab'){
  if(/\b(amp\s*only|head\s*only|without\s+(a\s+)?cab(?:inet)?|no\s+cab(?:inet)?|amp\s+saja|tanpa\s+cab(?:inet)?|head\s+only)\b/i.test(value))return 'amp';
  if(/\b(amp\s*(?:\+|and|plus)\s*cab(?:inet)?|head\s*(?:\+|and|plus)\s*cab(?:inet)?|with\s+(a\s+)?cab(?:inet)?|amp\s*\+\s*cab|amp\s+cabinet|head\s*\+\s*cab)\b/i.test(value))return 'amp-cab';
  return fallback==='amp'?'amp':'amp-cab';
+}
+export function shouldAutoImportNamForTone(intent,namModeEnabled,hasInstalledNamContext){
+ if(!namModeEnabled)return false;
+ if(intent==='tone_create')return true;
+ return intent==='tone_refine'&&!hasInstalledNamContext;
 }
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
@@ -305,13 +310,14 @@ async function init(){
 
  audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:var(--ai-tone-max-height);max-height:94dvh}.ai-tone-head{flex:0 0 auto}.ai-tone-head-actions{display:flex;align-items:center;gap:6px}.ai-tone-audio-toggle{font-size:19px;font-weight:850;min-width:42px}.ai-tone-audio-toggle.active{border-color:#c5f36b;color:#c5f36b;background:#c5f36b18}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;height:auto;max-height:none;padding:10px 13px calc(10px + env(safe-area-inset-bottom,0px));overflow:hidden;overscroll-behavior:none}.ai-tone-messages{display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:none;height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{flex:0 0 auto}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:9px 11px;border-radius:14px}.ai-tone-audio-panel[hidden]{display:none!important}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:39px;margin-top:8px}.ai-tone-audio-meter{height:16px;margin-top:5px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.3}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:6px;margin:0;padding-top:3px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:50px;height:50px;max-height:76px;resize:none;overflow-y:auto;padding:10px 12px}.ai-tone-compose{flex:0 0 auto;margin:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.3}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 96px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-nam-panel{display:flex;flex-direction:column;gap:9px;margin:12px 0;padding:11px;border:1px solid #3c4b32;border-radius:13px;background:#111911}.ai-tone-nam-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ai-tone-nam-panel-head strong{display:block;color:#edf5e4;font-size:12px}.ai-tone-nam-panel-head small{display:block;margin-top:3px;color:#9daa93;font-size:10px}.ai-tone-nam-action{border:1px solid #536447;border-radius:10px;background:#182317;color:#c7d3bf;padding:9px 14px;font-size:11px;font-weight:850;letter-spacing:.03em}.ai-tone-nam-action.active{border-color:#c5f36b;background:#c5f36b;color:#10160b;box-shadow:0 0 0 1px #c5f36b35}.ai-tone-nam-gear-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.ai-tone-nam-gear-row .ai-tone-nam-choice{min-height:40px;border:1px solid #435438;border-radius:10px;background:#172017;color:#b9c7ad;font-size:11px;font-weight:800}.ai-tone-nam-gear-row .ai-tone-nam-choice.active{border-color:#c5f36b;background:#c5f36b;color:#10160b}.ai-tone-nam-mode-status{color:#96a28e;font-size:10px;line-height:1.4}.ai-tone-nam-mode-status[data-active=true]{color:#c5f36b}.ai-tone-nam-model.recommended{border-color:#8cad54;background:#182418}.ai-tone-nam-results{max-height:42dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:94dvh;max-height:94dvh;width:100%;border-radius:22px 22px 0 0}.ai-tone-body{padding:9px 12px calc(8px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:0;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:8px 9px}.ai-tone-audio-note{display:block}.ai-tone-prompt{height:49px;min-height:49px;max-height:72px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh;height:96dvh;max-height:96dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:12px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:34px}.ai-tone-prompt{height:43px;min-height:43px}}';
 
+ audioStyle.textContent += '.ai-tone-head-actions .ai-tone-icon{width:56px;height:56px;min-width:56px;flex:0 0 56px;padding:0;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}.ai-tone-audio-toggle{font-size:0;line-height:1}.ai-tone-audio-toggle svg{display:block;width:22px;height:22px;flex:0 0 22px}';
  document.head.appendChild(audioStyle);
 
  const open=document.createElement('button');open.id='aiToneOpenButton';open.type='button';open.className='btn';open.textContent='✦ AI';open.setAttribute('aria-haspopup','dialog');open.setAttribute('aria-expanded','false');actions.insertBefore(open,ctrl);
  const shade=document.createElement('div');shade.className='ai-tone-backdrop';
  const sheet=document.createElement('section');sheet.className='ai-tone-sheet';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','AI Live Tone Assistant');
  sheet.innerHTML=[
- '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div class="ai-tone-head-actions"><button class="ai-tone-icon ai-tone-audio-toggle" id="aiToneAudioToggle" type="button" aria-label="Toggle Audio Listening" aria-controls="aiToneAudioPanel" aria-expanded="false">♫</button> <button class="ai-tone-icon" id="aiToneSettingsToggle" type="button" aria-label="AI Settings">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button" aria-label="Close AI Assistant">×</button></div></div>',
+ '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div class="ai-tone-head-actions"><button class="ai-tone-icon ai-tone-audio-toggle" id="aiToneAudioToggle" type="button" aria-label="Toggle Audio Listening" aria-controls="aiToneAudioPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v4 M6 6v12 M10 3v18 M14 8v8 M18 5v14 M22 10v4"/></svg></button> <button class="ai-tone-icon" id="aiToneSettingsToggle" type="button" aria-label="AI Settings">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button" aria-label="Close AI Assistant">×</button></div></div>',
  '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>Cloud AI Providers & Models</h4><p>Provider credentials are stored only as Cloudflare Worker secrets. This app requests provider status, model lists and Tone Plans through the authenticated Cloud gateway.</p>',
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking Cloud configuration…</span></div></div>',
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking Cloud configuration…</span></div></div>',
@@ -1017,7 +1023,10 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
  }
  async function makePlan(prompt,bridge,audioMetrics=null,conversation=''){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
-  const system=systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt))+(audioMetrics?'\n\nLIVE USB AUDIO GUIDANCE: Use the measured audio evidence to inform this correction conservatively. The USB source is input channels 1–2 and may contain host-loopback mix; it is not a calibrated amp-only microphone measurement. Preserve unaffected blocks, NAM and IR settings.\n'+formatToneAudioMetrics(audioMetrics):'');
+  const namPlanGuard=activeNamContext
+   ?'\n\nAUTHORITATIVE AMP SOURCE: TONE3000 NAM is already installed in MG-30 slot 10. Do not invent, recommend, name, or claim a built-in amp model such as SLO-100, Deluxe, Friedman, etc. The app will force the selection-only NAM Slot 10 catalog entry. Your summary and notes must describe the installed NAM capture, not a fictional built-in amp replacement. Only choose compatible non-NAM effect/EQ parameters.'
+   :'';
+  const system=systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt))+namPlanGuard+(audioMetrics?'\n\nLIVE USB AUDIO GUIDANCE: Use the measured audio evidence to inform this correction conservatively. The USB source is input channels 1–2 and may contain host-loopback mix; it is not a calibrated amp-only microphone measurement. Preserve unaffected blocks, NAM and IR settings.\n'+formatToneAudioMetrics(audioMetrics):'');
   const multiMode=mode==='auto'||mode==='collab';
   const localRefinement=Boolean(toneSession.intent&&isLocalToneRefinement(prompt));
   let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent;
@@ -1090,6 +1099,7 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
   if(!prompt){status('Enter a tone request first.','error');return;}
   const conversation=conversationContextText();
   const intent=classifyAssistantIntent(prompt);
+  if(intent==='tone_create'){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
   rememberConversation('user',prompt);
   setBusy(true);message('user',prompt);
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
@@ -1108,8 +1118,12 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
    if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.');
-   if(namModeActive&&!activeNamContext){
-    status('Preparing the TONE3000 NAM search…','busy');
+   if(shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))){
+    const pendingMatchesThisRequest=Boolean(pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
+    if(intent==='tone_create'&&!pendingMatchesThisRequest){
+     activeNamContext='';activeNamModelName='';
+    }
+    status(intent==='tone_create'?'Finding a fresh TONE3000 NAM profile for this new preset…':'Finding a TONE3000 NAM profile because no compatible NAM is installed…','busy');
     const namResult=await automaticNamImportForPrompt(prompt,conversation);
     if(namResult?.pendingConnection||namResult?.pendingSelection)return;
    }
@@ -1130,7 +1144,13 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
    status('Tone Plan validated. Updating the editor and sending MIDI…','busy');
    const result=await bridge.applyPlan(plan);
    last={before:result.before,after:result.after,blocks:result.blocks};ui.undo.disabled=false;
-   const reply=(plan.summary||'Tone updated by AI.')+'\nParameters sent to: '+result.blocks.join(', ')+(plan.notes.length?'\n'+plan.notes.join(' · '):'');
+   const appliedSummary=activeNamContext
+    ?'Tone updated using the installed TONE3000 NAM capture in slot 10.'
+    :(plan.summary||'Tone updated by AI.');
+   const appliedNotes=activeNamContext
+    ?['The installed NAM capture remained the amp source; only validated non-NAM parameters were updated.']
+    :plan.notes;
+   const reply=appliedSummary+'\nParameters sent to: '+result.blocks.join(', ')+(appliedNotes.length?'\n'+appliedNotes.join(' · '):'');
    message('ai',reply);rememberConversation('assistant',reply);
    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
    status(intent==='tone_refine'?'Tone refinement complete. Editor and MG-30 were updated through USB-MIDI.':'Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
