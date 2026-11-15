@@ -925,7 +925,9 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   }
 async function automaticNamImportForPrompt(prompt,conversation=''){
   const bridge=window.NUXTONE3000Bridge;
-  if(!activeNamGear)throw new Error('Choose Amp Only or Amp + Cab in the NAM source menu before sending this tone request.');
+  namCaptureType=inferNamCaptureType(prompt,namCaptureType);
+  if(namModeActive){activeNamGear=namCaptureType;updateNamControlState();}
+  if(!activeNamGear)throw new Error('Choose Amp Only or Amp + Cab in the NAM settings before sending this tone request.');
   if(!bridge?.searchTones||!bridge?.loadTone||!bridge?.prepareModel||!bridge?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update the AI Studio app.');
   if(!await bridge.hasSession())throw new Error('TONE3000 account is not authenticated. Open Device → TONE3000 Settings → Connect TONE3000 Account and finish sign-in.');
   let pending=pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear?pendingNamSelection:null;

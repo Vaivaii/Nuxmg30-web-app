@@ -506,3 +506,10 @@ test('manual NAM import cannot automatically create a preset from the search pro
  assert.ok(block.includes('autoCreatePreset=false'));
  assert.equal(block.includes('autoCreatePreset=Boolean(ui.prompt.value.trim())'),false);
 });
+
+
+test('automatic NAM search synchronizes the visible capture choice with explicit prompt gear',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("namCaptureType=inferNamCaptureType(prompt,namCaptureType)"));
+ assert.ok(source.includes("if(namModeActive){activeNamGear=namCaptureType;updateNamControlState();}"));
+});
