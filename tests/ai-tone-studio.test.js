@@ -273,7 +273,7 @@ test('Send wraps bridge checks, AI planning and MIDI apply in visible error hand
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
  assert.ok(submit.indexOf('try{')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
  assert.match(submit,/Preparing the MG-30 catalog and requesting an AI Tone Plan/);
- assert.match(submit,/await makePlan\(prompt,bridge\)/);
+ assert.match(submit,/await makePlan\(prompt,bridge,audioMetricsForRequest\)/);
  assert.match(submit,/await bridge\.applyPlan\(plan\)/);
  assert.match(submit,/catch\(e\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
  assert.match(source,/aiToneSend'\)\.addEventListener\('click',\(\)=>\{void submit\(\)\.catch/);
@@ -362,7 +362,7 @@ test('Critical Reviewer triggers only for explicit uncertainty, low confidence o
 test('live orchestration retains direct applyPlan MIDI path with no manual Apply gate', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   const submit = source.slice(source.indexOf(' async function submit(){'), source.indexOf(' async function undo(){'));
-  assert.match(submit, /await makePlan\(prompt,bridge\)/);
+  assert.match(submit, /await makePlan\(prompt,bridge,audioMetricsForRequest\)/);
   assert.match(submit, /await bridge\.applyPlan\(plan\)/);
   assert.doesNotMatch(submit, /manual approval|confirm.*apply|Apply to Pedal/i);
 });

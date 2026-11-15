@@ -1,5 +1,5 @@
 import { cloudApiRequest } from './cloud-api.js';
-import { analyzeToneAudioSamples, formatToneAudioMetrics } from './ai-audio-analysis.js';
+import { analyzeToneAudioSamples, formatToneAudioMetrics, selectUsbInputChannels } from './ai-audio-analysis.js';
 
 const aiRuntimeErrorQueue = [];
 let aiRuntimeErrorHandlersInstalled = false;
@@ -365,8 +365,11 @@ async function init(){
   const context=new AudioContextClass();
   try{
    const decoded=await context.decodeAudioData(bytes.slice(0));
-   const channels=[];
-   for(let index=0;index<decoded.numberOfChannels;index+=1)channels.push(decoded.getChannelData(index));
+   const decodedChannels=[];
+   for(let index=0;index<decoded.numberOfChannels;index+=1)decodedChannels.push(decoded.getChannelData(index));
+   const activeMask=Number(take.channelIndexMask)||Number(take.requestedChannelIndexMask)||3;
+   const requestedMask=Number(take.requestedChannelIndexMask)||3;
+   const channels=selectUsbInputChannels(decodedChannels,activeMask,requestedMask);
    const metrics=analyzeToneAudioSamples(channels,decoded.sampleRate);
    metrics.captureMode=String(take.captureMode||'multichannel');
    metrics.inputRoute='MG-30 USB input channels 1–2 (stereo host-loopback mix)';

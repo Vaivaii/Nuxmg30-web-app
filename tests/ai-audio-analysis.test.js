@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeToneAudioSamples, formatToneAudioMetrics } from '../www/ai-audio-analysis.js';
+import { analyzeToneAudioSamples, formatToneAudioMetrics, selectUsbInputChannels } from '../www/ai-audio-analysis.js';
 function sine(frequency,sampleRate=48000,seconds=1,amplitude=0.25){
   const output=new Float32Array(Math.floor(sampleRate*seconds));
   for(let i=0;i<output.length;i+=1)output[i]=amplitude*Math.sin(2*Math.PI*frequency*i/sampleRate);
@@ -26,4 +26,14 @@ test('aggregates stereo channel energy without cancelling opposite-phase channel
   const left=sine(440),right=sine(440).map(value=>-value);
   const metrics=analyzeToneAudioSamples([left,right],48000);
   assert.ok(Math.abs(metrics.spectralCentroidHz-440)<45);assert.equal(metrics.channels,2);
+});
+
+test('selects only requested USB input 1–2 from a wider multichannel capture',()=>{
+ const channelA=new Float32Array([1,2]),channelB=new Float32Array([3,4]);
+ const channelC=new Float32Array([5,6]),channelD=new Float32Array([7,8]);
+ const selected=selectUsbInputChannels([channelA,channelB,channelC,channelD],0xF,0x3);
+ assert.equal(selected.length,2);assert.equal(selected[0],channelA);assert.equal(selected[1],channelB);
+});
+test('rejects a USB stream that does not include the requested input pair',()=>{
+ assert.throws(()=>selectUsbInputChannels([new Float32Array([1,2])],0x1,0x3),/does not contain every requested input channel/);
 });

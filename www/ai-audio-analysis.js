@@ -128,6 +128,35 @@ export function analyzeToneAudioSamples(channelData, sampleRate) {
     analysisNote:'Objective measurements from MG-30 USB input channels 1–2. They describe this captured performance and are not a calibrated frequency-response measurement of the amp alone.'
   };
 }
+
+/**
+ * Select only the requested USB input positions from an Android multichannel WAV.
+ * The active mask maps WAV channel order; requested mask identifies the input pair
+ * chosen by the caller (for AI listening this is USB inputs 1–2, mask 0x3).
+ */
+export function selectUsbInputChannels(channelData, activeMask, requestedMask) {
+  if (!Array.isArray(channelData)) throw new TypeError('Decoded USB channel data is required.');
+  const active = Number(activeMask) || Number(requestedMask) || 0;
+  const requested = Number(requestedMask) || active;
+  const selected = [];
+  let position = 0;
+  for (let bit = 0; bit < 8; bit += 1) {
+    const flag = 1 << bit;
+    if ((active & flag) === 0) continue;
+    const channel = channelData[position++];
+    if ((requested & flag) !== 0 && channel) selected.push(channel);
+  }
+  if (selected.length !== countBits(requested)) {
+    throw new Error('The MG-30 USB capture does not contain every requested input channel.');
+  }
+  return selected;
+}
+function countBits(value) {
+  let count = 0, bits = Number(value) || 0;
+  while (bits) { count += bits & 1; bits >>>= 1; }
+  return count;
+}
+
 export function formatToneAudioMetrics(metrics) {
   if (!metrics || typeof metrics !== 'object') return 'No measured USB audio context is available.';
   const bands = metrics.bandsPct || {};
