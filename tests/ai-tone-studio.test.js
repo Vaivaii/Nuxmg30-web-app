@@ -163,7 +163,7 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.ok(html.includes('parameters:namProfile?{}:{...states[index].values}'));
   assert.ok(source.includes('namModeActive=true;activeNamGear=gear'));
-  assert.ok(source.includes('if(namModeActive&&!activeNamContext)'));
+  assert.ok(source.includes('shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))'));
   assert.ok(source.includes('automaticNamImportForPrompt(prompt,conversation)'));
 });
 

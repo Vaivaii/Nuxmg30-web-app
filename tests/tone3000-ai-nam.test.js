@@ -105,7 +105,7 @@ test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloa
 test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
   assert.match(aiStudio, /pendingNamSelection/);
-  assert.match(aiStudio, /if\(namModeActive&&!activeNamContext\)/);
+  assert.ok(aiStudio.includes('shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))'));
   assert.match(aiStudio, /automaticNamImportForPrompt\(prompt,conversation\)/);
   assert.match(aiStudio, /bridge\.prepareModel\(selected\.model\.id\)/);
   assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
