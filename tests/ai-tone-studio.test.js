@@ -452,7 +452,7 @@ test('Audio Listening is collapsed behind a dedicated header toggle and only con
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.match(source,/id="aiToneAudioToggle"/);
  assert.match(source,/aria-controls="aiToneAudioPanel"/);
- assert.match(source,/id="aiToneAudioPanel" hidden/);
+ assert.ok(source.includes(String.raw`id=\"aiToneAudioPanel\" hidden`));
  assert.match(source,/setAudioPanelExpanded\\(ui.audioPanel\\.hidden\\)/);
  assert.match(source,/\\.ai-tone-messages\\{display:flex;flex:1 1 auto/);
  assert.match(source,/\\.ai-tone-audio-panel\\{flex:0 0 auto/);
@@ -461,7 +461,7 @@ test('Audio Listening is collapsed behind a dedicated header toggle and only con
 test('TONE3000 NAM is always visible with Amp + Cab active by default and a persistent ON/OFF button',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.match(source,/id="aiToneFindNam" type="button" aria-pressed="false">OFF/);
- assert.match(source,/data-ai-nam-gear="amp-cab" aria-pressed="true">Amp \\+ Cab/);
+ assert.ok(source.includes('data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab'));
  assert.match(source,/function updateNamControlState\\(\\)/);
  assert.match(source,/setNamMode\\(!namModeActive\\)/);
  assert.match(source,/TONE3000 NAM mode OFF/);
