@@ -660,8 +660,12 @@ async function init(){
    const models=await listAiProviderModels(provider,stored);
    if(!models.length)throw new Error('No text-generation models were returned by '+providerNames[provider]+'.');
    providerModels[provider]=models;
-   const manual=localStorage.getItem('mg30-ai-model-manual-'+provider)==='1';
-   let chosen=manual&&models.some(row=>row.id===saved)?saved:'';
+   const manualKey='mg30-ai-model-manual-'+provider;
+   const manual=localStorage.getItem(manualKey)==='1';
+   const manualModelAvailable=manual&&models.some(row=>row.id===saved);
+   if(manual&&!manualModelAvailable)localStorage.setItem(manualKey,'0');
+   delete autoModelHealthCache[provider];
+   let chosen=manualModelAvailable?saved:'';
    if(!chosen){
     if(provider==='openrouter')chosen=models.some(row=>row.id==='openrouter/free')?'openrouter/free':models[0].id;
     else if(provider==='gemini')chosen=findDefaultGeminiModel(models);
@@ -709,15 +713,15 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   return openAiCompatible(key,system,user,model,provider,timeoutMs);
  }
  async function fastestReadyModel(provider,key){
+  const models=providerModels[provider]?.length?providerModels[provider]:await refreshProviderModels(provider,true);
   const manual=selectedModel(provider);
-  if(manual)return manual;
+  if(manual&&(!models.length||models.some(row=>row.id===manual)))return manual;
+  if(manual)localStorage.setItem('mg30-ai-model-manual-'+provider,'0');
   const cached=autoModelHealthCache[provider];
   if(cached&&Date.now()<cached.expires){
    if(provider!=='gemini'||findDefaultGeminiModel([{id:cached.model}]))return cached.model;
    delete autoModelHealthCache[provider];
   }
-  let models=providerModels[provider]||[];
-  if(!models.length)models=await refreshProviderModels(provider,true);
   if(provider==='gemini'){
    const preferred=findDefaultGeminiModel(models);
    if(!preferred)throw new Error('Gemini 3.1 Flash Lite is not available in the Cloud model catalogue. Refresh the model list or choose a model manually. No Gemini request was sent.');
