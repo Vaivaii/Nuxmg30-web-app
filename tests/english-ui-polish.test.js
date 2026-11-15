@@ -125,7 +125,9 @@ test('AI workspace uses English tool labels while AI response language defaults 
  const ai=await read('../www/ai-tone-studio.js');
  assert.match(ai,/Analyze Once/);
  assert.match(ai,/Live Listening/);
- assert.match(ai,/Search TONE3000 NAM/);
+ assert.match(ai,/TONE3000 NAM/);
+ assert.match(ai,/Amp Only/);
+ assert.match(ai,/Amp \+ Cab/);
  assert.match(ai,/Bahasa Indonesia by default/);
  assert.match(ai,/Gemini 3.1 Flash Lite/);
 });

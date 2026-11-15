@@ -148,10 +148,12 @@ export function classifyAssistantIntent(prompt){
  const audioTopic=/\b(audio|tone|suara|gitar|guitar|current|sekarang|ini|rekaman|recording)\b/i.test(value);
  const change=/\b(tweak|adjust|fix|improv(?:e|ement)|change|modify|reduce|increase|raise|lower|less|more|make it|kurangi|kurangin|tambah|naikkan|turunkan|ubah|perbaiki|haluskan|lembutkan|buat lebih)\b/i.test(value);
  const toneProblem=/\b(too bright|too muddy|too harsh|too fizzy|too thin|too boomy|terlalu (tajam|bright|muddy|tipis|boomy|keras|terang)|kurang (hangat|body|sustain|gain)|berlebihan)\b/i.test(value);
+ const question=/\b(apa|apakah|kenapa|mengapa|bagaimana|gimana|jelaskan|bedanya|perbedaan|what|why|how|explain|difference|does|do you|can you explain|should i)\b/i.test(value)||/[?？]$/.test(value);
  if(analysis&&audioTopic&&!change)return 'audio_analyze';
- if(change||toneProblem)return 'tone_refine';
+ if(change)return 'tone_refine';
+ if(question)return 'consultation';
+ if(toneProblem)return 'tone_refine';
  if(/\b(create|generate|build|make|design|buat(?:kan)?|bikin)\b[\s\S]{0,45}\b(preset|tone|patch|sound|suara)\b|\b(preset|tone|patch)\b[\s\S]{0,35}\b(for|untuk|ala|inspired|inspired by|bergaya)\b/i.test(value))return 'tone_create';
- if(/\b(apa|apakah|kenapa|mengapa|bagaimana|gimana|jelaskan|bedanya|perbedaan|what|why|how|explain|difference|does|do you|can you explain|should i)\b/i.test(value)||/[?？]$/.test(value))return 'consultation';
  return 'consultation';
 }
 export function inferNamCaptureType(prompt,fallback='amp-cab'){
@@ -322,7 +324,7 @@ async function init(){
 '<section class="ai-tone-nam-panel" id="aiToneNamPanel"><div class="ai-tone-nam-panel-head"><div><strong>TONE3000 NAM</strong><small>Optional NAM search mode for amp captures</small></div><button class="ai-tone-nam-action" id="aiToneFindNam" type="button" aria-pressed="false">OFF</button></div><div class="ai-tone-nam-gear-row" role="group" aria-label="NAM capture type"><button class="ai-tone-nam-choice" type="button" data-ai-nam-gear="amp" aria-pressed="false">Amp Only</button><button class="ai-tone-nam-choice active" type="button" data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab</button></div><small class="ai-tone-nam-mode-status" id="aiToneNamModeStatus">TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.</small></section>',
 '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
 '<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
-'</div>',,
+'</div>',
  '<div class="ai-tone-messages" id="aiToneMessages"><div class="ai-tone-message ai"><small>AI ASSISTANT</small>Describe the tone you want. Validated results update the editor controls and send parameters over USB-MIDI immediately. There is no Apply step.</div></div>',
  "<section class=\"ai-tone-audio-panel\" id=\"aiToneAudioPanel\" hidden> <div class=\"ai-tone-audio-head\"><div><strong>⌁ AUDIO LISTENING</strong><small id=\"aiToneAudioDevice\">Checking MG-30 USB Audio…</small></div><button class=\"ai-tone-audio-refresh\" id=\"aiToneAudioRefresh\" type=\"button\">Refresh</button></div> <div class=\"ai-tone-audio-modes\" role=\"group\" aria-label=\"Audio listening mode\"><button class=\"active\" data-ai-audio-mode=\"once\" type=\"button\">Analyze Once</button><button data-ai-audio-mode=\"live\" type=\"button\">Live Listening</button></div> <button class=\"ai-tone-audio-start\" id=\"aiToneAudioStart\" type=\"button\" disabled>Start Listening</button> <div class=\"ai-tone-audio-meter\" id=\"aiToneAudioMeter\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div> <div class=\"ai-tone-audio-status\" id=\"aiToneAudioStatus\" role=\"status\" aria-live=\"polite\">Ready to capture</div> <small class=\"ai-tone-audio-note\">Uses MG-30 USB Audio input channels 1–2. Android audio permission is used for USB capture; the phone microphone is not used. Audio is analyzed locally on this device.</small></section>",
  '<div class="ai-tone-composer">',
@@ -1103,7 +1105,7 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
    const bridge=window.MG30AIToneBridge;
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
-   if(!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a live tone change.');
+   if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.');
    if(namModeActive&&!activeNamContext){
     status('Preparing the TONE3000 NAM search…','busy');
     const namResult=await automaticNamImportForPrompt(prompt,conversation);

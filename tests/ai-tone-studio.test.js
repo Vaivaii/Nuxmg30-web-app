@@ -163,7 +163,8 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.ok(html.includes('parameters:namProfile?{}:{...states[index].values}'));
   assert.ok(source.includes('namModeActive=true;activeNamGear=gear'));
-  assert.ok(source.includes('if(namModeActive){const namResult=await automaticNamImportForPrompt(prompt);if(namResult?.pendingConnection||namResult?.pendingSelection)return;}'));
+  assert.ok(source.includes('if(namModeActive&&!activeNamContext)'));
+  assert.ok(source.includes('automaticNamImportForPrompt(prompt,conversation)'));
 });
 
 
@@ -273,9 +274,9 @@ test('Send wraps bridge checks, AI planning and MIDI apply in visible error hand
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
  assert.ok(submit.indexOf('try{')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
  assert.match(submit,/Preparing the MG-30 catalog and requesting an AI Tone Plan/);
- assert.match(submit,/await makePlan\(prompt,bridge,audioMetricsForRequest\)/);
+ assert.match(submit,/await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
  assert.match(submit,/await bridge\.applyPlan\(plan\)/);
- assert.match(submit,/catch\(e\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
+ assert.match(submit,/catch\(error\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
  assert.match(source,/aiToneSend'\)\.addEventListener\('click',\(\)=>\{void submit\(\)\.catch/);
 });
 
@@ -362,7 +363,7 @@ test('Critical Reviewer triggers only for explicit uncertainty, low confidence o
 test('live orchestration retains direct applyPlan MIDI path with no manual Apply gate', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   const submit = source.slice(source.indexOf(' async function submit(){'), source.indexOf(' async function undo(){'));
-  assert.match(submit, /await makePlan\(prompt,bridge,audioMetricsForRequest\)/);
+  assert.match(submit, /await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
   assert.match(submit, /await bridge\.applyPlan\(plan\)/);
   assert.doesNotMatch(submit, /manual approval|confirm.*apply|Apply to Pedal/i);
 });
@@ -467,6 +468,7 @@ test('TONE3000 NAM is always visible with Amp + Cab active by default and a pers
 });
 
 
+
 test('assistant intent routing separates discussion, preset creation, tone refinement, audio analysis and NAM search',()=>{
  assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
  assert.equal(classifyAssistantIntent('Buat preset John Mayer menggunakan NAM'),'tone_create');
@@ -474,6 +476,7 @@ test('assistant intent routing separates discussion, preset creation, tone refin
  assert.equal(classifyAssistantIntent('Analisis tone gitar saya sekarang'),'audio_analyze');
  assert.equal(classifyAssistantIntent('Carikan profile NAM Vox AC30'),'nam_search');
  assert.equal(classifyAssistantIntent('Find an amp capture for a Fender Deluxe'),'nam_search');
+ assert.equal(classifyAssistantIntent('Kenapa tone saya terlalu bright?'),'consultation');
 });
 test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only requests',()=>{
  assert.equal(inferNamCaptureType('Carikan NAM capture untuk Vox AC30'),'amp-cab');
@@ -481,25 +484,25 @@ test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only reque
  assert.equal(inferNamCaptureType('Search TONE3000 head only profile'),'amp');
  assert.equal(inferNamCaptureType('Find an amp plus cab model'),'amp-cab');
 });
-test('standalone NAM and consultation routes do not send a Tone Plan or MIDI',()=>{
+test('standalone NAM and consultation routes are separate from device-write operations',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/async function answerToneConversation/);
- assert.match(source,/Do not create a Tone Plan/);
- assert.match(source,/if\\(intent==='consultation'\\)/);
- assert.match(source,/async function searchNamCatalogForPrompt/);
- assert.match(source,/if\\(intent==='nam_search'\\)/);
- assert.match(source,/Nothing has been imported/);
+ assert.ok(source.includes('async function answerToneConversation'));
+ assert.ok(source.includes('Do not create a Tone Plan'));
+ assert.ok(source.includes("if(intent==='consultation')"));
+ assert.ok(source.includes('async function searchNamCatalogForPrompt'));
+ assert.ok(source.includes("if(intent==='nam_search')"));
+ assert.ok(source.includes('Nothing has been imported'));
 });
 test('recent conversation context is carried into audio diagnosis and Tone Plans',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/const conversationContextText=/);
- assert.match(source,/RECENT CONVERSATION CONTEXT/);
- assert.match(source,/makePlan\\(prompt,bridge,audioMetricsForRequest,conversation\\)/);
- assert.match(source,/requestAudioDiagnosis\\(prompt,audioMetricsForRequest,conversation\\)/);
+ assert.ok(source.includes('const conversationContextText='));
+ assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
+ assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
+ assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
 });
 test('manual NAM import cannot automatically create a preset from the search prompt',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const block=source.slice(source.indexOf("ui.namResults.addEventListener('click'"),source.indexOf("window.addEventListener('mg30-tone3000-catalogue-loaded'"));
- assert.match(block,/autoCreatePreset=false/);
- assert.doesNotMatch(block,/autoCreatePreset=Boolean\\(ui\\.prompt\\.value\\.trim\\(\\)\\)/);
+ assert.ok(block.includes('autoCreatePreset=false'));
+ assert.equal(block.includes('autoCreatePreset=Boolean(ui.prompt.value.trim())'),false);
 });
