@@ -524,7 +524,8 @@ test('standalone NAM search and import stay in chat and never auto-create a pres
  assert.ok(source.includes('async function confirmNamTransfer'));
  assert.equal(source.includes("ui.namResults.addEventListener('click'"),false);
  assert.ok(source.includes("pending.purpose==='create'"));
- assert.ok(source.includes("pending.purpose==='search'"));
+ assert.ok(source.includes("recommendation,'search',prompt,conversation"));
+ assert.ok(source.includes("if(pending.purpose==='create')resumePrompt= pending.prompt")||source.includes("if(pending.purpose==='create')resumePrompt=pending.prompt"));
  assert.ok(source.includes('return {pendingSelection:true}'));
 });
 test('automatic NAM search synchronizes the visible capture choice with explicit prompt gear',()=>{
