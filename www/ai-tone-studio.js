@@ -985,21 +985,89 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
   return {model,reason:String(result.reason||'')};
  }
-   function renderAiNamCapturePicker(pending){
-   ui.settings.classList.add('on');
-   const choices=Array.isArray(pending?.choices)?pending.choices:[];
-   ui.namResults.hidden=false;ui.namWizard.hidden=true;
-   if(!choices.length){ui.namResults.innerHTML='<p>No downloadable A2 NAM captures remain to choose.</p>';return;}
-   const recommendedId=String(pending.selected.model.id);
-   const options=choices.map(item=>'<option value="'+esc(item.model.id)+'" '+(String(item.model.id)===recommendedId?'selected':'')+'>'+esc((item.model.name||'Unnamed capture')+(String(item.model.id)===recommendedId?' · AI recommended':''))+'</option>').join('');
-   const reason=String(pending.selected.reason||'').trim().slice(0,180);
-   ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>AI-recommended NAM capture</strong><small>'+esc(pending.selected.tone.name)+' · '+esc(pending.selected.tone.creator?'@'+pending.selected.tone.creator:'TONE3000')+' · slot 10</small></div></div>'+
-    '<p><strong>'+esc(pending.selected.model.name)+'</strong> is the AI top match. '+choices.length+' downloadable A2 captures are available; you can choose another below.</p>'+
-    (reason?'<p class="ai-tone-nam-reason">Why AI recommends it: '+esc(reason)+'</p>':'')+
-    '<label class="ai-tone-key-field" for="aiToneNamCaptureSelect">Choose NAM capture</label><select id="aiToneNamCaptureSelect" style="width:100%;margin:7px 0 9px;padding:11px;border:1px solid #3b4934;border-radius:9px;background:#090e0b;color:#edf3e8">'+options+'</select>'+
-    '<button class="ai-tone-nam-import" type="button" data-ai-nam-continue>Use selected capture & continue</button>';
-  }
-async function automaticNamImportForPrompt(prompt,conversation=''){
+ function renderAiNamCapturePicker(pending){
+  pending.phase='captures';
+  pending.cardId='nam-'+(++namCardSequence);
+  chatCard('nam-captures',{
+   cardId:pending.cardId,tone:pending.tone,choices:pending.choices,
+   selectedId:pending.selected?.model?.id,
+   recommendedId:pending.aiSelectedModelId||pending.selected?.model?.id,
+   reason:pending.selected?.reason||''
+  });
+ }
+ async function loadNamCapturesForChat(toneId){
+  const pending=pendingNamSelection,bridge=window.NUXTONE3000Bridge;
+  if(!pending||!bridge?.loadTone)throw new Error('The NAM search session is no longer available. Search again.');
+  const tone=pending.tones.find(item=>String(item.id)===String(toneId));
+  if(!tone)throw new Error('The selected TONE3000 profile is no longer in the current result list.');
+  setBusy(true);status('Loading A2 captures for '+tone.name+'…','busy');
+  try{
+   const snapshot=await bridge.loadTone(tone.id,{silent:true});
+   const candidates=(snapshot?.models||[]).filter(model=>Boolean(model.model_url)&&/^(2|a2)$/.test(String(model.architecture_version??model.architecture??'2').trim().toLowerCase()));
+   if(!candidates.length)throw new Error('This profile has no downloadable A2 NAM captures. Choose another profile.');
+   let aiChoice=null;
+   try{aiChoice=await chooseNamModel(pending.prompt||pending.query,tone,candidates,[],pending.conversation||'');}
+   catch(error){message('ai','Capture recommendation was unavailable: '+(error.message||error)+'. All downloadable A2 captures remain available for manual selection.');}
+   const selectedModel=aiChoice?.model||candidates[0];
+   const choices=candidates.map(model=>({tone,model,snapshot,reason:String(model.id)===String(selectedModel.id)?String(aiChoice?.reason||'AI recommended'):'Available alternative capture',metadata:describeNamCaptureMetadata(tone,model,pending.gear),prepared:null}));
+   const selected=choices.find(item=>String(item.model.id)===String(selectedModel.id))||choices[0];
+   Object.assign(pending,{tone,snapshot,choices,selected,aiSelectedModelId:String(selected.model.id),phase:'captures'});
+   renderAiNamCapturePicker(pending);
+   status('A2 captures are shown in the conversation. Choose one and press Import Selected Capture.','success');
+  }finally{setBusy(false);}
+ }
+ async function prepareSelectedNamCapture(cardId){
+  const pending=pendingNamSelection,bridge=window.NUXTONE3000Bridge;
+  if(!pending||pending.phase!=='captures')throw new Error('Choose a TONE3000 profile and capture first.');
+  const card=Array.from(ui.messages.querySelectorAll('[data-ai-nam-card]')).find(node=>node.dataset.aiNamCard===cardId);
+  const radio=card?.querySelector('input[data-ai-nam-capture-radio]:checked');
+  const selected=pending.choices.find(item=>String(item.model.id)===String(radio?.value||''));
+  if(!selected)throw new Error('Select a downloadable A2 capture before importing.');
+  if(!bridge?.prepareModel)throw new Error('The TONE3000 A2-Lite validator is unavailable.');
+  namImportBusy=true;setBusy(true);status('Downloading and validating '+selected.model.name+' for MG-30 Gen 2…','busy');
+  try{
+   selected.prepared=await bridge.prepareModel(selected.model.id);
+   pending.selected=selected;pending.phase='confirm';pending.confirmationCardId='nam-confirm-'+(++namCardSequence);
+   chatCard('nam-confirm',{cardId:pending.confirmationCardId,selected,prepared:selected.prepared});
+   status('A2-Lite validation passed. Confirm the transfer to NAM Slot 10 when ready.','success');
+  }catch(error){
+   message('ai','Capture validation failed: '+(error.message||error)+'. No device data has been changed. Choose another A2 capture.');
+   status('NAM validation failed. Slot 10 was not changed.','error');
+  }finally{namImportBusy=false;setBusy(false);}
+ }
+ async function confirmNamTransfer(cardId){
+  const pending=pendingNamSelection,bridge=window.NUXTONE3000Bridge,editor=window.MG30AIToneBridge;
+  if(!pending||pending.phase!=='confirm'||pending.confirmationCardId!==cardId||!pending.selected?.prepared)throw new Error('The pending NAM confirmation is no longer valid. Select and validate a capture again.');
+  if(pending.purpose==='create'&&!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring a NAM for a new preset.');
+  namImportBusy=true;setBusy(true);status('Reading NAM slot metadata and transferring to slot 10…','busy');
+  let resumePrompt='';
+  try{
+   const result=await bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false});
+   if(result?.cancelled)throw new Error('NAM transfer was canceled. Slot 10 was not changed.');
+   if(!result?.success)throw new Error('The NAM transfer did not complete successfully.');
+   const amp=editor?.getCatalog?.().find(block=>block.id==='AMP');
+   const slotModel=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10);
+   if(!slotModel)throw new Error('Transfer returned success, but the NAM Slot 10 selection-only entry is not visible in the MG-30 catalogue.');
+   activeNamModelName=slotModel.name;namModeActive=true;activeNamGear=pending.gear;updateNamControlState();
+   activeNamContext='TONE3000 NAM capture "'+pending.selected.model.name+'" from tone "'+pending.tone.name+'" was validated and imported into MG-30 NAM slot 10 (previous slot label: "'+(result.currentName||'unknown')+'"). Use exact selection-only AMP model "'+activeNamModelName+'" with no parameters; never modify NAM internals. SOURCE METADATA (TONE3000, supporting evidence only): '+JSON.stringify(pending.selected.metadata)+'.';
+   pending.imported=true;pending.phase='imported';pending.importResult=result;
+   chatCard('nam-transfer',{success:true,modelName:pending.selected.model.name,message:'Transfer ACKs completed and the NAM Slot 10 selection-only entry is visible in the MG-30 catalogue. Previous slot label: '+(result.currentName||'unavailable')+'.'});
+   status('NAM transferred to slot 10. The device completed transfer ACK/readback.','success');
+   if(pending.purpose==='create')resumePrompt=pending.prompt;
+   else{rememberConversation('assistant','The selected NAM capture is installed in slot 10. I can now create or refine a tone around this capture.');pendingNamSelection=null;}
+  }catch(error){
+   chatCard('nam-transfer',{success:false,modelName:pending.selected?.model?.name,message:(error.message||error)+' No transfer success is assumed.'});
+   status('NAM transfer failed: '+(error.message||error),'error');
+  }finally{namImportBusy=false;setBusy(false);}
+  if(resumePrompt){ui.prompt.value=resumePrompt;$('aiToneCount').textContent=resumePrompt.length+'/1400';await submit();}
+ }
+ function cancelNamTransferConfirmation(cardId){
+  if(!pendingNamSelection||pendingNamSelection.confirmationCardId!==cardId)return;
+  pendingNamSelection.phase='captures';pendingNamSelection.confirmationCardId='';
+  message('ai','Transfer canceled. Slot 10 was not changed. Choose another capture or import when ready.');
+  status('Transfer canceled. No device data was written.','idle');
+ }
+ async function automaticNamImportForPrompt(prompt,conversation=''){
   const bridge=window.NUXTONE3000Bridge;
   namCaptureType=inferNamCaptureType(prompt,namCaptureType);
   if(namModeActive){activeNamGear=namCaptureType;updateNamControlState();}
