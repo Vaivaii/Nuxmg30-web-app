@@ -1084,7 +1084,7 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
    const leadCandidates=[preferredLead,...team.filter(item=>item!==preferredLead)];
    const leadSystem=system+'\n\n'+toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect);
    const leadUser=hasArchitect
-    ?JSON.stringify({state:'MG30_TONE_INTENT_V1',intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
+    ?JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
     :userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'',1350);
    first=lead.result;leadMember=lead.member;

@@ -254,7 +254,10 @@ test('Groq length-of-messages errors are fallback eligible',()=>{assert.equal(is
 test('TONE3000 metadata differentiates explicit boost/OD from unknown',async()=>{const {describeNamCaptureMetadata}=await import('../www/ai-tone-studio.js');const boosted=describeNamCaptureMetadata({name:'Lead amp',description:'Captured with Tube Screamer boost'},{name:'Mesa capture',description:'Overdrive pedal before amp'},'amp-cab');const clean=describeNamCaptureMetadata({name:'Clean direct',description:'No boost or overdrive used'},{name:'Clean capture'},'amp');const unknown=describeNamCaptureMetadata({name:'Studio NAM'},{name:'Capture 1'},'amp-cab');assert.match(boosted.driveMetadata,/mentions boost\/overdrive/);assert.match(clean.driveMetadata,/explicitly indicates no boost/);assert.match(unknown.driveMetadata,/does not specify/);});
 test('TONE3000 NAM keeps AI recommendation and user dropdown while hiding long metadata from the picker',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(source,/namModeActive=true;\s*return \{success:true,tone:selected\.tone/);assert.ok(source.includes('id="aiToneNamCaptureSelect"'));assert.ok(source.includes('data-ai-nam-continue'));assert.match(source,/const choices=candidates\.map/);assert.ok(source.includes('SOURCE METADATA (TONE3000, supporting evidence only)'));const picker=source.slice(source.indexOf('function renderAiNamCapturePicker('),source.indexOf('async function automaticNamImportForPrompt'));assert.ok(picker.includes('AI-recommended NAM capture'));assert.ok(picker.includes('pending.selected.model.name'));assert.ok(picker.includes('pending.selected.reason'));assert.ok(!picker.includes('meta.summary'));assert.ok(!picker.includes('item.metadata.driveMetadata'));});
 test('AI retries one invalid Tone Plan against exact catalog before MIDI apply',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.ok(source.includes('first proposal did not exactly match the MG-30 catalog'));assert.ok(source.includes('correcting the catalog validation'));assert.ok(source.includes('No MIDI changes were sent'));});
-test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: retry ? 3200 : 2600'));assert.ok(source.includes('error.failedGeneration'));assert.ok(source.includes('retry ? {} : { response_format'));});
+test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: clampOutputTokenLimit(maxOutputTokens)'));
+  assert.ok(source.includes('max_tokens: clampOutputTokenLimit(maxOutputTokens)'));
+  assert.ok(source.includes('max_output_tokens: clampOutputTokenLimit(maxOutputTokens)'));
+  assert.equal(source.includes('retry ? 3200 : 2600'),false);assert.ok(source.includes('error.failedGeneration'));assert.ok(source.includes('retry ? {} : { response_format'));});
 test('OpenRouter server adapter excludes reasoning and retries empty or malformed JSON output',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning: { effort: "low", exclude: true }'));assert.ok(source.includes('config.api === "openrouter"'));assert.ok(source.includes('JSON Tone Plan|invalid response'));});
 test('OpenAI-compatible response parser handles text parts and diagnoses reasoning-only responses',async()=>{const {compatibleChatText}=await import('../www/ai-tone-studio.js');assert.equal(compatibleChatText({choices:[{message:{content:[{type:'text',text:'{"status":"ok"}'}]}}]},'openrouter'),'{"status":"ok"}');assert.throws(()=>compatibleChatText({choices:[{finish_reason:'length',message:{content:null,reasoning:'hidden'}}]},'openrouter'),/no final text output.*reasoning-only/);});
 
@@ -536,7 +539,7 @@ test('NAM-backed tone summaries cannot claim that an unrelated built-in amp was 
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("Tone updated using the installed TONE3000 NAM capture in slot 10."));
  assert.ok(source.includes('The installed NAM capture remained the amp source'));
- assert.ok(source.includes('AUTHORITATIVE AMP SOURCE: TONE3000 NAM is already installed'));
+ assert.ok(source.includes('AUTHORITATIVE AMP SOURCE: TONE3000 NAM is installed in MG-30 slot 10'));
 });
 test('Audio Listening header uses a waveform icon and shares the Settings frame dimensions',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -581,7 +584,7 @@ test('provider cooldown marks rate limits and temporary upstream failures, not a
 });
 test('Tone Architect passes one compact state to Lead; correction and Reviewer only receive affected catalog blocks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',intent:toneIntent,installed_nam:"));
+ assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent,installed_nam:"));
  assert.ok(source.includes('toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect)'));
  assert.ok(source.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
  assert.ok(source.includes('affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)'));
@@ -608,4 +611,13 @@ test('per-stage token limits are sent through Cloud API while usage is read only
  assert.ok(source.includes("value:'provider'")===false);
  assert.ok(source.includes("value:result.usage||null")||source.includes("value:result.usage || null"));
  assert.ok(source.includes('logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result)'));
+});
+
+
+test('Lead state-passing retains the current user request but excludes prior chat history and raw audio',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.ok(plan.includes("state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent"));
+ assert.equal(plan.includes('RECENT CONVERSATION:'),false);
+ assert.equal(plan.includes('MEASURED USB AUDIO'),true);
 });
