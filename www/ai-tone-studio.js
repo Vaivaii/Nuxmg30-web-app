@@ -690,43 +690,15 @@ async function init(){
   updateNamControlState();
   status('NAM capture type set to '+(namCaptureType==='amp'?'Amp Only':'Amp + Cab')+'.','success');
  }));
- ui.namResults.addEventListener('change',event=>{
-  const select=event.target.closest('#aiToneNamCaptureSelect');if(!select||!pendingNamSelection)return;
-  const item=pendingNamSelection.choices.find(row=>String(row.model.id)===String(select.value));const meta=$('aiToneNamCaptureMeta');
-  if(item&&meta)meta.textContent=item.metadata.summary+' Source: '+item.metadata.source+'. Metadata is supporting evidence, not a verified pedal-chain inventory.';
- });
- ui.namResults.addEventListener('click',async event=>{
-  const continueButton=event.target.closest('[data-ai-nam-continue]');
-  if(continueButton&&!busy&&pendingNamSelection){const select=$('aiToneNamCaptureSelect');const item=pendingNamSelection.choices.find(row=>String(row.model.id)===String(select?.value||''));if(!item){status('Choose a downloadable NAM capture first.','error');return;}pendingNamSelection.selected=item;ui.namResults.hidden=true;ui.prompt.value=pendingNamSelection.prompt;$('aiToneCount').textContent=ui.prompt.value.length+'/1400';message('ai','Selected capture: '+item.model.name+'. '+item.metadata.driveMetadata+'. Validating and importing to slot 10.');void submit();return;}
-  const toneButton=event.target.closest('[data-ai-nam-tone]');
-  if(toneButton&&!busy&&!namImportBusy){
-   const toneId=toneButton.dataset.aiNamTone,bridge=window.NUXTONE3000Bridge;
-   if(!bridge?.loadTone){status('The TONE3000 tone loader is unavailable.','error');return;}
-   namFlowActive=true;setBusy(true);ui.namResults.innerHTML='<p>Loading tone details and A2 capture candidates from TONE3000…</p>';status('Loading TONE3000 A2 models…','busy');
-   try{await bridge.loadTone(toneId);}
-   catch(error){namFlowActive=false;ui.namResults.innerHTML='<p>Could not load this tone: '+esc(error.message||error)+'</p>';status('Could not load TONE3000 tone: '+(error.message||error),'error');}
-   finally{setBusy(false);}
-   return;
-  }
-  const button=event.target.closest('[data-ai-nam-import]');if(!button||namImportBusy)return;
-  const modelId=button.dataset.aiNamImport,bridge=window.NUXTONE3000Bridge;
-  if(!bridge?.importModel){status('The TONE3000 import bridge is unavailable.','error');return;}
-  let autoCreatePreset=false;
-  namImportBusy=true;setBusy(true);status('Checking slot 10 and preparing the NAM download…','busy');
-  try{
-   const result=await bridge.importModel(modelId,{slotNumber:10,confirmOverwrite:true});
-   if(result?.cancelled){message('ai','NAM import canceled. Slot 10 was not changed.');status('Import canceled.','idle');return;}
-   if(!result?.success)throw new Error('The NAM import did not complete.');
-   namFlowActive=false;ui.namWizard.hidden=true;ui.namResults.hidden=true;
-   const ampCatalog=window.MG30AIToneBridge?.getCatalog?.().find(block=>block.id==='AMP');
-   const slotTenModel=ampCatalog?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10)?.name||'NAM Slot 10';
-   activeNamModelName=slotTenModel;
-   activeNamContext='The TONE3000 NAM model "'+(result.modelName||'selected A2 capture')+'" was validated and imported into MG-30 NAM slot 10 (tone ID '+result.toneId+'). For the AMP block, select the exact selection-only catalog model "'+slotTenModel+'" with parameters:{} so the preset uses slot 10. Never change NAM internal parameters. Build the requested tone around this installed capture; adjust only the other permitted tone blocks.';
-   autoCreatePreset=false;
-   message('ai','Imported '+(result.modelName||'the selected NAM')+' to MG-30 slot 10. A copy is retained in NAM Library. Your current preset was not changed. You can now ask me to create or tweak a tone using this installed NAM.');
-   status('NAM imported to slot 10. Preparing the tone from the installed capture…','success');
-  }catch(error){message('ai','NAM import failed: '+(error.message||error));status('NAM import failed: '+(error.message||error),'error');}
-  finally{namImportBusy=false;setBusy(false);if(autoCreatePreset)await submit();}
+ ui.messages.addEventListener('click',async event=>{
+  const view=event.target.closest('[data-ai-nam-view-captures]');
+  if(view&&!busy&&!namImportBusy){try{await loadNamCapturesForChat(view.dataset.aiNamViewCaptures||'');}catch(error){message('ai','Could not load A2 captures: '+(error.message||error));status('Could not load NAM captures.','error');}return;}
+  const importSelected=event.target.closest('[data-ai-nam-import-selected]');
+  if(importSelected&&!busy&&!namImportBusy){try{await prepareSelectedNamCapture(importSelected.dataset.aiNamImportSelected||'');}catch(error){message('ai','Cannot prepare this NAM capture: '+(error.message||error));status(error.message||'NAM capture selection failed.','error');}return;}
+  const confirm=event.target.closest('[data-ai-nam-confirm]');
+  if(confirm&&!busy&&!namImportBusy){try{await confirmNamTransfer(confirm.dataset.aiNamConfirm||'');}catch(error){message('ai','Transfer not started: '+(error.message||error));status(error.message||'Connect the MG-30 before transfer.','error');}return;}
+  const cancel=event.target.closest('[data-ai-nam-cancel]');
+  if(cancel&&!busy&&!namImportBusy){cancelNamTransferConfirmation(cancel.dataset.aiNamCancel||'');return;}
  });
  window.addEventListener('mg30-tone3000-catalogue-loaded',event=>{
   if(!namFlowActive)return;
@@ -1072,65 +1044,27 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   namCaptureType=inferNamCaptureType(prompt,namCaptureType);
   if(namModeActive){activeNamGear=namCaptureType;updateNamControlState();}
   if(!activeNamGear)throw new Error('Choose Amp Only or Amp + Cab in the NAM settings before sending this tone request.');
-  if(!bridge?.searchTones||!bridge?.loadTone||!bridge?.prepareModel||!bridge?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update the AI Studio app.');
+  if(!bridge?.searchTones||!bridge?.loadTone||!bridge?.prepareModel||!bridge?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update MG30 Studio.');
   if(!await bridge.hasSession())throw new Error('TONE3000 account is not authenticated. Open Device → TONE3000 Settings → Connect TONE3000 Account and finish sign-in.');
-  let pending=pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear?pendingNamSelection:null;
-  let selected=pending?.selected||null;
-  if(!selected){
-   const intent=await deriveNamSearchQuery(prompt,conversation);
-   message('ai','Searching TONE3000 for “'+intent.query+'” ('+(activeNamGear==='amp'?'Amp Only':'Amp + Cab')+', A2 NAM).');
-   status('Searching the TONE3000 NAM catalog…','busy');
-   const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
-   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. Capture-size filtering is deferred until model download. No file was downloaded and no pedal data was changed.');}
-   const selection=await chooseNamTone(prompt,intent.query,tones,conversation);
-   message('ai','Selected TONE3000 tone: '+selection.tone.name+(selection.tone.creator?' by @'+selection.tone.creator:'')+'. '+selection.reason);
-   const toneOptions=[selection.tone,...tones.filter(t=>String(t.id)!==String(selection.tone.id))].slice(0,3);
-   let lastError=null;
-   for(const toneChoice of toneOptions){
-    status('Loading A2 NAM capture metadata for '+toneChoice.name+'…','busy');
-    let snapshot;try{snapshot=await bridge.loadTone(toneChoice.id,{silent:true});}catch(error){lastError=error;continue;}
-    const candidates=(snapshot?.models||[]).filter(model=>Boolean(model.model_url)&&/^(2|a2)$/.test(String(model.architecture_version??model.architecture??'2').trim().toLowerCase()));
-    if(!candidates.length){lastError=new Error('No downloadable A2 NAM captures in '+toneChoice.name+'.');continue;}
-    const aiChoice=await chooseNamModel(prompt,toneChoice,candidates,[],conversation);
-    const selectedModel=candidates.find(model=>String(model.id)===String(aiChoice.model.id));
-    if(!selectedModel){lastError=new Error('AI selected a model outside the TONE3000 catalogue.');continue;}
-    const choices=candidates.map(model=>({tone:toneChoice,model,snapshot,reason:String(model.id)===String(selectedModel.id)?aiChoice.reason:'Available alternative capture',metadata:describeNamCaptureMetadata(toneChoice,model,activeNamGear),prepared:null}));
-    selected=choices.find(item=>String(item.model.id)===String(selectedModel.id));
-    pending={prompt,gear:activeNamGear,selected,choices,aiSelectedModelId:String(selectedModel.id)};
-    pendingNamSelection=pending;break;
-   }
-   if(!selected)throw new Error('No downloadable TONE3000 A2 NAM candidate found in the best matching tone packs. '+(lastError?.message||'Try another search phrase.'));
-   if(pending.choices.length>1){
-    renderAiNamCapturePicker(pending);
-    message('ai','AI recommends '+selected.model.name+'. '+pending.choices.length+' downloadable captures are available; choose the recommendation or another capture in the dropdown.');
-    status('Choose a capture before downloading and importing to slot 10. No pedal data has changed.','success');
-    return {pendingSelection:true};
-   }
+  if(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear){
+   const completed=pendingNamSelection;pendingNamSelection=null;
+   return {success:true,tone:completed.tone,model:completed.selected.model,slotModel:activeNamModelName};
   }
-  if(!selected.prepared){
-   status('Downloading '+selected.model.name+' and validating its actual NAM weights for MG-30 Gen 2…','busy');
-   try{selected.prepared=await bridge.prepareModel(selected.model.id);if(pending)pending.selected=selected;pendingNamSelection=pending||{prompt,gear:activeNamGear,selected,choices:[selected]};message('ai','Capture validation passed: '+selected.model.name+' ('+selected.prepared.weightBytes.toLocaleString()+' weight bytes). '+selected.metadata.driveMetadata+'.');}
-   catch(error){
-    if(pending){pending.choices=pending.choices.filter(item=>String(item.model.id)!==String(selected.model.id));if(pending.choices.length){pending.selected=pending.choices[0];pendingNamSelection=pending;renderAiNamCapturePicker(pending);message('ai','Selected file failed MG-30 Gen-2 validation: '+error.message+'. Choose another capture.');status('Capture rejected; choose another available model. No device data changed.','error');return {pendingSelection:true};}}
-    throw new Error('Selected NAM failed MG-30 Gen-2 weight validation: '+error.message);
-   }
-  }
-  const editor=window.MG30AIToneBridge;
-  if(!editor?.isConnected?.()){status('NAM found and validated. Connect the MG-30 via USB-MIDI, then press Send again to transfer to slot 10. No pedal data has been written.','success');return {pendingConnection:true};}
-  status('Checking slot 10 and asking before overwrite if occupied…','busy');
-  const imported=await bridge.importModel(selected.model.id,{slotNumber:10,confirmOverwrite:true,prepare:false});
-  if(imported?.cancelled){pendingNamSelection=null;throw new Error('NAM import canceled. Slot 10 was not changed.');}
-  if(!imported?.success)throw new Error('The automatic NAM import did not complete.');
-  pendingNamSelection=null;
-  const amp=editor.getCatalog?.().find(block=>block.id==='AMP'),slotModel=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10);
-  if(!slotModel)throw new Error('NAM imported, but AMP NAM Slot 10 is not verifiable. No AI parameters were sent.');
-  activeNamModelName=slotModel.name;
-  activeNamContext='TONE3000 NAM capture "'+selected.model.name+'" from tone "'+selected.tone.name+'" was validated and imported into slot 10. Use exact selection-only AMP model "'+activeNamModelName+'" with no parameters; never modify NAM internals. SOURCE METADATA (TONE3000, supporting evidence only): '+JSON.stringify(selected.metadata)+'.';
-  message('ai','Imported '+selected.model.name+' from '+selected.tone.name+' into NAM Slot 10. Library copy retained. '+selected.metadata.driveMetadata+'.');
-  status('NAM installed in slot 10. Building the preset around the imported amp…','busy');namModeActive=true;
-  return {success:true,tone:selected.tone,model:selected.model,slotModel:slotModel.name};
+  const intent=await deriveNamSearchQuery(prompt,conversation);
+  status('Searching TONE3000 for a fresh NAM profile for this preset…','busy');
+  const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
+  if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. No file was downloaded and no pedal data was changed.');}
+  let recommendation=null;
+  try{recommendation=await chooseNamTone(prompt,intent.query,tones,conversation);}
+  catch(error){message('ai','Profiles were found, but AI ranking was unavailable: '+(error.message||error)+'. Choose a matching profile manually.');}
+  const rows=recommendation?[recommendation.tone,...tones.filter(t=>String(t.id)!==String(recommendation.tone.id))]:tones;
+  renderNamSearchResults(rows,intent.query,recommendation,'create',prompt,conversation);
+  message('ai','Choose a TONE3000 profile below. I will show its A2 capture variants before downloading or transferring anything.');
+  status('Fresh NAM search complete. Choose a profile to inspect its A2 captures.','success');
+  return {pendingSelection:true};
  }
- async function resolveFreeProviderTeam(){
+
+  async function resolveFreeProviderTeam(){
   const order=await fastestReadyProviderOrder(),team=[];
   for(const provider of order){
    const key=await secret(providerKeyId(provider));
@@ -1322,6 +1256,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    message('ai',reply);rememberConversation('assistant',reply);
    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
    status(intent==='tone_refine'?'Tone refinement complete. Editor and MG-30 were updated through USB-MIDI.':'Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
+   if(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt)pendingNamSelection=null;
   }catch(error){const detail=error?.message||String(error);message('ai','Failed: '+detail);status('Failed: '+detail,'error');}
   finally{setBusy(false);ui.undo.disabled=!last;}
  }
@@ -1345,6 +1280,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
  sheet.querySelector('.ai-tone-body').addEventListener('click',event=>{if(ui.settings.classList.contains('on')&&!event.target.closest('#aiToneSettings')&&!event.target.closest('#aiToneSettingsToggle'))ui.settings.classList.remove('on');});
  $('aiToneSaveKeys').addEventListener('click',saveKeys);
  $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
+ ui.usageReset.addEventListener('click',()=>{aiUsage.requests=0;aiUsage.total=0;aiUsage.providers=Object.create(null);aiUsage.tasks=Object.create(null);renderAiUsageMonitor();status('Local AI usage session counters reset. Provider quotas and API usage are unchanged.','success');});
  $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));
  $('aiToneTestGroq').addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter').addEventListener('click',()=>testProvider('openrouter'));
  // Provider keys are server-managed; no client-side delete buttons are rendered.
