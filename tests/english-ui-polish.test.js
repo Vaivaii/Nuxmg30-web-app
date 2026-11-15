@@ -109,3 +109,13 @@ test('Cloud Account module ships English-only interface text and status messages
     assert.equal(cloud.includes(leaked), false, leaked);
   }
 });
+
+
+test('AI audio listening controls use English UI labels', async () => {
+  const ai = await read('../www/ai-tone-studio.js');
+  assert.match(ai, /AUDIO LISTENING/);
+  assert.match(ai, /Analyze Once/);
+  assert.match(ai, /Live Listening/);
+  assert.match(ai, /Start Listening/);
+  assert.match(ai, /Stop & Analyze/);
+});

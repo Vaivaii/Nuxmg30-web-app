@@ -1,4 +1,5 @@
 import { cloudApiRequest } from './cloud-api.js';
+import { analyzeToneAudioSamples, formatToneAudioMetrics } from './ai-audio-analysis.js';
 
 const aiRuntimeErrorQueue = [];
 let aiRuntimeErrorHandlersInstalled = false;
@@ -263,6 +264,11 @@ async function init(){
  const actions=document.querySelector('#page-editor .editor-top-actions'),ctrl=$('openCtrlEditor');
  if(!actions||!ctrl||$('aiToneOpenButton'))return;
  style();
+
+ const audioStyle=document.createElement('style');audioStyle.id='aiToneAudioCss';
+ audioStyle.textContent='.ai-tone-audio-panel{margin:0 0 12px;padding:13px;border:1px solid #3c4b32;border-radius:16px;background:linear-gradient(145deg,rgba(23,34,22,.88),rgba(13,19,15,.95))}.ai-tone-audio-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ai-tone-audio-head strong{display:block;color:#edf5e4;font-size:12px;letter-spacing:.07em}.ai-tone-audio-head small{display:block;margin-top:4px;color:#9daa93;font-size:10px}.ai-tone-audio-head small[data-state=connected]{color:#c5f36b}.ai-tone-audio-refresh{border:1px solid #3c4b32;border-radius:9px;padding:7px 10px;background:#141c14;color:#b9c7ad;font-size:10px;font-weight:750}.ai-tone-audio-modes{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:12px;padding:4px;border:1px solid #34402f;border-radius:11px;background:#0c110d}.ai-tone-audio-modes button{min-height:36px;border:0;border-radius:8px;background:transparent;color:#a6b09d;font-size:11px;font-weight:750}.ai-tone-audio-modes button.active{background:#c5f36b;color:#10150b}.ai-tone-audio-start{width:100%;min-height:45px;margin-top:10px;border:1px solid #c5f36b;border-radius:11px;background:#c5f36b;color:#10150b;font-size:13px;font-weight:850}.ai-tone-audio-start:disabled,.ai-tone-audio-refresh:disabled,.ai-tone-audio-modes button:disabled{opacity:.45}.ai-tone-audio-meter{display:flex;align-items:center;justify-content:center;gap:3px;height:35px;margin-top:9px;overflow:hidden}.ai-tone-audio-meter span{height:var(--audio-level,15%);flex:1;min-width:2px;border-radius:3px;background:#526b35;opacity:.6;transform:scaleY(.28);transform-origin:center;transition:height .12s,transform .12s,opacity .12s}.ai-tone-audio-meter.is-active span{transform:scaleY(1);opacity:1;background:#91c44d}.ai-tone-audio-meter.is-active span:nth-child(3n){background:#c5f36b}.ai-tone-audio-status{margin-top:5px;color:#bdc9b2;text-align:center;font-size:11px;line-height:1.45}.ai-tone-audio-status[data-state=error]{color:#ffd2a3}.ai-tone-audio-note{display:block;margin-top:8px;color:#7f8c77;font-size:9px;line-height:1.5}@media(max-width:380px){.ai-tone-audio-panel{padding:11px}.ai-tone-audio-head strong{font-size:11px}}';
+ document.head.appendChild(audioStyle);
+
  const open=document.createElement('button');open.id='aiToneOpenButton';open.type='button';open.className='btn';open.textContent='✦ AI';open.setAttribute('aria-haspopup','dialog');open.setAttribute('aria-expanded','false');actions.insertBefore(open,ctrl);
  const shade=document.createElement('div');shade.className='ai-tone-backdrop';
  const sheet=document.createElement('section');sheet.className='ai-tone-sheet';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','AI Live Tone Assistant');
@@ -280,6 +286,7 @@ async function init(){
  '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
  '<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
+"<section class=\"ai-tone-audio-panel\" id=\"aiToneAudioPanel\"> <div class=\"ai-tone-audio-head\"><div><strong>⌁ AUDIO LISTENING</strong><small id=\"aiToneAudioDevice\">Checking MG-30 USB Audio…</small></div><button class=\"ai-tone-audio-refresh\" id=\"aiToneAudioRefresh\" type=\"button\">Refresh</button></div> <div class=\"ai-tone-audio-modes\" role=\"group\" aria-label=\"Audio listening mode\"><button class=\"active\" data-ai-audio-mode=\"once\" type=\"button\">Analyze Once</button><button data-ai-audio-mode=\"live\" type=\"button\">Live Listening</button></div> <button class=\"ai-tone-audio-start\" id=\"aiToneAudioStart\" type=\"button\" disabled>Start Listening</button> <div class=\"ai-tone-audio-meter\" id=\"aiToneAudioMeter\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div> <div class=\"ai-tone-audio-status\" id=\"aiToneAudioStatus\" role=\"status\" aria-live=\"polite\">Ready to capture</div> <small class=\"ai-tone-audio-note\">Uses MG-30 USB Audio input channels 1–2. Android audio permission is used for USB capture; the phone microphone is not used. Audio is analyzed locally on this device.</small></section>",
  '<div class="ai-tone-messages" id="aiToneMessages"><div class="ai-tone-message ai"><small>AI ASSISTANT</small>Describe the tone you want. Validated results update the editor controls and send parameters over USB-MIDI immediately. There is no Apply step.</div></div>',
  '<textarea class="ai-tone-prompt" id="aiTonePrompt" maxlength="1400" placeholder="Example: Create a warm blues-rock tone with mild breakup, low-to-medium gain, present mids, short delay, and light reverb."></textarea>',
  '<div class="ai-tone-compose"><button class="ai-tone-undo" id="aiToneUndo" type="button" disabled>↶ Undo AI Changes</button><div><span class="ai-tone-hint" id="aiToneCount">0/1400</span> <button class="ai-tone-send" id="aiToneSend" type="button">Send ↗</button></div></div>',
@@ -287,11 +294,12 @@ async function init(){
  ].join('');
  document.body.append(shade,sheet);
  flushAiRuntimeErrors();
- const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults')};
+ const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults'),audioDevice:$('aiToneAudioDevice'),audioRefresh:$('aiToneAudioRefresh'),audioStart:$('aiToneAudioStart'),audioStatus:$('aiToneAudioStatus'),audioMeter:$('aiToneAudioMeter'),audioModes:sheet.querySelectorAll('[data-ai-audio-mode]')};
  let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
+ let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
   const next=['auto','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'auto';
@@ -300,8 +308,176 @@ async function init(){
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
   else if(next==='collab')void refreshAllProviderModels(true);
  };
- const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');window.setTimeout(()=>ui.prompt.focus(),150);};
- const closePanel=()=>{shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
+ const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');void refreshAudioDeviceStatus();window.setTimeout(()=>ui.prompt.focus(),150);};
+ const closePanel=()=>{if(audioCaptureActive)void stopAudioListeningWithoutAnalysis();shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
+
+ const setAudioStatus=(text,state='idle')=>{ui.audioStatus.textContent=text;ui.audioStatus.dataset.state=state;};
+ function setAudioMode(next){
+  if(audioCaptureActive||audioBusy)return;
+  audioMode=next==='live'?'live':'once';
+  ui.audioModes.forEach(button=>button.classList.toggle('active',button.dataset.aiAudioMode===audioMode));
+  setAudioStatus(audioMode==='once'?'Analyze a short sample, then receive a tone diagnosis.':'Keep listening while you play, then stop to analyze the captured performance.');
+ }
+ function setAudioMeter(values,active){
+  const bars=ui.audioMeter.querySelectorAll('span');
+  ui.audioMeter.classList.toggle('is-active',Boolean(active));
+  bars.forEach((bar,index)=>{
+   const level=Array.isArray(values)&&values.length?Number(values[index%values.length])||0:(active?18+((index*17)%60):8);
+   bar.style.setProperty('--audio-level',Math.max(5,Math.min(100,level))+'%');
+  });
+ }
+ async function refreshAudioDeviceStatus(){
+  const recorder=window.NUXStudioRecorder;
+  if(!recorder?.isNative?.()){
+   ui.audioDevice.textContent='Android APK required for USB Audio capture';
+   ui.audioDevice.dataset.state='error';ui.audioStart.disabled=true;return false;
+  }
+  try{
+   const result=await recorder.inspectToneAnalysisInput();
+   const devices=Array.isArray(result?.devices)?result.devices:[];
+   const match=devices.find(device=>device?.isUsb&&/mg-?30|nux/i.test(String(device.name||'')));
+   const ready=Boolean(match);
+   ui.audioDevice.textContent=ready?'● '+(match.name||'NUX MG-30')+' · USB Audio connected':'MG-30 USB Audio input not detected';
+   ui.audioDevice.dataset.state=ready?'connected':'error';
+   ui.audioStart.disabled=!ready||audioBusy||audioCaptureActive;
+   if(!ready)setAudioStatus('Connect the MG-30 by USB OTG, then refresh the audio input status.','error');
+   else if(!audioCaptureActive)setAudioStatus('Ready to capture. Play through the MG-30, not the phone microphone.');
+   return ready;
+  }catch(error){
+   ui.audioDevice.textContent='USB Audio check failed';ui.audioDevice.dataset.state='error';
+   ui.audioStart.disabled=true;setAudioStatus(error?.message||'Could not inspect MG-30 USB Audio.','error');return false;
+  }
+ }
+ function stopAudioTimers(){
+  if(audioCaptureTimer)window.clearTimeout(audioCaptureTimer);
+  if(audioPollTimer)window.clearInterval(audioPollTimer);
+  audioCaptureTimer=0;audioPollTimer=0;
+ }
+ async function decodeToneAnalysisTake(take){
+  if(!take?.path)throw new Error('The MG-30 USB capture did not produce an audio file.');
+  const url=take.audioUrl||window.NUXStudioRecorder?.pathToUrl?.(take);
+  if(!url)throw new Error('The captured USB audio file URL is unavailable.');
+  const response=await fetch(url);
+  if(!response.ok)throw new Error('Could not read the captured MG-30 USB audio file ('+response.status+').');
+  const bytes=await response.arrayBuffer();
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)throw new Error('This Android WebView does not provide Web Audio decoding.');
+  const context=new AudioContextClass();
+  try{
+   const decoded=await context.decodeAudioData(bytes.slice(0));
+   const channels=[];
+   for(let index=0;index<decoded.numberOfChannels;index+=1)channels.push(decoded.getChannelData(index));
+   const metrics=analyzeToneAudioSamples(channels,decoded.sampleRate);
+   metrics.captureMode=String(take.captureMode||'multichannel');
+   metrics.inputRoute='MG-30 USB input channels 1–2 (stereo host-loopback mix)';
+   return metrics;
+  }finally{try{await context.close();}catch(_){}}
+ }
+ function isReadOnlyAudioAnalysisRequest(prompt){
+  const value=String(prompt||'');
+  const asks=/\b(analy[sz]e|analysis|analisa|analisis|dengar|listen|evaluasi|evaluate)\b/i.test(value);
+  const audioTopic=/\b(audio|tone|suara|gitar|guitar|current|sekarang|ini)\b/i.test(value);
+  const asksForChange=/\b(kurangin|kurangi|tambah|naikkan|turunkan|ubah|buat|jadikan|reduce|increase|raise|lower|change|make|brighten|darken|warmer|cooler)\b/i.test(value);
+  return asks&&audioTopic&&!asksForChange;
+ }
+ function formatAudioDiagnosis(result){
+  if(typeof result==='string')return result;
+  const rows=[];
+  if(result?.summary)rows.push(String(result.summary));
+  for(const item of Array.isArray(result?.observations)?result.observations:[]){
+   rows.push('• '+String(item.area||'Observation')+': '+String(item.finding||'')+(item.evidence?' — '+String(item.evidence):''));
+  }
+  for(const item of Array.isArray(result?.recommendations)?result.recommendations:[])rows.push('Recommendation: '+String(item));
+  if(result?.limitations)rows.push('Limitations: '+String(result.limitations));
+  return rows.join('\n')||JSON.stringify(result);
+ }
+ async function requestAudioDiagnosis(question,metrics){
+  const system='You are a guitar tone listening assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). Respond in the same language as the USER REQUEST. The audio PCM was analyzed locally; you receive only objective measurements, never raw audio. Interpret the measurements cautiously: the capture uses MG-30 USB input channels 1–2, which may include a host-loopback mix and the result is affected by pickups, playing technique, guitar volume, gain staging and the performance. Do not claim you heard timbre details that these measurements cannot establish. Spectral centroid, rolloff and band percentages are evidence, not calibrated EQ targets. Do not recommend exact knob settings unless the user asks. This is read-only analysis: do not generate a preset, Tone Plan, block list, MIDI command or hardware change. Return JSON only: {"summary":"...","observations":[{"area":"...","finding":"...","evidence":"...","confidence":0.0}],"recommendations":["..."],"limitations":"..."}.'; 
+  const user='USER REQUEST:\n'+String(question||'Analyze my current guitar tone.')+'\n\nMEASURED USB AUDIO (local analysis):\n'+formatToneAudioMetrics(metrics)+'\n\nGive an evidence-based diagnosis only. No device changes.';
+  const result=await askNamAIJson(system,user,'analyzing the captured MG-30 USB audio');
+  message('ai',formatAudioDiagnosis(result));return result;
+ }
+ async function finishAudioListening(options={}){
+  const askAi=options.askAi!==false,discard=Boolean(options.discard);
+  if(!audioCaptureActive)return lastAudioMetrics;
+  audioCaptureActive=false;stopAudioTimers();audioBusy=true;
+  ui.audioStart.disabled=true;ui.audioStart.textContent='Processing Audio…';
+  ui.audioModes.forEach(button=>button.disabled=true);
+  setAudioMeter([],false);setAudioStatus('Stopping USB capture and preparing local analysis…','busy');
+  const recorder=window.NUXStudioRecorder;let take=null,metrics=null;
+  try{
+   take=await recorder.stopToneAnalysis();
+   if(!take?.path)throw new Error('The MG-30 USB capture stopped without producing a WAV file.');
+   if(!discard){
+    setAudioStatus('Analyzing captured audio locally…','busy');
+    metrics=await decodeToneAnalysisTake(take);
+    metrics.measuredAt=Date.now();metrics.route='MG-30 USB input channels 1–2';
+    lastAudioMetrics=metrics;
+    message('ai','Local USB audio measurements\n'+formatToneAudioMetrics(metrics));
+    if(askAi){
+     try{await requestAudioDiagnosis('Analyze my current guitar tone from this MG-30 USB audio capture. Do not change the device.',metrics);}
+     catch(error){message('ai','Audio measurements were saved locally, but the AI diagnosis could not be completed: '+(error?.message||error));}
+    }
+    setAudioStatus('Analysis complete. Ask a follow-up or request a tone correction.','success');
+   }else{
+    lastAudioMetrics=null;setAudioStatus('Listening stopped. Temporary audio was discarded.','idle');
+   }
+  }catch(error){
+   setAudioStatus(error?.message||'USB audio analysis failed.','error');
+   message('ai','USB audio analysis failed: '+(error?.message||error));
+   if(discard)lastAudioMetrics=null;
+  }finally{
+   if(take?.path){try{await recorder.deleteToneAnalysisTake(take.path);}catch(_){}}
+   audioBusy=false;ui.audioModes.forEach(button=>button.disabled=false);
+   ui.audioStart.textContent='Start Listening';await refreshAudioDeviceStatus();
+  }
+  return metrics;
+ }
+ async function startAudioListening(){
+  if(audioCaptureActive){await finishAudioListening({askAi:true});return;}
+  if(audioBusy||busy)return;
+  audioBusy=true;ui.audioStart.disabled=true;ui.audioRefresh.disabled=true;
+  ui.audioModes.forEach(button=>button.disabled=true);
+  setAudioStatus('Checking MG-30 USB Audio and preparing capture…','busy');
+  try{
+   const recorder=window.NUXStudioRecorder;
+   if(!recorder?.startToneAnalysis)throw new Error('The native MG-30 USB audio capture bridge is unavailable. Rebuild and install the Android APK.');
+   const ready=await refreshAudioDeviceStatus();
+   if(!ready)throw new Error('MG-30 USB Audio input is not detected. Connect the pedal and refresh.');
+   if(recorder.isRecording?.())throw new Error('Another USB Audio recording is already active. Stop Quick Record or the DAW recording first.');
+   const opened=await recorder.startToneAnalysis({channelIndexMask:3});
+   if(!opened?.recording)throw new Error('Android did not confirm MG-30 USB Audio capture.');
+   audioCaptureActive=true;audioCaptureStartedAt=Date.now();
+   ui.audioStart.textContent='Stop & Analyze';ui.audioStart.disabled=false;
+   ui.audioModes.forEach(button=>button.disabled=true);setAudioMeter([],true);
+   setAudioStatus(audioMode==='once'?'Listening for 7 seconds… Play a short phrase or chord.':'Live Listening · Play freely, then press Stop & Analyze.','busy');
+   audioPollTimer=window.setInterval(async()=>{
+    try{
+     const stats=await recorder.getToneAnalysisStats();
+     if(!audioCaptureActive||!stats?.recording)return;
+     const peaks=(stats.channelWaveforms||[]).flatMap(channel=>Array.isArray(channel.peaks)?channel.peaks:[]);
+     const peak=Math.max(0,...peaks.map(Number));
+     const bars=Array.from({length:32},(_,index)=>Math.max(6,Math.min(100,Math.round((peak*100)+(index%5)*3))));
+     setAudioMeter(bars,true);
+     const seconds=Math.max(0,Number(stats.durationSeconds)||((Date.now()-audioCaptureStartedAt)/1000));
+     if(audioMode==='once')setAudioStatus('Listening · '+Math.max(0,Math.ceil(7-seconds))+' seconds remaining…','busy');
+     else setAudioStatus('Live Listening · '+seconds.toFixed(1)+' s captured','busy');
+    }catch(_){}
+   },220);
+   audioCaptureTimer=window.setTimeout(()=>{void finishAudioListening({askAi:true});},audioMode==='once'?7000:120000);
+  }catch(error){
+   setAudioStatus(error?.message||'Could not start USB audio listening.','error');
+   message('ai','Audio listening could not start: '+(error?.message||error));
+   ui.audioStart.textContent='Start Listening';await refreshAudioDeviceStatus();
+  }finally{
+   audioBusy=false;ui.audioRefresh.disabled=false;ui.audioModes.forEach(button=>button.disabled=audioCaptureActive);
+   if(!audioCaptureActive)ui.audioStart.disabled=false;
+  }
+ }
+ async function stopAudioListeningWithoutAnalysis(){
+  if(audioCaptureActive)await finishAudioListening({askAi:false,discard:true});
+ }
+
  function showNamSourceChoice(){
   ui.namResults.hidden=true;ui.namWizard.hidden=false;
   ui.namWizard.innerHTML='<p>Choose the amplifier source for this request.</p><div class="ai-tone-nam-choice-row"><button class="ai-tone-nam-choice" data-ai-nam-source="builtin" type="button">Built-in MG-30 Amp</button><button class="ai-tone-nam-choice" data-ai-nam-source="nam" type="button">TONE3000 NAM</button></div>';
@@ -706,9 +882,9 @@ async function automaticNamImportForPrompt(prompt){
   }
   throw new Error(lastError?.message||'No free AI provider completed the task.');
  }
- async function makePlan(prompt,bridge){
+ async function makePlan(prompt,bridge,audioMetrics=null){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
-  const system=systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt));
+  const system=systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt))+(audioMetrics?'\n\nLIVE USB AUDIO GUIDANCE: Use the measured audio evidence to inform this correction conservatively. The USB source is input channels 1–2 and may contain host-loopback mix; it is not a calibrated amp-only microphone measurement. Preserve unaffected blocks, NAM and IR settings.\n'+formatToneAudioMetrics(audioMetrics):'');
   const multiMode=mode==='auto'||mode==='collab';
   const localRefinement=Boolean(toneSession.intent&&isLocalToneRefinement(prompt));
   let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent;
@@ -716,7 +892,7 @@ async function automaticNamImportForPrompt(prompt){
    team=await resolveFreeProviderTeam();
    if(!team.length)throw new Error('No free Gemini, Groq, or OpenRouter provider is ready. Choose a configured free provider in AI Settings.');
    if(team.length>=2&&!localRefinement){
-    const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),'USER MUSICAL REQUEST:\n'+prompt,'defining the musical direction');
+    const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),'USER MUSICAL REQUEST:\n'+prompt+(audioMetrics?'\n\nMEASURED MG-30 USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):''),'defining the musical direction');
     architectMember=architect.member;
     toneIntent=compactToneArchitectIntent(architect.result,prompt);
     toneSession.intent=toneIntent;toneSession.architectProvider=architectMember.provider;toneSession.sourcePrompt=prompt;
@@ -727,7 +903,7 @@ async function automaticNamImportForPrompt(prompt){
    const preferredLead=team.find(item=>item.provider!==architectMember?.provider&&item.provider!==toneSession.architectProvider)||team.find(item=>item.provider!==architectMember?.provider)||team[0];
    const leadCandidates=[preferredLead,...team.filter(item=>item!==preferredLead)];
    const leadSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-   const leadUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nNo prior Tone Architect context is available. Perform Tone Architect analysis internally before making gear and parameter decisions.');
+   const leadUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nNo prior Tone Architect context is available. Perform Tone Architect analysis internally before making gear and parameter decisions.')+(audioMetrics?'\n\nMEASURED MG-30 USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'');
    first=lead.result;leadMember=lead.member;
    if(!toneIntent){
@@ -737,7 +913,7 @@ async function automaticNamImportForPrompt(prompt){
    if(team.length===1&&!localRefinement)message('ai','One free provider is available. Tone Architect, Gear Specialist, Parameter Engineer and Lead AI were combined into one token-efficient request.');
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-   const singleUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nPerform the Tone Architect role internally before the Lead AI / Gear Specialist / Parameter Engineer synthesis.');
+   const singleUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nPerform the Tone Architect role internally before the Lead AI / Gear Specialist / Parameter Engineer synthesis.')+(audioMetrics?'\n\nMEASURED MG-30 USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
    if(!localRefinement||!toneSession.intent){
     toneSession.intent=compactToneArchitectIntent(first,prompt);
@@ -780,7 +956,10 @@ async function automaticNamImportForPrompt(prompt){
   const prompt=ui.prompt.value.trim();
   if(!prompt){status('Enter a tone request first.','error');return;}
   setBusy(true);message('user',prompt);
+  let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
   try{
+   if(audioCaptureActive){const captured=await finishAudioListening({askAi:false});if(captured)audioMetricsForRequest=captured;}
+   if(isReadOnlyAudioAnalysisRequest(prompt)){if(!audioMetricsForRequest)throw new Error('Capture your guitar first with Analyze Once or Live Listening, then ask AI to analyze the current tone.');await requestAudioDiagnosis(prompt,audioMetricsForRequest);status('Audio analysis completed. No device parameters were changed.','success');return;}
    const bridge=window.MG30AIToneBridge;
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
    if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before generating a built-in amp live preset.');
@@ -788,7 +967,7 @@ async function automaticNamImportForPrompt(prompt){
    if(namModeActive){const namResult=await automaticNamImportForPrompt(prompt);if(namResult?.pendingConnection||namResult?.pendingSelection)return;}
    if(!bridge.isConnected?.())throw new Error('The MG-30 disconnected before applying the live preset.');
    status('Preparing the MG-30 catalog and requesting an AI Tone Plan…','busy');
-   const plan=await makePlan(prompt,bridge);
+   const plan=await makePlan(prompt,bridge,audioMetricsForRequest);
    if(activeNamContext){
     const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
     const installed=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10&&model.name===activeNamModelName);
@@ -828,6 +1007,9 @@ async function automaticNamImportForPrompt(prompt){
   }catch(e){status('Undo failed: '+e.message,'error');}
   finally{setBusy(false);ui.undo.disabled=!last;}
  }
+ ui.audioModes.forEach(button=>button.addEventListener('click',()=>setAudioMode(button.dataset.aiAudioMode)));
+ ui.audioStart.addEventListener('click',()=>{void startAudioListening();});
+ ui.audioRefresh.addEventListener('click',()=>{void refreshAudioDeviceStatus();});
  open.addEventListener('click',()=>sheet.classList.contains('on')?closePanel():openPanel());
  $('aiToneClose').addEventListener('click',closePanel);shade.addEventListener('click',closePanel);
  $('aiToneSettingsToggle').addEventListener('click',()=>{ui.settings.classList.toggle('on');if(ui.settings.classList.contains('on'))void keyStates();});
@@ -852,7 +1034,7 @@ async function automaticNamImportForPrompt(prompt){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on')&&!busy)closePanel();});
  window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. TONE3000 search can still run; connect MG-30 before slot-10 import or live preset send.','idle');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
  window.addEventListener('mg30-midi-connected',()=>{if(!busy)status('MG-30 connected. AI live editing is ready.','success');});
- await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
+ setAudioMode('once');void refreshAudioDeviceStatus();await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
 }
 if(typeof window!=='undefined'&&typeof document!=='undefined'){
  const startAiToneStudio=()=>{void init().catch(error=>showAiRuntimeError('AI assistant startup',error));};
