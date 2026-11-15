@@ -138,6 +138,28 @@ export function findDefaultGeminiModel(models){
  const match=rows.find(row=>/gemini[\s_-]*3[.]1[\s_-]*flash[\s_-]*lite/i.test(String(row?.id||'')+' '+String(row?.name||'')));
  return match?String(match.id||''):'';
 }
+export function classifyAssistantIntent(prompt){
+ const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim();
+ if(!value)return 'consultation';
+ const searchVerb=/\b(cari(?:kan)?|temukan|find|search|look for|help me find|recommend(?: me)?)\b/i;
+ const namSubject=/\b(nam|capture|amp|amplifier|head|cab(?:inet)?|profil|profile|pedal)\b/i;
+ if(searchVerb.test(value)&&namSubject.test(value))return 'nam_search';
+ const analysis=/\b(analy[sz](?:e|ing|is|a)?|analysis|analisa|analisis|dengar|listen|evaluasi|evaluate|diagnos(?:e|is))\b/i.test(value);
+ const audioTopic=/\b(audio|tone|suara|gitar|guitar|current|sekarang|ini|rekaman|recording)\b/i.test(value);
+ const change=/\b(tweak|adjust|fix|improv(?:e|ement)|change|modify|reduce|increase|raise|lower|less|more|make it|kurangi|kurangin|tambah|naikkan|turunkan|ubah|perbaiki|haluskan|lembutkan|buat lebih)\b/i.test(value);
+ const toneProblem=/\b(too bright|too muddy|too harsh|too fizzy|too thin|too boomy|terlalu (tajam|bright|muddy|tipis|boomy|keras|terang)|kurang (hangat|body|sustain|gain)|berlebihan)\b/i.test(value);
+ if(analysis&&audioTopic&&!change)return 'audio_analyze';
+ if(change||toneProblem)return 'tone_refine';
+ if(/\b(create|generate|build|make|design|buat(?:kan)?|bikin)\b[\s\S]{0,45}\b(preset|tone|patch|sound|suara)\b|\b(preset|tone|patch)\b[\s\S]{0,35}\b(for|untuk|ala|inspired|inspired by|bergaya)\b/i.test(value))return 'tone_create';
+ if(/\b(apa|apakah|kenapa|mengapa|bagaimana|gimana|jelaskan|bedanya|perbedaan|what|why|how|explain|difference|does|do you|can you explain|should i)\b/i.test(value)||/[?？]$/.test(value))return 'consultation';
+ return 'consultation';
+}
+export function inferNamCaptureType(prompt,fallback='amp-cab'){
+ const value=String(prompt||'').toLowerCase();
+ if(/\b(amp\s*only|head\s*only|without\s+(a\s+)?cab(?:inet)?|no\s+cab(?:inet)?|amp\s+saja|tanpa\s+cab(?:inet)?|head\s+only)\b/i.test(value))return 'amp';
+ if(/\b(amp\s*(?:\+|and|plus)\s*cab(?:inet)?|head\s*(?:\+|and|plus)\s*cab(?:inet)?|with\s+(a\s+)?cab(?:inet)?|amp\s*\+\s*cab|amp\s+cabinet|head\s*\+\s*cab)\b/i.test(value))return 'amp-cab';
+ return fallback==='amp'?'amp':'amp-cab';
+}
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
  'You are a live tone editor for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII.',
@@ -278,13 +300,16 @@ async function init(){
 
  audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:calc(var(--ai-tone-max-height) - 62px);height:auto;padding:10px 13px 12px;overflow:hidden;overscroll-behavior:none}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-status-accessible{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.ai-tone-messages{display:flex;flex:0 1 auto;flex-direction:column;gap:9px;min-height:clamp(118px,21dvh,220px);max-height:min(48dvh,500px);height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{max-width:96%;flex:0 0 auto;font-size:14px;line-height:1.5}.ai-tone-activity{align-self:flex-start;display:flex;align-items:center;gap:9px;flex:0 0 auto;max-width:96%;padding:9px 12px;border:1px solid #536a39;border-radius:12px;background:#172316;color:#d8f4ac;font-size:12px;line-height:1.4}.ai-tone-activity:before{content:"";width:13px;height:13px;flex:0 0 13px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:10px 11px;border-radius:14px}.ai-tone-audio-head{min-height:25px}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:40px;margin-top:8px}.ai-tone-audio-meter{height:19px;margin-top:6px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.35}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:7px;margin-top:0;padding-top:2px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:54px;max-height:88px;height:54px;resize:none;overflow-y:auto;padding:11px 12px}.ai-tone-compose{flex:0 0 auto;margin-top:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.35}.ai-tone-provider-row{margin-bottom:10px}.ai-tone-nam-toolbar{margin:10px 0}.ai-tone-nam-wizard,.ai-tone-nam-results{max-height:40dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height);width:100%;border-radius:22px 22px 0 0}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 60px);padding:9px 12px calc(9px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:clamp(116px,20dvh,190px);max-height:48dvh;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:9px 10px}.ai-tone-audio-note{display:block}.ai-tone-prompt{min-height:50px;height:50px;max-height:76px}.ai-tone-composer>.ai-tone-hint{font-size:8px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh}.ai-tone-messages{min-height:90px;max-height:34dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:14px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:35px}.ai-tone-prompt{height:46px;min-height:46px}}';
 
+
+ audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:var(--ai-tone-max-height);max-height:94dvh}.ai-tone-head{flex:0 0 auto}.ai-tone-head-actions{display:flex;align-items:center;gap:6px}.ai-tone-audio-toggle{font-size:19px;font-weight:850;min-width:42px}.ai-tone-audio-toggle.active{border-color:#c5f36b;color:#c5f36b;background:#c5f36b18}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;height:auto;max-height:none;padding:10px 13px calc(10px + env(safe-area-inset-bottom,0px));overflow:hidden;overscroll-behavior:none}.ai-tone-messages{display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:none;height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{flex:0 0 auto}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:9px 11px;border-radius:14px}.ai-tone-audio-panel[hidden]{display:none!important}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:39px;margin-top:8px}.ai-tone-audio-meter{height:16px;margin-top:5px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.3}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:6px;margin:0;padding-top:3px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:50px;height:50px;max-height:76px;resize:none;overflow-y:auto;padding:10px 12px}.ai-tone-compose{flex:0 0 auto;margin:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.3}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 96px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-nam-panel{display:flex;flex-direction:column;gap:9px;margin:12px 0;padding:11px;border:1px solid #3c4b32;border-radius:13px;background:#111911}.ai-tone-nam-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ai-tone-nam-panel-head strong{display:block;color:#edf5e4;font-size:12px}.ai-tone-nam-panel-head small{display:block;margin-top:3px;color:#9daa93;font-size:10px}.ai-tone-nam-action{border:1px solid #536447;border-radius:10px;background:#182317;color:#c7d3bf;padding:9px 14px;font-size:11px;font-weight:850;letter-spacing:.03em}.ai-tone-nam-action.active{border-color:#c5f36b;background:#c5f36b;color:#10160b;box-shadow:0 0 0 1px #c5f36b35}.ai-tone-nam-gear-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.ai-tone-nam-gear-row .ai-tone-nam-choice{min-height:40px;border:1px solid #435438;border-radius:10px;background:#172017;color:#b9c7ad;font-size:11px;font-weight:800}.ai-tone-nam-gear-row .ai-tone-nam-choice.active{border-color:#c5f36b;background:#c5f36b;color:#10160b}.ai-tone-nam-mode-status{color:#96a28e;font-size:10px;line-height:1.4}.ai-tone-nam-mode-status[data-active=true]{color:#c5f36b}.ai-tone-nam-model.recommended{border-color:#8cad54;background:#182418}.ai-tone-nam-results{max-height:42dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:94dvh;max-height:94dvh;width:100%;border-radius:22px 22px 0 0}.ai-tone-body{padding:9px 12px calc(8px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:0;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:8px 9px}.ai-tone-audio-note{display:block}.ai-tone-prompt{height:49px;min-height:49px;max-height:72px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh;height:96dvh;max-height:96dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:12px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:34px}.ai-tone-prompt{height:43px;min-height:43px}}';
+
  document.head.appendChild(audioStyle);
 
  const open=document.createElement('button');open.id='aiToneOpenButton';open.type='button';open.className='btn';open.textContent='✦ AI';open.setAttribute('aria-haspopup','dialog');open.setAttribute('aria-expanded','false');actions.insertBefore(open,ctrl);
  const shade=document.createElement('div');shade.className='ai-tone-backdrop';
  const sheet=document.createElement('section');sheet.className='ai-tone-sheet';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','AI Live Tone Assistant');
  sheet.innerHTML=[
- '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div><button class="ai-tone-icon" id="aiToneSettingsToggle" type="button">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button">×</button></div></div>',
+ '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div class="ai-tone-head-actions"><button class="ai-tone-icon ai-tone-audio-toggle" id="aiToneAudioToggle" type="button" aria-label="Toggle Audio Listening" aria-controls="aiToneAudioPanel" aria-expanded="false">♫</button> <button class="ai-tone-icon" id="aiToneSettingsToggle" type="button" aria-label="AI Settings">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button" aria-label="Close AI Assistant">×</button></div></div>',
  '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings"><h4>Cloud AI Providers & Models</h4><p>Provider credentials are stored only as Cloudflare Worker secrets. This app requests provider status, model lists and Tone Plans through the authenticated Cloud gateway.</p>',
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking Cloud configuration…</span></div></div>',
  '<div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking Cloud configuration…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking Cloud configuration…</span></div></div>',
@@ -294,12 +319,12 @@ async function init(){
  '<p class="ai-tone-note">Provider secrets never leave the Worker. Free-model quotas still apply. Automatic fallback retries only temporary rate-limit, capacity, timeout, network and server failures. Tone Plans are checked against the verified original MG-30 Gen 2 catalog before editor MIDI changes.</p>',
 '<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · Free Multi-AI</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>',
 '<div class="ai-tone-status ai-tone-status-accessible" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live tone assistance.</div>',
-'<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
+'<section class="ai-tone-nam-panel" id="aiToneNamPanel"><div class="ai-tone-nam-panel-head"><div><strong>TONE3000 NAM</strong><small>Optional NAM search mode for amp captures</small></div><button class="ai-tone-nam-action" id="aiToneFindNam" type="button" aria-pressed="false">OFF</button></div><div class="ai-tone-nam-gear-row" role="group" aria-label="NAM capture type"><button class="ai-tone-nam-choice" type="button" data-ai-nam-gear="amp" aria-pressed="false">Amp Only</button><button class="ai-tone-nam-choice active" type="button" data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab</button></div><small class="ai-tone-nam-mode-status" id="aiToneNamModeStatus">TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.</small></section>',
 '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
 '<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
 '</div>',,
  '<div class="ai-tone-messages" id="aiToneMessages"><div class="ai-tone-message ai"><small>AI ASSISTANT</small>Describe the tone you want. Validated results update the editor controls and send parameters over USB-MIDI immediately. There is no Apply step.</div></div>',
- "<section class=\"ai-tone-audio-panel\" id=\"aiToneAudioPanel\"> <div class=\"ai-tone-audio-head\"><div><strong>⌁ AUDIO LISTENING</strong><small id=\"aiToneAudioDevice\">Checking MG-30 USB Audio…</small></div><button class=\"ai-tone-audio-refresh\" id=\"aiToneAudioRefresh\" type=\"button\">Refresh</button></div> <div class=\"ai-tone-audio-modes\" role=\"group\" aria-label=\"Audio listening mode\"><button class=\"active\" data-ai-audio-mode=\"once\" type=\"button\">Analyze Once</button><button data-ai-audio-mode=\"live\" type=\"button\">Live Listening</button></div> <button class=\"ai-tone-audio-start\" id=\"aiToneAudioStart\" type=\"button\" disabled>Start Listening</button> <div class=\"ai-tone-audio-meter\" id=\"aiToneAudioMeter\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div> <div class=\"ai-tone-audio-status\" id=\"aiToneAudioStatus\" role=\"status\" aria-live=\"polite\">Ready to capture</div> <small class=\"ai-tone-audio-note\">Uses MG-30 USB Audio input channels 1–2. Android audio permission is used for USB capture; the phone microphone is not used. Audio is analyzed locally on this device.</small></section>",
+ "<section class=\"ai-tone-audio-panel\" id=\"aiToneAudioPanel\" hidden> <div class=\"ai-tone-audio-head\"><div><strong>⌁ AUDIO LISTENING</strong><small id=\"aiToneAudioDevice\">Checking MG-30 USB Audio…</small></div><button class=\"ai-tone-audio-refresh\" id=\"aiToneAudioRefresh\" type=\"button\">Refresh</button></div> <div class=\"ai-tone-audio-modes\" role=\"group\" aria-label=\"Audio listening mode\"><button class=\"active\" data-ai-audio-mode=\"once\" type=\"button\">Analyze Once</button><button data-ai-audio-mode=\"live\" type=\"button\">Live Listening</button></div> <button class=\"ai-tone-audio-start\" id=\"aiToneAudioStart\" type=\"button\" disabled>Start Listening</button> <div class=\"ai-tone-audio-meter\" id=\"aiToneAudioMeter\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div> <div class=\"ai-tone-audio-status\" id=\"aiToneAudioStatus\" role=\"status\" aria-live=\"polite\">Ready to capture</div> <small class=\"ai-tone-audio-note\">Uses MG-30 USB Audio input channels 1–2. Android audio permission is used for USB capture; the phone microphone is not used. Audio is analyzed locally on this device.</small></section>",
  '<div class="ai-tone-composer">',
 '<textarea class="ai-tone-prompt" id="aiTonePrompt" maxlength="1400" placeholder="Ask anything about your tone…"></textarea>',
 '<div class="ai-tone-compose"><button class="ai-tone-undo" id="aiToneUndo" type="button" disabled>↶ Undo AI Changes</button><div><span class="ai-tone-hint" id="aiToneCount">0/1400</span> <button class="ai-tone-send" id="aiToneSend" type="button">Send ↗</button></div></div>',
@@ -307,8 +332,8 @@ async function init(){
  ].join('');
  document.body.append(shade,sheet);
  flushAiRuntimeErrors();
- const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults'),audioDevice:$('aiToneAudioDevice'),audioRefresh:$('aiToneAudioRefresh'),audioStart:$('aiToneAudioStart'),audioStatus:$('aiToneAudioStatus'),audioMeter:$('aiToneAudioMeter'),audioModes:sheet.querySelectorAll('[data-ai-audio-mode]')};
- let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
+ const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults'),namModeStatus:$('aiToneNamModeStatus'),namGearButtons:sheet.querySelectorAll('[data-ai-nam-gear]'),audioToggle:$('aiToneAudioToggle'),audioPanel:$('aiToneAudioPanel'),audioDevice:$('aiToneAudioDevice'),audioRefresh:$('aiToneAudioRefresh'),audioStart:$('aiToneAudioStart'),audioStatus:$('aiToneAudioStatus'),audioMeter:$('aiToneAudioMeter'),audioModes:sheet.querySelectorAll('[data-ai-audio-mode]')};
+ let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,namCaptureType='amp-cab',activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null,namSearchOnlyActive=false,namSearchPrompt='';const history=[],dialogueContext=[];
  const renderActivity=()=>{
   let activity=ui.messages.querySelector('.ai-tone-activity');
   if(ui.status.dataset.state==='busy'){
@@ -333,6 +358,12 @@ async function init(){
  const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');void refreshAudioDeviceStatus();window.setTimeout(()=>ui.prompt.focus(),150);};
  const closePanel=()=>{if(audioCaptureActive)void stopAudioListeningWithoutAnalysis();shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
 
+ const setAudioPanelExpanded=expanded=>{
+  ui.audioPanel.hidden=!expanded;
+  ui.audioToggle.classList.toggle('active',Boolean(expanded));
+  ui.audioToggle.setAttribute('aria-expanded',String(Boolean(expanded)));
+  if(expanded)void refreshAudioDeviceStatus();
+ };
  const setAudioStatus=(text,state='idle')=>{ui.audioStatus.textContent=text;ui.audioStatus.dataset.state=state;};
  function setAudioMode(next){
   if(audioCaptureActive||audioBusy)return;
@@ -510,6 +541,26 @@ async function init(){
   if(audioCaptureActive)await finishAudioListening({askAi:false,discard:true});
  }
 
+ function updateNamControlState(){
+  ui.findNam.classList.toggle('active',namModeActive);
+  ui.findNam.textContent=namModeActive?'ON':'OFF';
+  ui.findNam.setAttribute('aria-pressed',String(namModeActive));
+  ui.namModeStatus.dataset.active=String(namModeActive);
+  ui.namGearButtons.forEach(button=>{
+   const active=button.dataset.aiNamGear===namCaptureType;
+   button.classList.toggle('active',active);
+   button.setAttribute('aria-pressed',String(active));
+  });
+  ui.namModeStatus.textContent=namModeActive
+   ?'TONE3000 NAM mode ON · New tone requests will use '+(namCaptureType==='amp'?'Amp Only':'Amp + Cab')+'.'
+   :'TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.';
+ }
+ function setNamMode(enabled){
+  namModeActive=Boolean(enabled);
+  activeNamGear=namModeActive?namCaptureType:'';
+  if(!namModeActive){activeNamContext='';activeNamModelName='';pendingNamSelection=null;}
+  updateNamControlState();
+ }
  function showNamSourceChoice(){
   ui.namResults.hidden=true;ui.namWizard.hidden=false;
   ui.namWizard.innerHTML='<p>Choose the amplifier source for this request.</p><div class="ai-tone-nam-choice-row"><button class="ai-tone-nam-choice" data-ai-nam-source="builtin" type="button">Built-in MG-30 Amp</button><button class="ai-tone-nam-choice" data-ai-nam-source="nam" type="button">TONE3000 NAM</button></div>';
@@ -541,20 +592,19 @@ async function init(){
    '<p>These models were returned by TONE3000 for architecture A2. Each downloaded file must still pass the MG-30 Gen 2 A2-Lite validator before transfer. Choose a candidate to continue.</p>'+
    (models.length?models.map(model=>'<div class="ai-tone-nam-model"><div class="ai-tone-nam-model-copy"><strong>'+esc(model.name||'Unnamed model')+'</strong><small>'+esc(model.architecture_version??model.architecture??'A2')+' · '+esc(model.size??'Size unavailable')+(model.downloadable?' · Download available':' · Download unavailable')+'</small></div><button class="ai-tone-nam-import" type="button" data-ai-nam-import="'+esc(model.id)+'" '+(model.downloadable?'':'disabled')+'>'+(model.downloadable?'Validate & Import to Slot 10':'No Download URL')+'</button></div>').join(''):'<p>No models were returned for this tone. Choose another tone in TONE3000.</p>');
  }
- ui.findNam.addEventListener('click',()=>{if(!busy)showNamSourceChoice();});
- ui.namWizard.addEventListener('click',async event=>{
-  const source=event.target.closest('[data-ai-nam-source]')?.dataset.aiNamSource;
-  if(source==='builtin'){
-   namFlowActive=false;namModeActive=false;activeNamGear='';activeNamContext='';activeNamModelName='';pendingNamSelection=null;ui.namWizard.hidden=true;
-   ui.prompt.value=(ui.prompt.value.trim()?ui.prompt.value.trim()+'\n\n':'')+'Use a built-in MG-30 amp model, not a NAM capture. ';$('aiToneCount').textContent=ui.prompt.value.length+'/1400';ui.prompt.focus();
-   message('ai','Built-in MG-30 Amp selected. Describe the sound you want, then send your tone request.');return;
-  }
-  if(source==='nam'){showNamGearChoice();message('ai','TONE3000 NAM selected. Choose Amp Only or Amp + Cab.');return;}
-  const gear=event.target.closest('[data-ai-nam-gear]')?.dataset.aiNamGear;
-  if(gear==='amp'||gear==='amp-cab'){
-   try{await beginNamSearch(gear);}catch(error){status('TONE3000 search failed: '+(error.message||error),'error');message('ai','TONE3000 search failed: '+(error.message||error));}
-  }
+ ui.findNam.addEventListener('click',()=>{
+  if(busy||namImportBusy)return;
+  setNamMode(!namModeActive);
+  status(namModeActive?'TONE3000 NAM mode enabled. New tone requests will search compatible A2 captures.':'TONE3000 NAM mode disabled. Built-in MG-30 amps will be used by default.','success');
+  message('ai',namModeActive?'TONE3000 NAM mode is ON. New tone-creation requests will search '+(namCaptureType==='amp'?'Amp Only':'Amp + Cab')+' profiles.':'TONE3000 NAM mode is OFF. Built-in MG-30 amp selection is restored.');
  });
+ ui.namGearButtons.forEach(button=>button.addEventListener('click',()=>{
+  if(busy||namImportBusy)return;
+  namCaptureType=button.dataset.aiNamGear==='amp'?'amp':'amp-cab';
+  if(namModeActive)activeNamGear=namCaptureType;
+  updateNamControlState();
+  status('NAM capture type set to '+(namCaptureType==='amp'?'Amp Only':'Amp + Cab')+'.','success');
+ }));
  ui.namResults.addEventListener('change',event=>{
   const select=event.target.closest('#aiToneNamCaptureSelect');if(!select||!pendingNamSelection)return;
   const item=pendingNamSelection.choices.find(row=>String(row.model.id)===String(select.value));const meta=$('aiToneNamCaptureMeta');
@@ -1055,6 +1105,7 @@ async function automaticNamImportForPrompt(prompt){
   finally{setBusy(false);ui.undo.disabled=!last;}
  }
  ui.audioModes.forEach(button=>button.addEventListener('click',()=>setAudioMode(button.dataset.aiAudioMode)));
+ ui.audioToggle.addEventListener('click',()=>setAudioPanelExpanded(ui.audioPanel.hidden));
  ui.audioStart.addEventListener('click',()=>{void startAudioListening();});
  ui.audioRefresh.addEventListener('click',()=>{void refreshAudioDeviceStatus();});
  open.addEventListener('click',()=>sheet.classList.contains('on')?closePanel():openPanel());
@@ -1082,7 +1133,7 @@ async function automaticNamImportForPrompt(prompt){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on')&&!busy)closePanel();});
  window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. TONE3000 search can still run; connect MG-30 before slot-10 import or live preset send.','idle');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
  window.addEventListener('mg30-midi-connected',()=>{if(!busy)status('MG-30 connected. AI live editing is ready.','success');});
- setAudioMode('once');void refreshAudioDeviceStatus();await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
+ setAudioMode('once');void refreshAudioDeviceStatus();setAudioPanelExpanded(false);updateNamControlState();await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
 }
 if(typeof window!=='undefined'&&typeof document!=='undefined'){
  const startAiToneStudio=()=>{void init().catch(error=>showAiRuntimeError('AI assistant startup',error));};

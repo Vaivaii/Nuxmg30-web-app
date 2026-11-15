@@ -431,3 +431,37 @@ test('stale manually saved Gemini model cannot override the current model catalo
  assert.ok(source.includes("if(manual&&!manualModelAvailable)localStorage.setItem(manualKey,'0')"));
  assert.ok(source.includes("if(manual)localStorage.setItem('mg30-ai-model-manual-'+provider,'0')"));
 });
+
+
+test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
+ assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
+ assert.equal(classifyAssistantIntent('Buat preset John Mayer menggunakan NAM'),'tone_create');
+ assert.equal(classifyAssistantIntent('Kurangi sedikit Treble dan haluskan tone ini'),'tone_refine');
+ assert.equal(classifyAssistantIntent('Analisis tone gitar saya sekarang'),'audio_analyze');
+ assert.equal(classifyAssistantIntent('Carikan profile NAM Vox AC30'),'nam_search');
+ assert.equal(classifyAssistantIntent('Find an amp capture for a Fender Deluxe'),'nam_search');
+});
+test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only requests',()=>{
+ assert.equal(inferNamCaptureType('Carikan NAM capture untuk Vox AC30'),'amp-cab');
+ assert.equal(inferNamCaptureType('Find an Amp Only capture for a Deluxe Reverb'),'amp');
+ assert.equal(inferNamCaptureType('Search TONE3000 head only profile'),'amp');
+ assert.equal(inferNamCaptureType('Find an amp plus cab model'),'amp-cab');
+});
+test('Audio Listening is collapsed behind a dedicated header toggle and only conversation scrolls',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/id="aiToneAudioToggle"/);
+ assert.match(source,/aria-controls="aiToneAudioPanel"/);
+ assert.match(source,/id="aiToneAudioPanel" hidden/);
+ assert.match(source,/setAudioPanelExpanded\\(ui.audioPanel\\.hidden\\)/);
+ assert.match(source,/\\.ai-tone-messages\\{display:flex;flex:1 1 auto/);
+ assert.match(source,/\\.ai-tone-audio-panel\\{flex:0 0 auto/);
+ assert.match(source,/\\.ai-tone-composer\\{display:flex;flex:0 0 auto/);
+});
+test('TONE3000 NAM is always visible with Amp + Cab active by default and a persistent ON/OFF button',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/id="aiToneFindNam" type="button" aria-pressed="false">OFF/);
+ assert.match(source,/data-ai-nam-gear="amp-cab" aria-pressed="true">Amp \\+ Cab/);
+ assert.match(source,/function updateNamControlState\\(\\)/);
+ assert.match(source,/setNamMode\\(!namModeActive\\)/);
+ assert.match(source,/TONE3000 NAM mode OFF/);
+});
