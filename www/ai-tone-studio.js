@@ -130,10 +130,18 @@ async function postJson(url,options,timeoutMs=90000){
 export function compactToneContext(catalog,snapshot){const c=(catalog||[]).map(b=>[b.id,b.currentModel,(b.models||[]).map(m=>[m.name,m.kind||'',m.slot??'',(m.parameters||[]).map(p=>p.kind==='discrete'?[p.key,(p.choices||[]).map(x=>x.value)]:p.key)])]);const s=(snapshot||[]).map(b=>[b.id,b.model,b.enabled?1:0,b.parameters||{}]);return {catalog:c,snapshot:s};}
 export function describeNamCaptureMetadata(tone,model,gear='amp-cab'){const fields={toneName:String(tone?.name||tone?.title||''),creator:String(tone?.creator||tone?.username||''),toneDescription:String(tone?.description||''),makes:Array.isArray(tone?.makes)?tone.makes.map(x=>String(x?.name||x)).slice(0,6):[],tags:Array.isArray(tone?.tags)?tone.tags.map(x=>String(x?.name||x)).slice(0,8):[],modelName:String(model?.name||''),modelDescription:String(model?.description||''),architecture:String(model?.architecture_version??model?.architecture??'A2'),size:String(model?.size??'unspecified'),gear:String(gear)};const text=[fields.toneName,fields.toneDescription,fields.makes.join(' '),fields.tags.join(' '),fields.modelName,fields.modelDescription].join(' ').toLowerCase();const no=/\b(no|without|unboosted|clean[- ]only)\b.{0,35}\b(boost|overdrive|\bod\b|drive pedal)\b|\b(boost|overdrive|\bod\b|drive pedal)\b.{0,25}\b(not included|not used|none)\b/.test(text);const yes=/\b(boosted|boost|overdrive|overdrive pedal|tube screamer|klon|treble booster|drive pedal|\bod\b)\b/.test(text);fields.driveMetadata=no?'TONE3000 text explicitly indicates no boost/overdrive':yes?'TONE3000 text mentions boost/overdrive or a drive pedal':'TONE3000 metadata does not specify whether boost/overdrive is embedded';fields.driveConfidence=no||yes?'explicit metadata mention':'unknown';fields.source='TONE3000 tone/model description and catalogue tags';fields.summary=fields.modelName+' — '+fields.driveMetadata+'. '+(fields.modelDescription||fields.toneDescription||'No detailed capture description supplied by TONE3000.');return fields;}
 export function artistToneGuidance(prompt){const p=String(prompt||'').toLowerCase();if(/\b(john\s*mayer|mayer)\b/.test(p))return 'ARTIST TONE: John Mayer-inspired blues/pop lead. Prefer touch-sensitive clean to edge-of-breakup response, warm lows, present mids, restrained treble, subtle modulation, short/medium delay and tasteful spring/plate/hall reverb. Avoid high-gain metal voicing. This is a stylistic target, not a claim about exact studio gear.';if(/\b(john\s*petrucci|petrucci|dream\s*theater)\b/.test(p))return 'ARTIST TONE: John Petrucci / progressive-metal lead. Prefer tight high gain, controlled low end, focused upper mids, articulate sustain, noise control if available, lead delay and restrained reverb. Do not default to blues edge-of-breakup.';if(/\b(joe\s*satriani|satriani)\b/.test(p))return 'ARTIST TONE: Joe Satriani-inspired melodic rock lead. Prefer expressive saturated singing mids, smooth highs, sustain, rhythmic delay, subtle modulation and moderate reverb. Do not reuse a Petrucci metal or Mayer low-gain chain unchanged.';return 'ARTIST / STYLE INTENT: infer gain, dynamics, amp voicing and ambience from this request. Avoid a generic chain by default.';}
+export function responseLanguageInstruction(){
+ return 'LANGUAGE POLICY: Use Bahasa Indonesia by default for all natural-language responses. If the latest USER REQUEST is clearly written in English or another language, respond in the same language as the USER REQUEST. If the message is mixed or the language is unclear, use Bahasa Indonesia. This applies to summaries, explanations, diagnosis, recommendations, questions and follow-up conversation. Keep JSON keys, technical identifiers, exact device model names and UI labels unchanged.';
+}
+export function findDefaultGeminiModel(models){
+ const rows=Array.isArray(models)?models:[];
+ const match=rows.find(row=>/gemini[\s_-]*3[.]1[\s_-]*flash[\s_-]*lite/i.test(String(row?.id||'')+' '+String(row?.name||'')));
+ return match?String(match.id||''):'';
+}
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
  'You are a live tone editor for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII.',
- 'Write all natural-language output in the same language as the latest USER REQUEST. Do not force English when the user writes in another language. Keep JSON keys, exact catalog/model names, block IDs, parameter keys and technical identifiers unchanged.',
+ responseLanguageInstruction(),
  'Perform the Tone Architect role first: interpret the musical reference, style, feel, dynamics, gain character, tonal balance, ambience and things to avoid before choosing any gear or parameters.',
  'Then perform Gear Specialist and Parameter Engineer work, and act as Lead AI / Preset Composer: select only compatible catalog models and concrete values, preserve unaffected blocks, and produce one coherent final Tone Plan.',
  'Include compact orchestration metadata at the top level when possible: tone_intent (object), confidence (0..1), review_required (boolean), and review_reason (short string). These metadata fields do not replace or bypass application validation.',
@@ -236,7 +244,7 @@ export function shouldInvokeCriticalReviewer(plan){
  return Array.isArray(plan.blocks)&&plan.blocks.length>=4;
 }
 export function toneArchitectSystemPrompt(){
- return 'You are the Tone Architect for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). Use the same language as the USER MUSICAL REQUEST for every natural-language JSON value; do not force English. Keep JSON keys and device terminology unchanged. Analyze only the musical intent; do not choose device models, blocks, parameter values, MIDI or transfer operations. Return JSON only: {"tone_intent":{"reference":"","style":"","feel":"","dynamics":"","gain_character":"","tonal_balance":"","ambience":"","avoid":[],"focus":"","summary":"","confidence":0.0}}. Keep every field short and specific. Interpret the user\'s musical goal, not an imagined exact artist rig.';
+ return 'You are the Tone Architect for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' Analyze only the musical intent; do not choose device models, blocks, parameter values, MIDI or transfer operations. Return JSON only: {"tone_intent":{"reference":"","style":"","feel":"","dynamics":"","gain_character":"","tonal_balance":"","ambience":"","avoid":[],"focus":"","summary":"","confidence":0.0}}. Keep every field short and specific. Interpret the user\'s musical goal, not an imagined exact artist rig.';
 }
 export function toneLeadInstruction(intent){
  return 'ROLE HANDOFF: Tone Architect is mandatory and its musical intent is authoritative. You are now Lead AI / Preset Composer, combining Gear Specialist and Parameter Engineer duties. Use this compact Tone Architect intent: '+JSON.stringify(intent||{})+'. Choose compatible MG-30 models and parameter values using only the supplied compact catalog. Preserve unaffected blocks. Set review_required=true only when you detect a material conflict, low confidence, uncertain mapping, or coupled changes that deserve independent critique; add a short review_reason and confidence (0..1). Return the normal Tone Plan JSON plus these metadata fields.';
@@ -267,6 +275,9 @@ async function init(){
 
  const audioStyle=document.createElement('style');audioStyle.id='aiToneAudioCss';
  audioStyle.textContent='.ai-tone-audio-panel{margin:0 0 12px;padding:13px;border:1px solid #3c4b32;border-radius:16px;background:linear-gradient(145deg,rgba(23,34,22,.88),rgba(13,19,15,.95))}.ai-tone-audio-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ai-tone-audio-head strong{display:block;color:#edf5e4;font-size:12px;letter-spacing:.07em}.ai-tone-audio-head small{display:block;margin-top:4px;color:#9daa93;font-size:10px}.ai-tone-audio-head small[data-state=connected]{color:#c5f36b}.ai-tone-audio-refresh{border:1px solid #3c4b32;border-radius:9px;padding:7px 10px;background:#141c14;color:#b9c7ad;font-size:10px;font-weight:750}.ai-tone-audio-modes{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:12px;padding:4px;border:1px solid #34402f;border-radius:11px;background:#0c110d}.ai-tone-audio-modes button{min-height:36px;border:0;border-radius:8px;background:transparent;color:#a6b09d;font-size:11px;font-weight:750}.ai-tone-audio-modes button.active{background:#c5f36b;color:#10150b}.ai-tone-audio-start{width:100%;min-height:45px;margin-top:10px;border:1px solid #c5f36b;border-radius:11px;background:#c5f36b;color:#10150b;font-size:13px;font-weight:850}.ai-tone-audio-start:disabled,.ai-tone-audio-refresh:disabled,.ai-tone-audio-modes button:disabled{opacity:.45}.ai-tone-audio-meter{display:flex;align-items:center;justify-content:center;gap:3px;height:35px;margin-top:9px;overflow:hidden}.ai-tone-audio-meter span{height:var(--audio-level,15%);flex:1;min-width:2px;border-radius:3px;background:#526b35;opacity:.6;transform:scaleY(.28);transform-origin:center;transition:height .12s,transform .12s,opacity .12s}.ai-tone-audio-meter.is-active span{transform:scaleY(1);opacity:1;background:#91c44d}.ai-tone-audio-meter.is-active span:nth-child(3n){background:#c5f36b}.ai-tone-audio-status{margin-top:5px;color:#bdc9b2;text-align:center;font-size:11px;line-height:1.45}.ai-tone-audio-status[data-state=error]{color:#ffd2a3}.ai-tone-audio-note{display:block;margin-top:8px;color:#7f8c77;font-size:9px;line-height:1.5}@media(max-width:380px){.ai-tone-audio-panel{padding:11px}.ai-tone-audio-head strong{font-size:11px}}';
+
+ audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:calc(var(--ai-tone-max-height) - 62px);height:auto;padding:10px 13px 12px;overflow:hidden;overscroll-behavior:none}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-status-accessible{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.ai-tone-messages{display:flex;flex:0 1 auto;flex-direction:column;gap:9px;min-height:clamp(118px,21dvh,220px);max-height:min(48dvh,500px);height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{max-width:96%;flex:0 0 auto;font-size:14px;line-height:1.5}.ai-tone-activity{align-self:flex-start;display:flex;align-items:center;gap:9px;flex:0 0 auto;max-width:96%;padding:9px 12px;border:1px solid #536a39;border-radius:12px;background:#172316;color:#d8f4ac;font-size:12px;line-height:1.4}.ai-tone-activity:before{content:"";width:13px;height:13px;flex:0 0 13px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:10px 11px;border-radius:14px}.ai-tone-audio-head{min-height:25px}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:40px;margin-top:8px}.ai-tone-audio-meter{height:19px;margin-top:6px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.35}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:7px;margin-top:0;padding-top:2px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:54px;max-height:88px;height:54px;resize:none;overflow-y:auto;padding:11px 12px}.ai-tone-compose{flex:0 0 auto;margin-top:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.35}.ai-tone-provider-row{margin-bottom:10px}.ai-tone-nam-toolbar{margin:10px 0}.ai-tone-nam-wizard,.ai-tone-nam-results{max-height:40dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height);width:100%;border-radius:22px 22px 0 0}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 60px);padding:9px 12px calc(9px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:clamp(116px,20dvh,190px);max-height:48dvh;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:9px 10px}.ai-tone-audio-note{display:block}.ai-tone-prompt{min-height:50px;height:50px;max-height:76px}.ai-tone-composer>.ai-tone-hint{font-size:8px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh}.ai-tone-messages{min-height:90px;max-height:34dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:14px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:35px}.ai-tone-prompt{height:46px;min-height:46px}}';
+
  document.head.appendChild(audioStyle);
 
  const open=document.createElement('button');open.id='aiToneOpenButton';open.type='button';open.className='btn';open.textContent='✦ AI';open.setAttribute('aria-haspopup','dialog');open.setAttribute('aria-expanded','false');actions.insertBefore(open,ctrl);
@@ -280,27 +291,38 @@ async function init(){
  
  '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter only. GPT is never used automatically and must be selected manually.</small></span></label>',
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Cloud Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button></div>',
- '<p class="ai-tone-note">Provider secrets never leave the Worker. Free-model quotas still apply. Automatic fallback retries only temporary rate-limit, capacity, timeout, network and server failures. Tone Plans are checked against the verified original MG-30 Gen 2 catalog before editor MIDI changes.</p></div>',
+ '<p class="ai-tone-note">Provider secrets never leave the Worker. Free-model quotas still apply. Automatic fallback retries only temporary rate-limit, capacity, timeout, network and server failures. Tone Plans are checked against the verified original MG-30 Gen 2 catalog before editor MIDI changes.</p>',
 '<div class="ai-tone-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · Free Multi-AI</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>',
- '<div class="ai-tone-status" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live preset transfer.</div>',
- '<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
- '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
- '<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
-"<section class=\"ai-tone-audio-panel\" id=\"aiToneAudioPanel\"> <div class=\"ai-tone-audio-head\"><div><strong>⌁ AUDIO LISTENING</strong><small id=\"aiToneAudioDevice\">Checking MG-30 USB Audio…</small></div><button class=\"ai-tone-audio-refresh\" id=\"aiToneAudioRefresh\" type=\"button\">Refresh</button></div> <div class=\"ai-tone-audio-modes\" role=\"group\" aria-label=\"Audio listening mode\"><button class=\"active\" data-ai-audio-mode=\"once\" type=\"button\">Analyze Once</button><button data-ai-audio-mode=\"live\" type=\"button\">Live Listening</button></div> <button class=\"ai-tone-audio-start\" id=\"aiToneAudioStart\" type=\"button\" disabled>Start Listening</button> <div class=\"ai-tone-audio-meter\" id=\"aiToneAudioMeter\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div> <div class=\"ai-tone-audio-status\" id=\"aiToneAudioStatus\" role=\"status\" aria-live=\"polite\">Ready to capture</div> <small class=\"ai-tone-audio-note\">Uses MG-30 USB Audio input channels 1–2. Android audio permission is used for USB capture; the phone microphone is not used. Audio is analyzed locally on this device.</small></section>",
+'<div class="ai-tone-status ai-tone-status-accessible" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live tone assistance.</div>',
+'<div class="ai-tone-nam-toolbar"><button class="ai-tone-nam-action" id="aiToneFindNam" type="button">Search TONE3000 NAM</button></div>',
+'<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div>',
+'<div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div>',
+'</div>',,
  '<div class="ai-tone-messages" id="aiToneMessages"><div class="ai-tone-message ai"><small>AI ASSISTANT</small>Describe the tone you want. Validated results update the editor controls and send parameters over USB-MIDI immediately. There is no Apply step.</div></div>',
- '<textarea class="ai-tone-prompt" id="aiTonePrompt" maxlength="1400" placeholder="Example: Create a warm blues-rock tone with mild breakup, low-to-medium gain, present mids, short delay, and light reverb."></textarea>',
- '<div class="ai-tone-compose"><button class="ai-tone-undo" id="aiToneUndo" type="button" disabled>↶ Undo AI Changes</button><div><span class="ai-tone-hint" id="aiToneCount">0/1400</span> <button class="ai-tone-send" id="aiToneSend" type="button">Send ↗</button></div></div>',
- '<p class="ai-tone-hint">Use the editor’s Save to Device button to store the tone. Success confirms MIDI commands were sent; it does not confirm full pedal ACK/readback.</p></div>'
+ "<section class=\"ai-tone-audio-panel\" id=\"aiToneAudioPanel\"> <div class=\"ai-tone-audio-head\"><div><strong>⌁ AUDIO LISTENING</strong><small id=\"aiToneAudioDevice\">Checking MG-30 USB Audio…</small></div><button class=\"ai-tone-audio-refresh\" id=\"aiToneAudioRefresh\" type=\"button\">Refresh</button></div> <div class=\"ai-tone-audio-modes\" role=\"group\" aria-label=\"Audio listening mode\"><button class=\"active\" data-ai-audio-mode=\"once\" type=\"button\">Analyze Once</button><button data-ai-audio-mode=\"live\" type=\"button\">Live Listening</button></div> <button class=\"ai-tone-audio-start\" id=\"aiToneAudioStart\" type=\"button\" disabled>Start Listening</button> <div class=\"ai-tone-audio-meter\" id=\"aiToneAudioMeter\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div> <div class=\"ai-tone-audio-status\" id=\"aiToneAudioStatus\" role=\"status\" aria-live=\"polite\">Ready to capture</div> <small class=\"ai-tone-audio-note\">Uses MG-30 USB Audio input channels 1–2. Android audio permission is used for USB capture; the phone microphone is not used. Audio is analyzed locally on this device.</small></section>",,
+ '<div class="ai-tone-composer">',
+'<textarea class="ai-tone-prompt" id="aiTonePrompt" maxlength="1400" placeholder="Ask anything about your tone…"></textarea>',
+'<div class="ai-tone-compose"><button class="ai-tone-undo" id="aiToneUndo" type="button" disabled>↶ Undo AI Changes</button><div><span class="ai-tone-hint" id="aiToneCount">0/1400</span> <button class="ai-tone-send" id="aiToneSend" type="button">Send ↗</button></div></div>',
+'<p class="ai-tone-hint">Use the editor’s Save to Device button to store the tone. Success confirms MIDI commands were sent; it does not confirm full pedal ACK/readback.</p></div></div>'
  ].join('');
  document.body.append(shade,sheet);
  flushAiRuntimeErrors();
  const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults'),audioDevice:$('aiToneAudioDevice'),audioRefresh:$('aiToneAudioRefresh'),audioStart:$('aiToneAudioStart'),audioStatus:$('aiToneAudioStatus'),audioMeter:$('aiToneAudioMeter'),audioModes:sheet.querySelectorAll('[data-ai-audio-mode]')};
  let mode='auto',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null;const history=[];
- const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');};
- const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>12)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE STUDIO')+'</small>'+esc(x.text)+'</div>').join('');ui.messages.scrollTop=ui.messages.scrollHeight;};
+ const renderActivity=()=>{
+  let activity=ui.messages.querySelector('.ai-tone-activity');
+  if(ui.status.dataset.state==='busy'){
+   if(!activity){activity=document.createElement('div');activity.className='ai-tone-activity';activity.setAttribute('role','status');}
+   activity.textContent=ui.status.textContent;
+   if(!activity.isConnected)ui.messages.appendChild(activity);
+   ui.messages.scrollTop=ui.messages.scrollHeight;
+  }else if(activity)activity.remove();
+ };
+ const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');renderActivity();};
+ const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>60)history.shift();ui.messages.innerHTML=history.map(x=>'<div class="ai-tone-message '+x.role+'"><small>'+(x.role==='user'?'YOU':'AI TONE ASSISTANT')+'</small>'+esc(x.text)+'</div>').join('');renderActivity();ui.messages.scrollTop=ui.messages.scrollHeight;};
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
- const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
+ const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.audioStart.disabled=busy||audioBusy||(!audioCaptureActive&&ui.audioDevice.dataset.state!=='connected');ui.audioModes.forEach(button=>button.disabled=busy||audioBusy||audioCaptureActive);ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
   const next=['auto','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'auto';
   mode=next;ui.providerSelect.value=next;autoProviderHealthCache.expires=0;
@@ -395,10 +417,17 @@ async function init(){
   return rows.join('\n')||JSON.stringify(result);
  }
  async function requestAudioDiagnosis(question,metrics){
-  const system='You are a guitar tone listening assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). Respond in the same language as the USER REQUEST. The audio PCM was analyzed locally; you receive only objective measurements, never raw audio. Interpret the measurements cautiously: the capture uses MG-30 USB input channels 1–2, which may include a host-loopback mix and the result is affected by pickups, playing technique, guitar volume, gain staging and the performance. Do not claim you heard timbre details that these measurements cannot establish. Spectral centroid, rolloff and band percentages are evidence, not calibrated EQ targets. Do not recommend exact knob settings unless the user asks. This is read-only analysis: do not generate a preset, Tone Plan, block list, MIDI command or hardware change. Return JSON only: {"summary":"...","observations":[{"area":"...","finding":"...","evidence":"...","confidence":0.0}],"recommendations":["..."],"limitations":"..."}.'; 
-  const user='USER REQUEST:\n'+String(question||'Analyze my current guitar tone.')+'\n\nMEASURED USB AUDIO (local analysis):\n'+formatToneAudioMetrics(metrics)+'\n\nGive an evidence-based diagnosis only. No device changes.';
-  const result=await askNamAIJson(system,user,'analyzing the captured MG-30 USB audio');
-  message('ai',formatAudioDiagnosis(result));return result;
+  const system='You are a guitar tone listening assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The audio PCM was analyzed locally; you receive only objective measurements, never raw audio. Interpret the measurements cautiously: the capture uses MG-30 USB input channels 1–2, which may include a host-loopback mix and the result is affected by pickups, playing technique, guitar volume, gain staging and the performance. Do not claim you heard timbre details that these measurements cannot establish. Spectral centroid, rolloff and band percentages are evidence, not calibrated EQ targets. Do not recommend exact knob settings unless the user asks. This is read-only analysis: do not generate a preset, Tone Plan, block list, MIDI command or hardware change. Return JSON only: {"summary":"...","observations":[{"area":"...","finding":"...","evidence":"...","confidence":0.0}],"recommendations":["..."],"limitations":"..."}.'; 
+  const user='USER REQUEST:\n'+String(question||'Analisis tone gitar saya saat ini.')+'\n\nMEASURED USB AUDIO (local analysis):\n'+formatToneAudioMetrics(metrics)+'\n\nGive an evidence-based diagnosis only. No device changes.';
+  try{
+   const result=await askNamAIJson(system,user,'analyzing the captured MG-30 USB audio');
+   message('ai',formatAudioDiagnosis(result));
+   status('Audio analysis complete. No device parameters were changed.','success');
+   return result;
+  }catch(error){
+   status('Audio analysis failed: '+(error?.message||error),'error');
+   throw error;
+  }
  }
  async function finishAudioListening(options={}){
   const askAi=options.askAi!==false,discard=Boolean(options.discard);
@@ -418,7 +447,7 @@ async function init(){
     lastAudioMetrics=metrics;
     message('ai','Local USB audio measurements\n'+formatToneAudioMetrics(metrics));
     if(askAi){
-     try{await requestAudioDiagnosis('Analyze my current guitar tone from this MG-30 USB audio capture. Do not change the device.',metrics);}
+     try{await requestAudioDiagnosis('Analisis tone gitar saya berdasarkan hasil capture USB Audio MG-30 ini. Jangan ubah parameter perangkat.',metrics);}
      catch(error){message('ai','Audio measurements were saved locally, but the AI diagnosis could not be completed: '+(error?.message||error));}
     }
     setAudioStatus('Analysis complete. Ask a follow-up or request a tone correction.','success');
@@ -596,7 +625,7 @@ async function init(){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
   const models=providerModels[provider]||[];
   select.replaceChildren();
-  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent='Auto · fastest available';select.append(autoOption);
+  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent=provider==='gemini'?'Auto · Gemini 3.1 Flash Lite':'Auto · fastest available';select.append(autoOption);
   if(models.length){
    for(const row of models){
     const option=document.createElement('option');option.value=row.id;
@@ -631,10 +660,11 @@ async function init(){
    const models=await listAiProviderModels(provider,stored);
    if(!models.length)throw new Error('No text-generation models were returned by '+providerNames[provider]+'.');
    providerModels[provider]=models;
-   let chosen=models.some(row=>row.id===saved)?saved:'';
+   const manual=localStorage.getItem('mg30-ai-model-manual-'+provider)==='1';
+   let chosen=manual&&models.some(row=>row.id===saved)?saved:'';
    if(!chosen){
     if(provider==='openrouter')chosen=models.some(row=>row.id==='openrouter/free')?'openrouter/free':models[0].id;
-    else if(provider==='gemini')chosen=(models.find(row=>/flash/i.test(row.id)&&!/live|image|tts|audio/i.test(row.id))||models[0]).id;
+    else if(provider==='gemini')chosen=findDefaultGeminiModel(models);
     else if(provider==='groq')chosen=(models.find(row=>/openai\/gpt-oss-20b/i.test(row.id))||models[0]).id;
     else chosen=(models.find(row=>/mini/i.test(row.id))||models[0]).id;
    }
@@ -679,11 +709,22 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   return openAiCompatible(key,system,user,model,provider,timeoutMs);
  }
  async function fastestReadyModel(provider,key){
-  if(selectedModel(provider))return selectedModel(provider);
+  const manual=selectedModel(provider);
+  if(manual)return manual;
   const cached=autoModelHealthCache[provider];
-  if(cached&&Date.now()<cached.expires)return cached.model;
+  if(cached&&Date.now()<cached.expires){
+   if(provider!=='gemini'||findDefaultGeminiModel([{id:cached.model}]))return cached.model;
+   delete autoModelHealthCache[provider];
+  }
   let models=providerModels[provider]||[];
   if(!models.length)models=await refreshProviderModels(provider,true);
+  if(provider==='gemini'){
+   const preferred=findDefaultGeminiModel(models);
+   if(!preferred)throw new Error('Gemini 3.1 Flash Lite is not available in the Cloud model catalogue. Refresh the model list or choose a model manually. No Gemini request was sent.');
+   localStorage.setItem(modelStorageKey(provider),preferred);
+   autoModelHealthCache[provider]={model:preferred,expires:Date.now()+45_000};
+   return preferred;
+  }
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
   if(saved&&models.some(row=>row.id===saved)){
    autoModelHealthCache[provider]={model:saved,expires:Date.now()+45_000};
@@ -691,7 +732,6 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   }
   const score=id=>{
    const value=String(id).toLowerCase();
-   if(provider==='gemini')return /flash-lite/.test(value)?0:/flash/.test(value)?1:4;
    if(provider==='groq')return /llama-3.1-8b-instant|llama-3.3-70b-versatile|qwen.*32b|gpt-oss-20b/.test(value)?0:/instant|8b|20b/.test(value)?1:4;
    if(provider==='openrouter')return value==='openrouter/free'?0:/free/.test(value)?1:4;
    return /mini/.test(value)?0:4;
@@ -1016,6 +1056,7 @@ async function automaticNamImportForPrompt(prompt){
  open.addEventListener('click',()=>sheet.classList.contains('on')?closePanel():openPanel());
  $('aiToneClose').addEventListener('click',closePanel);shade.addEventListener('click',closePanel);
  $('aiToneSettingsToggle').addEventListener('click',()=>{ui.settings.classList.toggle('on');if(ui.settings.classList.contains('on'))void keyStates();});
+ sheet.querySelector('.ai-tone-body').addEventListener('click',event=>{if(ui.settings.classList.contains('on')&&!event.target.closest('#aiToneSettings')&&!event.target.closest('#aiToneSettingsToggle'))ui.settings.classList.remove('on');});
  $('aiToneSaveKeys').addEventListener('click',saveKeys);
  $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
  $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));

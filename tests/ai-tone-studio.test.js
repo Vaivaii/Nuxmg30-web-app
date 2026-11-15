@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -386,4 +386,40 @@ test('Tone Architect fallback text preserves the language of the user request', 
   const intent = compactToneArchitectIntent({}, request);
   assert.equal(intent.summary, request);
   assert.equal(intent.focus, request);
+});
+
+
+test('Bahasa Indonesia is the default AI response language and other user languages are followed',()=>{
+ const policy=responseLanguageInstruction();
+ assert.match(policy,/Bahasa Indonesia by default/);
+ assert.match(policy,/same language as the USER REQUEST/);
+ assert.match(toneArchitectSystemPrompt(),/Bahasa Indonesia by default/);
+});
+
+test('Gemini automatic model is specifically Gemini 3.1 Flash Lite',()=>{
+ const models=[
+  {id:'gemini-2.5-flash',name:'Gemini 2.5 Flash'},
+  {id:'gemini-3.1-flash',name:'Gemini 3.1 Flash'},
+  {id:'gemini-3.1-flash-lite-preview-09-2026',name:'Gemini 3.1 Flash Lite'}
+ ];
+ assert.equal(findDefaultGeminiModel(models),'gemini-3.1-flash-lite-preview-09-2026');
+ assert.equal(findDefaultGeminiModel([{id:'gemini-2.5-flash',name:'Gemini 2.5 Flash'}]),'');
+});
+
+test('AI assistant keeps only conversation scrollable with a pinned audio card and message composer',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/\\.ai-tone-body\\{position:relative;display:flex;flex:1 1 auto;flex-direction:column/);
+ assert.match(source,/\\.ai-tone-messages\\{display:flex;flex:0 1 auto/);
+ assert.match(source,/\\.ai-tone-audio-panel\\{flex:0 0 auto/);
+ assert.match(source,/\\.ai-tone-composer\\{display:flex;flex:0 0 auto/);
+ assert.match(source,/position:absolute;z-index:8/);
+ assert.match(source,/ai-tone-status-accessible/);
+ assert.match(source,/renderActivity\\(\\)/);
+});
+
+test('audio diagnosis marks the AI request complete or failed after the final chat response',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const request=source.slice(source.indexOf('async function requestAudioDiagnosis'),source.indexOf('async function finishAudioListening'));
+ assert.match(request,/status\\('Audio analysis complete\\..*'success'\\)/);
+ assert.match(request,/status\\('Audio analysis failed:.*'error'\\)/);
 });
