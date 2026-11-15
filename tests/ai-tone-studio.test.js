@@ -427,7 +427,7 @@ test('audio diagnosis marks the AI request complete or failed after the final ch
 
 test('stale manually saved Gemini model cannot override the current model catalogue default',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/manualModelAvailable=manual&&models\\.some\\(row=>row\\.id===saved\\)/);
- assert.match(source,/if\\(manual&&!manualModelAvailable\\)localStorage\\.setItem\\(manualKey,'0'\\)/);
- assert.match(source,/if\\(manual\\)localStorage\\.setItem\\('mg30-ai-model-manual-'\\+provider,'0'\\)/);
+ assert.ok(source.includes('manualModelAvailable=manual&&models.some(row=>row.id===saved)'));
+ assert.ok(source.includes("if(manual&&!manualModelAvailable)localStorage.setItem(manualKey,'0')"));
+ assert.ok(source.includes("if(manual)localStorage.setItem('mg30-ai-model-manual-'+provider,'0')"));
 });
