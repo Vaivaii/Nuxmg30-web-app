@@ -52,3 +52,5 @@
 - When a NAM is the authoritative amp source, system instructions and the final response explicitly identify the installed slot-10 capture rather than claiming that an unrelated built-in amp such as SLO-100 was applied.
 - Replaced the Audio Listening music-note glyph with a waveform SVG and normalized Audio, Settings and Close header buttons to the same 56×56 CSS-pixel frame.
 - No Cloudflare Worker/API, MIDI CC mapping, IR collection import, NAM codec or slot-10 transfer protocol was changed.
+
+- Added an explicit latest-request precedence rule to Tone Architect, NAM query derivation, tone-pack ranking, capture ranking and Lead AI. A newly named artist/model always overrides old artist references in recent conversation history.

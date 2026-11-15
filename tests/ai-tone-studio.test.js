@@ -544,3 +544,12 @@ test('Audio Listening header uses a waveform icon and shares the Settings frame 
  assert.ok(source.includes('.ai-tone-head-actions .ai-tone-icon{width:56px;height:56px;min-width:56px;flex:0 0 56px'));
  assert.equal(source.includes('>♫</button>'),false);
 });
+
+
+test('new artist and amp targets override old conversation context during planning and NAM selection',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('The CURRENT USER REQUEST is authoritative'));
+ assert.ok(source.includes('never reuse a previous artist or amp search query'));
+ assert.ok(source.includes('must never override a newly named artist, amp or target'));
+ assert.ok(source.includes('previous artist references must not override a newly named artist or target'));
+});
