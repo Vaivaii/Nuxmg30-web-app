@@ -408,18 +408,18 @@ test('Gemini automatic model is specifically Gemini 3.1 Flash Lite',()=>{
 
 test('AI assistant keeps only conversation scrollable with a pinned audio card and message composer',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/\\.ai-tone-body\\{position:relative;display:flex;flex:1 1 auto;flex-direction:column/);
- assert.match(source,/\\.ai-tone-messages\\{display:flex;flex:0 1 auto/);
- assert.match(source,/\\.ai-tone-audio-panel\\{flex:0 0 auto/);
- assert.match(source,/\\.ai-tone-composer\\{display:flex;flex:0 0 auto/);
- assert.match(source,/position:absolute;z-index:8/);
- assert.match(source,/ai-tone-status-accessible/);
- assert.match(source,/renderActivity\\(\\)/);
+ assert.match(source, /\.ai-tone-body\{position:relative;display:flex;flex:1 1 auto;flex-direction:column/);
+ assert.match(source, /\.ai-tone-messages\{display:flex;flex:0 1 auto/);
+ assert.match(source, /\.ai-tone-audio-panel\{flex:0 0 auto/);
+ assert.match(source, /\.ai-tone-composer\{display:flex;flex:0 0 auto/);
+ assert.match(source, /position:absolute;z-index:8/);
+ assert.match(source, /ai-tone-status-accessible/);
+ assert.match(source, /renderActivity\(\)/);
 });
 
 test('audio diagnosis marks the AI request complete or failed after the final chat response',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const request=source.slice(source.indexOf('async function requestAudioDiagnosis'),source.indexOf('async function finishAudioListening'));
- assert.match(request,/status\\('Audio analysis complete\\..*'success'\\)/);
- assert.match(request,/status\\('Audio analysis failed:.*'error'\\)/);
+ assert.match(request, /status\('Audio analysis complete\..*'success'\)/);
+ assert.match(request, /status\('Audio analysis failed:.*'error'\)/);
 });
