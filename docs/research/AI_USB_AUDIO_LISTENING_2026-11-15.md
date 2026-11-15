@@ -21,5 +21,7 @@
 - Automatic provider policy remains free-first (Gemini, Groq, OpenRouter); GPT remains manually selected only.
 
 ## Validation status
-- Automated unit/integration tests and APK build are pending CI.
-- Physical USB input selection, concurrent USB-MIDI operation, Android permission behavior, monitoring, and MG-30 firmware 6.0.x hardware testing remain to be verified on the actual phone/pedal.
+- GitHub Actions run #845 (ID `43697311104`) completed successfully: JavaScript syntax validation, all 508 Node tests, Capacitor Android generation, Gradle `assembleDebug`, and APK artifact upload.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14154817995`, created 2026-11-15; ZIP SHA-256 `f83ecc4e241b9d7079e7d14062b0d64282ef6a3f0bbd3c9aeb69f083efef0f08`.
+- Extracted debug APK SHA-256: `fe2c7f7c30a8202d2065c32dad4132f163d9e3ac54cfb540114743bcfd91a6ec`.
+- Physical USB input selection, concurrent USB-MIDI operation, Android permission behavior, monitoring, and MG-30 firmware 6.0.x hardware testing remain unverified and must be tested on the actual phone/pedal.
