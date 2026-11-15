@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -318,7 +318,7 @@ test('Tone Architect is mandatory and hands compact musical intent to Lead AI', 
   const lead = toneLeadInstruction({ style: 'blues rock', feel: 'touch-sensitive' });
   assert.match(architect, /Tone Architect/);
   assert.match(architect, /do not choose device models/);
-  assert.match(lead, /Tone Architect is mandatory/);
+  assert.match(lead, /Tone Architect has completed/);
   assert.match(lead, /Gear Specialist and Parameter Engineer/);
   assert.match(lead, /blues rock/);
 });
@@ -540,8 +540,8 @@ test('NAM-backed tone summaries cannot claim that an unrelated built-in amp was 
 });
 test('Audio Listening header uses a waveform icon and shares the Settings frame dimensions',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes('<svg viewBox="0 0 24 24" width="22" height="22"'));
- assert.ok(source.includes('.ai-tone-head-actions .ai-tone-icon{width:56px;height:56px;min-width:56px;flex:0 0 56px'));
+ assert.ok(source.includes('<svg viewBox="0 0 24 24" width="18" height="18"'));
+ assert.ok(source.includes('.ai-tone-head-actions .ai-tone-icon{width:38px;height:38px;min-width:38px;min-height:38px;flex:0 0 38px'));
  assert.equal(source.includes('>♫</button>'),false);
 });
 
@@ -552,4 +552,60 @@ test('new artist and amp targets override old conversation context during planni
  assert.ok(source.includes('never reuse a previous artist or amp search query'));
  assert.ok(source.includes('must never override a newly named artist, amp or target'));
  assert.ok(source.includes('previous artist references must not override a newly named artist or target'));
+});
+
+
+test('Auto mode uses a single AI for ordinary tone work and Multi-AI only for complex new presets',()=>{
+ assert.equal(shouldUseMultiAgent('Buat tone Joe Satriani','tone_create','auto',false),false);
+ assert.equal(shouldUseMultiAgent('Buat tone blues hangat dengan gain rendah','tone_create','auto',false),false);
+ assert.equal(shouldUseMultiAgent('Build a layered dual-amp rig with separate clean and lead scenes, tempo-synced delays, parallel modulation and a specific intro-to-solo transition','tone_create','auto',false),true);
+ assert.equal(shouldUseMultiAgent('Buat preset biasa','tone_create','collab',false),true);
+ assert.equal(shouldUseMultiAgent('Kurangi treble sedikit','tone_refine','collab',true),false);
+ assert.equal(shouldUseMultiAgent('Jelaskan fungsi Presence','consultation','auto',false),false);
+ assert.equal(isComplexToneRequest('Build a dual-amp rig'),true);
+});
+test('agent stages use bounded output-token budgets and a clearly-labelled local estimate',()=>{
+ assert.equal(outputTokenBudgetForStage('deriving TONE3000 search terms'),180);
+ assert.equal(outputTokenBudgetForStage('defining the musical direction'),260);
+ assert.equal(outputTokenBudgetForStage('building your Tone Plan'),1350);
+ assert.equal(outputTokenBudgetForStage('checking a material conflict or coupled change'),850);
+ assert.equal(outputTokenBudgetForStage('answering your tone question'),520);
+ assert.equal(estimateTokenCount('12345678'),2);
+ assert.equal(estimateTokenCount(''),1);
+});
+test('provider cooldown marks rate limits and temporary upstream failures, not auth or Worker route errors',()=>{
+ assert.equal(shouldCooldownProvider({status:429,message:'rate limit'}),true);
+ assert.equal(shouldCooldownProvider({upstreamStatus:503,message:'unavailable'}),true);
+ assert.equal(shouldCooldownProvider({status:404,message:'Cloud API route not found'}),false);
+ assert.equal(shouldCooldownProvider({status:401,message:'Unauthorized'}),false);
+});
+test('Tone Architect passes one compact state to Lead; correction and Reviewer only receive affected catalog blocks',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',intent:toneIntent,installed_nam:"));
+ assert.ok(source.includes('toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect)'));
+ assert.ok(source.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
+ assert.ok(source.includes('affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)'));
+ assert.ok(source.includes('!correctionUsed&&shouldInvokeCriticalReviewer(first)'));
+});
+test('same-tone refinements request parameter deltas without regenerating a preset chain',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('DELTA PATCH MODE: This is a focused edit to the CURRENT tone.'));
+ assert.ok(source.includes('only changed blocks and only changed parameter keys'));
+ assert.ok(source.includes('Do not regenerate the chain'));
+});
+test('conversation memory is four recent turns and AI usage logging omits prompt contents',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('value.slice(0,1400)'));
+ assert.ok(source.includes('while(dialogueContext.length>4)'));
+ assert.ok(source.includes("console.info('[MG30 AI TOKEN USAGE]',record)"));
+ assert.ok(source.includes("usage_source:usage?'provider':'estimated_chars_div_4'"));
+ const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.equal(plan.includes('RECENT CONVERSATION:'),false);
+});
+test('per-stage token limits are sent through Cloud API while usage is read only when provided by Worker',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('body: { provider, model, system, prompt, maxOutputTokens }'));
+ assert.ok(source.includes("value:'provider'")===false);
+ assert.ok(source.includes("value:result.usage||null")||source.includes("value:result.usage || null"));
+ assert.ok(source.includes('logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result)'));
 });
