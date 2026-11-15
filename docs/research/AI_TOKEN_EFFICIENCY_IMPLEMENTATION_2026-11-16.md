@@ -46,3 +46,19 @@ cloud-worker/worker.js, cloud-worker/src/index.js and tests/cloud-worker.test.js
 
 ## Handoff for future conversations
 Continue on feature/multi-ai-free-tone-architect. Keep the constraints above. Before optimizing further, inspect the current intent router and makePlan path. Do not reintroduce full chat passing between agents or make routine tasks multi-agent by default. Do not deploy Worker or claim actual token usage until Worker deployment is separately completed and checked.
+
+
+## Final validation record — CI #866
+
+- Final app commit tested: 7843c4eabf7b7b1877c6d040917cc749cc1fcc49.
+- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43743943327
+- JavaScript syntax: passed.
+- Node protocol/regression suite: 539 passed, 0 failed.
+- Capacitor Android project generation: passed.
+- Gradle assembleDebug: passed.
+- APK artifact upload: passed.
+- Artifact: MG30-Studio-debug-APK, artifact ID 14172529965, ZIP SHA-256 5bdd51d3ece960ba8e574fe3dfd09e5832af8335f8a776522454e6d7ba4c279d.
+- Extracted APK SHA-256: 86f07ef3dbbf6960d09de2d0b1ba5b9fe1ae6bbcec5cfbb3b0cb3dbf9857a2e1.
+- The Lead state payload now includes the current exact user request alongside MG30_TONE_INTENT_V1, compact intent and optional installed NAM source; it does not include previous conversation turns or raw audio.
+- Production Worker remains undeployed. Actual provider usage and server-enforced per-stage output limits must not be claimed as active in the installed app until the Worker is separately deployed and verified.
+- Physical testing on the original MG-30 hardware remains outstanding.

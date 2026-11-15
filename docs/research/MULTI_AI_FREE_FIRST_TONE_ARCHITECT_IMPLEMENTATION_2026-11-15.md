@@ -153,3 +153,19 @@ Do not merge to the base branch or deploy the backend as part of this implementa
 - Gemini gemini-3.1-flash-lite-preview default is unchanged. GPT remains manual-only. No model latency probes were added.
 - TONE3000 search, A2 validation, NAM slot 10 import, NAM library retention, IR User/Third Party/Collection mapping, MIDI CC mappings, live USB-MIDI parameter writes, USB Audio capture and local audio analysis are unchanged.
 - The current branch remains feature/multi-ai-free-tone-architect. CI and APK build results must be recorded separately; a successful Android build is not a Worker deployment or physical MG-30 verification.
+
+
+## Final validation record — CI #866
+
+- Final app commit tested: 7843c4eabf7b7b1877c6d040917cc749cc1fcc49.
+- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43743943327
+- JavaScript syntax: passed.
+- Node protocol/regression suite: 539 passed, 0 failed.
+- Capacitor Android project generation: passed.
+- Gradle assembleDebug: passed.
+- APK artifact upload: passed.
+- Artifact: MG30-Studio-debug-APK, artifact ID 14172529965, ZIP SHA-256 5bdd51d3ece960ba8e574fe3dfd09e5832af8335f8a776522454e6d7ba4c279d.
+- Extracted APK SHA-256: 86f07ef3dbbf6960d09de2d0b1ba5b9fe1ae6bbcec5cfbb3b0cb3dbf9857a2e1.
+- The Lead state payload now includes the current exact user request alongside MG30_TONE_INTENT_V1, compact intent and optional installed NAM source; it does not include previous conversation turns or raw audio.
+- Production Worker remains undeployed. Actual provider usage and server-enforced per-stage output limits must not be claimed as active in the installed app until the Worker is separately deployed and verified.
+- Physical testing on the original MG-30 hardware remains outstanding.
