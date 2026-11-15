@@ -118,3 +118,38 @@ Before merging this branch into `feature/ai-live-tone-studio`:
 5. Perform a controlled live audition on the original MG-30 Gen 2 firmware 6.0.x.
 
 Do not merge to the base branch or deploy the backend as part of this implementation record.
+
+
+## AI Token Efficiency and Compact Header Update — 2026-11-16
+
+**Scope:** Original NUX MG-30 Gen 2 firmware 6.0.x. This change improves AI call routing, prompt payload size, output budgets and header controls. It does not change the device codec, MIDI mapping or pedal transfer protocol.
+
+### Architecture
+- The in-session AI dialogue memory is now a four-message sliding window. Each stored user/assistant turn is capped at 1,400 characters. The visible transcript remains intact and is not used as a full model prompt.
+- Tone Architect receives the current user request and, only when present, locally measured USB Audio metrics. It does not receive the preceding chat transcript.
+- In Multi-AI mode, Lead AI receives one minified MG30_TONE_INTENT_V1 JSON object from Tone Architect plus task-specific instructions and the compact MG-30 catalogue/current state. It no longer receives the full conversation, duplicate intent payloads or duplicate raw audio measurements.
+- Auto mode uses one provider for ordinary tone creation and for all routine conversation/audio/tweak work. Multi-AI is selected for complex new-tone prompts (multi-amp, multi-scene, layered or similarly coupled designs). The explicit Collab setting still opts into Multi-AI. Focused same-tone refinements are single-agent even when Collab is selected.
+- Correction and Critical Reviewer each receive minified state and only the affected block catalogue/snapshot. An execution is capped at three provider hops: Architect → Lead → either one catalog correction OR one conditional Reviewer. A Reviewer is skipped if a validation correction already consumed hop three.
+- Same-tone refinements include an explicit Delta Patch contract: return only changed blocks and changed parameter keys, retain current model unless the user explicitly asks for a model change, and preserve unaffected blocks. The existing MG-30 catalogue validator remains authoritative.
+
+### Token limits and usage
+| Stage | Output-token ceiling |
+|---|---:|
+| NAM search query / pack / capture selection | 180 |
+| Tone Architect | 260 |
+| Tone discussion | 520 |
+| USB Audio diagnosis | 520 |
+| Tone Plan generator | 1,350 |
+| Catalog correction / Critical Reviewer | 850 |
+| Provider test | 64 |
+
+- Frontend sends maxOutputTokens with each request. Cloud Worker clamps it to 96–2,048 and uses the same ceiling for any JSON-format retry; a format retry does not silently raise the output allowance.
+- Worker normalizes Gemini usageMetadata, OpenAI Responses usage, and OpenAI-compatible usage into prompt_tokens, completion_tokens, and total_tokens.
+- The app emits one [MG30 AI TOKEN USAGE] console record per model call, without logging prompt text. If the Worker response contains actual provider usage, usage_source is provider; otherwise it is estimated_chars_div_4. Character-based estimates are not billable token measurements.
+- **Deployment boundary:** Cloud Worker source and tests have been updated, but no Cloudflare Worker deployment was performed. The production Worker must be deployed separately before the live endpoint honours maxOutputTokens or returns actual provider usage. Until then, the app logs estimates only and the existing production output ceiling remains unchanged.
+
+### Provider fallback and protected paths
+- HTTP 429/503 and temporary provider failures trigger a 60-second client-side provider cooldown, preventing repeated calls to the same provider across subsequent agent stages. Authentication errors and generic Worker-route 404s do not cause cooldown.
+- Gemini gemini-3.1-flash-lite-preview default is unchanged. GPT remains manual-only. No model latency probes were added.
+- TONE3000 search, A2 validation, NAM slot 10 import, NAM library retention, IR User/Third Party/Collection mapping, MIDI CC mappings, live USB-MIDI parameter writes, USB Audio capture and local audio analysis are unchanged.
+- The current branch remains feature/multi-ai-free-tone-architect. CI and APK build results must be recorded separately; a successful Android build is not a Worker deployment or physical MG-30 verification.
