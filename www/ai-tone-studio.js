@@ -690,6 +690,11 @@ async function init(){
   updateNamControlState();
   status('NAM capture type set to '+(namCaptureType==='amp'?'Amp Only':'Amp + Cab')+'.','success');
  }));
+ ui.messages.addEventListener('change',event=>{
+  const radio=event.target.closest('input[data-ai-nam-capture-radio]');if(!radio)return;
+  const historyItem=history.find(item=>item.type==='nam-captures'&&String(item.data?.cardId)===String(radio.dataset.aiNamCaptureRadio));
+  if(historyItem){historyItem.data.selectedId=String(radio.value);renderHistory();}
+ });
  ui.messages.addEventListener('click',async event=>{
   const view=event.target.closest('[data-ai-nam-view-captures]');
   if(view&&!busy&&!namImportBusy){try{await loadNamCapturesForChat(view.dataset.aiNamViewCaptures||'');}catch(error){message('ai','Could not load A2 captures: '+(error.message||error));status('Could not load NAM captures.','error');}return;}
@@ -1010,7 +1015,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
  async function confirmNamTransfer(cardId){
   const pending=pendingNamSelection,bridge=window.NUXTONE3000Bridge,editor=window.MG30AIToneBridge;
   if(!pending||pending.phase!=='confirm'||pending.confirmationCardId!==cardId||!pending.selected?.prepared)throw new Error('The pending NAM confirmation is no longer valid. Select and validate a capture again.');
-  if(pending.purpose==='create'&&!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring a NAM for a new preset.');
+  if(!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring the selected NAM to slot 10.');
   namImportBusy=true;setBusy(true);status('Reading NAM slot metadata and transferring to slot 10…','busy');
   let resumePrompt='';
   try{
