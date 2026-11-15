@@ -201,14 +201,16 @@ async function secret(provider) {
  const status = await getCloudAiStatus();
  return status?.providers?.[key] ? 'cloud-managed' : '';
 }
-async function cloudTonePlan(provider, system, prompt, model) {
+async function cloudTonePlan(provider, system, prompt, model, maxOutputTokens=900) {
  if (!model) throw new Error('Choose an available model in AI Settings.');
- const result = await cloudApiRequest('/api/v1/ai/tone-plan', { method: 'POST', body: { provider, model, system, prompt } });
+ const result = await cloudApiRequest('/api/v1/ai/tone-plan', { method: 'POST', body: { provider, model, system, prompt, maxOutputTokens } });
  if (!result?.tonePlan || typeof result.tonePlan !== 'object') throw new Error('Cloud AI did not return a valid Tone Plan response.');
- return result.tonePlan;
+ const plan={...result.tonePlan};
+ Object.defineProperty(plan,'__aiUsage',{value:result.usage||null,enumerable:false,configurable:false});
+ return plan;
 }
-async function openai(_credential, system, prompt, model) { return cloudTonePlan('gpt', system, prompt, model); }
-async function gemini(_credential, system, prompt, model) { return cloudTonePlan('gemini', system, prompt, model); }
+async function openai(_credential, system, prompt, model, maxOutputTokens=900) { return cloudTonePlan('gpt', system, prompt, model, maxOutputTokens); }
+async function gemini(_credential, system, prompt, model, maxOutputTokens=900) { return cloudTonePlan('gemini', system, prompt, model, maxOutputTokens); }
 
 export function compatibleChatText(data,provider){
  const choice=data?.choices?.[0]||{},message=choice.message||{};
@@ -806,10 +808,27 @@ async function init(){
 }
 async function saveKeys(){await keyStates();status('Provider credentials are managed as Cloudflare Worker secrets. Cloud status and model lists refreshed.','success');}
 async function deleteKey(provider){status('Manage '+providerNames[provider]+' credentials in Cloudflare Worker secrets. The app cannot read or delete server-side keys.','idle');}
-async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
-  if(provider==='gpt')return openai(key,system,user,model,timeoutMs);
-  if(provider==='gemini')return gemini(key,system,user,model,timeoutMs);
-  return openAiCompatible(key,system,user,model,provider,timeoutMs);
+function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result,error=null){
+  const usage=result?.__aiUsage&&typeof result.__aiUsage==='object'?result.__aiUsage:null;
+  const promptEstimate=estimateTokenCount(String(system||'')+'\n'+String(user||''));
+  const completionEstimate=result?estimateTokenCount(JSON.stringify(result)):0;
+  const record={event:'mg30_ai_token_usage',task:String(stage||'AI request'),provider,model,
+   prompt_tokens:usage?.prompt_tokens??promptEstimate,
+   completion_tokens:usage?.completion_tokens??completionEstimate,
+   total_tokens:usage?.total_tokens??(promptEstimate+completionEstimate),
+   usage_source:usage?'provider':'estimated_chars_div_4',
+   max_output_tokens:maxOutputTokens,outcome:error?'failed':'success'};
+  try{console.info('[MG30 AI TOKEN USAGE]',record);}catch{}
+ }
+ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000,stage='AI request',maxOutputTokens=900){
+  let result;
+  try{
+   if(provider==='gpt')result=await openai(key,system,user,model,maxOutputTokens);
+   else if(provider==='gemini')result=await gemini(key,system,user,model,maxOutputTokens);
+   else result=await cloudTonePlan(provider,system,user,model,maxOutputTokens);
+   logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result);
+   return result;
+  }catch(error){logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,null,error);throw error;}
  }
  async function fastestReadyModel(provider,key){
   const models=providerModels[provider]?.length?providerModels[provider]:await refreshProviderModels(provider,true);
@@ -869,7 +888,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   try{
    const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' is not configured in Cloudflare Worker.');
    const model=await fastestReadyModel(provider,key);
-   await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',model);
+   await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',model,90000,'testing provider',64);
    const stateId=({gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'})[provider];
    if($(stateId))$(stateId).textContent='Configured in Cloudflare Worker · API test successful';
    status(providerNames[provider]+' API responded successfully.','success');
@@ -881,17 +900,18 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
+   if(providerInCooldown(provider)){missing.push(providerNames[provider]+' cooling down after a temporary limit');continue;}
    if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' Worker secret');continue;}
    const model=await fastestReadyModel(provider,key);
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
     status(providerNames[provider]+' is '+stage+'…','busy');
-    const result=await invokeProvider(provider,key,system,user,model);
+    const result=await invokeProvider(provider,key,system,user,model,90000,stage,outputTokenBudgetForStage(stage));
     if(provider!==mode&&providerNames[mode])message('ai','Automatic fallback used '+providerNames[provider]+' after '+providerNames[mode]+' was unavailable.');
     return result;
    }catch(error){
-    lastError=error;
-    const next=order.slice(index+1).find(candidate=>candidate!==provider);
+    lastError=error;noteProviderFailure(provider,error);
+    const next=order.slice(index+1).find(candidate=>candidate!==provider&&!providerInCooldown(candidate));
     if(!auto||!next||!isRetryableProviderError(error))throw new Error(niceError(error,provider));
     if(mode==='auto'){autoProviderHealthCache.order=autoProviderHealthCache.order.filter(item=>item!==provider);autoProviderHealthCache.expires=Date.now()+45_000;}
     message('ai',providerNames[provider]+' is temporarily busy ('+(error.message||error)+'). Switching to '+providerNames[next]+'.');
@@ -1012,19 +1032,20 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
   }
   return team;
  }
- async function invokeFreeTeam(team,system,user,stage,preferredProvider=''){
-  const preferred=team.find(item=>item.provider===preferredProvider);
-  const ordered=preferred?[preferred,...team.filter(item=>item!==preferred)]:team.slice();
+ async function invokeFreeTeam(team,system,user,stage,preferredProvider='',maxOutputTokens=900){
+  const ready=team.filter(item=>!providerInCooldown(item.provider));
+  const preferred=ready.find(item=>item.provider===preferredProvider);
+  const ordered=preferred?[preferred,...ready.filter(item=>item!==preferred)]:ready.slice();
   let lastError=null;
   for(let index=0;index<ordered.length;index++){
    const member=ordered[index];
    try{
     status(providerNames[member.provider]+' is '+stage+'…','busy');
-    const result=await invokeProvider(member.provider,member.key,system,user,member.model);
+    const result=await invokeProvider(member.provider,member.key,system,user,member.model,90000,stage,maxOutputTokens);
     return {result,member};
    }catch(error){
-    lastError=error;
-    const next=ordered[index+1];
+    lastError=error;noteProviderFailure(member.provider,error);
+    const next=ordered.slice(index+1).find(item=>!providerInCooldown(item.provider));
     if(!next||!ui.autoFallback.checked||!isRetryableProviderError(error))throw new Error(niceError(error,member.provider));
     message('ai',providerNames[member.provider]+' hit a temporary limit. Trying '+providerNames[next.provider]+' using the existing free-provider team.');
    }
