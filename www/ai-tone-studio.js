@@ -648,7 +648,7 @@ async function init(){
   const intent=await deriveNamSearchQuery(prompt,conversation);
   status('Searching the TONE3000 NAM catalog…','busy');
   const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
-  if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 returned no matching A2 NAM profiles for '+intent.query+'. Try another amp name or capture type. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'.');}
+  if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 returned no matching A2 NAM profiles for '+intent.query+'. Try another amp name or capture type. Capture-size filtering is deferred until model download; this result means the A2 catalogue search returned no matching profile. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'.');}
   let recommendation=null;
   try{recommendation=await chooseNamTone(prompt,intent.query,tones,conversation);}
   catch(error){message('ai','Profiles were found, but AI ranking was unavailable: '+(error.message||error)+'. You can still inspect every matching result and choose manually.');}

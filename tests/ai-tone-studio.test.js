@@ -136,7 +136,7 @@ test('AI assistant interface stays English while generated tone summaries follow
   assert.match(source, /same language as the USER MUSICAL REQUEST/);
   assert.doesNotMatch(source, /Keep summary and notes in English/);
   assert.match(source, /AI ready. MG-30 connection is required for live tone assistance/);
-  assert.match(source, /Refresh Cloud Status/);
+  assert.match(source, /Refresh Status/);
   assert.match(source, /Undo AI Changes/);
   assert.match(source, /Parameters sent to:/);
   assert.doesNotMatch(source, /Menunggu koneksi|Simpan API Key|Kirim ↗|Parameter dikirim|Undo gagal|berhasil merespons/);
@@ -252,7 +252,20 @@ test('provider model dropdown defaults to auto and permits explicit manual overr
 
 test('Groq length-of-messages errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Please reduce the length of the messages or completion.')),true);assert.equal(isRetryableProviderError(new Error('tokens per minute (TPM) Limit 8000, Requested 12508')),true);});
 test('TONE3000 metadata differentiates explicit boost/OD from unknown',async()=>{const {describeNamCaptureMetadata}=await import('../www/ai-tone-studio.js');const boosted=describeNamCaptureMetadata({name:'Lead amp',description:'Captured with Tube Screamer boost'},{name:'Mesa capture',description:'Overdrive pedal before amp'},'amp-cab');const clean=describeNamCaptureMetadata({name:'Clean direct',description:'No boost or overdrive used'},{name:'Clean capture'},'amp');const unknown=describeNamCaptureMetadata({name:'Studio NAM'},{name:'Capture 1'},'amp-cab');assert.match(boosted.driveMetadata,/mentions boost\/overdrive/);assert.match(clean.driveMetadata,/explicitly indicates no boost/);assert.match(unknown.driveMetadata,/does not specify/);});
-test('TONE3000 NAM keeps AI recommendation and user dropdown while hiding long metadata from the picker',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(source,/namModeActive=true;\s*return \{success:true,tone:selected\.tone/);assert.ok(source.includes('id="aiToneNamCaptureSelect"'));assert.ok(source.includes('data-ai-nam-continue'));assert.match(source,/const choices=candidates\.map/);assert.ok(source.includes('SOURCE METADATA (TONE3000, supporting evidence only)'));const picker=source.slice(source.indexOf('function renderAiNamCapturePicker('),source.indexOf('async function automaticNamImportForPrompt'));assert.ok(picker.includes('AI-recommended NAM capture'));assert.ok(picker.includes('pending.selected.model.name'));assert.ok(picker.includes('pending.selected.reason'));assert.ok(!picker.includes('meta.summary'));assert.ok(!picker.includes('item.metadata.driveMetadata'));});
+test('TONE3000 profile results and A2 capture choices render in conversation cards with explicit slot-10 confirmation',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("chatCard('nam-profiles'"));
+ assert.ok(source.includes('data-ai-nam-view-captures='));
+ assert.ok(source.includes("chatCard('nam-captures'"));
+ assert.ok(source.includes('data-ai-nam-capture-radio='));
+ assert.ok(source.includes('Import Selected Capture'));
+ assert.ok(source.includes("chatCard('nam-confirm'"));
+ assert.ok(source.includes('Confirm NAM Transfer'));
+ assert.ok(source.includes('Transfer to Slot 10'));
+ assert.ok(source.includes('This will replace the current contents of slot 10'));
+ assert.equal(source.includes('id="aiToneNamCaptureSelect"'),false);
+ assert.ok(source.includes("bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})"));
+});
 test('AI retries one invalid Tone Plan against exact catalog before MIDI apply',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.ok(source.includes('first proposal did not exactly match the MG-30 catalog'));assert.ok(source.includes('correcting the catalog validation'));assert.ok(source.includes('No MIDI changes were sent'));});
 test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: clampOutputTokenLimit(maxOutputTokens)'));
   assert.ok(source.includes('max_tokens: clampOutputTokenLimit(maxOutputTokens)'));
@@ -503,14 +516,17 @@ test('recent conversation context is carried into audio diagnosis and Tone Plans
  assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
  assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
 });
-test('manual NAM import cannot automatically create a preset from the search prompt',()=>{
+test('standalone NAM search and import stay in chat and never auto-create a preset',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- const block=source.slice(source.indexOf("ui.namResults.addEventListener('click'"),source.indexOf("window.addEventListener('mg30-tone3000-catalogue-loaded'"));
- assert.ok(block.includes('autoCreatePreset=false'));
- assert.equal(block.includes('autoCreatePreset=Boolean(ui.prompt.value.trim())'),false);
+ assert.ok(source.includes("if(intent==='nam_search'){await searchNamCatalogForPrompt(prompt,conversation);return;}"));
+ assert.ok(source.includes("ui.messages.addEventListener('click'"));
+ assert.ok(source.includes('async function searchNamCatalogForPrompt'));
+ assert.ok(source.includes('async function confirmNamTransfer'));
+ assert.equal(source.includes("ui.namResults.addEventListener('click'"),false);
+ assert.ok(source.includes("pending.purpose==='create'"));
+ assert.ok(source.includes("pending.purpose==='search'"));
+ assert.ok(source.includes('return {pendingSelection:true}'));
 });
-
-
 test('automatic NAM search synchronizes the visible capture choice with explicit prompt gear',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("namCaptureType=inferNamCaptureType(prompt,namCaptureType)"));
@@ -620,4 +636,24 @@ test('Lead state-passing retains the current user request but excludes prior cha
  assert.ok(plan.includes("state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent"));
  assert.equal(plan.includes('RECENT CONVERSATION:'),false);
  assert.equal(plan.includes('MEASURED USB AUDIO'),true);
+});
+
+
+test('AI Settings uses compact provider and usage accordions while NAM controls remain visible',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('id="aiToneProviderDetails"'));
+ assert.ok(source.includes('id="aiToneUsageDetails"'));
+ assert.ok(source.includes('id="aiToneProviderSelect"'));
+ assert.ok(source.includes('id="aiToneActiveModel"'));
+ assert.ok(source.includes('id="aiToneNamPanel"'));
+ assert.ok(source.includes('data-ai-nam-gear="amp"'));
+ assert.ok(source.includes('data-ai-nam-gear="amp-cab"'));
+ assert.ok(source.includes('Reset Session'));
+});
+test('NAM capture selection survives chat rerender and transfer cannot start before USB-MIDI connects',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("ui.messages.addEventListener('change'"));
+ assert.ok(source.includes("historyItem.data.selectedId=String(radio.value);renderHistory();"));
+ assert.ok(source.includes("if(!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring the selected NAM to slot 10.')"));
+ assert.ok(source.includes("const result=await bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})"));
 });
