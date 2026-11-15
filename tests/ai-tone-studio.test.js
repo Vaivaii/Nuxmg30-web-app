@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -464,4 +464,42 @@ test('TONE3000 NAM is always visible with Amp + Cab active by default and a pers
  assert.match(source,/function updateNamControlState\\(\\)/);
  assert.match(source,/setNamMode\\(!namModeActive\\)/);
  assert.match(source,/TONE3000 NAM mode OFF/);
+});
+
+
+test('assistant intent routing separates discussion, preset creation, tone refinement, audio analysis and NAM search',()=>{
+ assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
+ assert.equal(classifyAssistantIntent('Buat preset John Mayer menggunakan NAM'),'tone_create');
+ assert.equal(classifyAssistantIntent('Kurangi sedikit Treble dan haluskan tone ini'),'tone_refine');
+ assert.equal(classifyAssistantIntent('Analisis tone gitar saya sekarang'),'audio_analyze');
+ assert.equal(classifyAssistantIntent('Carikan profile NAM Vox AC30'),'nam_search');
+ assert.equal(classifyAssistantIntent('Find an amp capture for a Fender Deluxe'),'nam_search');
+});
+test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only requests',()=>{
+ assert.equal(inferNamCaptureType('Carikan NAM capture untuk Vox AC30'),'amp-cab');
+ assert.equal(inferNamCaptureType('Find an Amp Only capture for a Deluxe Reverb'),'amp');
+ assert.equal(inferNamCaptureType('Search TONE3000 head only profile'),'amp');
+ assert.equal(inferNamCaptureType('Find an amp plus cab model'),'amp-cab');
+});
+test('standalone NAM and consultation routes do not send a Tone Plan or MIDI',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/async function answerToneConversation/);
+ assert.match(source,/Do not create a Tone Plan/);
+ assert.match(source,/if\\(intent==='consultation'\\)/);
+ assert.match(source,/async function searchNamCatalogForPrompt/);
+ assert.match(source,/if\\(intent==='nam_search'\\)/);
+ assert.match(source,/Nothing has been imported/);
+});
+test('recent conversation context is carried into audio diagnosis and Tone Plans',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/const conversationContextText=/);
+ assert.match(source,/RECENT CONVERSATION CONTEXT/);
+ assert.match(source,/makePlan\\(prompt,bridge,audioMetricsForRequest,conversation\\)/);
+ assert.match(source,/requestAudioDiagnosis\\(prompt,audioMetricsForRequest,conversation\\)/);
+});
+test('manual NAM import cannot automatically create a preset from the search prompt',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const block=source.slice(source.indexOf("ui.namResults.addEventListener('click'"),source.indexOf("window.addEventListener('mg30-tone3000-catalogue-loaded'"));
+ assert.match(block,/autoCreatePreset=false/);
+ assert.doesNotMatch(block,/autoCreatePreset=Boolean\\(ui\\.prompt\\.value\\.trim\\(\\)\\)/);
 });

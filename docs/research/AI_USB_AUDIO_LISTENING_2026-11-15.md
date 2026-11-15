@@ -34,3 +34,11 @@
 - AI response language defaults to Bahasa Indonesia. A clearly different language in the latest user request is followed.
 - Gemini automatic selection now requires a catalogue entry identified as Gemini 3.1 Flash Lite. An explicitly manual model selection remains respected. Saved automatic Gemini choices no longer override the default.
 - Added regression tests for responsive layout structure, activity lifecycle, language policy and Gemini default selection.
+
+
+## AI conversation and standalone NAM search — 2026-11-15
+- Added intent routing for consultation, audio analysis, tone refinement, preset creation and standalone TONE3000 NAM profile search.
+- Consultation requests use a conversational reply schema and never create a Tone Plan or send MIDI. Recent user/assistant dialogue is bounded to the current AI Studio session and passed into follow-up questions, NAM recommendations, audio diagnosis and tone plans.
+- Explicit requests to find an amp/NAM/capture can search TONE3000 independently of preset creation. AI ranks matching tone packs; the user opens A2 model candidates and manually chooses Import. Search itself does not import or change the preset.
+- Manual NAM import no longer auto-generates a preset from the search sentence. The installed slot-10 NAM can be used later by an explicit create/refine request.
+- Existing automatic NAM import for tone creation retains A2 validation and slot-10 installation. No Cloudflare Worker/API, USB-MIDI mapping, MIDI CC, IR import or preset-transfer code changed.
