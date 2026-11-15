@@ -1053,40 +1053,49 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
   throw new Error(lastError?.message||'No free AI provider completed the task.');
  }
  async function makePlan(prompt,bridge,audioMetrics=null,conversation=''){
-  const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
-  const namPlanGuard=activeNamContext
-   ?'\n\nAUTHORITATIVE AMP SOURCE: TONE3000 NAM is already installed in MG-30 slot 10. Do not invent, recommend, name, or claim a built-in amp model such as SLO-100, Deluxe, Friedman, etc. The app will force the selection-only NAM Slot 10 catalog entry. Your summary and notes must describe the installed NAM capture, not a fictional built-in amp replacement. Only choose compatible non-NAM effect/EQ parameters.'
-   :'';
-  const system=systemPrompt(catalog,snapshot,false,artistToneGuidance(prompt))+namPlanGuard+(audioMetrics?'\n\nLIVE USB AUDIO GUIDANCE: Use the measured audio evidence to inform this correction conservatively. The USB source is input channels 1–2 and may contain host-loopback mix; it is not a calibrated amp-only microphone measurement. Preserve unaffected blocks, NAM and IR settings.\n'+formatToneAudioMetrics(audioMetrics):'');
-  const multiMode=mode==='auto'||mode==='collab';
+  const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();
+  if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
   const localRefinement=Boolean(toneSession.intent&&isLocalToneRefinement(prompt));
-  let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent;
+  const multiMode=shouldUseMultiAgent(prompt,localRefinement?'tone_refine':'tone_create',mode,localRefinement);
+  const namPlanGuard=activeNamContext
+   ?'\n\nAUTHORITATIVE AMP SOURCE: TONE3000 NAM is installed in MG-30 slot 10. Do not invent or claim any built-in AMP model. The app selects the NAM Slot 10 selection-only entry. Never write NAM internals.'
+   :'';
+  const deltaGuard=localRefinement
+   ?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.'
+   :'';
+  const system=systemPrompt(catalog,snapshot,false,multiMode?'':artistToneGuidance(prompt))+namPlanGuard+deltaGuard;
+  let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent,hasArchitect=false,correctionUsed=false;
   if(multiMode){
    team=await resolveFreeProviderTeam();
    if(!team.length)throw new Error('No free Gemini, Groq, or OpenRouter provider is ready. Choose a configured free provider in AI Settings.');
-   if(team.length>=2&&!localRefinement){
-    const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER MUSICAL REQUEST:\n'+prompt+(audioMetrics?'\n\nMEASURED MG-30 USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):''),'defining the musical direction');
+   hasArchitect=team.length>=2&&!localRefinement;
+   if(hasArchitect){
+    const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),
+     'CURRENT USER REQUEST:\n'+prompt+(audioMetrics?'\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):''),
+     'defining the musical direction','',260);
     architectMember=architect.member;
     toneIntent=compactToneArchitectIntent(architect.result,prompt);
     toneSession.intent=toneIntent;toneSession.architectProvider=architectMember.provider;toneSession.sourcePrompt=prompt;
     message('ai','Tone Architect · '+providerNames[architectMember.provider]+': '+(toneIntent.summary||toneIntent.style||'Musical direction established.'));
    }else if(localRefinement){
-    message('ai','Tone Architect context reused for this focused refinement; no duplicate intent-analysis request was sent.');
+    message('ai','Focused edit: reusing the saved musical intent and current pedal state. No duplicate Tone Architect call.');
    }
    const preferredLead=team.find(item=>item.provider!==architectMember?.provider&&item.provider!==toneSession.architectProvider)||team.find(item=>item.provider!==architectMember?.provider)||team[0];
    const leadCandidates=[preferredLead,...team.filter(item=>item!==preferredLead)];
-   const leadSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-   const leadUser=userText(prompt,null,activeNamContext,conversation)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nNo prior Tone Architect context is available. Perform Tone Architect analysis internally before making gear and parameter decisions.')+(audioMetrics?'\n\nMEASURED MG-30 USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'');
+   const leadSystem=system+'\n\n'+toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect);
+   const leadUser=hasArchitect
+    ?JSON.stringify({state:'MG30_TONE_INTENT_V1',intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
+    :userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
+   const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'',1350);
    first=lead.result;leadMember=lead.member;
    if(!toneIntent){
     toneIntent=compactToneArchitectIntent(first,prompt);
     toneSession.intent=toneIntent;toneSession.architectProvider='';toneSession.sourcePrompt=prompt;
    }
-   if(team.length===1&&!localRefinement)message('ai','One free provider is available. Tone Architect, Gear Specialist, Parameter Engineer and Lead AI were combined into one token-efficient request.');
+   if(!hasArchitect&&!localRefinement)message('ai','A single AI handled musical interpretation, gear selection and parameter generation in one request.');
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-   const singleUser=userText(prompt,null,activeNamContext,conversation)+(toneIntent?'\n\nSHARED TONE ARCHITECT INTENT:\n'+JSON.stringify(toneIntent):'\n\nPerform the Tone Architect role internally before the Lead AI / Gear Specialist / Parameter Engineer synthesis.')+(audioMetrics?'\n\nMEASURED MG-30 USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
+   const singleUser=userText(prompt,null,activeNamContext)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
    if(!localRefinement||!toneSession.intent){
     toneSession.intent=compactToneArchitectIntent(first,prompt);
@@ -1096,27 +1105,47 @@ async function automaticNamImportForPrompt(prompt,conversation=''){
   let validated;
   try{validated=validateAiTonePlan(first,catalog);}
   catch(validationError){
-   message('ai','The first proposal did not exactly match the MG-30 catalog ('+validationError.message+'). Requesting one compact correction before sending anything.');
-   const correctionSystem=system+'\nMANDATORY CORRECTION: Re-check exact block model names and parameter keys against the compact catalog. If changing a model, include every parameter listed for that exact model. Do not guess or abbreviate names. Return corrected complete JSON only.';
-   const correctionUser=(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER REQUEST:\n'+prompt+'\nINSTALLED NAM CONTEXT:\n'+(activeNamContext||'none')+'\nTONE ARCHITECT INTENT:\n'+JSON.stringify(toneSession.intent||{})+'\nVALIDATION ERROR:\n'+validationError.message+'\nPREVIOUS INVALID PLAN:\n'+JSON.stringify(first)+'\nReturn a corrected Tone Plan and preserve unaffected blocks.';
+   correctionUsed=true;
+   const ids=new Set((Array.isArray(first?.blocks)?first.blocks:[]).map(block=>String(block?.id||'').trim().toUpperCase()));
+   const affectedCatalog=catalog.filter(block=>ids.has(block.id));
+   const affectedSnapshot=snapshot.filter(block=>ids.has(block.id));
+   const correctionSystem='You are a strict correction agent for the ORIGINAL NUX MG-30 Gen 2 firmware 6.0.x. Fix the catalog/parameter validation error. Return one complete valid Tone Plan JSON only. Use only the supplied affected-block catalogue; exact model and parameter identifiers are mandatory. Preserve unaffected blocks, NAM, IR, MIDI mapping, signal-chain order, preset slot and all unrelated state. Do not add commentary.';
+   const correctionUser=JSON.stringify({
+    tone_intent:toneSession.intent||null,
+    installed_nam:activeNamContext?String(activeNamContext).slice(0,320):null,
+    validation_error:String(validationError.message||validationError).slice(0,350),
+    previous_invalid_plan:first,
+    valid_block_ids:catalog.map(block=>block.id),
+    affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)
+   });
+   message('ai','The first proposal did not exactly match the MG-30 catalog. Requesting one focused correction for the affected blocks.');
    let corrected;
    if(multiMode&&team.length){
     const candidates=leadMember?[leadMember,...team.filter(item=>item!==leadMember)]:team;
-    corrected=(await invokeFreeTeam(candidates,correctionSystem,correctionUser,'correcting the catalog validation',leadMember?.provider||'')).result;
+    corrected=(await invokeFreeTeam(candidates,correctionSystem,correctionUser,'correcting the catalog validation',leadMember?.provider||'',850)).result;
    }else corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
    try{validated=validateAiTonePlan(corrected,catalog);first=corrected;}
    catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
-  if(multiMode&&team.length>=2&&shouldInvokeCriticalReviewer(first)){
-   const reviewerCandidates=team.filter(item=>item.provider!==leadMember?.provider);
+  // At most three provider hops: Architect → Lead → either correction OR Reviewer.
+  if(multiMode&&hasArchitect&&team.length>=2&&!correctionUsed&&shouldInvokeCriticalReviewer(first)){
+   const reviewerCandidates=team.filter(item=>item.provider!==leadMember?.provider&&!providerInCooldown(item.provider));
    if(reviewerCandidates.length){
     try{
-     const reviewerSystem=system+'\n\nROLE: Critical Reviewer. Inspect the proposed Tone Plan for musical contradictions, coupled amp/effect changes, uncertain choices, or catalog mistakes. Return one corrected complete Tone Plan in the same JSON schema. Keep unaffected blocks and do not invent catalogue entries.';
-     const reviewerUser='USER REQUEST:\n'+prompt+'\nTONE ARCHITECT INTENT:\n'+JSON.stringify(toneSession.intent||{})+'\nPROPOSED PLAN:\n'+JSON.stringify(first)+'\nREVIEW REASON:\n'+String(first.review_reason||first.reviewReason||'The Lead AI flagged a conflict, uncertainty or materially coupled change.')+'\nReturn the reviewed plan only.';
-     const reviewed=(await invokeFreeTeam(reviewerCandidates,reviewerSystem,reviewerUser,'checking a material conflict or coupled change')).result;
-     const reviewedPlan=validateAiTonePlan(reviewed,catalog);
-     first=reviewed;validated=reviewedPlan;
-     message('ai','Critical Reviewer · '+reviewerCandidates[0].provider+' checked the flagged trade-off. The reviewed plan passed the MG-30 catalog validator.');
+     const ids=new Set((first.blocks||[]).map(block=>String(block?.id||'').toUpperCase()));
+     const reviewCatalog=catalog.filter(block=>ids.has(block.id));
+     const reviewSnapshot=snapshot.filter(block=>ids.has(block.id));
+     const reviewerSystem='You are an independent Critical Reviewer for a NUX MG-30 Gen 2 Tone Plan. Inspect musical coherence, coupled changes and catalog safety. Return one corrected complete Tone Plan JSON only. Use only the supplied proposal and affected-block catalogue; never invent IDs, parameters or unsupported models. Preserve NAM, IR, MIDI mappings, preset slot and unaffected blocks. No commentary.';
+     const reviewerUser=JSON.stringify({
+      tone_intent:toneSession.intent||null,
+      proposed_plan:first,
+      review_reason:String(first.review_reason||first.reviewReason||'Lead AI flagged a material conflict or coupled change.').slice(0,240),
+      affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)
+     });
+     const review=await invokeFreeTeam(reviewerCandidates,reviewerSystem,reviewerUser,'checking a material conflict or coupled change','',850);
+     const reviewedPlan=validateAiTonePlan(review.result,catalog);
+     validated=reviewedPlan;
+     message('ai','Critical Reviewer · '+providerNames[review.member.provider]+' checked the flagged trade-off. The reviewed plan passed the MG-30 catalog validator.');
     }catch(reviewError){
      message('ai','Critical Reviewer was unavailable or returned an invalid revision; the original Lead AI plan remains in use. '+(reviewError.message||reviewError));
     }
