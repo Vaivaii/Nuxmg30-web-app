@@ -135,7 +135,7 @@ test('AI assistant interface stays English while generated tone summaries follow
   assert.match(source, /same language as the USER REQUEST/);
   assert.match(source, /same language as the USER MUSICAL REQUEST/);
   assert.doesNotMatch(source, /Keep summary and notes in English/);
-  assert.match(source, /AI ready. MG-30 connection is required for live preset transfer/);
+  assert.match(source, /AI ready. MG-30 connection is required for live tone assistance/);
   assert.match(source, /Refresh Cloud Status/);
   assert.match(source, /Undo AI Changes/);
   assert.match(source, /Parameters sent to:/);
