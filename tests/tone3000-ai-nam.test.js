@@ -107,7 +107,7 @@ test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
   assert.match(aiStudio, /pendingNamSelection/);
   assert.ok(aiStudio.includes('shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))'));
-  assert.match(aiStudio, /automaticNamImportForPrompt\(prompt,conversation\)/);
+  assert.match(aiStudio, /automaticNamImportForPrompt\(prompt,conversation,preparedPlan\)/);
   assert.match(aiStudio, /bridge\.prepareModel\(selected\.model\.id\)/);
   assert.ok(aiStudio.includes('bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})'));
   assert.ok(aiStudio.includes("chatCard('nam-confirm'"));
