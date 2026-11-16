@@ -455,7 +455,10 @@ test('Workers AI uses Gemma first then GPT-OSS, Mistral Small 3.1 and Llama 4 Sc
       async run(model, input) {
         models.push({ model, input });
         if (model === '@cf/google/gemma-4-26b-a4b-it') throw new Error('Gemma capacity unavailable');
-        if (model === '@cf/openai/gpt-oss-20b') return { response: 'not valid JSON' };
+        if (model === '@cf/openai/gpt-oss-20b') return {
+          response: 'not valid JSON',
+          usage: { prompt_tokens: 4, completion_tokens: 2, total_tokens: 6 }
+        };
         if (model === '@cf/mistralai/mistral-small-3.1-24b-instruct') return {
           response: JSON.stringify({ reply: 'Workers AI Mistral fallback responded.' }),
           usage: { prompt_tokens: 30, completion_tokens: 8, total_tokens: 38 }
@@ -473,6 +476,7 @@ test('Workers AI uses Gemma first then GPT-OSS, Mistral Small 3.1 and Llama 4 Sc
   assert.equal(body.provider, 'cloudflare');
   assert.equal(body.model, '@cf/mistralai/mistral-small-3.1-24b-instruct');
   assert.equal(body.result.reply, 'Workers AI Mistral fallback responded.');
+  assert.deepEqual(body.usage, { prompt_tokens: 34, completion_tokens: 10, total_tokens: 44 });
   assert.deepEqual(models.map(row => row.model), [
     '@cf/google/gemma-4-26b-a4b-it',
     '@cf/openai/gpt-oss-20b',
