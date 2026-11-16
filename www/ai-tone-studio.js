@@ -466,7 +466,19 @@ async function init(){
  const renderHistory=()=>{ui.messages.innerHTML=history.map(item=>item.type?'<div class="ai-tone-message ai"><small>AI TONE ASSISTANT</small>'+renderNamChatCard(item)+'</div>':'<div class="ai-tone-message '+item.role+'"><small>'+(item.role==='user'?'YOU':'AI TONE ASSISTANT')+'</small>'+esc(item.text)+'</div>').join('');renderActivity();scrollMessagesToEnd();};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>60)history.shift();renderHistory();};
  const chatCard=(type,data)=>{history.push({role:'ai',type,data:{...data,cardId:data.cardId||'nam-'+(++namCardSequence)}});while(history.length>60)history.shift();renderHistory();};
- const updateChatCard=(cardId,type,data)=>{const item=history.find(row=>row.type&&String(row.data?.cardId)===String(cardId));if(item){item.type=type;item.data={...data,cardId};renderHistory();return;}chatCard(type,{...data,cardId});};
+ const updateChatCard=(cardId,type,data)=>{
+  const item=history.find(row=>row.type&&String(row.data?.cardId)===String(cardId));
+  if(!item){chatCard(type,{...data,cardId});return;}
+  item.type=type;item.data={...data,cardId};
+  const existing=Array.from(ui.messages.querySelectorAll('[data-ai-nam-card]')).find(node=>node.dataset.aiNamCard===String(cardId));
+  if(!existing){renderHistory();return;}
+  const messageScrollTop=ui.messages.scrollTop;
+  const body=sheet.querySelector('.ai-tone-body');
+  const bodyScrollTop=body?.scrollTop||0;
+  existing.outerHTML=renderNamChatCard(item);
+  ui.messages.scrollTop=messageScrollTop;
+  if(body)body.scrollTop=bodyScrollTop;
+ };
  const removeChatCard=cardId=>{const index=history.findIndex(row=>row.type&&String(row.data?.cardId)===String(cardId));if(index>=0){history.splice(index,1);renderHistory();}};
  let namCardSequence=0;
  const aiUsage={requests:0,total:0,providers:Object.create(null),tasks:Object.create(null)};
@@ -483,7 +495,7 @@ async function init(){
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
   else if(next==='collab')void refreshAllProviderModels(true);
  };
- const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');const body=sheet.querySelector('.ai-tone-body');if(body)body.scrollTop=0;ui.messages.scrollTop=ui.messages.scrollHeight;void refreshAudioDeviceStatus();window.setTimeout(()=>{ui.messages.scrollTop=ui.messages.scrollHeight;ui.prompt.focus();},150);};
+ const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');void refreshAudioDeviceStatus();window.setTimeout(()=>{try{ui.prompt.focus({preventScroll:true});}catch{ui.prompt.focus();}},150);};
  const closePanel=()=>{if(audioCaptureActive)void stopAudioListeningWithoutAnalysis();shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
 
  const setAudioPanelExpanded=expanded=>{
@@ -764,8 +776,18 @@ async function init(){
  }));
  ui.messages.addEventListener('change',event=>{
   const radio=event.target.closest('input[data-ai-nam-capture-radio]');if(!radio)return;
-  const historyItem=history.find(item=>item.type==='nam-captures'&&String(item.data?.cardId)===String(radio.dataset.aiNamCaptureRadio));
-  if(historyItem){historyItem.data.selectedId=String(radio.value);renderHistory();}
+  const cardId=String(radio.dataset.aiNamCaptureRadio||'');
+  const historyItem=history.find(item=>item.type==='nam-captures'&&String(item.data?.cardId)===cardId);
+  if(!historyItem)return;
+  // Persist the choice in memory, but update only radio/label classes in the existing card.
+  // Never repaint chat history or move either conversation scroll container for a radio change.
+  historyItem.data.selectedId=String(radio.value);
+  const card=radio.closest('[data-ai-nam-card]');
+  if(!card)return;
+  card.querySelectorAll('input[data-ai-nam-capture-radio]').forEach(input=>{
+   const label=input.closest('.ai-tone-nam-capture');
+   if(label)label.classList.toggle('selected',input.checked);
+  });
  });
  ui.messages.addEventListener('click',async event=>{
   const view=event.target.closest('[data-ai-nam-view-captures]');
