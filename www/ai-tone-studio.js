@@ -1462,9 +1462,11 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const prompt=ui.prompt.value.trim();
   if(!prompt){status('Enter a tone request first.','error');return;}
   const conversation=conversationContextText();
-  const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);\n  const intent=classifyAssistantIntent(prompt,conversation);
+  const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);
+  const intent=classifyAssistantIntent(prompt,conversation);
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
-  const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);\n  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
+  const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);
+  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
   rememberConversation('user',prompt);
   setBusy(true);message('user',prompt);
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
