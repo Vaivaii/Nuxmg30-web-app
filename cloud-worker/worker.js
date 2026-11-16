@@ -350,6 +350,8 @@ async function runWorkersAiLightTask(body, env) {
     "tone-discussion": 520,
     "tone3000-search-terms": 180,
     "tone3000-profile-ranking": 320,
+    "tone3000-capture-selection": 320,
+    "tone3000-profile-ranking": 320,
     "tone3000-capture-selection": 320
   };
   if (!Object.prototype.hasOwnProperty.call(taskLimits, task)) {
