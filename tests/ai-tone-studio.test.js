@@ -850,6 +850,22 @@ test('Audio Listening and Settings stay pinned outside conversation scroll; conv
  assert.ok(source.includes("const scrollArea=$('aiToneScrollArea');if(scrollArea)scrollArea.scrollTop=scrollArea.scrollHeight;"),'activity updates must scroll the actual conversation container');
 });
 
+test('Audio Listening and composer docks use rounded floating surfaces and Settings height follows content',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const polishStart=source.indexOf("audioStyle.textContent += '.ai-tone-audio-panel{box-sizing:border-box!important;");
+ const polishEnd=source.indexOf("';",polishStart);
+ assert.ok(polishStart>=0&&polishEnd>polishStart,'dock and settings polish stylesheet must exist');
+ const css=source.slice(polishStart,polishEnd);
+ assert.ok(css.includes('.ai-tone-audio-panel{box-sizing:border-box!important;margin:0 10px 8px!important;'));
+ assert.ok(css.includes('border-radius:20px!important;'));
+ assert.ok(css.includes('.ai-tone-composer{box-sizing:border-box!important;width:auto!important;margin:0 10px 10px!important;'));
+ assert.ok(css.includes('background:linear-gradient(155deg,rgba(25,39,26,.98),rgba(12,20,14,.99))!important;'));
+ assert.ok(css.includes('.ai-tone-settings{box-sizing:border-box!important;position:absolute!important;'));
+ assert.ok(css.includes('bottom:auto!important;width:auto!important;height:auto!important;min-height:0!important;max-height:calc(100% - 76px)!important;'));
+ assert.equal(css.includes('bottom:calc(132px + env(safe-area-inset-bottom,0px))!important;'),false,'Settings must not reserve empty space below collapsed cards');
+ assert.ok(css.includes('.ai-tone-settings-section[open]>summary{'));
+ assert.ok(css.includes('border-radius:15px!important;'));
+});
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const start=source.indexOf('const scrollMessagesToEnd=');
