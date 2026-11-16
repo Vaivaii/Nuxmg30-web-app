@@ -153,3 +153,13 @@ Regression coverage asserts the loading card, replacement-in-place, error cleanu
 - Android debug APK: `BUILD SUCCESSFUL`; artifact `MG30-Studio-debug-APK` ID `14211041341`.
 - Extracted APK file: `MG30-Studio-Manual-A2-Capture-Fix.apk`, SHA-256 `42636ba6a33d1928f33d3d7e31876583ef549dfa2554f97050d5e344b87024e7`.
 - App-side loading/picker fix is included in this APK. Worker deploy remains a separate operation: the live Worker must be version 1.2.3 with `tone3000-profile-ranking` and `tone3000-capture-selection` allowlisted to remove the HTTP 400 recommendation errors shown in the screenshot.
+
+
+## Follow-up fix: NAM light-task allow-list and AI sheet scrolling (2026-11-16)
+
+- Root cause confirmed from the app/Worker contract: `www/ai-tone-studio.js` calls `tone3000-profile-ranking` and `tone3000-capture-selection`, while the deployed Worker source initially allowed only `tone-discussion` and `tone3000-search-terms`. This produced HTTP 400 `Unsupported lightweight AI task` and disabled AI ranking/capture recommendation.
+- Added both missing tasks to the allow-list in `cloud-worker/worker.js` and synchronized `cloud-worker/src/index.js`; each is capped at 320 output tokens.
+- Adjusted the AI sheet body to scroll vertically on mobile and reset the body/message scroll positions when reopening the sheet. This addresses the clipped/stale panel position seen after closing and reopening.
+- No NAM A2-Lite validator, slot-10 transfer, IR import/Collection, MIDI mapping, or preset serialization logic was changed.
+- New commits: Worker `db85287c5bf1dfc755a410d56e32ec70b6ec138e`, synchronized source `be04a11abe9debe7330ee4777313a927960172d1`, app UI `46973c78cf8c90720629853fd6bc9e23f94f2e88`.
+- CI run for app head: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43838160396 (pending at note creation). Physical Android/WebView validation is still required; no claim of live device verification.
