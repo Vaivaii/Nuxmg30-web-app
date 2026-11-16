@@ -820,7 +820,7 @@ async function init(){
    select.append(option);select.disabled=true;
   }
   ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto free team + models':'Model';
-  if(currentMode()==='auto'||currentMode()==='collab'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent=currentMode()==='collab'?'Free providers assigned by role':'Auto · free providers and models selected per request';select.append(option);select.disabled=true;}
+  if(currentMode()==='auto'||currentMode()==='collab'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent=currentMode()==='collab'?'Free providers assigned by role':'Auto · Cloudflare first; team joins for complex tones';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
@@ -952,7 +952,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
  }
  async function fastestReadyProviderOrder(){
   if(Date.now()<autoProviderHealthCache.expires&&autoProviderHealthCache.order.length)return autoProviderHealthCache.order.slice();
-  const providers=['gemini','groq','openrouter'];
+  const providers=['cloudflare','gemini','groq','openrouter'];
   const rows=await Promise.all(providers.map(async provider=>{
    const key=await secret(providerKeyId(provider));
    if(!key)return {provider,ok:false,error:new Error('Free provider is not configured in Cloudflare Worker.')};
@@ -1007,7 +1007,11 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,missing=[];
   let order=[];
-  if(mode==='auto'||mode==='collab'){
+  if(mode==='auto'){
+   // Ordinary Auto tasks stay on Workers AI only; do not spend external vendor RPM.
+   if(await secret('cloudflare'))order=['cloudflare'];
+   else missing.push('Cloudflare Workers AI binding AI is not configured. Auto light tasks do not probe external providers.');
+  }else if(mode==='collab'){
    try{order=await fastestReadyProviderOrder();}
    catch(error){missing.push(String(error.message||error));}
   }else order=auto?providerFallbackOrder(mode):[mode];
@@ -1050,7 +1054,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const system='Choose the single best TONE3000 NAM tone pack for the current user request. The CURRENT USER REQUEST is authoritative; recent conversation may clarify preferences but must never override a newly named artist, amp or target. Return JSON only: {"toneId":"123","reason":"alasan singkat Bahasa Indonesia"}. Select only an ID present in CANDIDATES. Prefer a direct amplifier make/model or clearly relevant amp family. If none are meaningfully relevant return {"toneId":"","reason":"tidak ada profil yang cukup relevan"}. Never invent tone details not present in the candidate fields. Write the reason in Bahasa Indonesia, 1–2 short sentences, maximum 30 words total. Keep the reason concise and factual.';
   const recent=compactNamConversation(conversation);
   const user=(recent?'RECENT CONVERSATION (compact):\\n'+recent+'\\n\\n':'')+'USER REQUEST:\\n'+prompt+'\\nAI SEARCH QUERY:\\n'+searchQuery+'\\nCANDIDATES (minified JSON):\\n'+JSON.stringify(candidates)+'\\nReturn only the requested JSON.';
-  const result=await askNamAIJson(system,user,'choosing the closest NAM tone');
+  const result=await invokeWorkersAILightTask('tone3000-profile-ranking',system,user,'choosing the closest NAM tone',320);
   const tone=tones.find(t=>String(t.id)===String(result?.toneId||''));
   if(!tone)throw new Error('No TONE3000 tone result was relevant enough for this request. Nothing was downloaded or written to the pedal.');
   return {tone,reason:conciseNamRecommendationReason(result.reason)};
@@ -1064,7 +1068,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const system='Choose the best downloadable A2-Lite NAM capture for this TONE3000 profile and the current user request. The CURRENT USER REQUEST is authoritative. Return JSON only: {"modelId":"123","reason":"alasan singkat Bahasa Indonesia"}. Select only an ID present in CANDIDATES. Downloadable eligibility has already been checked by the app; never invent IDs or capture details. Compare size/weight information and any supplied gain/cab notes. Do not infer boost/OD or cab details when the notes are silent. Let the user override the AI choice in the capture picker. Actual downloaded-file validation is authoritative. Write the reason in Bahasa Indonesia, 1–2 short sentences, maximum 30 words total.';
   const recent=compactNamConversation(conversation);
   const user=(recent?'RECENT CONVERSATION (compact):\\n'+recent+'\\n\\n':'')+'USER REQUEST:\\n'+prompt+'\\nSELECTED TONE (minified JSON):\\n'+JSON.stringify(selectedTone)+'\\nCANDIDATES (minified JSON):\\n'+JSON.stringify(candidates)+'\\nREJECTED MODEL IDS:\\n'+JSON.stringify(rejected)+'\\nReturn only the requested JSON.';
-  const result=await askNamAIJson(system,user,'selecting the closest A2-Lite capture');
+  const result=await invokeWorkersAILightTask('tone3000-capture-selection',system,user,'selecting the closest A2-Lite capture',320);
   const model=models.find(m=>String(m.id)===String(result?.modelId||'')&&m.model_url);
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
   return {model,reason:conciseNamRecommendationReason(result.reason)};
@@ -1210,7 +1214,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    }
   }
   const workerFallbackAllowed=mode==='auto'||mode==='collab'||ui.autoFallback.checked;
-  if(workerFallbackAllowed&&!providerInCooldown('cloudflare')){
+  if(workerFallbackAllowed&&!providerInCooldown('cloudflare')&&!ordered.some(item=>item.provider==='cloudflare')){
    try{
     const key=await secret('cloudflare');
     if(key){
@@ -1278,7 +1282,12 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
    const singleUser=userText(prompt,null,activeNamContext)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
+   if(mode==='auto'||mode==='cloudflare'){
+    const workerKey=await secret('cloudflare');
+    if(!workerKey)throw new Error('Cloudflare Workers AI binding AI is not configured. Auto and Cloudflare mode keep light Tone Plans off external provider RPM.');
+    first=await invokeProvider('cloudflare',workerKey,singleSystem,singleUser,WORKERS_AI_MODEL,90000,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'));
+   }else first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
+   namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
    if(!localRefinement||!toneSession.intent){
     toneSession.intent=compactToneArchitectIntent(first,prompt);
     toneSession.sourcePrompt=prompt;
