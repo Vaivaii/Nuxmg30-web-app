@@ -168,7 +168,63 @@ export function shouldAutoImportNamForTone(intent,namModeEnabled,hasInstalledNam
  return intent==='tone_refine'&&!hasInstalledNamContext;
 }
 export function estimateTokenCount(text){return Math.max(1,Math.ceil(String(text||'').length/4));}
-export function outputTokenBudgetForStage(stage){const v=String(stage||'').toLowerCase();if(v.includes('testing '))return 64;if(v.includes('deriving tone3000 search terms')||v.includes('choosing the closest nam tone')||v.includes('selecting the closest a2-lite capture'))return 180;if(v.includes('defining the musical direction'))return 260;if(v.includes('analyzing the captured mg-30 usb audio')||v.includes('answering your tone question'))return 520;if(v.includes('correcting the catalog validation')||v.includes('checking a material conflict'))return 850;if(v.includes('building your tone plan')||v.includes('synthesizing the final tone plan'))return 1350;return 700;}
+function compactNamText(value,maxLength=100){
+ if(value===null||value===undefined)return '';
+ if(typeof value==='string'||typeof value==='number'||typeof value==='boolean')return String(value).trim().slice(0,maxLength);
+ if(Array.isArray(value))return value.map(item=>compactNamText(item,40)).filter(Boolean).join(', ').slice(0,maxLength);
+ if(typeof value==='object')return compactNamText(value.name??value.label??value.title??value.value??'',maxLength);
+ return '';
+}
+export function sanitizeNamProfileCandidates(tones,limit=12){
+ return (Array.isArray(tones)?tones:[]).slice(0,Math.max(0,limit)).map(tone=>{
+  const item={id:String(tone?.id??tone?.tone_id??'')};
+  const name=compactNamText(tone?.title??tone?.name??tone?.tone_name,100);
+  const creator=compactNamText(tone?.creator??tone?.username,60);
+  const tags=(Array.isArray(tone?.tags)?tone.tags:[]).map(tag=>compactNamText(tag,32)).filter(Boolean).slice(0,8);
+  const description=compactNamText(tone?.description,100);
+  if(name)item.name=name;
+  if(creator)item.creator=creator;
+  if(tags.length)item.tags=tags;
+  if(description)item.description=description;
+  return item;
+ }).filter(item=>item.id);
+}
+export function sanitizeNamCaptureCandidates(models,rejected=[],limit=18){
+ const blocked=new Set((Array.isArray(rejected)?rejected:[]).map(id=>String(id)));
+ return (Array.isArray(models)?models:[]).filter(model=>!blocked.has(String(model?.id??''))).slice(0,Math.max(0,limit)).map(model=>{
+  const item={id:String(model?.id??model?.model_id??'')};
+  const name=compactNamText(model?.name,90);
+  const rawSize=model?.weights??model?.weight_count??model?.weightCount??model?.size;
+  const size=Array.isArray(rawSize)?rawSize.length:(rawSize&&typeof rawSize==='object'?(rawSize.count??rawSize.length??rawSize.weights??''):rawSize);
+  const notes=[model?.notes,model?.capture_notes,model?.gain_character,model?.gain,model?.cab_character,model?.cabinet_character,model?.cab,model?.cabinet,model?.description]
+   .map(value=>compactNamText(value,60)).filter(Boolean);
+  if(name)item.name=name;
+  if(size!==null&&size!==undefined&&size!=='')item.size=typeof size==='number'?size:compactNamText(size,40);
+  if(notes.length)item.notes=[...new Set(notes)].join('; ').slice(0,120);
+  return item;
+ }).filter(item=>item.id);
+}
+export function normalizeNamSearchTerms(value){
+ const raw=Array.isArray(value)?value.join(' '):String(value||'');
+ return raw.replace(/[\r\n]+/g,' ').replace(/[^\p{L}\p{N} .+_-]/gu,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean).slice(0,5).join(' ').slice(0,60);
+}
+export function compactNamConversation(value,maxLength=600){
+ const source=String(value||'').replace(/\s+/g,' ').trim();
+ return source.length>maxLength?'…'+source.slice(-maxLength):source;
+}
+export function conciseNamRecommendationReason(value){
+ const source=String(value||'').replace(/\s+/g,' ').trim();
+ if(!source)return '';
+ const sentences=(source.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[source]).slice(0,2).join(' ').trim();
+ return sentences.split(/\s+/).filter(Boolean).slice(0,30).join(' ').replace(/\s+([,.;!?])/g,'$1');
+}
+function fallbackNamSearchTerms(prompt){
+ const stop=new Set(['buat','buatkan','bikin','tolong','please','create','build','make','generate','design','guitar','gitar','tone','suara','sound','preset','profile','profil','amp','amplifier','yang','untuk','dengan','the','and','for','a','an','me','my']);
+ const words=String(prompt||'').replace(/[^\p{L}\p{N} .+_-]/gu,' ').split(/\s+/).filter(word=>word&&!stop.has(word.toLowerCase()));
+ return (words.length?words:String(prompt||'').split(/\s+/)).slice(0,5).join(' ').slice(0,60);
+}
+
+export function outputTokenBudgetForStage(stage){const v=String(stage||'').toLowerCase();if(v.includes('testing '))return 64;if(v.includes('deriving tone3000 search terms'))return 180;if(v.includes('choosing the closest nam tone')||v.includes('selecting the closest a2-lite capture'))return 320;if(v.includes('defining the musical direction'))return 260;if(v.includes('analyzing the captured mg-30 usb audio')||v.includes('answering your tone question'))return 520;if(v.includes('correcting the catalog validation')||v.includes('checking a material conflict'))return 850;if(v.includes('building your tone plan')||v.includes('synthesizing the final tone plan'))return 1350;return 700;}
 export function isComplexToneRequest(prompt){const v=String(prompt||'').toLowerCase();if(v.length>=240)return true;return /\b(dual[- ]amp|two amps|multi[- ]scene|multiple scenes|multi[- ]layer|layered tone|clean (?:and|\+) lead|rhythm and lead|verse and chorus|intro.*solo|switch(?:ing)? between|three different tones|blend(?:ed|ing)? (?:two|multiple)|hybrid rig|full arrangement|complex signal chain|studio production|detailed signal chain)\b/i.test(v);}
 export function shouldUseMultiAgent(prompt,intent='tone_create',selectedMode='auto',localRefinement=false){if(localRefinement||intent!=='tone_create')return false;if(selectedMode==='collab')return true;return selectedMode==='auto'&&isComplexToneRequest(prompt);}
 export function shouldCooldownProvider(error){const status=Number(error?.upstreamStatus||error?.status||0);if([408,425,429,500,502,503,504].includes(status))return true;const v=String(error?.message||error||'');return /high demand|capacity exceeded|temporarily unavailable|temporarily busy|server busy|timed? out|failed to fetch|network|provider rejected the request.*\b404\b/i.test(v);}
@@ -624,9 +680,9 @@ async function init(){
  function showNamGearChoice(){
   ui.namWizard.innerHTML='<p>Choose the NAM capture type. This controls the official TONE3000 catalog filter.</p><div class="ai-tone-nam-choice-row"><button class="ai-tone-nam-choice" data-ai-nam-gear="amp" type="button">Amp Only</button><button class="ai-tone-nam-choice" data-ai-nam-gear="amp-cab" type="button">Amp + Cab</button></div>';
  }
- function renderNamSearchResults(rows,query,recommendation=null,purpose='search',prompt='',conversation=''){
+ function renderNamSearchResults(rows,query,recommendation=null,purpose='search',prompt='',conversation='',preparedPlan=null){
   const best=recommendation?.tone||null;
-  pendingNamSelection={purpose,prompt,conversation,gear:activeNamGear,query,tones:rows.slice(),recommendedToneId:best?String(best.id):'',phase:'profiles'};
+  pendingNamSelection={purpose,prompt,conversation,gear:activeNamGear,query,tones:rows.slice(),recommendedToneId:best?String(best.id):'',preparedPlan,phase:'profiles'};
   chatCard('nam-profiles',{query,gear:activeNamGear,tones:rows.map(tone=>({...tone})),recommendedId:best?String(best.id):'',recommendation:best?{name:best.name,creator:best.creator,reason:recommendation.reason||''}:null});
  }
  async function beginNamSearch(gear){
@@ -946,21 +1002,28 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   return {query,reason:String(result?.reason||'')};
  }
  async function chooseNamTone(prompt,searchQuery,tones,conversation=''){
-  const candidates=tones.slice(0,12).map(t=>({id:String(t.id),name:t.name,creator:t.creator,description:t.description,makes:t.makes,tags:t.tags,gear:t.gear,sizes:t.sizes,a2ModelsCount:t.a2ModelsCount,format:t.format}));
-  const system='Choose the single best TONE3000 NAM tone pack for the current user request. The CURRENT USER REQUEST is authoritative; recent conversation may clarify preferences but must never override a newly named artist, amp or target. Return JSON only: {"toneId":"123","reason":"short reason in the same language as the USER REQUEST"}. Select only an ID present in CANDIDATES. Prefer direct amp make/model and compatible gear/size. If none are meaningfully relevant return {"toneId":"","reason":"no relevant match, explained in the USER REQUEST language"}. Never invent a tone or assert capture details not in metadata.';
-  const result=await askNamAIJson(system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER REQUEST:\n'+prompt+'\nAI SEARCH QUERY:\n'+searchQuery+'\nCANDIDATES:\n'+JSON.stringify(candidates),'choosing the closest NAM tone');
+  const candidates=sanitizeNamProfileCandidates(tones,12);
+  const system='Choose the single best TONE3000 NAM tone pack for the current user request. The CURRENT USER REQUEST is authoritative; recent conversation may clarify preferences but must never override a newly named artist, amp or target. Return JSON only: {"toneId":"123","reason":"alasan singkat Bahasa Indonesia"}. Select only an ID present in CANDIDATES. Prefer a direct amplifier make/model or clearly relevant amp family. If none are meaningfully relevant return {"toneId":"","reason":"tidak ada profil yang cukup relevan"}. Never invent tone details not present in the candidate fields. Write the reason in Bahasa Indonesia, 1–2 short sentences, maximum 30 words total. Keep the reason concise and factual.';
+  const recent=compactNamConversation(conversation);
+  const user=(recent?'RECENT CONVERSATION (compact):\\n'+recent+'\\n\\n':'')+'USER REQUEST:\\n'+prompt+'\\nAI SEARCH QUERY:\\n'+searchQuery+'\\nCANDIDATES (minified JSON):\\n'+JSON.stringify(candidates)+'\\nReturn only the requested JSON.';
+  const result=await askNamAIJson(system,user,'choosing the closest NAM tone');
   const tone=tones.find(t=>String(t.id)===String(result?.toneId||''));
   if(!tone)throw new Error('No TONE3000 tone result was relevant enough for this request. Nothing was downloaded or written to the pedal.');
-  return {tone,reason:String(result.reason||'')};
+  return {tone,reason:conciseNamRecommendationReason(result.reason)};
  }
  async function chooseNamModel(prompt,tone,models,rejected=[],conversation=''){
-  const candidates=models.filter(m=>!rejected.includes(String(m.id))).slice(0,18).map(m=>({id:String(m.id),name:m.name,size:m.size,architecture:m.architecture_version??m.architecture,description:m.description,metadata:(()=>{const meta=describeNamCaptureMetadata(tone,m,tone.gear||'amp-cab');return {drive:meta.driveMetadata,description:String(m.description||tone?.description||'').slice(0,180)};})(),downloadable:Boolean(m.model_url)}));
+  const eligible=models.filter(model=>!rejected.includes(String(model.id))&&Boolean(model.model_url));
+  const candidates=sanitizeNamCaptureCandidates(eligible,rejected,18);
   if(!candidates.length)throw new Error('No remaining downloadable A2-Lite captures are available in the selected TONE3000 tone.');
-  const system='Choose the best downloadable A2 NAM capture for the current user request from this one TONE3000 tone pack. The CURRENT USER REQUEST is authoritative; do not carry over a previous artist or tone target from conversation history. Return JSON only: {"modelId":"123","reason":"short reason in the same language as the USER REQUEST"}. Select only an ID from CANDIDATES. Do not choose a model without a download URL. Use model description and tone metadata as backup evidence for whether boost/OD is included; do not invent this when metadata is silent. Prefer a capture appropriate to the artist tone, and let the user override the selection in the capture dropdown. Actual file validation is authoritative.';
-  const result=await askNamAIJson(system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER REQUEST:\n'+prompt+'\nSELECTED TONE:\n'+JSON.stringify({name:tone.tone?.name||tone.name,creator:tone.tone?.creator||tone.creator,description:tone.tone?.description||tone.description,gear:tone.gear})+'\nCANDIDATES:\n'+JSON.stringify(candidates)+'\nREJECTED MODEL IDS:\n'+JSON.stringify(rejected),'selecting the closest A2-Lite capture');
+  const toneProfile=sanitizeNamProfileCandidates([tone?.tone||tone],1)[0]||{id:String(tone?.id??'')};
+  const selectedTone={id:toneProfile.id,name:toneProfile.name||'',creator:toneProfile.creator||'',tags:toneProfile.tags||[],description:toneProfile.description||'',gear:String(tone?.gear||'amp-cab')};
+  const system='Choose the best downloadable A2-Lite NAM capture for this TONE3000 profile and the current user request. The CURRENT USER REQUEST is authoritative. Return JSON only: {"modelId":"123","reason":"alasan singkat Bahasa Indonesia"}. Select only an ID present in CANDIDATES. Downloadable eligibility has already been checked by the app; never invent IDs or capture details. Compare size/weight information and any supplied gain/cab notes. Do not infer boost/OD or cab details when the notes are silent. Let the user override the AI choice in the capture picker. Actual downloaded-file validation is authoritative. Write the reason in Bahasa Indonesia, 1–2 short sentences, maximum 30 words total.';
+  const recent=compactNamConversation(conversation);
+  const user=(recent?'RECENT CONVERSATION (compact):\\n'+recent+'\\n\\n':'')+'USER REQUEST:\\n'+prompt+'\\nSELECTED TONE (minified JSON):\\n'+JSON.stringify(selectedTone)+'\\nCANDIDATES (minified JSON):\\n'+JSON.stringify(candidates)+'\\nREJECTED MODEL IDS:\\n'+JSON.stringify(rejected)+'\\nReturn only the requested JSON.';
+  const result=await askNamAIJson(system,user,'selecting the closest A2-Lite capture');
   const model=models.find(m=>String(m.id)===String(result?.modelId||'')&&m.model_url);
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
-  return {model,reason:String(result.reason||'')};
+  return {model,reason:conciseNamRecommendationReason(result.reason)};
  }
  function renderAiNamCapturePicker(pending){
   pending.phase='captures';
@@ -1044,7 +1107,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   message('ai','Transfer canceled. Slot 10 was not changed. Choose another capture or import when ready.');
   status('Transfer canceled. No device data was written.','idle');
  }
- async function automaticNamImportForPrompt(prompt,conversation=''){
+ async function automaticNamImportForPrompt(prompt,conversation='',preparedPlan=null){
   const bridge=window.NUXTONE3000Bridge;
   namCaptureType=inferNamCaptureType(prompt,namCaptureType);
   if(namModeActive){activeNamGear=namCaptureType;updateNamControlState();}
@@ -1053,17 +1116,21 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(!await bridge.hasSession())throw new Error('TONE3000 account is not authenticated. Open Device → TONE3000 Settings → Connect TONE3000 Account and finish sign-in.');
   if(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear){
    const completed=pendingNamSelection;pendingNamSelection=null;
-   return {success:true,tone:completed.tone,model:completed.selected.model,slotModel:activeNamModelName};
+   return {success:true,tone:completed.tone,model:completed.selected.model,slotModel:activeNamModelName,preparedPlan:completed.preparedPlan||null};
   }
-  const intent=await deriveNamSearchQuery(prompt,conversation);
+  const searchTerms=normalizeNamSearchTerms(preparedPlan?.search_terms)||fallbackNamSearchTerms(prompt);
+  if(searchTerms.length<2)throw new Error('The Tone Plan did not provide usable TONE3000 search_terms. Add an amplifier name or a clearer tone description.');
+  status('Searching TONE3000 for a fresh NAM profile for this preset…','busy');
+  const tones=await bridge.searchTones(searchTerms,{gear:activeNamGear});
+  if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+searchTerms+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. No file was downloaded and no pedal data was changed.');}
   status('Searching TONE3000 for a fresh NAM profile for this preset…','busy');
   const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. No file was downloaded and no pedal data was changed.');}
   let recommendation=null;
-  try{recommendation=await chooseNamTone(prompt,intent.query,tones,conversation);}
+  try{recommendation=await chooseNamTone(prompt,searchTerms,tones,conversation);}
   catch(error){message('ai','Profiles were found, but AI ranking was unavailable: '+(error.message||error)+'. Choose a matching profile manually.');}
   const rows=recommendation?[recommendation.tone,...tones.filter(t=>String(t.id)!==String(recommendation.tone.id))]:tones;
-  renderNamSearchResults(rows,intent.query,recommendation,'create',prompt,conversation);
+  renderNamSearchResults(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan);
   message('ai','Choose a TONE3000 profile below. I will show its A2 capture variants before downloading or transferring anything.');
   status('Fresh NAM search complete. Choose a profile to inspect its A2 captures.','success');
   return {pendingSelection:true};
@@ -1110,8 +1177,9 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const deltaGuard=localRefinement
    ?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.'
    :'';
-  const system=systemPrompt(catalog,snapshot,false,multiMode?'':artistToneGuidance(prompt))+namPlanGuard+deltaGuard;
-  let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent,hasArchitect=false,correctionUsed=false;
+  const namSearchDirective=namModeActive&&!activeNamContext?'\n\nTONE3000 SEARCH TERMS: This request is about selecting a fresh TONE3000 NAM profile. Include a top-level JSON string field "search_terms" with 2–5 concise amplifier make/model/family words, maximum 60 characters, suitable for the TONE3000 catalogue search. Infer a plausible amp family only when justified; never claim an exact artist rig. Do not omit this field.':'';
+  const system=systemPrompt(catalog,snapshot,false,multiMode?'':artistToneGuidance(prompt))+namPlanGuard+deltaGuard+namSearchDirective;
+  let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent,hasArchitect=false,correctionUsed=false,namSearchTerms='';
   if(multiMode){
    team=await resolveFreeProviderTeam();
    if(!team.length)throw new Error('No free Gemini, Groq, or OpenRouter provider is ready. Choose a configured free provider in AI Settings.');
@@ -1134,7 +1202,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
     ?JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
     :userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'',1350);
-   first=lead.result;leadMember=lead.member;
+   first=lead.result;leadMember=lead.member;namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
    if(!toneIntent){
     toneIntent=compactToneArchitectIntent(first,prompt);
     toneSession.intent=toneIntent;toneSession.architectProvider='';toneSession.sourcePrompt=prompt;
@@ -1143,7 +1211,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
    const singleUser=userText(prompt,null,activeNamContext)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
+   first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
    if(!localRefinement||!toneSession.intent){
     toneSession.intent=compactToneArchitectIntent(first,prompt);
     toneSession.sourcePrompt=prompt;
@@ -1171,7 +1239,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
     const candidates=leadMember?[leadMember,...team.filter(item=>item!==leadMember)]:team;
     corrected=(await invokeFreeTeam(candidates,correctionSystem,correctionUser,'correcting the catalog validation',leadMember?.provider||'',850)).result;
    }else corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
-   try{validated=validateAiTonePlan(corrected,catalog);first=corrected;}
+   try{validated=validateAiTonePlan(corrected,catalog);first=corrected;namSearchTerms=normalizeNamSearchTerms(corrected?.search_terms)||namSearchTerms;}
    catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
   // At most three provider hops: Architect → Lead → either correction OR Reviewer.
@@ -1191,13 +1259,14 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
      });
      const review=await invokeFreeTeam(reviewerCandidates,reviewerSystem,reviewerUser,'checking a material conflict or coupled change','',850);
      const reviewedPlan=validateAiTonePlan(review.result,catalog);
-     validated=reviewedPlan;
+     validated=reviewedPlan;namSearchTerms=normalizeNamSearchTerms(review.result?.search_terms)||namSearchTerms;
      message('ai','Critical Reviewer · '+providerNames[review.member.provider]+' checked the flagged trade-off. The reviewed plan passed the MG-30 catalog validator.');
     }catch(reviewError){
      message('ai','Critical Reviewer was unavailable or returned an invalid revision; the original Lead AI plan remains in use. '+(reviewError.message||reviewError));
     }
    }
   }
+  if(namSearchTerms)Object.defineProperty(validated,'search_terms',{value:namSearchTerms,enumerable:false,configurable:false});
   return validated;
  }
  async function submit(){
@@ -1206,7 +1275,8 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(!prompt){status('Enter a tone request first.','error');return;}
   const conversation=conversationContextText();
   const intent=classifyAssistantIntent(prompt);
-  if(intent==='tone_create'){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
+  const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
+  if(intent==='tone_create'&&!resumesImportedNamPlan){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
   rememberConversation('user',prompt);
   setBusy(true);message('user',prompt);
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
@@ -1225,18 +1295,32 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
    if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.');
+   let preparedPlan=null;
    if(shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))){
     const pendingMatchesThisRequest=Boolean(pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
+    const completedPending=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
     if(intent==='tone_create'&&!pendingMatchesThisRequest){
      activeNamContext='';activeNamModelName='';
     }
+    if(!completedPending){
+     preparedPlan=pendingMatchesThisRequest&&pendingNamSelection?.purpose==='create'?pendingNamSelection.preparedPlan||null:null;
+     if(!preparedPlan){
+      const tone3000=window.NUXTONE3000Bridge;
+      if(!activeNamGear)throw new Error('Choose Amp Only or Amp + Cab in the NAM settings before sending this tone request.');
+      if(!tone3000?.searchTones||!tone3000?.loadTone||!tone3000?.prepareModel||!tone3000?.importModel)throw new Error('The automatic TONE3000 NAM integration is unavailable. Update MG30 Studio.');
+      if(!await tone3000.hasSession())throw new Error('TONE3000 account is not authenticated. Open Device → TONE3000 Settings → Connect TONE3000 Account and finish sign-in.');
+      status('Building the Tone Plan and deriving TONE3000 search terms…','busy');
+      preparedPlan=await makePlan(prompt,bridge,audioMetricsForRequest,conversation);
+     }
+    }
     status(intent==='tone_create'?'Finding a fresh TONE3000 NAM profile for this new preset…':'Finding a TONE3000 NAM profile because no compatible NAM is installed…','busy');
-    const namResult=await automaticNamImportForPrompt(prompt,conversation);
+    const namResult=await automaticNamImportForPrompt(prompt,conversation,preparedPlan);
     if(namResult?.pendingConnection||namResult?.pendingSelection)return;
+    if(namResult?.preparedPlan)preparedPlan=namResult.preparedPlan;
    }
    if(!bridge.isConnected?.())throw new Error('The MG-30 disconnected before applying the live tone.');
    status(intent==='tone_refine'?'Diagnosing the current tone and preparing a focused correction…':'Preparing the MG-30 catalog and requesting an AI Tone Plan…','busy');
-   const plan=await makePlan(prompt,bridge,audioMetricsForRequest,conversation);
+   const plan=preparedPlan||await makePlan(prompt,bridge,audioMetricsForRequest,conversation);   const plan=await makePlan(prompt,bridge,audioMetricsForRequest,conversation);
    if(activeNamContext){
     const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
     const installed=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10&&model.name===activeNamModelName);

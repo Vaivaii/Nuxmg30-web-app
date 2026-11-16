@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider } from '../www/ai-tone-studio.js';
+import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -657,4 +657,56 @@ test('NAM capture selection survives chat rerender and transfer cannot start bef
  assert.ok(source.includes("historyItem.data.selectedId=String(radio.value);renderHistory();"));
  assert.ok(source.includes("if(!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring the selected NAM to slot 10.')"));
  assert.ok(source.includes("const result=await bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})"));
+});
+
+
+test('TONE3000 profile AI payload is allow-listed and description is capped at 100 characters',()=>{
+ const rows=sanitizeNamProfileCandidates([{id:42,title:'Fender Twin Reverb',name:'ignored',creator:'vaivaii',tags:[{name:'clean'},{name:'spring'}],description:'x'.repeat(180),avatar_url:'https://secret/avatar',created_at:'today',downloads:99,file_url:'https://secret/file',makes:['Fender'],sizes:['large'],gear:'amp-cab'}]);
+ assert.deepEqual(Object.keys(rows[0]),['id','name','creator','tags','description']);
+ assert.equal(rows[0].id,'42');assert.equal(rows[0].description.length,100);
+ assert.deepEqual(rows[0].tags,['clean','spring']);
+ assert.equal(JSON.stringify(rows).includes('avatar_url'),false);
+ assert.equal(JSON.stringify(rows).includes('file_url'),false);
+ assert.equal(JSON.stringify(rows).includes('downloads'),false);
+});
+
+test('TONE3000 A2 capture AI payload keeps only ID, name, size and concise gain/cab notes',()=>{
+ const rows=sanitizeNamCaptureCandidates([
+  {id:'m1',name:'Clean 1',size:1871,weights:[1,2,3],gain_character:'clean headroom',cab_character:'open-back 2x12',description:'captured with mild breakup',model_url:'https://secret/file',architecture_version:2,created_at:'today',user:{name:'private'}},
+  {id:'m2',name:'Rejected',size:900,model_url:'https://secret/2'}
+ ],['m2']);
+ assert.deepEqual(Object.keys(rows[0]),['id','name','size','notes']);
+ assert.equal(rows[0].size,3);
+ assert.match(rows[0].notes,/clean headroom/);
+ assert.match(rows[0].notes,/open-back 2x12/);
+ assert.equal(JSON.stringify(rows).includes('model_url'),false);
+ assert.equal(JSON.stringify(rows).includes('architecture_version'),false);
+});
+
+test('TONE3000 chooser reasons are capped at two sentences and 30 words; chooser output ceiling is 320',()=>{
+ const reason=conciseNamRecommendationReason('Profil ini paling dekat dengan karakter clean yang diminta dan punya respons dinamis. Deskripsinya juga menyebut kabinet yang relevan. Kalimat ketiga harus dibuang.');
+ assert.equal(reason.split(/\s+/).length<=30,true);
+ assert.equal((reason.match(/[.!?]/g)||[]).length<=2,true);
+ assert.equal(outputTokenBudgetForStage('choosing the closest NAM tone'),320);
+ assert.equal(outputTokenBudgetForStage('selecting the closest A2-Lite capture'),320);
+});
+
+test('Tone Plan owns automatic TONE3000 search_terms and is reused after import without a separate search-term agent',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
+ assert.match(source,/const searchTerms=normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)/);
+ assert.match(source,/renderNamSearchResults\(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan\)/);
+ assert.match(source,/preparedPlan=await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
+ assert.match(source,/preparedPlan:completed\.preparedPlan\|\|null/);
+ assert.match(source,/const plan=preparedPlan\|\|await makePlan/);
+ assert.match(source,/sanitizeNamProfileCandidates\(tones,12\)/);
+ assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
+ assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
+});
+
+test('profile and capture recommendation UI retain full local TONE3000 objects',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/tones:rows\.map\(tone=>\(\.\.\.tone\)\)/);
+ assert.match(source,/const choices=candidates\.map\(model=>\(\{tone,model,snapshot/);
+ assert.match(source,/bridge\.importModel\(pending\.selected\.model\.id,\{slotNumber:10/);
 });
