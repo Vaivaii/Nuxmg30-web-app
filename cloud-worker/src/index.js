@@ -1,12 +1,12 @@
 
-const VERSION = "1.2.2";
-const WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it";
-const WORKERS_AI_MODEL_FALLBACKS = [
-  WORKERS_AI_MODEL,
+const VERSION = "1.2.3";
+const WORKERS_AI_MODELS = [
+  "@cf/google/gemma-4-26b-a4b-it",
   "@cf/openai/gpt-oss-20b",
   "@cf/mistralai/mistral-small-3.1-24b-instruct",
   "@cf/meta/llama-4-scout-17b-16e-instruct"
 ];
+const WORKERS_AI_MODEL = WORKERS_AI_MODELS[0];
 const TOKEN_TTL_SECONDS = 604800;
 const enc = new TextEncoder();
 
@@ -233,7 +233,7 @@ function mergeProviderUsage(...rows) {
     (prompt_tokens !== null && completion_tokens !== null ? prompt_tokens + completion_tokens : null);
   return { prompt_tokens, completion_tokens, total_tokens };
 }
-async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200) {
+async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200, preferredModel = "") {
   if (!env.AI || typeof env.AI.run !== "function") {
     throw Object.assign(new Error("Cloudflare Workers AI binding AI is not configured."), { status: 503, retryable: true });
   }
@@ -241,10 +241,17 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
     { role: "system", content: String(system || "") + "\nReturn exactly one valid JSON object only. Do not use Markdown fences or explanatory text." },
     { role: "user", content: String(prompt || "") }
   ];
+  const requestedModel = String(preferredModel || "").trim();
+  if (requestedModel && !WORKERS_AI_MODELS.includes(requestedModel)) {
+    throw Object.assign(new Error("Requested Cloudflare Workers AI model is not in the approved fallback list."), { status: 400 });
+  }
+  const candidates = requestedModel
+    ? [requestedModel, ...WORKERS_AI_MODELS.filter(model => model !== requestedModel)]
+    : WORKERS_AI_MODELS;
   const limit = clampOutputTokenLimit(maxOutputTokens);
   const failures = [];
   const usageRows = [];
-  for (const model of WORKERS_AI_MODEL_FALLBACKS) {
+  for (const model of candidates) {
     let usage = null;
     try {
       // Gemma 4 uses the completion-token and thinking-template options already validated
@@ -268,7 +275,7 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
   throw error;
 }
 async function generateTonePlan(provider, model, system, prompt, env, maxOutputTokens = 1200) {
-  if (provider === "cloudflare") return generateWorkersAiJson(system, prompt, env, maxOutputTokens);
+  if (provider === "cloudflare") return generateWorkersAiJson(system, prompt, env, maxOutputTokens, model);
   const config = PROVIDERS[provider];
   if (!config) throw Object.assign(new Error("Unknown AI provider."), { status: 400 });
   const key = String(env[config.secret] || "").trim();
@@ -511,6 +518,7 @@ export default {
             TONE3000_API_KEY: Boolean(String(env.TONE3000_API_KEY || "").trim())
           },
           ai: { gemini: Boolean(env.GEMINI_API_KEY), groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY), cloudflare: Boolean(env.AI && typeof env.AI.run === "function"), gpt: Boolean(env.OPENAI_API_KEY) },
+          workers_ai_models: WORKERS_AI_MODELS,
           youtube: Boolean(youtubeApiKey(env)), tone3000_oauth_proxy: true, tone3000_service_key_fallback: Boolean(String(env.TONE3000_API_KEY || "").trim())
         });
       } else if (url.pathname === "/api/v1/status" && request.method === "GET") {
@@ -530,7 +538,8 @@ export default {
               gpt: Boolean(env.OPENAI_API_KEY), gemini: Boolean(env.GEMINI_API_KEY),
               groq: Boolean(env.GROQ_API_KEY), openrouter: Boolean(env.OPENROUTER_API_KEY),
               cloudflare: Boolean(env.AI && typeof env.AI.run === "function")
-            }
+            },
+            workers_ai_models: WORKERS_AI_MODELS
           });
         } else if (url.pathname === "/api/v1/ai/models" && request.method === "GET") {
           response = await listModels(url.searchParams.get("provider") || "", env);
@@ -558,7 +567,9 @@ export default {
                 failures.push(candidate + ": not configured"); continue;
               }
               const defaultModels = { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", openrouter: "openrouter/free", cloudflare: WORKERS_AI_MODEL };
-              const selectedModel = candidate === "cloudflare" ? WORKERS_AI_MODEL : (String(body.model || "").trim() || defaultModels[candidate]);
+              const selectedModel = candidate === "cloudflare"
+                ? (requestedProvider === "cloudflare" ? (String(body.model || "").trim() || WORKERS_AI_MODEL) : WORKERS_AI_MODEL)
+                : (String(body.model || "").trim() || defaultModels[candidate]);
               try {
                 const generated = await generateTonePlan(candidate, selectedModel, system, prompt, env, maxOutputTokens);
                 completed = { ok: true, provider: candidate, model: generated.model || selectedModel, tonePlan: generated.tonePlan, usage: generated.usage, maxOutputTokens, requestId: crypto.randomUUID() };
