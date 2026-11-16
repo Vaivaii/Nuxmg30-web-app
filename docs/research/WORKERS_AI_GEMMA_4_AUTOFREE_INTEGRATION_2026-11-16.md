@@ -163,3 +163,16 @@ Regression coverage asserts the loading card, replacement-in-place, error cleanu
 - No NAM A2-Lite validator, slot-10 transfer, IR import/Collection, MIDI mapping, or preset serialization logic was changed.
 - New commits: Worker `db85287c5bf1dfc755a410d56e32ec70b6ec138e`, synchronized source `be04a11abe9debe7330ee4777313a927960172d1`, app UI `46973c78cf8c90720629853fd6bc9e23f94f2e88`.
 - CI run for app head: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43838160396 (pending at note creation). Physical Android/WebView validation is still required; no claim of live device verification.
+
+
+## A2 capture radio selection must not move chat scroll — 2026-11-16
+
+The user confirmed that selecting a radio item in the manual A2 capture picker caused the conversation to jump to the bottom/composer. Root cause: the delegated `change` handler updated `historyItem.data.selectedId` and then called `renderHistory()`; that function rebuilds the entire chat and always calls `scrollMessagesToEnd()`.
+
+Fix committed in `www/ai-tone-studio.js`:
+- Radio selection now updates only the in-memory `selectedId` and the `.selected` class on labels in the existing `[data-ai-nam-card]` element. It does not call `renderHistory`, does not replace the capture card and does not assign either scrollTop.
+- `updateChatCard` replaces only the specific loading card's `outerHTML`, preserving both `#aiToneMessages.scrollTop` and the enclosing `.ai-tone-body.scrollTop`; it no longer redraws the whole conversation for a card-state transition.
+- `openPanel` no longer resets body/message scroll or forces focus to the composer. The sheet remains mounted while closed, so it retains the exact position the user left.
+- Regression tests verify the radio handler has no history repaint or scroll operation, the loading-card updater preserves both scroll positions, and reopening does not force the composer into view.
+
+This UI-only patch does not modify AI prompts, candidate limits, token budgets, usage accounting, Cloudflare routing, Worker endpoints, A2-Lite validation, or Slot 10 transfer. Thus the prior token-saving settings (12 profile candidates, 18 capture candidates, and 180/320 output-token limits) are unchanged.
