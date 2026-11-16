@@ -53,3 +53,9 @@
 - The measurement is refreshed when Settings opens and on viewport resize/orientation changes.
 - Settings starts at `calc(header-height + 1px)`; the opaque header keeps z-index 30 above the panel at z-index 20. This prevents Settings from covering the header while preserving the downward entrance motion.
 - Added a regression test for header measurement, viewport refresh, and the non-overlapping top offset.
+
+
+## Follow-up: restore independent Audio Listening animation styles (2026-11-16)
+- Restored the LED state styles, visually hidden audio status text, Audio Listening slide-up transition and composer stacking after a later Settings-only CSS replacement inadvertently dropped those rules.
+- The final combined stylesheet now retains both docks and Settings motion independently.
+- Header remains opaque at z-index 30; Settings is z-index 20 and begins at the measured header height plus 1px; Audio Listening is z-index 2 behind the composer at z-index 4.
