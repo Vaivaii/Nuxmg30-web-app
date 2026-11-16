@@ -827,7 +827,7 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(beforeComposer.includes('id="aiToneMessages"'));
  assert.ok(beforeComposer.includes('id=\\\"aiToneAudioPanel\\\"'));
  assert.match(beforeComposer,/AI audio is analyzed locally|Audio is analyzed locally/);
- assert.ok(source.includes('</section></div></div>",\\n \'<div class="ai-tone-composer">\'),'the scroll-area must close before the composer');
+ assert.ok(source.includes('</small></section></div></div>'), 'the scroll-area must close before the composer');
  const cssStart=source.indexOf(".ai-tone-sheet{box-sizing:border-box!important;display:grid!important");
  const cssEnd=source.indexOf("';",cssStart);
  assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative grid dock CSS must exist');
