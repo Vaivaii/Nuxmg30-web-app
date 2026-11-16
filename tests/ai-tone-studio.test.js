@@ -652,7 +652,7 @@ test('provider cooldown marks rate limits and temporary upstream failures, not a
 });
 test('Tone Architect passes one compact state to Lead; correction and Reviewer only receive affected catalog blocks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent,installed_nam:"));
+ assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent,installed_nam:"));
  assert.ok(source.includes('toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect)'));
  assert.ok(source.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
  assert.ok(source.includes('affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)'));
@@ -667,7 +667,7 @@ test('same-tone refinements request parameter deltas without regenerating a pres
 test('conversation memory is four recent turns and AI usage logging omits prompt contents',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('value.slice(0,1400)'));
- assert.ok(source.includes('while(dialogueContext.length>4)'));
+ assert.ok(source.includes('while(dialogueContext.length>8)'));
  assert.ok(source.includes("console.info('[MG30 AI TOKEN USAGE]',record)"));
  assert.ok(source.includes("usage_source:usage?'provider':'estimated_chars_div_4'"));
  const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
@@ -685,7 +685,7 @@ test('per-stage token limits are sent through Cloud API while usage is read only
 test('Lead state-passing retains the current user request but excludes prior chat history and raw audio',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
- assert.ok(plan.includes("state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent"));
+ assert.ok(plan.includes("state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent"));
  assert.equal(plan.includes('RECENT CONVERSATION:'),false);
  assert.equal(plan.includes('MEASURED USB AUDIO'),true);
 });
