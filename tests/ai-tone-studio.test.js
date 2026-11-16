@@ -828,12 +828,15 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(beforeComposer.includes('id=\\\"aiToneAudioPanel\\\"'));
  assert.match(beforeComposer,/AI audio is analyzed locally|Audio is analyzed locally/);
  assert.ok(source.includes('</section></div>",\\n \'<div class="ai-tone-composer">')||source.includes('</section></div>',composer-500));
- const cssStart=source.indexOf(".ai-tone-scroll-area{display:flex!important");
+ const cssStart=source.indexOf(".ai-tone-scroll-area{box-sizing:border-box!important;display:flex!important");
  const cssEnd=source.indexOf("';",cssStart);
  assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative scroll/dock CSS must exist');
  const css=source.slice(cssStart,cssEnd);
  assert.match(css,/overflow-y:auto!important/);
- assert.ok(source.includes('.ai-tone-sheet{box-sizing:border-box!important;display:flex!important;flex-direction:column!important;top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;bottom:0!important;height:auto!important;max-height:none!important;'));\n assert.ok(css.includes('flex:1 1 0%!important;'));\n assert.ok(css.includes('height:auto!important;max-height:none!important;'));\n assert.ok(css.includes('overflow-y:auto!important;'));
+ assert.ok(source.includes('.ai-tone-sheet{box-sizing:border-box!important;display:flex!important;flex-direction:column!important;top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;bottom:0!important;height:auto!important;max-height:none!important;'));
+ assert.ok(css.includes('flex:1 1 0%!important;'));
+ assert.ok(css.includes('height:auto!important;max-height:none!important;'));
+ assert.ok(css.includes('overflow-y:auto!important;'));
  assert.ok(css.includes('.ai-tone-composer{position:relative!important;z-index:3!important;display:flex!important;flex:0 0 auto!important;'));
  assert.ok(css.includes('.ai-tone-messages{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;'));
 });
