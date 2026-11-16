@@ -187,3 +187,31 @@ This UI-only patch does not modify AI prompts, candidate limits, token budgets, 
 - APK artifact: `MG30-Studio-debug-APK`, artifact ID `14213786317`; extracted as `MG30-Studio-No-AutoScroll-A2-Picker.apk` (SHA-256 `7c42e5dd9c3f6b7b4dc1ec0e9fbdbcd8af6b0e512ca818f34b4cc4be0fdde42e`).
 - Manual radio changes now update only the selected classes inside the existing A2 capture card; the full chat is not repainted and neither chat nor body scroll position is assigned. Loading-card replacement updates only that card and preserves both scroll positions. Reopening the sheet no longer resets the body/chat scroll or focuses the composer.
 - No Worker redeploy required for this UI-only change. Physical Android touch/scroll verification remains a user-side check; CI covers syntax, regression assertions and APK compilation.
+
+
+## Final AI conversation dock and single-scroll layout — 2026-11-16
+
+The user reported that selecting a manual NAM capture still made the conversation window jump/collapse upward and the message composer appeared partway up the sheet instead of remaining attached to the bottom of the AI window. The prior patch prevented radio-triggered chat rerender but did not structurally separate the composer from scrollable content; CSS also left both `.ai-tone-body` and `.ai-tone-messages` as competing scroll/flex regions.
+
+The final layout change in `www/ai-tone-studio.js` now creates one `.ai-tone-scroll-area#aiToneScrollArea` containing the settings/NAM controls, chat messages and audio panel. The composer (`#aiTonePrompt`, Undo/Send controls and footnote) is a sibling outside this scroll region, inside the fixed-height AI sheet, with `flex: 0 0 auto`, opaque background, top border and safe-area bottom padding. The sheet uses a fixed mobile viewport height of `94dvh`; the conversation region receives remaining space (`flex:1 1 0; min-height:0; overflow-y:auto`). Inner `.ai-tone-body` and `.ai-tone-messages` no longer create competing scroll containers.
+
+Other interaction guarantees retained:
+- Selecting a capture radio updates only the selected capture label's class and in-memory `selectedId`; it does not repaint chat history, modify scrollTop or resize/recreate the sheet.
+- Loading-card replacement changes only the target NAM card and preserves `aiToneScrollArea.scrollTop`.
+- New messages scroll the unified content region, not the inner message list.
+- Reopening the sheet does not reset scroll position or focus the composer.
+
+No AI prompts, candidate limits, token budgets, usage accounting, Cloudflare model priority, external provider fallback, NAM search, capture selection, A2-Lite validation, Slot 10 transfer, IR/User/Collection paths, MIDI mapping or MG-30 preset serialization were changed by this layout follow-up.
+
+### Final verification
+
+- Branch: `feature/multi-ai-free-tone-architect`
+- Commit: `aa10a49da74f23c951572230a221c9a17cc1c5a5`
+- GitHub Actions workflow #934: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43846820977
+- JavaScript syntax: passed.
+- Protocol / UI regression tests: **561 passed, 0 failed**.
+- Android debug APK: `BUILD SUCCESSFUL`.
+- Artifact: `MG30-Studio-debug-APK`, ID `14215961623`.
+- Extracted APK SHA-256: `5e73103e675d606f64d9ae6e6dfacff1af65ca0ab9fe3bcad4e3e175fc7fac48`.
+- APK: `MG30-Studio-Fixed-Conversation-Dock.apk`.
+- Worker redeploy is not needed for this UI-only patch. Physical Android visual/touch confirmation is still needed; CI confirms JS syntax, regression assertions and successful Android build, not a device screenshot run.
