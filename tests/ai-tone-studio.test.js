@@ -761,3 +761,15 @@ test('complex Auto Tone Architect team starts with Cloudflare before Gemini, Gro
  assert.ok(source.includes('hasArchitect=team.length>=2&&!localRefinement'));
  assert.ok(source.includes("'Tone Architect · '+providerNames[architectMember.provider]"));
 });
+
+
+test('manual TONE3000 profile selection shows a persistent loading card and replaces it with A2 capture choices',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("if(item.type==='nam-captures-loading')"));
+ assert.ok(source.includes("chatCard('nam-captures-loading',{cardId:loadingCardId,tone:"));
+ assert.ok(source.includes("renderAiNamCapturePicker(pending,loadingCardId)"));
+ assert.ok(source.includes("updateChatCard(replaceCardId,'nam-captures',data)"));
+ assert.ok(source.includes('removeChatCard(loadingCardId)'));
+ assert.ok(source.includes('window.requestAnimationFrame(()=>window.requestAnimationFrame(scroll))'));
+ assert.ok(source.includes('const selectedModel=aiChoice?.model||candidates[0]'));
+});
