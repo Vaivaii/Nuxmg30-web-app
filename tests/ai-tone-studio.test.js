@@ -833,7 +833,8 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative grid dock CSS must exist');
  const css=source.slice(cssStart,cssEnd);
  assert.ok(css.includes('grid-template-rows:auto minmax(0,1fr) auto!important;'));
- assert.ok(css.includes('top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;bottom:0!important;'));
+ assert.ok(css.includes('top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;right:auto!important;bottom:0!important;left:50%!important;width:min(720px,100%)!important;'));
+ assert.ok(css.includes('padding-bottom:0!important;overflow:hidden!important}'));
  assert.ok(css.includes('.ai-tone-scroll-area{box-sizing:border-box!important;grid-row:2!important;display:block!important;min-width:0!important;min-height:0!important;'));
  assert.ok(css.includes('overflow-y:auto!important;'));
  assert.ok(css.includes('.ai-tone-composer{grid-row:3!important;position:relative!important;z-index:3!important;display:flex!important;'));
