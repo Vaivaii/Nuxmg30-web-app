@@ -130,3 +130,15 @@ The user supplied their currently deployed Worker script, edited with Gemini. It
 The repository's standalone Worker entry point and mirrored test source `cloud-worker/src/index.js` have been kept in sync. Automated tests now assert the four IDs, all four light-task budgets, Cloudflare-first Auto order, internal fallback sequence, cumulative usage across failed/invalid model attempts, and manual model allow-list enforcement.
 
 **Deployment status:** no Cloudflare deployment was performed from this chat. The live Worker needs one redeploy from the updated Worker 1.2.3 source after CI validation. The existing APK from build #909 already contains the matching four light-task calls and Cloudflare-first Auto routing; no APK rebuild is required for Worker-only changes.
+
+
+## Manual TONE3000 profile → A2 capture blank-panel fix — 2026-11-16
+
+User screenshot review established two separate observations:
+
+1. The app received HTTP 400 `Unsupported lightweight AI task` while ranking TONE3000 NAM profiles. This identifies the live Worker deployment at screenshot time as missing the app's `tone3000-profile-ranking` task (and likely the paired `tone3000-capture-selection` task). The updated repository Worker 1.2.3 allowlists both. Deploy Worker 1.2.3 for these task calls to work; manual selection must still remain possible even when optional AI ranking fails.
+2. The manual **View A2 Captures** path showed a blank message area until the assistant panel was closed/reopened, while the automatic/recommended path remained usable. The app-side fix now inserts a persistent `nam-captures-loading` chat card before awaiting TONE3000 `loadTone` and optional AI capture ranking. On completion it updates that same card in-place to `nam-captures`, preserving the selected-profile history and preventing a blank waiting surface. On true load failure the transient card is removed and the delegated handler displays the failure message.
+
+Chat history rerender now scrolls to the last message after two animation frames, allowing the WebView flex/scroll layout to settle before applying the scroll position. If AI capture ranking returns an unsupported-task or other error, the existing fallback `aiChoice?.model || candidates[0]` still exposes the first downloadable A2 candidate and all alternatives; this does not bypass A2-Lite validation or the explicit Slot 10 import confirmation.
+
+Regression coverage asserts the loading card, replacement-in-place, error cleanup, post-layout scroll and manual first-candidate fallback. No NAM transfer protocol, Slot 10 semantics, IR collection/user paths, MIDI mapping or MG-30 catalogue logic is modified.
