@@ -47,7 +47,7 @@ All `/api/v1/*` routes require the app JWT in `Authorization: Bearer <token>`, v
 - `GET /api/v1/status`
 - `GET /api/v1/ai/providers`
 - `GET /api/v1/ai/models?provider=gpt|gemini|groq|openrouter`
-- `POST /api/v1/ai/light-task` — authenticated allow-listed lightweight tasks (`tone-discussion`, `tone3000-search-terms`) run first on `@cf/google/gemma-4-26b-a4b-it` through `env.AI`.
+- `POST /api/v1/ai/light-task` — authenticated allow-listed lightweight tasks (`tone-discussion`, `tone3000-search-terms`, `tone3000-profile-ranking`, `tone3000-capture-selection`) run only through the Cloudflare Workers AI model pool on `env.AI`.
 - `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Cloudflare Workers AI first, then Gemini, Groq and OpenRouter if the Workers AI model pool is exhausted. Explicit provider selection is also supported. OpenAI remains manual-only in the app.
 - Cloudflare Workers AI internal model order: Gemma 4 26B → GPT-OSS 20B → Mistral Small 3.1 24B → Llama 4 Scout 17B. The Worker advances on binding errors or non-JSON output and returns the model that actually succeeded.
 - The `/api/v1/ai/light-task` route supports `tone-discussion`, `tone3000-search-terms`, `tone3000-profile-ranking` and `tone3000-capture-selection`. In app Auto mode, these tasks and ordinary/single-agent Tone Plans stay on Workers AI only, preserving external provider RPM. Complex Auto Tone Architect / Collab uses Workers AI as the first team member, then the existing Gemini/Groq/OpenRouter agents.
