@@ -33,6 +33,10 @@ Use the existing Cloudflare Worker binding named `AI` (`env.AI`) with model `@cf
 - No model API key secret is required for this service binding.
 - Deployment still must be run separately against the existing `nux-mg30-studio-api` Worker.
 
+## Usage / billing note
+
+This integration avoids consuming Gemini, Groq and OpenRouter provider quota for the designated tasks, but it does not imply zero-cost inference. Cloudflare Workers AI has a daily free Neurons allocation and account usage limits; the current Cloudflare pricing page lists the Gemma 4 model at $0.100 per million input tokens and $0.300 per million output tokens. Monitor Neuron usage in the Cloudflare dashboard.
+
 ## Safety / protected scope
 
 No change to:
