@@ -691,9 +691,11 @@ test('TONE3000 chooser reasons are capped at two sentences and 30 words; chooser
  assert.equal(outputTokenBudgetForStage('selecting the closest A2-Lite capture'),320);
 });
 
-test('Tone Plan owns automatic TONE3000 search_terms and is reused after import without a separate search-term agent',()=>{
+test('Workers AI derives fresh TONE3000 search_terms after Tone Plan validation and reuses the prepared plan after import',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
+ assert.doesNotMatch(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
+ assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
+ assert.match(source,/if\(namModeActive&&!activeNamContext\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
  assert.match(source,/const searchTerms=normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)/);
  assert.match(source,/renderNamSearchResults\(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan\)/);
  assert.match(source,/preparedPlan=await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
@@ -702,6 +704,13 @@ test('Tone Plan owns automatic TONE3000 search_terms and is reused after import 
  assert.match(source,/sanitizeNamProfileCandidates\(tones,12\)/);
  assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
  assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
+});
+test('free tone discussion uses the Workers AI light-task route as its primary path',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/invokeWorkersAILightTask\('tone-discussion'/);
+ assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
+ assert.match(source,/const WORKERS_AI_MODEL = '@cf\/google\/gemma-4-26b-a4b-it'/);
+ assert.match(source,/providerNames=\{[^}]*cloudflare:'Cloudflare Workers AI'/);
 });
 
 test('profile and capture recommendation UI retain full local TONE3000 objects',()=>{
