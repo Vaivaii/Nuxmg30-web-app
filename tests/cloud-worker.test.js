@@ -27,7 +27,7 @@ test('standalone Worker parses and retains original auth health route with boole
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.version, '1.2.1');
+  assert.equal(body.version, '1.2.2');
   assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_light_task: true, ai_tone_plan: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true });
   assert.equal(body.auth_configured, true);
   assert.deepEqual(body.secret_checks, {
@@ -83,7 +83,7 @@ test('provider status returns configured flags only after local JWT verification
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.workerVersion, '1.2.1');
+  assert.equal(body.workerVersion, '1.2.2');
   assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false, cloudflare: false });
   assert.equal(JSON.stringify(body).includes('secret-openai'), false);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://localhost');
@@ -327,11 +327,18 @@ test('Workers AI light tasks parse response.response and enforce task-specific t
     AI: {
       async run(model, input) {
         calls.push({ model, input });
-        const queryTask = input.messages[1].content.includes('TONE REQUEST');
+        const prompt = input.messages[1].content;
+        const queryTask = prompt.includes('TONE REQUEST');
+        const profileTask = prompt.includes('RANK_PROFILE');
+        const captureTask = prompt.includes('SELECT_CAPTURE');
         return {
-          response: JSON.stringify(queryTask
-            ? { query: 'Fender Deluxe Reverb', reason: 'Model amplifier yang paling sesuai.' }
-            : { reply: 'Coba kurangi treble sedikit dan naikkan mids untuk artikulasi.' }),
+          response: JSON.stringify(profileTask
+            ? { toneId: '123', reason: 'Profil paling dekat dengan amplifier yang diminta.' }
+            : captureTask
+              ? { modelId: 'm2', reason: 'Capture A2 paling sesuai.' }
+              : queryTask
+                ? { query: 'Fender Deluxe Reverb', reason: 'Model amplifier yang paling sesuai.' }
+                : { reply: 'Coba kurangi treble sedikit dan naikkan mids untuk artikulasi.' }),
           usage: { prompt_tokens: 120, completion_tokens: 18, total_tokens: 138 }
         };
       }
@@ -365,14 +372,32 @@ test('Workers AI light tasks parse response.response and enforce task-specific t
   assert.equal(searchTerms.status, 200);
   assert.equal(searchBody.result.query, 'Fender Deluxe Reverb');
   assert.equal(searchBody.maxOutputTokens, 180);
-  assert.equal(calls.length, 2);
+  const profileRanking = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone3000-profile-ranking', system: 'Return toneId and reason.', prompt: 'RANK_PROFILE', maxOutputTokens: 999 })
+  }), env);
+  const profileBody = await profileRanking.json();
+  assert.equal(profileRanking.status, 200);
+  assert.equal(profileBody.result.toneId, '123');
+  assert.equal(profileBody.maxOutputTokens, 320);
+
+  const captureSelection = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone3000-capture-selection', system: 'Return modelId and reason.', prompt: 'SELECT_CAPTURE', maxOutputTokens: 999 })
+  }), env);
+  const captureBody = await captureSelection.json();
+  assert.equal(captureSelection.status, 200);
+  assert.equal(captureBody.result.modelId, 'm2');
+  assert.equal(captureBody.maxOutputTokens, 320);
+
+  assert.equal(calls.length, 4);
   assert.equal(calls[0].model, '@cf/google/gemma-4-26b-a4b-it');
   assert.equal(calls[0].input.max_completion_tokens, 520);
   assert.equal(calls[1].input.max_completion_tokens, 180);
   assert.deepEqual(calls[0].input.chat_template_kwargs, { enable_thinking: false });
 });
 
-test('AI auto Tone Plan falls back to Workers AI after Gemini, Groq and OpenRouter errors', async () => {
+test('AI auto Tone Plan prefers Workers AI before external providers', async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];
   let workersAiModel = '';
@@ -417,9 +442,43 @@ test('AI auto Tone Plan falls back to Workers AI after Gemini, Groq and OpenRout
     assert.equal(body.tonePlan.summary, 'Clean blackface tone');
     assert.deepEqual(body.tonePlan.blocks[0].parameters, { gain: 35 });
     assert.equal(workersAiModel, '@cf/google/gemma-4-26b-a4b-it');
-    assert.equal(calls.length, 3);
-    assert.match(calls[0], /generativelanguage/);
-    assert.match(calls[1], /api\.groq\.com/);
-    assert.match(calls[2], /openrouter\.ai/);
+    assert.equal(calls.length, 0);
   } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test('Workers AI uses Gemma first then GPT-OSS, Mistral Small 3.1 and Llama 4 Scout on inference or JSON failure', async () => {
+  const models = [];
+  const env = {
+    ...baseEnv,
+    AI: {
+      async run(model, input) {
+        models.push({ model, input });
+        if (model === '@cf/google/gemma-4-26b-a4b-it') throw new Error('Gemma capacity unavailable');
+        if (model === '@cf/openai/gpt-oss-20b') return { response: 'not valid JSON' };
+        if (model === '@cf/mistralai/mistral-small-3.1-24b-instruct') return {
+          response: JSON.stringify({ reply: 'Workers AI Mistral fallback responded.' }),
+          usage: { prompt_tokens: 30, completion_tokens: 8, total_tokens: 38 }
+        };
+        throw new Error('Unexpected model should not be called after success: ' + model);
+      }
+    }
+  };
+  const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone-discussion', system: 'Return JSON with reply.', prompt: 'Confirm fallback.', maxOutputTokens: 200 })
+  }), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.provider, 'cloudflare');
+  assert.equal(body.model, '@cf/mistralai/mistral-small-3.1-24b-instruct');
+  assert.equal(body.result.reply, 'Workers AI Mistral fallback responded.');
+  assert.deepEqual(models.map(row => row.model), [
+    '@cf/google/gemma-4-26b-a4b-it',
+    '@cf/openai/gpt-oss-20b',
+    '@cf/mistralai/mistral-small-3.1-24b-instruct'
+  ]);
+  assert.equal(models[0].input.max_completion_tokens, 200);
+  assert.equal(models[1].input.max_tokens, 200);
+  assert.equal(models[2].input.max_tokens, 200);
 });
