@@ -818,31 +818,34 @@ test('reopening the AI assistant does not reset body/chat scroll or force focus 
 });
 
 
-test('AI composer is a fixed dock outside one unified scrollable conversation region',()=>{
+test('Audio Listening and Settings stay pinned outside conversation scroll; conversation has no artificial tail space',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const settings=source.indexOf('<div class="ai-tone-settings" id="aiToneSettings">');
  const region=source.indexOf('<div class="ai-tone-scroll-area" id="aiToneScrollArea">');
+ const audio=source.lastIndexOf('<section class=',source.indexOf('AUDIO LISTENING'));
  const composer=source.indexOf('<div class="ai-tone-composer">');
- assert.ok(region>=0&&composer>region,'scroll region must precede the dock');
- const beforeComposer=source.slice(region,composer);
- assert.ok(beforeComposer.includes('id="aiToneMessages"'));
- assert.ok(beforeComposer.includes('id=\\\"aiToneAudioPanel\\\"'));
- assert.match(beforeComposer,/AI audio is analyzed locally|Audio is analyzed locally/);
- assert.ok(source.includes('</small></section></div></div>'), 'the scroll-area must close before the composer');
+ assert.ok(settings>=0&&settings<region,'Settings overlay must be outside and before the scroll region');
+ assert.ok(region>=0&&audio>region&&composer>audio,'conversation, Audio Listening dock, and composer must be separate siblings');
+ const conversation=source.slice(region,audio);
+ assert.ok(conversation.includes('id="aiToneMessages"'));
+ assert.equal(conversation.includes('aiToneSettings'),false,'Settings must not be nested in the conversation scroller');
+ assert.equal(conversation.includes('aiToneAudioPanel'),false,'Audio Listening must not be nested in the conversation scroller');
+ const audioDock=source.slice(audio,composer);
+ assert.match(audioDock,/Audio is analyzed locally/);
+ assert.ok(source.includes('setAudioPanelExpanded(ui.audioPanel.hidden)'),'header toggle must still collapse/expand the pinned audio dock');
  const cssStart=source.indexOf(".ai-tone-sheet{box-sizing:border-box!important;display:grid!important");
  const cssEnd=source.indexOf("';",cssStart);
  assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative grid dock CSS must exist');
  const css=source.slice(cssStart,cssEnd);
- assert.ok(css.includes('grid-template-rows:auto minmax(0,1fr) auto!important;'));
- assert.ok(css.includes('top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;right:auto!important;bottom:0!important;left:50%!important;width:min(720px,100%)!important;'));
- assert.ok(css.includes('padding-bottom:0!important;overflow:hidden!important}'));
- assert.ok(css.includes('.ai-tone-scroll-area{box-sizing:border-box!important;grid-row:2!important;display:block!important;min-width:0!important;min-height:0!important;'));
- assert.ok(css.includes('.ai-tone-body{box-sizing:border-box!important;position:relative!important;display:flex!important;flex:0 0 auto!important;flex-direction:column!important;min-width:0!important;min-height:100%!important;'));
- assert.ok(css.includes('.ai-tone-messages{box-sizing:border-box!important;display:flex!important;flex:0 0 auto!important;'));
+ assert.ok(css.includes('grid-template-rows:auto minmax(0,1fr) auto auto!important;'));
+ assert.ok(css.includes('grid-row:2!important;display:block!important;min-width:0!important;min-height:0!important;'));
+ assert.ok(css.includes('.ai-tone-body{box-sizing:border-box!important;position:relative!important;display:flex!important;flex:0 0 auto!important;flex-direction:column!important;min-width:0!important;min-height:0!important;'));
+ assert.equal(css.includes('min-height:100%!important;'),false,'conversation content must not be forced to viewport height');
+ assert.ok(css.includes('.ai-tone-audio-panel{grid-row:3!important;'));
+ assert.ok(css.includes('.ai-tone-settings{position:absolute!important;z-index:10!important;top:64px!important;'));
+ assert.ok(css.includes('.ai-tone-composer{grid-row:4!important;position:relative!important;z-index:3!important;'));
  assert.ok(css.includes('overflow-y:auto!important;'));
- assert.ok(css.includes('.ai-tone-composer{grid-row:3!important;position:relative!important;z-index:3!important;display:flex!important;'));
- assert.ok(css.includes('min-height:max-content!important;'));
- assert.ok(css.includes('.ai-tone-messages{box-sizing:border-box!important;display:flex!important;flex:0 0 auto!important;'));
- assert.equal(css.includes('grid-template-rows:auto minmax(0,1fr) auto!important;'),true);
+ assert.ok(source.includes("const scrollArea=$('aiToneScrollArea');if(scrollArea)scrollArea.scrollTop=scrollArea.scrollHeight;"),'activity updates must scroll the actual conversation container');
 });
 
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
