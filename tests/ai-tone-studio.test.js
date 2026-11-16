@@ -825,7 +825,7 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(region>=0&&composer>region,'scroll region must precede the dock');
  const beforeComposer=source.slice(region,composer);
  assert.ok(beforeComposer.includes('id="aiToneMessages"'));
- assert.ok(beforeComposer.includes('id="aiToneAudioPanel"'));
+ assert.ok(beforeComposer.includes('id=\\\"aiToneAudioPanel\\\"'));
  assert.match(beforeComposer,/AI audio is analyzed locally|Audio is analyzed locally/);
  assert.ok(source.includes('</section></div>",\\n \'<div class="ai-tone-composer">')||source.includes('</section></div>',composer-500));
  const cssStart=source.indexOf(".ai-tone-scroll-area{display:flex!important");
