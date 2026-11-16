@@ -560,7 +560,7 @@ export default {
               const selectedModel = candidate === "cloudflare" ? WORKERS_AI_MODEL : (String(body.model || "").trim() || defaultModels[candidate]);
               try {
                 const generated = await generateTonePlan(candidate, selectedModel, system, prompt, env, maxOutputTokens);
-                completed = { ok: true, provider: candidate, model: selectedModel, tonePlan: generated.tonePlan, usage: generated.usage, maxOutputTokens, requestId: crypto.randomUUID() };
+                completed = { ok: true, provider: candidate, model: generated.model || selectedModel, tonePlan: generated.tonePlan, usage: generated.usage, maxOutputTokens, requestId: crypto.randomUUID() };
                 break;
               } catch (error) {
                 failures.push(candidate + ": " + (error.message || "provider error"));
