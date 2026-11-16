@@ -773,3 +773,41 @@ test('manual TONE3000 profile selection shows a persistent loading card and repl
  assert.ok(source.includes('window.requestAnimationFrame(()=>window.requestAnimationFrame(scroll))'));
  assert.ok(source.includes('const selectedModel=aiChoice?.model||candidates[0]'));
 });
+
+
+test('selecting a manual A2 capture updates only its card and never scrolls the conversation',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const start=source.indexOf("ui.messages.addEventListener('change',event=>{");
+ const end=source.indexOf("ui.messages.addEventListener('click',async event=>{",start);
+ assert.ok(start>=0&&end>start,'capture radio change handler must exist');
+ const handler=source.slice(start,end);
+ assert.ok(handler.includes("historyItem.data.selectedId=String(radio.value)"));
+ assert.ok(handler.includes("card.querySelectorAll('input[data-ai-nam-capture-radio]')"));
+ assert.ok(handler.includes("label.classList.toggle('selected',input.checked)"));
+ assert.doesNotMatch(handler,/renderHistory\\s*\\(|scrollMessagesToEnd\\s*\\(|scrollTop\\s*=/);
+});
+
+test('replacing the loading card preserves the conversation and body scroll positions',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const start=source.indexOf('const updateChatCard=');
+ const end=source.indexOf('const removeChatCard=',start);
+ assert.ok(start>=0&&end>start,'in-place card updater must exist');
+ const updater=source.slice(start,end);
+ assert.ok(updater.includes('existing.outerHTML=renderNamChatCard(item)'));
+ assert.ok(updater.includes('const messageScrollTop=ui.messages.scrollTop'));
+ assert.ok(updater.includes('ui.messages.scrollTop=messageScrollTop'));
+ assert.ok(updater.includes('const bodyScrollTop=body?.scrollTop||0'));
+ assert.ok(updater.includes('if(body)body.scrollTop=bodyScrollTop'));
+ assert.doesNotMatch(updater,/renderHistory\\s*\\(/);
+});
+
+test('reopening the AI assistant does not reset body/chat scroll or force focus onto the composer',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const start=source.indexOf('const openPanel=');
+ const end=source.indexOf('const closePanel=',start);
+ assert.ok(start>=0&&end>start,'openPanel handler must exist');
+ const openPanel=source.slice(start,end);
+ assert.ok(openPanel.includes('shade.classList.add(\'on\')'));
+ assert.ok(openPanel.includes('sheet.classList.add(\'on\')'));
+ assert.doesNotMatch(openPanel,/scrollTop\\s*=|prompt\\.focus|scrollMessagesToEnd/);
+});
