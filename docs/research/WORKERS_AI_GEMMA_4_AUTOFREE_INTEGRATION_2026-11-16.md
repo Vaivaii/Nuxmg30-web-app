@@ -57,3 +57,17 @@ Automated Worker regression tests cover:
 4. Existing Gemini→Groq success path remains unchanged.
 
 Automated tests and CI must pass before treating the code as ready. Production deployment and a live request through the user's Cloudflare account are separate verification steps.
+
+
+## UI visibility follow-up — 2026-11-16
+
+The first application build exposed a presentation gap: Workers AI was already called for light tone discussion and TONE3000 search-term derivation, and was already the final Tone Plan fallback, but the AI Settings panel still showed only the four API-key providers. The free-team status message also named Gemini first, which obscured the separate Workers AI light-task route.
+
+The follow-up in `www/ai-tone-studio.js` now:
+- displays Cloudflare Workers AI as a fifth provider status row, driven by `providers.cloudflare` from `GET /api/v1/ai/providers`;
+- counts configured providers as `n / 5` and describes the binding as active/unavailable (not as an API-key secret);
+- adds a **Test Workers AI** action that invokes the existing authenticated `POST /api/v1/ai/light-task` `tone-discussion` path and reports the returned response;
+- exposes `Cloudflare Workers AI · Gemma 4` as a manual provider choice using the fixed `@cf/google/gemma-4-26b-a4b-it` model, without calling a provider model catalogue for it;
+- clarifies that Workers AI is primary for light discussion and TONE3000 query terms, while Gemini → Groq → OpenRouter remain the free Tone Plan provider team and Workers AI remains the final Tone Plan fallback.
+
+No Worker protocol, NAM/IR import code, MG-30 catalog validation, USB-MIDI command routing or MIDI mapping is changed by this UI-only follow-up. Automated coverage is added for the fifth provider status, test action, UI copy and manual fallback order. Results of the next CI build are to be recorded after completion.
