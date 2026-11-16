@@ -719,3 +719,22 @@ test('profile and capture recommendation UI retain full local TONE3000 objects',
  assert.ok(source.includes('const choices=candidates.map(model=>({tone,model,snapshot'));
  assert.match(source,/bridge\.importModel\(pending\.selected\.model\.id,\{slotNumber:10/);
 });
+
+
+test('Cloudflare Workers AI is visible as the fifth provider and can be tested directly',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('id="aiCloudflareBindingState"'));
+ assert.ok(source.includes('id="aiToneTestCloudflare"'));
+ assert.ok(source.includes("$('aiToneTestCloudflare').addEventListener('click',()=>{void testWorkersAI();})"));
+ assert.ok(source.includes("ui.providerSummary.textContent=configured+' / 5 configured'"));
+ assert.ok(source.includes("provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable')"));
+ assert.ok(source.includes('Cloudflare Workers AI (Gemma 4 26B) is primary for light tone discussion and TONE3000 search terms.'));
+ assert.ok(source.includes('Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI.'));
+ assert.ok(source.includes('<option value="cloudflare">Cloudflare Workers AI · Gemma 4</option>'));
+ assert.ok(source.includes("if(provider==='cloudflare'){"));
+ assert.match(source,/async function testWorkersAI\(\)[\\s\\S]*invokeWorkersAILightTask\('tone-discussion'/);
+});
+
+test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
+ assert.deepEqual(providerFallbackOrder('cloudflare'),['cloudflare','gemini','groq','openrouter']);
+});
