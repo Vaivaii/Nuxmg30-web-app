@@ -828,17 +828,18 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(beforeComposer.includes('id=\\\"aiToneAudioPanel\\\"'));
  assert.match(beforeComposer,/AI audio is analyzed locally|Audio is analyzed locally/);
  assert.ok(source.includes('</section></div>",\\n \'<div class="ai-tone-composer">')||source.includes('</section></div>',composer-500));
- const cssStart=source.indexOf(".ai-tone-scroll-area{box-sizing:border-box!important;display:flex!important");
+ const cssStart=source.indexOf(".ai-tone-sheet{box-sizing:border-box!important;display:grid!important");
  const cssEnd=source.indexOf("';",cssStart);
- assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative scroll/dock CSS must exist');
+ assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative grid dock CSS must exist');
  const css=source.slice(cssStart,cssEnd);
- assert.match(css,/overflow-y:auto!important/);
- assert.ok(source.includes('.ai-tone-sheet{box-sizing:border-box!important;display:flex!important;flex-direction:column!important;top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;bottom:0!important;height:auto!important;max-height:none!important;'));
- assert.ok(css.includes('flex:1 1 0%!important;'));
- assert.ok(css.includes('height:auto!important;max-height:none!important;'));
+ assert.ok(css.includes('grid-template-rows:auto minmax(0,1fr) auto!important;'));
+ assert.ok(css.includes('top:max(8dvh,calc(env(safe-area-inset-top,0px) + 64px))!important;bottom:0!important;'));
+ assert.ok(css.includes('.ai-tone-scroll-area{box-sizing:border-box!important;grid-row:2!important;display:block!important;min-width:0!important;min-height:0!important;'));
  assert.ok(css.includes('overflow-y:auto!important;'));
- assert.ok(css.includes('.ai-tone-composer{position:relative!important;z-index:3!important;display:flex!important;flex:0 0 auto!important;'));
+ assert.ok(css.includes('.ai-tone-composer{grid-row:3!important;position:relative!important;z-index:3!important;display:flex!important;'));
+ assert.ok(css.includes('min-height:max-content!important;'));
  assert.ok(css.includes('.ai-tone-messages{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;'));
+ assert.equal(css.includes('grid-template-rows:auto minmax(0,1fr) auto!important;'),true);
 });
 
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
