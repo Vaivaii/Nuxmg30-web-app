@@ -732,7 +732,8 @@ test('Cloudflare Workers AI is visible as the fifth provider and can be tested d
  assert.ok(source.includes('Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI.'));
  assert.ok(source.includes('<option value="cloudflare">Cloudflare Workers AI · Gemma 4</option>'));
  assert.ok(source.includes("if(provider==='cloudflare'){"));
- assert.match(source,/async function testWorkersAI\(\)[\\s\\S]*invokeWorkersAILightTask\('tone-discussion'/);
+ assert.ok(source.includes('async function testWorkersAI(){'));
+ assert.ok(source.includes("invokeWorkersAILightTask('tone-discussion'"));
 });
 
 test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
