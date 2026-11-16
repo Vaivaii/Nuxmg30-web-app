@@ -1,5 +1,5 @@
 
-const VERSION = "1.2.1";
+const VERSION = "1.2.2";
 const WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const WORKERS_AI_MODEL_FALLBACKS = [
   WORKERS_AI_MODEL,
