@@ -164,7 +164,7 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
   assert.ok(html.includes('parameters:namProfile?{}:{...states[index].values}'));
   assert.ok(source.includes('namModeActive=true;activeNamGear=gear'));
   assert.ok(source.includes('shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))'));
-  assert.ok(source.includes('automaticNamImportForPrompt(prompt,conversation)'));
+  assert.ok(source.includes('automaticNamImportForPrompt(prompt,conversation,preparedPlan)'));
 });
 
 
@@ -549,7 +549,7 @@ test('every new preset searches a fresh NAM while same-preset tweaks reuse the i
  assert.equal(shouldAutoImportNamForTone('tone_refine',true,false),true);
  assert.equal(shouldAutoImportNamForTone('consultation',true,true),false);
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(intent==='tone_create'){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}"));
+ assert.ok(source.includes("intent==='tone_create'&&!resumesImportedNamPlan"));
  assert.ok(source.includes("intent==='tone_create'&&!pendingMatchesThisRequest"));
 });
 test('NAM-backed tone summaries cannot claim that an unrelated built-in amp was applied',()=>{
@@ -706,7 +706,7 @@ test('Tone Plan owns automatic TONE3000 search_terms and is reused after import 
 
 test('profile and capture recommendation UI retain full local TONE3000 objects',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/tones:rows\.map\(tone=>\(\.\.\.tone\)\)/);
- assert.match(source,/const choices=candidates\.map\(model=>\(\{tone,model,snapshot/);
+ assert.ok(source.includes('tones:rows.map(tone=>({...tone}))'));
+ assert.ok(source.includes('const choices=candidates.map(model=>({tone,model,snapshot'));
  assert.match(source,/bridge\.importModel\(pending\.selected\.model\.id,\{slotNumber:10/);
 });
