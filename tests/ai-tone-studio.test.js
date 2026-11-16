@@ -171,7 +171,7 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 test('Auto is the default AI provider and provider model options are dropdowns', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · Free Multi-AI/);
+  assert.match(source, /value="auto" selected>Auto · Workers AI \+ Free Multi-AI/);
   assert.match(source, /id="aiToneActiveModel"/);
   assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
@@ -223,7 +223,7 @@ test('Gemini high-demand errors are classified as temporary and eligible for fal
 test('AI defaults to a free Multi-AI team while keeping GPT manual-only', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · Free Multi-AI/);
+  assert.match(source, /value="auto" selected>Auto · Workers AI \+ Free Multi-AI/);
   assert.match(source, /fastestReadyProviderOrder/);
   assert.match(source, /Auto · free providers and models selected per request/);
   assert.match(source, /No GPT model was probed or selected/);
@@ -247,7 +247,7 @@ test('automatic model selection uses the model catalogue without spending genera
 test('Groq TPM and oversized-request errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Request too large: tokens per minute (TPM) Limit 8000, Requested 12508')),true);assert.equal(isRetryableProviderError(new Error('Please reduce your message size and try again')),true);});
 test('artist tone guidance differentiates Mayer, Petrucci and Satriani',async()=>{const {artistToneGuidance}=await import('../www/ai-tone-studio.js');const a=artistToneGuidance('John Mayer lead tone'),b=artistToneGuidance('John Petrucci lead tone'),c=artistToneGuidance('Joe Satriani lead tone');assert.match(a,/edge-of-breakup/);assert.match(b,/tight high gain/);assert.match(c,/expressive saturated/);assert.notEqual(a,b);assert.notEqual(b,c);});
 test('compact tuple tone context preserves discrete choices and drops irrelevant snapshot fields',async()=>{const {compactToneContext}=await import('../www/ai-tone-studio.js');const c=compactToneContext(catalog,[{id:'AMP',model:'Deluxe Rvb',enabled:true,parameters:{gain:30},extra:'drop'}]);assert.deepEqual(c.snapshot,[['AMP','Deluxe Rvb',1,{gain:30}]]);assert.deepEqual(c.catalog.find(x=>x[0]==='MOD')[2][0][3][1],['subd',[0,1]]);});
-test('provider model dropdown defaults to auto and permits explicit manual override',()=>{const s=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(s,/Auto · Free Multi-AI/);assert.match(s,/fastestReadyModel\(provider,key\)/);assert.match(s,/mg30-ai-model-manual-/);assert.doesNotMatch(s,/row.id,10000/);});
+test('provider model dropdown defaults to auto and permits explicit manual override',()=>{const s=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(s,/Auto · Workers AI \+ Free Multi-AI/);assert.match(s,/fastestReadyModel\(provider,key\)/);assert.match(s,/mg30-ai-model-manual-/);assert.doesNotMatch(s,/row.id,10000/);});
 
 
 test('Groq length-of-messages errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Please reduce the length of the messages or completion.')),true);assert.equal(isRetryableProviderError(new Error('tokens per minute (TPM) Limit 8000, Requested 12508')),true);});
