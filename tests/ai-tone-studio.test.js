@@ -884,7 +884,7 @@ test('Audio status is a small USB LED; dock footnotes are removed and both panel
  const cssEnd=source.indexOf("';",cssStart);
  assert.ok(cssStart>=0&&cssEnd>cssStart);
  const css=source.slice(cssStart,cssEnd);
- assert.ok(css.includes('z-index:12!important'));
+ assert.ok(css.includes('z-index:30!important'));
  assert.ok(css.includes('.ai-tone-audio-panel.is-open{transform:translateY(0)!important;opacity:1!important}'));
  assert.ok(css.includes('.ai-tone-settings.is-open{transform:translateY(0)!important;opacity:1!important;pointer-events:auto!important}'));
  assert.ok(css.includes('z-index:4!important'));
