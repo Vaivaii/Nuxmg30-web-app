@@ -226,7 +226,7 @@ test('AI defaults to a free Multi-AI team while keeping GPT manual-only', () => 
   assert.match(source, /value="auto" selected>Auto · Workers AI \+ Free Multi-AI/);
   assert.match(source, /fastestReadyProviderOrder/);
   assert.match(source, /Auto · Cloudflare first; team joins for complex tones/);
-  assert.match(source, /No GPT model was probed or selected/);
+  assert.match(source, /No OpenAI GPT API model was probed or selected/);
   assert.match(source, /mode==='auto'\|\|mode==='collab'\|\|ui\.autoFallback\.checked/);
   assert.match(source, /const providers=\['gemini','groq','openrouter'\]/);
   assert.match(source, /GPT · manual \(may be paid\)/);
@@ -390,7 +390,7 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
   const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
   assert.match(auto, /\['cloudflare','gemini','groq','openrouter'\]/);
-  assert.doesNotMatch(auto, /['\"]gpt['\"]|openai/i);
+  assert.doesNotMatch(auto, /['\"]gpt['\"]|OPENAI_API_KEY|invokeProvider\('gpt'/);
   assert.match(source, /GPT · manual \(may be paid\)/);
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
   assert.match(worker, /\/api\/v1\/ai\/tone-plan/);
@@ -627,7 +627,7 @@ test('per-stage token limits are sent through Cloud API while usage is read only
  assert.ok(source.includes('body: { provider, model, system, prompt, maxOutputTokens }'));
  assert.ok(source.includes("value:'provider'")===false);
  assert.ok(source.includes("value:result.usage||null")||source.includes("value:result.usage || null"));
- assert.ok(source.includes('logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result)'));
+ assert.ok(source.includes('logAiTokenUsage(provider,result?.__aiModel||model,stage,maxOutputTokens,system,user,result)'));
 });
 
 
@@ -728,7 +728,7 @@ test('Cloudflare Workers AI is visible as the fifth provider and can be tested d
  assert.ok(source.includes("$('aiToneTestCloudflare').addEventListener('click',()=>{void testWorkersAI();})"));
  assert.ok(source.includes("ui.providerSummary.textContent=configured+' / 5 configured'"));
  assert.ok(source.includes("provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable')"));
- assert.ok(source.includes('Cloudflare Workers AI (Gemma 4 26B) is primary for light tone discussion and TONE3000 search terms.'));
+ assert.ok(source.includes('Cloudflare Workers AI is first for light tasks and the first member of the complex Tone Architect team.'));
  assert.ok(source.includes('Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI.'));
  assert.ok(source.includes('<option value="cloudflare">Cloudflare Workers AI · Gemma 4</option>'));
  assert.ok(source.includes("if(provider==='cloudflare'){"));
