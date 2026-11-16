@@ -834,8 +834,8 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  const css=source.slice(cssStart,cssEnd);
  assert.match(css,/overflow-y:auto!important/);
  assert.match(css,/\.ai-tone-sheet\{[^}]*height:94dvh!important/);
- assert.match(css,/\.ai-tone-composer\{[^}]*flex:0 0 auto!important/);
- assert.match(css,/\.ai-tone-messages\{[^}]*overflow:visible!important/);
+ assert.ok(css.includes('.ai-tone-composer{position:relative!important;z-index:3!important;display:flex!important;flex:0 0 auto!important;'));
+ assert.ok(css.includes('.ai-tone-messages{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;'));
 });
 
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
