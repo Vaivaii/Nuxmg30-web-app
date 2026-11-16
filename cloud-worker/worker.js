@@ -1,5 +1,5 @@
 
-const VERSION = "1.2.2";
+const VERSION = "1.2.3";
 const WORKERS_AI_MODELS = [
   "@cf/google/gemma-4-26b-a4b-it",
   "@cf/openai/gpt-oss-20b",
@@ -567,7 +567,9 @@ export default {
                 failures.push(candidate + ": not configured"); continue;
               }
               const defaultModels = { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", openrouter: "openrouter/free", cloudflare: WORKERS_AI_MODEL };
-              const selectedModel = candidate === "cloudflare" ? WORKERS_AI_MODEL : (String(body.model || "").trim() || defaultModels[candidate]);
+              const selectedModel = candidate === "cloudflare"
+                ? (requestedProvider === "cloudflare" ? (String(body.model || "").trim() || WORKERS_AI_MODEL) : WORKERS_AI_MODEL)
+                : (String(body.model || "").trim() || defaultModels[candidate]);
               try {
                 const generated = await generateTonePlan(candidate, selectedModel, system, prompt, env, maxOutputTokens);
                 completed = { ok: true, provider: candidate, model: generated.model || selectedModel, tonePlan: generated.tonePlan, usage: generated.usage, maxOutputTokens, requestId: crypto.randomUUID() };
