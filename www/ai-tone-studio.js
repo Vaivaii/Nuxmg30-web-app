@@ -1123,9 +1123,6 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   status('Searching TONE3000 for a fresh NAM profile for this preset…','busy');
   const tones=await bridge.searchTones(searchTerms,{gear:activeNamGear});
   if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+searchTerms+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. No file was downloaded and no pedal data was changed.');}
-  status('Searching TONE3000 for a fresh NAM profile for this preset…','busy');
-  const tones=await bridge.searchTones(intent.query,{gear:activeNamGear});
-  if(!tones.length){const meta=tones.searchMeta||{};throw new Error('TONE3000 catalog returned zero A2 NAM results for '+intent.query+'. Queries tried: '+(meta.queriesTried||[]).join(' → ')+'. API total for last search: '+Number(meta.total||0)+'. No file was downloaded and no pedal data was changed.');}
   let recommendation=null;
   try{recommendation=await chooseNamTone(prompt,searchTerms,tones,conversation);}
   catch(error){message('ai','Profiles were found, but AI ranking was unavailable: '+(error.message||error)+'. Choose a matching profile manually.');}
@@ -1320,7 +1317,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    }
    if(!bridge.isConnected?.())throw new Error('The MG-30 disconnected before applying the live tone.');
    status(intent==='tone_refine'?'Diagnosing the current tone and preparing a focused correction…':'Preparing the MG-30 catalog and requesting an AI Tone Plan…','busy');
-   const plan=preparedPlan||await makePlan(prompt,bridge,audioMetricsForRequest,conversation);   const plan=await makePlan(prompt,bridge,audioMetricsForRequest,conversation);
+   const plan=preparedPlan||await makePlan(prompt,bridge,audioMetricsForRequest,conversation);
    if(activeNamContext){
     const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
     const installed=amp?.models?.find(model=>model.kind==='nam-slot-selection'&&model.slot===10&&model.name===activeNamModelName);
