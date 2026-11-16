@@ -651,10 +651,12 @@ test('AI Settings uses compact provider and usage accordions while NAM controls 
  assert.ok(source.includes('data-ai-nam-gear="amp-cab"'));
  assert.ok(source.includes('Reset Session'));
 });
-test('NAM capture selection survives chat rerender and transfer cannot start before USB-MIDI connects',()=>{
+test('NAM capture selection updates only the selected card and transfer still requires USB-MIDI',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("ui.messages.addEventListener('change'"));
- assert.ok(source.includes("historyItem.data.selectedId=String(radio.value);renderHistory();"));
+ assert.ok(source.includes("historyItem.data.selectedId=String(radio.value)"));
+ assert.ok(source.includes("label.classList.toggle('selected',input.checked)"));
+ assert.equal(source.includes("historyItem.data.selectedId=String(radio.value);renderHistory();"),false);
  assert.ok(source.includes("if(!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring the selected NAM to slot 10.')"));
  assert.ok(source.includes("const result=await bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})"));
 });
