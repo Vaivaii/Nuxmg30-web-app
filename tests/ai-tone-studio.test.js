@@ -784,7 +784,9 @@ test('selecting a manual A2 capture updates only its card and never scrolls the 
  assert.ok(handler.includes("historyItem.data.selectedId=String(radio.value)"));
  assert.ok(handler.includes("card.querySelectorAll('input[data-ai-nam-capture-radio]')"));
  assert.ok(handler.includes("label.classList.toggle('selected',input.checked)"));
- assert.doesNotMatch(handler,/renderHistory\\s*\\(|scrollMessagesToEnd\\s*\\(|scrollTop\\s*=/);
+ assert.equal(handler.includes('renderHistory()'),false);
+ assert.equal(handler.includes('scrollMessagesToEnd()'),false);
+ assert.equal(handler.includes('scrollTop='),false);
 });
 
 test('replacing the loading card preserves the conversation and body scroll positions',()=>{
@@ -798,7 +800,7 @@ test('replacing the loading card preserves the conversation and body scroll posi
  assert.ok(updater.includes('ui.messages.scrollTop=messageScrollTop'));
  assert.ok(updater.includes('const bodyScrollTop=body?.scrollTop||0'));
  assert.ok(updater.includes('if(body)body.scrollTop=bodyScrollTop'));
- assert.doesNotMatch(updater,/renderHistory\\s*\\(/);
+ assert.equal(updater.includes('renderHistory()'),false);
 });
 
 test('reopening the AI assistant does not reset body/chat scroll or force focus onto the composer',()=>{
@@ -809,5 +811,7 @@ test('reopening the AI assistant does not reset body/chat scroll or force focus 
  const openPanel=source.slice(start,end);
  assert.ok(openPanel.includes('shade.classList.add(\'on\')'));
  assert.ok(openPanel.includes('sheet.classList.add(\'on\')'));
- assert.doesNotMatch(openPanel,/scrollTop\\s*=|prompt\\.focus|scrollMessagesToEnd/);
+ assert.equal(openPanel.includes('scrollTop='),false);
+ assert.equal(openPanel.includes('prompt.focus'),false);
+ assert.equal(openPanel.includes('scrollMessagesToEnd'),false);
 });
