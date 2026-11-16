@@ -215,3 +215,31 @@ No AI prompts, candidate limits, token budgets, usage accounting, Cloudflare mod
 - Extracted APK SHA-256: `5e73103e675d606f64d9ae6e6dfacff1af65ca0ab9fe3bcad4e3e175fc7fac48`.
 - APK: `MG30-Studio-Fixed-Conversation-Dock.apk`.
 - Worker redeploy is not needed for this UI-only patch. Physical Android visual/touch confirmation is still needed; CI confirms JS syntax, regression assertions and successful Android build, not a device screenshot run.
+
+
+## Final fixed-dock layout correction after user screenshot — 2026-11-16
+
+The user tested the previous flex-based dock APK and supplied a screenshot showing the composer directly beneath the initial assistant message, with a large empty area below. This confirmed that the flex `flex:1 1 0%` scroll region still did not occupy the available fixed-sheet height in their Android WebView. Do not treat workflow #937 (75de19f) as a visually correct dock release.
+
+The shell layout was changed from flex distribution to explicit CSS Grid tracks. The sheet remains a centered, maximum-720px fixed bottom panel; its top is anchored below the Android status/header safe region and its bottom is 0. The direct sheet children have three grid rows:
+
+1. Header: `auto`.
+2. Conversation/content: `minmax(0,1fr)` — the only sheet-level scroll container.
+3. Composer: `auto` — fixed dock row whose height comes from textarea/buttons/hint and safe-area bottom padding.
+
+The composer remains outside `#aiToneScrollArea`. The grid track, not flex-grow on a zero-height box, allocates all remaining vertical space to conversation. The previous left/right full-width geometry was removed; sheet is centered at `left:50%`, `width:min(720px,100%)`, retaining the original horizontal transform. Safe-area bottom padding is applied once by composer, not both composer and sheet.
+
+Existing no-auto-scroll behavior remains: capture radio changes update only the selected radio/label classes in the selected card; they do not repaint history or set scroll positions. Loading card replaces only its card. New chat content scrolls the unified conversation region. Opening the panel does not force the composer into view.
+
+### Final build #942
+
+- Commit: `2e762d72b9e8f4a010168ba9970f901349362c08`.
+- GitHub Actions: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43850491697
+- Regression tests: **561 passed, 0 failed**.
+- JavaScript syntax validation: passed.
+- Android Gradle: `BUILD SUCCESSFUL`.
+- Artifact ID: `14216354512`, artifact `MG30-Studio-debug-APK`.
+- Extracted APK: `MG30-Studio-Grid-Dock-Layout-Fix.apk`.
+- APK SHA-256: `a68519e9571bd3aa42594d2d84bf13afcb98c2d6b40b35ee47ab973f8593a8d8`.
+
+CI proves syntax, source-level grid/dock regression assertions and Android packaging. A local headless Chromium session could not start in the container (process timed out before rendering), so this build is not claimed as device-visual verified. User Android/WebView confirmation is still required before marking the visual issue permanently resolved. No Worker redeploy is required. No token limits, AI routing, NAM selection/import logic, A2-Lite validation, Slot 10 transfer, IR import/Collection, MIDI mapping, preset serialization or SysEx code was changed.
