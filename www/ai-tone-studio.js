@@ -303,7 +303,8 @@ export async function listAiProviderModels(provider, _credential) {
 }
 export function providerFallbackOrder(primary='gemini'){
  const freePriority=['gemini','groq','openrouter'];
- const first=freePriority.includes(primary)?primary:(primary==='gpt'?'gpt':'gemini');
+ const first=freePriority.includes(primary)?primary:(primary==='gpt'?'gpt':primary==='cloudflare'?'cloudflare':'gemini');
+ if(first==='cloudflare')return ['cloudflare',...freePriority];
  return first==='gpt'?['gpt',...freePriority]:[first,...freePriority.filter(provider=>provider!==first)];
 }
 export function isLocalToneRefinement(prompt){
