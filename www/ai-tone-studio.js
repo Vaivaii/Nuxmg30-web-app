@@ -471,7 +471,7 @@ async function init(){
   if(!item){chatCard(type,{...data,cardId});return;}
   item.type=type;item.data={...data,cardId};
   const existing=Array.from(ui.messages.querySelectorAll('[data-ai-nam-card]')).find(node=>node.dataset.aiNamCard===String(cardId));
-  if(!existing){renderHistory();return;}
+  if(!existing)return;
   const messageScrollTop=ui.messages.scrollTop;
   const body=sheet.querySelector('.ai-tone-body');
   const bodyScrollTop=body?.scrollTop||0;
