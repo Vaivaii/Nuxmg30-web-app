@@ -110,3 +110,19 @@ Release gate:
 - Roadmap documented before implementation.
 - Workstreams 1–3 are the immediate engineering focus.
 - No implementation item is considered complete until its regression test and CI result are recorded.
+
+
+## Implementation update — first reliability pass (2026-11-16)
+- Implemented context-aware follow-up intent routing for short creation commands when recent conversation contains a guitar-tone discussion.
+- Preserved explicit new artist/style requests as authoritative; ordinary questions, summaries, NAM searches and parameter refinements remain separate routes.
+- Expanded bounded dialogue memory from 4 to 8 turns.
+- Forwarded recent discussion to Tone Architect, Lead AI, Cloudflare fallback and single-agent Tone Plan prompts.
+- Reused artist guidance from recent discussion for short continuation commands when the latest message does not name a new target.
+- Validator errors now print exact allowed parameter keys for the selected block/model.
+- Tone Plan and focused correction prompts now forbid cross-model key reuse and guessed aliases. No deterministic alias is added for observed DLY/Analog Delay level or RVB/Hall mix errors because catalogue metadata does not prove those controls are interchangeable.
+- Added fixtures/tests based on original MG-30 catalogue definitions: DLY Analog Delay = rate, echo, intensity, subd; RVB Hall = decay, predelay, liveliness, level.
+
+### First-pass validation status
+- Regression tests added; pending execution in CI.
+- APK build pending CI.
+- Hardware-connected verification pending an original MG-30 Gen 2 device test.

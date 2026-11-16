@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -25,7 +25,17 @@ const catalog = [
     currentModel: 'Spring',
     models: [
       { name: 'Spring', parameters: [{ key: 'decay', kind: 'range' }, { key: 'level', kind: 'range' }] },
-      { name: 'Hall', parameters: [{ key: 'decay', kind: 'range' }, { key: 'predelay', kind: 'range' }] }
+      { name: 'Hall', parameters: [{ key: 'decay', kind: 'range' }, { key: 'predelay', kind: 'range' }, { key: 'liveliness', kind: 'range' }, { key: 'level', kind: 'range' }] }
+    ]
+  },
+  {
+    id: 'DLY',
+    currentModel: 'Analog Delay',
+    models: [
+      { name: 'Analog Delay', parameters: [
+        { key: 'rate', kind: 'range' }, { key: 'echo', kind: 'range' },
+        { key: 'intensity', kind: 'range' }, { key: 'subd', kind: 'range' }
+      ] }
     ]
   },
   {
@@ -70,6 +80,12 @@ test('rejects unknown blocks, models and parameter names', () => {
   assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { magic: 50 } }] }, catalog), /not available/);
 });
 
+test('catalog errors list only the exact parameters available on each selected effect model',()=>{
+  assert.throws(()=>validateAiTonePlan({blocks:[{id:'DLY',model:'Analog Delay',parameters:{level:48}}]},catalog),
+   /Allowed exact catalog keys: rate, echo, intensity, subd/);
+  assert.throws(()=>validateAiTonePlan({blocks:[{id:'RVB',model:'Hall',parameters:{mix:32}}]},catalog),
+   /Allowed exact catalog keys: decay, predelay, liveliness, level/);
+});
 test('rejects values outside the normalized range and invalid discrete choices', () => {
   assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 101 } }] }, catalog), /outside the supported choices\/range/);
   assert.throws(() => validateAiTonePlan({ blocks: [{ id: 'MOD', model: 'CE-1', parameters: { subd: 7 } }] }, catalog), /outside the supported choices\/range/i);
@@ -266,6 +282,13 @@ test('TONE3000 profile results and A2 capture choices render in conversation car
  assert.equal(source.includes('id="aiToneNamCaptureSelect"'),false);
  assert.ok(source.includes("bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})"));
 });
+test('catalog correction prompt forbids guessed parameter aliases and receives exact catalog keys',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('Allowed exact catalog keys:'));
+ assert.ok(source.includes('never assume synonyms such as mix, level, volume, intensity or echo are interchangeable'));
+ assert.ok(source.includes('Do not invent alias mappings.'));
+ assert.ok(source.includes('Never substitute common pedal synonyms'));
+});
 test('AI retries one invalid Tone Plan against exact catalog before MIDI apply',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.ok(source.includes('first proposal did not exactly match the MG-30 catalog'));assert.ok(source.includes('correcting the catalog validation'));assert.ok(source.includes('No MIDI changes were sent'));});
 test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: clampOutputTokenLimit(maxOutputTokens)'));
   assert.ok(source.includes('max_tokens: clampOutputTokenLimit(maxOutputTokens)'));
@@ -458,6 +481,24 @@ test('assistant classifies consultation, preset creation, refinement, audio anal
  assert.equal(classifyAssistantIntent('Carikan profile NAM Vox AC30'),'nam_search');
  assert.equal(classifyAssistantIntent('Find an amp capture for a Fender Deluxe'),'nam_search');
 });
+function expectedJohnMayerGuidance(){return 'ARTIST TONE: John Mayer-inspired blues/pop lead. Prefer touch-sensitive clean to edge-of-breakup response, warm lows, present mids, restrained treble, subtle modulation, short/medium delay and tasteful spring/plate/hall reverb. Avoid high-gain metal voicing. This is a stylistic target, not a claim about exact studio gear.';}
+test('short follow-up commands continue the current tone discussion into Tone Plan creation',()=>{
+ const context=[
+  'User: Saya ingin karakter John Mayer, clean yang hangat dengan sedikit edge of breakup dan delay pendek.',
+  'Assistant: Kita bisa memakai amp clean yang touch-sensitive, reverb tipis, dan delay yang tidak mengganggu artikulasi.',
+  'User: Saya suka karakter mid yang halus dan dinamika picking tetap terasa.'
+ ].join('\\n');
+ assert.equal(isToneCreationFollowUp('Oke, buatkan sekarang',context),true);
+ assert.equal(classifyAssistantIntent('Oke, buatkan sekarang',context),'tone_create');
+ assert.equal(classifyAssistantIntent('Terapkan rekomendasi tadi',context),'tone_create');
+ assert.equal(classifyAssistantIntent('Go ahead and build it',context),'tone_create');
+ assert.equal(resolveArtistToneGuidance('Oke, buatkan sekarang',context),expectedJohnMayerGuidance());
+ assert.equal(classifyAssistantIntent('Apa pengaruh reverb terhadap sustain?',context),'consultation');
+ assert.equal(classifyAssistantIntent('Buatkan ringkasan diskusi tone tadi',context),'consultation');
+ assert.equal(classifyAssistantIntent('Kurangi sedikit delay dan reverb',context),'tone_refine');
+ assert.equal(classifyAssistantIntent('Buat preset John Mayer baru',context),'tone_create');
+ assert.equal(isToneCreationFollowUp('Oke, buatkan sekarang','User: Bahas IR routing dan transfer file.'),false);
+});
 test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only requests',()=>{
  assert.equal(inferNamCaptureType('Carikan NAM capture untuk Vox AC30'),'amp-cab');
  assert.equal(inferNamCaptureType('Find an Amp Only capture for a Deluxe Reverb'),'amp');
@@ -515,6 +556,16 @@ test('recent conversation context is carried into audio diagnosis and Tone Plans
  assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
  assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
  assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
+});
+test('recent conversation is forwarded to Tone Architect, Lead AI and single-agent plan creation',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('RECENT TONE DISCUSSION (oldest first)'));
+ assert.ok(source.includes('conversation:compactNamConversation(conversation,1800)'));
+ assert.ok(source.includes('userText(prompt,null,activeNamContext,conversation)'));
+ assert.ok(source.includes('const conversationContextText=()=>dialogueContext.slice(-8)'));
+ assert.ok(source.includes('while(dialogueContext.length>8)dialogueContext.shift()'));
+ assert.ok(source.includes('resolveArtistToneGuidance(prompt,conversation)'));
+ assert.ok(source.includes('const keepToneSessionForContinuation='));
 });
 test('standalone NAM search and import stay in chat and never auto-create a preset',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
