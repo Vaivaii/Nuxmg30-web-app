@@ -245,6 +245,7 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
   const failures = [];
   const usageRows = [];
   for (const model of WORKERS_AI_MODEL_FALLBACKS) {
+    let usage = null;
     try {
       // Gemma 4 uses the completion-token and thinking-template options already validated
       // by the MG30 integration. The other Workers AI chat models use max_tokens.
@@ -252,12 +253,12 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
         ? { messages, temperature: 0.2, max_completion_tokens: limit, chat_template_kwargs: { enable_thinking: false } }
         : { messages, temperature: 0.2, max_tokens: limit };
       const body = await env.AI.run(model, options);
-      const usage = normalizeWorkersAiUsage(body);
-      if (usage) usageRows.push(usage);
+      usage = normalizeWorkersAiUsage(body);
       const tonePlan = extractJsonObject(workersAiText(body));
-      return { tonePlan, usage, model };
+      return { tonePlan, usage: mergeProviderUsage(...usageRows, usage), model };
     } catch (error) {
-      if (error?.usage) usageRows.push(error.usage);
+      if (usage) usageRows.push(usage);
+      else if (error?.usage) usageRows.push(error.usage);
       failures.push(model + ": " + String(error?.message || "inference or JSON validation failed").slice(0, 220));
     }
   }
