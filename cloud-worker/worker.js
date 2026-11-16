@@ -239,7 +239,7 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
         { role: "user", content: String(prompt || "") }
       ],
       temperature: 0.2,
-      max_tokens: clampOutputTokenLimit(maxOutputTokens),
+      max_completion_tokens: clampOutputTokenLimit(maxOutputTokens),
       chat_template_kwargs: { enable_thinking: false }
     });
   } catch (error) {
@@ -478,7 +478,7 @@ export default {
         response = json({
           ok: true, service: "nux-mg30-studio-api", version: VERSION,
           gateway_routes: {
-            status: true, ai_providers: true, ai_models: true, ai_tone_plan: true,
+            status: true, ai_providers: true, ai_models: true, ai_light_task: true, ai_tone_plan: true,
             youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true
           },
           auth_configured: Boolean(String(env.APP_LOGIN_USERNAME || "").trim() && String(env.APP_LOGIN_PASSWORD || "").trim() && String(env.APP_AUTH_SECRET || "").trim()),
