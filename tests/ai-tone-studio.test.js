@@ -225,7 +225,7 @@ test('AI defaults to a free Multi-AI team while keeping GPT manual-only', () => 
   assert.match(source, /let mode='auto'/);
   assert.match(source, /value="auto" selected>Auto · Workers AI \+ Free Multi-AI/);
   assert.match(source, /fastestReadyProviderOrder/);
-  assert.match(source, /Auto · free providers and models selected per request/);
+  assert.match(source, /Auto · Cloudflare first; team joins for complex tones/);
   assert.match(source, /No GPT model was probed or selected/);
   assert.match(source, /mode==='auto'\|\|mode==='collab'\|\|ui\.autoFallback\.checked/);
   assert.match(source, /const providers=\['gemini','groq','openrouter'\]/);
@@ -240,7 +240,7 @@ test('automatic model selection uses the model catalogue without spending genera
   assert.match(selection, /providerModels\[provider\]/);
   assert.match(selection, /localStorage\.setItem\(modelStorageKey\(provider\),chosen\)/);
   assert.doesNotMatch(selection, /row\.id,10000|invokeProvider\(/);
-  assert.match(selection, /const providers=\['gemini','groq','openrouter'\]/);
+  assert.match(selection, /const providers=\['cloudflare','gemini','groq','openrouter'\]/);
   assert.doesNotMatch(selection, /'gpt'/);
 });
 
@@ -389,7 +389,7 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   const auto = source.slice(source.indexOf('async function fastestReadyProviderOrder'), source.indexOf('async function testProvider'));
   const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
   const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
-  assert.match(auto, /\['gemini','groq','openrouter'\]/);
+  assert.match(auto, /\['cloudflare','gemini','groq','openrouter'\]/);
   assert.doesNotMatch(auto, /['\"]gpt['\"]|openai/i);
   assert.match(source, /GPT · manual \(may be paid\)/);
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
@@ -738,4 +738,26 @@ test('Cloudflare Workers AI is visible as the fifth provider and can be tested d
 
 test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
  assert.deepEqual(providerFallbackOrder('cloudflare'),['cloudflare','gemini','groq','openrouter']);
+});
+
+
+test('Auto mode keeps ordinary Tone Plans and every TONE3000 ranking stage on Cloudflare Workers AI only',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
+ assert.ok(source.includes("first=await invokeProvider('cloudflare',workerKey,singleSystem,singleUser,WORKERS_AI_MODEL"));
+ assert.ok(source.includes("if(mode==='auto'){"));
+ assert.ok(source.includes("if(await secret('cloudflare'))order=['cloudflare'];"));
+ assert.ok(source.includes("invokeWorkersAILightTask('tone-discussion'"));
+ assert.ok(source.includes("invokeWorkersAILightTask('tone3000-search-terms'"));
+ assert.ok(source.includes("invokeWorkersAILightTask('tone3000-profile-ranking'"));
+ assert.ok(source.includes("invokeWorkersAILightTask('tone3000-capture-selection'"));
+});
+
+test('complex Auto Tone Architect team starts with Cloudflare before Gemini, Groq and OpenRouter',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
+ assert.match(team,/const providers=\['cloudflare','gemini','groq','openrouter'\]/);
+ assert.ok(source.includes('async function resolveFreeProviderTeam()'));
+ assert.ok(source.includes('hasArchitect=team.length>=2&&!localRefinement'));
+ assert.ok(source.includes("'Tone Architect · '+providerNames[architectMember.provider]"));
 });
