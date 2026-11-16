@@ -1,6 +1,12 @@
 
 const VERSION = "1.2.1";
 const WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it";
+const WORKERS_AI_MODEL_FALLBACKS = [
+  WORKERS_AI_MODEL,
+  "@cf/openai/gpt-oss-20b",
+  "@cf/mistralai/mistral-small-3.1-24b-instruct",
+  "@cf/meta/llama-4-scout-17b-16e-instruct"
+];
 const TOKEN_TTL_SECONDS = 604800;
 const enc = new TextEncoder();
 
@@ -231,31 +237,34 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
   if (!env.AI || typeof env.AI.run !== "function") {
     throw Object.assign(new Error("Cloudflare Workers AI binding AI is not configured."), { status: 503, retryable: true });
   }
-  let body;
-  try {
-    body = await env.AI.run(WORKERS_AI_MODEL, {
-      messages: [
-        { role: "system", content: String(system || "") + "\nReturn exactly one valid JSON object only. Do not use Markdown fences or explanatory text." },
-        { role: "user", content: String(prompt || "") }
-      ],
-      temperature: 0.2,
-      max_completion_tokens: clampOutputTokenLimit(maxOutputTokens),
-      chat_template_kwargs: { enable_thinking: false }
-    });
-  } catch (error) {
-    throw Object.assign(new Error(String(error?.message || "Cloudflare Workers AI inference failed.").slice(0, 300)), {
-      status: Number(error?.status) || 502, retryable: true
-    });
+  const messages = [
+    { role: "system", content: String(system || "") + "\nReturn exactly one valid JSON object only. Do not use Markdown fences or explanatory text." },
+    { role: "user", content: String(prompt || "") }
+  ];
+  const limit = clampOutputTokenLimit(maxOutputTokens);
+  const failures = [];
+  const usageRows = [];
+  for (const model of WORKERS_AI_MODEL_FALLBACKS) {
+    try {
+      // Gemma 4 uses the completion-token and thinking-template options already validated
+      // by the MG30 integration. The other Workers AI chat models use max_tokens.
+      const options = model === WORKERS_AI_MODEL
+        ? { messages, temperature: 0.2, max_completion_tokens: limit, chat_template_kwargs: { enable_thinking: false } }
+        : { messages, temperature: 0.2, max_tokens: limit };
+      const body = await env.AI.run(model, options);
+      const usage = normalizeWorkersAiUsage(body);
+      if (usage) usageRows.push(usage);
+      const tonePlan = extractJsonObject(workersAiText(body));
+      return { tonePlan, usage, model };
+    } catch (error) {
+      if (error?.usage) usageRows.push(error.usage);
+      failures.push(model + ": " + String(error?.message || "inference or JSON validation failed").slice(0, 220));
+    }
   }
-  const usage = normalizeWorkersAiUsage(body);
-  try {
-    // Workers AI's binding commonly returns generated text in response.response.
-    // Convert that field into the same JSON parser path used by Gemini/OpenAI-compatible providers.
-    return { tonePlan: extractJsonObject(workersAiText(body)), usage };
-  } catch (error) {
-    error.usage = usage;
-    throw error;
-  }
+  const error = Object.assign(new Error("All configured Cloudflare Workers AI models failed. " + failures.join(" | ").slice(0, 900)), {
+    status: 502, retryable: true, usage: mergeProviderUsage(...usageRows)
+  });
+  throw error;
 }
 async function generateTonePlan(provider, model, system, prompt, env, maxOutputTokens = 1200) {
   if (provider === "cloudflare") return generateWorkersAiJson(system, prompt, env, maxOutputTokens);
@@ -329,7 +338,12 @@ async function generateTonePlan(provider, model, system, prompt, env, maxOutputT
 }
 async function runWorkersAiLightTask(body, env) {
   const task = String(body?.task || "");
-  const taskLimits = { "tone-discussion": 520, "tone3000-search-terms": 180 };
+  const taskLimits = {
+    "tone-discussion": 520,
+    "tone3000-search-terms": 180,
+    "tone3000-profile-ranking": 320,
+    "tone3000-capture-selection": 320
+  };
   if (!Object.prototype.hasOwnProperty.call(taskLimits, task)) {
     return json({ ok: false, error: "Unsupported lightweight AI task." }, 400);
   }
@@ -344,7 +358,7 @@ async function runWorkersAiLightTask(body, env) {
     : taskLimits[task];
   const generated = await generateWorkersAiJson(system, prompt, env, maxOutputTokens);
   return json({
-    ok: true, task, provider: "cloudflare", model: WORKERS_AI_MODEL,
+    ok: true, task, provider: "cloudflare", model: generated.model || WORKERS_AI_MODEL,
     result: generated.tonePlan, usage: generated.usage, maxOutputTokens
   });
 }
@@ -530,7 +544,7 @@ export default {
           const maxOutputTokens = clampOutputTokenLimit(body.maxOutputTokens);
           if (system.length > 180_000 || prompt.length > 40_000 || !system || !prompt) response = json({ ok: false, error: "AI request content is missing or exceeds the allowed size." }, 400);
           else {
-            const order = requestedProvider === "auto" ? ["gemini", "groq", "openrouter", "cloudflare"] : [requestedProvider];
+            const order = requestedProvider === "auto" ? ["cloudflare", "gemini", "groq", "openrouter"] : [requestedProvider];
             const failures = [];
             let completed = null;
             for (const candidate of order) {
@@ -550,8 +564,8 @@ export default {
                 break;
               } catch (error) {
                 failures.push(candidate + ": " + (error.message || "provider error"));
-                // Auto mode advances through every configured provider error, not only 429/5xx.
-                // Workers AI is deliberately the last fallback after Gemini, Groq and OpenRouter.
+                // Auto mode prioritizes Cloudflare Workers AI. If its internal model pool fails,
+                // continue through external providers only for callers explicitly using Worker auto.
                 if (requestedProvider !== "auto") {
                   response = json({ ok: false, error: error.message || "AI provider request failed.", requestId: crypto.randomUUID() }, error.status || 502);
                   break;
