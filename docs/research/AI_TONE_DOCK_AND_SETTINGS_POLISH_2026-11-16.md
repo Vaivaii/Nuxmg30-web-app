@@ -26,3 +26,13 @@
 ## Validation boundary
 - GitHub Actions syntax, Node regression tests and Android APK build must complete successfully for the latest commit before CI success is claimed.
 - Physical Android WebView checks remain necessary for visual tuning, disclosure behavior and keyboard/safe-area interaction.
+
+
+## Follow-up: compact dock labels and layered slide animations (2026-11-16)
+- Removed the Save-to-Device helper paragraph below the composer.
+- Removed the USB Audio explanatory footnote below Audio Listening.
+- Replaced visible USB connection/error text beside Audio Listening with a compact LED beside the title: lime glow when MG-30 USB Audio is detected, muted when unavailable/checking. Accessible connection text remains in the indicator's `aria-label`; the status live region is visually hidden.
+- The old red/orange "Connect the MG-30..." instruction is no longer visible; internal status and capture flow remain unchanged.
+- Audio dock now slides upward from below while staying behind the composer layer.
+- Settings now slides down from above behind the fixed header layer.
+- Both panels clean up their open/closed state after transitions, include a timeout fallback, and respect reduced-motion preferences.

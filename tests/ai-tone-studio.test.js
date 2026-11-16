@@ -833,7 +833,9 @@ test('Audio Listening and Settings stay pinned outside conversation scroll; conv
  assert.equal(conversation.includes('aiToneSettings'),false,'Settings must not be nested in the conversation scroller');
  assert.equal(conversation.includes('aiToneAudioPanel'),false,'Audio Listening must not be nested in the conversation scroller');
  const audioDock=source.slice(audio,composer);
- assert.match(audioDock,/Audio is analyzed locally/);
+ assert.ok(audioDock.includes('ai-tone-audio-indicator'),'USB status appears beside the Audio Listening title');
+  assert.ok(audioDock.includes('aiToneAudioStatus'),'status remains available to accessibility');
+  assert.equal(audioDock.includes('ai-tone-audio-note'),false,'visible audio footnote is removed');
  assert.ok(source.includes('setAudioPanelExpanded(ui.audioPanel.hidden)'),'header toggle must still collapse/expand the pinned audio dock');
  const cssStart=source.indexOf(".ai-tone-sheet{box-sizing:border-box!important;display:grid!important");
  const cssEnd=source.indexOf("';",cssStart);
@@ -865,6 +867,28 @@ test('Audio Listening and composer docks use rounded floating surfaces and Setti
  assert.equal(css.includes('bottom:calc(132px + env(safe-area-inset-bottom,0px))!important;'),false,'Settings must not reserve empty space below collapsed cards');
  assert.ok(css.includes('.ai-tone-settings-section[open]>summary{'));
  assert.ok(css.includes('border-radius:15px!important;'));
+});
+test('Audio status is a small USB LED; dock footnotes are removed and both panels slide behind fixed layers',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('ai-tone-audio-indicator'),'USB status must use an LED beside the title');
+ assert.equal(source.includes('Uses MG-30 USB Audio input channels 1–2'),false,'Audio Listening explanatory footnote must be removed');
+ assert.equal(source.includes('Use the editor’s Save to Device button'),false,'composer footnote must be removed');
+ assert.ok(source.includes("ui.audioDevice.dataset.state=ready?'connected':'error';"));
+ assert.ok(source.includes("ui.audioDevice.textContent='';"));
+ assert.ok(source.includes("ui.audioPanel.classList.add('is-open')"));
+ assert.ok(source.includes("ui.audioPanel.classList.remove('is-open')"));
+ assert.ok(source.includes("ui.settings.classList.add('is-open')"));
+ assert.ok(source.includes("ui.settings.classList.remove('is-open')"));
+ assert.ok(source.includes("setSettingsExpanded(!ui.settings.classList.contains('on'))"));
+ const cssStart=source.indexOf("audioStyle.textContent += '.ai-tone-head{position:relative!important;");
+ const cssEnd=source.indexOf("';",cssStart);
+ assert.ok(cssStart>=0&&cssEnd>cssStart);
+ const css=source.slice(cssStart,cssEnd);
+ assert.ok(css.includes('z-index:12!important'));
+ assert.ok(css.includes('.ai-tone-audio-panel.is-open{transform:translateY(0)!important;opacity:1!important}'));
+ assert.ok(css.includes('.ai-tone-settings.is-open{transform:translateY(0)!important;opacity:1!important;pointer-events:auto!important}'));
+ assert.ok(css.includes('z-index:4!important'));
+ assert.ok(css.includes('prefers-reduced-motion:reduce'));
 });
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
