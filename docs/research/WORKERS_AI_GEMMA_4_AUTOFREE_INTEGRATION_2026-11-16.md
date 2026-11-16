@@ -71,3 +71,14 @@ The follow-up in `www/ai-tone-studio.js` now:
 - clarifies that Workers AI is primary for light discussion and TONE3000 query terms, while Gemini → Groq → OpenRouter remain the free Tone Plan provider team and Workers AI remains the final Tone Plan fallback.
 
 No Worker protocol, NAM/IR import code, MG-30 catalog validation, USB-MIDI command routing or MIDI mapping is changed by this UI-only follow-up. Automated coverage is added for the fifth provider status, test action, UI copy and manual fallback order. Results of the next CI build are to be recorded after completion.
+
+
+### UI follow-up validation result
+
+- GitHub Actions workflow run: [#892](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43819579207)
+- Branch commit: `89b0db726512d12f4702d2aa294fb17474fbdf11`
+- JavaScript syntax validation: passed.
+- Protocol regression tests: **551 passed, 0 failed**.
+- Android debug APK: **BUILD SUCCESSFUL**; uploaded as artifact `MG30-Studio-debug-APK` (artifact ID `14203409686`).
+- Extracted APK: `MG30-Studio-WorkersAI-UI-debug.apk`; SHA-256 `a3749e92510fde955e2f61af2d957ae0a8809656ab1bf2d7326a101205a0cedb`.
+- This verifies compilation and regression tests only. The new Test Workers AI button still needs a live tap from the user's installed app to confirm the deployed Cloudflare binding/model responds in their account.
