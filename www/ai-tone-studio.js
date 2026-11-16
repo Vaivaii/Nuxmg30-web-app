@@ -82,7 +82,7 @@ export function validateAiTonePlan(plan,catalog){
   const allowed=new Map(model.parameters.map(x=>[x.key,x])),parameters={};
   for(const [key,raw] of Object.entries(p.parameters)){
    const d=allowed.get(key),v=Number(raw);
-   if(!d)throw new Error('Parameter '+key+' is not available for '+id+'/'+modelName+'.');
+   if(!d)throw new Error('Parameter '+key+' is not available for '+id+'/'+modelName+'. Allowed exact catalog keys: '+(allowed.size?[...allowed.keys()].join(', '):'(none)')+'. Do not substitute aliases.');
    if(!Number.isFinite(v))throw new Error('Value for '+key+' must be numeric.');
    if(d.kind==='discrete'?!d.choices.some(x=>Number(x.value)===v):v<0||v>100)throw new Error('Value for '+id+'.'+key+' is outside the supported choices/range.');
    parameters[key]=v;
@@ -130,6 +130,14 @@ async function postJson(url,options,timeoutMs=90000){
 export function compactToneContext(catalog,snapshot){const c=(catalog||[]).map(b=>[b.id,b.currentModel,(b.models||[]).map(m=>[m.name,m.kind||'',m.slot??'',(m.parameters||[]).map(p=>p.kind==='discrete'?[p.key,(p.choices||[]).map(x=>x.value)]:p.key)])]);const s=(snapshot||[]).map(b=>[b.id,b.model,b.enabled?1:0,b.parameters||{}]);return {catalog:c,snapshot:s};}
 export function describeNamCaptureMetadata(tone,model,gear='amp-cab'){const fields={toneName:String(tone?.name||tone?.title||''),creator:String(tone?.creator||tone?.username||''),toneDescription:String(tone?.description||''),makes:Array.isArray(tone?.makes)?tone.makes.map(x=>String(x?.name||x)).slice(0,6):[],tags:Array.isArray(tone?.tags)?tone.tags.map(x=>String(x?.name||x)).slice(0,8):[],modelName:String(model?.name||''),modelDescription:String(model?.description||''),architecture:String(model?.architecture_version??model?.architecture??'A2'),size:String(model?.size??'unspecified'),gear:String(gear)};const text=[fields.toneName,fields.toneDescription,fields.makes.join(' '),fields.tags.join(' '),fields.modelName,fields.modelDescription].join(' ').toLowerCase();const no=/\b(no|without|unboosted|clean[- ]only)\b.{0,35}\b(boost|overdrive|\bod\b|drive pedal)\b|\b(boost|overdrive|\bod\b|drive pedal)\b.{0,25}\b(not included|not used|none)\b/.test(text);const yes=/\b(boosted|boost|overdrive|overdrive pedal|tube screamer|klon|treble booster|drive pedal|\bod\b)\b/.test(text);fields.driveMetadata=no?'TONE3000 text explicitly indicates no boost/overdrive':yes?'TONE3000 text mentions boost/overdrive or a drive pedal':'TONE3000 metadata does not specify whether boost/overdrive is embedded';fields.driveConfidence=no||yes?'explicit metadata mention':'unknown';fields.source='TONE3000 tone/model description and catalogue tags';fields.summary=fields.modelName+' — '+fields.driveMetadata+'. '+(fields.modelDescription||fields.toneDescription||'No detailed capture description supplied by TONE3000.');return fields;}
 export function artistToneGuidance(prompt){const p=String(prompt||'').toLowerCase();if(/\b(john\s*mayer|mayer)\b/.test(p))return 'ARTIST TONE: John Mayer-inspired blues/pop lead. Prefer touch-sensitive clean to edge-of-breakup response, warm lows, present mids, restrained treble, subtle modulation, short/medium delay and tasteful spring/plate/hall reverb. Avoid high-gain metal voicing. This is a stylistic target, not a claim about exact studio gear.';if(/\b(john\s*petrucci|petrucci|dream\s*theater)\b/.test(p))return 'ARTIST TONE: John Petrucci / progressive-metal lead. Prefer tight high gain, controlled low end, focused upper mids, articulate sustain, noise control if available, lead delay and restrained reverb. Do not default to blues edge-of-breakup.';if(/\b(joe\s*satriani|satriani)\b/.test(p))return 'ARTIST TONE: Joe Satriani-inspired melodic rock lead. Prefer expressive saturated singing mids, smooth highs, sustain, rhythmic delay, subtle modulation and moderate reverb. Do not reuse a Petrucci metal or Mayer low-gain chain unchanged.';return 'ARTIST / STYLE INTENT: infer gain, dynamics, amp voicing and ambience from this request. Avoid a generic chain by default.';}
+export function resolveArtistToneGuidance(prompt,conversation=''){
+ const current=String(prompt||'');
+ const currentGuidance=artistToneGuidance(current);
+ const currentNamesTarget=/\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|jazz|blues|metal|country|funk|ambient|progressive rock)\b/i.test(current)
+  ||/\b(?:tone|preset|patch|sound|suara)\s+(?!ini\b|itu\b|tadi\b|tersebut\b|sekarang\b|baru\b|it\b|that\b|this\b|now\b)[\p{L}\d-]+(?:\s+[\p{L}\d-]+)?/iu.test(current);
+ if(currentNamesTarget||!isToneCreationFollowUp(current,conversation))return currentGuidance;
+ return artistToneGuidance(conversation)||currentGuidance;
+}
 export function responseLanguageInstruction(){
  return 'LANGUAGE POLICY: Use Bahasa Indonesia by default for all natural-language responses. If the latest USER REQUEST is clearly written in English or another language, respond in the same language as the USER REQUEST. If the message is mixed or the language is unclear, use Bahasa Indonesia. This applies to summaries, explanations, diagnosis, recommendations, questions and follow-up conversation. Keep JSON keys, technical identifiers, exact device model names and UI labels unchanged.';
 }
@@ -138,19 +146,37 @@ export function findDefaultGeminiModel(models){
  const match=rows.find(row=>/gemini[\s_-]*3[.]1[\s_-]*flash[\s_-]*lite/i.test(String(row?.id||'')+' '+String(row?.name||'')));
  return match?String(match.id||''):'';
 }
-export function classifyAssistantIntent(prompt){
+export function isToneCreationFollowUp(prompt,conversation=''){
+ const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim();
+ const context=String(conversation||'').toLowerCase();
+ if(!value||!context)return false;
+ const hasToneDiscussion=/\b(tone|guitar|gitar|amplifier|\bamp\b|preset|patch|sound|suara|gain|pickup|delay|reverb|efek|effect|john\s*mayer|petrucci|satriani|blues|jazz|rock|funk|country|ambient)\b/i.test(context);
+ if(!hasToneDiscussion)return false;
+ if(/\b(ringkasan|summary|penjelasan|explanation|daftar|list|tabel|table|perbandingan|comparison|analisis|analysis|lirik|lyrics|catatan|notes)\b/i.test(value))return false;
+ const explicitNewTarget=/\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|jazz|blues|metal|country|funk|ambient|progressive rock)\b/i.test(value)
+  ||/\b(?:tone|preset|patch|sound|suara)\s+(?!ini\b|itu\b|tadi\b|tersebut\b|sekarang\b|baru\b|it\b|that\b|this\b|now\b)[\p{L}\d-]+(?:\s+[\p{L}\d-]+)?/iu.test(value);
+ if(explicitNewTarget)return false;
+ const directBuild=/\b(buatkan|bikinkan|bikin(?:kan)?|rakit(?:kan)?|susun(?:kan)?|generate|create|build|make)\b/i.test(value);
+ const applyRecommendation=/\b(terapkan|apply|wujudkan|implement)\b.{0,50}\b(rekomendasi|hasil diskusi|yang tadi|itu|ini|tersebut|saran|it|this|that|above|discussed)\b/i.test(value);
+ const continueAndBuild=/\b(?:oke|ok|sip|setuju|baik|ya|sekarang|langsung|now|go ahead|sounds good|yes|please)\b.{0,55}\b(?:buatkan|bikin(?:kan)?|rakit(?:kan)?|susun(?:kan)?|generate|create|build|make|terapkan|apply)\b/i.test(value);
+ const buildWithReference=/\b(?:buatkan|bikinkan|bikin|generate|create|build|make|terapkan|apply)\b.{0,35}\b(?:sekarang|langsung|ini|itu|tersebut|tadi|seperti itu|yang tadi|it|this|that|now)\b/i.test(value);
+ return directBuild||applyRecommendation||continueAndBuild||buildWithReference;
+}
+export function classifyAssistantIntent(prompt,conversation=''){
  const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim();
  if(!value)return 'consultation';
  const searchVerb=/\b(cari(?:kan|in)?|temukan|telusuri|find|search|look for|help me find|recommend(?: me)?)\b/i;
  const namSubject=/\b(nam|tone\s*3000|amp(?:-?nya)?|amplifier(?:-?nya)?|head(?:-?nya)?|cab(?:inet)?(?:-?nya)?|capture|profil(?:e)?|profile|pedal(?:-?nya)?)\b/i;
  if(searchVerb.test(value)&&namSubject.test(value))return 'nam_search';
+ if(/\b(ringkasan|summary|penjelasan|explanation|daftar|list|tabel|table|perbandingan|comparison|lirik|lyrics)\b/i.test(value))return 'consultation';
  const analysis=/\b(analy[sz](?:e|ing|is|a)?|analysis|analisa|analisis|dengar|listen|evaluasi|evaluate|diagnos(?:e|is))\b/i.test(value);
  const audioTopic=/\b(audio|tone|suara|gitar|guitar|current|sekarang|ini|rekaman|recording)\b/i.test(value);
- const change=/\b(tweak|adjust|fix|improv(?:e|ement)|change|modify|reduce|increase|raise|lower|less|more|make it|kurangi|kurangin|tambah|naikkan|turunkan|ubah|perbaiki|haluskan|lembutkan|buat lebih)\b/i.test(value);
+ const change=/\b(tweak|adjust|fix|improv(?:e|ement)|change|modify|reduce|increase|raise|lower|less|more|make it|kurangi|kurangin|tambah|naikkan|turunkan|ubah|perbaiki|haluskan|lembutkan|buat lebih|lebih\s+(hangat|gelap|terang|bright|lembut|sustain|gain|body|panjang|pendek)|kurang\s+(hangat|body|sustain|gain))\b/i.test(value);
  const toneProblem=/\b(too bright|too muddy|too harsh|too fizzy|too thin|too boomy|terlalu (tajam|bright|muddy|tipis|boomy|keras|terang)|kurang (hangat|body|sustain|gain)|berlebihan)\b/i.test(value);
  const question=/\b(apa|apakah|kenapa|mengapa|bagaimana|gimana|jelaskan|bedanya|perbedaan|what|why|how|explain|difference|does|do you|can you explain|should i)\b/i.test(value)||/[?？]$/.test(value);
  if(analysis&&audioTopic&&!change)return 'audio_analyze';
  if(change)return 'tone_refine';
+ if(isToneCreationFollowUp(prompt,conversation))return 'tone_create';
  if(question)return 'consultation';
  if(toneProblem)return 'tone_refine';
  if(/\b(create|generate|build|make|design|buat(?:kan)?|bikin)\b[\s\S]{0,45}\b(preset|tone|patch|sound|suara)\b|\b(preset|tone|patch)\b[\s\S]{0,35}\b(for|untuk|ala|inspired|inspired by|bergaya)\b/i.test(value))return 'tone_create';
@@ -244,7 +270,7 @@ function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  'Never change IR/User/Third Party/Collection IR, NAM internal parameters, Send/Return, Volume, scene, preset slot, MIDI mapping or signal-chain order.',
  'The AMP catalog may expose NAM Slot 10 as a selection-only model. When installed NAM context is supplied, do not propose any AMP block; the application selects imported slot 10 deterministically. Never write NAM internal controls and never select NAM slots 1–9.',
  'Do not output MIDI, SysEx, preset bytes or import instructions. The app validates and writes parameter changes through its current editor path.',
- 'CATALOG CONTRACT: Blocks are [id,currentModel,models]; models are [exactName,kind,slot,parameters]. Range parameters are exact keys; discrete parameters are [key,[allowed values]]. Use only these names/keys. A model change includes all writable parameters; a same-model tweak includes changed keys only. Preserve unlisted blocks. Make choices artist/style-specific; never claim an exact artist rig. TONE3000 metadata is supporting evidence only; unknown boost/OD status must remain unknown.'
+ 'CATALOG CONTRACT: Blocks are [id,currentModel,models]; models are [exactName,kind,slot,parameters]. Range parameters are exact keys; discrete parameters are [key,[allowed values]]. Copy each parameter key character-for-character from the selected exact model. Never substitute common pedal synonyms or carry a key from another effect model (for example, mix, level, volume, intensity, or echo are not universal aliases). If a key is absent for that exact model, do not output it. A model change includes all writable parameters; a same-model tweak includes changed keys only. Preserve unlisted blocks. Make choices artist/style-specific; never claim an exact artist rig. TONE3000 metadata is supporting evidence only; unknown boost/OD status must remain unknown.'
  ];
  if(toneGuidance)lines.push(toneGuidance);
  if(review)lines.push('You are the Gemini reviewer in collaboration mode. Check artist/style specificity and catalog correctness, then return the complete final changed-block proposal.');
@@ -341,7 +367,7 @@ export function shouldInvokeCriticalReviewer(plan){
  return Array.isArray(plan.blocks)&&plan.blocks.length>=4;
 }
 export function toneArchitectSystemPrompt(){
- return 'You are the Tone Architect for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The CURRENT USER MUSICAL REQUEST is authoritative; previous artist references must not override a newly named artist or target. Use the same language as the USER MUSICAL REQUEST for every natural-language JSON value. Analyze only the musical intent; do not choose device models, blocks, parameter values, MIDI or transfer operations. Return JSON only: {"tone_intent":{"reference":"","style":"","feel":"","dynamics":"","gain_character":"","tonal_balance":"","ambience":"","avoid":[],"focus":"","summary":"","confidence":0.0}}. Keep every field short and specific. Interpret the user\'s musical goal, not an imagined exact artist rig.';
+ return 'You are the Tone Architect for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The CURRENT USER MUSICAL REQUEST is authoritative; previous artist references must not override a newly named artist or target. If the current request is a short continuation command (for example, 'make it now'), use the recent tone discussion to resolve what 'it/that' refers to, and carry forward its agreed musical preferences. Use the same language as the USER MUSICAL REQUEST for every natural-language JSON value. Analyze only the musical intent; do not choose device models, blocks, parameter values, MIDI or transfer operations. Return JSON only: {"tone_intent":{"reference":"","style":"","feel":"","dynamics":"","gain_character":"","tonal_balance":"","ambience":"","avoid":[],"focus":"","summary":"","confidence":0.0}}. Keep every field short and specific. Interpret the user\'s musical goal, not an imagined exact artist rig.';
 }
 export function toneLeadInstruction(intent,stateProvidedInUser=false){
  const state=stateProvidedInUser?'The compact Tone Architect JSON is supplied as the complete user payload. Treat it as authoritative; do not request or reconstruct chat history.':(intent?'Use this compact Tone Architect intent: '+JSON.stringify(intent)+'.':'No prior Tone Architect state exists; infer musical intent from the current user request before selecting hardware.');
@@ -487,8 +513,8 @@ async function init(){
  const aiUsage={requests:0,total:0,providers:Object.create(null),tasks:Object.create(null)};
  const renderAiUsageMonitor=()=>{ui.usageTotal.textContent=aiUsage.total.toLocaleString();ui.usageRequests.textContent=String(aiUsage.requests);ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';ui.usageProviders.innerHTML=Object.keys(aiUsage.providers).length?Object.entries(aiUsage.providers).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';};
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
- const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>4)dialogueContext.shift();};
- const conversationContextText=()=>dialogueContext.slice(-4).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
+ const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>8)dialogueContext.shift();};
+ const conversationContextText=()=>dialogueContext.slice(-8).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.audioStart.disabled=busy||audioBusy||(!audioCaptureActive&&ui.audioDevice.dataset.state!=='connected');ui.audioModes.forEach(button=>button.disabled=busy||audioBusy||audioCaptureActive);ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
@@ -1316,7 +1342,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const deltaGuard=localRefinement
    ?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.'
    :'';
-  const system=systemPrompt(catalog,snapshot,false,multiMode?'':artistToneGuidance(prompt))+namPlanGuard+deltaGuard;
+  const system=systemPrompt(catalog,snapshot,false,multiMode?'':resolveArtistToneGuidance(prompt,conversation))+namPlanGuard+deltaGuard;
   let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent,hasArchitect=false,correctionUsed=false,namSearchTerms='';
   if(multiMode){
    team=await resolveFreeProviderTeam().catch(()=>[]);
@@ -1324,7 +1350,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
     const workerKey=await secret('cloudflare');
     if(!workerKey)throw new Error('No Gemini, Groq, OpenRouter model is ready and Cloudflare Workers AI binding AI is not configured.');
     const fallbackSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-    const fallbackUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
+    const fallbackUser=userText(prompt,null,activeNamContext,conversation)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
     first=await invokeProvider('cloudflare',workerKey,fallbackSystem,fallbackUser,WORKERS_AI_MODEL,90000,'building your Tone Plan',1350);
     leadMember={provider:'cloudflare',key:workerKey,model:WORKERS_AI_MODEL};
     namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
@@ -1333,7 +1359,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    hasArchitect=team.length>=2&&!localRefinement;
    if(hasArchitect){
     const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),
-     'CURRENT USER REQUEST:\n'+prompt+(audioMetrics?'\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):''),
+     (conversation?'RECENT TONE DISCUSSION (oldest first):\n'+conversation+'\n\n':'')+'CURRENT USER REQUEST (authoritative action):\n'+prompt+(audioMetrics?'\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):''),
      'defining the musical direction','',260);
     architectMember=architect.member;
     toneIntent=compactToneArchitectIntent(architect.result,prompt);
@@ -1346,7 +1372,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    const leadCandidates=[preferredLead,...team.filter(item=>item!==preferredLead)];
    const leadSystem=system+'\n\n'+toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect);
    const leadUser=hasArchitect
-    ?JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
+    ?JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
     :userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'',1350);
    first=lead.result;leadMember=lead.member;namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
@@ -1358,7 +1384,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    }
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-   const singleUser=userText(prompt,null,activeNamContext)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
+   const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
    if(mode==='auto'||mode==='cloudflare'){
     const workerKey=await secret('cloudflare');
     if(!workerKey)throw new Error('Cloudflare Workers AI binding AI is not configured. Auto and Cloudflare mode keep light Tone Plans off external provider RPM.');
@@ -1377,7 +1403,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    const ids=new Set((Array.isArray(first?.blocks)?first.blocks:[]).map(block=>String(block?.id||'').trim().toUpperCase()));
    const affectedCatalog=catalog.filter(block=>ids.has(block.id));
    const affectedSnapshot=snapshot.filter(block=>ids.has(block.id));
-   const correctionSystem='You are a strict correction agent for the ORIGINAL NUX MG-30 Gen 2 firmware 6.0.x. Fix the catalog/parameter validation error. Return one complete valid Tone Plan JSON only. Use only the supplied affected-block catalogue; exact model and parameter identifiers are mandatory. Preserve unaffected blocks, NAM, IR, MIDI mapping, signal-chain order, preset slot and all unrelated state. Do not add commentary.';
+   const correctionSystem='You are a strict correction agent for the ORIGINAL NUX MG-30 Gen 2 firmware 6.0.x. Fix the catalog/parameter validation error. Return one complete valid Tone Plan JSON only. First compare every proposed parameter key with the exact model parameter list in the supplied catalogue. Copy only exact keys from that model; never assume synonyms such as mix, level, volume, intensity or echo are interchangeable. Do not invent alias mappings. If a requested control has no safe exact equivalent, omit that unsupported control and use only other clearly relevant available controls; if no safe change remains, stop safely rather than inventing a parameter. Preserve unaffected blocks, NAM, IR, MIDI mapping, signal-chain order, preset slot and all unrelated state. Do not add commentary.';
    const correctionUser=JSON.stringify({
     tone_intent:toneSession.intent||null,
     installed_nam:activeNamContext?String(activeNamContext).slice(0,320):null,
@@ -1436,9 +1462,9 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const prompt=ui.prompt.value.trim();
   if(!prompt){status('Enter a tone request first.','error');return;}
   const conversation=conversationContextText();
-  const intent=classifyAssistantIntent(prompt);
+  const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);\n  const intent=classifyAssistantIntent(prompt,conversation);
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
-  if(intent==='tone_create'&&!resumesImportedNamPlan){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
+  const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);\n  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
   rememberConversation('user',prompt);
   setBusy(true);message('user',prompt);
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
