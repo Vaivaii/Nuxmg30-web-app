@@ -27,7 +27,13 @@ test('standalone Worker parses and retains original auth health route with boole
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.version, '1.2.2');
+  assert.equal(body.version, '1.2.3');
+  assert.deepEqual(body.workers_ai_models, [
+    '@cf/google/gemma-4-26b-a4b-it',
+    '@cf/openai/gpt-oss-20b',
+    '@cf/mistralai/mistral-small-3.1-24b-instruct',
+    '@cf/meta/llama-4-scout-17b-16e-instruct'
+  ]);
   assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_light_task: true, ai_tone_plan: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true });
   assert.equal(body.auth_configured, true);
   assert.deepEqual(body.secret_checks, {
@@ -83,8 +89,14 @@ test('provider status returns configured flags only after local JWT verification
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.workerVersion, '1.2.2');
+  assert.equal(body.workerVersion, '1.2.3');
   assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false, cloudflare: false });
+  assert.deepEqual(body.workers_ai_models, [
+    '@cf/google/gemma-4-26b-a4b-it',
+    '@cf/openai/gpt-oss-20b',
+    '@cf/mistralai/mistral-small-3.1-24b-instruct',
+    '@cf/meta/llama-4-scout-17b-16e-instruct'
+  ]);
   assert.equal(JSON.stringify(body).includes('secret-openai'), false);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://localhost');
 });
@@ -485,4 +497,40 @@ test('Workers AI uses Gemma first then GPT-OSS, Mistral Small 3.1 and Llama 4 Sc
   assert.equal(models[0].input.max_completion_tokens, 200);
   assert.equal(models[1].input.max_tokens, 200);
   assert.equal(models[2].input.max_tokens, 200);
+});
+
+
+test('explicit Cloudflare model preference is allow-listed and runs before remaining Workers AI fallbacks', async () => {
+  const calls = [];
+  const env = {
+    ...baseEnv,
+    AI: {
+      async run(model, input) {
+        calls.push({ model, input });
+        return { response: JSON.stringify({ summary: 'Preferred Mistral tone', blocks: [], notes: [] }) };
+      }
+    }
+  };
+  const preferred = '@cf/mistralai/mistral-small-3.1-24b-instruct';
+  const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/tone-plan', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'cloudflare', model: preferred, system: 'Return Tone Plan JSON.', prompt: 'Create a tone.', maxOutputTokens: 160 })
+  }), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.provider, 'cloudflare');
+  assert.equal(body.model, preferred);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].model, preferred);
+  assert.equal(calls[0].input.max_tokens, 160);
+  assert.equal(calls[0].input.max_completion_tokens, undefined);
+
+  const rejected = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/tone-plan', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'cloudflare', model: '@cf/vendor/unapproved-model', system: 'S', prompt: 'P' })
+  }), env);
+  const rejectedBody = await rejected.json();
+  assert.equal(rejected.status, 400);
+  assert.match(rejectedBody.error, /approved fallback list/);
+  assert.equal(calls.length, 1);
 });
