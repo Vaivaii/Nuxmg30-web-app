@@ -142,3 +142,14 @@ User screenshot review established two separate observations:
 Chat history rerender now scrolls to the last message after two animation frames, allowing the WebView flex/scroll layout to settle before applying the scroll position. If AI capture ranking returns an unsupported-task or other error, the existing fallback `aiChoice?.model || candidates[0]` still exposes the first downloadable A2 candidate and all alternatives; this does not bypass A2-Lite validation or the explicit Slot 10 import confirmation.
 
 Regression coverage asserts the loading card, replacement-in-place, error cleanup, post-layout scroll and manual first-candidate fallback. No NAM transfer protocol, Slot 10 semantics, IR collection/user paths, MIDI mapping or MG-30 catalogue logic is modified.
+
+
+### Manual A2 picker fix build result
+
+- GitHub Actions workflow run #918: [43835780963](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43835780963)
+- Commit: `a5278da7b3dbc9e8ea5c8f7f60096d109125bfcf`
+- JavaScript syntax: passed.
+- Protocol regression tests: **556 passed, 0 failed**.
+- Android debug APK: `BUILD SUCCESSFUL`; artifact `MG30-Studio-debug-APK` ID `14211041341`.
+- Extracted APK file: `MG30-Studio-Manual-A2-Capture-Fix.apk`, SHA-256 `42636ba6a33d1928f33d3d7e31876583ef549dfa2554f97050d5e344b87024e7`.
+- App-side loading/picker fix is included in this APK. Worker deploy remains a separate operation: the live Worker must be version 1.2.3 with `tone3000-profile-ranking` and `tone3000-capture-selection` allowlisted to remove the HTTP 400 recommendation errors shown in the screenshot.
