@@ -265,6 +265,7 @@ async function cloudTonePlan(provider, system, prompt, model, maxOutputTokens=90
  if (!result?.tonePlan || typeof result.tonePlan !== 'object') throw new Error('Cloud AI did not return a valid Tone Plan response.');
  const plan={...result.tonePlan};
  Object.defineProperty(plan,'__aiUsage',{value:result.usage||null,enumerable:false,configurable:false});
+ Object.defineProperty(plan,'__aiModel',{value:result.model||WORKERS_AI_MODEL,enumerable:false,configurable:false});
  return plan;
 }
 async function openai(_credential, system, prompt, model, maxOutputTokens=900) { return cloudTonePlan('gpt', system, prompt, model, maxOutputTokens); }
@@ -908,7 +909,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    if(provider==='gpt')result=await openai(key,system,user,model,maxOutputTokens);
    else if(provider==='gemini')result=await gemini(key,system,user,model,maxOutputTokens);
    else result=await cloudTonePlan(provider,system,user,model,maxOutputTokens);
-   logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result);
+   logAiTokenUsage(provider,result?.__aiModel||model,stage,maxOutputTokens,system,user,result);
    return result;
   }catch(error){logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,null,error);throw error;}
  }
@@ -986,6 +987,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(!data?.result||typeof data.result!=='object')throw new Error('Cloudflare Workers AI did not return a valid JSON task result.');
   const result={...data.result};
   Object.defineProperty(result,'__aiUsage',{value:data.usage||null,enumerable:false,configurable:false});
+  Object.defineProperty(result,'__aiModel',{value:data.model||WORKERS_AI_MODEL,enumerable:false,configurable:false});
   logAiTokenUsage('cloudflare',data.model||WORKERS_AI_MODEL,stage,maxOutputTokens,system,user,result);
   return result;
  }
