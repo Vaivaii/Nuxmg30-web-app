@@ -176,3 +176,14 @@ Fix committed in `www/ai-tone-studio.js`:
 - Regression tests verify the radio handler has no history repaint or scroll operation, the loading-card updater preserves both scroll positions, and reopening does not force the composer into view.
 
 This UI-only patch does not modify AI prompts, candidate limits, token budgets, usage accounting, Cloudflare routing, Worker endpoints, A2-Lite validation, or Slot 10 transfer. Thus the prior token-saving settings (12 profile candidates, 18 capture candidates, and 180/320 output-token limits) are unchanged.
+
+
+### No-auto-scroll A2 radio selection verification
+
+- Final app commit: `76daa2ba96005693385bddf5474f11b65793905c`.
+- CI workflow #927: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/43842193505
+- Protocol regression tests: **559 passed, 0 failed**.
+- Android Gradle: `BUILD SUCCESSFUL`.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14213786317`; extracted as `MG30-Studio-No-AutoScroll-A2-Picker.apk` (SHA-256 `7c42e5dd9c3f6b7b4dc1ec0e9fbdbcd8af6b0e512ca818f34b4cc4be0fdde42e`).
+- Manual radio changes now update only the selected classes inside the existing A2 capture card; the full chat is not repainted and neither chat nor body scroll position is assigned. Loading-card replacement updates only that card and preserves both scroll positions. Reopening the sheet no longer resets the body/chat scroll or focuses the composer.
+- No Worker redeploy required for this UI-only change. Physical Android touch/scroll verification remains a user-side check; CI covers syntax, regression assertions and APK compilation.
