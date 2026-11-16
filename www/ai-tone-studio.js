@@ -430,6 +430,10 @@ async function init(){
     '<div class="ai-tone-nam-profile-list">'+(rows.length?rows.map(tone=>'<article class="ai-tone-nam-profile '+(String(tone.id)===String(data.recommendedId)?'recommended':'')+'"><div class="ai-tone-nam-profile-copy">'+(String(tone.id)===String(data.recommendedId)?'<small class="ai-tone-nam-recommended-label">★ AI RECOMMENDED</small>':'')+'<strong>'+esc(tone.name||'Unnamed NAM profile')+'</strong><small>'+(tone.creator?'@'+esc(tone.creator)+' · ':'')+esc((tone.makes||[]).join(', ')||tone.gear||'NAM')+' · '+Number(tone.a2ModelsCount||0)+' A2 captures</small></div><button type="button" data-ai-nam-view-captures="'+esc(tone.id)+'" data-ai-nam-card="'+cardId+'">View A2 Captures</button></article>').join(''):'<p>No matching TONE3000 profiles were found.</p>')+'</div>'+
     '<p class="ai-tone-nam-card-footnote">Choose a profile to inspect its downloadable A2 captures. Nothing has been downloaded or transferred yet.</p></section>';
   }
+  if(item.type==='nam-captures-loading'){
+   const tone=data.tone||{};
+   return '<section class="ai-tone-nam-chat-card ai-tone-nam-captures-loading" data-ai-nam-card="'+cardId+'"><header><span class="ai-tone-nam-card-icon">◇</span><div><strong>'+esc(tone.name||'TONE3000 NAM')+' · A2 captures</strong><small>'+(tone.creator?'@'+esc(tone.creator)+' · ':'')+'Destination: MG-30 NAM Slot 10</small></div></header><div class="ai-tone-nam-loading-row"><span aria-hidden="true"></span><p>Loading the profile metadata and downloadable A2 capture list. The search results stay available while this finishes.</p></div></section>';
+  }
   if(item.type==='nam-captures'){
    const choices=Array.isArray(data.choices)?data.choices:[];
    return '<section class="ai-tone-nam-chat-card" data-ai-nam-card="'+cardId+'">'+
@@ -453,9 +457,15 @@ async function init(){
   }
   return '';
  };
- const renderHistory=()=>{ui.messages.innerHTML=history.map(item=>item.type?'<div class="ai-tone-message ai"><small>AI TONE ASSISTANT</small>'+renderNamChatCard(item)+'</div>':'<div class="ai-tone-message '+item.role+'"><small>'+(item.role==='user'?'YOU':'AI TONE ASSISTANT')+'</small>'+esc(item.text)+'</div>').join('');renderActivity();ui.messages.scrollTop=ui.messages.scrollHeight;};
+ const scrollMessagesToEnd=()=>{
+  const scroll=()=>{if(ui.messages.isConnected)ui.messages.scrollTop=ui.messages.scrollHeight;};
+  if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(()=>window.requestAnimationFrame(scroll));else scroll();
+ };
+ const renderHistory=()=>{ui.messages.innerHTML=history.map(item=>item.type?'<div class="ai-tone-message ai"><small>AI TONE ASSISTANT</small>'+renderNamChatCard(item)+'</div>':'<div class="ai-tone-message '+item.role+'"><small>'+(item.role==='user'?'YOU':'AI TONE ASSISTANT')+'</small>'+esc(item.text)+'</div>').join('');renderActivity();scrollMessagesToEnd();};
  const message=(role,text)=>{history.push({role,text:String(text)});while(history.length>60)history.shift();renderHistory();};
  const chatCard=(type,data)=>{history.push({role:'ai',type,data:{...data,cardId:data.cardId||'nam-'+(++namCardSequence)}});while(history.length>60)history.shift();renderHistory();};
+ const updateChatCard=(cardId,type,data)=>{const item=history.find(row=>row.type&&String(row.data?.cardId)===String(cardId));if(item){item.type=type;item.data={...data,cardId};renderHistory();return;}chatCard(type,{...data,cardId});};
+ const removeChatCard=cardId=>{const index=history.findIndex(row=>row.type&&String(row.data?.cardId)===String(cardId));if(index>=0){history.splice(index,1);renderHistory();}};
  let namCardSequence=0;
  const aiUsage={requests:0,total:0,providers:Object.create(null),tasks:Object.create(null)};
  const renderAiUsageMonitor=()=>{ui.usageTotal.textContent=aiUsage.total.toLocaleString();ui.usageRequests.textContent=String(aiUsage.requests);ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';ui.usageProviders.innerHTML=Object.keys(aiUsage.providers).length?Object.entries(aiUsage.providers).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';};
