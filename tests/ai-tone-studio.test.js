@@ -798,10 +798,9 @@ test('replacing the loading card preserves the conversation and body scroll posi
  assert.ok(start>=0&&end>start,'in-place card updater must exist');
  const updater=source.slice(start,end);
  assert.ok(updater.includes('existing.outerHTML=renderNamChatCard(item)'));
- assert.ok(updater.includes('const messageScrollTop=ui.messages.scrollTop'));
- assert.ok(updater.includes('ui.messages.scrollTop=messageScrollTop'));
- assert.ok(updater.includes('const bodyScrollTop=body?.scrollTop||0'));
- assert.ok(updater.includes('if(body)body.scrollTop=bodyScrollTop'));
+ assert.ok(updater.includes("const scrollArea=$('aiToneScrollArea')"));
+ assert.ok(updater.includes('const scrollTop=scrollArea?.scrollTop||0'));
+ assert.ok(updater.includes('if(scrollArea)scrollArea.scrollTop=scrollTop'));
  assert.equal(updater.includes('renderHistory()'),false);
 });
 
@@ -816,4 +815,35 @@ test('reopening the AI assistant does not reset body/chat scroll or force focus 
  assert.equal(openPanel.includes('scrollTop='),false);
  assert.equal(openPanel.includes('prompt.focus'),false);
  assert.equal(openPanel.includes('scrollMessagesToEnd'),false);
+});
+
+
+test('AI composer is a fixed dock outside one unified scrollable conversation region',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const region=source.indexOf('<div class="ai-tone-scroll-area" id="aiToneScrollArea">');
+ const composer=source.indexOf('<div class="ai-tone-composer">');
+ assert.ok(region>=0&&composer>region,'scroll region must precede the dock');
+ const beforeComposer=source.slice(region,composer);
+ assert.ok(beforeComposer.includes('id="aiToneMessages"'));
+ assert.ok(beforeComposer.includes('id="aiToneAudioPanel"'));
+ assert.match(beforeComposer,/AI audio is analyzed locally|Audio is analyzed locally/);
+ assert.ok(source.includes('</section></div>",\\n \'<div class="ai-tone-composer">')||source.includes('</section></div>',composer-500));
+ const cssStart=source.indexOf(".ai-tone-scroll-area{display:flex!important");
+ const cssEnd=source.indexOf("';",cssStart);
+ assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative scroll/dock CSS must exist');
+ const css=source.slice(cssStart,cssEnd);
+ assert.match(css,/overflow-y:auto!important/);
+ assert.match(css,/\.ai-tone-composer\\{[^}]*flex:0 0 auto!important/);
+ assert.match(css,/\.ai-tone-messages\\{[^}]*overflow:visible!important/);
+});
+
+test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const start=source.indexOf('const scrollMessagesToEnd=');
+ const end=source.indexOf('const renderHistory=',start);
+ assert.ok(start>=0&&end>start);
+ const scroll=source.slice(start,end);
+ assert.ok(scroll.includes("$('aiToneScrollArea')"));
+ assert.ok(scroll.includes('scrollArea.scrollTop=scrollArea.scrollHeight'));
+ assert.equal(scroll.includes('ui.messages.scrollTop='),false);
 });
