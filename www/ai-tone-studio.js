@@ -257,8 +257,10 @@ async function secret(provider) {
  const status = await getCloudAiStatus();
  return status?.providers?.[key] ? 'cloud-managed' : '';
 }
+const WORKERS_AI_MODEL = '@cf/google/gemma-4-26b-a4b-it';
 async function cloudTonePlan(provider, system, prompt, model, maxOutputTokens=900) {
- if (!model) throw new Error('Choose an available model in AI Settings.');
+ if(provider==='cloudflare')model=WORKERS_AI_MODEL;
+ else if (!model) throw new Error('Choose an available model in AI Settings.');
  const result = await cloudApiRequest('/api/v1/ai/tone-plan', { method: 'POST', body: { provider, model, system, prompt, maxOutputTokens } });
  if (!result?.tonePlan || typeof result.tonePlan !== 'object') throw new Error('Cloud AI did not return a valid Tone Plan response.');
  const plan={...result.tonePlan};
@@ -720,7 +722,7 @@ async function init(){
   const system='You are a conversational guitar tone assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The user may discuss guitar tone, amp models, NAM, IR, EQ, effect behavior, gain staging, playing dynamics and signal-chain choices. Answer naturally and contextually as a knowledgeable guitar tone engineer. Use recent conversation and current editor context when provided. Explain trade-offs and practical experiments. Do not create a Tone Plan, do not generate a preset, do not write MIDI, and do not claim that any device setting was changed. Answer questions directly; ask one concise follow-up only when important information is missing. Return JSON only: {"reply":"complete conversational answer"}.';
   const snapshot=bridge?.getSnapshot?.()||[];
   const user=(conversation?'RECENT CONVERSATION (oldest first):\n'+conversation+'\n\n':'')+'CURRENT MG-30 EDITOR STATE:\n'+JSON.stringify(snapshot.slice(0,12))+'\n\nUSER MESSAGE:\n'+prompt+'\n\nReply conversationally. No device changes.';
-  const result=await askNamAIJson(system,user,'answering your tone question');
+  const result=await invokeWorkersAILightTask('tone-discussion',system,user,'answering your tone question',520);
   const reply=String(result?.reply||result?.answer||result?.response||'').trim();
   if(!reply)throw new Error('AI returned an empty conversation reply.');
   message('ai',reply);rememberConversation('assistant',reply);status('Conversation updated. No device parameters were changed.','success');
@@ -775,7 +777,7 @@ async function init(){
   else if(p.stage==='readback')status('Verifying device slot names: pass '+p.round+'/2, slot '+p.slot+'/10…','busy');
  });
  const providerKeyId=p=>p==='gpt'?'openai':p;
- const providerNames={gpt:'GPT',gemini:'Gemini',groq:'Groq',openrouter:'OpenRouter'};
+ const providerNames={gpt:'GPT',gemini:'Gemini',groq:'Groq',openrouter:'OpenRouter',cloudflare:'Cloudflare Workers AI'};
  const providerModels={gpt:[],gemini:[],groq:[],openrouter:[]};
  const modelStorageKey=p=>'mg30-ai-model-'+p;
  const autoProviderHealthCache={expires:0,order:[],errors:[]};
@@ -904,6 +906,10 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   }catch(error){logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,null,error);throw error;}
  }
  async function fastestReadyModel(provider,key){
+  if(provider==='cloudflare'){
+   if(!await secret('cloudflare'))throw new Error('Cloudflare Workers AI binding AI is not configured in the Worker.');
+   return WORKERS_AI_MODEL;
+  }
   const models=providerModels[provider]?.length?providerModels[provider]:await refreshProviderModels(provider,true);
   const manual=selectedModel(provider);
   if(manual&&(!models.length||models.some(row=>row.id===manual)))return manual;
@@ -968,8 +974,22 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   }catch(error){status(niceError(error,provider),'error');}
   finally{setBusy(false);}
  }
+ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520){
+  const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{task,system,prompt:user,maxOutputTokens}});
+  if(!data?.result||typeof data.result!=='object')throw new Error('Cloudflare Workers AI did not return a valid JSON task result.');
+  const result={...data.result};
+  Object.defineProperty(result,'__aiUsage',{value:data.usage||null,enumerable:false,configurable:false});
+  logAiTokenUsage('cloudflare',data.model||WORKERS_AI_MODEL,stage,maxOutputTokens,system,user,result);
+  return result;
+ }
  async function askNamAIJson(system,user,stage){
-  const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,order=(mode==='auto'||mode==='collab')?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
+  const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,missing=[];
+  let order=[];
+  if(mode==='auto'||mode==='collab'){
+   try{order=await fastestReadyProviderOrder();}
+   catch(error){missing.push(String(error.message||error));}
+  }else order=auto?providerFallbackOrder(mode):[mode];
+  if(auto&&!order.includes('cloudflare')&&await secret('cloudflare'))order.push('cloudflare');
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
@@ -985,18 +1005,20 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    }catch(error){
     lastError=error;noteProviderFailure(provider,error);
     const next=order.slice(index+1).find(candidate=>candidate!==provider&&!providerInCooldown(candidate));
-    if(!auto||!next||!isRetryableProviderError(error))throw new Error(niceError(error,provider));
+    if(!auto)throw new Error(niceError(error,provider));
     if(mode==='auto'){autoProviderHealthCache.order=autoProviderHealthCache.order.filter(item=>item!==provider);autoProviderHealthCache.expires=Date.now()+45_000;}
-    message('ai',providerNames[provider]+' is temporarily busy ('+(error.message||error)+'). Switching to '+providerNames[next]+'.');
-    status(providerNames[provider]+' unavailable. Trying '+providerNames[next]+'…','busy');
+    if(next){
+     message('ai',providerNames[provider]+' failed ('+(error.message||error)+'). Switching to '+providerNames[next]+'.');
+     status(providerNames[provider]+' unavailable. Trying '+providerNames[next]+'…','busy');
+    }
    }
   }
   if(lastError)throw new Error('All configured fallback providers were unavailable. Last error: '+(lastError.message||lastError));
-  throw new Error('No configured AI provider/model is available. Configure a Gemini, Groq, OpenRouter, or OpenAI secret in Cloudflare Worker. Missing: '+missing.join(', '));
+  throw new Error('No configured AI provider/model is available. Configure a Gemini, Groq, OpenRouter, or OpenAI secret, or enable the Cloudflare Workers AI binding. Missing: '+missing.join(', '));
  }
  async function deriveNamSearchQuery(prompt,conversation=''){
   const system='You select search terms for the TONE3000 NAM catalog. The CURRENT USER TONE REQUEST is authoritative. Use recent conversation only to resolve ambiguity; never reuse a previous artist or amp search query when the current request names a different artist or target. Return JSON only: {"query":"short search phrase","reason":"brief reason in the same language as the USER REQUEST"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
-  const result=await askNamAIJson(system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms');
+  const result=await invokeWorkersAILightTask('tone3000-search-terms',system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms',180);
   const query=String(result?.query||'').trim().replace(/\s+/g,' ').slice(0,60);
   if(query.length<2)throw new Error('AI could not derive useful amplifier search terms. Add an amplifier name or a clearer tone description.');
   return {query,reason:String(result?.reason||'')};
@@ -1157,11 +1179,28 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    }catch(error){
     lastError=error;noteProviderFailure(member.provider,error);
     const next=ordered.slice(index+1).find(item=>!providerInCooldown(item.provider));
-    if(!next||!ui.autoFallback.checked||!isRetryableProviderError(error))throw new Error(niceError(error,member.provider));
-    message('ai',providerNames[member.provider]+' hit a temporary limit. Trying '+providerNames[next.provider]+' using the existing free-provider team.');
+    const workerFallbackAllowed=mode==='auto'||mode==='collab'||ui.autoFallback.checked;
+    if(next&&workerFallbackAllowed){
+     message('ai',providerNames[member.provider]+' failed ('+(error.message||error)+'). Trying '+providerNames[next.provider]+'.');
+    }else if(index<ordered.length-1&&!workerFallbackAllowed){
+     throw new Error(niceError(error,member.provider));
+    }
    }
   }
-  throw new Error(lastError?.message||'No free AI provider completed the task.');
+  const workerFallbackAllowed=mode==='auto'||mode==='collab'||ui.autoFallback.checked;
+  if(workerFallbackAllowed&&!providerInCooldown('cloudflare')){
+   try{
+    const key=await secret('cloudflare');
+    if(key){
+     const model=WORKERS_AI_MODEL;
+     message('ai','Gemini, Groq and OpenRouter could not complete '+stage+'. Switching to Cloudflare Workers AI as the final fallback.');
+     status('Cloudflare Workers AI is '+stage+'…','busy');
+     const result=await invokeProvider('cloudflare',key,system,user,model,90000,stage,maxOutputTokens);
+     return {result,member:{provider:'cloudflare',key,model}};
+    }
+   }catch(error){lastError=error;noteProviderFailure('cloudflare',error);}
+  }
+  throw new Error(lastError?.message||'No free AI provider or Cloudflare Workers AI completed the task.');
  }
  async function makePlan(prompt,bridge,audioMetrics=null,conversation=''){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();
@@ -1174,12 +1213,20 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const deltaGuard=localRefinement
    ?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.'
    :'';
-  const namSearchDirective=namModeActive&&!activeNamContext?'\n\nTONE3000 SEARCH TERMS: This request is about selecting a fresh TONE3000 NAM profile. Include a top-level JSON string field "search_terms" with 2–5 concise amplifier make/model/family words, maximum 60 characters, suitable for the TONE3000 catalogue search. Infer a plausible amp family only when justified; never claim an exact artist rig. Do not omit this field.':'';
-  const system=systemPrompt(catalog,snapshot,false,multiMode?'':artistToneGuidance(prompt))+namPlanGuard+deltaGuard+namSearchDirective;
+  const system=systemPrompt(catalog,snapshot,false,multiMode?'':artistToneGuidance(prompt))+namPlanGuard+deltaGuard;
   let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent,hasArchitect=false,correctionUsed=false,namSearchTerms='';
   if(multiMode){
-   team=await resolveFreeProviderTeam();
-   if(!team.length)throw new Error('No free Gemini, Groq, or OpenRouter provider is ready. Choose a configured free provider in AI Settings.');
+   team=await resolveFreeProviderTeam().catch(()=>[]);
+   if(!team.length){
+    const workerKey=await secret('cloudflare');
+    if(!workerKey)throw new Error('No Gemini, Groq, OpenRouter model is ready and Cloudflare Workers AI binding AI is not configured.');
+    const fallbackSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
+    const fallbackUser=userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
+    first=await invokeProvider('cloudflare',workerKey,fallbackSystem,fallbackUser,WORKERS_AI_MODEL,90000,'building your Tone Plan',1350);
+    leadMember={provider:'cloudflare',key:workerKey,model:WORKERS_AI_MODEL};
+    namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
+    message('ai','No free Gemini/Groq/OpenRouter model is ready. Cloudflare Workers AI generated the Tone Plan as a single-agent fallback.');
+   }else{
    hasArchitect=team.length>=2&&!localRefinement;
    if(hasArchitect){
     const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),
@@ -1205,6 +1252,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
     toneSession.intent=toneIntent;toneSession.architectProvider='';toneSession.sourcePrompt=prompt;
    }
    if(!hasArchitect&&!localRefinement)message('ai','A single AI handled musical interpretation, gear selection and parameter generation in one request.');
+   }
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
    const singleUser=userText(prompt,null,activeNamContext)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
@@ -1261,6 +1309,15 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
     }catch(reviewError){
      message('ai','Critical Reviewer was unavailable or returned an invalid revision; the original Lead AI plan remains in use. '+(reviewError.message||reviewError));
     }
+   }
+  }
+  if(namModeActive&&!activeNamContext){
+   try{
+    const derivedSearch=await deriveNamSearchQuery(prompt,conversation);
+    namSearchTerms=normalizeNamSearchTerms(derivedSearch.query)||namSearchTerms;
+   }catch(error){
+    namSearchTerms=namSearchTerms||fallbackNamSearchTerms(prompt);
+    message('ai','Cloudflare TONE3000 search-term generation was unavailable; using the local safe search-term fallback. '+(error.message||error));
    }
   }
   if(namSearchTerms)Object.defineProperty(validated,'search_terms',{value:namSearchTerms,enumerable:false,configurable:false});
