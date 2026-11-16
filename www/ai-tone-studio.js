@@ -1086,15 +1086,17 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
   return {model,reason:conciseNamRecommendationReason(result.reason)};
  }
- function renderAiNamCapturePicker(pending){
+ function renderAiNamCapturePicker(pending,replaceCardId=''){
   pending.phase='captures';
-  pending.cardId='nam-'+(++namCardSequence);
-  chatCard('nam-captures',{
+  pending.cardId=replaceCardId||'nam-'+(++namCardSequence);
+  const data={
    cardId:pending.cardId,tone:pending.tone,choices:pending.choices,
    selectedId:pending.selected?.model?.id,
    recommendedId:pending.aiSelectedModelId||pending.selected?.model?.id,
    reason:pending.selected?.reason||''
-  });
+  };
+  if(replaceCardId)updateChatCard(replaceCardId,'nam-captures',data);
+  else chatCard('nam-captures',data);
  }
  async function loadNamCapturesForChat(toneId){
   const pending=pendingNamSelection,bridge=window.NUXTONE3000Bridge;
@@ -1102,6 +1104,8 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const tone=pending.tones.find(item=>String(item.id)===String(toneId));
   if(!tone)throw new Error('The selected TONE3000 profile is no longer in the current result list.');
   setBusy(true);status('Loading A2 captures for '+tone.name+'…','busy');
+  const loadingCardId='nam-loading-'+(++namCardSequence);
+  chatCard('nam-captures-loading',{cardId:loadingCardId,tone:{name:tone.name,creator:tone.creator}});
   try{
    const snapshot=await bridge.loadTone(tone.id,{silent:true});
    const candidates=(snapshot?.models||[]).filter(model=>Boolean(model.model_url)&&/^(2|a2)$/.test(String(model.architecture_version??model.architecture??'2').trim().toLowerCase()));
@@ -1113,9 +1117,10 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    const choices=candidates.map(model=>({tone,model,snapshot,reason:String(model.id)===String(selectedModel.id)?String(aiChoice?.reason||'AI recommended'):'Available alternative capture',metadata:describeNamCaptureMetadata(tone,model,pending.gear),prepared:null}));
    const selected=choices.find(item=>String(item.model.id)===String(selectedModel.id))||choices[0];
    Object.assign(pending,{tone,snapshot,choices,selected,aiSelectedModelId:String(selected.model.id),phase:'captures'});
-   renderAiNamCapturePicker(pending);
+   renderAiNamCapturePicker(pending,loadingCardId);
    status('A2 captures are shown in the conversation. Choose one and press Import Selected Capture.','success');
-  }finally{setBusy(false);}
+  }catch(error){removeChatCard(loadingCardId);throw error;}
+  finally{setBusy(false);}
  }
  async function prepareSelectedNamCapture(cardId){
   const pending=pendingNamSelection,bridge=window.NUXTONE3000Bridge;
