@@ -78,7 +78,7 @@ After deploy:
 4. Test YouTube search.
 5. Test TONE3000 catalogue and model download using the user's existing OAuth session, then confirm the existing app-side A2-Lite validator before import.
 
-A successful `/health` does not prove provider credentials or the Workers AI model invocation are valid. Live provider calls must be tested separately. The Workers AI binding is reported as `WORKERS_AI_BINDING` / `providers.cloudflare`; it is a Cloudflare service binding, not a text secret. Confirm the `AI` binding exists on the deployed Worker. No deployment is performed by this repository update.
+Workers AI is not unmetered by default: its daily free allocation and model-specific unit pricing are controlled by the Cloudflare account. The current Gemma 4 model page lists $0.10 per million input tokens and $0.30 per million output tokens; check the Cloudflare dashboard before enabling frequent calls. A successful `/health` does not prove provider credentials or the Workers AI model invocation are valid. Live provider calls must be tested separately. The Workers AI binding is reported as `WORKERS_AI_BINDING` / `providers.cloudflare`; it is a Cloudflare service binding, not a text secret. Confirm the `AI` binding exists on the deployed Worker. No deployment is performed by this repository update.
 
 
 ### TONE3000 and YouTube credential compatibility
