@@ -495,7 +495,7 @@ async function init(){
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
   else if(next==='collab')void refreshAllProviderModels(true);
  };
- const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');void refreshAudioDeviceStatus();window.setTimeout(()=>{try{ui.prompt.focus({preventScroll:true});}catch{ui.prompt.focus();}},150);};
+ const openPanel=()=>{shade.classList.add('on');sheet.classList.add('on');open.classList.add('ai-tone-open');open.setAttribute('aria-expanded','true');void refreshAudioDeviceStatus();};
  const closePanel=()=>{if(audioCaptureActive)void stopAudioListeningWithoutAnalysis();shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
 
  const setAudioPanelExpanded=expanded=>{
