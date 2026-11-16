@@ -388,12 +388,12 @@ async function init(){
  sheet.innerHTML=[
  '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div class="ai-tone-head-actions"><button class="ai-tone-icon ai-tone-audio-toggle" id="aiToneAudioToggle" type="button" aria-label="Toggle Audio Listening" aria-controls="aiToneAudioPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v4 M6 6v12 M10 3v18 M14 8v8 M18 5v14 M22 10v4"/></svg></button> <button class="ai-tone-icon" id="aiToneSettingsToggle" type="button" aria-label="AI Settings">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button" aria-label="Close AI Assistant">×</button></div></div>',
  '<div class="ai-tone-body"><div class="ai-tone-settings" id="aiToneSettings">'+
- '<details class="ai-tone-settings-section" id="aiToneProviderDetails"><summary><span><strong>Cloud AI Providers & Models</strong><small>Credentials stay in Cloudflare Worker</small></span><b id="aiToneProviderSummary">Checking…</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking…</span></div></div>'+
- '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Gemini → Groq → OpenRouter. GPT is manual-only.</small></span></label>'+
- '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button></div>'+
- '<p class="ai-tone-note">Free-model quotas still apply. Tone Plans are validated against the original MG-30 Gen 2 catalogue before live MIDI changes.</p></div></details>'+
+ '<details class="ai-tone-settings-section" id="aiToneProviderDetails"><summary><span><strong>Cloud AI Providers & Models</strong><small>Credentials stay in Cloudflare Worker</small></span><b id="aiToneProviderSummary">Checking…</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Cloudflare Workers AI</strong><span class="ai-tone-key-state" id="aiCloudflareBindingState">Checking binding…</span></div></div>'+
+ '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI. Light tasks use Workers AI first.</small></span></label>'+
+ '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneTestCloudflare" type="button">Test Workers AI</button></div>'+
+ '<p class="ai-tone-note">Cloudflare Workers AI uses the Worker binding AI (no API key): Gemma 4 handles tone discussion and TONE3000 search terms first, then serves as the final Tone Plan fallback. Free-model quotas still apply; Tone Plans are validated against the original MG-30 Gen 2 catalogue before live MIDI changes.</p></div></details>'+
  '<details class="ai-tone-settings-section" id="aiToneUsageDetails"><summary><span><strong>AI Usage & Token Monitor</strong><small>Session totals · provider and task breakdown</small></span><b id="aiToneUsageSummary">0 tokens</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-usage-metrics"><div><strong id="aiToneUsageTotal">0</strong><small>Total tokens</small></div><div><strong id="aiToneUsageRequests">0</strong><small>AI requests</small></div></div><div class="ai-tone-usage-subtitle">By provider</div><div id="aiToneUsageProviderRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-subtitle">By task / agent</div><div id="aiToneUsageAgentRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-foot"><small>Provider counts are actual when available; otherwise marked as estimates. Reset only clears this local session display.</small><button type="button" id="aiToneUsageReset">Reset Session</button></div></div></details>'+
- '<div class="ai-tone-provider-row ai-tone-compact-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · Free Multi-AI</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>'+
+ '<div class="ai-tone-provider-row ai-tone-compact-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="auto" selected>Auto · Workers AI + Free Multi-AI</option><option value="cloudflare">Cloudflare Workers AI · Gemma 4</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>'+
  '<div class="ai-tone-status ai-tone-status-accessible" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live tone assistance.</div>'+
  '<section class="ai-tone-nam-panel" id="aiToneNamPanel"><div class="ai-tone-nam-panel-head"><div><strong>TONE3000 NAM</strong><small>Optional NAM search mode for amp captures</small></div><button class="ai-tone-nam-action" id="aiToneFindNam" type="button" aria-pressed="false">OFF</button></div><div class="ai-tone-nam-gear-row" role="group" aria-label="NAM capture type"><button class="ai-tone-nam-choice" type="button" data-ai-nam-gear="amp" aria-pressed="false">Amp Only</button><button class="ai-tone-nam-choice active" type="button" data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab</button></div><small class="ai-tone-nam-mode-status" id="aiToneNamModeStatus">TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.</small></section>'+
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div><div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div></div>',
@@ -463,7 +463,7 @@ async function init(){
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.audioStart.disabled=busy||audioBusy||(!audioCaptureActive&&ui.audioDevice.dataset.state!=='connected');ui.audioModes.forEach(button=>button.disabled=busy||audioBusy||audioCaptureActive);ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
-  const next=['auto','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'auto';
+  const next=['auto','cloudflare','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'auto';
   mode=next;ui.providerSelect.value=next;autoProviderHealthCache.expires=0;
   renderActiveModelSelect();
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
@@ -778,7 +778,7 @@ async function init(){
  });
  const providerKeyId=p=>p==='gpt'?'openai':p;
  const providerNames={gpt:'GPT',gemini:'Gemini',groq:'Groq',openrouter:'OpenRouter',cloudflare:'Cloudflare Workers AI'};
- const providerModels={gpt:[],gemini:[],groq:[],openrouter:[]};
+ const providerModels={gpt:[],gemini:[],groq:[],openrouter:[],cloudflare:[{id:WORKERS_AI_MODEL,name:'Gemma 4 26B · Workers AI'}]};
  const modelStorageKey=p=>'mg30-ai-model-'+p;
  const autoProviderHealthCache={expires:0,order:[],errors:[]};
  const autoModelHealthCache={};
@@ -823,6 +823,11 @@ async function init(){
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
+  if(provider==='cloudflare'){
+   providerModels.cloudflare=await secret('cloudflare')?[{id:WORKERS_AI_MODEL,name:'Gemma 4 26B · Workers AI'}]:[];
+   if(provider===activeModelProvider())renderActiveModelSelect();
+   return providerModels.cloudflare;
+  }
   const stored=await secret(providerKeyId(provider));
   if(!stored){
    providerModels[provider]=[];
@@ -869,14 +874,15 @@ async function init(){
  async function keyStates(){
   try {
    const data=await getCloudAiStatus(true),providers=data?.providers||{};
-   const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'};
-   let configured=0;for(const [provider,id] of Object.entries(labels)){const node=$(id);if(node)node.textContent=providers[provider]?'Configured':'Not configured';if(providers[provider])configured++;}
-   ui.providerSummary.textContent=configured+' / 4 configured';
+   const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState',cloudflare:'aiCloudflareBindingState'};
+   let configured=0;for(const [provider,id] of Object.entries(labels)){const node=$(id);if(node)node.textContent=provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable'):providers[provider]?'Configured':'Not configured';if(providers[provider])configured++;}
+   ui.providerSummary.textContent=configured+' / 5 configured';
+   providerModels.cloudflare=providers.cloudflare?[{id:WORKERS_AI_MODEL,name:'Gemma 4 26B · Workers AI'}]:[];
    await refreshAllProviderModels(false);
   } catch(error) {
-   ['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState'].forEach(id=>{if($(id))$(id).textContent='Status unavailable';});
+   ['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState','aiCloudflareBindingState'].forEach(id=>{if($(id))$(id).textContent='Status unavailable';});
    ui.providerSummary.textContent='Status unavailable';
-   providerModels.gpt=[];providerModels.gemini=[];providerModels.groq=[];providerModels.openrouter=[];renderActiveModelSelect();
+   providerModels.gpt=[];providerModels.gemini=[];providerModels.groq=[];providerModels.openrouter=[];providerModels.cloudflare=[];renderActiveModelSelect();
    status(error.message||'Cloud AI configuration is unavailable.','error');
   }
 }
@@ -959,7 +965,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   autoProviderHealthCache.order=ready;
   autoProviderHealthCache.errors=rows.filter(item=>!item.ok).map(item=>({provider:item.provider,message:String(item.error?.message||item.error)}));
   if(!ready.length)throw new Error('No free Gemini, Groq, or OpenRouter model is configured and available. Select a provider manually or check Cloud AI settings.');
-  message('ai','Free-first Multi-AI team ready: '+rows.filter(item=>item.ok).map(item=>item.provider+' / '+item.model).join(' · ')+'. No GPT model was probed or selected.');
+  message('ai','Cloudflare Workers AI (Gemma 4 26B) is primary for light tone discussion and TONE3000 search terms. Tone Plan free team ready: '+rows.filter(item=>item.ok).map(item=>item.provider+' / '+item.model).join(' · ')+'. Cloudflare Workers AI is the final Tone Plan fallback. No GPT model was probed or selected.');
   return ready.slice();
  }
  async function testProvider(provider){
@@ -981,6 +987,21 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   Object.defineProperty(result,'__aiUsage',{value:data.usage||null,enumerable:false,configurable:false});
   logAiTokenUsage('cloudflare',data.model||WORKERS_AI_MODEL,stage,maxOutputTokens,system,user,result);
   return result;
+ }
+ async function testWorkersAI(){
+  setBusy(true);status('Testing Cloudflare Workers AI · Gemma 4 26B…','busy');
+  try{
+   const providers=(await getCloudAiStatus(true))?.providers||{};
+   if(!providers.cloudflare)throw new Error('Cloudflare Worker binding AI is not active. Check the [ai] binding in wrangler.toml and redeploy the Worker.');
+   const result=await invokeWorkersAILightTask('tone-discussion','Return JSON only with a non-empty reply field. Use Indonesian.','Reply with exactly one short sentence confirming that Cloudflare Workers AI Gemma 4 is responding.','testing Workers AI',64);
+   const reply=String(result?.reply||result?.answer||result?.response||'').trim();
+   if(!reply)throw new Error('Workers AI responded without a reply field.');
+   const node=$('aiCloudflareBindingState');if(node)node.textContent='Binding AI active · test successful';
+   status('Cloudflare Workers AI · Gemma 4 test successful. '+reply,'success');
+  }catch(error){
+   const node=$('aiCloudflareBindingState');if(node)node.textContent='Workers AI test failed';
+   status('Cloudflare Workers AI test failed: '+(error.message||error),'error');
+  }finally{setBusy(false);}
  }
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,missing=[];
@@ -1425,7 +1446,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
  $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
  ui.usageReset.addEventListener('click',()=>{aiUsage.requests=0;aiUsage.total=0;aiUsage.providers=Object.create(null);aiUsage.tasks=Object.create(null);renderAiUsageMonitor();status('Local AI usage session counters reset. Provider quotas and API usage are unchanged.','success');});
  $('aiToneTestOpenAi').addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini').addEventListener('click',()=>testProvider('gemini'));
- $('aiToneTestGroq').addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter').addEventListener('click',()=>testProvider('openrouter'));
+ $('aiToneTestGroq').addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter').addEventListener('click',()=>testProvider('openrouter'));$('aiToneTestCloudflare').addEventListener('click',()=>{void testWorkersAI();});
  // Provider keys are server-managed; no client-side delete buttons are rendered.
  
  ui.autoFallback.checked=localStorage.getItem('mg30-ai-auto-fallback')!=='0';
