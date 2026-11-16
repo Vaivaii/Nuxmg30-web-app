@@ -114,3 +114,19 @@ The repository Worker source and its mirrored `cloud-worker/src/index.js` now co
 ### Protected hardware scope
 
 No changes to original MG-30 Gen 2 firmware 6.0.x targeting, NAM A2-Lite validator / Slot 10 transfer, IR User / Third Party / Collection paths, MIDI mapping, live parameter transport, preset serialization, or SysEx. AI output continues through existing catalog validation before any live MIDI apply.
+
+
+## User-supplied Worker 1.2.2 reconciliation — 2026-11-16
+
+The user supplied their currently deployed Worker script, edited with Gemini. Its four-model pool and fallback behavior are retained; the repository Worker is reconciled to this model-list naming and behavior rather than replacing the user's model choices:
+
+- `WORKERS_AI_MODELS` contains Gemma 4 26B A4B, GPT-OSS 20B, Mistral Small 3.1 24B and Llama 4 Scout 17B; `WORKERS_AI_MODEL` remains the first (Gemma) entry.
+- Auto `/api/v1/ai/tone-plan` now tries Cloudflare first, followed by Gemini, Groq and OpenRouter only if the internal Workers AI pool is exhausted.
+- A manually requested Cloudflare model is honored only when it is one of the four approved IDs. The chosen model runs first and the remaining three remain its fallback chain; unapproved IDs return HTTP 400 without inference.
+- The allow-listed light task set remains four tasks: `tone-discussion` (520), `tone3000-search-terms` (180), `tone3000-profile-ranking` (320), and `tone3000-capture-selection` (320). These tasks always use the internal Workers AI pool, and do not spill to external providers.
+- Model-specific token parameters are intentionally used: Gemma 4 receives `max_completion_tokens` and `chat_template_kwargs.enable_thinking=false`; GPT-OSS 20B, Mistral Small 3.1 and Llama 4 Scout receive `max_tokens`. This avoids sending both limit parameters to every model.
+- `/health` and `/api/v1/ai/providers` expose `workers_ai_models` and Worker version `1.2.3` so the deployed code can be distinguished from the user's former 1.2.2 deployment.
+
+The repository's standalone Worker entry point and mirrored test source `cloud-worker/src/index.js` have been kept in sync. Automated tests now assert the four IDs, all four light-task budgets, Cloudflare-first Auto order, internal fallback sequence, cumulative usage across failed/invalid model attempts, and manual model allow-list enforcement.
+
+**Deployment status:** no Cloudflare deployment was performed from this chat. The live Worker needs one redeploy from the updated Worker 1.2.3 source after CI validation. The existing APK from build #909 already contains the matching four light-task calls and Cloudflare-first Auto routing; no APK rebuild is required for Worker-only changes.
