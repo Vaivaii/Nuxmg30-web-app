@@ -833,7 +833,7 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(cssStart>=0&&cssEnd>cssStart,'authoritative scroll/dock CSS must exist');
  const css=source.slice(cssStart,cssEnd);
  assert.match(css,/overflow-y:auto!important/);
- assert.match(css,/\.ai-tone-sheet\{[^}]*height:94dvh!important/);
+ assert.ok(source.includes('.ai-tone-sheet{display:flex!important;flex-direction:column!important;height:94dvh!important;max-height:94svh!important;'));
  assert.ok(css.includes('.ai-tone-composer{position:relative!important;z-index:3!important;display:flex!important;flex:0 0 auto!important;'));
  assert.ok(css.includes('.ai-tone-messages{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;'));
 });
