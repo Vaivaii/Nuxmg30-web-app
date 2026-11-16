@@ -10,7 +10,7 @@ From the repository root:
 npx wrangler deploy --config cloud-worker/wrangler.toml
 ```
 
-The Wrangler config uses `cloud-worker/worker.js` as the complete standalone Worker entry point. `cloud-worker/src/index.js` is kept synchronized for source/test tooling.
+The Wrangler config uses `cloud-worker/worker.js` as the complete standalone Worker entry point. `cloud-worker/src/index.js` is kept synchronized for source/test tooling. The `[ai]` binding maps Cloudflare Workers AI to `env.AI`; it requires no model API key secret.
 
 **Important:** deploy this merged code to the existing `nux-mg30-studio-api` Worker. Do not paste it into a different Worker and do not overwrite it with the former cloud-only Worker. The app's Cloud Account and Cloud API clients now use this same host.
 
@@ -47,7 +47,8 @@ All `/api/v1/*` routes require the app JWT in `Authorization: Bearer <token>`, v
 - `GET /api/v1/status`
 - `GET /api/v1/ai/providers`
 - `GET /api/v1/ai/models?provider=gpt|gemini|groq|openrouter`
-- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Gemini, then Groq, then OpenRouter; explicit provider selection is also supported. OpenAI remains available as an explicit provider.
+- `POST /api/v1/ai/light-task` — authenticated allow-listed lightweight tasks (`tone-discussion`, `tone3000-search-terms`) run first on `@cf/google/gemma-4-26b-a4b-it` through `env.AI`.
+- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Gemini, then Groq, then OpenRouter, and uses Workers AI as the final fallback; explicit provider selection is also supported. OpenAI remains available as an explicit provider.
 - `GET /api/v1/youtube/status`
 - `GET /api/v1/youtube/search?q=...`
 - `GET /api/v1/tone3000/proxy?path=...` — app-compatible restricted metadata proxy.
@@ -77,7 +78,7 @@ After deploy:
 4. Test YouTube search.
 5. Test TONE3000 catalogue and model download using the user's existing OAuth session, then confirm the existing app-side A2-Lite validator before import.
 
-A successful `/health` does not prove provider keys are valid. Live provider calls must be tested separately. No deployment is performed by this repository update.
+A successful `/health` does not prove provider credentials or the Workers AI model invocation are valid. Live provider calls must be tested separately. The Workers AI binding is reported as `WORKERS_AI_BINDING` / `providers.cloudflare`; it is a Cloudflare service binding, not a text secret. Confirm the `AI` binding exists on the deployed Worker. No deployment is performed by this repository update.
 
 
 ### TONE3000 and YouTube credential compatibility
