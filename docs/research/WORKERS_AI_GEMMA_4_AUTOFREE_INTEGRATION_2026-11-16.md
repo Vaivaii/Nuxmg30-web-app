@@ -82,3 +82,35 @@ No Worker protocol, NAM/IR import code, MG-30 catalog validation, USB-MIDI comma
 - Android debug APK: **BUILD SUCCESSFUL**; uploaded as artifact `MG30-Studio-debug-APK` (artifact ID `14203409686`).
 - Extracted APK: `MG30-Studio-WorkersAI-UI-debug.apk`; SHA-256 `a3749e92510fde955e2f61af2d957ae0a8809656ab1bf2d7326a101205a0cedb`.
 - This verifies compilation and regression tests only. The new Test Workers AI button still needs a live tap from the user's installed app to confirm the deployed Cloudflare binding/model responds in their account.
+
+
+## Cloudflare-first routing and internal model pool — 2026-11-16
+
+The installed APK screenshots showed that Auto used Workers AI for TONE3000 search-term derivation but still used Gemini for profile ranking. The corrected routing policy is now:
+
+- **Workers AI only (no external provider inference/RPM):** tone discussion, TONE3000 search-term derivation, TONE3000 profile ranking, A2 capture selection, ordinary/simple Tone Plans and single-agent corrections while in Auto.
+- **Complex Auto Tone Architect / Collab:** Workers AI is inserted first in the existing team and is the first Tone Architect candidate. Gemini, Groq and OpenRouter remain available as following agents/lead/reviewer fallback candidates. OpenAI API/GPT remains manual-only; the Workers AI-hosted GPT-OSS fallback is separate from the OpenAI provider.
+- The Auto model selector copy now identifies Cloudflare-first behavior and the complex-team exception.
+
+The authenticated Worker light-task allowlist adds `tone3000-profile-ranking` and `tone3000-capture-selection` with 320-token caps. These keep profile/capture recommendation stages on Workers AI rather than silently calling the Gemini/Groq/OpenRouter generation providers.
+
+### Workers AI internal fallback order
+
+The Worker now calls the binding sequentially, stopping at the first model that returns parseable JSON:
+
+1. `@cf/google/gemma-4-26b-a4b-it` — primary.
+2. `@cf/openai/gpt-oss-20b` — fallback.
+3. `@cf/mistralai/mistral-small-3.1-24b-instruct` — fallback.
+4. `@cf/meta/llama-4-scout-17b-16e-instruct` — final Workers AI fallback.
+
+Gemma retains its existing `max_completion_tokens` plus `chat_template_kwargs.enable_thinking=false` request shape. The other models use `max_tokens`. Model attempts advance on a binding error or a response that cannot be parsed as a JSON object. The Worker response returns the actual model that succeeded so the app usage monitor does not mislabel fallback inference as Gemma.
+
+Cloudflare's official model catalogue documents the exact model IDs for [GPT-OSS 20B](https://developers.cloudflare.com/workers-ai/models/gpt-oss-20b/), [Mistral Small 3.1 24B](https://developers.cloudflare.com/workers-ai/models/mistral-small-3.1-24b-instruct/) and [Llama 4 Scout 17B](https://developers.cloudflare.com/workers-ai/models/llama-4-scout-17b-16e-instruct/). The Worker continues to use the existing `env.AI` binding; no vendor API keys are required for this internal pool.
+
+### Deployment note
+
+The repository Worker source and its mirrored `cloud-worker/src/index.js` now contain the internal model pool, new light-task names and Cloudflare-first Worker auto order. To make the deployed Worker match this source, redeploy the Worker from this branch using `npx wrangler deploy --config cloud-worker/wrangler.toml`. The app APK is a separate build/deployment from the Worker.
+
+### Protected hardware scope
+
+No changes to original MG-30 Gen 2 firmware 6.0.x targeting, NAM A2-Lite validator / Slot 10 transfer, IR User / Third Party / Collection paths, MIDI mapping, live parameter transport, preset serialization, or SysEx. AI output continues through existing catalog validation before any live MIDI apply.
