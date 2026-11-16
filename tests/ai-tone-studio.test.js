@@ -825,7 +825,9 @@ test('Audio Listening and Settings stay pinned outside conversation scroll; conv
  const audio=source.lastIndexOf('<section class=',source.indexOf('AUDIO LISTENING'));
  const composer=source.indexOf('<div class="ai-tone-composer">');
  assert.ok(settings>=0&&settings<region,'Settings overlay must be outside and before the scroll region');
+ assert.ok(source.includes('</div><div class="ai-tone-scroll-area" id="aiToneScrollArea">'),'Settings wrapper must close before the conversation scroller begins');
  assert.ok(region>=0&&audio>region&&composer>audio,'conversation, Audio Listening dock, and composer must be separate siblings');
+ assert.ok(source.includes('</div></div><section class='),'conversation body and scroll region must close before Audio Listening begins');
  const conversation=source.slice(region,audio);
  assert.ok(conversation.includes('id="aiToneMessages"'));
  assert.equal(conversation.includes('aiToneSettings'),false,'Settings must not be nested in the conversation scroller');
