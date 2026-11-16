@@ -1009,10 +1009,10 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,missing=[];
   let order=[];
-  if(mode==='auto'){
-   // Ordinary Auto tasks stay on Workers AI only; do not spend external vendor RPM.
+  if(mode==='auto'||mode==='cloudflare'){
+   // Ordinary Auto/Cloudflare tasks stay on Workers AI only; do not spend external vendor RPM.
    if(await secret('cloudflare'))order=['cloudflare'];
-   else missing.push('Cloudflare Workers AI binding AI is not configured. Auto light tasks do not probe external providers.');
+   else missing.push('Cloudflare Workers AI binding AI is not configured. Auto/Cloudflare light tasks do not probe external providers.');
   }else if(mode==='collab'){
    try{order=await fastestReadyProviderOrder();}
    catch(error){missing.push(String(error.message||error));}
