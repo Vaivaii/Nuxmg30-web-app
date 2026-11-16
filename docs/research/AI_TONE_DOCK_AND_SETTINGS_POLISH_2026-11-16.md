@@ -36,3 +36,12 @@
 - Audio dock now slides upward from below while staying behind the composer layer.
 - Settings now slides down from above behind the fixed header layer.
 - Both panels clean up their open/closed state after transitions, include a timeout fallback, and respect reduced-motion preferences.
+
+
+## Follow-up: settings overlay sizing, opacity and motion correction (2026-11-16)
+- User screenshot showed the settings surface occupying excessive vertical space, with a large empty region below the actual settings controls; its header also appeared translucent and the entrance motion felt slow/layered.
+- Reworked the settings surface as an absolutely positioned overlay inside the AI sheet, with content-driven height (`height:auto`, `min-height:0`) and a bounded scroll area only when settings content exceeds the available viewport.
+- Set an opaque solid dark background for the settings surface and an opaque, isolated header layer above it. Explicit stacking order: header 30, settings 20.
+- Shortened settings entrance/exit motion to 170ms transform and 140ms opacity, with a small 10px travel distance; no large vertical slide.
+- Audio dock animation and its composer layering are not changed by this correction.
+- Added regression coverage for settings sizing, opacity, stacking, and transition duration.

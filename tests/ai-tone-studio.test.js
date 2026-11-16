@@ -890,6 +890,22 @@ test('Audio status is a small USB LED; dock footnotes are removed and both panel
  assert.ok(css.includes('z-index:4!important'));
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
 });
+test('settings panel stays content-sized, opaque, below the fixed header, and animates quickly',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const start=source.indexOf("audioStyle.textContent += '.ai-tone-head{position:relative!important;z-index:30");
+ const end=source.indexOf("';",start);
+ assert.ok(start>=0&&end>start,'settings visual override exists');
+ const css=source.slice(start,end);
+ assert.ok(css.includes('background:#172018!important'));
+ assert.ok(css.includes('z-index:30!important'));
+ assert.ok(css.includes('position:absolute!important'));
+ assert.ok(css.includes('height:auto!important'));
+ assert.ok(css.includes('min-height:0!important'));
+ assert.ok(css.includes('max-height:calc(94dvh - 170px)!important'));
+ assert.ok(css.includes('background:#101710!important'));
+ assert.ok(css.includes('transition:transform .17s ease-out,opacity .14s ease-out!important'));
+ assert.ok(css.includes('z-index:20!important'));
+});
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const start=source.indexOf('const scrollMessagesToEnd=');
