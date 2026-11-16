@@ -906,6 +906,21 @@ test('settings panel stays content-sized, opaque, below the fixed header, and an
  assert.ok(css.includes('transition:transform .17s ease-out,opacity .14s ease-out!important'));
  assert.ok(css.includes('z-index:20!important'));
 });
+test('settings panel is anchored immediately below the measured header, never over it',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes("const syncSettingsTop=()=>{"));
+ assert.ok(source.includes("header.getBoundingClientRect().height"));
+ assert.ok(source.includes("sheet.style.setProperty('--ai-tone-head-height',height+'px')"));
+ assert.ok(source.includes("window.addEventListener('resize',syncSettingsTop,{passive:true})"));
+ assert.ok(source.includes('syncSettingsTop();\n   ui.settings.classList.add(\'on\')'));
+ const cssStart=source.indexOf("audioStyle.textContent += '.ai-tone-head{position:relative!important;z-index:30");
+ const cssEnd=source.indexOf("';",cssStart);
+ const css=source.slice(cssStart,cssEnd);
+ assert.ok(css.includes('top:calc(var(--ai-tone-head-height,68px) + 1px)!important;'));
+ assert.ok(css.includes('background:#172018!important'));
+ assert.ok(css.includes('z-index:30!important'));
+ assert.ok(css.includes('z-index:20!important'));
+});
 test('new chat messages scroll the unified region, not an inner messages scroller',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const start=source.indexOf('const scrollMessagesToEnd=');

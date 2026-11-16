@@ -45,3 +45,11 @@
 - Shortened settings entrance/exit motion to 170ms transform and 140ms opacity, with a small 10px travel distance; no large vertical slide.
 - Audio dock animation and its composer layering are not changed by this correction.
 - Added regression coverage for settings sizing, opacity, stacking, and transition duration.
+
+
+## Follow-up: anchor Settings directly below the header (2026-11-16)
+- Corrected the Settings top offset from a guessed fixed 68px to the measured height of `.ai-tone-head`.
+- `syncSettingsTop()` reads the rendered header height using `getBoundingClientRect()` and sets `--ai-tone-head-height` on the assistant sheet.
+- The measurement is refreshed when Settings opens and on viewport resize/orientation changes.
+- Settings starts at `calc(header-height + 1px)`; the opaque header keeps z-index 30 above the panel at z-index 20. This prevents Settings from covering the header while preserving the downward entrance motion.
+- Added a regression test for header measurement, viewport refresh, and the non-overlapping top offset.
