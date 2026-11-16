@@ -841,7 +841,7 @@ test('AI composer is a fixed dock outside one unified scrollable conversation re
  assert.ok(css.includes('overflow-y:auto!important;'));
  assert.ok(css.includes('.ai-tone-composer{grid-row:3!important;position:relative!important;z-index:3!important;display:flex!important;'));
  assert.ok(css.includes('min-height:max-content!important;'));
- assert.ok(css.includes('.ai-tone-messages{display:flex!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;'));
+ assert.ok(css.includes('.ai-tone-messages{box-sizing:border-box!important;display:flex!important;flex:0 0 auto!important;'));
  assert.equal(css.includes('grid-template-rows:auto minmax(0,1fr) auto!important;'),true);
 });
 
