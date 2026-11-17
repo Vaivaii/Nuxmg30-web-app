@@ -813,7 +813,7 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.match(source,/row\.requests\+' req'/);
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
  assert.match(source,/specialist tone_architect/);
- assert.match(source,/result\.provider\)result\.__aiModel/);
+ assert.ok(source.includes("logAiTokenUsage(result.provider,result.__aiModel,'specialist '+role"));
  assert.match(source,/aiUsage\.models\[modelKey\]/);
 });
 
