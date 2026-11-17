@@ -157,5 +157,13 @@ No changes were made to NAM A2-Lite transfer codec, TONE3000 download/import pro
 
 - Intermediate Actions #1006 at commit b7017b42feed798d2b20733419a6f0b4a252702c: 561 tests passed and Android debug APK build/artifact upload succeeded. This artifact is NOT the deliverable because further specialist-eligibility and bridge regression changes followed it.
 - The latest source/test commits after that intermediate build include d123f7b4a96cb6158c2a45284e7185c3e88c9c50, 76877e5d3ea41594ba238f912a1c65338939b564, 137a4b1c750b37bd9c38024a280810cbf418e6bb, 59180d0917e9874e78099aa24248ee66b819337c, 8e6e1b92527945dfc7e6199e23a3231be2264ff0, and 106ccfc36551f2d618ded49fd26d7c6e7a370c66.
-- A fresh Actions run for the final documentation/source HEAD is required before distributing an APK. Do not reuse artifact #1006 as if it contains these later changes.
+- Final source commit built: 106ccfc36551f2d618ded49fd26d7c6e7a370c66. The branch HEAD was subsequently advanced only by documentation commit 4b8236ea664514d4aa6784a5aba3619c3752cd4e; no source code changed after the tested source commit.
+- Final GitHub Actions run #1013: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44025327422 — success.
+  - JavaScript syntax validation: passed.
+  - Regression tests: 563 passed, 0 failed.
+  - Capacitor Android generation and USB audio plugin setup: passed.
+  - Gradle assembleDebug: BUILD SUCCESSFUL.
+  - APK artifact uploaded: MG30-Studio-debug-APK, artifact ID 14301599965, APK size 4,746,824 bytes.
+  - Extracted APK SHA-256: 7ae8f3d6641487a2d33217269269af995e14a5ae7fdffa14c13d8f3e1c1352b9.
+- The APK corresponds to the final tested source commit; it is not the superseded #1006 artifact.
 - Physical Android + original MG-30 Gen 2 firmware 6.0.x verification remains pending; CI does not prove hardware behavior.
