@@ -162,6 +162,18 @@ test('Native SIWC bridge preserves Responses message arrays and bounded speciali
   assert.match(chatGptPlugin,/result\.put\("toolCalls", toolCalls\)/);
 });
 
+test('Native SIWC stream returns partial text and incomplete reason for one JS-side continuation',()=>{
+  assert.match(chatGptPlugin,/String incompleteReason = ""/);
+  assert.match(chatGptPlugin,/"response\.incomplete"\.equals\(type\)/);
+  assert.match(chatGptPlugin,/details\.optString\("reason", "incomplete"\)/);
+  assert.match(chatGptPlugin,/incompleteReason = "stream_interrupted"/);
+  assert.match(chatGptPlugin,/incompleteReason = "stream_ended"/);
+  assert.match(chatGptPlugin,/result\.put\("incomplete", !completed\)/);
+  assert.match(chatGptPlugin,/result\.put\("incompleteReason", incompleteReason/);
+  assert.match(chatGptPlugin,/if \(!completed && finalText\.length\(\) == 0\)/);
+  assert.match(chatGptPlugin,/call\.resolve\(result\)/);
+});
+
 test('ChatGPT plan access uses the native SIWC plugin and never sends ChatGPT tokens through Cloudflare', () => {
   assert.match(aiStudio, /MG30ChatGPTBridge/);
   assert.match(aiStudio, /async function chatgpt\(_credential, system, prompt, model\)/);
