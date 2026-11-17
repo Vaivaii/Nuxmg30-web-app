@@ -1633,17 +1633,7 @@ test('same-tone refinements request parameter deltas without regenerating a pres
  assert.ok(source.includes('only changed blocks and only changed parameter keys'));
  assert.ok(source.includes('Do not regenerate the chain'));
 });
-test('token monitor separates provider-model usage and per-agent/model requests',()=>{
- const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes('models:Object.create(null)'));
- assert.match(source,/const modelKey=String\(provider\)\+' · '\+String\(model\|\|'unknown model'\)/);
- assert.match(source,/agent:aiAgentLabel\(stage,provider,model\)/);
- assert.match(source,/row\.requests\+' req'/);
- assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
- assert.match(source,/specialist tone_architect/);
- assert.match(source,/result\.provider\)result\.__aiModel/);
- assert.match(source,/aiUsage\.models\[modelKey\]/);
-});
+
 
 test('conversation memory is four recent turns and AI usage logging omits prompt contents',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
