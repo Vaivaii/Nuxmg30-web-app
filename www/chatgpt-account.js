@@ -28,6 +28,7 @@ function render() {
   const switchButton = $('mg30ChatGPTSwitchBtn');
   const select = $('mg30ChatGPTAccounts');
   const identity = $('mg30ChatGPTIdentity');
+  const switchRow = $('mg30ChatGPTSwitchRow');
   const connected = session.status === 'connected' && session.sharing;
 
   if (login) {
@@ -56,6 +57,7 @@ function render() {
     select.hidden = profiles.length < 2;
   }
   if (switchButton) switchButton.hidden = profiles.length < 2;
+  if (switchRow) switchRow.hidden = profiles.length < 2;
 }
 
 async function refreshState(message) {
