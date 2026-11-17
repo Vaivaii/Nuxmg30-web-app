@@ -106,7 +106,7 @@ export function toneSpecialistToolDefinition(){
  return {
   type:'function',
   name:'delegate_tone_specialist',
-  description:'Delegate one narrowly-scoped task to one available free specialist model. ChatGPT remains the sole orchestrator and final Tone Plan author. Do not call for routine/simple requests. Use Tone Architect for uncertain artist/song musical intent, Gear Specialist for difficult device/model compatibility, Parameter Engineer for coupled or unusual exact parameter mapping, and Critical Reviewer only for a material conflict in a candidate plan. At most one specialist call is allowed for this request.',
+  description:'Delegate one narrowly-scoped task to one available free specialist model. ChatGPT remains the sole orchestrator and final Tone Plan author. Do not call for routine/simple requests. For a named artist/song reference, always call Tone Architect once when available; use Gear Specialist for difficult device/model compatibility, Parameter Engineer for coupled or unusual exact parameter mapping, and Critical Reviewer only for a material conflict in a candidate plan. At most one specialist call is allowed for this request.',
   strict:true,
   parameters:{
    type:'object',
@@ -418,6 +418,9 @@ export async function requestChatGptConversation({bridge,model,system,user,maxOu
  Object.defineProperty(result,'__aiUsageBreakdown',{value:breakdown,enumerable:false});
  Object.defineProperty(result,'__aiModel',{value:String(finalResponse?.model||model),enumerable:false});
  return result;
+}
+export function requiresToneArchitect(prompt){
+ return /\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|stevie\s*ray\s*vaughan|srv|jimi\s*hendrix|hendrix|eric\s*clapton|david\s*gilmour|gilmour|slash|eddie\s*van\s*halen|van\s*halen|john\s*frusciante|frusciante|mark\s*knopfler|gary\s*moore|joe\s*bonamassa|bb\s*king|b\.b\.\s*king)\b/i.test(String(prompt||''));
 }
 export function shouldOfferToneSpecialist(prompt,localRefinement=false){
  if(localRefinement)return false;
@@ -1777,7 +1780,8 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
     const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
     const specialistEligible=shouldOfferToneSpecialist(prompt,localRefinement);
     const specialistAvailable=specialistEligible&&await hasFreeToneSpecialist();
-    const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT ORCHESTRATOR CONTRACT: You are the sole user-facing AI, orchestrator and final decision authority. You may call at most ONE delegate_tone_specialist tool for this request. Do not call a specialist for a routine single-amp preset, an ordinary parameter edit, or when your own evidence and the supplied MG-30 catalogue are sufficient. Delegate Tone Architect only for meaningful musical-reference ambiguity; Gear Specialist only for uncertain device/model compatibility; Parameter Engineer only for coupled or difficult exact parameter translation; Critical Reviewer only for a material conflict in a candidate plan. Never call all roles, never call two specialists, and never repeat a specialist task. If no specialist materially improves confidence, produce the final Tone Plan yourself. Treat any specialist output as advisory, resolve it yourself, and return the final catalog-valid JSON Tone Plan only. The runtime catalogue and validator are authoritative.';
+    if(requiresToneArchitect(prompt)&&!specialistAvailable)message('ai','Tone Architect was not called because no free specialist provider is configured. ChatGPT GPT-6-Luna will continue as the sole model; no specialist usage is being reported.');
+    const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT ORCHESTRATOR CONTRACT: You are the sole user-facing AI, orchestrator and final decision authority. You may call at most ONE delegate_tone_specialist tool for this request. Do not call a specialist for a routine single-amp preset, an ordinary parameter edit, or when your own evidence and the supplied MG-30 catalogue are sufficient. For a named guitarist, artist, band or song reference, you MUST delegate Tone Architect exactly once whenever the specialist tool is available; for generic requests, delegate Tone Architect only when musical intent is materially ambiguous. Delegate Gear Specialist only for uncertain device/model compatibility; Parameter Engineer only for coupled or difficult exact parameter translation; Critical Reviewer only for a material conflict in a candidate plan. Never call all roles, never call two specialists, and never repeat a specialist task. If no specialist materially improves confidence, produce the final Tone Plan yourself. Treat any specialist output as advisory, resolve it yourself, and return the final catalog-valid JSON Tone Plan only. The runtime catalogue and validator are authoritative.';
     first=await orchestrateChatGptTonePlan({
      bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],
      instructions:orchestrationInstructions,
