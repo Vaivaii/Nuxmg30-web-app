@@ -978,9 +978,9 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
   }
  }
 async function refreshAllProviderModels(quiet=true){
+await refreshProviderModels('chatgpt',quiet);
 const providers=['gemini','groq','openrouter'];
 const results=await Promise.all(providers.map(provider=>refreshProviderModels(provider,quiet)));
-await refreshProviderModels('chatgpt',quiet);
 renderActiveModelSelect();
   const failures=results.map((rows,index)=>({provider:providers[index],rows})).filter(x=>!x.rows.length);
   if(!quiet&&failures.length){
@@ -994,6 +994,8 @@ let nativeSession=null;
 try { nativeSession=await window.MG30ChatGPTBridge?.getSession?.(); } catch {}
 const chatNode=$('aiChatGPTKeyState');
 if(chatNode)chatNode.textContent=nativeSession?.status==='connected'&&nativeSession?.sharing?'Connected · ChatGPT plan access enabled (direct Android connection)':'Not connected · sign in from Device settings';
+// SIWC models belong to the native ChatGPT account and must not depend on Cloud Account login.
+await refreshProviderModels('chatgpt',true);
 try {
 const data=await getCloudAiStatus(true),providers=data?.providers||{};
    const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState',cloudflare:'aiCloudflareBindingState'};
@@ -1101,7 +1103,7 @@ const cached=autoModelHealthCache[provider];
  async function testProvider(provider){
   setBusy(true);status('Testing '+providerNames[provider]+' API…','busy');
   try{
-   const key=await secret(providerKeyId(provider));if(!key)throw new Error(providerNames[provider]+' is not configured in Cloudflare Worker.');
+   const key=await secret(providerKeyId(provider));if(!key)throw new Error(provider==='chatgpt'?'ChatGPT account is not connected or plan-use permission is disabled. Sign in from Device settings.':providerNames[provider]+' is not configured in Cloudflare Worker.');
    const model=await fastestReadyModel(provider,key);
    await invokeProvider(provider,key,'Return exactly {"status":"ok"}.','Return exactly {"status":"ok"}.',model,90000,'testing provider',64);
 const stateId=({chatgpt:'aiChatGPTKeyState',gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'})[provider];
@@ -1136,7 +1138,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   }finally{setBusy(false);}
  }
  async function askNamAIJson(system,user,stage){
-  const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,missing=[];
+  const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
   let order=[];
   if(mode==='auto'||mode==='cloudflare'){
    // Ordinary Auto/Cloudflare tasks stay on Workers AI only; do not spend external vendor RPM.
@@ -1613,6 +1615,7 @@ $('aiToneTestGroq')?.addEventListener('click',()=>testProvider('groq'));$('aiTon
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on')&&!busy)closePanel();});
  window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. TONE3000 search can still run; connect MG-30 before slot-10 import or live preset send.','idle');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
  window.addEventListener('mg30-midi-connected',()=>{if(!busy)status('MG-30 connected. AI live editing is ready.','success');});
+ window.addEventListener('mg30-chatgpt-session-changed',()=>{void refreshProviderModels('chatgpt',true).then(()=>{renderActiveModelSelect();void keyStates();});});
  setAudioMode('once');void refreshAudioDeviceStatus();setAudioPanelExpanded(false);updateNamControlState();await keyStates();if(window.MG30AIToneBridge?.isConnected?.())status('MG-30 connected via USB-MIDI.','success');
 }
 if(typeof window!=='undefined'&&typeof document!=='undefined'){
