@@ -292,3 +292,25 @@ No changes were made to NAM A2-Lite transfer codec, TONE3000 download/import pro
 - Extracted `app-debug.apk`: 4,751,144 bytes; archive integrity check passed; identified as Android package with APK Signing Block.
 - APK SHA-256: `4ae376109d98f309caef4c5a93d17b0eb8c38cf89b69d3c0bc4b3083df945b65`.
 - Physical-device testing remains required: verify a real discussion that previously stopped, a John Mayer Tone Plan with the Tone Architect agent visible, usage lines for the actual specialist provider/model, and then live apply on the original MG-30 Gen 2 firmware 6.0.x. CI and mocked tests do not by themselves prove the user's account has a configured free specialist provider or that a real SIWC SSE interruption will occur/recover identically on the device.
+
+## Final correction: keep empty incomplete reasons distinct, no retry for content filtering — Actions #1040
+
+- A final code review found an edge case after run #1037: a native `response.incomplete` event with no visible text was still rejected by the native plugin. A content-filter stop could therefore be converted into a generic stream error, which matched the JS network-retry rule.
+- `native-android/MG30ChatGPTPlugin.java` now resolves all Responses incomplete events with their reason even if no text has arrived. The JS layer decides whether it is recoverable:
+  - `max_output_tokens`, `stream_ended`, `stream_interrupted`, and `incomplete`: at most one bounded continuation/retry.
+  - `content_filter` and other non-recoverable reasons: no retry; the reason is surfaced and the failed attempt is recorded.
+  - Stream interruption with useful partial text continues from that partial answer; it does not resend the full recent conversation.
+- Updated native bridge regression test to assert empty incomplete results preserve the reason rather than being converted to a network retry.
+- Final validation is Actions #1040 (supersedes run #1037 as the deliverable):
+  - Source/test commit: `0a348d0fe51e9ec3c11c765e9c24b598e2da7a05`.
+  - Run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44049661959 — success.
+  - JavaScript syntax: passed.
+  - Regression tests: 648 passed, 0 failed.
+  - Capacitor Android generation and USB Audio plugin: passed.
+  - Gradle `assembleDebug`: BUILD SUCCESSFUL.
+  - Artifact ID: `14313610398`, `MG30-Studio-debug-APK`.
+  - ZIP artifact size: 4,374,448 bytes; archive integrity: passed.
+  - Extracted `app-debug.apk`: 4,751,044 bytes; identified as Android package with APK Signing Block.
+  - APK SHA-256: `a523be2c33dcdf3ffe68a21b3d05bae7449b2265ce791a9b69d5a49932cd5666`.
+- Branch `feature/chatgpt-siwc-android` at this tested source commit contains only the native SIWC plugin, AI tone assistant, and regression test changes relative to the previous Auto/Token Monitor docs commit. The project integration note is updated afterward as a documentation-only commit.
+- Hardware acceptance remains outstanding on the user's Android device and original MG-30 Gen 2 firmware 6.0.x: verify a real interrupted discussion resumes, a named-artist Tone Plan visibly invokes Tone Architect when at least one free specialist provider is configured, actual provider/model/token rows appear in Token Monitor, and final live apply works. A CI mock proves the recovery logic paths, not an actual network interruption on the user's account.
