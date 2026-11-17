@@ -239,7 +239,7 @@ public class MG30ChatGPTPlugin extends Plugin {
             if (output.size() > 2 * 1024 * 1024) throw new IllegalStateException("ChatGPT returned an unexpectedly large JSON response.");
         }
         JSONObject body = new JSONObject(new String(output.toByteArray(), StandardCharsets.UTF_8));
-        if (code < 200 || code >= 300) throw apiError(body, code);
+        if (code < 200 || code >= 300) throw new IllegalStateException(apiError(body, code));
         return body;
     }
 
@@ -570,7 +570,7 @@ public class MG30ChatGPTPlugin extends Plugin {
             upsertProfile(root, profile);
             root.put("activeProfileId", profile.getString("id"));
             writeStore(root);
-            JSObject result = publicSession(root);
+            JSObject result = new JSObject(publicSession(root).toString());
             result.put("ok", true);
             call.resolve(result);
         } catch (Exception error) {
@@ -705,7 +705,7 @@ public class MG30ChatGPTPlugin extends Plugin {
 
     @PluginMethod
     public void getSession(PluginCall call) {
-        try { call.resolve(publicSession(readStore())); }
+        try { call.resolve(new JSObject(publicSession(readStore()).toString())); }
         catch (Exception error) { call.reject("Could not read ChatGPT connection state: " + error.getMessage()); }
     }
 
@@ -740,7 +740,7 @@ public class MG30ChatGPTPlugin extends Plugin {
             if (!found) throw new IllegalArgumentException("ChatGPT account profile was not found.");
             root.put("activeProfileId", id);
             writeStore(root);
-            call.resolve(publicSession(root));
+            call.resolve(new JSObject(publicSession(root).toString()));
         } catch (Exception error) { call.reject("Could not switch ChatGPT account: " + error.getMessage()); }
     }
 
