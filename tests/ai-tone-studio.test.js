@@ -655,7 +655,7 @@ test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only reque
 test('standalone NAM and consultation routes are separate from device-write operations',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('async function answerToneConversation'));
- assert.ok(source.includes('Do not create a Tone Plan'));
+ assert.ok(source.includes('This is a DISCUSSION turn, not a Tone Plan request'));
  assert.ok(source.includes("if(intent==='consultation')"));
  assert.ok(source.includes('async function searchNamCatalogForPrompt'));
  assert.ok(source.includes("if(intent==='nam_search')"));
