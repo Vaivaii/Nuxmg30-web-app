@@ -184,10 +184,13 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 });
 
 
-test('Auto is the default AI provider and provider model options are dropdowns', () => {
+test('ChatGPT SIWC is the default AI provider and provider model options are dropdowns', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · Workers AI \+ Free Multi-AI/);
+  assert.match(source, /let mode='chatgpt'/);
+  assert.match(source, /value="chatgpt" selected>ChatGPT · signed-in plan \(SIWC\)/);
+  for (const provider of ['auto','cloudflare','gemini','groq','openrouter','gpt','collab']) {
+    assert.match(source, new RegExp('value="' + provider + '"'));
+  }
   assert.match(source, /id="aiToneActiveModel"/);
   assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
@@ -236,17 +239,18 @@ test('Gemini high-demand errors are classified as temporary and eligible for fal
   assert.equal(isRetryableProviderError(new Error('This model is currently experiencing high demand. Spikes in demand are usually temporary.')), true);
 });
 
-test('AI defaults to a free Multi-AI team while keeping GPT manual-only', () => {
+test('ChatGPT is primary while Auto and the free Multi-AI team remain explicit alternate providers', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · Workers AI \+ Free Multi-AI/);
-  assert.match(source, /fastestReadyProviderOrder/);
-  assert.match(source, /Auto · Cloudflare first; team joins for complex tones/);
+  assert.match(source, /let mode='chatgpt'/);
+  assert.match(source, /value="chatgpt" selected/);
+  for (const provider of ['auto','cloudflare','gemini','groq','openrouter','gpt','collab']) {
+    assert.match(source, new RegExp('value="' + provider + '"'));
+  }
+  assert.match(source, /const auto=mode==='auto'\|\|mode==='collab'\|\|\(mode!=='chatgpt'&&ui\.autoFallback\.checked\)/);
+  assert.match(source, /if\(provider==='chatgpt'\)result=await chatgpt/);
   assert.match(source, /No OpenAI GPT API model was probed or selected/);
-  assert.match(source, /mode==='auto'\|\|mode==='collab'\|\|ui\.autoFallback\.checked/);
-  assert.match(source, /const providers=\['gemini','groq','openrouter'\]/);
-  assert.match(source, /GPT · manual \(may be paid\)/);
-  for (const provider of ['gemini','groq','openrouter','gpt']) assert.match(source, new RegExp('value="'+provider+'"'));
+  assert.deepEqual(providerFallbackOrder('auto'), ['gemini','groq','openrouter']);
+  assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
 });
 
 test('automatic model selection uses the model catalogue without spending generation tokens on probes', () => {
@@ -774,11 +778,11 @@ test('profile and capture recommendation UI retain full local TONE3000 objects',
 });
 
 
-test('Cloudflare Workers AI is visible as the fifth provider and can be tested directly',()=>{
+test('Cloudflare Workers AI remains available as a provider and can be tested directly',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('id="aiCloudflareBindingState"'));
  assert.ok(source.includes('id="aiToneTestCloudflare"'));
- assert.ok(source.includes("$('aiToneTestCloudflare').addEventListener('click',()=>{void testWorkersAI();})"));
+ assert.ok(source.includes("$('aiToneTestCloudflare')?.addEventListener('click',()=>{void testWorkersAI();});"));
  assert.ok(source.includes("ui.providerSummary.textContent=configured+' / 5 configured'"));
  assert.ok(source.includes("provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable')"));
  assert.ok(source.includes('Cloudflare Workers AI is first for light tasks and the first member of the complex Tone Architect team.'));
