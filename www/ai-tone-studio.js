@@ -605,6 +605,7 @@ async function init(){
  const aiUsage={requests:0,total:0,providers:Object.create(null),tasks:Object.create(null)};
  const renderAiUsageMonitor=()=>{ui.usageTotal.textContent=aiUsage.total.toLocaleString();ui.usageRequests.textContent=String(aiUsage.requests);ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';ui.usageProviders.innerHTML=Object.keys(aiUsage.providers).length?Object.entries(aiUsage.providers).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';};
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
+ let pendingToneApply=null;
  const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>8)dialogueContext.shift();};
  const conversationContextText=()=>dialogueContext.slice(-8).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
@@ -1670,9 +1671,10 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   const conversation=conversationContextText();
   const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);
   const intent=classifyAssistantIntent(prompt,conversation);
+  const resumePendingTone=Boolean(pendingToneApply&&/\\b(lanjutkan|terapkan|apply|pasang|kirim|continue|resume)\\b/i.test(prompt));
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
   const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);
-  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
+  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation&&!resumePendingTone){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';pendingToneApply=null;}
   rememberConversation('user',prompt);
   setBusy(true);message('user',prompt);
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
@@ -1690,9 +1692,12 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    const bridge=window.MG30AIToneBridge;
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
-   if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.');
-   let preparedPlan=null;
-   if(shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))){
+   let preparedPlan=resumePendingTone?validateAiTonePlan(pendingToneApply,bridge.getCatalog?.()||[]):null;
+   if(resumePendingTone&&!bridge.isConnected?.()){
+    const guidance='Tone Plan sudah siap dan tidak perlu dibuat ulang. Hubungkan MG-30 melalui USB-MIDI, lalu kirim “terapkan tone” atau “lanjutkan”.';
+    message('ai',guidance);rememberConversation('assistant',guidance);status('Tone Plan ready; waiting for USB-MIDI connection.','idle');return;
+   }
+   if(!resumePendingTone&&shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))){
     const pendingMatchesThisRequest=Boolean(pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
     const completedPending=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
     if(intent==='tone_create'&&!pendingMatchesThisRequest){
@@ -1726,8 +1731,15 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
     else{const ampChange={id:'AMP',model:installed.name,enabled:true,parameters:{}};if(existing>=0)plan.blocks[existing]=ampChange;else plan.blocks.unshift(ampChange);}
     plan.summary=(plan.summary||'AI tone')+' using the imported NAM capture in slot 10.';
    }
+   if(!bridge.isConnected?.()){
+    pendingToneApply=plan;
+    const summary=(plan.summary||'Tone Plan siap diterapkan.')+'\\nRencana blok: '+plan.blocks.map(block=>block.id+': '+block.model).join(', ');
+    const guidance='Tone Plan berhasil disusun ChatGPT dan lolos validasi MG-30 Gen 2. Belum ada MIDI yang dikirim karena pedal belum tersambung.\\n\\n'+summary+'\\n\\nHubungkan MG-30 via USB-MIDI, lalu kirim “terapkan tone” atau “lanjutkan”. Rencana ini akan digunakan kembali tanpa memanggil AI lagi.';
+    message('ai',guidance);rememberConversation('assistant',guidance);ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Tone Plan ready; waiting for USB-MIDI connection.','success');return;
+   }
    status('Tone Plan validated. Updating the editor and sending MIDI…','busy');
    const result=await bridge.applyPlan(plan);
+   pendingToneApply=null;
    last={before:result.before,after:result.after,blocks:result.blocks};ui.undo.disabled=false;
    const appliedSummary=activeNamContext
     ?'Tone updated using the installed TONE3000 NAM capture in slot 10.'
