@@ -692,7 +692,7 @@ async function automaticNamImportForPrompt(prompt){
   try{
    if(!isExplicitToneCreationRequest(prompt)){
     status('ChatGPT is thinking…','busy');
-    const namSearch=/\\b(nam|neural\\s+amp\\s+model|tone3000)\\b/i.test(prompt)&&/\\b(cari|carikan|search|find|research|riset|rekomendasi|recommend|best|terbaik)\\b/i.test(prompt);
+    const namSearch=/\b(nam|neural\s+amp\s+model|tone3000)\b/i.test(prompt)&&/\b(cari|carikan|search|find|research|riset|rekomendasi|recommend|best|terbaik)\b/i.test(prompt);
     const research=namSearch?await researchNamForPrompt(prompt):'';
     await askChatGPTDiscussion(prompt,research);
     ui.prompt.value='';$('aiToneCount').textContent='0/1400';
