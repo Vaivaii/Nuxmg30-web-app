@@ -810,7 +810,7 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.ok(source.includes('models:Object.create(null)'));
  assert.match(source,/const modelKey=String\(provider\)\+' · '\+String\(model\|\|'unknown model'\)/);
  assert.match(source,/agent:aiAgentLabel\(stage,provider,model\)/);
- assert.match(source,/row\.requests\+' req'/);
+ assert.ok(source.includes("row.requests+' req</small>"));
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
  assert.match(source,/specialist tone_architect/);
  assert.ok(source.includes("logAiTokenUsage(result.provider,result.__aiModel,'specialist '+role"));
