@@ -817,13 +817,33 @@ public class MG30ChatGPTPlugin extends Plugin {
                 String instructions = call.getString("instructions", "");
                 String rawInput = call.getString("input", "[]");
                 JSONArray input = new JSONArray(rawInput);
-                if (input.length() < 1 || input.length() > 40) throw new IllegalArgumentException("Conversation context must contain between 1 and 40 messages.");
+                if (input.length() < 1 || input.length() > 40) throw new IllegalArgumentException("Conversation context must contain between 1 and 40 messages/items.");
                 for (int i = 0; i < input.length(); i++) {
-                    JSONObject message = input.optJSONObject(i);
-                    if (message == null || !("user".equals(message.optString("role")) ||
-                            "assistant".equals(message.optString("role")) || "developer".equals(message.optString("role"))) ||
-                            !(message.opt("content") instanceof String)) {
-                        throw new IllegalArgumentException("Conversation messages must use user, assistant, or developer roles with text content.");
+                    JSONObject item = input.optJSONObject(i);
+                    if (item == null) throw new IllegalArgumentException("Conversation input contains an invalid item.");
+                    String role = item.optString("role", "");
+                    String type = item.optString("type", "");
+                    if (!role.isEmpty()) {
+                        if (!("user".equals(role) || "assistant".equals(role) || "developer".equals(role)) ||
+                                !(item.opt("content") instanceof String)) {
+                            throw new IllegalArgumentException("Conversation messages must use user, assistant, or developer roles with text content.");
+                        }
+                    } else if ("function_call".equals(type)) {
+                        if (item.optString("call_id", "").isEmpty() || item.optString("name", "").isEmpty() ||
+                                !(item.opt("arguments") instanceof String)) {
+                            throw new IllegalArgumentException("A delegated function-call item is incomplete.");
+                        }
+                    } else if ("function_call_output".equals(type)) {
+                        if (item.optString("call_id", "").isEmpty() || !(item.opt("output") instanceof String)) {
+                            throw new IllegalArgumentException("A delegated function output is incomplete.");
+                        }
+                        if (item.optString("output", "").length() > 12000) {
+                            throw new IllegalArgumentException("A delegated function output exceeds the safe size limit.");
+                        }
+                    } else if ("reasoning".equals(type)) {
+                        // Preserve the complete Responses reasoning item for the next function-call turn.
+                    } else {
+                        throw new IllegalArgumentException("Unsupported Responses input item type.");
                     }
                 }
                 JSONObject payload = new JSONObject();
@@ -832,6 +852,23 @@ public class MG30ChatGPTPlugin extends Plugin {
                 payload.put("input", input);
                 payload.put("store", false);
                 payload.put("stream", true);
+                int maxOutputTokens = call.getInt("maxOutputTokens", 1350);
+                maxOutputTokens = Math.max(256, Math.min(1800, maxOutputTokens));
+                payload.put("max_output_tokens", maxOutputTokens);
+                boolean parallelToolCalls = call.getBoolean("parallelToolCalls", false);
+                payload.put("parallel_tool_calls", parallelToolCalls);
+                JSONArray tools = call.getData().optJSONArray("tools");
+                if (tools != null) {
+                    if (tools.length() > 1) throw new IllegalArgumentException("MG-30 Studio allows at most one specialist tool per request.");
+                    for (int i = 0; i < tools.length(); i++) {
+                        JSONObject tool = tools.optJSONObject(i);
+                        if (tool == null || !"function".equals(tool.optString("type")) ||
+                                !"delegate_tone_specialist".equals(tool.optString("name"))) {
+                            throw new IllegalArgumentException("Only the approved MG-30 tone specialist tool is available.");
+                        }
+                    }
+                    payload.put("tools", tools);
+                }
 
                 byte[] bytes = payload.toString().getBytes(StandardCharsets.UTF_8);
                 if (bytes.length > 900000) throw new IllegalArgumentException("Conversation context is too large. Shorten the discussion and try again.");
@@ -853,6 +890,8 @@ public class MG30ChatGPTPlugin extends Plugin {
                 }
 
                 StringBuilder finalText = new StringBuilder();
+                JSONArray streamedOutputItems = new JSONArray();
+                JSONObject completedResponse = null;
                 boolean completed = false;
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
@@ -873,9 +912,13 @@ public class MG30ChatGPTPlugin extends Plugin {
                         } else if ("response.failed".equals(type) || "error".equals(type)) {
                             JSONObject detail = event.optJSONObject("response");
                             throw new IllegalStateException(detail != null ? apiError(detail, status) : apiError(event, status));
+                        } else if ("response.output_item.done".equals(type)) {
+                            JSONObject item = event.optJSONObject("item");
+                            if (item != null) streamedOutputItems.put(item);
                         } else if ("response.incomplete".equals(type)) {
                             throw new IllegalStateException("ChatGPT stopped before completing the response. You can retry.");
                         } else if ("response.completed".equals(type)) {
+                            completedResponse = event.optJSONObject("response");
                             completed = true;
                             break;
                         }
@@ -883,9 +926,28 @@ public class MG30ChatGPTPlugin extends Plugin {
                 }
                 if (responseCancelled.get()) throw new InterruptedException("ChatGPT response cancelled.");
                 if (!completed) throw new IllegalStateException("ChatGPT stream ended before response.completed. Try again.");
+                JSONArray outputItems = completedResponse != null ? completedResponse.optJSONArray("output") : null;
+                if (outputItems == null) outputItems = streamedOutputItems;
+                JSONArray toolCalls = new JSONArray();
+                for (int i = 0; i < outputItems.length(); i++) {
+                    JSONObject item = outputItems.optJSONObject(i);
+                    if (item != null && "function_call".equals(item.optString("type"))) toolCalls.put(item);
+                }
                 JSObject result = new JSObject();
                 result.put("text", finalText.toString());
                 result.put("model", model);
+                result.put("outputItems", outputItems);
+                result.put("toolCalls", toolCalls);
+                if (completedResponse != null) {
+                    JSONObject usage = completedResponse.optJSONObject("usage");
+                    if (usage != null) {
+                        JSObject usageResult = new JSObject();
+                        usageResult.put("input_tokens", usage.optInt("input_tokens", 0));
+                        usageResult.put("output_tokens", usage.optInt("output_tokens", 0));
+                        usageResult.put("total_tokens", usage.optInt("total_tokens", 0));
+                        result.put("usage", usageResult);
+                    }
+                }
                 call.resolve(result);
             } catch (InterruptedException error) {
                 call.reject(error.getMessage());
