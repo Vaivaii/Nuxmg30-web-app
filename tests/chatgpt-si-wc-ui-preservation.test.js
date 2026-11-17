@@ -19,7 +19,7 @@ test('Restored AI Live Tone Assistant keeps the audio listening and local analys
 });
 
 test('All pre-existing AI providers remain selectable alongside ChatGPT SIWC', () => {
-  const select = html.match(/<select id="aiToneProviderSelect">[\s\S]*?<\/select>/)?.[0] || '';
+  const select = ai.match(/<select id="aiToneProviderSelect">[\s\S]*?<\/select>/)?.[0] || '';
   for (const provider of ['chatgpt', 'auto', 'cloudflare', 'gemini', 'groq', 'openrouter', 'gpt', 'collab']) {
     assert.ok(select.includes('value="' + provider + '"'), 'provider selector lost ' + provider);
   }
