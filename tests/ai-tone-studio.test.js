@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, shouldOfferToneSpecialist } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, shouldOfferToneSpecialist, requestChatGptConversation } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -536,6 +536,53 @@ test('stale manually saved Gemini model cannot override the current model catalo
  assert.ok(source.includes("if(manual)localStorage.setItem('mg30-ai-model-manual-'+provider,'0')"));
 });
 
+
+test('short contextual follow-up questions stay in discussion mode, not Tone Plan generation',()=>{
+ const context=[
+  'User: Jelaskan tone John Mayer yang clean dan edge of breakup.',
+  'Assistant: Amp clean dengan mids hangat, sedikit breakup dan delay pendek bisa membantu.',
+  'Assistant: Apakah kamu ingin saya bandingkan dengan setting yang sedang kamu gunakan?'
+ ].join('\\n');
+ assert.equal(classifyAssistantIntent('Kalau yang ini gimana',context),'consultation');
+ assert.equal(classifyAssistantIntent('Kalau yang tadi bagaimana?',context),'consultation');
+ assert.equal(classifyAssistantIntent('Apa kekurangannya?',context),'consultation');
+ assert.equal(classifyAssistantIntent('Oke, buatkan tonenya',context),'tone_create');
+});
+
+test('ChatGPT discussion accepts plain prose through native SIWC without JSON parsing or specialist tools',async()=>{
+ const calls=[];
+ const bridge={sendResponse:async options=>{
+  calls.push(options);
+  return {text:'Setting ini terdengar lebih cocok untuk lead yang artikulatif. Coba perhatikan sustain dan area upper-mid.',model:'gpt-model',usage:{input_tokens:180,output_tokens:34,total_tokens:214}};
+ }};
+ const result=await requestChatGptConversation({
+  bridge,model:'gpt-model',system:'Answer conversationally. Do not return JSON.',
+  user:'RECENT DISCUSSION: John Mayer tone.\\nLATEST USER MESSAGE: Kalau yang ini gimana?',
+  maxOutputTokens:520
+ });
+ assert.equal(result.reply,'Setting ini terdengar lebih cocok untuk lead yang artikulatif. Coba perhatikan sustain dan area upper-mid.');
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].model,'gpt-model');
+ assert.equal(calls[0].maxOutputTokens,520);
+ assert.equal(calls[0].parallelToolCalls,false);
+ assert.equal(calls[0].tools,undefined);
+ assert.equal(calls[0].input.length,1);
+ assert.equal(result.__aiUsage.input_tokens,180);
+ assert.equal(result.__aiUsage.output_tokens,34);
+ assert.equal(result.__aiUsage.total_tokens,214);
+});
+
+test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route and all MIDI writes',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const start=source.indexOf('async function answerToneConversation');
+ const end=source.indexOf('function renderNamCandidates',start);
+ const discussion=source.slice(start,end);
+ assert.match(discussion,/if\(mode==='chatgpt'\)/);
+ assert.match(discussion,/requestChatGptConversation/);
+ assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
+ assert.match(discussion,/compactNamConversation\(conversation,1500\)/);
+ assert.match(discussion,/slice\(0,900\)/);
+});
 
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
  assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
