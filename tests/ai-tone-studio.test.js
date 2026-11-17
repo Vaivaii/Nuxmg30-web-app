@@ -623,7 +623,7 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
   const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
   assert.match(auto, /const providers=\['gemini','groq','openrouter'\]/);
-  assert.match(auto, /providerFallbackOrder\('chatgpt'\)/);
+  assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
   assert.doesNotMatch(auto, /['\"]gpt['\"]|OPENAI_API_KEY|invokeProvider\('gpt'/);
   assert.match(source, /GPT · manual \(may be paid\)/);
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
@@ -1510,7 +1510,7 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
   const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
   assert.match(auto, /const providers=\['gemini','groq','openrouter'\]/);
-  assert.match(auto, /providerFallbackOrder\('chatgpt'\)/);
+  assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
   assert.doesNotMatch(auto, /['\"]gpt['\"]|OPENAI_API_KEY|invokeProvider\('gpt'/);
   assert.match(source, /GPT · manual \(may be paid\)/);
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
