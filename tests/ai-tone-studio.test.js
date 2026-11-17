@@ -134,7 +134,7 @@ test('AI assistant interface and generated tone summaries are English', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /Keep summary and notes in English/);
   assert.match(source, /AI ready. MG-30 connection is required for live preset transfer/);
-  assert.match(source, /Refresh Cloud Status/);
+  assert.match(source, /Refresh ChatGPT/);
   assert.match(source, /Undo AI Changes/);
   assert.match(source, /Parameters sent to:/);
   assert.doesNotMatch(source, /Menunggu koneksi|Simpan API Key|Kirim ↗|Parameter dikirim|Undo gagal|berhasil merespons/);
@@ -168,17 +168,18 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 test('Auto is the default AI provider and provider model options are dropdowns', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · fastest available/);
+  assert.match(source, /value="auto" selected>ChatGPT · adaptive/);
   assert.match(source, /id="aiToneActiveModel"/);
   assert.match(source, /providerModels/);
   assert.match(source, /listAiProviderModels/);
-  assert.match(source, /\/api\/v1\/ai\/models/);
-  assert.match(source, /cloudApiRequest/);
+  assert.match(source, /MG30ChatGPTBridge\?\.listModels/);
+  assert.match(source, /chatgpt-plan/);
+  assert.match(source, /MG30ChatGPTBridge/);
 });
 
-test('AI fallback order is Gemini, Groq, OpenRouter, GPT and retries only transient errors', () => {
-  assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','groq','openrouter','gpt']);
-  assert.deepEqual(providerFallbackOrder('groq'), ['groq','gemini','openrouter','gpt']);
+test('AI fallback order prioritizes ChatGPT while transient errors remain classifiable', () => {
+  assert.deepEqual(providerFallbackOrder('gpt'), ['gpt','gemini','groq','openrouter']);
+  assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','gpt','groq','openrouter']);
   assert.equal(isRetryableProviderError(new Error('HTTP 429 rate limit')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 503 service unavailable')), true);
   assert.equal(isRetryableProviderError(new Error('request timed out')), true);
@@ -216,12 +217,13 @@ test('Gemini high-demand errors are classified as temporary and eligible for fal
 test('AI defaults to automatic fastest-ready provider and model selection while preserving manual providers', () => {
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='auto'/);
-  assert.match(source, /value="auto" selected>Auto · fastest available/);
+  assert.match(source, /value="auto" selected>ChatGPT · adaptive/);
   assert.match(source, /fastestReadyProviderOrder/);
-  assert.match(source, /Auto · provider and model selected per request/);
-  assert.match(source, /Auto selected .*probe/);
-  assert.match(source, /mode==='auto'\|\|ui\.autoFallback\.checked/);
-  for (const provider of ['gemini','groq','openrouter','gpt']) assert.match(source, new RegExp('value="'+provider+'"'));
+  assert.match(source, /ChatGPT · adaptive/);
+  assert.match(source, /ChatGPT plan access enabled/);
+  assert.match(source, /mode==='auto'\?\['gpt'\]/);
+  assert.match(source, /value="gpt"/);
+  assert.match(source, /listAiProviderModels/);
 });
 
 test('automatic provider probes use a short timeout and cache the fastest healthy order', () => {
