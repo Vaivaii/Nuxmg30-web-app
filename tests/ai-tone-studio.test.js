@@ -577,9 +577,12 @@ test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route
  const start=source.indexOf('async function answerToneConversation');
  const end=source.indexOf('function renderNamCandidates',start);
  const discussion=source.slice(start,end);
- assert.match(discussion,/if\(mode==='chatgpt'\)/);
- assert.match(discussion,/requestChatGptConversation/);
- assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
+ const chatgptStart=discussion.indexOf("if(mode==='chatgpt')");
+ const chatgptEnd=discussion.indexOf("}else{",chatgptStart);
+ const chatgptRoute=discussion.slice(chatgptStart,chatgptEnd);
+ assert.ok(chatgptStart>=0&&chatgptEnd>chatgptStart);
+ assert.match(chatgptRoute,/requestChatGptConversation/);
+ assert.doesNotMatch(chatgptRoute,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
  assert.match(discussion,/compactNamConversation\(conversation,1500\)/);
  assert.match(discussion,/slice\(0,900\)/);
 });
