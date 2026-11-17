@@ -75,3 +75,16 @@ A successful CI build proves compilation and existing automated tests only. It d
 - Added `tests/chatgpt-account-startup.test.js` to prevent reintroducing a self-triggering observer.
 - Hotfix commits: `fd2e6865ab413833f7cfb957c14e79a97e7ec38e` (source), `16da509a52102d47addee37dcb63b502454ec0a0` (regression test).
 - Rebuild and verify first launch on a physical Android device after CI completes. The source-level cause is addressed, but the real-device freeze fix must not be marked confirmed until the replacement APK is installed and tested.
+
+## Restore latest AI workspace UI and add SIWC provider — 2026-11-17
+
+- The prior SIWC branch had replaced the latest AI workspace module with an older, reduced assistant panel. This removed the USB Audio Listening / Analyze Once / Live Listening dock and the provider-selection experience, and left stale test-button listeners that could throw before the Send handler was attached.
+- Restored `www/ai-tone-studio.js`, `www/index.html`, and `tests/ai-tone-studio.test.js` from `feature/multi-ai-free-tone-architect`, the latest source branch containing the current conversation UI, audio diagnosis, provider selection, NAM cards and recent conversation behavior.
+- Restored `www/ai-audio-analysis.js`, used by the current USB Audio analysis dock.
+- Added ChatGPT SIWC as an additional provider in the restored provider selector; the prior Auto, Cloudflare Workers AI, Gemini, Groq, OpenRouter, GPT API and Multi-AI choices remain present.
+- ChatGPT is the default selected provider. Requests use the native `MG30ChatGPTBridge.sendResponse` path and do not send SIWC credentials or Responses traffic through Cloudflare. The existing provider selection and fallback behavior for other modes remains intact. ChatGPT does not silently fall back to a different provider when selected.
+- Native ChatGPT model discovery is performed independently of Cloud Account status, so a user can use SIWC without first signing in to MG30 Cloud.
+- Added `tests/chatgpt-si-wc-ui-preservation.test.js` covering restoration of the audio UI, prior provider choices, native SIWC routing, Cloud-independent model discovery, ChatGPT primary selection and Send handler presence.
+- IR import / User / Collection mapping, NAM transfer codec/slot protocol and MIDI mapping were not changed in this UI restoration.
+- Updated source commits: `07f358cec65fe4284f4f9b6f89a1b58f838f5c76`, `7ba2b7da07e5943841937821b3843cafc2ab5ac6`, `0fa36202984c819007d8d9189094171e4f74329f`, `aeea452859d590abd39c82ce242aedccdf78ec8d`, plus regression tests `ecdcdc175d6cefa1663b6ffb76909eeb8d22f6e9` and `4c0b72a3a80939cc3f7448a6fd52ab82d6279213`.
+- This is source restoration and integration only; the current branch must still pass CI and the replacement APK must be tested on the physical Android device before confirming the regression is fixed.
