@@ -96,3 +96,38 @@ test('Global English copy covers all remaining visible Indonesian interface labe
   assert.match(html, /<html lang="en">/);
   assert.equal(html.includes("toast('Preset '+slotName()+' dibaca ke aplikasi'"), false);
 });
+
+
+test('Cloud Account module ships English-only interface text and status messages', async () => {
+  const cloud = await read('../www/cloud-account.js');
+  assert.match(cloud, /A personal account for Cloud services/);
+  assert.match(cloud, /Cloud Account connected/);
+  assert.match(cloud, /Checking session…/);
+  assert.ok(cloud.includes('<span>Account</span>'));
+  assert.match(cloud, /Cloud services are online-only/);
+  for (const leaked of ['Akun pribadi', 'Cloud Account aktif', 'Memeriksa sesi', '<span>Akun</span>', 'Cloud hanya untuk layanan online']) {
+    assert.equal(cloud.includes(leaked), false, leaked);
+  }
+});
+
+
+test('AI audio listening controls use English UI labels', async () => {
+  const ai = await read('../www/ai-tone-studio.js');
+  assert.match(ai, /AUDIO LISTENING/);
+  assert.match(ai, /Analyze Once/);
+  assert.match(ai, /Live Listening/);
+  assert.match(ai, /Start Listening/);
+  assert.match(ai, /Stop & Analyze/);
+});
+
+
+test('AI workspace uses English tool labels while AI response language defaults to Indonesian',async()=>{
+ const ai=await read('../www/ai-tone-studio.js');
+ assert.match(ai,/Analyze Once/);
+ assert.match(ai,/Live Listening/);
+ assert.match(ai,/TONE3000 NAM/);
+ assert.match(ai,/Amp Only/);
+ assert.match(ai,/Amp \+ Cab/);
+ assert.match(ai,/Bahasa Indonesia by default/);
+ assert.match(ai,/Gemini 3.1 Flash Lite/);
+});

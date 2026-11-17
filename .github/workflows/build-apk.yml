@@ -26,6 +26,7 @@ on:
       - feature/nam-library-persistent-cards
       - feature/full-backup-selective-restore
       - feature/ai-live-tone-studio
+      - feature/multi-ai-free-tone-architect
       - fix/ir-user-cut-scene-sync
       - release/mg30-studio-final-polish
       - feature/editor-card-proportions-with-dock

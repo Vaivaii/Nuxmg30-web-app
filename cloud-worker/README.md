@@ -10,7 +10,7 @@ From the repository root:
 npx wrangler deploy --config cloud-worker/wrangler.toml
 ```
 
-The Wrangler config uses `cloud-worker/worker.js` as the complete standalone Worker entry point. `cloud-worker/src/index.js` is kept synchronized for source/test tooling.
+The Wrangler config uses `cloud-worker/worker.js` as the complete standalone Worker entry point. `cloud-worker/src/index.js` is kept synchronized for source/test tooling. The `[ai]` binding maps Cloudflare Workers AI to `env.AI`; it requires no model API key secret.
 
 **Important:** deploy this merged code to the existing `nux-mg30-studio-api` Worker. Do not paste it into a different Worker and do not overwrite it with the former cloud-only Worker. The app's Cloud Account and Cloud API clients now use this same host.
 
@@ -47,7 +47,10 @@ All `/api/v1/*` routes require the app JWT in `Authorization: Bearer <token>`, v
 - `GET /api/v1/status`
 - `GET /api/v1/ai/providers`
 - `GET /api/v1/ai/models?provider=gpt|gemini|groq|openrouter`
-- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Gemini, then Groq, then OpenRouter; explicit provider selection is also supported. OpenAI remains available as an explicit provider.
+- `POST /api/v1/ai/light-task` — authenticated allow-listed lightweight tasks (`tone-discussion`, `tone3000-search-terms`, `tone3000-profile-ranking`, `tone3000-capture-selection`) run only through the Cloudflare Workers AI model pool on `env.AI`.
+- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Cloudflare Workers AI first, then Gemini, Groq and OpenRouter if the Workers AI model pool is exhausted. Explicit provider selection is also supported. OpenAI remains manual-only in the app.
+- Cloudflare Workers AI internal model order: Gemma 4 26B → GPT-OSS 20B → Mistral Small 3.1 24B → Llama 4 Scout 17B. The Worker advances on binding errors or non-JSON output and returns the model that actually succeeded.
+- The `/api/v1/ai/light-task` route supports `tone-discussion`, `tone3000-search-terms`, `tone3000-profile-ranking` and `tone3000-capture-selection`. In app Auto mode, these tasks and ordinary/single-agent Tone Plans stay on Workers AI only, preserving external provider RPM. Complex Auto Tone Architect / Collab uses Workers AI as the first team member, then the existing Gemini/Groq/OpenRouter agents.
 - `GET /api/v1/youtube/status`
 - `GET /api/v1/youtube/search?q=...`
 - `GET /api/v1/tone3000/proxy?path=...` — app-compatible restricted metadata proxy.
@@ -77,7 +80,7 @@ After deploy:
 4. Test YouTube search.
 5. Test TONE3000 catalogue and model download using the user's existing OAuth session, then confirm the existing app-side A2-Lite validator before import.
 
-A successful `/health` does not prove provider keys are valid. Live provider calls must be tested separately. No deployment is performed by this repository update.
+Workers AI is not unmetered by default: its daily free allocation and model-specific unit pricing are controlled by the Cloudflare account. The current Gemma 4 model page lists $0.10 per million input tokens and $0.30 per million output tokens; check the Cloudflare dashboard before enabling frequent calls. A successful `/health` does not prove provider credentials or the Workers AI model invocation are valid. Live provider calls must be tested separately. The Workers AI binding is reported as `WORKERS_AI_BINDING` / `providers.cloudflare`; it is a Cloudflare service binding, not a text secret. Confirm the `AI` binding exists on the deployed Worker. No deployment is performed by this repository update.
 
 
 ### TONE3000 and YouTube credential compatibility

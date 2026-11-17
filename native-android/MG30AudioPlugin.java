@@ -895,6 +895,32 @@ public class MG30AudioPlugin extends Plugin {
         }
     }
 
+
+    @PluginMethod
+    public void deleteTake(PluginCall call) {
+        File file = resolveTakeFile(call.getString("path"));
+        if (file == null || !file.isFile()) {
+            JSObject result = new JSObject();
+            result.put("deleted", false);
+            result.put("reason", "The requested audio take is not in the app-managed Music folder.");
+            call.resolve(result);
+            return;
+        }
+        try {
+            if (recording && activeFile != null && file.equals(activeFile.getCanonicalFile())) {
+                call.reject("The active USB audio capture cannot be deleted.");
+                return;
+            }
+            boolean deleted = file.delete();
+            JSObject result = new JSObject();
+            result.put("deleted", deleted);
+            result.put("fileName", file.getName());
+            call.resolve(result);
+        } catch (IOException error) {
+            call.reject("Could not delete the temporary USB audio capture: " + error.getMessage());
+        }
+    }
+
     private JSObject takeDetails(File file) throws IOException {
         int sampleRate = 48000;
         int channels = 2;

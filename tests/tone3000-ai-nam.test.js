@@ -81,7 +81,8 @@ test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening S
   assert.ok(tone3000.includes('searchTones(query, options = {})'));
   assert.match(aiStudio, /async function beginNamSearch/);
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
-  assert.match(aiStudio, /data-ai-nam-tone=/);
+  assert.ok(aiStudio.includes('data-ai-nam-view-captures='));
+  assert.ok(aiStudio.includes("chatCard('nam-profiles'"));
   assert.ok(aiStudio.includes('bridge.searchTones(intent.query,{gear:activeNamGear})'));
   assert.match(tone3000, /TONE3000 API search rate limit reached/);
 });
@@ -105,9 +106,12 @@ test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloa
 test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
   assert.match(aiStudio, /pendingNamSelection/);
-  assert.match(aiStudio, /if\(namModeActive\)\{const namResult=await automaticNamImportForPrompt\(prompt\);if\(namResult\?\.pendingConnection\|\|namResult\?\.pendingSelection\)return;\}/);
+  assert.ok(aiStudio.includes('shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))'));
+  assert.match(aiStudio, /automaticNamImportForPrompt\(prompt,conversation,preparedPlan\)/);
   assert.match(aiStudio, /bridge\.prepareModel\(selected\.model\.id\)/);
-  assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
+  assert.ok(aiStudio.includes('bridge.importModel(pending.selected.model.id,{slotNumber:10,confirmOverwrite:false,prepare:false})'));
+  assert.ok(aiStudio.includes("chatCard('nam-confirm'"));
+  assert.ok(aiStudio.includes('data-ai-nam-confirm='));
 });
 
 
@@ -121,7 +125,10 @@ test('TONE3000 provides a separate connect-only account sign-in flow', () => {
 
 test('AI NAM search and A2-Lite preflight are allowed before USB-MIDI connection', () => {
   assert.match(aiStudio, /if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)/);
-  assert.match(aiStudio, /NAM found and validated\. Connect the MG-30 via USB-MIDI/);
+  assert.match(aiStudio, /Connect the MG-30 via USB-MIDI before transferring the selected NAM to slot 10/);
+  assert.match(aiStudio, /async function loadNamCapturesForChat/);
+  assert.match(aiStudio, /async function prepareSelectedNamCapture/);
+  assert.match(aiStudio, /async function confirmNamTransfer/);
   assert.match(aiStudio, /pendingNamSelection/);
 });
 
@@ -132,7 +139,7 @@ test('TONE3000 session check refreshes the OAuth access token and separates app 
 
 test('AI provider credentials are managed only by Cloudflare Worker secrets, not local Android storage', () => {
   assert.match(aiStudio, /cloudApiRequest\('\/api\/v1\/ai\/providers'\)/);
-  assert.match(aiStudio, /Provider credentials are stored only as Cloudflare Worker secrets/);
+  assert.match(aiStudio, /Provider credentials are managed as Cloudflare Worker secrets/);
   assert.doesNotMatch(aiStudio, /SecureStore|registerPlugin/);
   assert.match(tone3000, /SecureStore\.setSecret\(\{ provider: 'tone3000'/);
 });
