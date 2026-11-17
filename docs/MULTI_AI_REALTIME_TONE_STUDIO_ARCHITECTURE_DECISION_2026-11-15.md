@@ -160,3 +160,33 @@ Status: **Initial implementation committed on isolated feature branch; validatio
 4. Resolve every failure and rerun until green.
 5. Inspect the final diff to confirm protected NAM/IR/MIDI files remain untouched.
 6. Update this document with actual test/build results before considering APK delivery.
+
+---
+
+## Validation and build recovery — 2026-11-17
+
+Status: **Debug APK build passed and artifact verified.** This is a feature-branch debug build, not a release build or production deployment.
+
+### Initial CI failure and correction
+- First CI run: `44079143418` failed in `npm test` before Android project generation. The failing cases were six tests whose expectations did not match the six-agent sequential contract, including stale four-role names and an old assumption that specialist tools disappear after the first handoff.
+- Only `tests/ai-tone-studio.test.js` was changed during the build recovery. Assertions now verify the six declared roles, structured failed-handoff payload, sequential one-specialist-per-turn behavior, and current usage labels. No application implementation code was modified during this recovery.
+- A second run reached 649/650 tests; the last outdated assertion was corrected to permit a subsequent sequential handoff while continuing to prohibit parallel calls.
+
+### Successful verification
+- Final CI run: `44079614847`
+- Commit: `7bccc03058fe67005635be5bfdab78645da1309d`
+- JavaScript syntax validation: passed.
+- Protocol regression suite: **650 passed, 0 failed**.
+- Capacitor Android project generation and USB audio plugin setup: passed.
+- Gradle `assembleDebug`: passed.
+- APK artifact upload: passed.
+- Artifact: `MG30-Studio-debug-APK` (artifact ID `14326676515`).
+- Extracted file: `app-debug.apk`, 4,753,004 bytes (approximately 4.6 MiB).
+- APK SHA-256: `0e54ddc565d2ffc67a9308bdd4a98965db2757bc21f9decadd7f77754b4e506c`.
+- APK archive integrity check: passed; file recognized as an Android package.
+
+### Scope and remaining release gates
+- Build recovery changed tests only; it did not modify NAM behavior, IR import/User/Collection handling, MIDI mapping, preset codec, or pedal transfer code.
+- Work remains on `feature/tone-architect-six-agent-sequential`. No merge to main and no production deployment were performed.
+- A successful APK build does not prove the Cloudflare Worker Gemma specialist fallback end-to-end. The route/binding verification recorded above remains an independent blocker before claiming that fallback operational or treating the feature as release-ready.
+- The delivered binary is a debug APK; it is not a signed production/release package.
