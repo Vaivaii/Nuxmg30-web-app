@@ -115,22 +115,47 @@ A successful CI build proves compilation and existing automated tests only. It d
 - Extracted debug APK SHA-256: `581d154444c4bb7c048d6fae5e3cf10d474f0768c0b0724e28783b1fbd20b986`.
 - Physical-device acceptance is still pending. CI success does not prove actual SIWC sign-in or MG-30 Gen 2 NAM/audio/MIDI hardware operation. Install and verify on the original MG-30 Gen 2 with firmware 6.0.x before treating hardware validation as complete.
 
-## Fix: generate Tone Plans while USB-MIDI is disconnected — 2026-11-17
+## Adaptive ChatGPT Tone Architect and token-efficient live apply — 2026-11-17
 
-- User confirmed ChatGPT discussion works, but every request to create a tone returned `MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.`
-- Root cause: `submit()` checked `bridge.isConnected()` before calling `makePlan()`. The precondition blocked the AI planning stage, conflating Tone Plan generation with live hardware application.
-- Changed `www/ai-tone-studio.js`:
-  - Removed the early USB-MIDI guard before AI planning.
-  - ChatGPT can now generate and catalog-validate a Tone Plan while disconnected.
-  - If the pedal is disconnected after planning, the validated Tone Plan is retained in an in-memory pending draft and shown in chat with a block summary. No MIDI is sent.
-  - When the user reconnects USB-MIDI and sends an explicit apply command (e.g. `terapkan tone`), the app revalidates the retained plan against the current catalog and then calls the existing `applyPlan` path.
-  - If the user requests apply while still disconnected, the assistant explains that the plan is ready and asks for USB-MIDI connection; it does not fail the generation stage.
-  - A new tone-creation request clears an older pending draft. A successfully applied draft is cleared.
-- Added regression test in `tests/ai-tone-studio.test.js` for offline draft generation and explicit apply after reconnect. Updated the NAM preflight regression in `tests/tone3000-ai-nam.test.js` so it no longer expects the obsolete pre-generation connection guard.
-- Source/test commits: `0d5bf85dec823a6b71ac8a965b06fe187fa876a3`, `58913b36e3742822cdf2fb4ec90b62f5bd12f1cb`, `e0dcdec369f3d47860b05b4d6811dabe9eb33606`.
-- GitHub Actions run #993: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44021209728
-  - JavaScript syntax validation: passed.
-  - Regression tests: 559 passed, 0 failed.
-  - Capacitor Android generation: passed.
-  - Gradle debug APK build: was still running when this note was written; do not claim APK success until Actions confirms completion and artifact upload.
-- No NAM transfer codec, TONE3000 download/preflight implementation, IR import mapping, MIDI mapping, or USB audio analysis implementation was changed. Hardware verification on the original MG-30 Gen 2 firmware 6.0.x remains pending.
+The earlier "offline draft" implementation note above has been superseded. The accepted architecture is ChatGPT-first and adaptive, not free-first multi-agent orchestration and not a disconnected-only draft workflow.
+
+### Product flow
+
+1. The user continues the normal AI Live Tone Assistant conversation. ChatGPT uses the current request plus compact recent conversation context.
+2. For a simple request or focused edit, ChatGPT handles the entire task in one native SIWC Responses call. The specialist tool schema is not sent.
+3. For a named artist/song/style reference or genuinely complex signal-chain request, the app may expose one narrowly scoped specialist tool only when a free specialist provider is actually available.
+4. ChatGPT decides whether that specialist is materially useful. At most one specialist task is permitted for one Tone Plan. The specialist receives a short brief, a compact conversation excerpt and only the relevant MG-30 catalog/snapshot blocks; it does not receive the full conversation or catalog.
+5. The specialist is advisory. ChatGPT receives its structured result and remains the sole synthesizer/final decision authority. No second specialist or consensus fan-out is allowed.
+6. The final Tone Plan is validated against the exact runtime catalog before any device write.
+7. Tone Plan generation is not blocked by USB-MIDI disconnection. If the pedal is disconnected, the validated plan is kept in a session-local pending-apply slot. No MIDI is sent. Once connected, a natural follow-up such as "terapkan tone" or "lanjutkan" reuses and revalidates that plan; it does not call ChatGPT or the specialist again. A new tone request replaces the old pending plan.
+
+### Token and cost controls
+
+- One ChatGPT call for simple requests.
+- One optional specialist at most for a qualified complex/artist-reference request; no default fan-out.
+- One ChatGPT synthesis call only when a specialist was actually called.
+- Specialist output caps: Tone Architect 220, Gear Specialist 240, Parameter Engineer 320, Critical Reviewer 260 tokens (server-side limits still apply).
+- Specialist inputs are capped and block-filtered; only up to four relevant block IDs are accepted.
+- ChatGPT tool calls are sequential (parallel_tool_calls=false), limited to one tool definition and one invocation.
+- The native bridge caps Responses output tokens at 1,800 and carries actual usage metadata back to the UI. Responses are stored with store:false.
+- No specialist is offered for routine/simple edits or same-tone refinements. A named artist/style or complex signal chain is required before even exposing the tool schema.
+
+### Implementation changes on feature/chatgpt-siwc-android
+
+- www/ai-tone-studio.js: added adaptive ChatGPT tool orchestration, specialist eligibility, compact specialist execution, one-call cap, final synthesis, and session-local pending Tone Plan reuse after USB-MIDI reconnect.
+- www/chatgpt-account.js: forwards only the bounded tool definition and output-token controls through the native SIWC bridge.
+- native-android/MG30ChatGPTPlugin.java: validates the single approved specialist tool, caps token output and tool count, preserves Responses output items/function-call handoff, and accepts complete assistant message content arrays for the second Responses request.
+- tests/ai-tone-studio.test.js: covers one-call simple requests, one-specialist delegation, no second tool, token usage aggregation, specialist eligibility and pending plan reuse.
+- tests/tone3000-ai-nam.test.js: covers the ordering of planning/validation before live USB-MIDI apply and the native Responses handoff contract.
+- The existing ChatGPT SIWC account/OAuth mechanism remains the direct Android connection. ChatGPT tokens and Responses requests are not sent through Cloudflare. The Worker is used only for the optional non-ChatGPT free specialist call where configured.
+
+### Protected boundaries
+
+No changes were made to NAM A2-Lite transfer codec, TONE3000 download/import protocol, NAM slot 10 mapping, IR User/Third Party or Collection mapping, MIDI CC/parameter mapping, preset/scene codec, or USB audio capture/analysis. The target remains original MG-30 Gen 2 firmware 6.0.x, not MKII.
+
+### Validation status
+
+- Intermediate Actions #1006 at commit b7017b42feed798d2b20733419a6f0b4a252702c: 561 tests passed and Android debug APK build/artifact upload succeeded. This artifact is NOT the deliverable because further specialist-eligibility and bridge regression changes followed it.
+- The latest source/test commits after that intermediate build include d123f7b4a96cb6158c2a45284e7185c3e88c9c50, 76877e5d3ea41594ba238f912a1c65338939b564, 137a4b1c750b37bd9c38024a280810cbf418e6bb, 59180d0917e9874e78099aa24248ee66b819337c, 8e6e1b92527945dfc7e6199e23a3231be2264ff0, and 106ccfc36551f2d618ded49fd26d7c6e7a370c66.
+- A fresh Actions run for the final documentation/source HEAD is required before distributing an APK. Do not reuse artifact #1006 as if it contains these later changes.
+- Physical Android + original MG-30 Gen 2 firmware 6.0.x verification remains pending; CI does not prove hardware behavior.
