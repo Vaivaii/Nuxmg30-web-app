@@ -190,3 +190,28 @@ Status: **Debug APK build passed and artifact verified.** This is a feature-bran
 - Work remains on `feature/tone-architect-six-agent-sequential`. No merge to main and no production deployment were performed.
 - A successful APK build does not prove the Cloudflare Worker Gemma specialist fallback end-to-end. The route/binding verification recorded above remains an independent blocker before claiming that fallback operational or treating the feature as release-ready.
 - The delivered binary is a debug APK; it is not a signed production/release package.
+
+
+---
+
+## Architecture correction — ChatGPT replaces Cloudflare Workers AI (2026-11-18)
+
+Status: **Implementation corrected on the isolated feature branch; validation is running again. Do not deliver an APK until the new commit passes the complete CI suite.**
+
+### User clarification
+The Cloudflare Workers AI/Gemma role is no longer part of the active application architecture. The existing connected ChatGPT account now handles ordinary discussion, light AI tasks, TONE3000 search/ranking, and tone creation. GPT-6 Luna is the Chief for Tone Architect requests and uses the connected ChatGPT session for separate role-scoped specialist requests. Gemini, Groq, and OpenRouter remain optional external providers for explicit Multi-AI mode or configured fallback only; they are not the default Chief or a substitute for Luna.
+
+### Routing corrections
+- Auto now resolves to ChatGPT as its primary provider; it no longer routes light tasks to Cloudflare Workers AI.
+- Auto tone creation follows the ChatGPT GPT-6 Luna path. Artist-specific/complex requests are eligible for the sequential specialist orchestration contract; the Chief must call one relevant specialist, wait, evaluate, and then decide whether another is needed.
+- Specialist requests use the existing ChatGPT SIWC/native bridge, not the legacy Worker light-task endpoint and not a Cloudflare Worker model.
+- The old Workers AI test button, visible provider option, Gemma-first labels, and active Worker light-task route were removed from the AI settings UI and active routing.
+- Legacy saved Cloudflare mode values are migrated to ChatGPT for compatibility; they do not select a live Worker route.
+- The explicit external Multi-AI team remains Gemini/Groq/OpenRouter only. Failure of those providers must not silently fall back to Cloudflare/Gemma.
+- NAM, IR User/Collection mapping, MIDI mapping, preset codec and pedal transfer behavior remain protected and are not intentionally changed.
+
+### Regression coverage
+- Updated provider-routing tests to assert ChatGPT-first Auto behavior, optional external-provider routing, and absence of Cloudflare from the active provider selector.
+- Updated SIWC preservation coverage to retain the native ChatGPT bridge, audio UI, model discovery, and composer wiring while recognizing that ChatGPT has replaced the former Workers AI role.
+- The initial rerun exposed stale assertions that still expected Cloudflare/Gemma to be active. Those assertions were updated to the corrected architecture; this is not evidence of a passing test run.
+- New CI run and complete regression/build verification are required after this correction. No APK is approved for delivery until CI is green and the final diff confirms protected NAM/IR/MIDI/protocol files are unchanged.
