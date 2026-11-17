@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -597,6 +597,58 @@ test('ChatGPT discussion accepts plain prose through native SIWC without JSON pa
  assert.equal(result.__aiUsage.input_tokens,180);
  assert.equal(result.__aiUsage.output_tokens,34);
  assert.equal(result.__aiUsage.total_tokens,214);
+});
+
+test('incomplete ChatGPT discussion continues once from partial text and accounts each response separately',async()=>{
+ const calls=[];
+ const bridge={sendResponse:async request=>{
+  calls.push(request);
+  if(calls.length===1)return {text:'Tone ini punya midrange yang menonjol dan respons gain yang cukup cepat.',model:'gpt-5.6-luna',incomplete:true,incompleteReason:'max_output_tokens',usage:{input_tokens:120,output_tokens:160,total_tokens:280}};
+  return {text:' Coba kurangi sedikit presence bila terasa tajam.',model:'gpt-5.6-luna',completed:true,usage:{input_tokens:45,output_tokens:22,total_tokens:67}};
+ }};
+ const result=await requestChatGptConversation({bridge,model:'gpt-5.6-luna',system:'Discuss normally; no JSON.',user:'RECENT DISCUSSION: current tone.\nLATEST USER MESSAGE: Bagaimana menurutmu?',maxOutputTokens:520});
+ assert.equal(calls.length,2,'one bounded continuation only');
+ assert.equal(calls[0].maxOutputTokens,520);
+ assert.equal(calls[1].maxOutputTokens,360);
+ assert.equal(calls[1].input[0].role,'assistant');
+ assert.match(calls[1].input[0].content,/midrange yang menonjol/);
+ assert.match(calls[1].input[1].content,/Do not repeat/);
+ assert.match(result.reply,/midrange yang menonjol/);
+ assert.match(result.reply,/kurangi sedikit presence/);
+ assert.equal(result.__aiUsageBreakdown.length,2);
+ assert.equal(result.__aiUsageBreakdown[0].incomplete,true);
+ assert.equal(result.__aiUsageBreakdown[1].incomplete,false);
+ assert.equal(result.__aiUsage.total_tokens,347);
+});
+
+test('incomplete ChatGPT discussion never retries content-filter responses or exceeds one continuation',async()=>{
+ let calls=0;
+ await assert.rejects(()=>requestChatGptConversation({bridge:{sendResponse:async()=>{calls++;return {text:'',incomplete:true,incompleteReason:'content_filter',usage:{input_tokens:50,output_tokens:4,total_tokens:54}};}},model:'gpt-5.6-luna',system:'',user:'question'}),/incomplete \(reason: content_filter\)/);
+ assert.equal(calls,1);
+ calls=0;
+ const error=await requestChatGptConversation({bridge:{sendResponse:async()=>{calls++;return calls===1?{text:'Partial answer',incomplete:true,incompleteReason:'max_output_tokens'}:{text:'Still partial',incomplete:true,incompleteReason:'max_output_tokens'};}},model:'gpt-5.6-luna',system:'',user:'question'}).catch(e=>e);
+ assert.match(error.message,/remained incomplete after one bounded continuation/);
+ assert.equal(calls,2);
+ assert.equal(error.__aiUsageBreakdown.length,2);
+ assert.equal(error.__aiUsageBreakdown[1].failed,true);
+});
+
+test('one transient discussion stream error receives only one bounded retry',async()=>{
+ let calls=0;
+ const result=await requestChatGptConversation({bridge:{sendResponse:async request=>{calls++;if(calls===1)throw new Error('ChatGPT stream ended before response.completed. Try again.');return {text:'Recovered response.',model:'gpt-5.6-luna',usage:{input_tokens:40,output_tokens:6,total_tokens:46}};}},model:'gpt-5.6-luna',system:'',user:'small contextual question'});
+ assert.equal(calls,2);
+ assert.equal(result.reply,'Recovered response.');
+ assert.equal(result.__aiUsageBreakdown[0].failed,true);
+ assert.equal(result.__aiUsageBreakdown[1].failed,false);
+});
+
+test('named artist tone builds require one Tone Architect when a free specialist is available',()=>{
+ assert.equal(requiresToneArchitect('Buatkan tone John Mayer'),true);
+ assert.equal(requiresToneArchitect('Create a Satriani lead tone'),true);
+ assert.equal(requiresToneArchitect('Buatkan tone clean sederhana'),false);
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/you MUST delegate Tone Architect exactly once whenever the specialist tool is available/);
+ assert.match(source,/Tone Architect was not called because no free specialist provider is configured/);
 });
 
 test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route and all MIDI writes',()=>{
