@@ -1144,7 +1144,7 @@ test('new chat messages scroll the unified region, not an inner messages scrolle
  assert.ok(scroll.includes('scrollArea.scrollTop=scrollArea.scrollHeight'));
  assert.equal(scroll.includes('ui.messages.scrollTop='),false);
 });
-,()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: clampOutputTokenLimit(maxOutputTokens)'));
+test('Groq GPT-OSS server adapter hides reasoning and retries JSON validation failures without JSON mode',()=>{const source=readFileSync(new URL('../cloud-worker/src/index.js',import.meta.url),'utf8');assert.ok(source.includes('reasoning_effort: "low", include_reasoning: false'));assert.ok(source.includes('max_completion_tokens: clampOutputTokenLimit(maxOutputTokens)'));
   assert.ok(source.includes('max_tokens: clampOutputTokenLimit(maxOutputTokens)'));
   assert.ok(source.includes('max_output_tokens: clampOutputTokenLimit(maxOutputTokens)'));
   assert.equal(source.includes('retry ? 3200 : 2600'),false);assert.ok(source.includes('error.failedGeneration'));assert.ok(source.includes('retry ? {} : { response_format'));});
