@@ -1259,10 +1259,12 @@ function aiAgentLabel(stage,provider,model){
  let agent=String(stage||'AI request');
  if(task.includes('answering your tone question'))agent='Discussion';
  else if(task.includes('building your tone plan'))agent=provider==='chatgpt'?'ChatGPT Orchestrator':'Tone Plan Builder';
- else if(task.includes('specialist tone_architect'))agent='Tone Architect';
- else if(task.includes('specialist gear_specialist'))agent='Gear Specialist';
- else if(task.includes('specialist parameter_engineer'))agent='Parameter Engineer';
- else if(task.includes('specialist critical_reviewer'))agent='Critical Reviewer';
+ else if(task.includes('specialist tone_researcher'))agent='Tone Researcher';
+ else if(task.includes('specialist amp_cabinet_specialist'))agent='Amp & Cabinet Specialist';
+ else if(task.includes('specialist effects_specialist'))agent='Effects Specialist';
+ else if(task.includes('specialist guitar_input_specialist'))agent='Guitar & Input Specialist';
+ else if(task.includes('specialist tone_calibration_specialist'))agent='Tone Calibration Specialist';
+ else if(task.includes('specialist tone_critic'))agent='Tone Critic';
  else if(task.includes('correcting the catalog validation'))agent='Catalog Validation Correction';
  else if(task.includes('defining the musical direction'))agent='Tone Architect';
  else if(task.includes('synthesizing the final tone plan'))agent=provider==='chatgpt'?'ChatGPT Orchestrator':'Tone Plan Synthesizer';
@@ -1478,7 +1480,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   const spec=roles[role];if(!spec)throw new Error('Unsupported specialist role.');
   const candidateText=String(args?.candidatePlan||'').trim().slice(0,3000);
   let candidate=null;
-  if(candidateText){try{candidate=JSON.parse(candidateText);}catch{if(role==='critical_reviewer')throw new Error('Critical Reviewer requires a valid candidate plan JSON.');}}
+  if(candidateText){try{candidate=JSON.parse(candidateText);}catch{if(role==='tone_critic')throw new Error('Tone Critic requires a valid candidate plan JSON.');}}
   if(role==='tone_critic'&&!candidate)throw new Error('Tone Critic requires a candidate plan.');
   const blockIds=Array.isArray(args?.blockIds)?args.blockIds:[];
   const deviceContext=compactSpecialistDeviceContext(role,blockIds,context.catalog,context.snapshot,candidate);
@@ -1831,7 +1833,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
        callUsage.instructions,callUsage.input,callResult);
      }
     }else logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
-    if(first.__specialistRole)message('ai','ChatGPT orchestrated one '+String(first.__specialistRole).replaceAll('_',' ')+' specialist task, then consolidated the result as the final AI authority.');
+    if(Array.isArray(first.__specialistRoles)&&first.__specialistRoles.length)message('ai','GPT-6 Luna sequentially orchestrated: '+first.__specialistRoles.map(role=>role.replaceAll('_',' ')).join(' → ')+'. All specialist results were reviewed by the Chief before final synthesis.');
    }else if(mode==='auto'||mode==='cloudflare'){
     const workerKey=await secret('cloudflare');
     if(!workerKey)throw new Error('Cloudflare Workers AI binding AI is not configured. Auto and Cloudflare mode keep light Tone Plans off external provider RPM.');
