@@ -35,6 +35,9 @@ import java.security.MessageDigest;
 import java.security.Signature;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.UUID;
+import java.util.Date;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.Cipher;
@@ -394,7 +397,7 @@ public class MG30ChatGPTPlugin extends Plugin {
         JSONObject claims = new JSONObject(new String(Base64.decode(parts[1], Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING), StandardCharsets.UTF_8));
         long now = System.currentTimeMillis() / 1000L;
         if (!ISSUER.equals(claims.optString("iss")) || claims.optLong("exp", 0) <= now - 5 ||
-                claims.optLong("iat", now + 999) > now + 60 || !nonce.equals(claims.optString("nonce"))) {
+                claims.optLong("iat", now + 999) > now + 60 || (nonce != null && !nonce.equals(claims.optString("nonce")))) {
             throw new IllegalStateException("ChatGPT identity claims could not be verified.");
         }
         boolean audience = clientId.equals(claims.optString("aud"));
@@ -402,7 +405,9 @@ public class MG30ChatGPTPlugin extends Plugin {
         if (aud != null) {
             for (int i = 0; i < aud.length(); i++) if (clientId.equals(aud.optString(i))) audience = true;
         }
+        JSONArray audiences = claims.optJSONArray("aud");
         if (!audience || (claims.has("azp") && !clientId.equals(claims.optString("azp"))) ||
+                (audiences != null && audiences.length() > 1 && !clientId.equals(claims.optString("azp"))) ||
                 claims.optString("sub").isEmpty()) {
             throw new IllegalStateException("ChatGPT identity does not match this app registration.");
         }
@@ -505,6 +510,19 @@ public class MG30ChatGPTPlugin extends Plugin {
             String subject = identity.getString("subject");
             if (!existingSubject.isEmpty() && !existingSubject.equals(subject)) throw new IllegalStateException("This login returned a different ChatGPT account. Add a new account instead of replacing the existing profile.");
 
+            // Persist the user-bound client registration before code exchange. If the
+            // one-time code expires or token exchange is interrupted, the next sign-in
+            // reuses this issued client_id instead of registering another app.
+            if (!isNew && !clientId.equals(previous.optString("clientId"))) {
+                throw new IllegalStateException("ChatGPT returned a different client registration for this saved account.");
+            }
+            JSONObject pendingProfile = new JSONObject(previous.toString());
+            pendingProfile.put("clientId", clientId);
+            pendingProfile.put("status", "disconnected");
+            upsertProfile(root, pendingProfile);
+            root.put("activeProfileId", pendingProfile.getString("id"));
+            writeStore(root);
+
             JSONObject profile = new JSONObject();
             profile.put("id", previous.getString("id"));
             profile.put("label", identity.optString("email", previous.optString("label", "ChatGPT account")));
@@ -549,9 +567,8 @@ public class MG30ChatGPTPlugin extends Plugin {
                 throw new IllegalStateException("ChatGPT sign-in state validation failed.");
             }
             if (callback.getQueryParameter("error") != null) {
-                String reason = callback.getQueryParameter("error");
-                writeCallback(socket, "ChatGPT sign-in was not completed: " + reason);
-                throw new IllegalStateException("ChatGPT sign-in was not completed (" + reason + ").");
+                writeCallback(socket, "ChatGPT sign-in was not completed. Return to the app and try again.");
+                throw new IllegalStateException("ChatGPT sign-in was not completed. You can retry from Device settings.");
             }
             String code = callback.getQueryParameter("code");
             String clientId = callback.getQueryParameter("client_id");
@@ -595,9 +612,18 @@ public class MG30ChatGPTPlugin extends Plugin {
         JSONObject oidc = discovery();
         Object earliestValue = profile.opt("earliestRefreshAt");
         long earliest = 0;
-        if (earliestValue instanceof Number) earliest = ((Number) earliestValue).longValue() * 1000L;
-        else if (earliestValue instanceof String) {
-            try { earliest = Long.parseLong((String) earliestValue) * 1000L; } catch (Exception ignored) {}
+        if (earliestValue instanceof Number) {
+            earliest = ((Number) earliestValue).longValue() * 1000L;
+        } else if (earliestValue instanceof String) {
+            String value = (String) earliestValue;
+            try { earliest = Long.parseLong(value) * 1000L; }
+            catch (Exception ignored) {
+                try {
+                    SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.US);
+                    Date parsed = iso.parse(value);
+                    if (parsed != null) earliest = parsed.getTime();
+                } catch (Exception ignoredAgain) {}
+            }
         }
         if (earliest > System.currentTimeMillis() && expiresAt > System.currentTimeMillis()) {
             throw new IllegalStateException("ChatGPT access token is not yet eligible for refresh. Try again shortly.");
