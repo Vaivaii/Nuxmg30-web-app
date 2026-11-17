@@ -990,7 +990,7 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
  for(const role of TONE_SPECIALIST_ROLES)assert.ok(source.includes(`task.includes('specialist ${role}')`),`missing usage label for ${role}`);
  for(const label of ['Tone Researcher','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
- assert.ok(source.includes("logAiTokenUsage(result.provider,result.__aiModel,'specialist '+role"));
+ assert.ok(source.includes("logAiTokenUsage('chatgpt',result.__aiModel,'specialist '+role"));
  assert.match(source,/aiUsage\.models\[modelKey\]/);
 });
 
