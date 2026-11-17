@@ -1577,7 +1577,22 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
    const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   if(mode==='auto'||mode==='cloudflare'){
+   if(mode==='chatgpt'){
+    const credential=await secret('chatgpt');
+    if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
+    const model=await fastestReadyModel('chatgpt',credential);
+    const specialistAvailable=!localRefinement&&await hasFreeToneSpecialist();
+    const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT ORCHESTRATOR CONTRACT: You are the sole user-facing AI, orchestrator and final decision authority. You may call at most ONE delegate_tone_specialist tool for this request. Do not call a specialist for a routine single-amp preset, an ordinary parameter edit, or when your own evidence and the supplied MG-30 catalogue are sufficient. Delegate Tone Architect only for meaningful musical-reference ambiguity; Gear Specialist only for uncertain device/model compatibility; Parameter Engineer only for coupled or difficult exact parameter translation; Critical Reviewer only for a material conflict in a candidate plan. Never call all roles, never call two specialists, and never repeat a specialist task. If no specialist materially improves confidence, produce the final Tone Plan yourself. Treat any specialist output as advisory, resolve it yourself, and return the final catalog-valid JSON Tone Plan only. The runtime catalogue and validator are authoritative.';
+    first=await orchestrateChatGptTonePlan({
+     bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],
+     instructions:orchestrationInstructions,
+     toolsEnabled:specialistAvailable,
+     maxOutputTokens:outputTokenBudgetForStage('building your Tone Plan'),
+     runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot})
+    });
+    logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
+    if(first.__specialistRole)message('ai','ChatGPT orchestrated one '+String(first.__specialistRole).replaceAll('_',' ')+' specialist task, then consolidated the result as the final AI authority.');
+   }else if(mode==='auto'||mode==='cloudflare'){
     const workerKey=await secret('cloudflare');
     if(!workerKey)throw new Error('Cloudflare Workers AI binding AI is not configured. Auto and Cloudflare mode keep light Tone Plans off external provider RPM.');
     first=await invokeProvider('cloudflare',workerKey,singleSystem,singleUser,WORKERS_AI_MODEL,90000,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'));
