@@ -498,6 +498,9 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
   finally{setBusy(false);}
  }
  async function askNamAIJson(system,user,stage){
+  const prior=history.slice(-9,-1).filter(row=>row.role==='user'||row.role==='ai')
+   .map(row=>(row.role==='ai'?'ASSISTANT':'USER')+': '+String(row.text||'').slice(0,1400)).join('\\n');
+  if(prior)user='RECENT DISCUSSION CONTEXT (newest last):\\n'+prior.slice(-7000)+'\\n\\nCURRENT TASK:\\n'+user;
   if(mode==='collab'){
    const g=await secret('openai'),m=await secret('gemini');
    if(!g||!m)throw new Error('Collaboration mode requires both GPT and Gemini credentials configured in Cloudflare Worker.');
