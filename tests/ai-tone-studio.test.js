@@ -1450,7 +1450,7 @@ test('assistant classifies consultation, preset creation, refinement, audio anal
  assert.equal(classifyAssistantIntent('Carikan profile NAM Vox AC30'),'nam_search');
  assert.equal(classifyAssistantIntent('Find an amp capture for a Fender Deluxe'),'nam_search');
 });
-function expectedJohnMayerGuidance(){return 'ARTIST TONE: John Mayer-inspired blues/pop lead. Prefer touch-sensitive clean to edge-of-breakup response, warm lows, present mids, restrained treble, subtle modulation, short/medium delay and tasteful spring/plate/hall reverb. Avoid high-gain metal voicing. This is a stylistic target, not a claim about exact studio gear.';}
+
 test('short follow-up commands continue the current tone discussion into Tone Plan creation',()=>{
  const context=[
   'User: Saya ingin karakter John Mayer, clean yang hangat dengan sedikit edge of breakup dan delay pendek.',
