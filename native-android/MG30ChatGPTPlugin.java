@@ -944,9 +944,8 @@ public class MG30ChatGPTPlugin extends Plugin {
                 }
                 if (responseCancelled.get()) throw new InterruptedException("ChatGPT response cancelled.");
                 if (!completed && incompleteReason.isEmpty()) incompleteReason = "stream_ended";
-                if (!completed && finalText.length() == 0) {
-                    throw new IllegalStateException("ChatGPT stream ended without any answer text (reason: " + incompleteReason + "). Please retry.");
-                }
+                // Resolve an incomplete result even when it contains no visible text. The JS layer
+                // uses incompleteReason to distinguish content filtering from recoverable truncation.
                 JSONArray outputItems = completedResponse != null ? completedResponse.optJSONArray("output") : null;
                 if (outputItems == null) outputItems = streamedOutputItems;
                 JSONArray toolCalls = new JSONArray();
