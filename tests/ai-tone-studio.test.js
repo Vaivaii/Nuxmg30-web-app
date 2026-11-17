@@ -324,6 +324,23 @@ test('Send wraps bridge checks, AI planning and MIDI apply in visible error hand
 });
 
 
+
+test('Tone Plan generation works while MG-30 is disconnected and can be applied after USB-MIDI reconnects',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
+ const planning=submit.indexOf('await makePlan(prompt,bridge,audioMetricsForRequest,conversation)');
+ const disconnectedDraft=submit.indexOf('pendingTonePlan=plan');
+ const apply=submit.indexOf("intent==='tone_apply_pending'");
+ assert.ok(planning>=0,'Tone Plan must be requested before any USB-MIDI requirement');
+ assert.ok(disconnectedDraft>planning,'A validated plan must be retained when the pedal is disconnected');
+ assert.ok(apply>0,'A pending Tone Plan must have an explicit apply path');
+ assert.match(submit,/Tone Plan berhasil dibuat dan lolos validasi katalog MG-30 Gen 2/);
+ assert.match(submit,/Hubungkan MG-30 melalui USB-MIDI, lalu kirim “terapkan tone”/);
+ assert.match(submit,/preparedPlan=validateAiTonePlan\(pendingTonePlan,bridge\.getCatalog\?\.\(\)\|\|\[\]\)/);
+ assert.match(submit,/if\(intent==='tone_apply_pending'\|\|pendingTonePlan===plan\)pendingTonePlan=null/);
+ assert.doesNotMatch(submit,/if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)throw new Error\('MG-30 is disconnected/);
+});
+
 test('AI initialization does not bind listeners to missing legacy provider-delete buttons',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  for(const id of ['aiToneDeleteOpenAi','aiToneDeleteGemini','aiToneDeleteGroq','aiToneDeleteOpenRouter']){
