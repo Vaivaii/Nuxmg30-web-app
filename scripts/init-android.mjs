@@ -108,6 +108,7 @@ writeFileSync(resolve(javaDir, 'MainActivity.java'), mainActivityLines.join('\n'
 const manifestPath = resolve(androidDir, 'app/src/main/AndroidManifest.xml');
 let manifest = readFileSync(manifestPath, 'utf8');
 const requiredEntries = [
+  ['android.permission.INTERNET', '    <uses-permission android:name="android.permission.INTERNET" />'],
   ['android.permission.RECORD_AUDIO', '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'],
   ['android.hardware.usb.host', '    <uses-feature android:name="android.hardware.usb.host" android:required="false" />']
 ];
