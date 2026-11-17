@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -370,47 +370,109 @@ test('ChatGPT Tone Plan generation is independent from USB-MIDI apply and pendin
  assert.doesNotMatch(submit,/Connect USB-MIDI before applying a built-in amp live tone/);
 });
 
-test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded specialist task',async()=>{
+test('ChatGPT Luna orchestrates the six specialist roles sequentially through one-at-a-time handoffs',async()=>{
  const definition=toneSpecialistToolDefinition();
  assert.equal(definition.type,'function');
  assert.equal(definition.name,'delegate_tone_specialist');
- assert.deepEqual(definition.parameters.properties.role.enum,['tone_architect','gear_specialist','parameter_engineer','critical_reviewer']);
- const args={role:'tone_architect',focus:'John Mayer feel',brief:'Interpret touch-sensitive blues tone',blockIds:[],candidatePlan:''};
+ assert.deepEqual(definition.parameters.properties.role.enum,[
+  'tone_researcher','amp_cabinet_specialist','effects_specialist',
+  'guitar_input_specialist','tone_calibration_specialist','tone_critic'
+ ]);
+ assert.deepEqual(TONE_SPECIALIST_ROLES,definition.parameters.properties.role.enum);
+ const roles=['tone_researcher','amp_cabinet_specialist','effects_specialist'];
  const calls=[];
  let specialistCalls=0;
  const bridge={sendResponse:async request=>{
   calls.push(request);
-  if(calls.length===1)return {model:'gpt-model',toolCalls:[{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],outputItems:[{type:'reasoning',id:'rs_1',summary:[]},{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],usage:{input_tokens:80,output_tokens:20,total_tokens:100}};
-  return {model:'gpt-model',text:'{"summary":"Warm touch-sensitive blues tone","blocks":[]}',usage:{input_tokens:100,output_tokens:40,total_tokens:140}};
+  const index=calls.length-1;
+  if(index<roles.length){
+   const args={role:roles[index],focus:'deep tone task '+index,brief:'Complete only this specialist responsibility',blockIds:index?['AMP','CAB']:[],candidatePlan:index?'{"blocks":[]}':''};
+   const callId='call_'+(index+1);
+   return {model:'gpt-6-luna',toolCalls:[{type:'function_call',call_id:callId,name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],
+    outputItems:[{type:'reasoning',id:'rs_'+index,summary:[]},{type:'function_call',call_id:callId,name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],
+    usage:{input_tokens:10,output_tokens:5,total_tokens:15}};
+  }
+  return {model:'gpt-6-luna',text:'{"summary":"Final validated tone proposal","blocks":[]}',usage:{input_tokens:20,output_tokens:10,total_tokens:30}};
  }};
- const plan=await orchestrateChatGptTonePlan({bridge,model:'gpt-model',input:[{role:'user',content:'Create a John Mayer tone'}],instructions:'Orchestrate adaptively',maxOutputTokens:500,runSpecialist:async task=>{specialistCalls++;assert.equal(task.role,'tone_architect');return {ok:true,result:{tone_intent:{style:'blues',feel:'touch-sensitive'}}};}});
- assert.equal(specialistCalls,1);
- assert.equal(calls.length,2);
- assert.equal(calls[0].tools.length,1);
- assert.equal(calls[0].parallelToolCalls,false);
- assert.equal(calls[0].maxOutputTokens,500);
- assert.equal(calls[1].tools,undefined,'No second specialist delegation is allowed');
- assert.ok(calls[1].input.some(item=>item.type==='function_call_output'));
- assert.equal(plan.__specialistRole,'tone_architect');
- assert.equal(plan.__aiUsageBreakdown.length,2);
- assert.equal(plan.__aiUsageBreakdown[0].stage,'ChatGPT Orchestrator · Specialist routing');
- assert.equal(plan.__aiUsageBreakdown[1].stage,'ChatGPT Orchestrator · Final synthesis');
- assert.equal(plan.__aiUsageBreakdown[0].usage.total_tokens,100);
- assert.equal(plan.__aiUsageBreakdown[1].usage.total_tokens,140);
- assert.equal(plan.__orchestratorCalls,2);
- assert.equal(plan.__aiUsage.total_tokens,240);
- assert.equal(plan.summary,'Warm touch-sensitive blues tone');
+ const plan=await orchestrateChatGptTonePlan({
+  bridge,model:'gpt-6-luna',input:[{role:'user',content:'Create a detailed John Mayer tone'}],
+  instructions:'Deep sequential orchestration',maxOutputTokens:700,
+  runSpecialist:async task=>{
+   specialistCalls++;
+   assert.equal(task.role,roles[specialistCalls-1]);
+   return {ok:true,role:task.role,provider:'gemini',model:'free-model',result:{confidence:0.9}};
+  }
+ });
+ assert.equal(specialistCalls,3);
+ assert.equal(calls.length,4);
+ for(const request of calls){assert.equal(request.parallelToolCalls,false);assert.equal(request.tools.length,1);}
+ assert.ok(calls[1].input.some(item=>item.type==='function_call_output'&&item.call_id==='call_1'));
+ assert.ok(calls[2].input.some(item=>item.type==='function_call_output'&&item.call_id==='call_2'));
+ assert.ok(calls[3].input.some(item=>item.type==='function_call_output'&&item.call_id==='call_3'));
+ assert.equal(plan.__specialistRoles.join(','),roles.join(','));
+ assert.equal(plan.__specialistRole,'tone_researcher');
+ assert.equal(plan.__orchestratorCalls,4);
+ assert.equal(plan.__aiUsageBreakdown.length,4);
+ assert.equal(plan.__aiUsage.total_tokens,75);
+ assert.equal(plan.summary,'Final validated tone proposal');
 });
 
-test('ChatGPT simple Tone Plans use one call and tool overuse is rejected',async()=>{
+test('Tone Critic and Guitar specialist are available as conditional roles, while simple requests can skip all agents',async()=>{
+ const definition=toneSpecialistToolDefinition();
+ assert.ok(definition.parameters.properties.role.enum.includes('guitar_input_specialist'));
+ assert.ok(definition.parameters.properties.role.enum.includes('tone_critic'));
  let calls=0;
- const simple=await orchestrateChatGptTonePlan({bridge:{sendResponse:async()=>{calls++;return {text:'{"summary":"Simple clean tone","blocks":[]}',model:'gpt-model'};}},model:'gpt-model',input:[{role:'user',content:'Make a clean tone'}],instructions:'Do it simply',toolsEnabled:false});
+ const simple=await orchestrateChatGptTonePlan({
+  bridge:{sendResponse:async()=>{calls++;return {text:'{"summary":"Simple clean tone","blocks":[]}',model:'gpt-6-luna'};}},
+  model:'gpt-6-luna',input:[{role:'user',content:'Make a clean tone'}],instructions:'Keep it simple',toolsEnabled:false
+ });
  assert.equal(calls,1);
  assert.equal(simple.__orchestratorCalls,1);
+ assert.deepEqual(simple.__specialistRoles,undefined);
  assert.equal(simple.summary,'Simple clean tone');
- await assert.rejects(()=>orchestrateChatGptTonePlan({bridge:{sendResponse:async()=>({toolCalls:[{name:'delegate_tone_specialist',call_id:'1',arguments:'{}'},{name:'delegate_tone_specialist',call_id:'2',arguments:'{}'}]})},model:'gpt-model',input:[{role:'user',content:'tone'}],instructions:'',runSpecialist:async()=>({ok:true})}),/one-specialist call budget/);
 });
 
+test('Sequential orchestrator rejects parallel tool calls and stops at the configured specialist budget',async()=>{
+ await assert.rejects(()=>orchestrateChatGptTonePlan({
+  bridge:{sendResponse:async()=>({toolCalls:[
+   {name:'delegate_tone_specialist',call_id:'1',arguments:'{}'},
+   {name:'delegate_tone_specialist',call_id:'2',arguments:'{}'}
+  ]})},
+  model:'gpt-6-luna',input:[{role:'user',content:'tone'}],instructions:'',runSpecialist:async()=>({ok:true})
+ }),/exactly one specialist per turn/);
+ let specialistCalls=0,turn=0;
+ await assert.rejects(()=>orchestrateChatGptTonePlan({
+  bridge:{sendResponse:async request=>{
+   turn++;
+   const args={role:['tone_researcher','amp_cabinet_specialist','effects_specialist'][turn-1],focus:'task',brief:'brief',blockIds:[],candidatePlan:''};
+   return {toolCalls:[{name:'delegate_tone_specialist',call_id:'budget_'+turn,arguments:JSON.stringify(args)}],
+    outputItems:[{type:'function_call',call_id:'budget_'+turn,name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
+  }},
+  model:'gpt-6-luna',input:[{role:'user',content:'tone'}],instructions:'',maxSpecialistCalls:2,
+  runSpecialist:async()=>{specialistCalls++;return {ok:true};}
+ }),/six-specialist sequential task budget/);
+ assert.equal(specialistCalls,2);
+});
+
+test('A failed specialist is reported to Luna as a failed handoff rather than a fabricated success',async()=>{
+ let round=0;
+ const plan=await orchestrateChatGptTonePlan({
+  bridge:{sendResponse:async request=>{
+   round++;
+   if(round===1){
+    const args={role:'tone_researcher',focus:'research',brief:'research',blockIds:[],candidatePlan:''};
+    return {toolCalls:[{name:'delegate_tone_specialist',call_id:'failed_1',arguments:JSON.stringify(args)}],
+     outputItems:[{type:'function_call',call_id:'failed_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
+   }
+   assert.match(request.input.find(item=>item.type==='function_call_output').output,/failed|unavailable/i);
+   return {text:'{"summary":"Safe fallback from Chief reasoning","blocks":[]}'};
+  }},
+  model:'gpt-6-luna',input:[{role:'user',content:'tone'}],instructions:'',
+  runSpecialist:async()=>{throw new Error('free provider quota exhausted');}
+ });
+ assert.equal(plan.summary,'Safe fallback from Chief reasoning');
+ assert.equal(plan.__specialistRoles[0],'tone_researcher');
+});
 test('AI initialization does not bind listeners to missing legacy provider-delete buttons',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  for(const id of ['aiToneDeleteOpenAi','aiToneDeleteGemini','aiToneDeleteGroq','aiToneDeleteOpenRouter']){
