@@ -201,3 +201,37 @@ No changes were made to NAM A2-Lite transfer codec, TONE3000 download/import pro
   - APK archive integrity: `unzip -t` passed; host identified file as Android package (APK).
   - Extracted APK SHA-256: `b9f082684c9ff0f73c43a901bd35ef73c8be313ab136681a3b35a40d1889a17b`.
 - Physical Android verification of follow-up chat, actual SIWC usage counts, and live MG-30 Gen 2 firmware 6.0.x operation remains pending. Do not claim device-level verification based on CI alone.
+
+
+## Task-based ChatGPT Auto models and per-agent token accounting — 2026-11-17
+
+### Auto model policy
+
+- This policy applies when the provider is ChatGPT SIWC and the model selector is Auto. Explicitly selected manual models are preserved and used for both tasks.
+- Ordinary conversation/discussion selects the light ChatGPT model from the signed-in model catalogue. With the currently observed model catalogue, the preferred discussion choice is `gpt-5.6-luna` (GPT-5.6-Luna). If that exact model is absent, Auto prefers a listed mini/nano/flash/lite/small model, then a GPT-5 family entry, then the first catalogue model.
+- Tone Plan generation selects GPT-6-Luna (`gpt-6-luna`) from the signed-in model catalogue. If GPT-6-Luna is not listed, it may use another listed GPT-6 model. If no GPT-6 model is available, the app fails with a clear message rather than silently downgrading the Tone Architect model.
+- The model selector's Auto label now describes the behavior: light chat / GPT-6 tone build.
+- Conversation requests remain plain-text SIWC calls and use the discussion model. Build requests and catalog-correction calls use the Tone Plan model. Manual model selection is not overridden.
+
+### Per-model and per-agent usage monitor
+
+- Session usage now retains provider totals plus separate provider/model rows. For ChatGPT this distinguishes, for example, `chatgpt · gpt-5.6-luna` discussion usage from `chatgpt · gpt-6-luna` Tone Plan usage.
+- Task/agent rows include model identity, input tokens, output tokens, total tokens, request count, and successful/failed invocation counts.
+- When ChatGPT calls one specialist, the routing/decision Responses call and final synthesis Responses call are logged as separate ChatGPT orchestrator requests. The specialist is a separate row labelled by role and actual provider/model.
+- Specialist success rows use the provider and model returned by the Worker. If a specialist invocation fails before the Worker can identify an upstream model, the monitor records a failed `free-specialist · provider/model unavailable` attempt with estimated input usage instead of inventing a provider/model.
+- The Cloudflare Worker now returns normalized actual usage when the upstream supplies it: Gemini `usageMetadata`, OpenAI Responses `usage`, and Groq/OpenRouter chat-completion `usage`. When no upstream usage is available, the UI estimates and marks the affected row with `~`.
+- Monitor headings now read "By provider / model" and "By task / agent + model"; detail rows show input/output and success/failure counts.
+
+### Final validation and artifact
+
+- Final GitHub Actions run #1030: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44037645087 — success.
+- Built source/test commit: `b8919c8bef9a3568aa168b25d181a12872868892`.
+- JavaScript syntax: passed.
+- Regression tests: 643 passed, 0 failed.
+- Capacitor Android generation and USB Audio plugin setup: passed.
+- Gradle `assembleDebug`: BUILD SUCCESSFUL.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14307956536`, size `4,371,266` bytes (compressed ZIP).
+- Extracted `app-debug.apk`: 4,748,716 bytes; archive integrity test passed; identified as an Android package with APK Signing Block.
+- APK SHA-256: `6c9c39c68c8effbb97f74bd6c38cc035e83394b763d299b494c6fb45c896be9e`.
+- Physical-device validation is still required to confirm that the signed-in SIWC model catalogue actually offers both GPT-5.6-Luna and GPT-6-Luna for the user's account, and to observe provider-reported token usage for the models/providers used in live specialist calls. The app's Auto selection is based on the catalogue returned by that account; the model names are not hard-coded as assumed available.
+- No NAM/TONE3000 transfer code, NAM slot-10 mapping, IR User/Third Party/Collection mapping, MIDI mapping, USB Audio capture/analysis, MG-30 preset codec, or original MG-30 Gen 2 firmware 6.0.x device catalog was changed.
