@@ -12,8 +12,8 @@ test('Restored AI Live Tone Assistant keeps the audio listening and local analys
   for (const id of ['aiToneAudioToggle', 'aiToneAudioPanel', 'aiToneAudioStart', 'aiToneAudioRefresh', 'aiToneAudioStatus']) {
     assert.ok(ai.includes(id), 'missing audio UI element ' + id);
   }
-  assert.match(ai, /data-ai-audio-mode="once"/);
-  assert.match(ai, /data-ai-audio-mode="live"/);
+  assert.match(ai, /data-ai-audio-mode=\\?"once\\?"/);
+  assert.match(ai, /data-ai-audio-mode=\\?"live\\?"/);
   assert.match(audio, /analyzeToneAudioSamples/);
   assert.match(ai, /requestAudioDiagnosis/);
 });
