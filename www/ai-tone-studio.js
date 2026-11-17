@@ -325,6 +325,29 @@ function fallbackNamSearchTerms(prompt){
 
 export function outputTokenBudgetForStage(stage){const v=String(stage||'').toLowerCase();if(v.includes('testing '))return 64;if(v.includes('deriving tone3000 search terms'))return 180;if(v.includes('choosing the closest nam tone')||v.includes('selecting the closest a2-lite capture'))return 320;if(v.includes('defining the musical direction'))return 260;if(v.includes('analyzing the captured mg-30 usb audio')||v.includes('answering your tone question'))return 520;if(v.includes('correcting the catalog validation')||v.includes('checking a material conflict'))return 850;if(v.includes('building your tone plan')||v.includes('synthesizing the final tone plan'))return 1350;return 700;}
 export function isComplexToneRequest(prompt){const v=String(prompt||'').toLowerCase();if(v.length>=240)return true;return /\b(dual[- ]amp|two amps|multi[- ]scene|multiple scenes|multi[- ]layer|layered tone|clean (?:and|\+) lead|rhythm and lead|verse and chorus|intro.*solo|switch(?:ing)? between|three different tones|blend(?:ed|ing)? (?:two|multiple)|hybrid rig|full arrangement|complex signal chain|studio production|detailed signal chain)\b/i.test(v);}
+
+export async function requestChatGptConversation({bridge,model,system,user,maxOutputTokens=520}){
+ if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable. Open Device settings and connect your ChatGPT account.');
+ const response=await bridge.sendResponse({
+  model,
+  input:[{role:'user',content:String(user||'')}],
+  instructions:String(system||''),
+  maxOutputTokens:Math.max(256,Math.min(700,Math.floor(Number(maxOutputTokens)||520))),
+  parallelToolCalls:false
+ });
+ const reply=String(response?.text||'').trim();
+ if(!reply)throw new Error('ChatGPT returned an empty conversational response.');
+ const result={reply};
+ if(response?.usage&&typeof response.usage==='object'){
+  Object.defineProperty(result,'__aiUsage',{value:{
+   input_tokens:Number(response.usage.input_tokens??response.usage.prompt_tokens??0),
+   output_tokens:Number(response.usage.output_tokens??response.usage.completion_tokens??0),
+   total_tokens:Number(response.usage.total_tokens??((response.usage.input_tokens??response.usage.prompt_tokens??0)+(response.usage.output_tokens??response.usage.completion_tokens??0)))
+  },enumerable:false});
+ }
+ Object.defineProperty(result,'__aiModel',{value:String(response?.model||model),enumerable:false});
+ return result;
+}
 export function shouldOfferToneSpecialist(prompt,localRefinement=false){
  if(localRefinement)return false;
  const value=String(prompt||'');
@@ -905,12 +928,33 @@ const next=['chatgpt','auto','cloudflare','gemini','groq','openrouter','gpt','co
  }
 
   async function answerToneConversation(prompt,conversation='',bridge=null){
-  const system='You are a conversational guitar tone assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The user may discuss guitar tone, amp models, NAM, IR, EQ, effect behavior, gain staging, playing dynamics and signal-chain choices. Answer naturally and contextually as a knowledgeable guitar tone engineer. Use recent conversation and current editor context when provided. Explain trade-offs and practical experiments. Do not create a Tone Plan, do not generate a preset, do not write MIDI, and do not claim that any device setting was changed. Answer questions directly; ask one concise follow-up only when important information is missing. Return JSON only: {"reply":"complete conversational answer"}.';
+  const system='You are ChatGPT, the primary conversational guitar tone partner for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' This is a DISCUSSION turn, not a Tone Plan request. Answer in natural Indonesian prose (or the user language). Use the recent conversation to resolve short references such as “yang ini”, “kalau yang tadi”, and “bagaimana dengan itu”. Explain tone, amp, NAM, IR, EQ, effects, gain staging, dynamics and practical trade-offs. Do not return JSON, code, a preset, a Tone Plan, parameter commands or MIDI. Do not claim any settings changed. Do not call specialists for ordinary discussion. Ask at most one concise follow-up only when needed.';
   const snapshot=bridge?.getSnapshot?.()||[];
-  const user=(conversation?'RECENT CONVERSATION (oldest first):\n'+conversation+'\n\n':'')+'CURRENT MG-30 EDITOR STATE:\n'+JSON.stringify(snapshot.slice(0,12))+'\n\nUSER MESSAGE:\n'+prompt+'\n\nReply conversationally. No device changes.';
-  const result=await invokeWorkersAILightTask('tone-discussion',system,user,'answering your tone question',520);
-  const reply=String(result?.reply||result?.answer||result?.response||'').trim();
-  if(!reply)throw new Error('AI returned an empty conversation reply.');
+  const compactState=snapshot.slice(0,8).map(block=>({
+   id:String(block?.id||'').slice(0,12),
+   model:String(block?.model||'').slice(0,48),
+   enabled:Boolean(block?.enabled),
+   parameters:Object.fromEntries(Object.entries(block?.parameters||{}).slice(0,5).map(([key,value])=>[String(key).slice(0,24),value]))
+  }));
+  const recent=compactNamConversation(conversation,1500);
+  const stateText=JSON.stringify(compactState).slice(0,900);
+  const user=(recent?'RECENT DISCUSSION:\\n'+recent+'\\n\\n':'')+
+   (stateText&&stateText!=='[]'?'CURRENT MG-30 EDITOR STATE (compact):\\n'+stateText+'\\n\\n':'')+
+   'LATEST USER MESSAGE:\\n'+String(prompt||'').slice(0,500)+'\\n\\nAnswer this discussion turn naturally. No device changes.';
+  let reply='';
+  if(mode==='chatgpt'){
+   const credential=await secret('chatgpt');
+   if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
+   const model=await fastestReadyModel('chatgpt',credential);
+   const maxOutputTokens=outputTokenBudgetForStage('answering your tone question');
+   const result=await requestChatGptConversation({bridge:window.MG30ChatGPTBridge,model,system,user,maxOutputTokens});
+   logAiTokenUsage('chatgpt',result.__aiModel||model,'answering your tone question',maxOutputTokens,system,user,result);
+   reply=result.reply;
+  }else{
+   const result=await invokeWorkersAILightTask('tone-discussion',system,user,'answering your tone question',520);
+   reply=String(result?.reply||result?.answer||result?.response||'').trim();
+  }
+  if(!reply)throw new Error('AI returned an empty conversational response.');
   message('ai',reply);rememberConversation('assistant',reply);status('Conversation updated. No device parameters were changed.','success');
   ui.prompt.value='';$('aiToneCount').textContent='0/1400';
  }
@@ -1096,9 +1140,9 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const promptEstimate=estimateTokenCount(String(system||'')+'\n'+String(user||''));
   const completionEstimate=result?estimateTokenCount(JSON.stringify(result)):0;
   const record={event:'mg30_ai_token_usage',task:String(stage||'AI request'),provider,model,
-   prompt_tokens:usage?.prompt_tokens??promptEstimate,
-   completion_tokens:usage?.completion_tokens??completionEstimate,
-   total_tokens:usage?.total_tokens??(promptEstimate+completionEstimate),
+   prompt_tokens:usage?.prompt_tokens??usage?.input_tokens??promptEstimate,
+   completion_tokens:usage?.completion_tokens??usage?.output_tokens??completionEstimate,
+   total_tokens:usage?.total_tokens??((usage?.input_tokens!==undefined||usage?.output_tokens!==undefined)?Number(usage?.input_tokens||0)+Number(usage?.output_tokens||0):promptEstimate+completionEstimate),
    usage_source:usage?'provider':'estimated_chars_div_4',
    max_output_tokens:maxOutputTokens,outcome:error?'failed':'success'};
   aiUsage.requests++;aiUsage.total+=record.total_tokens||0;const providerRow=aiUsage.providers[provider]||(aiUsage.providers[provider]={tokens:0,estimated:false});providerRow.tokens+=record.total_tokens||0;providerRow.estimated=providerRow.estimated||record.usage_source!=='provider';const taskRow=aiUsage.tasks[stage]||(aiUsage.tasks[stage]={tokens:0,estimated:false});taskRow.tokens+=record.total_tokens||0;taskRow.estimated=taskRow.estimated||record.usage_source!=='provider';renderAiUsageMonitor();
