@@ -189,11 +189,9 @@ function mount() {
   $('mg30ChatGPTSwitchBtn').addEventListener('click', () => void switchProfile());
   $('mg30ChatGPTUsageBtn').addEventListener('click', () => void openUsage());
 
-  const switchRow = $('mg30ChatGPTSwitchRow');
-  const observer = new MutationObserver(() => {
-    if (switchRow) switchRow.hidden = profiles.length < 2;
-  });
-  if (switchRow) observer.observe(switchRow, { attributes: true, attributeFilter: ['hidden'] });
+  // render() owns the hidden state for the account switch row. Do not observe
+  // and rewrite the same attribute here: that can create an endless
+  // MutationObserver -> hidden setter -> MutationObserver loop in Android WebView.
   void refreshState();
 }
 
