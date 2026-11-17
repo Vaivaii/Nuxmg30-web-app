@@ -250,6 +250,32 @@ public class MG30ChatGPTPlugin extends Plugin {
         try { return readJsonResponse(c); } finally { c.disconnect(); }
     }
 
+    private void postFormNoBody(String address, JSONObject form) throws Exception {
+        HttpsURLConnection c = connection(address, "POST");
+        c.setDoOutput(true);
+        c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        StringBuilder body = new StringBuilder();
+        java.util.Iterator<String> keys = form.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (body.length() > 0) body.append('&');
+            body.append(URLEncoder.encode(key, "UTF-8")).append('=')
+                    .append(URLEncoder.encode(String.valueOf(form.get(key)), "UTF-8"));
+        }
+        try {
+            try (OutputStream output = c.getOutputStream()) {
+                output.write(body.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            int code = c.getResponseCode();
+            if (code < 200 || code >= 300) {
+                InputStream error = c.getErrorStream();
+                String raw = readLimited(error, 65536);
+                JSONObject detail = new JSONObject(raw.isEmpty() ? "{}" : raw);
+                throw new IllegalStateException(apiError(detail, code));
+            }
+        } finally { c.disconnect(); }
+    }
+
     private JSONObject postForm(String address, JSONObject form) throws Exception {
         HttpsURLConnection c = connection(address, "POST");
         c.setDoOutput(true);
@@ -478,7 +504,10 @@ public class MG30ChatGPTPlugin extends Plugin {
             params.put("code_challenge", challenge);
             params.put("ext_agent_host_id", hostId());
             if (isNew) params.put("agent_name_hint", APP_NAME);
-            else if (!previous.optString("email", "").isEmpty()) params.put("login_hint", previous.optString("email"));
+            else {
+                if (!previous.optString("idToken", "").isEmpty()) params.put("id_token_hint", previous.optString("idToken"));
+                if (!previous.optString("email", "").isEmpty()) params.put("login_hint", previous.optString("email"));
+            }
             String authorizationUrl = oidc.getString("authorization_endpoint") + "?" + buildQuery(params);
 
             getActivity().runOnUiThread(() -> {
@@ -532,6 +561,7 @@ public class MG30ChatGPTPlugin extends Plugin {
             profile.put("email", identity.optString("email", ""));
             profile.put("status", "connected");
             profile.put("scopes", scopes);
+            profile.put("idToken", token.getString("id_token"));
             profile.put("accessToken", token.getString("access_token"));
             profile.put("refreshToken", token.getString("refresh_token"));
             profile.put("expiresAt", System.currentTimeMillis() + (long) (token.getDouble("expires_in") * 1000));
@@ -562,7 +592,9 @@ public class MG30ChatGPTPlugin extends Plugin {
             Uri callback = Uri.parse("http://127.0.0.1" + target);
             if (!CALLBACK_PATH.equals(callback.getPath())) throw new IllegalStateException("ChatGPT callback path did not match.");
             String returnedState = callback.getQueryParameter("state");
-            if (returnedState == null || !MessageDigest.isEqual(state.getBytes(StandardCharsets.UTF_8), returnedState.getBytes(StandardCharsets.UTF_8))) {
+            if (returnedState == null || callback.getQueryParameters("state").size() != 1 ||
+                    callback.getQueryParameters("code").size() > 1 || callback.getQueryParameters("client_id").size() != 1 ||
+                    !MessageDigest.isEqual(state.getBytes(StandardCharsets.UTF_8), returnedState.getBytes(StandardCharsets.UTF_8))) {
                 writeCallback(socket, "Invalid sign-in state. Return to the app and try again.");
                 throw new IllegalStateException("ChatGPT sign-in state validation failed.");
             }
@@ -643,6 +675,7 @@ public class MG30ChatGPTPlugin extends Plugin {
         if (token.has("id_token")) {
             JSONObject identity = verifyIdToken(token.getString("id_token"), profile.getString("clientId"), null, oidc.getString("jwks_uri"));
             if (!profile.optString("subject").equals(identity.optString("subject"))) throw new IllegalStateException("Refreshed ChatGPT identity does not match the saved account.");
+            profile.put("idToken", token.getString("id_token"));
         }
         JSONArray scopes = token.has("scope") ? parseScopes(token.optString("scope")) : profile.optJSONArray("scopes");
         boolean sharing = false;
@@ -726,7 +759,7 @@ public class MG30ChatGPTPlugin extends Plugin {
                         form.put("token", refresh);
                         form.put("token_type_hint", "refresh_token");
                         form.put("client_id", profile.getString("clientId"));
-                        postForm(oidc.getString("revocation_endpoint"), form);
+                        postFormNoBody(oidc.getString("revocation_endpoint"), form);
                     } catch (Exception ignored) { /* Local credentials are removed even if remote revocation is offline. */ }
                 }
                 profile.remove("accessToken");
