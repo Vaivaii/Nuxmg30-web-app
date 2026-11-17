@@ -248,7 +248,8 @@ test('ChatGPT is primary while Auto and the free Multi-AI team remain explicit a
   }
   assert.match(source, /const auto=mode==='auto'\|\|mode==='collab'\|\|\(mode!=='chatgpt'&&ui\.autoFallback\.checked\)/);
   assert.match(source, /if\(provider==='chatgpt'\)result=await chatgpt/);
-  assert.match(source, /No OpenAI GPT API model was probed or selected/);
+  assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
+  assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
   assert.deepEqual(providerFallbackOrder('auto'), ['chatgpt','gemini','groq','openrouter']);
   assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
 });
@@ -272,7 +273,8 @@ test('automatic model selection uses the model catalogue without spending genera
   assert.match(selection, /providerModels\[provider\]/);
   assert.match(selection, /localStorage\.setItem\(modelStorageKey\(provider\),chosen\)/);
   assert.doesNotMatch(selection, /row\.id,10000|invokeProvider\(/);
-  assert.match(selection, /const providers=\['cloudflare','gemini','groq','openrouter'\]/);
+  assert.match(selection, /if\(provider==='chatgpt'\)/);
+  assert.doesNotMatch(selection, /cloudflare/);
   assert.doesNotMatch(selection, /'gpt'/);
 });
 
@@ -620,7 +622,8 @@ test('Auto orchestration excludes paid GPT while existing Cloud API gateway rema
   const auto = source.slice(source.indexOf('async function fastestReadyProviderOrder'), source.indexOf('async function testProvider'));
   const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
   const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
-  assert.match(auto, /\['cloudflare','gemini','groq','openrouter'\]/);
+  assert.match(auto, /const providers=\['gemini','groq','openrouter'\]/);
+  assert.match(auto, /providerFallbackOrder\('chatgpt'\)/);
   assert.doesNotMatch(auto, /['\"]gpt['\"]|OPENAI_API_KEY|invokeProvider\('gpt'/);
   assert.match(source, /GPT · manual \(may be paid\)/);
   assert.match(source, /\/api\/v1\/ai\/tone-plan/);
