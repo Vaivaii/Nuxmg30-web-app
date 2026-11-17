@@ -872,12 +872,21 @@ test('Workers AI derives fresh TONE3000 search_terms after Tone Plan validation 
  assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
  assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
 });
-test('free tone discussion uses the Workers AI light-task route as its primary path',()=>{
+test('ChatGPT is the primary native SIWC discussion route; Workers AI remains an alternate provider',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/invokeWorkersAILightTask\('tone-discussion'/);
+ const start=source.indexOf('async function answerToneConversation');
+ const end=source.indexOf('function renderNamCandidates',start);
+ const handler=source.slice(start,end);
+ const chatgptStart=handler.indexOf("if(mode==='chatgpt')");
+ const chatgptEnd=handler.indexOf('}else{',chatgptStart);
+ const chatgptRoute=handler.slice(chatgptStart,chatgptEnd);
+ assert.ok(chatgptStart>=0&&chatgptEnd>chatgptStart);
+ assert.match(chatgptRoute,/window\.MG30ChatGPTBridge/);
+ assert.match(chatgptRoute,/requestChatGptConversation/);
+ assert.doesNotMatch(chatgptRoute,/invokeWorkersAILightTask|askNamAIJson|parseJson/);
+ assert.match(handler,/invokeWorkersAILightTask\('tone-discussion'/,'non-ChatGPT manual provider mode retains its alternate route');
  assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
  assert.match(source,/const WORKERS_AI_MODEL = '@cf\/google\/gemma-4-26b-a4b-it'/);
- assert.match(source,/providerNames=\{[^}]*cloudflare:'Cloudflare Workers AI'/);
 });
 
 test('profile and capture recommendation UI retain full local TONE3000 objects',()=>{
