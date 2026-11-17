@@ -571,7 +571,7 @@ async function init(){
  '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI. Light tasks use Workers AI first.</small></span></label>'+
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestChatGPT" type="button">Test ChatGPT</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneTestCloudflare" type="button">Test Workers AI</button></div>'+
  '<p class="ai-tone-note">Auto uses Cloudflare Workers AI first for discussion, TONE3000 search/ranking and ordinary presets. Internal model fallback: Gemma 4 → GPT-OSS 20B → Mistral Small 3.1 → Llama 4 Scout. Complex Tone Architect requests add the existing Gemini/Groq/OpenRouter agents. Tone Plans are validated against the original MG-30 Gen 2 catalogue before live MIDI changes.</p></div></details>'+
- '<details class="ai-tone-settings-section" id="aiToneUsageDetails"><summary><span><strong>AI Usage & Token Monitor</strong><small>Session totals · provider and task breakdown</small></span><b id="aiToneUsageSummary">0 tokens</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-usage-metrics"><div><strong id="aiToneUsageTotal">0</strong><small>Total tokens</small></div><div><strong id="aiToneUsageRequests">0</strong><small>AI requests</small></div></div><div class="ai-tone-usage-subtitle">By provider</div><div id="aiToneUsageProviderRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-subtitle">By task / agent</div><div id="aiToneUsageAgentRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-foot"><small>Provider counts are actual when available; otherwise marked as estimates. Reset only clears this local session display.</small><button type="button" id="aiToneUsageReset">Reset Session</button></div></div></details>'+
+ '<details class="ai-tone-settings-section" id="aiToneUsageDetails"><summary><span><strong>AI Usage & Token Monitor</strong><small>Session totals · model and agent breakdown</small></span><b id="aiToneUsageSummary">0 tokens</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-usage-metrics"><div><strong id="aiToneUsageTotal">0</strong><small>Total tokens</small></div><div><strong id="aiToneUsageRequests">0</strong><small>AI requests</small></div></div><div class="ai-tone-usage-subtitle">By provider / model</div><div id="aiToneUsageProviderRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-subtitle">By task / agent + model</div><div id="aiToneUsageAgentRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-foot"><small>Provider counts are actual when available; otherwise marked as estimates. Reset only clears this local session display.</small><button type="button" id="aiToneUsageReset">Reset Session</button></div></div></details>'+
  '<div class="ai-tone-provider-row ai-tone-compact-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="chatgpt" selected>ChatGPT · signed-in plan (SIWC)</option><option value="auto">Auto · Workers AI + Free Multi-AI</option><option value="cloudflare">Cloudflare Workers AI · Gemma 4</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>'+
  '<div class="ai-tone-status ai-tone-status-accessible" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live tone assistance.</div>'+
  '<section class="ai-tone-nam-panel" id="aiToneNamPanel"><div class="ai-tone-nam-panel-head"><div><strong>TONE3000 NAM</strong><small>Optional NAM search mode for amp captures</small></div><button class="ai-tone-nam-action" id="aiToneFindNam" type="button" aria-pressed="false">OFF</button></div><div class="ai-tone-nam-gear-row" role="group" aria-label="NAM capture type"><button class="ai-tone-nam-choice" type="button" data-ai-nam-gear="amp" aria-pressed="false">Amp Only</button><button class="ai-tone-nam-choice active" type="button" data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab</button></div><small class="ai-tone-nam-mode-status" id="aiToneNamModeStatus">TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.</small></section>'+
@@ -656,16 +656,16 @@ async function init(){
  const removeChatCard=cardId=>{const index=history.findIndex(row=>row.type&&String(row.data?.cardId)===String(cardId));if(index>=0){history.splice(index,1);renderHistory();}};
  let namCardSequence=0;
  const aiUsage={requests:0,total:0,providers:Object.create(null),models:Object.create(null),tasks:Object.create(null)};
- const renderAiUsageMonitor=()=>{
+ const renderUsageRows=rows=>Object.keys(rows).length
+   ?Object.entries(rows).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>
+    '<div><span>'+esc(name)+'<small>In '+Number(row.input_tokens||0).toLocaleString()+' · Out '+Number(row.output_tokens||0).toLocaleString()+' · '+row.successes+' ok / '+row.failures+' fail</small></span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'<small>'+row.requests+' req</small></strong></div>').join('')
+   :'<p>No AI requests recorded in this session.</p>';
+  const renderAiUsageMonitor=()=>{
    ui.usageTotal.textContent=aiUsage.total.toLocaleString();
    ui.usageRequests.textContent=String(aiUsage.requests);
    ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';
-   ui.usageProviders.innerHTML=Object.keys(aiUsage.models).length
-    ?Object.entries(aiUsage.models).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+' · '+row.requests+' req</strong></div>').join('')
-    :'<p>No AI requests recorded in this session.</p>';
-   ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length
-    ?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+' · '+row.requests+' req</strong></div>').join('')
-    :'<p>No AI requests recorded in this session.</p>';
+   ui.usageProviders.innerHTML=renderUsageRows(aiUsage.models);
+   ui.usageAgents.innerHTML=renderUsageRows(aiUsage.tasks);
   };
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
  let pendingToneApply=null;
@@ -1202,11 +1202,15 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   const providerRow=aiUsage.providers[provider]||(aiUsage.providers[provider]={tokens:0,requests:0,estimated:false});
   providerRow.tokens+=record.total_tokens||0;providerRow.requests++;providerRow.estimated=providerRow.estimated||record.usage_source!=='provider';
   const modelKey=String(provider)+' · '+String(model||'unknown model');
-  const modelRow=aiUsage.models[modelKey]||(aiUsage.models[modelKey]={tokens:0,requests:0,estimated:false});
-  modelRow.tokens+=record.total_tokens||0;modelRow.requests++;modelRow.estimated=modelRow.estimated||record.usage_source!=='provider';
+  const modelRow=aiUsage.models[modelKey]||(aiUsage.models[modelKey]={tokens:0,input_tokens:0,output_tokens:0,requests:0,successes:0,failures:0,estimated:false});
+  modelRow.tokens+=record.total_tokens||0;modelRow.input_tokens+=record.prompt_tokens||0;modelRow.output_tokens+=record.completion_tokens||0;modelRow.requests++;
+  if(error)modelRow.failures++;else modelRow.successes++;
+  modelRow.estimated=modelRow.estimated||record.usage_source!=='provider';
   const agentKey=record.agent;
-  const taskRow=aiUsage.tasks[agentKey]||(aiUsage.tasks[agentKey]={tokens:0,requests:0,estimated:false});
-  taskRow.tokens+=record.total_tokens||0;taskRow.requests++;taskRow.estimated=taskRow.estimated||record.usage_source!=='provider';
+  const taskRow=aiUsage.tasks[agentKey]||(aiUsage.tasks[agentKey]={tokens:0,input_tokens:0,output_tokens:0,requests:0,successes:0,failures:0,estimated:false});
+  taskRow.tokens+=record.total_tokens||0;taskRow.input_tokens+=record.prompt_tokens||0;taskRow.output_tokens+=record.completion_tokens||0;taskRow.requests++;
+  if(error)taskRow.failures++;else taskRow.successes++;
+  taskRow.estimated=taskRow.estimated||record.usage_source!=='provider';
   renderAiUsageMonitor();
   try{console.info('[MG30 AI TOKEN USAGE]',record);}catch{}
  }
@@ -1396,10 +1400,16 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    candidate_plan:candidate
   };
   const requestText=JSON.stringify(user);
-  const response=await cloudApiRequest('/api/v1/ai/tone-plan',{
-   method:'POST',
-   body:{provider:'auto',model:'',system,prompt:requestText,maxOutputTokens:spec.maxTokens}
-  });
+  let response;
+  try{
+   response=await cloudApiRequest('/api/v1/ai/tone-plan',{
+    method:'POST',
+    body:{provider:'auto',model:'',system,prompt:requestText,maxOutputTokens:spec.maxTokens}
+   });
+  }catch(error){
+   logAiTokenUsage('free-specialist','provider/model unavailable','specialist '+role,spec.maxTokens,system,requestText,null,error);
+   throw error;
+  }
   if(!response?.tonePlan||typeof response.tonePlan!=='object'||Array.isArray(response.tonePlan))
    throw new Error('The free specialist provider did not return a structured JSON result.');
   const result={ok:true,role,provider:String(response.provider||'unknown-provider'),model:String(response.model||'unknown-model'),result:response.tonePlan};
