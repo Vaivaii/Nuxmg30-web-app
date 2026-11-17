@@ -152,6 +152,16 @@ test('TONE3000 session check refreshes the OAuth access token and separates app 
   assert.match(aiStudio, /Publishable Key identifies this app only/);
 });
 
+test('Native SIWC bridge preserves Responses message arrays and bounded specialist handoff items',()=>{
+  assert.match(chatGptPlugin,/content instanceof String \|\| content instanceof JSONArray/);
+  assert.match(chatGptPlugin,/A prior Responses message item is incomplete/);
+  assert.match(chatGptPlugin,/"function_call_output"/);
+  assert.match(chatGptPlugin,/max_output_tokens/);
+  assert.match(chatGptPlugin,/parallel_tool_calls/);
+  assert.match(chatGptPlugin,/result\.put\("outputItems", outputItems\)/);
+  assert.match(chatGptPlugin,/result\.put\("toolCalls", toolCalls\)/);
+});
+
 test('ChatGPT plan access uses the native SIWC plugin and never sends ChatGPT tokens through Cloudflare', () => {
   assert.match(aiStudio, /MG30ChatGPTBridge/);
   assert.match(aiStudio, /async function chatgpt\(_credential, system, prompt, model\)/);
