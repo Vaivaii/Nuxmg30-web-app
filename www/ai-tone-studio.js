@@ -938,9 +938,9 @@ const next=['chatgpt','auto','cloudflare','gemini','groq','openrouter','gpt','co
   }));
   const recent=compactNamConversation(conversation,1500);
   const stateText=JSON.stringify(compactState).slice(0,900);
-  const user=(recent?'RECENT DISCUSSION:\\n'+recent+'\\n\\n':'')+
-   (stateText&&stateText!=='[]'?'CURRENT MG-30 EDITOR STATE (compact):\\n'+stateText+'\\n\\n':'')+
-   'LATEST USER MESSAGE:\\n'+String(prompt||'').slice(0,500)+'\\n\\nAnswer this discussion turn naturally. No device changes.';
+  const user=(recent?'RECENT DISCUSSION:\n'+recent+'\n\n':'')+
+   (stateText&&stateText!=='[]'?'CURRENT MG-30 EDITOR STATE (compact):\n'+stateText+'\n\n':'')+
+   'LATEST USER MESSAGE:\n'+String(prompt||'').slice(0,500)+'\n\nAnswer this discussion turn naturally. No device changes.';
   let reply='';
   if(mode==='chatgpt'){
    const credential=await secret('chatgpt');
