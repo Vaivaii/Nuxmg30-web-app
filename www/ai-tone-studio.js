@@ -326,6 +326,17 @@ function fallbackNamSearchTerms(prompt){
 export function outputTokenBudgetForStage(stage){const v=String(stage||'').toLowerCase();if(v.includes('testing '))return 64;if(v.includes('deriving tone3000 search terms'))return 180;if(v.includes('choosing the closest nam tone')||v.includes('selecting the closest a2-lite capture'))return 320;if(v.includes('defining the musical direction'))return 260;if(v.includes('analyzing the captured mg-30 usb audio')||v.includes('answering your tone question'))return 520;if(v.includes('correcting the catalog validation')||v.includes('checking a material conflict'))return 850;if(v.includes('building your tone plan')||v.includes('synthesizing the final tone plan'))return 1350;return 700;}
 export function isComplexToneRequest(prompt){const v=String(prompt||'').toLowerCase();if(v.length>=240)return true;return /\b(dual[- ]amp|two amps|multi[- ]scene|multiple scenes|multi[- ]layer|layered tone|clean (?:and|\+) lead|rhythm and lead|verse and chorus|intro.*solo|switch(?:ing)? between|three different tones|blend(?:ed|ing)? (?:two|multiple)|hybrid rig|full arrangement|complex signal chain|studio production|detailed signal chain)\b/i.test(v);}
 
+export function selectChatGptAutoModel(models,task='discussion'){
+ const rows=(Array.isArray(models)?models:[]).filter(row=>row?.id);
+ if(!rows.length)return '';
+ const normalized=row=>String(row.id+' '+(row.name||'')).toLowerCase().replace(/[_ ]+/g,'-');
+ const find=pattern=>rows.find(row=>pattern.test(normalized(row)))?.id||'';
+ if(task==='tone-plan')return find(/gpt-6-luna/)||find(/gpt-6/)||'';
+ return find(/gpt-5[.-]6-luna/)||
+  rows.filter(row=>/mini|nano|flash|lite|small/.test(normalized(row))).sort((a,b)=>normalized(a).localeCompare(normalized(b)))[0]?.id||
+  find(/gpt-5[.-]/)||rows[0].id;
+}
+
 export async function requestChatGptConversation({bridge,model,system,user,maxOutputTokens=520}){
  if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable. Open Device settings and connect your ChatGPT account.');
  const response=await bridge.sendResponse({
@@ -630,8 +641,18 @@ async function init(){
  };
  const removeChatCard=cardId=>{const index=history.findIndex(row=>row.type&&String(row.data?.cardId)===String(cardId));if(index>=0){history.splice(index,1);renderHistory();}};
  let namCardSequence=0;
- const aiUsage={requests:0,total:0,providers:Object.create(null),tasks:Object.create(null)};
- const renderAiUsageMonitor=()=>{ui.usageTotal.textContent=aiUsage.total.toLocaleString();ui.usageRequests.textContent=String(aiUsage.requests);ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';ui.usageProviders.innerHTML=Object.keys(aiUsage.providers).length?Object.entries(aiUsage.providers).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';};
+ const aiUsage={requests:0,total:0,providers:Object.create(null),models:Object.create(null),tasks:Object.create(null)};
+ const renderAiUsageMonitor=()=>{
+   ui.usageTotal.textContent=aiUsage.total.toLocaleString();
+   ui.usageRequests.textContent=String(aiUsage.requests);
+   ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';
+   ui.usageProviders.innerHTML=Object.keys(aiUsage.models).length
+    ?Object.entries(aiUsage.models).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+' · '+row.requests+' req</strong></div>').join('')
+    :'<p>No AI requests recorded in this session.</p>';
+   ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length
+    ?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+' · '+row.requests+' req</strong></div>').join('')
+    :'<p>No AI requests recorded in this session.</p>';
+  };
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
  let pendingToneApply=null;
  const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>8)dialogueContext.shift();};
@@ -1135,17 +1156,44 @@ status(nativeSession?.status==='connected'&&nativeSession?.sharing?'ChatGPT plan
 }
 async function saveKeys(){await keyStates();status('Provider credentials are managed as Cloudflare Worker secrets. Cloud status and model lists refreshed.','success');}
 async function deleteKey(provider){status('Manage '+providerNames[provider]+' credentials in Cloudflare Worker secrets. The app cannot read or delete server-side keys.','idle');}
+function aiAgentLabel(stage,provider,model){
+ const task=String(stage||'AI request').toLowerCase();
+ let agent=String(stage||'AI request');
+ if(task.includes('answering your tone question'))agent='Discussion';
+ else if(task.includes('building your tone plan'))agent=provider==='chatgpt'?'ChatGPT Orchestrator':'Tone Plan Builder';
+ else if(task.includes('specialist tone_architect'))agent='Tone Architect';
+ else if(task.includes('specialist gear_specialist'))agent='Gear Specialist';
+ else if(task.includes('specialist parameter_engineer'))agent='Parameter Engineer';
+ else if(task.includes('specialist critical_reviewer'))agent='Critical Reviewer';
+ else if(task.includes('correcting the catalog validation'))agent='Catalog Validation Correction';
+ else if(task.includes('defining the musical direction'))agent='Tone Architect';
+ else if(task.includes('synthesizing the final tone plan'))agent=provider==='chatgpt'?'ChatGPT Orchestrator':'Tone Plan Synthesizer';
+ else if(task.includes('checking a material conflict'))agent='Critical Reviewer';
+ return agent+' · '+String(model||provider||'unknown model');
+}
 function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result,error=null){
   const usage=result?.__aiUsage&&typeof result.__aiUsage==='object'?result.__aiUsage:null;
-  const promptEstimate=estimateTokenCount(String(system||'')+'\n'+String(user||''));
+  const promptEstimate=estimateTokenCount(String(system||'')+'\\n'+String(user||''));
   const completionEstimate=result?estimateTokenCount(JSON.stringify(result)):0;
-  const record={event:'mg30_ai_token_usage',task:String(stage||'AI request'),provider,model,
-   prompt_tokens:usage?.prompt_tokens??usage?.input_tokens??promptEstimate,
-   completion_tokens:usage?.completion_tokens??usage?.output_tokens??completionEstimate,
-   total_tokens:usage?.total_tokens??((usage?.input_tokens!==undefined||usage?.output_tokens!==undefined)?Number(usage?.input_tokens||0)+Number(usage?.output_tokens||0):promptEstimate+completionEstimate),
+  const inputTokens=usage?.prompt_tokens??usage?.input_tokens;
+  const outputTokens=usage?.completion_tokens??usage?.output_tokens;
+  const totalTokens=usage?.total_tokens??(inputTokens!==undefined||outputTokens!==undefined?Number(inputTokens||0)+Number(outputTokens||0):promptEstimate+completionEstimate);
+  const record={event:'mg30_ai_token_usage',task:String(stage||'AI request'),agent:aiAgentLabel(stage,provider,model),provider,model,
+   prompt_tokens:inputTokens??promptEstimate,
+   completion_tokens:outputTokens??completionEstimate,
+   total_tokens:totalTokens,
    usage_source:usage?'provider':'estimated_chars_div_4',
    max_output_tokens:maxOutputTokens,outcome:error?'failed':'success'};
-  aiUsage.requests++;aiUsage.total+=record.total_tokens||0;const providerRow=aiUsage.providers[provider]||(aiUsage.providers[provider]={tokens:0,estimated:false});providerRow.tokens+=record.total_tokens||0;providerRow.estimated=providerRow.estimated||record.usage_source!=='provider';const taskRow=aiUsage.tasks[stage]||(aiUsage.tasks[stage]={tokens:0,estimated:false});taskRow.tokens+=record.total_tokens||0;taskRow.estimated=taskRow.estimated||record.usage_source!=='provider';renderAiUsageMonitor();
+  aiUsage.requests++;aiUsage.total+=record.total_tokens||0;
+  const providerRow=aiUsage.providers[provider]||(aiUsage.providers[provider]={tokens:0,requests:0,estimated:false});
+  providerRow.tokens+=record.total_tokens||0;providerRow.requests++;providerRow.estimated=providerRow.estimated||record.usage_source!=='provider';
+  const modelKey=String(provider)+' · '+String(model||'unknown model');
+  const modelRow=aiUsage.models[modelKey]||(aiUsage.models[modelKey]={tokens:0,requests:0,estimated:false});
+  modelRow.tokens+=record.total_tokens||0;modelRow.requests++;modelRow.estimated=modelRow.estimated||record.usage_source!=='provider';
+  const agentKey=record.agent;
+  const taskRow=aiUsage.tasks[agentKey]||(aiUsage.tasks[agentKey]={tokens:0,requests:0,estimated:false});
+  taskRow.tokens+=record.total_tokens||0;taskRow.requests++;taskRow.estimated=taskRow.estimated||record.usage_source!=='provider';
+  renderAiUsageMonitor();
   try{console.info('[MG30 AI TOKEN USAGE]',record);}catch{}
  }
  async function invokeProvider(provider,key,system,user,model,timeoutMs=90000,stage='AI request',maxOutputTokens=900){
@@ -1159,7 +1207,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    return result;
   }catch(error){logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,null,error);throw error;}
  }
- async function fastestReadyModel(provider,key){
+ async function fastestReadyModel(provider,key,task='discussion'){
   if(provider==='cloudflare'){
    if(!await secret('cloudflare'))throw new Error('Cloudflare Workers AI binding AI is not configured in the Worker.');
    return WORKERS_AI_MODEL;
@@ -1169,11 +1217,14 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(manual&&(!models.length||models.some(row=>row.id===manual)))return manual;
 if(manual)localStorage.setItem('mg30-ai-model-manual-'+provider,'0');
 if(provider==='chatgpt'){
-const preferred=models.find(row=>/gpt-4\.1-mini|gpt-4o-mini|gpt-5-mini|mini/i.test(String(row.id)))||models[0];
-if(!preferred?.id)throw new Error('No ChatGPT text model is available for the signed-in account.');
-localStorage.setItem(modelStorageKey(provider),preferred.id);
-autoModelHealthCache[provider]={model:preferred.id,expires:Date.now()+45_000};
-return preferred.id;
+const preferredId=selectChatGptAutoModel(models,task);
+if(!preferredId){
+ if(task==='tone-plan')throw new Error('GPT-6-Luna is not available in the signed-in ChatGPT model catalogue. Refresh the model list or select an available model manually; Auto will not silently substitute a weaker tone-building model.');
+ throw new Error('No suitable lightweight ChatGPT model is available for discussion in this signed-in account.');
+}
+localStorage.setItem(modelStorageKey(provider),preferredId);
+autoModelHealthCache[provider]={model:preferredId,task,expires:Date.now()+45_000};
+return preferredId;
 }
 const cached=autoModelHealthCache[provider];
   if(cached&&Date.now()<cached.expires){
@@ -1825,7 +1876,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
  sheet.querySelector('.ai-tone-body').addEventListener('click',event=>{if(ui.settings.classList.contains('on')&&!event.target.closest('#aiToneSettingsToggle'))setSettingsExpanded(false);});
  $('aiToneSaveKeys').addEventListener('click',saveKeys);
  $('aiToneRefreshModels').addEventListener('click',()=>{void refreshAllProviderModels(false);});
- ui.usageReset.addEventListener('click',()=>{aiUsage.requests=0;aiUsage.total=0;aiUsage.providers=Object.create(null);aiUsage.tasks=Object.create(null);renderAiUsageMonitor();status('Local AI usage session counters reset. Provider quotas and API usage are unchanged.','success');});
+ ui.usageReset.addEventListener('click',()=>{aiUsage.requests=0;aiUsage.total=0;aiUsage.providers=Object.create(null);aiUsage.models=Object.create(null);aiUsage.tasks=Object.create(null);renderAiUsageMonitor();status('Local AI usage session counters reset. Provider quotas and API usage are unchanged.','success');});
 $('aiToneTestChatGPT')?.addEventListener('click',()=>testProvider('chatgpt'));
 $('aiToneTestOpenAi')?.addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini')?.addEventListener('click',()=>testProvider('gemini'));
 $('aiToneTestGroq')?.addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter')?.addEventListener('click',()=>testProvider('openrouter'));$('aiToneTestCloudflare')?.addEventListener('click',()=>{void testWorkersAI();});
