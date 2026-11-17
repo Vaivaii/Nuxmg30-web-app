@@ -388,7 +388,7 @@ export async function requestChatGptConversation({bridge,model,system,user,maxOu
  if(first?.incomplete){
   const reason=String(first.incompleteReason||'incomplete').toLowerCase();
   const mayContinue=['max_output_tokens','stream_ended','stream_interrupted','incomplete'].includes(reason);
-  if(!mayContinue)throw attachBreakdown(new Error('ChatGPT response was incomplete (reason: '+reason+'). No tone changes were made.'));
+  if(!mayContinue){breakdown[breakdown.length-1].failed=true;throw attachBreakdown(new Error('ChatGPT response was incomplete (reason: '+reason+'). No tone changes were made.'));}
   const continuationInput=partial
    ?[{role:'assistant',content:partial.slice(-2800)},{role:'user',content:'Continue from the exact ending of the previous answer. Do not repeat or summarize any earlier sentences. Finish the answer concisely.'}]
    :[{role:'user',content:originalUser.slice(0,2600)+'\\n\\nRetry this discussion answer once, concise and complete. Do not make device changes.'}];
@@ -396,6 +396,7 @@ export async function requestChatGptConversation({bridge,model,system,user,maxOu
    finalResponse=await request(continuationInput,partial?360:outputLimit,'answering your tone question · '+(partial?'continuation':'bounded retry'));
   }catch(error){throw attachBreakdown(new Error('ChatGPT discussion could not be completed after one bounded continuation: '+String(error?.message||error)));}
   if(finalResponse?.incomplete){
+   breakdown[breakdown.length-1].failed=true;
    throw attachBreakdown(new Error('ChatGPT response remained incomplete after one bounded continuation (reason: '+String(finalResponse.incompleteReason||'unknown')+'). No device changes were made.'));
   }
  }
