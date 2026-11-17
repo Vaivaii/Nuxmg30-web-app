@@ -428,7 +428,7 @@ test('Tone Critic and Guitar specialist are available as conditional roles, whil
  });
  assert.equal(calls,1);
  assert.equal(simple.__orchestratorCalls,1);
- assert.deepEqual(simple.__specialistRoles,undefined);
+ assert.deepEqual(simple.__specialistRoles,[]);
  assert.equal(simple.summary,'Simple clean tone');
 });
 
@@ -464,7 +464,10 @@ test('A failed specialist is reported to Luna as a failed handoff rather than a 
     return {toolCalls:[{name:'delegate_tone_specialist',call_id:'failed_1',arguments:JSON.stringify(args)}],
      outputItems:[{type:'function_call',call_id:'failed_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
    }
-   assert.match(request.input.find(item=>item.type==='function_call_output').output,/failed|unavailable/i);
+   const handoff=JSON.parse(request.input.find(item=>item.type==='function_call_output').output);
+   assert.equal(handoff.ok,false);
+   assert.equal(handoff.role,'tone_researcher');
+   assert.match(handoff.error,/quota exhausted/i);
    return {text:'{"summary":"Safe fallback from Chief reasoning","blocks":[]}'};
   }},
   model:'gpt-6-luna',input:[{role:'user',content:'tone'}],instructions:'',
@@ -704,13 +707,17 @@ test('one transient discussion stream error receives only one bounded retry',asy
  assert.equal(result.__aiUsageBreakdown[1].failed,false);
 });
 
-test('named artist tone builds require one Tone Architect when a free specialist is available',()=>{
+test('named artist tone requests enable the specialist roster and reserve Luna as final Chief',()=>{
  assert.equal(requiresToneArchitect('Buatkan tone John Mayer'),true);
  assert.equal(requiresToneArchitect('Create a Satriani lead tone'),true);
  assert.equal(requiresToneArchitect('Buatkan tone clean sederhana'),false);
- const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/you MUST delegate Tone Architect exactly once whenever the specialist tool is available/);
- assert.match(source,/Tone Architect was not called because no free specialist provider is configured/);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone John Mayer'),true);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),false);
+ const definition=toneSpecialistToolDefinition();
+ assert.match(definition.description,/GPT-6 Luna, the sole Chief Tone Architect and final decision-maker/);
+ assert.match(definition.description,/Tone Researcher for deep musical\/rig research/);
+ assert.match(definition.description,/Tone Critic only when your quality gate detects uncertainty, conflict, or material risk/);
+ assert.deepEqual(definition.parameters.properties.role.enum,[...TONE_SPECIALIST_ROLES]);
 });
 
 test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route and all MIDI writes',()=>{
@@ -926,7 +933,8 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.match(source,/agent:aiAgentLabel\(stage,provider,model\)/);
  assert.ok(source.includes("row.requests+' req</small>"));
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
- assert.match(source,/specialist tone_architect/);
+ for(const role of TONE_SPECIALIST_ROLES)assert.ok(source.includes(`task.includes('specialist ${role}')`),`missing usage label for ${role}`);
+ for(const label of ['Tone Researcher','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
  assert.ok(source.includes("logAiTokenUsage(result.provider,result.__aiModel,'specialist '+role"));
  assert.match(source,/aiUsage\.models\[modelKey\]/);
 });
@@ -1316,8 +1324,8 @@ test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded 
  const definition=toneSpecialistToolDefinition();
  assert.equal(definition.type,'function');
  assert.equal(definition.name,'delegate_tone_specialist');
- assert.deepEqual(definition.parameters.properties.role.enum,['tone_architect','gear_specialist','parameter_engineer','critical_reviewer']);
- const args={role:'tone_architect',focus:'John Mayer feel',brief:'Interpret touch-sensitive blues tone',blockIds:[],candidatePlan:''};
+ assert.deepEqual(definition.parameters.properties.role.enum,[...TONE_SPECIALIST_ROLES]);
+ const args={role:'tone_researcher',focus:'John Mayer feel',brief:'Interpret touch-sensitive blues tone',blockIds:[],candidatePlan:''};
  const calls=[];
  let specialistCalls=0;
  const bridge={sendResponse:async request=>{
@@ -1325,7 +1333,7 @@ test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded 
   if(calls.length===1)return {model:'gpt-model',toolCalls:[{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],outputItems:[{type:'reasoning',id:'rs_1',summary:[]},{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],usage:{input_tokens:80,output_tokens:20,total_tokens:100}};
   return {model:'gpt-model',text:'{"summary":"Warm touch-sensitive blues tone","blocks":[]}',usage:{input_tokens:100,output_tokens:40,total_tokens:140}};
  }};
- const plan=await orchestrateChatGptTonePlan({bridge,model:'gpt-model',input:[{role:'user',content:'Create a John Mayer tone'}],instructions:'Orchestrate adaptively',maxOutputTokens:500,runSpecialist:async task=>{specialistCalls++;assert.equal(task.role,'tone_architect');return {ok:true,result:{tone_intent:{style:'blues',feel:'touch-sensitive'}}};}});
+ const plan=await orchestrateChatGptTonePlan({bridge,model:'gpt-model',input:[{role:'user',content:'Create a John Mayer tone'}],instructions:'Orchestrate adaptively',maxOutputTokens:500,runSpecialist:async task=>{specialistCalls++;assert.equal(task.role,'tone_researcher');return {ok:true,result:{tone_intent:{style:'blues',feel:'touch-sensitive'}}};}});
  assert.equal(specialistCalls,1);
  assert.equal(calls.length,2);
  assert.equal(calls[0].tools.length,1);
@@ -1333,9 +1341,9 @@ test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded 
  assert.equal(calls[0].maxOutputTokens,500);
  assert.equal(calls[1].tools,undefined,'No second specialist delegation is allowed');
  assert.ok(calls[1].input.some(item=>item.type==='function_call_output'));
- assert.equal(plan.__specialistRole,'tone_architect');
+ assert.equal(plan.__specialistRole,'tone_researcher');
  assert.equal(plan.__aiUsageBreakdown.length,2);
- assert.equal(plan.__aiUsageBreakdown[0].stage,'ChatGPT Orchestrator · Specialist routing');
+ assert.equal(plan.__aiUsageBreakdown[0].stage,'ChatGPT Orchestrator · Sequential routing 1');
  assert.equal(plan.__aiUsageBreakdown[1].stage,'ChatGPT Orchestrator · Final synthesis');
  assert.equal(plan.__aiUsageBreakdown[0].usage.total_tokens,100);
  assert.equal(plan.__aiUsageBreakdown[1].usage.total_tokens,140);
@@ -1350,7 +1358,7 @@ test('ChatGPT simple Tone Plans use one call and tool overuse is rejected',async
  assert.equal(calls,1);
  assert.equal(simple.__orchestratorCalls,1);
  assert.equal(simple.summary,'Simple clean tone');
- await assert.rejects(()=>orchestrateChatGptTonePlan({bridge:{sendResponse:async()=>({toolCalls:[{name:'delegate_tone_specialist',call_id:'1',arguments:'{}'},{name:'delegate_tone_specialist',call_id:'2',arguments:'{}'}]})},model:'gpt-model',input:[{role:'user',content:'tone'}],instructions:'',runSpecialist:async()=>({ok:true})}),/one-specialist call budget/);
+ await assert.rejects(()=>orchestrateChatGptTonePlan({bridge:{sendResponse:async()=>({toolCalls:[{name:'delegate_tone_specialist',call_id:'1',arguments:'{}'},{name:'delegate_tone_specialist',call_id:'2',arguments:'{}'}]})},model:'gpt-model',input:[{role:'user',content:'tone'}],instructions:'',runSpecialist:async()=>({ok:true})}),/exactly one specialist per turn/);
 });
 
 test('AI initialization does not bind listeners to missing legacy provider-delete buttons',()=>{
