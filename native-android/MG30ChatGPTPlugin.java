@@ -824,9 +824,17 @@ public class MG30ChatGPTPlugin extends Plugin {
                     String role = item.optString("role", "");
                     String type = item.optString("type", "");
                     if (!role.isEmpty()) {
-                        if (!("user".equals(role) || "assistant".equals(role) || "developer".equals(role)) ||
-                                !(item.opt("content") instanceof String)) {
+                        Object content = item.opt("content");
+                        boolean validContent = content instanceof String || content instanceof JSONArray;
+                        if (!("user".equals(role) || "assistant".equals(role) || "developer".equals(role)) || !validContent) {
                             throw new IllegalArgumentException("Conversation messages must use user, assistant, or developer roles with text content.");
+                        }
+                    } else if ("message".equals(type)) {
+                        String messageRole = item.optString("role", "");
+                        Object content = item.opt("content");
+                        if (!("assistant".equals(messageRole) || "developer".equals(messageRole) || "user".equals(messageRole)) ||
+                                !(content instanceof JSONArray)) {
+                            throw new IllegalArgumentException("A prior Responses message item is incomplete.");
                         }
                     } else if ("function_call".equals(type)) {
                         if (item.optString("call_id", "").isEmpty() || item.optString("name", "").isEmpty() ||
