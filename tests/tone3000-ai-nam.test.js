@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const tone3000 = readFileSync(new URL('../www/tone3000.js', import.meta.url), 'utf8');
 const aiStudio = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
 const secureStore = readFileSync(new URL('../native-android/MG30SecureStorePlugin.java', import.meta.url), 'utf8');
+const chatGptPlugin = readFileSync(new URL('../native-android/MG30ChatGPTPlugin.java', import.meta.url), 'utf8');
 const namTransfer = readFileSync(new URL('../www/nam-transfer.js', import.meta.url), 'utf8');
 
 test('TONE3000 OAuth uses the one existing Publishable Key and PKCE flow for both capture types', () => {
@@ -130,10 +131,15 @@ test('TONE3000 session check refreshes the OAuth access token and separates app 
   assert.match(aiStudio, /Publishable Key identifies this app only/);
 });
 
-test('AI provider credentials are managed only by Cloudflare Worker secrets, not local Android storage', () => {
-  assert.match(aiStudio, /cloudApiRequest\('\/api\/v1\/ai\/providers'\)/);
-  assert.match(aiStudio, /Provider credentials are stored only as Cloudflare Worker secrets/);
-  assert.doesNotMatch(aiStudio, /SecureStore|registerPlugin/);
+test('ChatGPT plan access uses the native SIWC plugin and never sends ChatGPT tokens through Cloudflare', () => {
+  assert.match(aiStudio, /MG30ChatGPTBridge/);
+  assert.match(aiStudio, /Requests run directly from this Android app/);
+  assert.match(chatGptPlugin, /@CapacitorPlugin\(name = "MG30ChatGPT"\)/);
+  assert.match(chatGptPlugin, /AndroidKeyStore/);
+  assert.match(chatGptPlugin, /AES\/GCM\/NoPadding/);
+  assert.match(chatGptPlugin, /chatgpt\.tokens\.use\.direct/);
+  assert.match(chatGptPlugin, /API_BASE \+ "\/responses"/);
+  assert.doesNotMatch(aiStudio, /Authorization.*Bearer.*MG30ChatGPT/);
   assert.match(tone3000, /SecureStore\.setSecret\(\{ provider: 'tone3000'/);
 });
 
