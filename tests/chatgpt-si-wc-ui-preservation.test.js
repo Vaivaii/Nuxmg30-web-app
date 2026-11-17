@@ -18,14 +18,16 @@ test('Restored AI Live Tone Assistant keeps the audio listening and local analys
   assert.match(ai, /requestAudioDiagnosis/);
 });
 
-test('All pre-existing AI providers remain selectable alongside ChatGPT SIWC', () => {
-  const select = ai.match(/<select id="aiToneProviderSelect">[\s\S]*?<\/select>/)?.[0] || '';
-  for (const provider of ['chatgpt', 'auto', 'cloudflare', 'gemini', 'groq', 'openrouter', 'gpt', 'collab']) {
+test('ChatGPT replaces the former Cloudflare AI role while existing optional providers and SIWC remain', () => {
+  const select = ai.match(/<select id="aiToneProviderSelect">[\\s\\S]*?<\\/select>/)?.[0] || '';
+  for (const provider of ['chatgpt', 'auto', 'gemini', 'groq', 'openrouter', 'gpt', 'collab']) {
     assert.ok(select.includes('value="' + provider + '"'), 'provider selector lost ' + provider);
   }
-  for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestCloudflare', 'aiToneTestChatGPT']) {
+  assert.doesNotMatch(select, /value="cloudflare"/);
+  for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestChatGPT']) {
     assert.ok(ai.includes(id), 'provider settings lost ' + id);
   }
+  assert.doesNotMatch(ai, /id="aiToneTestCloudflare"/);
 });
 
 test('ChatGPT SIWC runs through the native bridge rather than the Cloudflare AI proxy', () => {
