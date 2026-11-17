@@ -1690,7 +1690,6 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    const bridge=window.MG30AIToneBridge;
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
-   let preparedPlan=null;
    if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.');
    let preparedPlan=null;
    if(shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))){
