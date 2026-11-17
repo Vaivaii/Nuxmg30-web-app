@@ -1339,7 +1339,8 @@ test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded 
  assert.equal(calls[0].tools.length,1);
  assert.equal(calls[0].parallelToolCalls,false);
  assert.equal(calls[0].maxOutputTokens,500);
- assert.equal(calls[1].tools,undefined,'No second specialist delegation is allowed');
+ assert.equal(calls[1].tools.length,1,'A later turn may request the next specialist after evaluating the previous handoff');
+ assert.equal(calls[1].parallelToolCalls,false,'Specialist calls remain sequential on every turn');
  assert.ok(calls[1].input.some(item=>item.type==='function_call_output'));
  assert.equal(plan.__specialistRole,'tone_researcher');
  assert.equal(plan.__aiUsageBreakdown.length,2);
