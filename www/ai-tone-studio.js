@@ -101,6 +101,79 @@ function parseJson(text){
  if(a<0||b<=a)throw new Error('The AI response does not contain a JSON Tone Plan.');
  return JSON.parse(s.slice(a,b+1));
 }
+
+export function toneSpecialistToolDefinition(){
+ return {
+  type:'function',
+  name:'delegate_tone_specialist',
+  description:'Delegate one narrowly-scoped task to one available free specialist model. ChatGPT remains the sole orchestrator and final Tone Plan author. Do not call for routine/simple requests. Use Tone Architect for uncertain artist/song musical intent, Gear Specialist for difficult device/model compatibility, Parameter Engineer for coupled or unusual exact parameter mapping, and Critical Reviewer only for a material conflict in a candidate plan. At most one specialist call is allowed for this request.',
+  strict:true,
+  parameters:{
+   type:'object',
+   properties:{
+    role:{type:'string',enum:['tone_architect','gear_specialist','parameter_engineer','critical_reviewer']},
+    focus:{type:'string',maxLength:140},
+    brief:{type:'string',maxLength:600},
+    blockIds:{type:'array',items:{type:'string',maxLength:12},maxItems:4},
+    candidatePlan:{type:'string',maxLength:1800}
+   },
+   required:['role','focus','brief','blockIds','candidatePlan'],
+   additionalProperties:false
+  }
+ };
+}
+export async function orchestrateChatGptTonePlan({bridge,model,input,instructions,runSpecialist,toolsEnabled=true,maxOutputTokens=1350}){
+ if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable.');
+ const request={model,input:input.slice(),instructions,maxOutputTokens,parallelToolCalls:false};
+ if(toolsEnabled)request.tools=[toneSpecialistToolDefinition()];
+ const first=await bridge.sendResponse(request);
+ const calls=Array.isArray(first?.toolCalls)?first.toolCalls:
+  (Array.isArray(first?.outputItems)?first.outputItems.filter(item=>item?.type==='function_call'):[]);
+ if(!calls.length){
+  const plan=parseJson(first?.text||'');
+  const usage=first?.usage&&typeof first.usage==='object'?{...first.usage}:null;
+  if(usage)Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});
+  Object.defineProperty(plan,'__aiModel',{value:first?.model||model,enumerable:false});
+  Object.defineProperty(plan,'__orchestratorCalls',{value:1,enumerable:false});
+  return plan;
+ }
+ if(!toolsEnabled||calls.length!==1)throw new Error('The ChatGPT orchestrator exceeded the one-specialist call budget. No device changes were sent.');
+ const call=calls[0];
+ if(call?.name!=='delegate_tone_specialist'||!call.call_id)throw new Error('ChatGPT requested an unsupported MG-30 specialist tool. No device changes were sent.');
+ let args;
+ try{args=JSON.parse(String(call.arguments||''));}catch{throw new Error('ChatGPT returned invalid specialist task arguments. No device changes were sent.');}
+ const allowedRoles=new Set(['tone_architect','gear_specialist','parameter_engineer','critical_reviewer']);
+ if(!allowedRoles.has(String(args?.role||'')))throw new Error('ChatGPT selected an unsupported specialist role. No device changes were sent.');
+ let specialistResult;
+ try{
+  specialistResult=await runSpecialist(args);
+  if(!specialistResult||typeof specialistResult!=='object')throw new Error('Specialist returned no structured result.');
+ }catch(error){
+  specialistResult={ok:false,role:args.role,error:String(error?.message||error).slice(0,300),fallback:'Continue using ChatGPT reasoning only. Do not claim a specialist participated.'};
+ }
+ const nextInput=Array.isArray(input)?input.slice():[];
+ if(Array.isArray(first.outputItems)&&first.outputItems.length)nextInput.push(...first.outputItems);
+ else nextInput.push({type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')});
+ nextInput.push({type:'function_call_output',call_id:call.call_id,output:JSON.stringify(specialistResult).slice(0,12000)});
+ const final=await bridge.sendResponse({
+  model,input:nextInput,
+  instructions:instructions+'\\n\\nSPECIALIST HANDOFF: Review the one specialist result above. You remain the sole orchestrator and final decision authority. Use only useful evidence; resolve disagreement yourself. Do not request any more specialists. Return the final MG-30 Tone Plan JSON only.',
+  maxOutputTokens,parallelToolCalls:false
+ });
+ if(Array.isArray(final?.toolCalls)&&final.toolCalls.length)throw new Error('ChatGPT tried to exceed the specialist call budget. No device changes were sent.');
+ const plan=parseJson(final?.text||'');
+ const firstUsage=first?.usage,finalUsage=final?.usage;
+ if(firstUsage||finalUsage){
+  const usage={input_tokens:Number(firstUsage?.input_tokens||0)+Number(finalUsage?.input_tokens||0),
+   output_tokens:Number(firstUsage?.output_tokens||0)+Number(finalUsage?.output_tokens||0),
+   total_tokens:Number(firstUsage?.total_tokens||0)+Number(finalUsage?.total_tokens||0)};
+  Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});
+ }
+ Object.defineProperty(plan,'__aiModel',{value:final?.model||first?.model||model,enumerable:false});
+ Object.defineProperty(plan,'__orchestratorCalls',{value:2,enumerable:false});
+ Object.defineProperty(plan,'__specialistRole',{value:String(args.role),enumerable:false});
+ return plan;
+}
 function outputText(data){
  if(typeof data?.output_text==='string')return data.output_text;
  const a=[];for(const item of data?.output||[])for(const c of item?.content||[])if(typeof c?.text==='string')a.push(c.text);
