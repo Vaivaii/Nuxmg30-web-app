@@ -188,7 +188,7 @@ test('ChatGPT SIWC is the default AI provider and provider model options are dro
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='chatgpt'/);
   assert.match(source, /value="chatgpt" selected>ChatGPT · signed-in plan \(SIWC\)/);
-  for (const provider of ['auto','cloudflare','gemini','groq','openrouter','gpt','collab']) {
+  for (const provider of ['auto','gemini','groq','openrouter','gpt','collab']) {
     assert.match(source, new RegExp('value="' + provider + '"'));
   }
   assert.match(source, /id="aiToneActiveModel"/);
@@ -202,7 +202,7 @@ test('AI fallback is free-first and GPT is only used after explicit manual selec
   assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','groq','openrouter']);
   assert.deepEqual(providerFallbackOrder('groq'), ['groq','gemini','openrouter']);
   assert.deepEqual(providerFallbackOrder('openrouter'), ['openrouter','gemini','groq']);
-  assert.deepEqual(providerFallbackOrder('auto'), ['gemini','groq','openrouter']);
+  assert.deepEqual(providerFallbackOrder('auto'), ['chatgpt','gemini','groq','openrouter']);
   assert.deepEqual(providerFallbackOrder('gpt'), ['gpt','gemini','groq','openrouter']);
   assert.equal(isRetryableProviderError(new Error('HTTP 429 rate limit')), true);
   assert.equal(isRetryableProviderError(new Error('HTTP 503 service unavailable')), true);
@@ -243,13 +243,13 @@ test('ChatGPT is primary while Auto and the free Multi-AI team remain explicit a
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(source, /let mode='chatgpt'/);
   assert.match(source, /value="chatgpt" selected/);
-  for (const provider of ['auto','cloudflare','gemini','groq','openrouter','gpt','collab']) {
+  for (const provider of ['auto','gemini','groq','openrouter','gpt','collab']) {
     assert.match(source, new RegExp('value="' + provider + '"'));
   }
   assert.match(source, /const auto=mode==='auto'\|\|mode==='collab'\|\|\(mode!=='chatgpt'&&ui\.autoFallback\.checked\)/);
   assert.match(source, /if\(provider==='chatgpt'\)result=await chatgpt/);
   assert.match(source, /No OpenAI GPT API model was probed or selected/);
-  assert.deepEqual(providerFallbackOrder('auto'), ['gemini','groq','openrouter']);
+  assert.deepEqual(providerFallbackOrder('auto'), ['chatgpt','gemini','groq','openrouter']);
   assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
 });
 
@@ -946,7 +946,7 @@ test('new artist and amp targets override old conversation context during planni
 test('Auto mode uses a single AI for ordinary tone work and Multi-AI only for complex new presets',()=>{
  assert.equal(shouldUseMultiAgent('Buat tone Joe Satriani','tone_create','auto',false),false);
  assert.equal(shouldUseMultiAgent('Buat tone blues hangat dengan gain rendah','tone_create','auto',false),false);
- assert.equal(shouldUseMultiAgent('Build a layered dual-amp rig with separate clean and lead scenes, tempo-synced delays, parallel modulation and a specific intro-to-solo transition','tone_create','auto',false),true);
+ assert.equal(shouldUseMultiAgent('Build a layered dual-amp rig with separate clean and lead scenes, tempo-synced delays, parallel modulation and a specific intro-to-solo transition','tone_create','auto',false),false);
  assert.equal(shouldUseMultiAgent('Buat preset biasa','tone_create','collab',false),true);
  assert.equal(shouldUseMultiAgent('Kurangi treble sedikit','tone_refine','collab',true),false);
  assert.equal(shouldUseMultiAgent('Jelaskan fungsi Presence','consultation','auto',false),false);
@@ -1113,45 +1113,42 @@ test('profile and capture recommendation UI retain full local TONE3000 objects',
 });
 
 
-test('Cloudflare Workers AI remains available as a provider and can be tested directly',()=>{
+test('ChatGPT replaces Workers AI as the active default provider and Cloudflare is absent from settings',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes('id="aiCloudflareBindingState"'));
- assert.ok(source.includes('id="aiToneTestCloudflare"'));
- assert.ok(source.includes("$('aiToneTestCloudflare')?.addEventListener('click',()=>{void testWorkersAI();});"));
- assert.ok(source.includes("ui.providerSummary.textContent=configured+' / 5 configured'"));
- assert.ok(source.includes("provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable')"));
- assert.ok(source.includes('Cloudflare Workers AI is first for light tasks and the first member of the complex Tone Architect team.'));
- assert.ok(source.includes('Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI.'));
- assert.ok(source.includes('<option value="cloudflare">Cloudflare Workers AI · Gemma 4</option>'));
- assert.ok(source.includes("if(provider==='cloudflare'){"));
- assert.ok(source.includes('async function testWorkersAI(){'));
- assert.ok(source.includes("invokeWorkersAILightTask('tone-discussion'"));
+ assert.ok(source.includes('id="aiChatGPTKeyState"'));
+ assert.ok(source.includes('ChatGPT is primary.'));
+ assert.ok(source.includes('ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets.'));
+ assert.ok(source.includes('Auto · ChatGPT + optional free API fallback'));
+ assert.ok(source.includes("const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode()"));
+ assert.doesNotMatch(source, /<option value="cloudflare">Cloudflare Workers AI/);
+ assert.doesNotMatch(source, /id="aiToneTestCloudflare"/);
+ assert.doesNotMatch(source, /id="aiCloudflareBindingState"/);
+ assert.doesNotMatch(source, /Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI/);
+ assert.doesNotMatch(source, /Cloudflare Workers AI is first for light tasks/);
 });
 
 test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
- assert.deepEqual(providerFallbackOrder('cloudflare'),['cloudflare','gemini','groq','openrouter']);
+ assert.deepEqual(providerFallbackOrder('cloudflare'),['chatgpt','gemini','groq','openrouter']);
 });
 
 
-test('Auto mode keeps ordinary Tone Plans and every TONE3000 ranking stage on Cloudflare Workers AI only',()=>{
+test('Auto routes light tasks and tone planning through ChatGPT before optional API fallbacks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
- assert.ok(source.includes("first=await invokeProvider('cloudflare',workerKey,singleSystem,singleUser,WORKERS_AI_MODEL"));
- assert.ok(source.includes("if(mode==='auto'){"));
- assert.ok(source.includes("if(await secret('cloudflare'))order=['cloudflare'];"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone-discussion'"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone3000-search-terms'"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone3000-profile-ranking'"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone3000-capture-selection'"));
+ assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){\n   order=providerFallbackOrder('chatgpt');"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){\n    const credential=await secret('chatgpt');"));
+ assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Legacy call-site name retained for compatibility; all active light tasks use the selected app AI route.\n  return askNamAIJson(system,user,stage);"));
+ assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
+ assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
 });
 
-test('complex Auto Tone Architect team starts with Cloudflare before Gemini, Groq and OpenRouter',()=>{
+test('Auto complex tone requests stay on GPT-6 Luna; external provider team is explicit Collab only',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
- assert.match(team,/const providers=\['cloudflare','gemini','groq','openrouter'\]/);
+ assert.match(team,/const providers=\['gemini','groq','openrouter'\]/);
+ assert.ok(source.includes("return selectedMode==='collab'"));
  assert.ok(source.includes('async function resolveFreeProviderTeam()'));
- assert.ok(source.includes('hasArchitect=team.length>=2&&!localRefinement'));
- assert.ok(source.includes("'Tone Architect · '+providerNames[architectMember.provider]"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){"));
+ assert.doesNotMatch(team,/cloudflare/);
 });
 
 
@@ -1776,7 +1773,7 @@ test('new artist and amp targets override old conversation context during planni
 test('Auto mode uses a single AI for ordinary tone work and Multi-AI only for complex new presets',()=>{
  assert.equal(shouldUseMultiAgent('Buat tone Joe Satriani','tone_create','auto',false),false);
  assert.equal(shouldUseMultiAgent('Buat tone blues hangat dengan gain rendah','tone_create','auto',false),false);
- assert.equal(shouldUseMultiAgent('Build a layered dual-amp rig with separate clean and lead scenes, tempo-synced delays, parallel modulation and a specific intro-to-solo transition','tone_create','auto',false),true);
+ assert.equal(shouldUseMultiAgent('Build a layered dual-amp rig with separate clean and lead scenes, tempo-synced delays, parallel modulation and a specific intro-to-solo transition','tone_create','auto',false),false);
  assert.equal(shouldUseMultiAgent('Buat preset biasa','tone_create','collab',false),true);
  assert.equal(shouldUseMultiAgent('Kurangi treble sedikit','tone_refine','collab',true),false);
  assert.equal(shouldUseMultiAgent('Jelaskan fungsi Presence','consultation','auto',false),false);
@@ -1932,45 +1929,42 @@ test('profile and capture recommendation UI retain full local TONE3000 objects',
 });
 
 
-test('Cloudflare Workers AI remains available as a provider and can be tested directly',()=>{
+test('ChatGPT replaces Workers AI as the active default provider and Cloudflare is absent from settings',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes('id="aiCloudflareBindingState"'));
- assert.ok(source.includes('id="aiToneTestCloudflare"'));
- assert.ok(source.includes("$('aiToneTestCloudflare')?.addEventListener('click',()=>{void testWorkersAI();});"));
- assert.ok(source.includes("ui.providerSummary.textContent=configured+' / 5 configured'"));
- assert.ok(source.includes("provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable')"));
- assert.ok(source.includes('Cloudflare Workers AI is first for light tasks and the first member of the complex Tone Architect team.'));
- assert.ok(source.includes('Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI.'));
- assert.ok(source.includes('<option value="cloudflare">Cloudflare Workers AI · Gemma 4</option>'));
- assert.ok(source.includes("if(provider==='cloudflare'){"));
- assert.ok(source.includes('async function testWorkersAI(){'));
- assert.ok(source.includes("invokeWorkersAILightTask('tone-discussion'"));
+ assert.ok(source.includes('id="aiChatGPTKeyState"'));
+ assert.ok(source.includes('ChatGPT is primary.'));
+ assert.ok(source.includes('ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets.'));
+ assert.ok(source.includes('Auto · ChatGPT + optional free API fallback'));
+ assert.ok(source.includes("const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode()"));
+ assert.doesNotMatch(source, /<option value="cloudflare">Cloudflare Workers AI/);
+ assert.doesNotMatch(source, /id="aiToneTestCloudflare"/);
+ assert.doesNotMatch(source, /id="aiCloudflareBindingState"/);
+ assert.doesNotMatch(source, /Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI/);
+ assert.doesNotMatch(source, /Cloudflare Workers AI is first for light tasks/);
 });
 
 test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
- assert.deepEqual(providerFallbackOrder('cloudflare'),['cloudflare','gemini','groq','openrouter']);
+ assert.deepEqual(providerFallbackOrder('cloudflare'),['chatgpt','gemini','groq','openrouter']);
 });
 
 
-test('Auto mode keeps ordinary Tone Plans and every TONE3000 ranking stage on Cloudflare Workers AI only',()=>{
+test('Auto routes light tasks and tone planning through ChatGPT before optional API fallbacks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
- assert.ok(source.includes("first=await invokeProvider('cloudflare',workerKey,singleSystem,singleUser,WORKERS_AI_MODEL"));
- assert.ok(source.includes("if(mode==='auto'){"));
- assert.ok(source.includes("if(await secret('cloudflare'))order=['cloudflare'];"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone-discussion'"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone3000-search-terms'"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone3000-profile-ranking'"));
- assert.ok(source.includes("invokeWorkersAILightTask('tone3000-capture-selection'"));
+ assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){\n   order=providerFallbackOrder('chatgpt');"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){\n    const credential=await secret('chatgpt');"));
+ assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Legacy call-site name retained for compatibility; all active light tasks use the selected app AI route.\n  return askNamAIJson(system,user,stage);"));
+ assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
+ assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
 });
 
-test('complex Auto Tone Architect team starts with Cloudflare before Gemini, Groq and OpenRouter',()=>{
+test('Auto complex tone requests stay on GPT-6 Luna; external provider team is explicit Collab only',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
- assert.match(team,/const providers=\['cloudflare','gemini','groq','openrouter'\]/);
+ assert.match(team,/const providers=\['gemini','groq','openrouter'\]/);
+ assert.ok(source.includes("return selectedMode==='collab'"));
  assert.ok(source.includes('async function resolveFreeProviderTeam()'));
- assert.ok(source.includes('hasArchitect=team.length>=2&&!localRefinement'));
- assert.ok(source.includes("'Tone Architect · '+providerNames[architectMember.provider]"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){"));
+ assert.doesNotMatch(team,/cloudflare/);
 });
 
 
