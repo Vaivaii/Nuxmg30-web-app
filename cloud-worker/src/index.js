@@ -167,7 +167,13 @@ function safeProviderError(status) {
   if (status >= 500) return "Provider is temporarily unavailable.";
   return "Provider rejected the request. Check the selected model and request settings.";
 }
-async function generateTonePlan(provider, model, system, prompt, env) {
+function clampOutputTokenLimit(value, fallback = 2600) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(256, Math.min(3200, Math.floor(numeric)));
+}
+async function generateTonePlan(provider, model, system, prompt, env, requestedMaxOutputTokens = 2600) {
   const config = PROVIDERS[provider];
   if (!config) throw Object.assign(new Error("Unknown AI provider."), { status: 400 });
   const key = String(env[config.secret] || "").trim();
@@ -177,14 +183,14 @@ async function generateTonePlan(provider, model, system, prompt, env) {
   if (config.api === "gemini") {
     const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent";
     upstream = await timedFetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.35, maxOutputTokens: 2600 } }) });
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.35, maxOutputTokens: clampOutputTokenLimit(requestedMaxOutputTokens) } }) });
     body = await responseJson(upstream);
     if (!upstream.ok) throw Object.assign(new Error(safeProviderError(upstream.status)), { status: upstream.status });
     return extractJsonObject(geminiText(body));
   }
   if (config.api === "openai") {
     upstream = await timedFetch("https://api.openai.com/v1/responses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-      body: JSON.stringify({ model, input: [{ role: "system", content: [{ type: "input_text", text: system }] }, { role: "user", content: [{ type: "input_text", text: prompt }] }], text: { format: { type: "json_object" } }, max_output_tokens: 2600 }) });
+      body: JSON.stringify({ model, input: [{ role: "system", content: [{ type: "input_text", text: system }] }, { role: "user", content: [{ type: "input_text", text: prompt }] }], text: { format: { type: "json_object" } }, max_output_tokens: clampOutputTokenLimit(requestedMaxOutputTokens) }) });
     body = await responseJson(upstream);
     if (!upstream.ok) throw Object.assign(new Error(safeProviderError(upstream.status)), { status: upstream.status });
     const output = typeof body.output_text === "string" ? body.output_text :
@@ -197,11 +203,12 @@ async function generateTonePlan(provider, model, system, prompt, env) {
   const messages = isGptOss ? [{ role: "user", content: system + "\n\n" + prompt }] :
     [{ role: "system", content: system + "\nReturn a valid JSON object only." }, { role: "user", content: prompt }];
   const request = async (retry = false) => {
+    const maxOutputTokens = clampOutputTokenLimit(retry ? Math.max(requestedMaxOutputTokens, 3200) : requestedMaxOutputTokens);
     const payload = {
       model, messages: retry ? [...messages.slice(0, -1), { role: "user", content: messages[messages.length - 1].content +
         "\n\nFINAL OUTPUT CONTRACT: Return one complete JSON object only with summary, blocks, and notes." }] : messages,
       ...(retry ? {} : { response_format: { type: "json_object" } }),
-      ...(isGroq ? { max_completion_tokens: retry ? 3200 : 2600 } : { max_tokens: retry ? 3200 : 2600, reasoning: { effort: "low", exclude: true } }),
+      ...(isGroq ? { max_completion_tokens: clampOutputTokenLimit(maxOutputTokens) } : { max_tokens: clampOutputTokenLimit(maxOutputTokens), reasoning: { effort: "low", exclude: true } }),
       ...(isGptOss ? { reasoning_effort: "low", include_reasoning: false } : { temperature: 0.2 })
     };
     const response = await timedFetch(base + "/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key }, body: JSON.stringify(payload) });
@@ -397,6 +404,7 @@ export default {
           const requestedProvider = String(body.provider || "auto").toLowerCase();
           const system = String(body.system || "");
           const prompt = String(body.prompt || "");
+          const requestedMaxOutputTokens = clampOutputTokenLimit(body.maxOutputTokens);
           if (system.length > 180_000 || prompt.length > 40_000 || !system || !prompt) response = json({ ok: false, error: "AI request content is missing or exceeds the allowed size." }, 400);
           else {
             const order = requestedProvider === "auto" ? ["gemini", "groq", "openrouter"] : [requestedProvider];
@@ -408,7 +416,7 @@ export default {
               const defaultModels = { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", openrouter: "openrouter/free" };
               const selectedModel = String(body.model || "").trim() || defaultModels[candidate];
               try {
-                const tonePlan = await generateTonePlan(candidate, selectedModel, system, prompt, env);
+                const tonePlan = await generateTonePlan(candidate, selectedModel, system, prompt, env, requestedMaxOutputTokens);
                 completed = { ok: true, provider: candidate, model: selectedModel, tonePlan, requestId: crypto.randomUUID() };
                 break;
               } catch (error) {
