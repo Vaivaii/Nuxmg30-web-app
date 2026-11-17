@@ -1211,6 +1211,89 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    status('Cloudflare Workers AI test failed: '+(error.message||error),'error');
   }finally{setBusy(false);}
  }
+
+ function compactSpecialistDeviceContext(role,blockIds,catalog,snapshot,candidatePlan){
+  const ids=[...new Set((Array.isArray(blockIds)?blockIds:[]).map(value=>String(value||'').trim().toUpperCase()).filter(Boolean))].slice(0,4);
+  const proposed=Array.isArray(candidatePlan?.blocks)?candidatePlan.blocks:[];
+  return ids.map(id=>{
+   const block=(catalog||[]).find(item=>String(item.id).toUpperCase()===id);
+   if(!block)return null;
+   const current=(snapshot||[]).find(item=>String(item.id).toUpperCase()===id);
+   const proposedBlock=proposed.find(item=>String(item.id).toUpperCase()===id);
+   const models=(block.models||[]);
+   const chosenName=String(proposedBlock?.model||current?.model||'');
+   const selected=role==='gear_specialist'
+    ?models.slice(0,24).map(model=>({name:model.name,kind:model.kind||'',slot:model.slot??null}))
+    :models.filter(model=>model.name===chosenName).slice(0,1).map(model=>({
+      name:model.name,kind:model.kind||'',slot:model.slot??null,
+      parameters:(model.parameters||[]).map(parameter=>parameter.kind==='discrete'
+       ?{key:parameter.key,kind:'discrete',choices:(parameter.choices||[]).map(choice=>choice.value)}
+       :{key:parameter.key,kind:'range',min:0,max:100})
+     }));
+   return {id,currentModel:block.currentModel,enabled:current?.enabled??null,currentParameters:current?.parameters||{},models:selected};
+  }).filter(Boolean);
+ }
+ async function hasFreeToneSpecialist(){
+  try{
+   const providers=(await getCloudAiStatus())?.providers||{};
+   return Boolean(providers.gemini||providers.groq||providers.openrouter);
+  }catch{return false;}
+ }
+ async function runToneSpecialistTask(args,context){
+  const role=String(args?.role||'').trim();
+  const roles={
+   tone_architect:{
+    maxTokens:220,
+    output:'{"tone_intent":{"reference":"","style":"","feel":"","dynamics":"","gain_character":"","tonal_balance":"","ambience":"","avoid":[],"focus":"","summary":"","confidence":0.0}}',
+    purpose:'Interpret the musical reference and desired feel only. Do not choose device models, block IDs, parameter values, MIDI or transfer actions.'
+   },
+   gear_specialist:{
+    maxTokens:240,
+    output:'{"recommendations":[{"id":"AMP","model":"exact catalogue model","reason":"short rationale"}],"confidence":0.0,"limitations":[]}',
+    purpose:'Recommend only relevant exact MG-30 block/model choices from the supplied subset. Do not invent unavailable gear or parameters.'
+   },
+   parameter_engineer:{
+    maxTokens:320,
+    output:'{"blocks":[{"id":"AMP","model":"exact catalogue model","parameters":{"exact_key":25}}],"reason":"short mapping rationale","confidence":0.0}',
+    purpose:'Translate only the requested changes into exact catalogue parameter keys and values. Never invent aliases, parameters, ranges, discrete values or MIDI.'
+   },
+   critical_reviewer:{
+    maxTokens:260,
+    output:'{"review_required":false,"conflicts":[],"corrections":[],"confidence":0.0}',
+    purpose:'Review only the supplied candidate plan and affected catalogue subset. Identify material musical, compatibility or coupled-parameter risks. Never invent a replacement parameter.'
+   }
+  };
+  const spec=roles[role];if(!spec)throw new Error('Unsupported specialist role.');
+  const candidateText=String(args?.candidatePlan||'').trim().slice(0,1800);
+  let candidate=null;
+  if(candidateText){try{candidate=JSON.parse(candidateText);}catch{if(role==='critical_reviewer')throw new Error('Critical Reviewer requires a valid candidate plan JSON.');}}
+  if(role==='critical_reviewer'&&!candidate)throw new Error('Critical Reviewer requires a candidate plan.');
+  const blockIds=Array.isArray(args?.blockIds)?args.blockIds:[];
+  const deviceContext=compactSpecialistDeviceContext(role,blockIds,context.catalog,context.snapshot,candidate);
+  if(['gear_specialist','parameter_engineer','critical_reviewer'].includes(role)&&!deviceContext.length)
+   throw new Error('This specialist needs one to four valid MG-30 block IDs from the current catalogue.');
+  const system='You are the '+role.replaceAll('_',' ')+' specialist for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' '+spec.purpose+' You are advisory only. ChatGPT is the orchestrator and final decision authority. Return compact JSON only using this shape: '+spec.output+' Keep the response within '+spec.maxTokens+' output tokens.';
+  const user={
+   current_request:String(context.prompt||'').slice(0,700),
+   recent_context:compactNamConversation(context.conversation||'',900),
+   focus:String(args?.focus||'').slice(0,140),
+   specialist_brief:String(args?.brief||'').slice(0,600),
+   device_context:deviceContext,
+   candidate_plan:candidate
+  };
+  const requestText=JSON.stringify(user);
+  const response=await cloudApiRequest('/api/v1/ai/tone-plan',{
+   method:'POST',
+   body:{provider:'auto',model:'',system,prompt:requestText,maxOutputTokens:spec.maxTokens}
+  });
+  if(!response?.tonePlan||typeof response.tonePlan!=='object'||Array.isArray(response.tonePlan))
+   throw new Error('The free specialist provider did not return a structured JSON result.');
+  const result={ok:true,role,provider:String(response.provider||'free-auto'),model:String(response.model||'unknown'),result:response.tonePlan};
+  Object.defineProperty(result,'__aiUsage',{value:response.usage||null,enumerable:false});
+  Object.defineProperty(result,'__aiModel',{value:response.model||'free-auto',enumerable:false});
+  logAiTokenUsage('free-specialist',result.__aiModel,'specialist '+role,spec.maxTokens,system,requestText,result);
+  return result;
+ }
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
   let order=[];
