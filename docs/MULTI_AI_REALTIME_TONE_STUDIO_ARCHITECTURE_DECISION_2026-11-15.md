@@ -118,3 +118,45 @@ External documentation checked for design context (limits are dynamic and accoun
 These references inform quota-aware design only; they do not establish the user's exact account quota.
 
 **Updated decision:** Adaptive Collaboration + Lead AI final synthesis remains unchanged, with a **free-API-first, no-surprise-billing** operating policy.
+
+---
+
+## Implementation update — six-agent sequential Tone Architect (2026-11-17)
+
+Status: **Initial implementation committed on isolated feature branch; validation/build still pending. Not released.**
+
+### Chief and specialist roster
+- GPT-6 Luna is the sole Chief/orchestrator and final synthesis authority through the existing ChatGPT connection.
+- Six distinct specialist roles are declared: Tone Researcher; Amp & Cabinet Specialist; Effects Specialist; Guitar & Input Specialist (conditional); Tone Calibration Specialist; Tone Critic (conditional quality gate).
+- The prior four-role delegation contract was replaced by the six-role contract. Tone Researcher must distinguish model knowledge/inference from verified external evidence and never fabricate citations.
+
+### Sequential execution contract
+- The orchestrator requests one specialist at a time, receives its result, then decides whether another role is needed.
+- Parallel specialist tool calls are rejected.
+- Maximum six specialist tasks per user request; duplicate role requests are rejected by the runtime guard.
+- Tone Critic and Guitar & Input Specialist remain conditional, not mandatory.
+- The Chief evaluates specialist results and owns final synthesis. Specialist outputs are advisory and are not direct pedal commands.
+
+### Free-provider fallback
+- Specialist work first uses the existing auto free-provider route (Gemini/Groq/OpenRouter).
+- On failure, implementation attempts the existing /api/v1/ai/light-task Cloudflare Workers AI route, configured in the app as Gemma.
+- If both routes fail, the handoff is marked failed and the Chief is told not to claim that the specialist completed successfully.
+- Important validation finding: the current branch's cloud-worker/src/index.js route table did not show an /api/v1/ai/light-task handler in the inspected source. The fallback is therefore not yet proven end-to-end and must be resolved before release; do not claim Gemma fallback is operational solely because the client call exists.
+
+### Tests added/updated
+- Updated tests/ai-tone-studio.test.js to cover six-role registration, sequential one-at-a-time handoffs, conditional-role availability, simple requests skipping agents, rejection of parallel calls, specialist budget enforcement, and failed handoff reporting.
+- Test suite has not yet been run. No passing test/build/APK claim is made.
+- Existing .github/workflows/build-apk.yml did not include this feature branch in its push branch filter at inspection time, so CI will not automatically run for this branch until its trigger is updated or a supported manual dispatch is used.
+
+### Protected boundaries
+- No changes were made intentionally to NAM, IR import/collection mapping, MIDI mappings, preset codec, or pedal transfer protocol.
+- No production deployment, merge to main, or APK delivery is authorized by this implementation update.
+- This branch remains isolated: feature/tone-architect-six-agent-sequential.
+
+### Next required validation
+1. Confirm/fix the Worker Gemma light-task route against the actual Worker binding and configured model; do not guess the Worker default model.
+2. Add this branch to the build workflow trigger or use a verified manual workflow dispatch.
+3. Run npm test, JavaScript syntax checks, Vite build, and Android Gradle debug build.
+4. Resolve every failure and rerun until green.
+5. Inspect the final diff to confirm protected NAM/IR/MIDI files remain untouched.
+6. Update this document with actual test/build results before considering APK delivery.
