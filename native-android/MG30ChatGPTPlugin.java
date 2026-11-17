@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -900,40 +901,52 @@ public class MG30ChatGPTPlugin extends Plugin {
                 StringBuilder finalText = new StringBuilder();
                 JSONArray streamedOutputItems = new JSONArray();
                 JSONObject completedResponse = null;
+                String incompleteReason = "";
                 boolean completed = false;
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
-                    while ((line = reader.readLine()) != null && !responseCancelled.get()) {
-                        if (!line.startsWith("data:")) continue;
-                        String data = line.substring(5).trim();
-                        if (data.isEmpty() || "[DONE]".equals(data)) continue;
-                        JSONObject event;
-                        try { event = new JSONObject(data); } catch (Exception ignored) { continue; }
-                        String type = event.optString("type", "");
-                        if ("response.output_text.delta".equals(type)) {
-                            String delta = event.optString("delta", "");
-                            finalText.append(delta);
-                            if (finalText.length() > MAX_RESPONSE_CHARS) throw new IllegalStateException("ChatGPT response exceeded the app's safe display limit.");
-                            JSObject update = new JSObject();
-                            update.put("delta", delta);
-                            notifyListeners("chatgptDelta", update);
-                        } else if ("response.failed".equals(type) || "error".equals(type)) {
-                            JSONObject detail = event.optJSONObject("response");
-                            throw new IllegalStateException(detail != null ? apiError(detail, status) : apiError(event, status));
-                        } else if ("response.output_item.done".equals(type)) {
-                            JSONObject item = event.optJSONObject("item");
-                            if (item != null) streamedOutputItems.put(item);
-                        } else if ("response.incomplete".equals(type)) {
-                            throw new IllegalStateException("ChatGPT stopped before completing the response. You can retry.");
-                        } else if ("response.completed".equals(type)) {
-                            completedResponse = event.optJSONObject("response");
-                            completed = true;
-                            break;
+                    try {
+                        while ((line = reader.readLine()) != null && !responseCancelled.get()) {
+                            if (!line.startsWith("data:")) continue;
+                            String data = line.substring(5).trim();
+                            if (data.isEmpty() || "[DONE]".equals(data)) continue;
+                            JSONObject event;
+                            try { event = new JSONObject(data); } catch (Exception ignored) { continue; }
+                            String type = event.optString("type", "");
+                            if ("response.output_text.delta".equals(type)) {
+                                String delta = event.optString("delta", "");
+                                finalText.append(delta);
+                                if (finalText.length() > MAX_RESPONSE_CHARS) throw new IllegalStateException("ChatGPT response exceeded the app's safe display limit.");
+                                JSObject update = new JSObject();
+                                update.put("delta", delta);
+                                notifyListeners("chatgptDelta", update);
+                            } else if ("response.failed".equals(type) || "error".equals(type)) {
+                                JSONObject detail = event.optJSONObject("response");
+                                throw new IllegalStateException(detail != null ? apiError(detail, status) : apiError(event, status));
+                            } else if ("response.output_item.done".equals(type)) {
+                                JSONObject item = event.optJSONObject("item");
+                                if (item != null) streamedOutputItems.put(item);
+                            } else if ("response.incomplete".equals(type)) {
+                                completedResponse = event.optJSONObject("response");
+                                JSONObject details = completedResponse != null ? completedResponse.optJSONObject("incomplete_details") : null;
+                                incompleteReason = details != null ? details.optString("reason", "incomplete") : "incomplete";
+                                break;
+                            } else if ("response.completed".equals(type)) {
+                                completedResponse = event.optJSONObject("response");
+                                completed = true;
+                                break;
+                            }
                         }
+                    } catch (IOException streamError) {
+                        if (finalText.length() == 0) throw streamError;
+                        incompleteReason = "stream_interrupted";
                     }
                 }
                 if (responseCancelled.get()) throw new InterruptedException("ChatGPT response cancelled.");
-                if (!completed) throw new IllegalStateException("ChatGPT stream ended before response.completed. Try again.");
+                if (!completed && incompleteReason.isEmpty()) incompleteReason = "stream_ended";
+                if (!completed && finalText.length() == 0) {
+                    throw new IllegalStateException("ChatGPT stream ended without any answer text (reason: " + incompleteReason + "). Please retry.");
+                }
                 JSONArray outputItems = completedResponse != null ? completedResponse.optJSONArray("output") : null;
                 if (outputItems == null) outputItems = streamedOutputItems;
                 JSONArray toolCalls = new JSONArray();
@@ -946,6 +959,9 @@ public class MG30ChatGPTPlugin extends Plugin {
                 result.put("model", model);
                 result.put("outputItems", outputItems);
                 result.put("toolCalls", toolCalls);
+                result.put("completed", completed);
+                result.put("incomplete", !completed);
+                if (!completed) result.put("incompleteReason", incompleteReason.isEmpty() ? "incomplete" : incompleteReason);
                 if (completedResponse != null) {
                     JSONObject usage = completedResponse.optJSONObject("usage");
                     if (usage != null) {
