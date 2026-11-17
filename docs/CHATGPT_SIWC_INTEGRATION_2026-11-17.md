@@ -114,3 +114,23 @@ A successful CI build proves compilation and existing automated tests only. It d
   - APK artifact upload: passed; artifact name `MG30-Studio-debug-APK`, 4,740,288 bytes.
 - Extracted debug APK SHA-256: `581d154444c4bb7c048d6fae5e3cf10d474f0768c0b0724e28783b1fbd20b986`.
 - Physical-device acceptance is still pending. CI success does not prove actual SIWC sign-in or MG-30 Gen 2 NAM/audio/MIDI hardware operation. Install and verify on the original MG-30 Gen 2 with firmware 6.0.x before treating hardware validation as complete.
+
+## Fix: generate Tone Plans while USB-MIDI is disconnected — 2026-11-17
+
+- User confirmed ChatGPT discussion works, but every request to create a tone returned `MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.`
+- Root cause: `submit()` checked `bridge.isConnected()` before calling `makePlan()`. The precondition blocked the AI planning stage, conflating Tone Plan generation with live hardware application.
+- Changed `www/ai-tone-studio.js`:
+  - Removed the early USB-MIDI guard before AI planning.
+  - ChatGPT can now generate and catalog-validate a Tone Plan while disconnected.
+  - If the pedal is disconnected after planning, the validated Tone Plan is retained in an in-memory pending draft and shown in chat with a block summary. No MIDI is sent.
+  - When the user reconnects USB-MIDI and sends an explicit apply command (e.g. `terapkan tone`), the app revalidates the retained plan against the current catalog and then calls the existing `applyPlan` path.
+  - If the user requests apply while still disconnected, the assistant explains that the plan is ready and asks for USB-MIDI connection; it does not fail the generation stage.
+  - A new tone-creation request clears an older pending draft. A successfully applied draft is cleared.
+- Added regression test in `tests/ai-tone-studio.test.js` for offline draft generation and explicit apply after reconnect. Updated the NAM preflight regression in `tests/tone3000-ai-nam.test.js` so it no longer expects the obsolete pre-generation connection guard.
+- Source/test commits: `0d5bf85dec823a6b71ac8a965b06fe187fa876a3`, `58913b36e3742822cdf2fb4ec90b62f5bd12f1cb`, `e0dcdec369f3d47860b05b4d6811dabe9eb33606`.
+- GitHub Actions run #993: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44021209728
+  - JavaScript syntax validation: passed.
+  - Regression tests: 559 passed, 0 failed.
+  - Capacitor Android generation: passed.
+  - Gradle debug APK build: was still running when this note was written; do not claim APK success until Actions confirms completion and artifact upload.
+- No NAM transfer codec, TONE3000 download/preflight implementation, IR import mapping, MIDI mapping, or USB audio analysis implementation was changed. Hardware verification on the original MG-30 Gen 2 firmware 6.0.x remains pending.
