@@ -152,6 +152,19 @@ function extractJsonObject(value) {
   if (a < 0 || b <= a) throw new Error("Provider did not return a JSON Tone Plan.");
   return JSON.parse(text.slice(a, b + 1));
 }
+function normalizeProviderUsage(body, api) {
+  const usage = api === "gemini" ? body?.usageMetadata : body?.usage;
+  if (!usage || typeof usage !== "object") return null;
+  const input = api === "gemini" ? usage.promptTokenCount : (usage.input_tokens ?? usage.prompt_tokens);
+  const output = api === "gemini" ? usage.candidatesTokenCount : (usage.output_tokens ?? usage.completion_tokens);
+  const total = api === "gemini" ? usage.totalTokenCount : usage.total_tokens;
+  if (input === undefined && output === undefined && total === undefined) return null;
+  return {
+    input_tokens: Number(input || 0),
+    output_tokens: Number(output || 0),
+    total_tokens: Number(total ?? (Number(input || 0) + Number(output || 0)))
+  };
+}
 function geminiText(body) {
   return (body?.candidates?.[0]?.content?.parts || []).map(x => x?.text || "").filter(Boolean).join("\n");
 }
@@ -187,7 +200,7 @@ async function generateTonePlan(provider, model, system, prompt, env, requestedM
       body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.35, maxOutputTokens: clampOutputTokenLimit(maxOutputTokens) } }) });
     body = await responseJson(upstream);
     if (!upstream.ok) throw Object.assign(new Error(safeProviderError(upstream.status)), { status: upstream.status });
-    return extractJsonObject(geminiText(body));
+    return { tonePlan: extractJsonObject(geminiText(body)), usage: normalizeProviderUsage(body, config.api) };
   }
   if (config.api === "openai") {
     upstream = await timedFetch("https://api.openai.com/v1/responses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
@@ -196,7 +209,7 @@ async function generateTonePlan(provider, model, system, prompt, env, requestedM
     if (!upstream.ok) throw Object.assign(new Error(safeProviderError(upstream.status)), { status: upstream.status });
     const output = typeof body.output_text === "string" ? body.output_text :
       (body.output || []).flatMap(x => x.content || []).map(x => x.text || "").filter(Boolean).join("\n");
-    return extractJsonObject(output);
+    return { tonePlan: extractJsonObject(output), usage: normalizeProviderUsage(body, config.api) };
   }
   const isGroq = config.api === "groq";
   const isGptOss = isGroq && model.toLowerCase().startsWith("openai/gpt-oss-");
@@ -221,7 +234,7 @@ async function generateTonePlan(provider, model, system, prompt, env, requestedM
         retryable: response.status === 429 || response.status >= 500
       });
     }
-    return extractJsonObject(chatText(data));
+    return { tonePlan: extractJsonObject(chatText(data)), usage: normalizeProviderUsage(data, config.api) };
   };
   try { return await request(false); }
   catch (error) {
@@ -417,8 +430,8 @@ export default {
               const defaultModels = { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", openrouter: "openrouter/free" };
               const selectedModel = String(body.model || "").trim() || defaultModels[candidate];
               try {
-                const tonePlan = await generateTonePlan(candidate, selectedModel, system, prompt, env, requestedMaxOutputTokens);
-                completed = { ok: true, provider: candidate, model: selectedModel, tonePlan, requestId: crypto.randomUUID() };
+                const generated = await generateTonePlan(candidate, selectedModel, system, prompt, env, requestedMaxOutputTokens);
+                completed = { ok: true, provider: candidate, model: selectedModel, tonePlan: generated.tonePlan, usage: generated.usage, requestId: crypto.randomUUID() };
                 break;
               } catch (error) {
                 failures.push(candidate + ": " + (error.message || "provider error"));
