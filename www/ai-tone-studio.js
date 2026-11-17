@@ -362,10 +362,10 @@ export async function requestChatGptConversation({bridge,model,system,user,maxOu
  const request=async(input,tokens,stage)=>{
   try{
    const response=await bridge.sendResponse({model,input,instructions,maxOutputTokens:tokens,parallelToolCalls:false});
-   breakdown.push({stage,model:response?.model||model,usage:usageOf(response),input:JSON.stringify(input),incomplete:Boolean(response?.incomplete),reason:String(response?.incompleteReason||'')});
+   breakdown.push({stage,model:response?.model||model,usage:usageOf(response),input:JSON.stringify(input),incomplete:Boolean(response?.incomplete),failed:false,reason:String(response?.incompleteReason||'')});
    return response;
   }catch(error){
-   breakdown.push({stage,model,usage:null,input:JSON.stringify(input),incomplete:true,reason:String(error?.message||error).slice(0,180)});
+   breakdown.push({stage,model,usage:null,input:JSON.stringify(input),incomplete:false,failed:true,reason:String(error?.message||error).slice(0,180)});
    throw error;
   }
  };
@@ -708,7 +708,7 @@ async function init(){
  const aiUsage={requests:0,total:0,providers:Object.create(null),models:Object.create(null),tasks:Object.create(null)};
  const renderUsageRows=rows=>Object.keys(rows).length
    ?Object.entries(rows).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>
-    '<div><span>'+esc(name)+'<small>In '+Number(row.input_tokens||0).toLocaleString()+' · Out '+Number(row.output_tokens||0).toLocaleString()+' · '+row.successes+' ok / '+row.failures+' fail</small></span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'<small>'+row.requests+' req</small></strong></div>').join('')
+    '<div><span>'+esc(name)+'<small>In '+Number(row.input_tokens||0).toLocaleString()+' · Out '+Number(row.output_tokens||0).toLocaleString()+' · '+row.successes+' ok / '+Number(row.continued||0)+' cont / '+row.failures+' fail</small></span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'<small>'+row.requests+' req</small></strong></div>').join('')
    :'<p>No AI requests recorded in this session.</p>';
   const renderAiUsageMonitor=()=>{
    ui.usageTotal.textContent=aiUsage.total.toLocaleString();
@@ -1032,8 +1032,27 @@ const next=['chatgpt','auto','cloudflare','gemini','groq','openrouter','gpt','co
    if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
    const model=await fastestReadyModel('chatgpt',credential,'discussion');
    const maxOutputTokens=outputTokenBudgetForStage('answering your tone question');
-   const result=await requestChatGptConversation({bridge:window.MG30ChatGPTBridge,model,system,user,maxOutputTokens});
-   logAiTokenUsage('chatgpt',result.__aiModel||model,'answering your tone question',maxOutputTokens,system,user,result);
+   let result;
+   try{
+    result=await requestChatGptConversation({bridge:window.MG30ChatGPTBridge,model,system,user,maxOutputTokens});
+   }catch(error){
+    const attempts=Array.isArray(error?.__aiUsageBreakdown)?error.__aiUsageBreakdown:[];
+    if(attempts.length){
+     for(const attempt of attempts){
+      const logged={};
+      if(attempt.usage)Object.defineProperty(logged,'__aiUsage',{value:attempt.usage,enumerable:false});
+      if(attempt.incomplete)Object.defineProperty(logged,'__incomplete',{value:true,enumerable:false});
+      logAiTokenUsage('chatgpt',attempt.model,attempt.stage,maxOutputTokens,system,attempt.input,logged,attempt.failed?new Error(attempt.reason||'ChatGPT request failed'):null);
+     }
+    }else logAiTokenUsage('chatgpt',model,'answering your tone question',maxOutputTokens,system,user,null,error);
+    throw error;
+   }
+   for(const attempt of result.__aiUsageBreakdown||[]){
+    const logged={};
+    if(attempt.usage)Object.defineProperty(logged,'__aiUsage',{value:attempt.usage,enumerable:false});
+    if(attempt.incomplete)Object.defineProperty(logged,'__incomplete',{value:true,enumerable:false});
+    logAiTokenUsage('chatgpt',attempt.model,attempt.stage,maxOutputTokens,system,attempt.input,logged,attempt.failed?new Error(attempt.reason||'ChatGPT request failed'):null);
+   }
    reply=result.reply;
   }else{
    const result=await invokeWorkersAILightTask('tone-discussion',system,user,'answering your tone question',520);
@@ -1247,19 +1266,19 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
    completion_tokens:outputTokens??completionEstimate,
    total_tokens:totalTokens,
    usage_source:usage?'provider':'estimated_chars_div_4',
-   max_output_tokens:maxOutputTokens,outcome:error?'failed':'success'};
+   max_output_tokens:maxOutputTokens,outcome:error?'failed':result?.__incomplete?'continued':'success'};
   aiUsage.requests++;aiUsage.total+=record.total_tokens||0;
   const providerRow=aiUsage.providers[provider]||(aiUsage.providers[provider]={tokens:0,requests:0,estimated:false});
   providerRow.tokens+=record.total_tokens||0;providerRow.requests++;providerRow.estimated=providerRow.estimated||record.usage_source!=='provider';
   const modelKey=String(provider)+' · '+String(model||'unknown model');
-  const modelRow=aiUsage.models[modelKey]||(aiUsage.models[modelKey]={tokens:0,input_tokens:0,output_tokens:0,requests:0,successes:0,failures:0,estimated:false});
+  const modelRow=aiUsage.models[modelKey]||(aiUsage.models[modelKey]={tokens:0,input_tokens:0,output_tokens:0,requests:0,successes:0,continued:0,failures:0,estimated:false});
   modelRow.tokens+=record.total_tokens||0;modelRow.input_tokens+=record.prompt_tokens||0;modelRow.output_tokens+=record.completion_tokens||0;modelRow.requests++;
-  if(error)modelRow.failures++;else modelRow.successes++;
+  if(error)modelRow.failures++;else if(result?.__incomplete)modelRow.continued++;else modelRow.successes++;
   modelRow.estimated=modelRow.estimated||record.usage_source!=='provider';
   const agentKey=record.agent;
-  const taskRow=aiUsage.tasks[agentKey]||(aiUsage.tasks[agentKey]={tokens:0,input_tokens:0,output_tokens:0,requests:0,successes:0,failures:0,estimated:false});
+  const taskRow=aiUsage.tasks[agentKey]||(aiUsage.tasks[agentKey]={tokens:0,input_tokens:0,output_tokens:0,requests:0,successes:0,continued:0,failures:0,estimated:false});
   taskRow.tokens+=record.total_tokens||0;taskRow.input_tokens+=record.prompt_tokens||0;taskRow.output_tokens+=record.completion_tokens||0;taskRow.requests++;
-  if(error)taskRow.failures++;else taskRow.successes++;
+  if(error)taskRow.failures++;else if(result?.__incomplete)taskRow.continued++;else taskRow.successes++;
   taskRow.estimated=taskRow.estimated||record.usage_source!=='provider';
   renderAiUsageMonitor();
   try{console.info('[MG30 AI TOKEN USAGE]',record);}catch{}
