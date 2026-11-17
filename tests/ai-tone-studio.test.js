@@ -320,5 +320,5 @@ test('Ordinary ChatGPT discussion does not require the MG-30 to be connected',()
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf('async function submit(){'),source.indexOf('async function undo(){'));
  assert.ok(submit.indexOf('if(!isExplicitToneCreationRequest(prompt))')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
- assert.match(submit,/await askChatGPTDiscussion\(prompt\)/);
+ assert.match(submit,/await askChatGPTDiscussion\(prompt,research\)/);
 });
