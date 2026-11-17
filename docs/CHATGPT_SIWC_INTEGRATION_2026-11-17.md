@@ -235,3 +235,60 @@ No changes were made to NAM A2-Lite transfer codec, TONE3000 download/import pro
 - APK SHA-256: `6c9c39c68c8effbb97f74bd6c38cc035e83394b763d299b494c6fb45c896be9e`.
 - Physical-device validation is still required to confirm that the signed-in SIWC model catalogue actually offers both GPT-5.6-Luna and GPT-6-Luna for the user's account, and to observe provider-reported token usage for the models/providers used in live specialist calls. The app's Auto selection is based on the catalogue returned by that account; the model names are not hard-coded as assumed available.
 - No NAM/TONE3000 transfer code, NAM slot-10 mapping, IR User/Third Party/Collection mapping, MIDI mapping, USB Audio capture/analysis, MG-30 preset codec, or original MG-30 Gen 2 firmware 6.0.x device catalog was changed.
+
+## Recover incomplete ChatGPT discussion streams and ensure named-artist Tone Architect delegation — 2026-11-17
+
+### Root cause addressed
+
+- The native SIWC Responses stream previously threw immediately on `response.incomplete` with a generic "ChatGPT stopped before completing the response" error and discarded any partial text plus the Responses API's `incomplete_details.reason`.
+- A stream ending/interruption before `response.completed` was also rejected generically, even if useful text had already arrived.
+- This prevented the discussion layer from distinguishing output-token exhaustion from a content-filter stop or a dropped stream and made a safe, token-bounded continuation impossible.
+
+### Native SIWC and discussion recovery
+
+- `native-android/MG30ChatGPTPlugin.java` now returns partial text, completed/incomplete status, the exact incomplete reason when the API supplies it, completed output items, and usage metadata for `response.incomplete`.
+- If the SSE stream ends or is interrupted after partial text has arrived, the native bridge returns that partial text with a `stream_ended` or `stream_interrupted` reason. If no text arrived, the native bridge returns a clear retryable network/stream error instead of an empty response.
+- Discussion handler `requestChatGptConversation()` performs at most one bounded recovery:
+  - For `max_output_tokens`, `stream_ended`, `stream_interrupted`, or `incomplete`, it continues from the partial assistant text plus a short "continue from exact ending" instruction.
+  - It does not resend the full recent conversation on the continuation request.
+  - If no partial answer exists after an incomplete/stream error, it permits one bounded retry using the already compact current user context.
+  - Content-filter or other non-recoverable incomplete reasons are not retried.
+  - A second incomplete response is surfaced with its reason; the system does not loop or repeatedly spend tokens.
+- A successful continuation combines the partial and continuation text while trimming a short exact overlap to avoid duplicated words.
+- Each initial/continuation/retry request retains its own model identity and provider-reported usage. Failed attempts, recovered partial responses, and final successful responses are logged separately. The monitor distinguishes `ok`, `cont` (recovered/continued), and `fail` instead of hiding retries inside one aggregate request.
+
+### Multi-AI agent execution
+
+- A named guitarist/artist/band/song reference in a Tone Plan request now requires one Tone Architect delegation whenever an eligible free specialist provider is configured.
+- Generic/simple tone requests remain eligible for ChatGPT-only execution or an optional specialist only when the task materially benefits. The hard limit remains one specialist call per Tone Plan; ChatGPT is still the sole orchestrator and final decision authority.
+- If no free specialist provider is available for a named-artist request, the chat explicitly reports that Tone Architect was not called and that ChatGPT is proceeding alone. It does not claim Multi-AI participation or fabricate token usage.
+- The existing specialist Worker call records its actual provider and model when returned; native SIWC routing/final-synthesis calls remain separately attributed.
+
+### Regression coverage
+
+- Added tests for: max-output partial response followed by one continuation; no retry for content-filter stops; no more than one continuation; one network retry only; required Tone Architect for named artists; and native bridge preservation of `response.incomplete` reason and partial output.
+- Current successful run confirms the tests at integration level. A mocked unit test proves the continuation branch logic and attempt accounting; CI does not simulate a real OpenAI SSE network interruption.
+
+### Protected project boundaries
+
+- Only these source/test files changed from the previous documented build HEAD `da99fcc8c530921a8bc677e57c7fd854a4c89985`:
+  - `native-android/MG30ChatGPTPlugin.java`
+  - `www/ai-tone-studio.js`
+  - `tests/ai-tone-studio.test.js`
+  - `tests/tone3000-ai-nam.test.js`
+- No NAM/TONE3000 transfer implementation, A2-Lite capture/import, NAM slot-10 mapping, IR User/Third Party/Collection mapping, MIDI CC/parameter mapping, USB audio analysis, or MG-30 preset/scene codec was edited.
+- Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
+
+### Final build and artifact
+
+- Branch: `feature/chatgpt-siwc-android`.
+- Build commit: `a48a087713a99116cd9d943cdcdf406e621a9037`.
+- GitHub Actions #1037: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44048711487 — success.
+- JavaScript syntax: passed.
+- Regression tests: 648 passed, 0 failed.
+- Capacitor Android project generation and USB Audio plugin installation: passed.
+- Gradle `assembleDebug`: BUILD SUCCESSFUL.
+- APK artifact ID: `14311874780`; artifact name `MG30-Studio-debug-APK`.
+- Extracted `app-debug.apk`: 4,751,144 bytes; archive integrity check passed; identified as Android package with APK Signing Block.
+- APK SHA-256: `4ae376109d98f309caef4c5a93d17b0eb8c38cf89b69d3c0bc4b3083df945b65`.
+- Physical-device testing remains required: verify a real discussion that previously stopped, a John Mayer Tone Plan with the Tone Architect agent visible, usage lines for the actual specialist provider/model, and then live apply on the original MG-30 Gen 2 firmware 6.0.x. CI and mocked tests do not by themselves prove the user's account has a configured free specialist provider or that a real SIWC SSE interruption will occur/recover identically on the device.
