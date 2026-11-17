@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, shouldOfferToneSpecialist } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -324,6 +324,13 @@ test('Send wraps bridge checks, AI planning and MIDI apply in visible error hand
 });
 
 
+
+test('Specialist tool schema is omitted for simple requests and enabled for named artist references only',()=>{
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),false);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone John Mayer'),true);
+ assert.equal(shouldOfferToneSpecialist('Create a detailed dual-amp studio signal chain'),true);
+ assert.equal(shouldOfferToneSpecialist('Buat delay sedikit lebih pendek',true),false);
+});
 
 test('ChatGPT Tone Plan generation is independent from USB-MIDI apply and pending plans are reused',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
