@@ -251,7 +251,7 @@ test('ChatGPT is primary while Auto and the free Multi-AI team remain explicit a
   assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
   assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
   assert.deepEqual(providerFallbackOrder('auto'), ['chatgpt','gemini','groq','openrouter']);
-  assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){"));
+  assert.ok(source.includes("if(mode==='auto'){"));
 });
 
 test('ChatGPT Auto uses GPT-5.6-Luna for discussion and GPT-6-Luna for tone building',()=>{
@@ -274,7 +274,7 @@ test('automatic model selection uses the model catalogue without spending genera
   assert.match(selection, /localStorage\.setItem\(modelStorageKey\(provider\),chosen\)/);
   assert.doesNotMatch(selection, /row\.id,10000|invokeProvider\(/);
   assert.match(selection, /if\(provider==='chatgpt'\)/);
-  assert.doesNotMatch(selection, /cloudflare/);
+  assert.ok(selection.includes("if(provider==='cloudflare')")); // legacy provider helper remains isolated from Auto routing
   assert.doesNotMatch(selection, /'gpt'/);
 });
 
@@ -1137,8 +1137,8 @@ test('manual Cloudflare provider starts with Workers AI before free providers',(
 
 test('Auto routes light tasks and tone planning through ChatGPT before optional API fallbacks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){\n   order=providerFallbackOrder('chatgpt');"));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){\n    const credential=await secret('chatgpt');"));
+ assert.ok(source.includes("if(mode==='auto'){\n   order=providerFallbackOrder('chatgpt');"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){\n    const credential=await secret('chatgpt');"));
  assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Legacy call-site name retained for compatibility; all active light tasks use the selected app AI route.\n  return askNamAIJson(system,user,stage);"));
  assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
  assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
@@ -1150,7 +1150,7 @@ test('Auto complex tone requests stay on GPT-6 Luna; external provider team is e
  assert.match(team,/const providers=\['gemini','groq','openrouter'\]/);
  assert.ok(source.includes("return selectedMode==='collab'"));
  assert.ok(source.includes('async function resolveFreeProviderTeam()'));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){"));
  assert.doesNotMatch(team,/cloudflare/);
 });
 
@@ -1954,8 +1954,8 @@ test('manual Cloudflare provider starts with Workers AI before free providers',(
 
 test('Auto routes light tasks and tone planning through ChatGPT before optional API fallbacks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(mode==='auto'||mode==='cloudflare'){\n   order=providerFallbackOrder('chatgpt');"));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){\n    const credential=await secret('chatgpt');"));
+ assert.ok(source.includes("if(mode==='auto'){\n   order=providerFallbackOrder('chatgpt');"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){\n    const credential=await secret('chatgpt');"));
  assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Legacy call-site name retained for compatibility; all active light tasks use the selected app AI route.\n  return askNamAIJson(system,user,stage);"));
  assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
  assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
@@ -1967,7 +1967,7 @@ test('Auto complex tone requests stay on GPT-6 Luna; external provider team is e
  assert.match(team,/const providers=\['gemini','groq','openrouter'\]/);
  assert.ok(source.includes("return selectedMode==='collab'"));
  assert.ok(source.includes('async function resolveFreeProviderTeam()'));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){"));
+ assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){"));
  assert.doesNotMatch(team,/cloudflare/);
 });
 
