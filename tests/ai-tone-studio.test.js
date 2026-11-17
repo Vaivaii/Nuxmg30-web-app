@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -325,20 +325,56 @@ test('Send wraps bridge checks, AI planning and MIDI apply in visible error hand
 
 
 
-test('Tone Plan generation works while MG-30 is disconnected and can be applied after USB-MIDI reconnects',()=>{
+test('ChatGPT Tone Plan generation is independent from USB-MIDI apply and pending plans are reused',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
  const planning=submit.indexOf('await makePlan(prompt,bridge,audioMetricsForRequest,conversation)');
- const disconnectedDraft=submit.indexOf('pendingTonePlan=plan');
- const apply=submit.indexOf("intent==='tone_apply_pending'");
- assert.ok(planning>=0,'Tone Plan must be requested before any USB-MIDI requirement');
- assert.ok(disconnectedDraft>planning,'A validated plan must be retained when the pedal is disconnected');
- assert.ok(apply>0,'A pending Tone Plan must have an explicit apply path');
- assert.match(submit,/Tone Plan berhasil dibuat dan lolos validasi katalog MG-30 Gen 2/);
- assert.match(submit,/Hubungkan MG-30 melalui USB-MIDI, lalu kirim “terapkan tone”/);
- assert.match(submit,/preparedPlan=validateAiTonePlan\(pendingTonePlan,bridge\.getCatalog\?\.\(\)\|\|\[\]\)/);
- assert.match(submit,/if\(intent==='tone_apply_pending'\|\|pendingTonePlan===plan\)pendingTonePlan=null/);
- assert.doesNotMatch(submit,/if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)throw new Error\('MG-30 is disconnected/);
+ const disconnected=submit.indexOf('if(!bridge.isConnected?.()){',planning);
+ const apply=submit.indexOf('await bridge.applyPlan(plan)');
+ assert.ok(planning>=0,'ChatGPT must orchestrate and validate a Tone Plan before checking USB-MIDI apply');
+ assert.ok(disconnected>planning&&disconnected<apply,'USB-MIDI is checked only after the plan is ready');
+ assert.match(submit,/pendingToneApply=plan/);
+ assert.match(submit,/resumePendingTone=Boolean\(pendingToneApply/);
+ assert.match(submit,/validateAiTonePlan\(pendingToneApply,bridge\.getCatalog\?\.\(\)\|\|\[\]\)/);
+ assert.match(submit,/Rencana ini akan digunakan kembali tanpa memanggil AI lagi/);
+ assert.match(submit,/await bridge\.applyPlan\(plan\)/);
+ assert.doesNotMatch(submit,/Connect USB-MIDI before applying a built-in amp live tone/);
+});
+
+test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded specialist task',async()=>{
+ const definition=toneSpecialistToolDefinition();
+ assert.equal(definition.type,'function');
+ assert.equal(definition.name,'delegate_tone_specialist');
+ assert.deepEqual(definition.parameters.properties.role.enum,['tone_architect','gear_specialist','parameter_engineer','critical_reviewer']);
+ const args={role:'tone_architect',focus:'John Mayer feel',brief:'Interpret touch-sensitive blues tone',blockIds:[],candidatePlan:''};
+ const calls=[];
+ let specialistCalls=0;
+ const bridge={sendResponse:async request=>{
+  calls.push(request);
+  if(calls.length===1)return {model:'gpt-model',toolCalls:[{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],outputItems:[{type:'reasoning',id:'rs_1',summary:[]},{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],usage:{input_tokens:80,output_tokens:20,total_tokens:100}};
+  return {model:'gpt-model',text:'{"summary":"Warm touch-sensitive blues tone","blocks":[]}',usage:{input_tokens:100,output_tokens:40,total_tokens:140}};
+ }};
+ const plan=await orchestrateChatGptTonePlan({bridge,model:'gpt-model',input:[{role:'user',content:'Create a John Mayer tone'}],instructions:'Orchestrate adaptively',maxOutputTokens:500,runSpecialist:async task=>{specialistCalls++;assert.equal(task.role,'tone_architect');return {ok:true,result:{tone_intent:{style:'blues',feel:'touch-sensitive'}}};}});
+ assert.equal(specialistCalls,1);
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].tools.length,1);
+ assert.equal(calls[0].parallelToolCalls,false);
+ assert.equal(calls[0].maxOutputTokens,500);
+ assert.equal(calls[1].tools,undefined,'No second specialist delegation is allowed');
+ assert.ok(calls[1].input.some(item=>item.type==='function_call_output'));
+ assert.equal(plan.__specialistRole,'tone_architect');
+ assert.equal(plan.__orchestratorCalls,2);
+ assert.equal(plan.__aiUsage.total_tokens,240);
+ assert.equal(plan.summary,'Warm touch-sensitive blues tone');
+});
+
+test('ChatGPT simple Tone Plans use one call and tool overuse is rejected',async()=>{
+ let calls=0;
+ const simple=await orchestrateChatGptTonePlan({bridge:{sendResponse:async()=>{calls++;return {text:'{"summary":"Simple clean tone","blocks":[]}',model:'gpt-model'};}},model:'gpt-model',input:[{role:'user',content:'Make a clean tone'}],instructions:'Do it simply',toolsEnabled:false});
+ assert.equal(calls,1);
+ assert.equal(simple.__orchestratorCalls,1);
+ assert.equal(simple.summary,'Simple clean tone');
+ await assert.rejects(()=>orchestrateChatGptTonePlan({bridge:{sendResponse:async()=>({toolCalls:[{name:'delegate_tone_specialist',call_id:'1',arguments:'{}'},{name:'delegate_tone_specialist',call_id:'2',arguments:'{}'}]})},model:'gpt-model',input:[{role:'user',content:'tone'}],instructions:'',runSpecialist:async()=>({ok:true})}),/one-specialist call budget/);
 });
 
 test('AI initialization does not bind listeners to missing legacy provider-delete buttons',()=>{
