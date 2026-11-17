@@ -1518,14 +1518,14 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
   let order=[];
-  if(mode==='auto'||mode==='cloudflare'){
+  if(mode==='auto'){
    order=providerFallbackOrder('chatgpt');
    if(!await secret('chatgpt'))missing.push('The connected ChatGPT account is unavailable.');
   }else if(mode==='collab'){
    try{order=await fastestReadyProviderOrder();}
    catch(error){missing.push(String(error.message||error));}
   }else order=auto?providerFallbackOrder(mode):[mode];
-  if(auto&&mode!=='auto'&&mode!=='cloudflare'&&mode!=='collab')order=providerFallbackOrder(mode);
+  if(auto&&mode!=='auto'&&mode!=='collab')order=providerFallbackOrder(mode);
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
@@ -1772,7 +1772,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
    const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){
+   if(mode==='chatgpt'||mode==='auto'){
     const credential=await secret('chatgpt');
     if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
     const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
@@ -1806,10 +1806,6 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
      }
     }else logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
     if(Array.isArray(first.__specialistRoles)&&first.__specialistRoles.length)message('ai','GPT-6 Luna sequentially orchestrated: '+first.__specialistRoles.map(role=>role.replaceAll('_',' ')).join(' → ')+'. All specialist results were reviewed by the Chief before final synthesis.');
-   }else if(mode==='auto'||mode==='cloudflare'){
-    const workerKey=await secret('cloudflare');
-    if(!workerKey)throw new Error('Cloudflare Workers AI binding AI is not configured. Auto and Cloudflare mode keep light Tone Plans off external provider RPM.');
-    first=await invokeProvider('cloudflare',workerKey,singleSystem,singleUser,WORKERS_AI_MODEL,90000,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'));
    }else first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
    namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
    if(!localRefinement||!toneSession.intent){
@@ -1872,7 +1868,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
     namSearchTerms=normalizeNamSearchTerms(derivedSearch.query)||namSearchTerms;
    }catch(error){
     namSearchTerms=namSearchTerms||fallbackNamSearchTerms(prompt);
-    message('ai','Cloudflare TONE3000 search-term generation was unavailable; using the local safe search-term fallback. '+(error.message||error));
+    message('ai','AI TONE3000 search-term generation was unavailable; using the local safe search-term fallback. '+(error.message||error));
    }
   }
   if(namSearchTerms)Object.defineProperty(validated,'search_terms',{value:namSearchTerms,enumerable:false,configurable:false});
