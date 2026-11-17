@@ -348,24 +348,74 @@ export function selectChatGptAutoModel(models,task='discussion'){
 
 export async function requestChatGptConversation({bridge,model,system,user,maxOutputTokens=520}){
  if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable. Open Device settings and connect your ChatGPT account.');
- const response=await bridge.sendResponse({
-  model,
-  input:[{role:'user',content:String(user||'')}],
-  instructions:String(system||''),
-  maxOutputTokens:Math.max(256,Math.min(700,Math.floor(Number(maxOutputTokens)||520))),
-  parallelToolCalls:false
- });
- const reply=String(response?.text||'').trim();
- if(!reply)throw new Error('ChatGPT returned an empty conversational response.');
- const result={reply};
- if(response?.usage&&typeof response.usage==='object'){
-  Object.defineProperty(result,'__aiUsage',{value:{
-   input_tokens:Number(response.usage.input_tokens??response.usage.prompt_tokens??0),
-   output_tokens:Number(response.usage.output_tokens??response.usage.completion_tokens??0),
-   total_tokens:Number(response.usage.total_tokens??((response.usage.input_tokens??response.usage.prompt_tokens??0)+(response.usage.output_tokens??response.usage.completion_tokens??0)))
-  },enumerable:false});
+ const outputLimit=Math.max(256,Math.min(700,Math.floor(Number(maxOutputTokens)||520)));
+ const instructions=String(system||'');
+ const originalUser=String(user||'');
+ const breakdown=[];
+ const usageOf=response=>{
+  const usage=response?.usage;
+  if(!usage||typeof usage!=='object')return null;
+  const input=Number(usage.input_tokens??usage.prompt_tokens??0);
+  const output=Number(usage.output_tokens??usage.completion_tokens??0);
+  return {input_tokens:input,output_tokens:output,total_tokens:Number(usage.total_tokens??input+output)};
+ };
+ const request=async(input,tokens,stage)=>{
+  try{
+   const response=await bridge.sendResponse({model,input,instructions,maxOutputTokens:tokens,parallelToolCalls:false});
+   breakdown.push({stage,model:response?.model||model,usage:usageOf(response),input:JSON.stringify(input),incomplete:Boolean(response?.incomplete),reason:String(response?.incompleteReason||'')});
+   return response;
+  }catch(error){
+   breakdown.push({stage,model,usage:null,input:JSON.stringify(input),incomplete:true,reason:String(error?.message||error).slice(0,180)});
+   throw error;
+  }
+ };
+ const attachBreakdown=error=>{
+  try{Object.defineProperty(error,'__aiUsageBreakdown',{value:breakdown,enumerable:false,configurable:true});}catch{}
+  return error;
+ };
+ const retryableNetworkError=error=>/timed? ?out|connection reset|connection aborted|failed to connect|network|stream ended|unexpected end of stream|socket closed|stream interrupted/i.test(String(error?.message||error||''));
+ let first;
+ try{
+  first=await request([{role:'user',content:originalUser}],outputLimit,'answering your tone question · initial');
+ }catch(error){
+  if(!retryableNetworkError(error))throw attachBreakdown(error);
+  try{
+   first=await request([{role:'user',content:originalUser.slice(0,2600)}],outputLimit,'answering your tone question · network retry');
+  }catch(retryError){throw attachBreakdown(new Error('ChatGPT discussion could not reconnect after one bounded retry: '+String(retryError?.message||retryError)));}
  }
- Object.defineProperty(result,'__aiModel',{value:String(response?.model||model),enumerable:false});
+ let finalResponse=first;
+ let partial=String(first?.text||'').trim();
+ if(first?.incomplete){
+  const reason=String(first.incompleteReason||'incomplete').toLowerCase();
+  const mayContinue=['max_output_tokens','stream_ended','stream_interrupted','incomplete'].includes(reason);
+  if(!mayContinue)throw attachBreakdown(new Error('ChatGPT response was incomplete (reason: '+reason+'). No tone changes were made.'));
+  const continuationInput=partial
+   ?[{role:'assistant',content:partial.slice(-2800)},{role:'user',content:'Continue from the exact ending of the previous answer. Do not repeat or summarize any earlier sentences. Finish the answer concisely.'}]
+   :[{role:'user',content:originalUser.slice(0,2600)+'\\n\\nRetry this discussion answer once, concise and complete. Do not make device changes.'}];
+  try{
+   finalResponse=await request(continuationInput,partial?360:outputLimit,'answering your tone question · '+(partial?'continuation':'bounded retry'));
+  }catch(error){throw attachBreakdown(new Error('ChatGPT discussion could not be completed after one bounded continuation: '+String(error?.message||error)));}
+  if(finalResponse?.incomplete){
+   throw attachBreakdown(new Error('ChatGPT response remained incomplete after one bounded continuation (reason: '+String(finalResponse.incompleteReason||'unknown')+'). No device changes were made.'));
+  }
+ }
+ const continuation=String(finalResponse?.text||'').trim();
+ let reply=partial&&first?.incomplete?partial:continuation;
+ if(first?.incomplete&&partial&&continuation){
+  let overlap=0;
+  const max=Math.min(120,partial.length,continuation.length);
+  for(let n=max;n>=12;n--){if(partial.slice(-n)===continuation.slice(0,n)){overlap=n;break;}}
+  reply=partial+(overlap?continuation.slice(overlap):'\\n'+continuation);
+ }
+ if(!reply)throw attachBreakdown(new Error('ChatGPT returned an empty conversational response.'));
+ const result={reply};
+ const aggregate=breakdown.reduce((sum,item)=>{
+  if(item.usage){sum.input_tokens+=item.usage.input_tokens;sum.output_tokens+=item.usage.output_tokens;sum.total_tokens+=item.usage.total_tokens;}
+  return sum;
+ },{input_tokens:0,output_tokens:0,total_tokens:0});
+ if(breakdown.some(item=>item.usage))Object.defineProperty(result,'__aiUsage',{value:aggregate,enumerable:false});
+ Object.defineProperty(result,'__aiUsageBreakdown',{value:breakdown,enumerable:false});
+ Object.defineProperty(result,'__aiModel',{value:String(finalResponse?.model||model),enumerable:false});
  return result;
 }
 export function shouldOfferToneSpecialist(prompt,localRefinement=false){
