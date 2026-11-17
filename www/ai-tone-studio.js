@@ -1422,30 +1422,9 @@ if($(stateId))$(stateId).textContent=provider==='chatgpt'?'Connected · ChatGPT 
   }catch(error){status(niceError(error,provider),'error');}
   finally{setBusy(false);}
  }
-async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,forceWorkersAI=false){
-if(['chatgpt','auto','cloudflare','collab'].includes(mode)){const result=await askNamAIJson(system,user,stage);return result;}
-const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{task,system,prompt:user,maxOutputTokens}});
-  if(!data?.result||typeof data.result!=='object')throw new Error('Cloudflare Workers AI did not return a valid JSON task result.');
-  const result={...data.result};
-  Object.defineProperty(result,'__aiUsage',{value:data.usage||null,enumerable:false,configurable:false});
-  Object.defineProperty(result,'__aiModel',{value:data.model||WORKERS_AI_MODEL,enumerable:false,configurable:false});
-  logAiTokenUsage('cloudflare',data.model||WORKERS_AI_MODEL,stage,maxOutputTokens,system,user,result);
-  return result;
- }
- async function testWorkersAI(){
-  setBusy(true);status('Testing Cloudflare Workers AI · Gemma 4 26B…','busy');
-  try{
-   const providers=(await getCloudAiStatus(true))?.providers||{};
-   if(!providers.cloudflare)throw new Error('Cloudflare Worker binding AI is not active. Check the [ai] binding in wrangler.toml and redeploy the Worker.');
-   const result=await invokeWorkersAILightTask('tone-discussion','Return JSON only with a non-empty reply field. Use Indonesian.','Reply with exactly one short sentence confirming that Cloudflare Workers AI Gemma 4 is responding.','testing Workers AI',64,true);
-   const reply=String(result?.reply||result?.answer||result?.response||'').trim();
-   if(!reply)throw new Error('Workers AI responded without a reply field.');
-   const node=$('aiCloudflareBindingState');if(node)node.textContent='Binding AI active · test successful';
-   status('Cloudflare Workers AI · '+(result.__aiModel||WORKERS_AI_MODEL)+' test successful. '+reply,'success');
-  }catch(error){
-   const node=$('aiCloudflareBindingState');if(node)node.textContent='Workers AI test failed';
-   status('Cloudflare Workers AI test failed: '+(error.message||error),'error');
-  }finally{setBusy(false);}
+async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){
+  // Legacy call-site name retained for compatibility; all active light tasks use the selected app AI route.
+  return askNamAIJson(system,user,stage);
  }
 
  function compactSpecialistDeviceContext(role,blockIds,catalog,snapshot,candidatePlan){
@@ -1741,12 +1720,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    }catch(error){
     lastError=error;noteProviderFailure(member.provider,error);
     const next=ordered.slice(index+1).find(item=>!providerInCooldown(item.provider));
-    const workerFallbackAllowed=mode==='auto'||mode==='collab'||ui.autoFallback.checked;
-    if(next&&workerFallbackAllowed){
-     message('ai',providerNames[member.provider]+' failed ('+(error.message||error)+'). Trying '+providerNames[next.provider]+'.');
-    }else if(index<ordered.length-1&&!workerFallbackAllowed){
-     throw new Error(niceError(error,member.provider));
-    }
+    if(next)message('ai',providerNames[member.provider]+' failed ('+(error.message||error)+'). Trying '+providerNames[next.provider]+'.');
    }
   }
   throw new Error(lastError?.message||'No available Gemini, Groq or OpenRouter provider completed the explicit Multi-AI task.');
