@@ -88,3 +88,29 @@ A successful CI build proves compilation and existing automated tests only. It d
 - IR import / User / Collection mapping, NAM transfer codec/slot protocol and MIDI mapping were not changed in this UI restoration.
 - Updated source commits: `07f358cec65fe4284f4f9b6f89a1b58f838f5c76`, `7ba2b7da07e5943841937821b3843cafc2ab5ac6`, `0fa36202984c819007d8d9189094171e4f74329f`, `aeea452859d590abd39c82ce242aedccdf78ec8d`, plus regression tests `ecdcdc175d6cefa1663b6ffb76909eeb8d22f6e9` and `4c0b72a3a80939cc3f7448a6fd52ab82d6279213`.
 - This is source restoration and integration only; the current branch must still pass CI and the replacement APK must be tested on the physical Android device before confirming the regression is fixed.
+
+## Repair of the latest ChatGPT-first branch Actions failures — 2026-11-17
+
+- Work was continued on the existing active branch `feature/chatgpt-siwc-android`, after reading the latest HEAD documentation commit `627c934191e7028f7bf0a0602086a6c42a7f94bc` and inspecting the code commit immediately before it. No branch reset or source rollback was performed.
+- The nine failures in Actions run #985 were traced to a combination of stale regression expectations and one real Worker implementation gap:
+  - Two provider tests still asserted the superseded Auto/free Multi-AI default. Updated them to assert ChatGPT SIWC is the selected default while Auto and the other provider modes remain available.
+  - The Cloudflare provider test expected a non-optional click listener. Updated it to preserve and assert the current optional listener, which avoids failures if a settings button is absent.
+  - The USB audio test searched for unescaped quote characters in a JavaScript string containing escaped HTML attributes. Corrected its matching expression; no audio UI or capture behavior was changed.
+  - Three NAM tests expected the former inline NAM selection/transfer flow. Updated them to verify the current conversation-card flow: TONE3000 profile selection, A2 capture selection, download and A2-Lite preflight, explicit transfer confirmation, and USB-MIDI connection required only at the final slot-10 transfer step.
+  - The SIWC test expected obsolete explanatory wording. It now asserts the actual native `MG30ChatGPTBridge.sendResponse` path and direct Android connection status.
+  - The Worker test exposed an actual omission: output-token limits were hard-coded in some provider adapters. Added `clampOutputTokenLimit`, passed the bounded request budget to Gemini/OpenAI-compatible adapters, and used bounded `max_completion_tokens` / `max_tokens` values for Groq and OpenRouter, including the JSON retry.
+- Files changed for this repair are limited to `cloud-worker/src/index.js` and regression test files:
+  - `tests/ai-tone-studio.test.js`
+  - `tests/chatgpt-si-wc-ui-preservation.test.js`
+  - `tests/tone3000-ai-nam.test.js`
+- A commit comparison from the preceding project HEAD `627c934` to the successful build commit confirms these four files are the only changed paths. No NAM codec, TONE3000 transfer implementation, IR import implementation/mapping, MIDI mapping, native ChatGPT plugin, or USB audio implementation was edited for this repair.
+- Repair commits on this branch: `c495889a9dcda0b24779df5b485cc4d704781e81`, `8bf7ccea1cb464b22bbb9fa391da65c658d4a6d2`, `66c3231aaa5aace2d9a391c2a66c59e836e2eee6`, `4dacbe247f26e63a672ce3ad315466f3609780a2`, and `65385d3fe8109e9eda19cf70f5c70ddf74bab597`.
+- Successful GitHub Actions run #990: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44019610029
+  - Commit built: `65385d3fe8109e9eda19cf70f5c70ddf74bab597`
+  - JavaScript syntax validation: passed.
+  - Protocol regression tests: 558 passed, 0 failed.
+  - Capacitor Android project generation and USB audio plugin setup: passed.
+  - Gradle debug APK build: passed.
+  - APK artifact upload: passed; artifact name `MG30-Studio-debug-APK`, 4,740,288 bytes.
+- Extracted debug APK SHA-256: `581d154444c4bb7c048d6fae5e3cf10d474f0768c0b0724e28783b1fbd20b986`.
+- Physical-device acceptance is still pending. CI success does not prove actual SIWC sign-in or MG-30 Gen 2 NAM/audio/MIDI hardware operation. Install and verify on the original MG-30 Gen 2 with firmware 6.0.x before treating hardware validation as complete.
