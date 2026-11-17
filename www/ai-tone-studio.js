@@ -966,7 +966,7 @@ const next=['chatgpt','auto','cloudflare','gemini','groq','openrouter','gpt','co
   if(mode==='chatgpt'){
    const credential=await secret('chatgpt');
    if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
-   const model=await fastestReadyModel('chatgpt',credential);
+   const model=await fastestReadyModel('chatgpt',credential,'discussion');
    const maxOutputTokens=outputTokenBudgetForStage('answering your tone question');
    const result=await requestChatGptConversation({bridge:window.MG30ChatGPTBridge,model,system,user,maxOutputTokens});
    logAiTokenUsage('chatgpt',result.__aiModel||model,'answering your tone question',maxOutputTokens,system,user,result);
@@ -1059,7 +1059,7 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
   const models=providerModels[provider]||[];
   select.replaceChildren();
-  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent=provider==='gemini'?'Auto · Gemini 3.1 Flash Lite':'Auto · fastest available';select.append(autoOption);
+  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent=provider==='gemini'?'Auto · Gemini 3.1 Flash Lite':provider==='chatgpt'?'Auto · light chat / GPT-6 tone build':'Auto · fastest available';select.append(autoOption);
   if(models.length){
    for(const row of models){
     const option=document.createElement('option');option.value=row.id;
@@ -1079,7 +1079,7 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
    option.textContent='Configure '+providerNames[provider]+' in Worker to load models';
    select.append(option);select.disabled=true;
   }
-  ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto free team + models':'Model';
+  ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto free team + models':provider==='chatgpt'?'Auto: light chat / GPT-6 tone build':'Model';
   if(currentMode()==='auto'||currentMode()==='collab'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent=currentMode()==='collab'?'Free providers assigned by role':'Auto · Cloudflare first; team joins for complex tones';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
@@ -1680,7 +1680,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    if(mode==='chatgpt'){
     const credential=await secret('chatgpt');
     if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
-    const model=await fastestReadyModel('chatgpt',credential);
+    const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
     const specialistEligible=shouldOfferToneSpecialist(prompt,localRefinement);
     const specialistAvailable=specialistEligible&&await hasFreeToneSpecialist();
     const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT ORCHESTRATOR CONTRACT: You are the sole user-facing AI, orchestrator and final decision authority. You may call at most ONE delegate_tone_specialist tool for this request. Do not call a specialist for a routine single-amp preset, an ordinary parameter edit, or when your own evidence and the supplied MG-30 catalogue are sufficient. Delegate Tone Architect only for meaningful musical-reference ambiguity; Gear Specialist only for uncertain device/model compatibility; Parameter Engineer only for coupled or difficult exact parameter translation; Critical Reviewer only for a material conflict in a candidate plan. Never call all roles, never call two specialists, and never repeat a specialist task. If no specialist materially improves confidence, produce the final Tone Plan yourself. Treat any specialist output as advisory, resolve it yourself, and return the final catalog-valid JSON Tone Plan only. The runtime catalogue and validator are authoritative.';
