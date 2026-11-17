@@ -19,7 +19,7 @@ test('Restored AI Live Tone Assistant keeps the audio listening and local analys
 });
 
 test('ChatGPT replaces the former Cloudflare AI role while existing optional providers and SIWC remain', () => {
-  const select = ai.match(/<select id="aiToneProviderSelect">[\\s\\S]*?<\\/select>/)?.[0] || '';
+  const select = ai.match(/<select id="aiToneProviderSelect">[\s\S]*?<\/select>/)?.[0] || '';
   for (const provider of ['chatgpt', 'auto', 'gemini', 'groq', 'openrouter', 'gpt', 'collab']) {
     assert.ok(select.includes('value="' + provider + '"'), 'provider selector lost ' + provider);
   }
