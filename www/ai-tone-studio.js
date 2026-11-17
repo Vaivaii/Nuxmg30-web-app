@@ -110,7 +110,7 @@ export function toneSpecialistToolDefinition(){
  return {
   type:'function',
   name:'delegate_tone_specialist',
-  description:'Delegate exactly one sequential task to one free specialist. You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker. You may request another specialist only after receiving and evaluating the previous result. Never call multiple specialists in parallel. Choose only roles needed for this tone: Tone Researcher for deep musical/rig research; Amp & Cabinet Specialist for amp/cab matching; Effects Specialist for effects and signal-chain recommendations; Guitar & Input Specialist only when guitar/pickup/input materially affects the target; Tone Calibration Specialist for whole-chain balance; Tone Critic only when your quality gate detects uncertainty, conflict, or material risk. Maximum six specialist tasks total, and never repeat a role unless you explicitly need a focused re-check. Specialists do not communicate with each other. All provider API calls must use free-tier Gemini, Groq, OpenRouter, or the Cloudflare Worker Gemma default/fallback; never use paid provider APIs or OpenAI API.',
+  description:'Delegate exactly one sequential task to one role-specialist. You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker. You may request another specialist only after receiving and evaluating the previous result. Never call multiple specialists in parallel. Choose only roles needed for this tone: Tone Researcher for deep musical/rig research; Amp & Cabinet Specialist for amp/cab matching; Effects Specialist for effects and signal-chain recommendations; Guitar & Input Specialist only when guitar/pickup/input materially affects the target; Tone Calibration Specialist for whole-chain balance; Tone Critic only when your quality gate detects uncertainty, conflict, or material risk. Maximum six specialist tasks total, and never repeat a role unless you explicitly need a focused re-check. Specialists do not communicate with each other. Each specialist is executed as a separate, focused request through the connected ChatGPT account; no Cloudflare Worker, API key, or external provider is required for this ChatGPT route.',
   strict:true,
   parameters:{
    type:'object',
@@ -126,11 +126,39 @@ export function toneSpecialistToolDefinition(){
   }
  };
 }
-export async function orchestrateChatGptTonePlan({bridge,model,input,instructions,runSpecialist,toolsEnabled=true,maxOutputTokens=1350,maxSpecialistCalls=6}){
+export function isChatGptToneSpecialistAvailable({credential,model,bridge}={}) {
+ return Boolean(credential&&model&&typeof bridge?.sendResponse==='function');
+}
+export async function requestChatGptToneSpecialist({bridge,model,role,system,user,maxOutputTokens=420}={}) {
+ if(!bridge?.sendResponse)throw new Error('The connected ChatGPT specialist bridge is unavailable.');
+ if(!TONE_SPECIALIST_ROLES.includes(String(role||'')))throw new Error('Unsupported ChatGPT tone specialist role.');
+ if(!model)throw new Error('No available ChatGPT model was selected for the specialist.');
+ const response=await bridge.sendResponse({
+  model,
+  input:[{role:'user',content:String(user||'')}],
+  instructions:String(system||''),
+  maxOutputTokens:Math.max(256,Math.min(1800,Number(maxOutputTokens)||420)),
+  parallelToolCalls:false
+ });
+ if(response?.incomplete)throw new Error('ChatGPT specialist response was incomplete ('+String(response.incompleteReason||'unknown')+').');
+ if((Array.isArray(response?.toolCalls)&&response.toolCalls.length)||(Array.isArray(response?.outputItems)&&response.outputItems.some(item=>item?.type==='function_call')))
+  throw new Error('A role-specialist cannot delegate nested tools. Return its own structured findings to GPT-6 Luna.');
+ const findings=parseJson(response?.text||'');
+ if(!findings||typeof findings!=='object'||Array.isArray(findings))throw new Error('ChatGPT specialist returned no structured JSON findings.');
+ const result={ok:true,role:String(role),provider:'chatgpt',model:String(response?.model||model),result:findings};
+ if(response?.usage&&typeof response.usage==='object')Object.defineProperty(result,'__aiUsage',{value:{
+  input_tokens:Number(response.usage.input_tokens??response.usage.prompt_tokens??0),
+  output_tokens:Number(response.usage.output_tokens??response.usage.completion_tokens??0),
+  total_tokens:Number(response.usage.total_tokens??((response.usage.input_tokens??response.usage.prompt_tokens??0)+(response.usage.output_tokens??response.usage.completion_tokens??0)))
+ },enumerable:false});
+ Object.defineProperty(result,'__aiModel',{value:response?.model||model,enumerable:false});
+ return result;
+}
+export async function orchestrateChatGptTonePlan({bridge,model,input,instructions,runSpecialist,toolsEnabled=true,maxOutputTokens=1350,maxSpecialistCalls=6,requireFirstSpecialist=false}){
  if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable.');
  const initialInput=Array.isArray(input)?input.slice():[];
  const tools=toolsEnabled?[toneSpecialistToolDefinition()]:undefined;
- const usageBreakdown=[],specialistRoles=[];
+ const usageBreakdown=[],specialistRoles=[],successfulSpecialistRoles=[];
  let response=await bridge.sendResponse({model,input:initialInput,instructions,maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})});
  let nextInput=initialInput.slice(),round=0;
  while(true){
@@ -142,7 +170,10 @@ export async function orchestrateChatGptTonePlan({bridge,model,input,instruction
    model:response?.model||model,usage:response?.usage||null,
    instructions:String(instructions||''),input:JSON.stringify(nextInput||[])
   });
-  if(!hasCalls)break;
+  if(!hasCalls){
+   if(round===0&&requireFirstSpecialist)throw new Error('GPT-6 Luna did not delegate a required specialist task. No Tone Plan was generated and no device changes were sent.');
+   break;
+  }
   if(!toolsEnabled||calls.length!==1)throw new Error('The ChatGPT orchestrator must request exactly one specialist per turn. Parallel or disabled tool calls are rejected. No device changes were sent.');
   if(round>=Math.max(1,Math.min(6,Number(maxSpecialistCalls)||6)))throw new Error('The ChatGPT orchestrator exceeded the six-specialist sequential task budget. No device changes were sent.');
   const call=calls[0];
@@ -162,6 +193,7 @@ export async function orchestrateChatGptTonePlan({bridge,model,input,instruction
   }catch(error){
    specialistResult={ok:false,role,error:String(error?.message||error).slice(0,300),fallback:'Chief may retry a different free provider or continue only if this task is non-critical. Never claim that this specialist completed successfully.'};
   }
+  if(specialistResult?.ok!==false)successfulSpecialistRoles.push(role);
   const returnedItems=Array.isArray(response.outputItems)?response.outputItems.slice():[
    {type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')}
   ];
@@ -176,6 +208,7 @@ export async function orchestrateChatGptTonePlan({bridge,model,input,instruction
    maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})
   });
  }
+ if(requireFirstSpecialist&&!successfulSpecialistRoles.length)throw new Error('No required ChatGPT specialist completed successfully. No Tone Plan was generated and no device changes were sent.');
  const plan=parseJson(response?.text||'');
  const usageRows=usageBreakdown.filter(row=>row.usage);
  if(usageRows.length){
@@ -191,6 +224,7 @@ export async function orchestrateChatGptTonePlan({bridge,model,input,instruction
  Object.defineProperty(plan,'__aiUsageBreakdown',{value:usageBreakdown,enumerable:false});
  Object.defineProperty(plan,'__orchestratorCalls',{value:usageBreakdown.length,enumerable:false});
  Object.defineProperty(plan,'__specialistRoles',{value:specialistRoles.slice(),enumerable:false});
+ Object.defineProperty(plan,'__successfulSpecialistRoles',{value:successfulSpecialistRoles.slice(),enumerable:false});
  if(specialistRoles.length)Object.defineProperty(plan,'__specialistRole',{value:specialistRoles[0],enumerable:false});
  return plan;
 }
@@ -436,7 +470,7 @@ export function requiresToneArchitect(prompt){
 export function shouldOfferToneSpecialist(prompt,localRefinement=false){
  if(localRefinement)return false;
  const value=String(prompt||'');
- return isComplexToneRequest(value)||/\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|jazz|blues|metal|country|funk|ambient|progressive rock|song|track|album|live version|recording reference|guitarist|artist style)\b/i.test(value);
+ return requiresToneArchitect(value)||isComplexToneRequest(value)||/\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|jazz|blues|metal|country|funk|ambient|progressive rock|song|track|album|live version|recording reference|guitarist|artist style)\b/i.test(value);
 }
 export function shouldUseMultiAgent(prompt,intent='tone_create',selectedMode='auto',localRefinement=false){if(localRefinement||intent!=='tone_create')return false;if(selectedMode==='collab')return true;return selectedMode==='auto'&&isComplexToneRequest(prompt);}
 export function shouldCooldownProvider(error){const status=Number(error?.upstreamStatus||error?.status||0);if([408,425,429,500,502,503,504].includes(status))return true;const v=String(error?.message||error||'');return /high demand|capacity exceeded|temporarily unavailable|temporarily busy|server busy|timed? out|failed to fetch|network|provider rejected the request.*\b404\b/i.test(v);}
@@ -1437,12 +1471,6 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    return {id,currentModel:block.currentModel,enabled:current?.enabled??null,currentParameters:current?.parameters||{},models:selected};
   }).filter(Boolean);
  }
- async function hasFreeToneSpecialist(){
-  try{
-   const providers=(await getCloudAiStatus())?.providers||{};
-   return Boolean(providers.gemini||providers.groq||providers.openrouter||providers.cloudflare);
-  }catch{return false;}
- }
  async function runToneSpecialistTask(args,context){
   const role=String(args?.role||'').trim();
   const roles={
@@ -1498,30 +1526,17 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    candidate_plan:candidate
   };
   const requestText=JSON.stringify(user);
-  let response,primaryError=null;
+  const specialistModel=context.specialistModel||context.model;
   try{
-   response=await cloudApiRequest('/api/v1/ai/tone-plan',{
-    method:'POST',
-    body:{provider:'auto',model:'',system,prompt:requestText,maxOutputTokens:spec.maxTokens}
+   const result=await requestChatGptToneSpecialist({
+    bridge:window.MG30ChatGPTBridge,model:specialistModel,role,system,user:requestText,maxOutputTokens:spec.maxTokens
    });
-   if(!response?.tonePlan||typeof response.tonePlan!=='object'||Array.isArray(response.tonePlan))
-    throw new Error('The free Gemini/Groq/OpenRouter specialist route returned no structured JSON result.');
+   logAiTokenUsage('chatgpt',result.__aiModel,'specialist '+role,spec.maxTokens,system,requestText,result);
+   return result;
   }catch(error){
-   primaryError=error;
-   try{
-    const fallback=await invokeWorkersAILightTask('tone-specialist-'+role,system,requestText,'specialist '+role,spec.maxTokens,true);
-    response={ok:true,provider:'cloudflare',model:fallback.__aiModel||WORKERS_AI_MODEL,tonePlan:fallback,usage:fallback.__aiUsage||null};
-    message('ai','Free specialist API route unavailable for '+role+'. Cloudflare Worker Gemma fallback completed the task.');
-   }catch(workerError){
-    logAiTokenUsage('free-specialist','all free routes unavailable','specialist '+role,spec.maxTokens,system,requestText,null,workerError);
-    throw new Error('Free Gemini/Groq/OpenRouter route failed ('+(primaryError?.message||primaryError)+'); Cloudflare Worker Gemma fallback failed ('+(workerError?.message||workerError)+').');
-   }
+   logAiTokenUsage('chatgpt',specialistModel,'specialist '+role,spec.maxTokens,system,requestText,null,error);
+   throw error;
   }
-  const result={ok:true,role,provider:String(response.provider||'unknown-provider'),model:String(response.model||'unknown-model'),result:response.tonePlan};
-  Object.defineProperty(result,'__aiUsage',{value:response.usage||null,enumerable:false});
-  Object.defineProperty(result,'__aiModel',{value:response.model||'unknown-model',enumerable:false});
-  logAiTokenUsage(result.provider,result.__aiModel,'specialist '+role,spec.maxTokens,system,requestText,result);
-  return result;
  }
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
@@ -1811,15 +1826,21 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
     if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
     const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
     const specialistEligible=shouldOfferToneSpecialist(prompt,localRefinement);
-    const specialistAvailable=specialistEligible&&await hasFreeToneSpecialist();
-    if(requiresToneArchitect(prompt)&&!specialistAvailable)message('ai','Tone Architect was not called because no free specialist provider is configured. ChatGPT GPT-6-Luna will continue as the sole model; no specialist usage is being reported.');
-    const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT TONE ARCHITECT CONTRACT: You are GPT-6 Luna, the sole Chief Tone Architect, user-facing orchestrator and final decision-maker. Your subscription-backed ChatGPT connection is the Chief; specialist API calls must use free Gemini, Groq, OpenRouter or Cloudflare Worker Gemma only. Never call paid provider APIs or OpenAI API. Delegate tasks sequentially: request exactly one specialist, wait for its result, evaluate it, then decide whether to request one different specialist. Never run specialists in parallel or let them communicate directly. Use the six roles only as needed: Tone Researcher for deep reference/rig analysis (never fabricate sources; distinguish model knowledge from verified sources); Amp & Cabinet Specialist for exact catalogue amp/cab matching; Effects Specialist for relevant effects; Guitar & Input Specialist only when the user guitar/pickups/input materially affect the tone; Tone Calibration Specialist for whole-chain balance; Tone Critic only when a quality gate detects material uncertainty, conflict or risk. Maximum six specialist tasks total. Do not call all agents by default, do not repeat a role without a focused re-check, and do not invent a specialist result if unavailable. If the specialist route fails, it may fall back to Cloudflare Worker Gemma. If every free route fails, report the limitation and continue only if the missing specialist work is non-critical. The runtime catalogue and validator are authoritative; preserve NAM, IR, MIDI mapping and unrelated device state.';
+    const specialistModel=specialistEligible
+     ?await fastestReadyModel('chatgpt',credential,'discussion').catch(()=>model)
+     :model;
+    const specialistAvailable=specialistEligible&&isChatGptToneSpecialistAvailable({
+     credential,model:specialistModel,bridge:window.MG30ChatGPTBridge
+    });
+    if(specialistEligible&&!specialistAvailable)throw new Error('The connected ChatGPT session cannot execute the required Tone Architect specialist task. No Tone Plan was generated and no pedal changes were sent.');
+    const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT TONE ARCHITECT CONTRACT: You are GPT-6 Luna, the sole Chief Tone Architect, user-facing orchestrator and final decision-maker. Use the connected ChatGPT account for the Chief and for each separate, role-scoped specialist request; do not route light tasks or specialist work through Cloudflare Workers AI. For artist-specific or complex new Tone Plan requests, you MUST delegate at least one relevant specialist before final synthesis. For a named artist or recording, start with Tone Researcher unless another role is materially more urgent. Delegate sequentially: request exactly one specialist, wait for its result, evaluate it, then decide whether to request one different specialist. Never run specialists in parallel or let them communicate directly. Use the six roles only as needed: Tone Researcher for deep reference/rig analysis (never fabricate sources; distinguish known from inferred and unverified facts); Amp & Cabinet Specialist for exact catalogue amp/cab matching; Effects Specialist for relevant effects and signal-chain recommendations; Guitar & Input Specialist only when guitar/pickups/input materially affect the target; Tone Calibration Specialist for whole-chain balance; Tone Critic only when a quality gate detects material uncertainty, conflict or risk. Maximum six specialist tasks total. Do not call all agents by default, do not repeat a role without a focused re-check, and never invent a specialist result. The runtime catalogue and validator are authoritative; preserve NAM, IR, MIDI mapping and unrelated device state.';
     first=await orchestrateChatGptTonePlan({
      bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],
      instructions:orchestrationInstructions,
      toolsEnabled:specialistAvailable,
+     requireFirstSpecialist:specialistEligible,
      maxOutputTokens:outputTokenBudgetForStage('building your Tone Plan'),
-     runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot})
+     runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot,model,specialistModel})
     });
     if(Array.isArray(first.__aiUsageBreakdown)&&first.__aiUsageBreakdown.length){
      for(const callUsage of first.__aiUsageBreakdown){
