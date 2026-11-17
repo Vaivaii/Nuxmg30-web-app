@@ -149,9 +149,14 @@ function systemPrompt(catalog,snapshot,review,toneGuidance=''){
 }
 function userText(prompt,candidate,namContext){return 'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider) {
- const key = provider === 'openai' ? 'gpt' : provider;
+ if (provider === 'gpt' || provider === 'openai') {
+  try {
+   const session = await window.MG30ChatGPTBridge?.getSession?.();
+   return session?.status === 'connected' && session?.sharing ? 'chatgpt-plan' : '';
+  } catch { return ''; }
+ }
  const status = await getCloudAiStatus();
- return status?.providers?.[key] ? 'cloud-managed' : '';
+ return status?.providers?.[provider] ? 'cloud-managed' : '';
 }
 async function cloudTonePlan(provider, system, prompt, model) {
  if (!model) throw new Error('Choose an available model in AI Settings.');
@@ -159,7 +164,13 @@ async function cloudTonePlan(provider, system, prompt, model) {
  if (!result?.tonePlan || typeof result.tonePlan !== 'object') throw new Error('Cloud AI did not return a valid Tone Plan response.');
  return result.tonePlan;
 }
-async function openai(_credential, system, prompt, model) { return cloudTonePlan('gpt', system, prompt, model); }
+async function openai(_credential, system, prompt, model) {
+ const bridge = window.MG30ChatGPTBridge;
+ if (!bridge) throw new Error('ChatGPT native connection is unavailable. Open Device settings and connect ChatGPT.');
+ const result = await bridge.sendResponse({ model, input: [{ role: 'user', content: String(prompt || '') }], instructions: String(system || '') });
+ if (!result || typeof result.text !== 'string' || !result.text.trim()) throw new Error('ChatGPT returned no text output.');
+ return parseJson(result.text);
+}
 async function gemini(_credential, system, prompt, model) { return cloudTonePlan('gemini', system, prompt, model); }
 
 export function compatibleChatText(data,provider){
@@ -190,11 +201,15 @@ async function openAiCompatible(_credential, system, prompt, model, provider) {
  return cloudTonePlan(provider, system, prompt, model);
 }
 export async function listAiProviderModels(provider, _credential) {
- const data = await cloudApiRequest('/api/v1/ai/models?provider=' + encodeURIComponent(provider === 'gpt' ? 'gpt' : provider));
+ if (provider === 'gpt' || provider === 'openai') {
+  const rows = await window.MG30ChatGPTBridge?.listModels?.();
+  return (Array.isArray(rows) ? rows : []).map(row => ({ id: String(row.slug || ''), name: String(row.displayName || row.slug || '') })).filter(row => row.id);
+ }
+ const data = await cloudApiRequest('/api/v1/ai/models?provider=' + encodeURIComponent(provider));
  return Array.isArray(data.models) ? data.models : [];
 }
 export function providerFallbackOrder(primary='gemini'){
- const priority=['gemini','groq','openrouter','gpt'];
+ const priority=['gpt','gemini','groq','openrouter'];
  const first=priority.includes(primary)?primary:'gemini';
  return [first,...priority.filter(provider=>provider!==first)];
 }
@@ -494,11 +509,11 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000){
    status('Gemini is reviewing GPT’s '+stage+'…','busy');
    return gemini(m,system+'\nYou are the Gemini reviewer. Verify the proposal against the supplied data, correct unsupported assumptions, and return the same JSON schema only.',user+'\n\nGPT PROPOSAL:\n'+JSON.stringify(draft),mm);
   }
-  const auto=mode==='auto'||ui.autoFallback.checked,order=mode==='auto'?await fastestReadyProviderOrder():(auto?providerFallbackOrder(mode):[mode]),missing=[];
+  const auto=mode==='auto'||ui.autoFallback.checked,order=mode==='auto'?['gpt']:(mode==='gpt'?['gpt']:(auto?providerFallbackOrder(mode):[mode])),missing=[];
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
-   if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' Worker secret');continue;}
+   if(!key){if(provider===mode)throw new Error(provider==='gpt'?'Connect ChatGPT in Device settings and enable plan-use permission.':providerNames[provider]+' is not configured.');missing.push(providerNames[provider]+' connection');continue;}
    const model=await fastestReadyModel(provider,key);
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
