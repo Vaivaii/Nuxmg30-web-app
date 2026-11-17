@@ -82,7 +82,10 @@ test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening S
   assert.ok(tone3000.includes('searchTones(query, options = {})'));
   assert.match(aiStudio, /async function beginNamSearch/);
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
-  assert.match(aiStudio, /data-ai-nam-tone=/);
+  assert.match(aiStudio, /data-ai-nam-card=/);
+  assert.match(aiStudio, /data-ai-nam-view-captures=/);
+  assert.match(aiStudio, /data-ai-nam-import-selected=/);
+  assert.match(aiStudio, /data-ai-nam-confirm=/);
   assert.ok(aiStudio.includes('bridge.searchTones(intent.query,{gear:activeNamGear})'));
   assert.match(tone3000, /TONE3000 API search rate limit reached/);
 });
@@ -103,14 +106,18 @@ test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloa
   assert.match(tone3000, /async loadTone\(toneId, options = \{\}\)/);
 });
 
-test('Automatic NAM starts from Send and does not open TONE3000 Select', () => {
+test('Automatic NAM starts from Send and uses explicit profile, capture and slot-10 confirmation cards', () => {
   assert.match(aiStudio, /async function automaticNamImportForPrompt/);
   assert.match(aiStudio, /pendingNamSelection/);
-  assert.match(aiStudio, /if\(namModeActive\)\{const namResult=await automaticNamImportForPrompt\(prompt\);if\(namResult\?\.pendingConnection\|\|namResult\?\.pendingSelection\)return;\}/);
-  assert.match(aiStudio, /bridge\.prepareModel\(selected\.model\.id\)/);
-  assert.match(aiStudio, /bridge\.importModel\(selected\.model\.id,\{slotNumber:10,confirmOverwrite:true,prepare:false\}\)/);
+  assert.match(aiStudio, /await automaticNamImportForPrompt\(prompt,conversation,preparedPlan\)/);
+  assert.match(aiStudio, /if\(namResult\?\.pendingConnection\|\|namResult\?\.pendingSelection\)return;/);
+  assert.match(aiStudio, /bridge\.searchTones\(searchTerms,\{gear:activeNamGear\}\)/);
+  assert.match(aiStudio, /selected\.prepared=await bridge\.prepareModel\(selected\.model\.id\)/);
+  assert.match(aiStudio, /bridge\.importModel\(pending\.selected\.model\.id,\{slotNumber:10,confirmOverwrite:false,prepare:false\}\)/);
+  assert.match(aiStudio, /data-ai-nam-view-captures=/);
+  assert.match(aiStudio, /data-ai-nam-import-selected=/);
+  assert.match(aiStudio, /data-ai-nam-confirm=/);
 });
-
 
 test('TONE3000 provides a separate connect-only account sign-in flow', () => {
   assert.match(tone3000, /t3kConnectAccount/);
@@ -122,7 +129,14 @@ test('TONE3000 provides a separate connect-only account sign-in flow', () => {
 
 test('AI NAM search and A2-Lite preflight are allowed before USB-MIDI connection', () => {
   assert.match(aiStudio, /if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)/);
-  assert.match(aiStudio, /NAM found and validated\. Connect the MG-30 via USB-MIDI/);
+  const automaticStart = aiStudio.indexOf('async function automaticNamImportForPrompt');
+  const automaticEnd = aiStudio.indexOf('async function resolveFreeProviderTeam', automaticStart);
+  const automatic = aiStudio.slice(automaticStart, automaticEnd);
+  assert.ok(automaticStart >= 0 && automaticEnd > automaticStart);
+  assert.doesNotMatch(automatic, /isConnected/, 'catalog search and A2-Lite preflight must not require USB-MIDI');
+  assert.match(aiStudio, /selected\.prepared=await bridge\.prepareModel\(selected\.model\.id\)/);
+  assert.ok(aiStudio.includes("if(!editor?.isConnected?.())throw new Error('Connect the MG-30 via USB-MIDI before transferring the selected NAM to slot 10.')"));
+  assert.match(aiStudio, /bridge\.importModel\(pending\.selected\.model\.id,\{slotNumber:10,confirmOverwrite:false,prepare:false\}\)/);
   assert.match(aiStudio, /pendingNamSelection/);
 });
 
@@ -133,7 +147,9 @@ test('TONE3000 session check refreshes the OAuth access token and separates app 
 
 test('ChatGPT plan access uses the native SIWC plugin and never sends ChatGPT tokens through Cloudflare', () => {
   assert.match(aiStudio, /MG30ChatGPTBridge/);
-  assert.match(aiStudio, /Requests run directly from this Android app/);
+  assert.match(aiStudio, /async function chatgpt\(_credential, system, prompt, model\)/);
+  assert.match(aiStudio, /await bridge\.sendResponse/);
+  assert.match(aiStudio, /direct Android connection/);
   assert.match(chatGptPlugin, /@CapacitorPlugin\(name = "MG30ChatGPT"\)/);
   assert.match(chatGptPlugin, /AndroidKeyStore/);
   assert.match(chatGptPlugin, /AES\/GCM\/NoPadding/);
