@@ -167,3 +167,37 @@ No changes were made to NAM A2-Lite transfer codec, TONE3000 download/import pro
   - Extracted APK SHA-256: 7ae8f3d6641487a2d33217269269af995e14a5ae7fdffa14c13d8f3e1c1352b9.
 - The APK corresponds to the final tested source commit; it is not the superseded #1006 artifact.
 - Physical Android + original MG-30 Gen 2 firmware 6.0.x verification remains pending; CI does not prove hardware behavior.
+
+
+## Fix: natural ChatGPT discussion was incorrectly forced through Tone Plan JSON — 2026-11-17
+
+- User demonstrated that an ordinary contextual follow-up such as "Kalau yang ini gimana?" after a successful tone discussion returned: `Failed: chatgpt: The AI response does not contain a JSON Tone Plan.`
+- Confirmed root cause in source:
+  - `submit()` correctly classified the example as `consultation` and routed it to `answerToneConversation()`.
+  - `answerToneConversation()` called `invokeWorkersAILightTask('tone-discussion', ...)`.
+  - In ChatGPT mode, `invokeWorkersAILightTask()` redirected to `askNamAIJson()`, which called the structured `chatgpt()` adapter and its `parseJson()` Tone Plan parser.
+  - Thus the request asked for natural conversation but the transport/parser still required a JSON Tone Plan. The same detour also violated the ChatGPT-first decision by using the Worker light-task abstraction for the default ChatGPT discussion path.
+- Changed `www/ai-tone-studio.js`:
+  - Added `requestChatGptConversation()`, a dedicated native SIWC Responses call that accepts ordinary plain-text output. It has no JSON parser, no Tone Plan schema, no specialist tools, and no route to `makePlan()` or `applyPlan()`.
+  - ChatGPT-mode consultation now calls `window.MG30ChatGPTBridge.sendResponse` directly and returns the natural-language response.
+  - The manual non-ChatGPT provider path remains available as an alternate; it is not used by the ChatGPT primary path.
+  - Preserved compact current context: recent discussion is capped at 1,500 characters, current editor snapshot at 8 blocks / 5 parameters each and 900 serialized characters, and the user message at 500 characters. Conversation output is capped by the existing 520-token stage budget (native bridge bounds it between 256 and 700).
+  - The discussion instruction explicitly forbids JSON, Tone Plan creation, MIDI, preset writes, and claims that settings changed.
+  - Corrected usage-monitor parsing to read native SIWC usage fields `input_tokens` and `output_tokens` as actual provider usage, instead of incorrectly treating them as absent and falling back to character estimates.
+- Added regression coverage in `tests/ai-tone-studio.test.js`:
+  - Contextual "Kalau yang ini gimana?" / "Kalau yang tadi bagaimana?" / "Apa kekurangannya?" remains `consultation`; explicit "Oke, buatkan tonenya" remains `tone_create`.
+  - Plain prose from the native ChatGPT bridge is accepted without JSON parsing; one call only, no tool payload, with the configured 520-token output cap and actual usage retained.
+  - The ChatGPT consultation branch is asserted to bypass `invokeWorkersAILightTask`, `askNamAIJson`, `parseJson`, `makePlan()`, and `applyPlan()`.
+  - The old test expectation that Workers AI was the primary discussion route was replaced with a test asserting native SIWC as the ChatGPT primary route while retaining the manual-provider alternate.
+- No NAM/TONE3000 import code, A2-Lite transfer codec, NAM slot mapping, IR User/Third Party/Collection mapping, MIDI mapping, USB Audio capture/analysis, preset codec, or MG-30 Gen 2 catalog was changed.
+- Successful final GitHub Actions run #1019: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44031479752
+  - Source/test commit built: `4d6512c47a6a968009997bc6c3057d917dec292f`.
+  - JavaScript syntax validation: passed.
+  - Regression tests: 566 passed, 0 failed.
+  - Capacitor Android generation and USB Audio plugin setup: passed.
+  - Gradle `assembleDebug`: BUILD SUCCESSFUL.
+  - APK artifact: `MG30-Studio-debug-APK`, artifact ID `14305781263`.
+  - Extracted APK size: 4,747,508 bytes.
+  - APK archive integrity: `unzip -t` passed; host identified file as Android package (APK).
+  - Extracted APK SHA-256: `b9f082684c9ff0f73c43a901bd35ef73c8be313ab136681a3b35a40d1889a17b`.
+- Physical Android verification of follow-up chat, actual SIWC usage counts, and live MG-30 Gen 2 firmware 6.0.x operation remains pending. Do not claim device-level verification based on CI alone.
