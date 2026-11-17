@@ -130,7 +130,7 @@ test('TONE3000 provides a separate connect-only account sign-in flow', () => {
 test('NAM catalog search/preflight and ChatGPT Tone Plan remain independent from USB-MIDI apply', () => {
   const submit = aiStudio.slice(aiStudio.indexOf(' async function submit(){'), aiStudio.indexOf(' async function undo(){'));
   const planning = submit.indexOf('await makePlan(prompt,bridge,audioMetricsForRequest,conversation)');
-  const applyGuard = submit.indexOf('if(!bridge.isConnected?.(){', planning);
+  const applyGuard = submit.indexOf('if(!bridge.isConnected?.()){', planning);
   const apply = submit.indexOf('await bridge.applyPlan(plan)');
   assert.ok(planning >= 0 && applyGuard > planning && apply > applyGuard,
     'AI planning must finish before the USB-MIDI requirement for live apply');
