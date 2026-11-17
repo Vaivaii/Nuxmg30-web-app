@@ -493,6 +493,19 @@ public class MG30ChatGPTPlugin extends Plugin {
             });
 
             JSONObject callback = acceptCallback(server, state);
+            String callbackClientId = callback.getString("clientId");
+            if (!isNew && !callbackClientId.equals(previous.optString("clientId"))) {
+                throw new IllegalStateException("ChatGPT returned a different client registration for this saved account.");
+            }
+            // Persist the issued registration before exchanging its one-time code.
+            // A failed/expired code can then be retried with the same client_id.
+            JSONObject pendingProfile = new JSONObject(previous.toString());
+            pendingProfile.put("clientId", callbackClientId);
+            pendingProfile.put("status", "disconnected");
+            upsertProfile(root, pendingProfile);
+            root.put("activeProfileId", pendingProfile.getString("id"));
+            writeStore(root);
+
             JSONObject token = exchangeCode(callback, verifier, redirectUri, oidc);
             String clientId = callback.getString("clientId");
             if (!clientId.equals(token.optString("client_id", clientId))) throw new IllegalStateException("ChatGPT returned a different OAuth client registration.");
@@ -509,19 +522,6 @@ public class MG30ChatGPTPlugin extends Plugin {
             JSONObject identity = verifyIdToken(token.getString("id_token"), clientId, nonce, oidc.getString("jwks_uri"));
             String subject = identity.getString("subject");
             if (!existingSubject.isEmpty() && !existingSubject.equals(subject)) throw new IllegalStateException("This login returned a different ChatGPT account. Add a new account instead of replacing the existing profile.");
-
-            // Persist the user-bound client registration before code exchange. If the
-            // one-time code expires or token exchange is interrupted, the next sign-in
-            // reuses this issued client_id instead of registering another app.
-            if (!isNew && !clientId.equals(previous.optString("clientId"))) {
-                throw new IllegalStateException("ChatGPT returned a different client registration for this saved account.");
-            }
-            JSONObject pendingProfile = new JSONObject(previous.toString());
-            pendingProfile.put("clientId", clientId);
-            pendingProfile.put("status", "disconnected");
-            upsertProfile(root, pendingProfile);
-            root.put("activeProfileId", pendingProfile.getString("id"));
-            writeStore(root);
 
             JSONObject profile = new JSONObject();
             profile.put("id", previous.getString("id"));
