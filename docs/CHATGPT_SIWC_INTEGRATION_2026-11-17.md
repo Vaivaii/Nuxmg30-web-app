@@ -42,12 +42,14 @@ Target device: Android app; original NUX MG-30 Gen 2 firmware 6.0.x (not MKII).
 - Registered the native plugin in `scripts/init-android.mjs`.
 - Added Device tab ChatGPT account panel in `www/chatgpt-account.js`; loaded it from `www/index.html`.
 - Added direct ChatGPT model listing and Responses calls in `www/ai-tone-studio.js`; primary Auto mode is ChatGPT-only and no longer fans out to Cloudflare AI providers.
+- Added a natural discussion path that does not require the MG-30 to be connected, carries recent in-app conversation context into later NAM research and Tone Plans, and enters structured Tone Plan generation only when the user explicitly asks to create/build/apply a tone or preset.
+- Added a TONE3000 NAM research path: ChatGPT derives the search phrase, the app retrieves live TONE3000 candidates, and ChatGPT explains/ranks those source results without automatically importing or changing the pedal.
 - Reworked AI settings copy and model selector to describe ChatGPT as the primary account-powered engine.
 - Added this branch to the Android APK GitHub Actions workflow.
 
 ## Remaining validation / known incomplete work
 
-1. Run CI on this branch and fix Java/Gradle/JS/test failures.
+1. Finish CI on this branch and fix any remaining Java/Gradle/JS/test failures.
 2. Verify SIWC issuer discovery, dynamic registration callback parameters, required scope and token response against the currently supported OpenAI SIWC flow before release. Do not assume an unverified OAuth field.
 3. Test first sign-in, interrupted code exchange/retry, existing account sign-in, add account, account switch, logout, token refresh and plan permission denial on a physical Android device.
 4. Verify streaming Responses events and cancellation on-device.
