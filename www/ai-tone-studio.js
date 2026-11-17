@@ -640,12 +640,41 @@ async function automaticNamImportForPrompt(prompt){
    try{return validateAiTonePlan(corrected,catalog);}catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
  }
+ function isExplicitToneCreationRequest(prompt){
+  const value=String(prompt||'').toLowerCase();
+  return /\\b(buat|bikinkan|bikinin|bikin|create|build|generate|apply|terapkan|pasang|setel)\\b.{0,55}\\b(tone|preset|patch|suara)\\b/.test(value) ||
+   /\\b(tone|preset|patch)\\b.{0,55}\\b(buatkan|buat|bikin|create|build|generate|terapkan|pasang)\\b/.test(value) ||
+   /\\b(make|create|build|generate)\\s+(me\\s+)?(a\\s+)?(guitar\\s+)?(tone|preset)\\b/.test(value);
+ }
+ async function askChatGPTDiscussion(prompt){
+  const account=await window.MG30ChatGPTBridge?.getSession?.();
+  if(account?.status!=='connected'||!account?.sharing)throw new Error('Connect ChatGPT and enable plan-use permission in Device settings first.');
+  const model=await fastestReadyModel('gpt','chatgpt-plan');
+  const context=history.slice(-9).filter(row=>row.role==='user'||row.role==='ai').map(row=>({
+   role:row.role==='ai'?'assistant':'user',content:String(row.text||'')
+  }));
+  if(!context.length||context[context.length-1].role!=='user'||context[context.length-1].content!==prompt)context.push({role:'user',content:prompt});
+  const result=await window.MG30ChatGPTBridge.sendResponse({
+   model,input:context,
+   instructions:'You are the primary ChatGPT partner inside NUX MG-30 Studio for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII. Hold natural, ongoing conversations; help with guitar tone concepts, artist/gear research, NAM and TONE3000 research, and explain trade-offs. Be concise but useful. Do not invent live search results: if a catalogue search has not actually been run, say so and ask for the minimum missing detail. Do not claim to have changed the pedal or created a preset. Only enter the structured Tone Plan workflow when the user explicitly asks to create, build, generate, apply or set a tone/preset. Protect NAM, IR, Collection/User mappings and MIDI mapping.'
+  });
+  if(!result?.text?.trim())throw new Error('ChatGPT returned an empty response.');
+  message('ai',result.text.trim());
+  return result;
+ }
  async function submit(){
   if(busy)return;
   const prompt=ui.prompt.value.trim();
-  if(!prompt){status('Enter a tone request first.','error');return;}
+  if(!prompt){status('Enter a message first.','error');return;}
   setBusy(true);message('user',prompt);
   try{
+   if(!isExplicitToneCreationRequest(prompt)){
+    status('ChatGPT is thinking…','busy');
+    await askChatGPTDiscussion(prompt);
+    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+    status('ChatGPT replied. Continue the discussion or ask to create a tone when ready.','success');
+    return;
+   }
    const bridge=window.MG30AIToneBridge;
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
    if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before generating a built-in amp live preset.');
