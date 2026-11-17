@@ -18,6 +18,7 @@ copyFileSync(resolve(root, 'native-android/MG30AudioOutputPlugin.java'), resolve
 copyFileSync(resolve(root, 'native-android/MG30MidiPlugin.java'), resolve(javaDir, 'MG30MidiPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30DawFilesPlugin.java'), resolve(javaDir, 'MG30DawFilesPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30SecureStorePlugin.java'), resolve(javaDir, 'MG30SecureStorePlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30ChatGPTPlugin.java'), resolve(javaDir, 'MG30ChatGPTPlugin.java'));
 
 const mainActivityLines = [
   'package com.vaivaii.mg30studio;',
@@ -48,6 +49,7 @@ const mainActivityLines = [
   '        registerPlugin(MG30MidiPlugin.class);',
   '        registerPlugin(MG30DawFilesPlugin.class);',
   '        registerPlugin(MG30SecureStorePlugin.class);',
+  '        registerPlugin(MG30ChatGPTPlugin.class);',
   '        super.onCreate(savedInstanceState);',
   '        applySystemBars();',
   '        getWindow().getDecorView().post(this::applySystemBars);',
