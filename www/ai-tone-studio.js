@@ -605,7 +605,6 @@ async function init(){
  const aiUsage={requests:0,total:0,providers:Object.create(null),tasks:Object.create(null)};
  const renderAiUsageMonitor=()=>{ui.usageTotal.textContent=aiUsage.total.toLocaleString();ui.usageRequests.textContent=String(aiUsage.requests);ui.usageSummary.textContent=aiUsage.total.toLocaleString()+' tokens';ui.usageProviders.innerHTML=Object.keys(aiUsage.providers).length?Object.entries(aiUsage.providers).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';ui.usageAgents.innerHTML=Object.keys(aiUsage.tasks).length?Object.entries(aiUsage.tasks).sort((a,b)=>b[1].tokens-a[1].tokens).map(([name,row])=>'<div><span>'+esc(name)+'</span><strong>'+row.tokens.toLocaleString()+(row.estimated?' ~':'')+'</strong></div>').join(''):'<p>No AI requests recorded in this session.</p>';};
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
- let pendingTonePlan=null;
  const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>8)dialogueContext.shift();};
  const conversationContextText=()=>dialogueContext.slice(-8).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
@@ -1670,12 +1669,10 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   if(!prompt){status('Enter a tone request first.','error');return;}
   const conversation=conversationContextText();
   const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);
-  let intent=classifyAssistantIntent(prompt,conversation);
-  const applyPendingTone=Boolean(pendingTonePlan&&/\\b(terapkan|apply|pasang|kirim|send)\\b/i.test(prompt));
-  if(applyPendingTone)intent='tone_apply_pending';
+  const intent=classifyAssistantIntent(prompt,conversation);
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
   const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);
-  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';pendingTonePlan=null;}
+  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';}
   rememberConversation('user',prompt);
   setBusy(true);message('user',prompt);
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
@@ -1694,13 +1691,8 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
    let preparedPlan=null;
-   if(intent==='tone_apply_pending'){
-    if(!bridge.isConnected?.()){
-     const guidance='Tone Plan sudah dibuat dan divalidasi. Hubungkan MG-30 melalui USB-MIDI, lalu kirim “terapkan tone” untuk mengirim preset ke pedal.';
-     message('ai',guidance);rememberConversation('assistant',guidance);status('Tone Plan is ready; connect USB-MIDI to apply it.','idle');return;
-    }
-    preparedPlan=validateAiTonePlan(pendingTonePlan,bridge.getCatalog?.()||[]);
-   }
+   if(!namModeActive&&!bridge.isConnected?.())throw new Error('MG-30 is disconnected. Connect USB-MIDI before applying a built-in amp live tone.');
+   let preparedPlan=null;
    if(shouldAutoImportNamForTone(intent,namModeActive,Boolean(activeNamContext))){
     const pendingMatchesThisRequest=Boolean(pendingNamSelection&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
     const completedPending=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt&&pendingNamSelection.gear===activeNamGear);
@@ -1735,13 +1727,6 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
     else{const ampChange={id:'AMP',model:installed.name,enabled:true,parameters:{}};if(existing>=0)plan.blocks[existing]=ampChange;else plan.blocks.unshift(ampChange);}
     plan.summary=(plan.summary||'AI tone')+' using the imported NAM capture in slot 10.';
    }
-   if(!bridge.isConnected()){
-    pendingTonePlan=plan;
-    const blocks=plan.blocks.map(block=>block.id+': '+block.model+(block.enabled===false?' (off)':'')).join(', ');
-    const draft='Tone Plan berhasil dibuat dan lolos validasi katalog MG-30 Gen 2. Belum ada MIDI yang dikirim karena pedal belum terhubung.\n\n'+(plan.summary||'Preset siap diterapkan.')+'\nRencana blok: '+blocks+'\n\nHubungkan MG-30 melalui USB-MIDI, lalu kirim “terapkan tone” agar preset ini dikirim ke pedal.';
-    message('ai',draft);rememberConversation('assistant',draft);status('Tone Plan ready. Connect USB-MIDI, then send “terapkan tone”.','success');
-    return;
-   }
    status('Tone Plan validated. Updating the editor and sending MIDI…','busy');
    const result=await bridge.applyPlan(plan);
    last={before:result.before,after:result.after,blocks:result.blocks};ui.undo.disabled=false;
@@ -1756,7 +1741,6 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
    status(intent==='tone_refine'?'Tone refinement complete. Editor and MG-30 were updated through USB-MIDI.':'Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
    if(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt)pendingNamSelection=null;
-   if(intent==='tone_apply_pending'||pendingTonePlan===plan)pendingTonePlan=null;
   }catch(error){const detail=error?.message||String(error);message('ai','Failed: '+detail);status('Failed: '+detail,'error');}
   finally{setBusy(false);ui.undo.disabled=!last;}
  }
