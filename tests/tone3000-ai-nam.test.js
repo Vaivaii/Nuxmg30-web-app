@@ -127,11 +127,15 @@ test('TONE3000 provides a separate connect-only account sign-in flow', () => {
   assert.match(tone3000, /Connect TONE3000 Account/);
 });
 
-test('AI NAM search and A2-Lite preflight are allowed before USB-MIDI connection', () => {
+test('NAM catalog search/preflight and ChatGPT Tone Plan remain independent from USB-MIDI apply', () => {
   const submit = aiStudio.slice(aiStudio.indexOf(' async function submit(){'), aiStudio.indexOf(' async function undo(){'));
-  assert.ok(submit.indexOf('await makePlan(prompt,bridge,audioMetricsForRequest,conversation)') < submit.indexOf('pendingTonePlan=plan'));
-  assert.match(submit, /Tone Plan berhasil dibuat dan lolos validasi katalog MG-30 Gen 2/);
-  assert.doesNotMatch(submit, /if\(!namModeActive&&!bridge\.isConnected/);
+  const planning = submit.indexOf('await makePlan(prompt,bridge,audioMetricsForRequest,conversation)');
+  const applyGuard = submit.indexOf('if(!bridge.isConnected?.(){', planning);
+  const apply = submit.indexOf('await bridge.applyPlan(plan)');
+  assert.ok(planning >= 0 && applyGuard > planning && apply > applyGuard,
+    'AI planning must finish before the USB-MIDI requirement for live apply');
+  assert.match(submit, /pendingToneApply=plan/);
+  assert.match(submit, /Rencana ini akan digunakan kembali tanpa memanggil AI lagi/);
   const automaticStart = aiStudio.indexOf('async function automaticNamImportForPrompt');
   const automaticEnd = aiStudio.indexOf('async function resolveFreeProviderTeam', automaticStart);
   const automatic = aiStudio.slice(automaticStart, automaticEnd);
