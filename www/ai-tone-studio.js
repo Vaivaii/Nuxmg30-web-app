@@ -472,7 +472,7 @@ export function shouldOfferToneSpecialist(prompt,localRefinement=false){
  const value=String(prompt||'');
  return requiresToneArchitect(value)||isComplexToneRequest(value)||/\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|jazz|blues|metal|country|funk|ambient|progressive rock|song|track|album|live version|recording reference|guitarist|artist style)\b/i.test(value);
 }
-export function shouldUseMultiAgent(prompt,intent='tone_create',selectedMode='auto',localRefinement=false){if(localRefinement||intent!=='tone_create')return false;if(selectedMode==='collab')return true;return selectedMode==='auto'&&isComplexToneRequest(prompt);}
+export function shouldUseMultiAgent(prompt,intent='tone_create',selectedMode='auto',localRefinement=false){if(localRefinement||intent!=='tone_create')return false;return selectedMode==='collab';}
 export function shouldCooldownProvider(error){const status=Number(error?.upstreamStatus||error?.status||0);if([408,425,429,500,502,503,504].includes(status))return true;const v=String(error?.message||error||'');return /high demand|capacity exceeded|temporarily unavailable|temporarily busy|server busy|timed? out|failed to fetch|network|provider rejected the request.*\b404\b/i.test(v);}
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
@@ -573,9 +573,8 @@ return Array.isArray(data.models) ? data.models : [];
 }
 export function providerFallbackOrder(primary='gemini'){
 const freePriority=['gemini','groq','openrouter'];
-if(primary==='chatgpt')return ['chatgpt',...freePriority,'cloudflare'];
-const first=freePriority.includes(primary)?primary:(primary==='gpt'?'gpt':primary==='cloudflare'?'cloudflare':'gemini');
-if(first==='cloudflare')return ['cloudflare',...freePriority];
+if(['chatgpt','auto','cloudflare'].includes(primary))return ['chatgpt',...freePriority];
+const first=freePriority.includes(primary)?primary:(primary==='gpt'?'gpt':'gemini');
 return first==='gpt'?['gpt',...freePriority]:[first,...freePriority.filter(provider=>provider!==first)];
 }
 export function isLocalToneRefinement(prompt){
@@ -666,12 +665,12 @@ async function init(){
  sheet.innerHTML=[
  '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div class="ai-tone-head-actions"><button class="ai-tone-icon ai-tone-audio-toggle" id="aiToneAudioToggle" type="button" aria-label="Toggle Audio Listening" aria-controls="aiToneAudioPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v4 M6 6v12 M10 3v18 M14 8v8 M18 5v14 M22 10v4"/></svg></button> <button class="ai-tone-icon" id="aiToneSettingsToggle" type="button" aria-label="AI Settings">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button" aria-label="Close AI Assistant">×</button></div></div>',
  '<div class="ai-tone-settings" id="aiToneSettings">'+
- '<details class="ai-tone-settings-section" id="aiToneProviderDetails"><summary><span><strong>AI Providers & ChatGPT Account</strong><small>ChatGPT uses your signed-in plan; existing providers remain available</small></span><b id="aiToneProviderSummary">Checking…</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>ChatGPT plan · SIWC</strong><span class="ai-tone-key-state" id="aiChatGPTKeyState">Checking ChatGPT account…</span></div><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Cloudflare Workers AI</strong><span class="ai-tone-key-state" id="aiCloudflareBindingState">Checking binding…</span></div></div>'+
- '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI. Light tasks use Workers AI first.</small></span></label>'+
- '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestChatGPT" type="button">Test ChatGPT</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneTestCloudflare" type="button">Test Workers AI</button></div>'+
- '<p class="ai-tone-note">Auto uses Cloudflare Workers AI first for discussion, TONE3000 search/ranking and ordinary presets. Internal model fallback: Gemma 4 → GPT-OSS 20B → Mistral Small 3.1 → Llama 4 Scout. Complex Tone Architect requests add the existing Gemini/Groq/OpenRouter agents. Tone Plans are validated against the original MG-30 Gen 2 catalogue before live MIDI changes.</p></div></details>'+
+ '<details class="ai-tone-settings-section" id="aiToneProviderDetails"><summary><span><strong>AI Providers & ChatGPT Account</strong><small>ChatGPT uses your signed-in plan; existing providers remain available</small></span><b id="aiToneProviderSummary">Checking…</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>ChatGPT plan · SIWC</strong><span class="ai-tone-key-state" id="aiChatGPTKeyState">Checking ChatGPT account…</span></div><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking…</span></div></div>'+
+ '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>ChatGPT is primary. Gemini → Groq → OpenRouter are optional API fallbacks. Light tasks and Tone Architect use the connected ChatGPT account first.</small></span></label>'+
+ '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestChatGPT" type="button">Test ChatGPT</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button></div>'+
+ '<p class="ai-tone-note">ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets. GPT-6 Luna is the Tone Architect Chief; artist-specific and complex requests are delegated sequentially to role-specialists through the connected ChatGPT account. Gemini, Groq and OpenRouter remain optional external providers. Tone Plans are validated against the original MG-30 Gen 2 catalogue before live MIDI changes.</p></div></details>'+
  '<details class="ai-tone-settings-section" id="aiToneUsageDetails"><summary><span><strong>AI Usage & Token Monitor</strong><small>Session totals · model and agent breakdown</small></span><b id="aiToneUsageSummary">0 tokens</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-usage-metrics"><div><strong id="aiToneUsageTotal">0</strong><small>Total tokens</small></div><div><strong id="aiToneUsageRequests">0</strong><small>AI requests</small></div></div><div class="ai-tone-usage-subtitle">By provider / model</div><div id="aiToneUsageProviderRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-subtitle">By task / agent + model</div><div id="aiToneUsageAgentRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-foot"><small>Provider counts are actual when available; otherwise marked as estimates. Reset only clears this local session display.</small><button type="button" id="aiToneUsageReset">Reset Session</button></div></div></details>'+
- '<div class="ai-tone-provider-row ai-tone-compact-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="chatgpt" selected>ChatGPT · signed-in plan (SIWC)</option><option value="auto">Auto · Workers AI + Free Multi-AI</option><option value="cloudflare">Cloudflare Workers AI · Gemma 4</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Configure provider in Cloudflare Worker to load models</option></select></label></div>'+
+ '<div class="ai-tone-provider-row ai-tone-compact-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="chatgpt" selected>ChatGPT · signed-in plan (SIWC)</option><option value="auto">Auto · ChatGPT + optional free API fallback</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Connect ChatGPT or select a configured provider</option></select></label></div>'+
  '<div class="ai-tone-status ai-tone-status-accessible" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live tone assistance.</div>'+
  '<section class="ai-tone-nam-panel" id="aiToneNamPanel"><div class="ai-tone-nam-panel-head"><div><strong>TONE3000 NAM</strong><small>Optional NAM search mode for amp captures</small></div><button class="ai-tone-nam-action" id="aiToneFindNam" type="button" aria-pressed="false">OFF</button></div><div class="ai-tone-nam-gear-row" role="group" aria-label="NAM capture type"><button class="ai-tone-nam-choice" type="button" data-ai-nam-gear="amp" aria-pressed="false">Amp Only</button><button class="ai-tone-nam-choice active" type="button" data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab</button></div><small class="ai-tone-nam-mode-status" id="aiToneNamModeStatus">TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.</small></section>'+
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div><div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div></div><div class="ai-tone-scroll-area" id="aiToneScrollArea"><div class="ai-tone-body">',
@@ -773,7 +772,7 @@ async function init(){
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.audioStart.disabled=busy||audioBusy||(!audioCaptureActive&&ui.audioDevice.dataset.state!=='connected');ui.audioModes.forEach(button=>button.disabled=busy||audioBusy||audioCaptureActive);ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
-const next=['chatgpt','auto','cloudflare','gemini','groq','openrouter','gpt','collab'].includes(v)?v:'chatgpt';
+const requested=v==='cloudflare'?'chatgpt':v;const next=['chatgpt','auto','gemini','groq','openrouter','gpt','collab'].includes(requested)?requested:'chatgpt';
   mode=next;ui.providerSelect.value=next;autoProviderHealthCache.expires=0;
   renderActiveModelSelect();
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
@@ -1211,8 +1210,8 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
    option.textContent='Configure '+providerNames[provider]+' in Worker to load models';
    select.append(option);select.disabled=true;
   }
-  ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto free team + models':provider==='chatgpt'?'Auto: light chat / GPT-6 tone build':'Model';
-  if(currentMode()==='auto'||currentMode()==='collab'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent=currentMode()==='collab'?'Free providers assigned by role':'Auto · Cloudflare first; team joins for complex tones';select.append(option);select.disabled=true;}
+  ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto: ChatGPT primary + optional fallbacks':provider==='chatgpt'?'Auto: light chat / GPT-6 tone build':'Model';
+  if(currentMode()==='auto'||currentMode()==='collab'){select.replaceChildren();const option=document.createElement('option');option.value='__auto__';option.textContent=currentMode()==='collab'?'Free providers assigned by role':'Auto · ChatGPT first; Luna delegates for complex tones';select.append(option);select.disabled=true;}
  }
  async function refreshProviderModels(provider,quiet=true){
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
@@ -1395,7 +1394,7 @@ const cached=autoModelHealthCache[provider];
  }
  async function fastestReadyProviderOrder(){
   if(Date.now()<autoProviderHealthCache.expires&&autoProviderHealthCache.order.length)return autoProviderHealthCache.order.slice();
-  const providers=['cloudflare','gemini','groq','openrouter'];
+  const providers=['gemini','groq','openrouter'];
   const rows=await Promise.all(providers.map(async provider=>{
    const key=await secret(providerKeyId(provider));
    if(!key)return {provider,ok:false,error:new Error('Free provider is not configured in Cloudflare Worker.')};
@@ -1408,8 +1407,8 @@ const cached=autoModelHealthCache[provider];
   autoProviderHealthCache.expires=Date.now()+45_000;
   autoProviderHealthCache.order=ready;
   autoProviderHealthCache.errors=rows.filter(item=>!item.ok).map(item=>({provider:item.provider,message:String(item.error?.message||item.error)}));
-  if(!ready.length)throw new Error('No free Gemini, Groq, or OpenRouter model is configured and available. Select a provider manually or check Cloud AI settings.');
-  message('ai','Cloudflare Workers AI is first for light tasks and the first member of the complex Tone Architect team. Workers AI internal fallback: Gemma 4 → GPT-OSS 20B → Mistral Small 3.1 → Llama 4 Scout. Available Tone Architect agents: '+rows.filter(item=>item.ok).map(item=>item.provider+' / '+item.model).join(' · ')+'. No OpenAI GPT API model was probed or selected.');
+  if(!ready.length)throw new Error('No optional Gemini, Groq, or OpenRouter model is configured and available. Select ChatGPT mode for the connected ChatGPT specialist team.');
+  message('ai','Available optional external providers for explicit Multi-AI mode: '+rows.filter(item=>item.ok).map(item=>item.provider+' / '+item.model).join(' · ')+'. The default Tone Architect uses the connected ChatGPT account.');
   return ready.slice();
  }
  async function testProvider(provider){
@@ -1425,7 +1424,7 @@ if($(stateId))$(stateId).textContent=provider==='chatgpt'?'Connected · ChatGPT 
   finally{setBusy(false);}
  }
 async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,forceWorkersAI=false){
-if(mode==='chatgpt'&&!forceWorkersAI){const result=await askNamAIJson(system,user,stage);return result;}
+if(['chatgpt','auto','cloudflare','collab'].includes(mode)){const result=await askNamAIJson(system,user,stage);return result;}
 const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{task,system,prompt:user,maxOutputTokens}});
   if(!data?.result||typeof data.result!=='object')throw new Error('Cloudflare Workers AI did not return a valid JSON task result.');
   const result={...data.result};
@@ -1542,14 +1541,13 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
   let order=[];
   if(mode==='auto'||mode==='cloudflare'){
-   // Ordinary Auto/Cloudflare tasks stay on Workers AI only; do not spend external vendor RPM.
-   if(await secret('cloudflare'))order=['cloudflare'];
-   else missing.push('Cloudflare Workers AI binding AI is not configured. Auto/Cloudflare light tasks do not probe external providers.');
+   order=providerFallbackOrder('chatgpt');
+   if(!await secret('chatgpt'))missing.push('The connected ChatGPT account is unavailable.');
   }else if(mode==='collab'){
    try{order=await fastestReadyProviderOrder();}
    catch(error){missing.push(String(error.message||error));}
   }else order=auto?providerFallbackOrder(mode):[mode];
-  if(auto&&!order.includes('cloudflare')&&await secret('cloudflare'))order.push('cloudflare');
+  if(auto&&mode!=='auto'&&mode!=='cloudflare'&&mode!=='collab')order=providerFallbackOrder(mode);
   let lastError=null;
   for(let index=0;index<order.length;index++){
    const provider=order[index],key=await secret(providerKeyId(provider));
@@ -1752,20 +1750,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
     }
    }
   }
-  const workerFallbackAllowed=mode==='auto'||mode==='collab'||ui.autoFallback.checked;
-  if(workerFallbackAllowed&&!providerInCooldown('cloudflare')&&!ordered.some(item=>item.provider==='cloudflare')){
-   try{
-    const key=await secret('cloudflare');
-    if(key){
-     const model=WORKERS_AI_MODEL;
-     message('ai','Gemini, Groq and OpenRouter could not complete '+stage+'. Switching to Cloudflare Workers AI as the final fallback.');
-     status('Cloudflare Workers AI is '+stage+'…','busy');
-     const result=await invokeProvider('cloudflare',key,system,user,model,90000,stage,maxOutputTokens);
-     return {result,member:{provider:'cloudflare',key,model}};
-    }
-   }catch(error){lastError=error;noteProviderFailure('cloudflare',error);}
-  }
-  throw new Error(lastError?.message||'No free AI provider or Cloudflare Workers AI completed the task.');
+  throw new Error(lastError?.message||'No available Gemini, Groq or OpenRouter provider completed the explicit Multi-AI task.');
  }
  async function makePlan(prompt,bridge,audioMetrics=null,conversation=''){
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();
@@ -1783,14 +1768,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   if(multiMode){
    team=await resolveFreeProviderTeam().catch(()=>[]);
    if(!team.length){
-    const workerKey=await secret('cloudflare');
-    if(!workerKey)throw new Error('No Gemini, Groq, OpenRouter model is ready and Cloudflare Workers AI binding AI is not configured.');
-    const fallbackSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-    const fallbackUser=userText(prompt,null,activeNamContext,conversation)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-    first=await invokeProvider('cloudflare',workerKey,fallbackSystem,fallbackUser,WORKERS_AI_MODEL,90000,'building your Tone Plan',1350);
-    leadMember={provider:'cloudflare',key:workerKey,model:WORKERS_AI_MODEL};
-    namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
-    message('ai','No free Gemini/Groq/OpenRouter model is ready. Cloudflare Workers AI generated the Tone Plan as a single-agent fallback.');
+    throw new Error('No Gemini, Groq, or OpenRouter specialist is available for explicit Multi-AI mode. Switch to ChatGPT mode to use GPT-6 Luna and its connected role-specialist team.');
    }else{
    hasArchitect=team.length>=2&&!localRefinement;
    if(hasArchitect){
@@ -1821,7 +1799,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   }else{
    const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
    const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   if(mode==='chatgpt'){
+   if(mode==='chatgpt'||mode==='auto'||mode==='cloudflare'){
     const credential=await secret('chatgpt');
     if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
     const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
