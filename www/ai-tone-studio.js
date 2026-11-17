@@ -1581,7 +1581,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
     const credential=await secret('chatgpt');
     if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
     const model=await fastestReadyModel('chatgpt',credential);
-    const specialistEligible=!localRefinement&&(isComplexToneRequest(prompt)||Boolean(resolveArtistToneGuidance(prompt,conversation))||/\\b(song|track|album|live version|recording reference|guitarist|artist style)\\b/i.test(prompt));
+    const specialistEligible=!localRefinement&&(isComplexToneRequest(prompt)||Boolean(resolveArtistToneGuidance(prompt,conversation))||/\b(song|track|album|live version|recording reference|guitarist|artist style)\b/i.test(prompt));
     const specialistAvailable=specialistEligible&&await hasFreeToneSpecialist();
     const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT ORCHESTRATOR CONTRACT: You are the sole user-facing AI, orchestrator and final decision authority. You may call at most ONE delegate_tone_specialist tool for this request. Do not call a specialist for a routine single-amp preset, an ordinary parameter edit, or when your own evidence and the supplied MG-30 catalogue are sufficient. Delegate Tone Architect only for meaningful musical-reference ambiguity; Gear Specialist only for uncertain device/model compatibility; Parameter Engineer only for coupled or difficult exact parameter translation; Critical Reviewer only for a material conflict in a candidate plan. Never call all roles, never call two specialists, and never repeat a specialist task. If no specialist materially improves confidence, produce the final Tone Plan yourself. Treat any specialist output as advisory, resolve it yourself, and return the final catalog-valid JSON Tone Plan only. The runtime catalogue and validator are authoritative.';
     first=await orchestrateChatGptTonePlan({
@@ -1672,7 +1672,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   const conversation=conversationContextText();
   const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);
   const intent=classifyAssistantIntent(prompt,conversation);
-  const resumePendingTone=Boolean(pendingToneApply&&/\\b(lanjutkan|terapkan|apply|pasang|kirim|continue|resume)\\b/i.test(prompt));
+  const resumePendingTone=Boolean(pendingToneApply&&/\b(lanjutkan|terapkan|apply|pasang|kirim|continue|resume)\b/i.test(prompt));
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
   const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);
   if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation&&!resumePendingTone){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';pendingToneApply=null;}
