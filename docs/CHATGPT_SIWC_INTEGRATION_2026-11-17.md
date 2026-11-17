@@ -49,13 +49,19 @@ Target device: Android app; original NUX MG-30 Gen 2 firmware 6.0.x (not MKII).
 
 ## Remaining validation / known incomplete work
 
-1. Finish CI on this branch and fix any remaining Java/Gradle/JS/test failures.
+1. **CI completed successfully on 2026-11-17** for commit `80f6779a5dfeab67805970114f6878fb63175460`: 492 tests passed, 0 failed; Capacitor Android project generation and `assembleDebug` succeeded; APK artifact uploaded.
 2. Verify SIWC issuer discovery, dynamic registration callback parameters, required scope and token response against the currently supported OpenAI SIWC flow before release. Do not assume an unverified OAuth field.
 3. Test first sign-in, interrupted code exchange/retry, existing account sign-in, add account, account switch, logout, token refresh and plan permission denial on a physical Android device.
 4. Verify streaming Responses events and cancellation on-device.
 5. Complete end-to-end AI conversation: follow-up chat context, TONE3000 search and NAM capture selection, Tone Plan generation, validation correction, and no unintended MIDI write on errors.
 6. Add dedicated unit/instrumentation tests for the native plugin and bridge. Current JavaScript test suite does not prove OAuth or Android runtime correctness.
 7. Consider moving the remaining obsolete Cloudflare AI-provider controls and dead multi-provider code out of the bundle only after tests prove no other app workflows depend on them.
+
+## Build artifact
+
+- GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44007567444
+- Artifact: `MG30-Studio-debug-APK` (debug APK, 4,713,572 bytes)
+- Build SHA-256: `05b9056aa6c61eb348236599a3862fab8b2883b23479f8faaefd939e50a2664b`
 
 ## Important status caveat
 
