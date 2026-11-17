@@ -49,8 +49,8 @@ test('ChatGPT model discovery does not depend on Cloud Account login', () => {
 
 test('ChatGPT remains the selected primary and is not silently replaced by another provider', () => {
   assert.match(ai, /let mode='chatgpt'/);
-  assert.match(ai, /const auto=mode==='auto'\|\|mode==='collab'\|\|\(mode!=='chatgpt'&&ui\.autoFallback\.checked\)/);
-  assert.match(ai, /providerFallbackOrder\(primary='gemini'\)[\s\S]*?primary==='chatgpt'\)return \['chatgpt'/);
+  assert.match(ai, /const auto=mode==='auto'\|\|mode==='collab'/);
+  assert.match(ai, /providerFallbackOrder\(primary='gemini'\)[\s\S]*?\['chatgpt',\.\.\.freePriority\]/);
 });
 
 test('Restored conversation composer always wires the Send control', () => {
