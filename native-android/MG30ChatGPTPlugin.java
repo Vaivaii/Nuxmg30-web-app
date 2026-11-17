@@ -750,7 +750,7 @@ public class MG30ChatGPTPlugin extends Plugin {
             try {
                 JSONObject root = readStore();
                 JSONObject profile = activeProfile(root);
-                if (profile == null) { call.resolve(publicSession(root)); return; }
+                if (profile == null) { call.resolve(new JSObject(publicSession(root).toString())); return; }
                 String refresh = profile.optString("refreshToken", "");
                 if (!refresh.isEmpty()) {
                     try {
@@ -771,7 +771,7 @@ public class MG30ChatGPTPlugin extends Plugin {
                 profile.put("scopes", new JSONArray());
                 upsertProfile(root, profile);
                 writeStore(root);
-                call.resolve(publicSession(root));
+                call.resolve(new JSObject(publicSession(root).toString()));
             } catch (Exception error) { call.reject("Could not disconnect ChatGPT: " + error.getMessage()); }
         }, "mg30-chatgpt-logout").start();
     }
