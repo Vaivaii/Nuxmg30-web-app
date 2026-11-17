@@ -170,7 +170,7 @@ test('Native SIWC stream returns partial text and incomplete reason for one JS-s
   assert.match(chatGptPlugin,/incompleteReason = "stream_ended"/);
   assert.match(chatGptPlugin,/result\.put\("incomplete", !completed\)/);
   assert.match(chatGptPlugin,/result\.put\("incompleteReason", incompleteReason/);
-  assert.match(chatGptPlugin,/Preserve an incomplete result even when it contains no visible text/);
+  assert.match(chatGptPlugin,/Resolve an incomplete result even when it contains no visible text/);
   assert.match(chatGptPlugin,/result\.put\("incompleteReason", incompleteReason/);
   assert.match(chatGptPlugin,/call\.resolve\(result\)/);
 });
