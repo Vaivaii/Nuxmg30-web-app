@@ -66,3 +66,12 @@ Target device: Android app; original NUX MG-30 Gen 2 firmware 6.0.x (not MKII).
 ## Important status caveat
 
 A successful CI build proves compilation and existing automated tests only. It does not prove that OpenAI SIWC registration, token-sharing permission, plan usage, or real-device OAuth work. Do not call the integration complete or distribute an APK until both CI and physical-device checks pass.
+
+## Android first-launch freeze hotfix — 2026-11-17
+
+- User reported that the first installed app launch froze and no controls responded.
+- Root cause found in `www/chatgpt-account.js`: a `MutationObserver` watched the account switch row's `hidden` attribute, then its callback rewrote that same attribute. The repeated attribute mutation could recursively schedule observer callbacks and lock the Android WebView main thread.
+- Removed the observer. The existing `render()` function already owns and updates the row's visibility, so no observer is needed.
+- Added `tests/chatgpt-account-startup.test.js` to prevent reintroducing a self-triggering observer.
+- Hotfix commits: `fd2e6865ab413833f7cfb957c14e79a97e7ec38e` (source), `16da509a52102d47addee37dcb63b502454ec0a0` (regression test).
+- Rebuild and verify first launch on a physical Android device after CI completes. The source-level cause is addressed, but the real-device freeze fix must not be marked confirmed until the replacement APK is installed and tested.
