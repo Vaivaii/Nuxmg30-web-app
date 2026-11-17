@@ -303,3 +303,22 @@ test('HTML has no duplicate static IDs and AI interactive IDs are created exactl
   assert.equal([...source.matchAll(new RegExp('id="' + id + '"','g'))].length,1,id+' should be created once');
  }
 });
+
+test('ChatGPT is the primary SIWC engine for discussion, NAM research and Tone Plans',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const plugin=readFileSync(new URL('../native-android/MG30ChatGPTPlugin.java',import.meta.url),'utf8');
+ assert.match(source,/async function askChatGPTDiscussion/);
+ assert.match(source,/async function researchNamForPrompt/);
+ assert.match(source,/bridge\.searchTones\(intent\.query/);
+ assert.match(source,/RECENT DISCUSSION CONTEXT/);
+ assert.match(source,/MG30ChatGPTBridge\.sendResponse/);
+ assert.match(plugin,/API_BASE \+ "\/responses"/);
+ assert.match(plugin,/payload\.put\("store", false\)/);
+ assert.match(plugin,/payload\.put\("stream", true\)/);
+});
+test('Ordinary ChatGPT discussion does not require the MG-30 to be connected',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const submit=source.slice(source.indexOf('async function submit(){'),source.indexOf('async function undo(){'));
+ assert.ok(submit.indexOf('if(!isExplicitToneCreationRequest(prompt))')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
+ assert.match(submit,/await askChatGPTDiscussion\(prompt\)/);
+});
