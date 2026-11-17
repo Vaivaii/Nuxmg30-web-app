@@ -202,11 +202,14 @@ export const MG30ChatGPTBridge = Object.freeze({
     const result = await NativeChatGPT.listModels();
     return Array.isArray(result?.models) ? result.models : [];
   },
-  sendResponse: async ({ model, input, instructions }) => {
+  sendResponse: async ({ model, input, instructions, tools, maxOutputTokens, parallelToolCalls = false }) => {
     const response = await NativeChatGPT.sendResponse({
       model,
       input: JSON.stringify(input),
-      instructions
+      instructions,
+      ...(Array.isArray(tools) && tools.length ? { tools } : {}),
+      maxOutputTokens: Number.isFinite(Number(maxOutputTokens)) ? Number(maxOutputTokens) : 1350,
+      parallelToolCalls: Boolean(parallelToolCalls)
     });
     return response;
   },
