@@ -764,6 +764,7 @@ public class MG30ChatGPTPlugin extends Plugin {
                 }
                 profile.remove("accessToken");
                 profile.remove("refreshToken");
+                profile.remove("idToken");
                 profile.remove("expiresAt");
                 profile.remove("earliestRefreshAt");
                 profile.put("status", "disconnected");
