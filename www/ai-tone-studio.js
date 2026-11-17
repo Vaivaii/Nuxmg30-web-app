@@ -134,6 +134,11 @@ export async function orchestrateChatGptTonePlan({bridge,model,input,instruction
   const usage=first?.usage&&typeof first.usage==='object'?{...first.usage}:null;
   if(usage)Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});
   Object.defineProperty(plan,'__aiModel',{value:first?.model||model,enumerable:false});
+  Object.defineProperty(plan,'__aiUsageBreakdown',{value:[{
+   stage:'ChatGPT Orchestrator · Tone Plan',
+   model:first?.model||model,usage:first?.usage||null,
+   instructions:String(instructions||''),input:JSON.stringify(input||[])
+  }],enumerable:false});
   Object.defineProperty(plan,'__orchestratorCalls',{value:1,enumerable:false});
   return plan;
  }
@@ -170,6 +175,10 @@ export async function orchestrateChatGptTonePlan({bridge,model,input,instruction
   Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});
  }
  Object.defineProperty(plan,'__aiModel',{value:final?.model||first?.model||model,enumerable:false});
+ Object.defineProperty(plan,'__aiUsageBreakdown',{value:[
+  {stage:'ChatGPT Orchestrator · Specialist routing',model:first?.model||model,usage:first?.usage||null,instructions:String(instructions||''),input:JSON.stringify(input||[])},
+  {stage:'ChatGPT Orchestrator · Final synthesis',model:final?.model||first?.model||model,usage:final?.usage||null,instructions:String(instructions||''),input:JSON.stringify(nextInput||[])}
+ ],enumerable:false});
  Object.defineProperty(plan,'__orchestratorCalls',{value:2,enumerable:false});
  Object.defineProperty(plan,'__specialistRole',{value:String(args.role),enumerable:false});
  return plan;
@@ -414,10 +423,15 @@ async function openai(_credential, system, prompt, model, maxOutputTokens=900) {
 async function chatgpt(_credential, system, prompt, model) {
 const bridge = window.MG30ChatGPTBridge;
 if (!bridge?.sendResponse) throw new Error('ChatGPT native SIWC connection is unavailable. Open Device settings and connect your ChatGPT account.');
-const response = await bridge.sendResponse({ model, input: [{ role: 'user', content: String(prompt || '') }], instructions: String(system || '') });
+const response = await bridge.sendResponse({ model, input: [{ role: 'user', content: String(prompt || '') }], instructions: String(system || ''), maxOutputTokens: 1350, parallelToolCalls: false });
 const text = String(response?.text || '').trim();
 if (!text) throw new Error('ChatGPT returned no text output.');
 const result = parseJson(text);
+if(response?.usage&&typeof response.usage==='object')Object.defineProperty(result,'__aiUsage',{value:{
+ input_tokens:Number(response.usage.input_tokens??response.usage.prompt_tokens??0),
+ output_tokens:Number(response.usage.output_tokens??response.usage.completion_tokens??0),
+ total_tokens:Number(response.usage.total_tokens??((response.usage.input_tokens??response.usage.prompt_tokens??0)+(response.usage.output_tokens??response.usage.completion_tokens??0)))
+},enumerable:false,configurable:false});
 Object.defineProperty(result, '__aiModel', { value: response.model || model, enumerable: false, configurable: false });
 return result;
 }
@@ -1388,10 +1402,10 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
   });
   if(!response?.tonePlan||typeof response.tonePlan!=='object'||Array.isArray(response.tonePlan))
    throw new Error('The free specialist provider did not return a structured JSON result.');
-  const result={ok:true,role,provider:String(response.provider||'free-auto'),model:String(response.model||'unknown'),result:response.tonePlan};
+  const result={ok:true,role,provider:String(response.provider||'unknown-provider'),model:String(response.model||'unknown-model'),result:response.tonePlan};
   Object.defineProperty(result,'__aiUsage',{value:response.usage||null,enumerable:false});
-  Object.defineProperty(result,'__aiModel',{value:response.model||'free-auto',enumerable:false});
-  logAiTokenUsage('free-specialist',result.__aiModel,'specialist '+role,spec.maxTokens,system,requestText,result);
+  Object.defineProperty(result,'__aiModel',{value:response.model||'unknown-model',enumerable:false});
+  logAiTokenUsage(result.provider,result.__aiModel,'specialist '+role,spec.maxTokens,system,requestText,result);
   return result;
  }
  async function askNamAIJson(system,user,stage){
@@ -1411,7 +1425,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
    const provider=order[index],key=await secret(providerKeyId(provider));
    if(providerInCooldown(provider)){missing.push(providerNames[provider]+' cooling down after a temporary limit');continue;}
    if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' Worker secret');continue;}
-   const model=await fastestReadyModel(provider,key);
+   const model=await fastestReadyModel(provider,key,provider==='chatgpt'&&(/building|correcting|synthesizing/i.test(stage))?'tone-plan':'discussion');
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
     status(providerNames[provider]+' is '+stage+'…','busy');
@@ -1691,7 +1705,18 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
      maxOutputTokens:outputTokenBudgetForStage('building your Tone Plan'),
      runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot})
     });
-    logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
+    if(Array.isArray(first.__aiUsageBreakdown)&&first.__aiUsageBreakdown.length){
+     for(const callUsage of first.__aiUsageBreakdown){
+      const callResult={};
+      if(callUsage.usage)Object.defineProperty(callResult,'__aiUsage',{value:{
+       input_tokens:Number(callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0),
+       output_tokens:Number(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0),
+       total_tokens:Number(callUsage.usage.total_tokens??((callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0)+(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0)))
+      },enumerable:false});
+      logAiTokenUsage('chatgpt',callUsage.model,callUsage.stage,outputTokenBudgetForStage('building your Tone Plan'),
+       callUsage.instructions,callUsage.input,callResult);
+     }
+    }else logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
     if(first.__specialistRole)message('ai','ChatGPT orchestrated one '+String(first.__specialistRole).replaceAll('_',' ')+' specialist task, then consolidated the result as the final AI authority.');
    }else if(mode==='auto'||mode==='cloudflare'){
     const workerKey=await secret('cloudflare');
