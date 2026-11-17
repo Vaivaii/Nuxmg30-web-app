@@ -128,7 +128,10 @@ test('TONE3000 provides a separate connect-only account sign-in flow', () => {
 });
 
 test('AI NAM search and A2-Lite preflight are allowed before USB-MIDI connection', () => {
-  assert.match(aiStudio, /if\(!namModeActive&&!bridge\.isConnected\?\.\(\)\)/);
+  const submit = aiStudio.slice(aiStudio.indexOf(' async function submit(){'), aiStudio.indexOf(' async function undo(){'));
+  assert.ok(submit.indexOf('await makePlan(prompt,bridge,audioMetricsForRequest,conversation)') < submit.indexOf('pendingTonePlan=plan'));
+  assert.match(submit, /Tone Plan berhasil dibuat dan lolos validasi katalog MG-30 Gen 2/);
+  assert.doesNotMatch(submit, /if\(!namModeActive&&!bridge\.isConnected/);
   const automaticStart = aiStudio.indexOf('async function automaticNamImportForPrompt');
   const automaticEnd = aiStudio.indexOf('async function resolveFreeProviderTeam', automaticStart);
   const automatic = aiStudio.slice(automaticStart, automaticEnd);
