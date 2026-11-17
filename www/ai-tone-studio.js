@@ -1178,7 +1178,7 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
  const noteProviderFailure=(provider,error)=>{if(shouldCooldownProvider(error)){providerCooldownUntil[provider]=Date.now()+60_000;autoProviderHealthCache.order=autoProviderHealthCache.order.filter(item=>item!==provider);autoProviderHealthCache.expires=0;}};
  const providerInCooldown=provider=>Date.now()<(providerCooldownUntil[provider]||0);
  const currentMode=()=>String(ui.providerSelect.value||mode||'auto');
- const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'gemini':currentMode();
+ const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode();
  function selectedModel(provider){
   const key=provider==='collab'?'gpt':provider;
   if(localStorage.getItem('mg30-ai-model-manual-'+key)!=='1')return '';
@@ -1207,7 +1207,7 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
    select.append(option);select.value=saved;select.disabled=false;
   }else{
    const option=document.createElement('option');option.value='';
-   option.textContent='Configure '+providerNames[provider]+' in Worker to load models';
+   option.textContent='Connect or configure '+providerNames[provider]+' to load models';
    select.append(option);select.disabled=true;
   }
   ui.activeModelLabel.textContent=currentMode()==='collab'?'Free team · models assigned automatically':currentMode()==='auto'?'Auto: ChatGPT primary + optional fallbacks':provider==='chatgpt'?'Auto: light chat / GPT-6 tone build':'Model';
@@ -1273,20 +1273,19 @@ if(chatNode)chatNode.textContent=nativeSession?.status==='connected'&&nativeSess
 await refreshProviderModels('chatgpt',true);
 try {
 const data=await getCloudAiStatus(true),providers=data?.providers||{};
-   const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState',cloudflare:'aiCloudflareBindingState'};
-   let configured=0;for(const [provider,id] of Object.entries(labels)){const node=$(id);if(node)node.textContent=provider==='cloudflare'?(providers.cloudflare?'Binding AI active · Gemma 4 ready':'Binding AI unavailable'):providers[provider]?'Configured':'Not configured';if(providers[provider])configured++;}
-   ui.providerSummary.textContent=configured+' / 5 configured';
-   providerModels.cloudflare=providers.cloudflare?[{id:WORKERS_AI_MODEL,name:'Gemma 4 26B · Workers AI'}]:[];
+   const labels={gpt:'aiOpenAiKeyState',gemini:'aiGeminiKeyState',groq:'aiGroqKeyState',openrouter:'aiOpenRouterKeyState'};
+   let configured=0;for(const [provider,id] of Object.entries(labels)){const node=$(id);if(node)node.textContent=providers[provider]?'Configured':'Not configured';if(providers[provider])configured++;}
+   ui.providerSummary.textContent=configured+' / 4 optional API providers configured';
    await refreshAllProviderModels(false);
   } catch(error) {
-   ['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState','aiCloudflareBindingState'].forEach(id=>{if($(id))$(id).textContent='Status unavailable';});
-   ui.providerSummary.textContent='Status unavailable';
-providerModels.gpt=[];providerModels.gemini=[];providerModels.groq=[];providerModels.openrouter=[];providerModels.cloudflare=[];renderActiveModelSelect();
-status(nativeSession?.status==='connected'&&nativeSession?.sharing?'ChatGPT plan access is connected. Cloud provider status is unavailable.':(error.message||'Cloud AI configuration is unavailable.'),nativeSession?.sharing?'success':'error');
+   ['aiOpenAiKeyState','aiGeminiKeyState','aiGroqKeyState','aiOpenRouterKeyState'].forEach(id=>{if($(id))$(id).textContent='Status unavailable';});
+   ui.providerSummary.textContent='Optional provider status unavailable';
+providerModels.gpt=[];providerModels.gemini=[];providerModels.groq=[];providerModels.openrouter=[];renderActiveModelSelect();
+status(nativeSession?.status==='connected'&&nativeSession?.sharing?'ChatGPT plan access is connected. Optional provider status is unavailable.':(error.message||'Optional provider status is unavailable.'),nativeSession?.sharing?'success':'error');
   }
 }
-async function saveKeys(){await keyStates();status('Provider credentials are managed as Cloudflare Worker secrets. Cloud status and model lists refreshed.','success');}
-async function deleteKey(provider){status('Manage '+providerNames[provider]+' credentials in Cloudflare Worker secrets. The app cannot read or delete server-side keys.','idle');}
+async function saveKeys(){await keyStates();status('ChatGPT connection and optional external provider status refreshed.','success');}
+async function deleteKey(provider){status('Manage '+providerNames[provider]+' credentials through the connected provider settings.','idle');}
 function aiAgentLabel(stage,provider,model){
  const task=String(stage||'AI request').toLowerCase();
  let agent=String(stage||'AI request');
@@ -2019,7 +2018,7 @@ const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{ta
  ui.usageReset.addEventListener('click',()=>{aiUsage.requests=0;aiUsage.total=0;aiUsage.providers=Object.create(null);aiUsage.models=Object.create(null);aiUsage.tasks=Object.create(null);renderAiUsageMonitor();status('Local AI usage session counters reset. Provider quotas and API usage are unchanged.','success');});
 $('aiToneTestChatGPT')?.addEventListener('click',()=>testProvider('chatgpt'));
 $('aiToneTestOpenAi')?.addEventListener('click',()=>testProvider('gpt'));$('aiToneTestGemini')?.addEventListener('click',()=>testProvider('gemini'));
-$('aiToneTestGroq')?.addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter')?.addEventListener('click',()=>testProvider('openrouter'));$('aiToneTestCloudflare')?.addEventListener('click',()=>{void testWorkersAI();});
+$('aiToneTestGroq')?.addEventListener('click',()=>testProvider('groq'));$('aiToneTestOpenRouter')?.addEventListener('click',()=>testProvider('openrouter'));// Workers AI is no longer an active provider or test target.
  // Provider keys are server-managed; no client-side delete buttons are rendered.
  
  ui.autoFallback.checked=localStorage.getItem('mg30-ai-auto-fallback')!=='0';
