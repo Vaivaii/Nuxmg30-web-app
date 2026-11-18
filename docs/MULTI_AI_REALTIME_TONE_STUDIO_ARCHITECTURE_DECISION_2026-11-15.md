@@ -524,3 +524,41 @@ Work branch: \`feature/ai-efficiency-worker-nam-complete-tone-state\`.
 - Added the new work branch to the Android CI push filter.
 - CI run #1086 (`44332435860`) on commit `15f2408a9c4daf9440ccc81fe43cd07873f17ae4`: **success**. JavaScript syntax validation passed; 673/673 tests passed; Capacitor Android initialization passed; Gradle `assembleDebug` succeeded; debug APK artifact uploaded (artifact ID `14439114283`, archive size 4,383,611 bytes, SHA-256 digest `d127a1781d38b742ab60abb5fbc5558a7cf3588f1a567af10a38afa3351d1975`).
 - Hardware and live deployed Worker outcome: not tested; no Worker deployment was issued.
+
+
+---
+
+## Implementation — NAM query-only Workers AI routing (2026-11-19)
+
+Work branch: `feature/worker-ai-nam-query-routing`, based on `feature/worker-v1.2.4-ai-search`.
+
+### Scope and provider ownership
+
+- The existing two-mode Luna architecture is retained: ordinary discussion uses GPT-5.6 Luna; preset creation/refinement remains GPT-6 Luna Chief and final decision-maker.
+- Only the compact TONE3000 NAM catalog query-generation task is moved to Cloudflare Workers AI.
+- Both direct NAM search and preset creation while NAM mode is active use the existing `POST /api/v1/ai/light-task` task `tone3000-search-terms`, with a maximum output budget of 180 tokens.
+- The app explicitly pins this query task to provider `cloudflare`; it no longer passes through `askNamAIJson` and cannot fall back to GPT-6 for query generation.
+- If Workers AI is unavailable or returns an unusable query, the app uses the existing deterministic local `fallbackNamSearchTerms()` helper. It does not send the query task to GPT as a fallback.
+- For a NAM-enabled preset, GPT-6 is instructed not to spend output tokens generating `search_terms`. The app ignores any `search_terms` field returned by GPT-6 or its catalog-correction response and obtains the query from Workers AI after the Tone Plan has been validated.
+
+### Luna authority deliberately unchanged
+
+- GPT-6 Luna remains responsible for selecting/recommending the best returned TONE3000 profile through `chooseNamTone()`.
+- GPT-6 Luna remains responsible for selecting/recommending the downloadable A2-Lite capture through `chooseNamModel()`.
+- Both selection functions continue to use `askLunaNamJson()`; Workers AI does not rank, approve, or decide which profile/capture is recommended.
+- GPT-6 Luna remains responsible for the full Tone Plan, research, sequential specialist orchestration, final synthesis, technical validation, and user-facing report.
+- The required specialist quorum and provider order are unchanged.
+
+### Protected integrations
+
+- Reuses the already-existing Worker lightweight task route and `tone3000-search-terms` task. No Worker source, task contract, model configuration, secret, URL, or deployment was changed in this implementation.
+- TONE3000 `ai-search` request, OAuth handling, `format=nam` / `architecture=2` filtering, Amp / Amp + Cab gear mapping, profile/model loading, model download, and candidate normalization are unchanged.
+- Existing A2-Lite file validation (1,871 weights), NAM Library persistence, slot-10 confirmation and transfer are unchanged.
+- No IR User/Third Party/Collection behavior, MIDI/CC mapping, preset codec, USB-MIDI, or USB Audio path was changed.
+
+### Automated validation
+
+- Regression assertions were updated to require Workers AI routing for NAM query generation and GPT-6 Luna selection for both profile and capture recommendations.
+- The build workflow now includes this feature branch.
+- CI, full regression tests, and Android debug build: pending at the time of this note.
+- No APK delivery or hardware acceptance is claimed until CI/build and the user's live NAM workflow have been checked.
