@@ -520,44 +520,23 @@ function normalizeToneSearchRows(body, gear){
   }).filter(tone=>/^\d+$/.test(tone.id));
 }
 async function searchTone3000ForAI(query, gear = 'amp-cab') {
-  const text=normalizeToneSearchQuery(query);
-  if(text.length<2)throw new Error('Enter an amplifier name or tone description in the prompt before searching TONE3000.');
-  if(gear!=='amp'&&gear!=='amp-cab')throw new Error('Choose Amp Only or Amp + Cab before searching.');
-  const cacheKey=gear+'|'+text.toLowerCase();
-  const cached=aiToneSearchCache.get(cacheKey);
-  if(cached&&Date.now()-cached.time<60_000)return Object.assign(cached.rows.slice(),{searchMeta:cached.searchMeta});
-  const terms=text.split(/\s+/).filter(Boolean);
-  const queries=[text,terms.length>1?terms[terms.length-1]:''];
-  const tried=[],attempts=[];
-  let rows=[],searchMeta={requestedQuery:text,queriesTried:[],total:0,totalPages:0};
-  for(const candidate of [...new Set(queries)]){
-    const params=new URLSearchParams({
-      page:'1',page_size:'25',sort:candidate?'best-match':'trending',
-      gears: gear,format:'nam',architecture:'2',
+  const text = normalizeToneSearchQuery(query);
+  if (text.length < 2) throw new Error('Enter an amplifier name or tone description in the prompt before searching TONE3000.');
+  if (gear !== 'amp' && gear !== 'amp-cab') throw new Error('Choose Amp Only or Amp + Cab before searching.');
+  const token = await ensureAccessToken();
+  try {
+    const body = await cloudApiRequest('/api/v1/tone3000/ai-search', {
+      method: 'POST',
+      headers: { 'X-TONE3000-Authorization': 'Bearer ' + token },
+      body: { query: text, gear }
     });
-    if(candidate)params.set('query',candidate);
-    const body=await apiJSON('/tones/search?'+params.toString());
-    const pageRows=normalizeToneSearchRows(body,gear);
-    const meta={
-      query:candidate||'(broad A2 NAM catalogue)',
-      total:Number(body?.total??pageRows.length),
-      page:Number(body?.page??1),
-      pageSize:Number(body?.page_size??25),
-      totalPages:Number(body?.total_pages??0),
-      rowsReturned:pageRows.length,
-    };
-    tried.push(candidate||'(broad)');
-    attempts.push(meta);
-    if(pageRows.length){
-      rows=pageRows;
-      searchMeta={requestedQuery:text,queriesTried:tried,attempts,matchedQuery:candidate||'',...meta};
-      break;
-    }
-    searchMeta={requestedQuery:text,queriesTried:tried,attempts,...meta};
+    const rows = Array.isArray(body?.tones) ? body.tones : [];
+    return Object.assign(rows, { searchMeta: body?.searchMeta || { requestedQuery: text, queriesTried: [], total: rows.length } });
+  } catch (error) {
+    if (error.status === 429) throw new Error('TONE3000 API search rate limit reached. Wait briefly and try again; no pedal changes were made.');
+    if (error.status === 403) throw new Error('TONE3000 denied this NAM search. Check the API client access tier; the app will not bypass service restrictions.');
+    throw error;
   }
-  aiToneSearchCache.set(cacheKey,{time:Date.now(),rows,searchMeta});
-  if(aiToneSearchCache.size>20)aiToneSearchCache.delete(aiToneSearchCache.keys().next().value);
-  return Object.assign(rows.slice(),{searchMeta});
 }
 async function loadTone3000ForAI(toneId, options = {}) {
   const id = String(toneId || '').trim();

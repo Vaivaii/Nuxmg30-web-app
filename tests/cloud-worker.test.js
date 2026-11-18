@@ -27,8 +27,8 @@ test('standalone Worker parses and retains original auth health route with boole
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.version, '1.2.1');
-  assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, ai_light_task: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true });
+  assert.equal(body.version, '1.2.2');
+  assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, ai_light_task: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_ai_search: true, tone3000_download: true });
   assert.equal(body.auth_configured, true);
   assert.deepEqual(body.secret_checks, {
     APP_LOGIN_USERNAME: true, APP_LOGIN_PASSWORD: true, APP_AUTH_SECRET: true,
@@ -124,6 +124,51 @@ test('YouTube status and search use Worker secret and preserve app result format
     assert.equal(body.items[0].id.videoId, 'abcdefghijk');
     assert.ok(requestedUrl.includes('key=youtube-secret'));
   } finally { globalThis.fetch = originalFetch; }
+});
+
+test('TONE3000 AI search runs query expansion and A2 NAM filtering inside the authenticated Worker', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), authorization: new Headers(options.headers).get('Authorization') });
+    const target = new URL(String(url));
+    if (target.searchParams.get('query') === 'Deluxe') return jsonResponse({ data: [] });
+    return jsonResponse({ data: [{ id: 42, title: 'Deluxe Reverb NAM', user: { username: 'capture-author' }, makes: [{ name: 'Fender' }], tags: [{ name: 'clean' }], a2_models_count: 3 }] });
+  };
+  try {
+    const noOAuth = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/ai-search', {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Fender Deluxe', gear: 'amp-cab' })
+    }), baseEnv);
+    assert.equal(noOAuth.status, 401);
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/ai-search', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'X-TONE3000-Authorization': 'Bearer user-tone-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Fender Deluxe', gear: 'amp-cab' })
+    }), baseEnv);
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.tones[0].id, '42');
+    assert.equal(body.tones[0].creator, 'capture-author');
+    assert.equal(body.searchMeta.queriesTried.length, 2);
+    assert.ok(calls.every(item => item.authorization === 'Bearer user-tone-token'));
+    assert.ok(calls.every(item => item.url.startsWith('https://www.tone3000.com/api/v1/tones/search?')));
+    assert.ok(calls.every(item => item.url.includes('architecture=2') && item.url.includes('format=nam')));
+    assert.ok(calls.every(item => item.url.includes('gears=amp-cab')));
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('TONE3000 AI search validates the requested gear and never bypasses app authentication', async () => {
+  const noAppAuth = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/ai-search', {
+    method: 'POST', headers: { 'X-TONE3000-Authorization': 'Bearer user-tone-token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: 'Fender Deluxe', gear: 'amp-cab' })
+  }), baseEnv);
+  assert.equal(noAppAuth.status, 401);
+  const invalidGear = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/ai-search', {
+    method: 'POST', headers: { ...authHeaders(), 'X-TONE3000-Authorization': 'Bearer user-tone-token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: 'Fender Deluxe', gear: 'all' })
+  }), baseEnv);
+  assert.equal(invalidGear.status, 400);
 });
 
 test('TONE3000 proxy requires both app JWT and the per-user OAuth token', async () => {

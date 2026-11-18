@@ -1,5 +1,5 @@
 
-const VERSION = "1.2.1";
+const VERSION = "1.2.2";
 const WORKERS_AI_MODELS = [
   "@cf/google/gemma-4-26b-a4b-it",
   "@cf/openai/gpt-oss-20b",
@@ -395,6 +395,74 @@ async function proxyTone3000(request, env, url) {
   try { body = bodyText ? JSON.parse(bodyText) : {}; } catch { return json({ ok: false, error: "TONE3000 returned invalid JSON." }, 502); }
   return json(body, upstream.status);
 }
+async function tone3000AiSearch(request, env, body) {
+  if (!toneAuth(request, env)) return json({ ok: false, error: "TONE3000 account authorization is required." }, 401);
+  const query = String(body?.query || "").trim().replace(/\s+/g, " ").slice(0, 160);
+  const gear = String(body?.gear || "amp-cab");
+  if (query.length < 2) return json({ ok: false, error: "A TONE3000 amplifier search phrase is required." }, 400);
+  if (gear !== "amp" && gear !== "amp-cab") return json({ ok: false, error: "TONE3000 gear must be amp or amp-cab." }, 400);
+
+  // Search expansion and result normalization live in the Worker, not in the Android client.
+  const words = query.split(/\s+/).filter(Boolean);
+  const candidates = [...new Set([query, words.length > 1 ? words[words.length - 1] : ""])];
+  const attempts = [];
+  for (const candidate of candidates) {
+    const params = new URLSearchParams({
+      page: "1", page_size: "25", sort: candidate ? "best-match" : "trending",
+      gears: gear, format: "nam", architecture: "2"
+    });
+    if (candidate) params.set("query", candidate);
+    const gatewayUrl = new URL(request.url);
+    gatewayUrl.search = "";
+    gatewayUrl.searchParams.set("path", "/tones/search?" + params.toString());
+    const upstream = await proxyTone3000(request, env, gatewayUrl);
+    const data = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      return json({ ok: false, error: data?.error || "TONE3000 catalogue search failed.", upstreamStatus: upstream.status }, upstream.status);
+    }
+    const sourceRows = Array.isArray(data?.data) ? data.data
+      : Array.isArray(data?.tones) ? data.tones
+      : Array.isArray(data?.items) ? data.items
+      : Array.isArray(data?.data?.items) ? data.data.items : [];
+    const tones = sourceRows.map(tone => {
+      const creator = tone?.user?.username || tone?.creator?.username || tone?.username ||
+        (typeof tone?.creator === "string" ? tone.creator : "");
+      return {
+        id: String(tone?.id ?? tone?.tone_id ?? ""),
+        name: String(tone?.title || tone?.name || tone?.tone_name || "Untitled tone"),
+        creator: String(creator || ""),
+        description: String(tone?.description || ""),
+        makes: Array.isArray(tone?.makes) ? tone.makes.slice(0, 5).map(item => String(item?.name || item)) : [],
+        tags: Array.isArray(tone?.tags) ? tone.tags.slice(0, 6).map(item => String(item?.name || item)) : [],
+        sizes: Array.isArray(tone?.sizes) ? tone.sizes.map(item => String(item?.name || item)) : [],
+        format: String(tone?.format || "nam"),
+        a2ModelsCount: Number(tone?.a2_models_count ?? 0),
+        gear: String(tone?.gear || gear)
+      };
+    }).filter(tone => /^\d+$/.test(tone.id));
+    const meta = {
+      query: candidate || "(broad A2 NAM catalogue)",
+      total: Number(data?.total ?? tones.length),
+      page: Number(data?.page ?? 1),
+      pageSize: Number(data?.page_size ?? 25),
+      totalPages: Number(data?.total_pages ?? 0),
+      rowsReturned: tones.length
+    };
+    attempts.push(meta);
+    if (tones.length) {
+      return json({
+        ok: true, query, gear, tones,
+        searchMeta: { requestedQuery: query, queriesTried: attempts.map(item => item.query), attempts, matchedQuery: candidate, ...meta }
+      });
+    }
+  }
+  const last = attempts[attempts.length - 1] || {};
+  return json({
+    ok: true, query, gear, tones: [],
+    searchMeta: { requestedQuery: query, queriesTried: attempts.map(item => item.query), attempts, ...last }
+  });
+}
+
 function toneOfficialHost(host) {
   return host === "tone3000.com" || host.endsWith(".tone3000.com");
 }
@@ -494,7 +562,7 @@ export default {
           ok: true, service: "nux-mg30-studio-api", version: VERSION,
           gateway_routes: {
             status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, ai_light_task: true,
-            youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true
+            youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_ai_search: true, tone3000_download: true
           },
           auth_configured: Boolean(String(env.APP_LOGIN_USERNAME || "").trim() && String(env.APP_LOGIN_PASSWORD || "").trim() && String(env.APP_AUTH_SECRET || "").trim()),
           secret_checks: {
@@ -571,6 +639,9 @@ export default {
           response = json({ ok: true, configured: Boolean(youtubeApiKey(env)) });
         } else if (url.pathname === "/api/v1/youtube/search" && request.method === "GET") {
           response = await youtubeSearch(url, env);
+        } else if (url.pathname === "/api/v1/tone3000/ai-search" && request.method === "POST") {
+          const body = await readBody(request, 32_000);
+          response = await tone3000AiSearch(request, env, body);
         } else if (url.pathname === "/api/v1/tone3000/proxy" && request.method === "GET") {
           response = await proxyTone3000(request, env, url);
         } else if (url.pathname === "/api/v1/tone3000/download" && request.method === "GET") {

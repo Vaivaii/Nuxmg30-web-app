@@ -72,12 +72,10 @@ test('AI slot-10 destination leaves manual NAM import target selection unchanged
   assert.ok(aiStudio.includes('bridge.searchTones(intent.query,{gear:activeNamGear})'));
 });
 
-test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening Select', () => {
+test('AI Studio delegates TONE3000 NAM A2 catalogue search to the authenticated Cloudflare Worker', () => {
   assert.match(tone3000, /async function searchTone3000ForAI/);
-  assert.ok(tone3000.includes("'/tones/search?'"));
-  assert.match(tone3000, /format: 'nam'/);
-  assert.match(tone3000, /architecture: '2'/);
-  assert.match(tone3000, /gears: gear/);
+  assert.match(tone3000, /\/api\/v1\/tone3000\/ai-search/);
+  assert.match(tone3000, /X-TONE3000-Authorization/);
   assert.match(tone3000, /async function loadTone3000ForAI/);
   assert.ok(tone3000.includes('searchTones(query, options = {})'));
   assert.match(aiStudio, /async function beginNamSearch/);
@@ -93,12 +91,12 @@ test('AI Studio searches authenticated TONE3000 NAM A2 catalog without opening S
 test('AI NAM automation preserves only slot 10 as an available destination', () => {
   assert.match(aiStudio, /installed NAM context/i);
   assert.match(aiStudio, /kind==='nam-slot-selection'&&model.slot===10/);
-  assert.match(tone3000, /aiToneSearchCache/);
+  assert.match(tone3000, /\/api\/v1\/tone3000\/ai-search/);
 });
 
 test('Automatic NAM import preflights A2-Lite bytes and reuses the exact downloaded binary', () => {
   assert.match(tone3000, /async function prepareTone3000ModelForAI/);
-  assert.match(tone3000, /normalizeToneSearchRows/);
+  assert.match(tone3000, /\/api\/v1\/tone3000\/ai-search/);
   assert.match(tone3000, /buildMG30A2LiteTransferPlan\(weightBytes, label, 10\)/);
   assert.match(tone3000, /modelBytes = options\.modelBytes \|\| null/);
   assert.match(tone3000, /prepared\?\.modelBytes \? \{ modelBytes: prepared\.modelBytes \}/);
