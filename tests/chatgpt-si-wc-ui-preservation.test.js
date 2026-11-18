@@ -22,11 +22,11 @@ test('ChatGPT conversation and preset modes are fixed to their task-specific Lun
   const select = ai.match(/<select id="aiToneProviderSelect">[\s\S]*?<\/select>/)?.[0] || '';
   assert.match(select, /value="chatgpt" selected/);
   assert.doesNotMatch(select, /value="auto"|value="gemini"|value="groq"|value="openrouter"|value="cloudflare"|value="collab"/);
-  assert.match(ai, /DISKUSI BIASA/);
+  assert.doesNotMatch(ai, /ai-tone-routing-strip|DISKUSI BIASA|<small>SPECIALIST<\/small>/);
   assert.match(ai, /GPT-5\.6 Luna/);
   assert.match(ai, /CREATE PRESET/);
   assert.match(ai, /GPT-6 Luna/);
-  assert.match(ai, /Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+  assert.match(ai, /GPT-5\.6 discussion \/ GPT-6 Luna preset/);
   for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestChatGPT', 'aiToneTestCloudflare']) {
     assert.ok(ai.includes(id), 'provider settings lost ' + id);
   }
