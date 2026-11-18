@@ -203,23 +203,23 @@ function clampOutputTokenLimit(value) {
   if (!Number.isFinite(parsed)) return 1200;
   return Math.max(96, Math.min(2048, Math.floor(parsed)));
 }
-function normalizeProviderUsage(body, provider) {
-  const raw = provider === "gemini" ? body?.usageMetadata : body?.usage;
-  if (!raw || typeof raw !== "object") return null;
-  const read = (...keys) => {
-    for (const key of keys) {
-      if (raw[key] === undefined || raw[key] === null || raw[key] === "") continue;
-      const value = Number(raw[key]);
-      if (Number.isFinite(value) && value >= 0) return value;
-    }
-    return null;
+function normalizeProviderUsage(body, api) {
+  const usage = api === "gemini" ? body?.usageMetadata : body?.usage;
+  if (!usage || typeof usage !== "object") return null;
+  const input = api === "gemini" ? usage.promptTokenCount : (usage.input_tokens ?? usage.prompt_tokens);
+  const output = api === "gemini" ? usage.candidatesTokenCount : (usage.output_tokens ?? usage.completion_tokens);
+  const total = api === "gemini" ? usage.totalTokenCount : usage.total_tokens;
+  if (input === undefined && output === undefined && total === undefined) return null;
+  const inputTokens = Number(input || 0);
+  const outputTokens = Number(output || 0);
+  const totalTokens = Number(total ?? (inputTokens + outputTokens));
+  return {
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    prompt_tokens: inputTokens,
+    completion_tokens: outputTokens,
+    total_tokens: totalTokens
   };
-  const prompt_tokens = read("prompt_tokens", "input_tokens", "promptTokenCount");
-  const completion_tokens = read("completion_tokens", "output_tokens", "candidatesTokenCount");
-  const total_tokens = read("total_tokens", "totalTokenCount") ??
-    (prompt_tokens !== null && completion_tokens !== null ? prompt_tokens + completion_tokens : null);
-  if (prompt_tokens === null && completion_tokens === null && total_tokens === null) return null;
-  return { prompt_tokens, completion_tokens, total_tokens };
 }
 function mergeProviderUsage(...rows) {
   const values = rows.filter(Boolean);
@@ -257,8 +257,8 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 1200
       // Gemma 4 uses the completion-token and thinking-template options already validated
       // by the MG30 integration. The other Workers AI chat models use max_tokens.
       const options = model === WORKERS_AI_MODEL
-        ? { messages, temperature: 0.2, max_completion_tokens: limit, chat_template_kwargs: { enable_thinking: false } }
-        : { messages, temperature: 0.2, max_tokens: limit };
+        ? { messages, temperature: 0.2, max_completion_tokens: limit, response_format: { type: "json_object" }, chat_template_kwargs: { enable_thinking: false } }
+        : { messages, temperature: 0.2, max_tokens: limit, response_format: { type: "json_object" } };
       const body = await env.AI.run(model, options);
       usage = normalizeWorkersAiUsage(body);
       const tonePlan = extractJsonObject(workersAiText(body));
@@ -332,7 +332,7 @@ async function generateTonePlan(provider, model, system, prompt, env, maxOutputT
   try { return await request(false); }
   catch (error) {
     if ((isGroq && (error instanceof SyntaxError || error.failedGeneration || (error.status === 400 && /rejected the request/i.test(error.message)))) ||
-        (config.api === "openrouter" && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message)))) {
+        (config.api === "openrouter" && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message) || error.retryable))) {
       try {
         const retryResult = await request(true);
         return { ...retryResult, usage: mergeProviderUsage(error.usage, retryResult.usage) };
@@ -344,18 +344,31 @@ async function generateTonePlan(provider, model, system, prompt, env, maxOutputT
     throw error;
   }
 }
-async function runWorkersAiLightTask(body, env) {
-  const task = String(body?.task || "");
+async function runAiLightTask(body, env) {
+  const task = String(body?.task || "").trim();
   const taskLimits = {
     "tone-discussion": 520,
     "tone3000-search-terms": 180,
     "tone3000-profile-ranking": 320,
     "tone3000-capture-selection": 320,
-    "tone3000-profile-ranking": 320,
-    "tone3000-capture-selection": 320
+    "provider-test": 96,
+    "tone-plan": 3200,
+    "tone-specialist": 1200
   };
   if (!Object.prototype.hasOwnProperty.call(taskLimits, task)) {
-    return json({ ok: false, error: "Unsupported lightweight AI task." }, 400);
+    return json({ ok: false, error: "Unsupported AI task." }, 400);
+  }
+  const role = String(body?.role || "");
+  const specialistRoles = new Set([
+    "tone_researcher", "amp_cabinet_specialist", "effects_specialist",
+    "guitar_input_specialist", "tone_calibration_specialist", "tone_critic"
+  ]);
+  if (task === "tone-specialist" && !specialistRoles.has(role)) {
+    return json({ ok: false, error: "Unsupported Tone Architect specialist role." }, 400);
+  }
+  const provider = String(body?.provider || "cloudflare").toLowerCase();
+  if (!["cloudflare", "gemini", "groq", "openrouter"].includes(provider)) {
+    return json({ ok: false, error: "Unsupported specialist AI provider." }, 400);
   }
   const system = String(body?.system || "");
   const prompt = String(body?.prompt || "");
@@ -366,11 +379,24 @@ async function runWorkersAiLightTask(body, env) {
   const maxOutputTokens = Number.isFinite(requested)
     ? Math.max(96, Math.min(taskLimits[task], Math.floor(requested)))
     : taskLimits[task];
-  const generated = await generateWorkersAiJson(system, prompt, env, maxOutputTokens);
-  return json({
-    ok: true, task, provider: "cloudflare", model: generated.model || WORKERS_AI_MODEL,
-    result: generated.tonePlan, usage: generated.usage, maxOutputTokens
-  });
+  const model = provider === "cloudflare"
+    ? (String(body?.model || "").trim() || WORKERS_AI_MODEL)
+    : String(body?.model || "").trim();
+  if (!model) return json({ ok: false, error: "A model is required for this provider task." }, 400);
+  try {
+    const generated = await generateTonePlan(provider, model, system, prompt, env, maxOutputTokens);
+    return json({
+      ok: true, task, role: task === "tone-specialist" ? role : null,
+      provider, model: generated.model || model, result: generated.tonePlan,
+      usage: generated.usage || null, maxOutputTokens
+    });
+  } catch (error) {
+    return json({
+      ok: false, task, role: task === "tone-specialist" ? role : null,
+      provider, model, error: error?.message || "AI provider task failed.",
+      usage: error?.usage || null
+    }, error?.status || 502);
+  }
 }
 function toneAuth(request, env) {
   // Prefer the signed-in user's OAuth token. Use the optional Worker service secret
@@ -659,7 +685,7 @@ export default {
           response = await listModels(url.searchParams.get("provider") || "", env);
         } else if (url.pathname === "/api/v1/ai/light-task" && request.method === "POST") {
           const body = await readBody(request);
-          response = await runWorkersAiLightTask(body, env);
+          response = await runAiLightTask(body, env);
         } else if (url.pathname === "/api/v1/ai/tone-plan" && request.method === "POST") {
           const body = await readBody(request);
           const requestedProvider = String(body.provider || "auto").toLowerCase();
