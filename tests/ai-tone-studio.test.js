@@ -1076,19 +1076,32 @@ test('TONE3000 chooser reasons are capped at two sentences and 30 words; chooser
  assert.match(readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8'),/Luna validating A2-Lite capture',256/);
 });
 
-test('GPT-6 Tone Plan search_terms are reused and Luna only derives a fallback query when absent',()=>{
+test('NAM search query generation uses Workers AI while GPT-6 Luna keeps profile and capture decisions',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.doesNotMatch(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
- assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
- assert.match(source,/if\(namModeActive&&!activeNamContext&&!namSearchTerms\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
- assert.match(source,/const searchTerms=normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)/);
- assert.match(source,/renderNamSearchResults\(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan\)/);
- assert.match(source,/preparedPlan=await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
- assert.match(source,/preparedPlan:completed\.preparedPlan\|\|null/);
- assert.match(source,/const plan=preparedPlan\|\|await makePlan/);
- assert.match(source,/sanitizeNamProfileCandidates\(tones,12\)/);
- assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
- assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
+ const workerTask=source.slice(source.indexOf('async function invokeWorkersAILightTask'),source.indexOf('async function testWorkersAI'));
+ assert.match(workerTask,/invokeWorkerLightTask\('cloudflare',task,system,user,stage,maxOutputTokens,WORKERS_AI_MODEL\)/);
+ assert.doesNotMatch(workerTask,/askNamAIJson/);
+ const derive=source.slice(source.indexOf('async function deriveNamSearchQuery'),source.indexOf('async function chooseNamTone'));
+ assert.match(derive,/invokeWorkersAILightTask\('tone3000-search-terms'/);
+ assert.match(derive,/fallbackNamSearchTerms\(prompt\)/);
+ const profile=source.slice(source.indexOf('async function chooseNamTone'),source.indexOf('async function chooseNamModel'));
+ assert.match(profile,/askLunaNamJson\(system,user,'Luna validating TONE3000 NAM profile',256\)/);
+ const capture=source.slice(source.indexOf('async function chooseNamModel'),source.indexOf('function renderAiNamCapturePicker'));
+ assert.match(capture,/askLunaNamJson\(system,user,'Luna validating A2-Lite capture',256\)/);
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(make,/namSearchRoutingGuard=namModeActive&&!activeNamContext/);
+ assert.match(make,/Do not generate, infer or include TONE3000 search_terms in this Tone Plan/);
+ assert.match(make,/let namSearchTerms=''/);
+ assert.match(make,/if\(namModeActive&&!activeNamContext\)\s*\{\s*const derivedSearch=await deriveNamSearchQuery\(prompt,conversation\)/);
+ assert.doesNotMatch(make,/normalizeNamSearchTerms\(first\?\.search_terms\)/);
+ assert.doesNotMatch(make,/normalizeNamSearchTerms\(corrected\?\.search_terms\)/);
+ assert.match(make,/fastestReadyModel\('chatgpt',credential,'tone-plan'\)/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);
+ const automatic=source.slice(source.indexOf('async function automaticNamImportForPrompt'),source.indexOf('async function resolveFreeProviderTeam'));
+ assert.match(automatic,/normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)\|\|fallbackNamSearchTerms\(prompt\)/);
+ assert.match(automatic,/bridge\.searchTones\(searchTerms,\{gear:activeNamGear\}\)/);
 });
 test('Ordinary discussion always uses GPT-5.6 native SIWC and never starts preset or specialist work',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -1903,19 +1916,32 @@ test('TONE3000 chooser reasons are capped at two sentences and 30 words; chooser
  assert.match(readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8'),/Luna validating A2-Lite capture',256/);
 });
 
-test('GPT-6 Tone Plan search_terms are reused and Luna only derives a fallback query when absent',()=>{
+test('NAM search query generation uses Workers AI while GPT-6 Luna keeps profile and capture decisions',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.doesNotMatch(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
- assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
- assert.match(source,/if\(namModeActive&&!activeNamContext&&!namSearchTerms\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
- assert.match(source,/const searchTerms=normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)/);
- assert.match(source,/renderNamSearchResults\(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan\)/);
- assert.match(source,/preparedPlan=await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
- assert.match(source,/preparedPlan:completed\.preparedPlan\|\|null/);
- assert.match(source,/const plan=preparedPlan\|\|await makePlan/);
- assert.match(source,/sanitizeNamProfileCandidates\(tones,12\)/);
- assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
- assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
+ const workerTask=source.slice(source.indexOf('async function invokeWorkersAILightTask'),source.indexOf('async function testWorkersAI'));
+ assert.match(workerTask,/invokeWorkerLightTask\('cloudflare',task,system,user,stage,maxOutputTokens,WORKERS_AI_MODEL\)/);
+ assert.doesNotMatch(workerTask,/askNamAIJson/);
+ const derive=source.slice(source.indexOf('async function deriveNamSearchQuery'),source.indexOf('async function chooseNamTone'));
+ assert.match(derive,/invokeWorkersAILightTask\('tone3000-search-terms'/);
+ assert.match(derive,/fallbackNamSearchTerms\(prompt\)/);
+ const profile=source.slice(source.indexOf('async function chooseNamTone'),source.indexOf('async function chooseNamModel'));
+ assert.match(profile,/askLunaNamJson\(system,user,'Luna validating TONE3000 NAM profile',256\)/);
+ const capture=source.slice(source.indexOf('async function chooseNamModel'),source.indexOf('function renderAiNamCapturePicker'));
+ assert.match(capture,/askLunaNamJson\(system,user,'Luna validating A2-Lite capture',256\)/);
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(make,/namSearchRoutingGuard=namModeActive&&!activeNamContext/);
+ assert.match(make,/Do not generate, infer or include TONE3000 search_terms in this Tone Plan/);
+ assert.match(make,/let namSearchTerms=''/);
+ assert.match(make,/if\(namModeActive&&!activeNamContext\)\s*\{\s*const derivedSearch=await deriveNamSearchQuery\(prompt,conversation\)/);
+ assert.doesNotMatch(make,/normalizeNamSearchTerms\(first\?\.search_terms\)/);
+ assert.doesNotMatch(make,/normalizeNamSearchTerms\(corrected\?\.search_terms\)/);
+ assert.match(make,/fastestReadyModel\('chatgpt',credential,'tone-plan'\)/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);
+ const automatic=source.slice(source.indexOf('async function automaticNamImportForPrompt'),source.indexOf('async function resolveFreeProviderTeam'));
+ assert.match(automatic,/normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)\|\|fallbackNamSearchTerms\(prompt\)/);
+ assert.match(automatic,/bridge\.searchTones\(searchTerms,\{gear:activeNamGear\}\)/);
 });
 test('Ordinary discussion is always GPT-5.6 native SIWC and preset research is GPT-6 Luna',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
