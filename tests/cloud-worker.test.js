@@ -411,11 +411,11 @@ test('TONE3000 global service token is never forwarded to an external model CDN'
 });
 
 
-test('Cloudflare Workers AI parses structured object responses for supported light tasks', async () => {
+test('Cloudflare Workers AI parses response.text payloads for supported light tasks', async () => {
   const calls = [];
   const env = { ...baseEnv, AI: { run: async (model, options) => {
     calls.push({ model, options });
-    return { response: { effects: [{ id: 'MOD', model: 'Tremolo' }], confidence: 0.92 }, usage: { prompt_tokens: 31, completion_tokens: 18, total_tokens: 49 } };
+    return { response: { text: JSON.stringify({ effects: [{ id: 'MOD', model: 'Tremolo' }], confidence: 0.92 }) }, usage: { prompt_tokens: 31, completion_tokens: 18, total_tokens: 49 } };
   } } };
   const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
     method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -436,7 +436,7 @@ test('Cloudflare Workers AI skips malformed Gemma JSON and falls back to the nex
   const env = { ...baseEnv, AI: { run: async (model, options) => {
     calls.push({ model, options });
     if (model === '@cf/google/gemma-4-26b-a4b-it') return { response: '{"effects":[{"id":"MOD","model":}]}', usage: { prompt_tokens: 12, completion_tokens: 8, total_tokens: 20 } };
-    return { response: { effects: [{ id: 'MOD', model: 'Tremolo' }], confidence: 0.9 }, usage: { prompt_tokens: 14, completion_tokens: 19, total_tokens: 33 } };
+    return { response: JSON.stringify({ effects: [{ id: 'MOD', model: 'Tremolo' }], confidence: 0.9 }), usage: { prompt_tokens: 14, completion_tokens: 19, total_tokens: 33 } };
   } } };
   const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
     method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
