@@ -1645,7 +1645,9 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
  async function deriveNamSearchQuery(prompt,conversation=''){
   const system='You select search terms for the TONE3000 NAM catalog. The CURRENT USER TONE REQUEST is authoritative. Use recent conversation only to resolve ambiguity; never reuse a previous artist or amp search query when the current request names a different artist or target. Return JSON only: {"query":"short search phrase","reason":"brief reason in the same language as the USER REQUEST"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
   try{
-   const result=await invokeWorkersAILightTask('tone3000-search-terms',system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms',180);
+   const recent=compactNamConversation(conversation,700);
+   const user=(recent?'RECENT RELEVANT CONVERSATION (compact):\n'+recent+'\n\n':'')+'USER TONE REQUEST:\n'+prompt;
+   const result=await invokeWorkersAILightTask('tone3000-search-terms',system,user,'deriving TONE3000 search terms',180);
    const query=String(result?.query||'').trim().replace(/\s+/g,' ').slice(0,60);
    if(query.length<2)throw new Error('Workers AI returned no useful TONE3000 search phrase.');
    return {query,reason:String(result?.reason||''),source:'workers-ai'};
