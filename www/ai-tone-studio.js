@@ -441,6 +441,12 @@ export function shouldOfferToneSpecialist(prompt,localRefinement=false){
 }
 export function shouldUseMultiAgent(prompt,intent='tone_create',selectedMode='auto',localRefinement=false){if(localRefinement||intent!=='tone_create')return false;return selectedMode==='collab';}
 export function shouldCooldownProvider(error){const status=Number(error?.upstreamStatus||error?.status||0);if([408,425,429,500,502,503,504].includes(status))return true;const v=String(error?.message||error||'');return /high demand|capacity exceeded|temporarily unavailable|temporarily busy|server busy|timed? out|failed to fetch|network|provider rejected the request.*\b404\b/i.test(v);}
+export function shouldRetryNoNamSpecialistError(error,namModeEnabled,provider){
+ if(namModeEnabled!==false||!['gemini','openrouter'].includes(String(provider||'')))return false;
+ const status=Number(error?.upstreamStatus||error?.status||0);
+ if([500,502,503,504].includes(status))return true;
+ return /provider did not return a json tone plan|returned no structured json result|does not contain a json tone plan|unexpected end of json input|invalid json response/i.test(String(error?.message||error||''));
+}
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
  'You are a live tone editor for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII.',
@@ -1554,6 +1560,21 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    candidate_plan:candidate
   };
   const requestText=JSON.stringify(user);
+  const invokeSpecialistWithNoNamRetry=async member=>{
+   const invoke=(retry=false)=>{
+    if(!retry)return invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText,'specialist '+role,spec.maxTokens,member.model,role);
+    const retryBudget=Math.min(1024,spec.maxTokens+160);
+    const retrySystem=system.replace(/Keep the response within \d+ output tokens\./,'Keep the response within '+retryBudget+' output tokens.')+'\n\nRECOVERY RETRY: The previous response was temporarily unavailable or was not a complete JSON object. Return exactly one compact, syntactically valid JSON object matching the schema above. No Markdown, commentary, code fences or extra keys. Keep text fields short, use empty arrays when there is no supported finding, and close every JSON object and array.';
+    return invokeWorkerLightTask(member.provider,'tone-specialist',retrySystem,requestText,'specialist '+role+' · NAM-OFF retry',retryBudget,member.model,role);
+   };
+   try{return await invoke(false);}
+   catch(error){
+    if(!shouldRetryNoNamSpecialistError(error,context.namModeEnabled,member.provider))throw error;
+    status(providerNames[member.provider]+' returned a temporary or incomplete specialist response. Retrying once before fallback…','busy');
+    await new Promise(resolve=>setTimeout(resolve,400));
+    return invoke(true);
+   }
+  };
   const team=Array.isArray(context.providerTeam)?context.providerTeam:await resolveFreeProviderTeam();
   if(team.length<2)throw new Error('At least two distinct specialist providers must be configured for a new preset.');
   const successfulProviders=Array.isArray(context.successfulProviders)?context.successfulProviders:[];
@@ -1569,7 +1590,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    try{
     updateToneMissionProvider(member.provider,'working',role,'Menjalankan tugas ahli '+expertNumber);
     status(providerNames[member.provider]+' is executing specialist '+expertNumber+' · '+role.replaceAll('_',' ')+'…','busy');
-    const findings=await invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText,'specialist '+role,spec.maxTokens,member.model,role);
+    const findings=await invokeSpecialistWithNoNamRetry(member);
     const result={ok:true,role,provider:member.provider,model:findings.__aiModel||member.model,result:findings};
     if(findings.__aiUsage)Object.defineProperty(result,'__aiUsage',{value:findings.__aiUsage,enumerable:false});
     Object.defineProperty(result,'__aiModel',{value:findings.__aiModel||member.model,enumerable:false});
@@ -1848,7 +1869,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   if(!requiresExperts){for(const provider of Object.keys(toneProviderLabels))updateToneMissionProvider(provider,'standby','','Tidak diperlukan untuk koreksi lokal');}
   for(const provider of Object.keys(toneProviderLabels)){const available=providerTeam.some(item=>item.provider===provider);if(requiresExperts)updateToneMissionProvider(provider,available?'ready':'unavailable','',available?'Model siap; menunggu giliran':'Belum dikonfigurasi atau tidak tersedia');}
   if(requiresExperts&&providerTeam.length<2)throw new Error('A new preset requires at least two configured external specialist providers. Gemini must be available first, plus at least one of Groq, OpenRouter, or Cloudflare Workers AI. No Tone Plan was generated and no pedal changes were sent.');
-  const specialistDispatchContext={providerTeam,successfulProviders:[],providerCursor:{value:0}};
+  const specialistDispatchContext={providerTeam,successfulProviders:[],providerCursor:{value:0},namModeEnabled:Boolean(namModeActive)};
   const orchestrationInstructions=singleSystem+'\n\nGPT-6 LUNA TONE ARCHITECT CONTRACT: You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker for preset creation. FIRST do your own musical/reference research before delegating: infer the requested artist/song/era, sonic character, playing dynamics, likely rig context, evidence status, assumptions and uncertainties. Tone Researcher is YOUR responsibility and must NEVER be delegated. Do not invent sources, studio credits, exact rigs or citations; distinguish known, reported, inferred and unknown facts. Then, for every new preset, you MUST call at least TWO DIFFERENT technical specialist roles sequentially and receive successful results from TWO DIFFERENT external provider identities before final synthesis. Request exactly one specialist per turn, wait for its actual result, evaluate it, and only then request the next different role. For a typical artist lead preset, use Amp & Cabinet Specialist first and Effects Specialist second; reverse their order only when the request is primarily effects-focused. Guitar & Input Specialist is conditional on relevant guitar/pickup/input details; Tone Calibration Specialist is conditional on meaningful coupled gain/frequency/dynamic interactions; Tone Critic is conditional on material uncertainty, conflict or risk. Gemini is the first specialist provider. If Gemini fails, the same role task falls back sequentially to Groq, OpenRouter, and Cloudflare Workers AI. A second successful specialist MUST use a provider identity different from the first successful specialist; the app enforces this. Never run specialist generations in parallel, never delegate Tone Researcher, and never claim a failed provider completed a role. If fewer than two distinct specialist roles from two provider identities succeed, stop without a Tone Plan. You remain the only Chief and synthesize your own research plus the two specialist findings into the final MG-30 Tone Plan JSON. The exact MG-30 Gen 2 firmware 6.0.x catalogue and validator are authoritative; preserve NAM, IR, MIDI mappings and all unrelated device state.';
   let first=await orchestrateChatGptTonePlan({bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],instructions:orchestrationInstructions,toolsEnabled:requiresExperts,requireFirstSpecialist:requiresExperts,maxSpecialistCalls:6,requireSuccessfulSpecialists:requiresExperts,minSuccessfulSpecialists:requiresExperts?2:0,minDistinctSpecialistProviders:requiresExperts?2:0,onEvent:event=>{if(event.type==='chief_research')updateToneMission({chiefState:'researching',stage:'GPT-6 Luna sedang melakukan riset awal',activeRole:'tone_architect'});else if(event.type==='specialist_requested')updateToneMission({chiefState:'delegating',stage:'Luna menugaskan ahli '+event.round+' · '+String(event.role||'').replaceAll('_',' '),activeRole:event.role||'tone_architect'});else if(event.type==='specialist_completed')updateToneMission({chiefState:'reviewing',stage:'Luna menilai hasil '+String(event.role||'').replaceAll('_',' '),activeRole:'tone_architect'});else if(event.type==='chief_synthesis')updateToneMission({chiefState:'synthesizing',stage:'GPT-6 Luna sedang menyatukan riset dan hasil dua ahli',activeRole:'tone_architect'});else if(event.type==='complete')updateToneMission({chiefState:'validating',stage:'Memeriksa parameter terhadap katalog MG-30 Gen 2',activeRole:'tone_architect'});},runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot,model,...specialistDispatchContext})});
   let namSearchTerms='';
