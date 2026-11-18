@@ -368,3 +368,37 @@ Status: **GitHub Actions build and automated validation passed. Debug APK artifa
 - This is a **debug APK**, not a signed release package.
 - Compared with base `feature/tone-architect-six-agent-sequential`, the isolated branch changes only `.github/workflows/build-apk.yml`, this documentation file, `tests/ai-tone-studio.test.js`, `tests/chatgpt-si-wc-ui-preservation.test.js`, `www/ai-tone-studio.js` and `www/cloud-account.js`. No NAM/IR/MIDI/protocol/codec/native USB files are included in the diff.
 - User-facing acceptance still requires installing this APK on the user's Android phone and checking the screen layout/animations there. Original MG-30 Gen 2 hardware behavior must also be tested after install; CI does not emulate the phone, signed-in SIWC session or physical pedal.
+
+
+---
+
+## User-reported Android acceptance feedback — animation and specialist error — 2026-11-18
+
+The user installed/tested the UI-polish APK and supplied a screenshot. **No code changes are authorized yet.** This entry records the requested follow-up only.
+
+### 1. Mission Control artwork animation correction
+- Artwork selection and card visuals are accepted as good.
+- Current motion is rejected because individual parts appear to float independently: pedal knobs move detached from the pedal body, and the amplifier speaker appears to float independently from the amp cabinet.
+- Desired motion: animate the **complete illustrated object as one coherent assembly**, not isolated knobs/speaker. Possible restrained motion: gentle whole-pedal rocking/tilting or slight body sway; similarly animate the complete amplifier/cabinet as a single grounded object. Internal components must remain visually attached and maintain their geometry/relative positions.
+- Apply the same principle to other instrument illustrations where appropriate: whole object/group motion rather than detached component motion. Keep motion polished and subtle, not chaotic spinning unless specifically designed for that object.
+- Preserve the current accepted artwork/card layout. Respect reduced-motion accessibility.
+- Do not start implementation until the user explicitly authorizes changes.
+
+### 2. Specialist failure shown in the same screenshot
+The request was: `Buat preset blues ala srv menggunakan nam profil`.
+Visible assistant failure:
+- Effects specialist failed across all configured provider fallbacks.
+- UI says no Tone Plan was generated and no pedal changes were sent.
+- OpenRouter reported: `Provider did not return a JSON Tone Plan. [502 /api/v1/ai/tone-plan]`.
+- Cloudflare Workers AI reported all configured models failed; visible model detail: `@cf/google/gemma-4-26b-a4b-it: Expected ',' or '}' after property value in JSON at positi...` (message is truncated in the screenshot).
+- Mission Control indicates 1/2 successful specialists: Gemini fallback for effects failed; Groq completed amp cabinet specialist; OpenRouter and Cloudflare failed effects specialist.
+- The app correctly stopped rather than generating/applying a Tone Plan with only one successful role. Preserve this fail-closed quorum behavior.
+
+### 3. Required investigation when authorized
+- Trace why the effects-specialist task produces a non-JSON response / HTTP 502 at `POST /api/v1/ai/tone-plan` for OpenRouter and malformed JSON from Cloudflare's selected model.
+- Inspect provider response extraction, structured-output/JSON parsing, prompt/output token budget, model compatibility and fallback error classification. Distinguish provider transport failure from invalid model output.
+- Do not weaken the two-distinct-role/two-distinct-provider quorum, fabricate specialist success, silently accept malformed output, or allow a partial Tone Plan to reach the device.
+- Keep the already successful Gemini/Groq routing behavior, GPT-6 Luna chief synthesis and all existing working NAM, IR User/Third Party/Collection, MIDI, preset codec, USB-MIDI and USB Audio paths unchanged.
+- Add targeted regression tests for OpenRouter 502/non-JSON response and Cloudflare malformed JSON, alongside full suite/build validation after approval.
+
+**Status:** recorded only. No source code, Worker endpoint, provider configuration, APK, branch behavior or hardware mapping was changed in response to this feedback.
