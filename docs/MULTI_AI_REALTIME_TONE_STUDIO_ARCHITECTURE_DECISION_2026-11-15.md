@@ -402,3 +402,20 @@ Visible assistant failure:
 - Add targeted regression tests for OpenRouter 502/non-JSON response and Cloudflare malformed JSON, alongside full suite/build validation after approval.
 
 **Status:** recorded only. No source code, Worker endpoint, provider configuration, APK, branch behavior or hardware mapping was changed in response to this feedback.
+
+
+### Mission Control redesign direction selected by user — 2026-11-18
+
+The user reviewed two alternative mockups and selected **Alternative B — Studio Console** as the preferred design direction. This is design approval only, not authorization to implement code yet.
+
+Design direction:
+- Amplifier illustration is the main visual anchor.
+- Animate the complete amplifier as one coherent object; speaker and controls must remain attached and must not float independently.
+- Place GPT-6 Luna / Chief identity and task progress directly below the hero illustration.
+- Show specialist roles as compact horizontal rows rather than multiple large provider tiles.
+- Keep provider diagnostics and verbose errors collapsed behind an expandable detail area.
+- Preserve the existing dark green / lime visual language and leave adequate room for chat content.
+- Preserve truthful sequential provider state, fallback details, and the two-successful-distinct-role/provider quorum. Do not hide or weaken failure states.
+- Retain reduced-motion accessibility.
+
+The previously recorded issue with effects-specialist provider failures remains open and separate from the visual redesign. No source code or APK was changed by this design selection.
