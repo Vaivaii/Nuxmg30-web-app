@@ -323,3 +323,28 @@ Status: **Implementation and CI validation passed on the isolated feature branch
 - Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MG-30 MKII.
 - CI does not prove real provider credentials, actual specialist quotas, native SIWC models available in the signed-in account, or physical pedal behavior. Those still require testing on the Android device and original MG-30.
 
+
+
+---
+
+## AI Tone Assistant UI polish — 2026-11-18
+
+Work is isolated on branch `feature/ai-tone-ui-bubble-mission-cloud`, based on `feature/tone-architect-six-agent-sequential`.
+
+### Requested UI changes
+- Add an immediate in-chat activity bubble after every submitted message, so the user sees the assistant working even during the initial preflight/network phase. Discussion uses the three-dot GPT-5.6 Luna typing bubble; preset requests show Mission Control immediately.
+- Replace the generic green orb in the Mission Control chief card with original inline SVG instrument artwork chosen from the current specialist role: amplifier/cabinet, effects pedal, guitar/input, calibration meter, Tone Critic review board, or Tone Architect signal flow.
+- Animate relevant SVG details while the AI is working (speaker cone, pedal LEDs/knobs, guitar strings, meter bars, review lens or signal flow). Respect `prefers-reduced-motion`; standby/completed/fallback states remain visually distinguishable.
+- Remove the redundant DISKUSI / CREATE PRESET / SPECIALIST routing strip from AI Settings. Provider configuration, diagnostics, automatic fallback, usage monitor and actual routing behavior remain intact.
+- Translate the Cloud Account card, status, login, logout, session-expiry and local-feature notice into English. The Cloud auth flow and endpoint are unchanged.
+
+### Scope and protected boundaries
+- App UI files: `www/ai-tone-studio.js`, `www/cloud-account.js`.
+- UI regression tests: `tests/ai-tone-studio.test.js`.
+- The APK build workflow is configured to run for this isolated UI branch.
+- No Cloudflare Worker code, URL, endpoint, credentials, account tokens, AI orchestration/provider order, Tone Plan validator, NAM functionality, TONE3000 transfer, IR User/Third Party/Collection mapping, MIDI mapping, preset codec, USB-MIDI or native USB Audio code is intentionally changed.
+- Hardware acceptance on Android and the original MG-30 Gen 2 remains required after CI verification.
+
+### Validation
+- Five targeted UI regression tests were added for role-to-art mapping, safe artwork values, immediate activity visibility, Settings routing-strip removal and English Cloud UI copy.
+- CI/build results are pending at the time of this note. Do not distribute an APK unless the complete regression suite and Android build pass and the resulting artifact is verified.
