@@ -27,7 +27,7 @@ test('standalone Worker parses and retains original auth health route with boole
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.version, '1.2.0');
+  assert.equal(body.version, '1.2.1');
   assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, ai_light_task: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true });
   assert.equal(body.auth_configured, true);
   assert.deepEqual(body.secret_checks, {
@@ -83,7 +83,7 @@ test('provider status returns configured flags only after local JWT verification
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.workerVersion, '1.2.0');
+  assert.equal(body.workerVersion, '1.2.1');
   assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false, cloudflare: false });
   assert.equal(JSON.stringify(body).includes('secret-openai'), false);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://localhost');
@@ -233,6 +233,9 @@ test('authenticated AI light-task gateway executes Cloudflare Workers AI and ret
   assert.equal(body.model, '@cf/google/gemma-4-26b-a4b-it');
   assert.deepEqual(body.result.findings, ['verified response']);
   assert.deepEqual(body.usage, { prompt_tokens: 23, completion_tokens: 11, total_tokens: 34 });
+  assert.deepEqual(calls[0].options.response_format, { type: 'json_object' });
+  assert.equal(calls[0].options.max_completion_tokens, 420);
+  assert.equal(calls[0].options.chat_template_kwargs.enable_thinking, false);
   assert.equal(calls.length, 1);
 });
 
@@ -325,5 +328,71 @@ test('TONE3000 global service token is never forwarded to an external model CDN'
     assert.equal(response.status, 403);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].authorization, 'Bearer service-tone-key');
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test('Cloudflare Workers AI accepts structured object JSON Mode responses without stringifying failures', async () => {
+  const calls = [];
+  const env = { ...baseEnv, AI: { run: async (model, options) => {
+    calls.push({ model, options });
+    return { response: { effects: [{ id: 'MOD', model: 'Tremolo' }], confidence: 0.92 }, usage: { prompt_tokens: 31, completion_tokens: 18, total_tokens: 49 } };
+  } } };
+  const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone-specialist', role: 'effects_specialist', provider: 'cloudflare', model: '@cf/google/gemma-4-26b-a4b-it', system: 'Return a JSON object.', prompt: 'Recommend exact effects.', maxOutputTokens: 640 })
+  }), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.model, '@cf/google/gemma-4-26b-a4b-it');
+  assert.deepEqual(body.result.effects, [{ id: 'MOD', model: 'Tremolo' }]);
+  assert.deepEqual(body.usage, { prompt_tokens: 31, completion_tokens: 18, total_tokens: 49 });
+  assert.deepEqual(calls[0].options.response_format, { type: 'json_object' });
+  assert.equal(calls[0].options.max_completion_tokens, 640);
+});
+
+test('Cloudflare Workers AI skips malformed Gemma JSON and succeeds with the next configured model', async () => {
+  const calls = [];
+  const env = { ...baseEnv, AI: { run: async (model, options) => {
+    calls.push({ model, options });
+    if (model === '@cf/google/gemma-4-26b-a4b-it') return { response: '{"effects":[{"id":"MOD","model":}]}', usage: { prompt_tokens: 12, completion_tokens: 8, total_tokens: 20 } };
+    return { response: { effects: [{ id: 'MOD', model: 'Tremolo' }], confidence: 0.9 }, usage: { prompt_tokens: 14, completion_tokens: 19, total_tokens: 33 } };
+  } } };
+  const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone-specialist', role: 'effects_specialist', provider: 'cloudflare', model: '@cf/google/gemma-4-26b-a4b-it', system: 'Return a JSON object.', prompt: 'Recommend exact effects.', maxOutputTokens: 640 })
+  }), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.model, '@cf/openai/gpt-oss-20b');
+  assert.deepEqual(body.result.effects, [{ id: 'MOD', model: 'Tremolo' }]);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls.map(call => call.options.response_format), [{ type: 'json_object' }, { type: 'json_object' }]);
+});
+
+test('OpenRouter retries a transient upstream 502 once without JSON-mode constraints', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), payload: JSON.parse(options.body) });
+    if (calls.length === 1) return jsonResponse({ error: { message: 'temporary upstream gateway failure' } }, 502);
+    return jsonResponse({ choices: [{ message: { content: JSON.stringify({ summary: 'Recovered', blocks: [], notes: [] }) } }] });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/tone-plan', {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'openrouter', model: 'openrouter/free', system: 'Return JSON.', prompt: 'Create an effects analysis.' })
+    }), { ...baseEnv, OPENROUTER_API_KEY: 'router-secret' });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.ok, true);
+    assert.equal(body.provider, 'openrouter');
+    assert.equal(body.tonePlan.summary, 'Recovered');
+    assert.equal(calls.length, 2);
+    assert.deepEqual(calls[0].payload.response_format, { type: 'json_object' });
+    assert.equal(calls[1].payload.response_format, undefined);
+    assert.match(calls[1].payload.messages.at(-1).content, /FINAL OUTPUT CONTRACT/);
   } finally { globalThis.fetch = originalFetch; }
 });
