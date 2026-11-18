@@ -233,3 +233,46 @@ The Cloudflare Workers AI/Gemma role is no longer part of the active application
 
 ### Validation status
 - CI validation is pending for this recovery commit. The previous APK does not contain these fixes and is not a deliverable for this recovery.
+
+
+---
+
+## User-approved two-mode Luna architecture — 2026-11-18
+
+This section supersedes prior provider-selection and external Tone Researcher assignments above. Historical decisions are retained for traceability.
+
+### 1. Ordinary discussion
+- Every ordinary chat/discussion turn uses the signed-in ChatGPT native SIWC session with GPT-5.6 Luna (model ID: gpt-5.6-luna).
+- The discussion route is prose-only. It does not generate a Tone Plan, invoke external specialist providers, or apply device parameters.
+- The composer no longer allows the user to switch the conversational provider/model. Settings still retain provider diagnostics and connectivity controls.
+- During discussion, the conversation displays a compact three-dot typing bubble labelled GPT-5.6 Luna.
+
+### 2. Preset creation
+- Creating a new preset uses GPT-6 Luna (model ID: gpt-6-luna) through the native ChatGPT SIWC bridge.
+- GPT-6 Luna is the only Chief, does its own musical/reference research, owns the Tone Researcher responsibility, evaluates evidence and uncertainty, directs specialist work, synthesizes the final result and remains the final decision-maker.
+- Tone Researcher is not an external specialist role and must not appear in the specialist tool schema.
+- All ChatGPT selection logic is task-specific: GPT-5.6 Luna for discussion; GPT-6 Luna for preset creation, preset correction and local tone refinement. A saved manual model selection cannot silently override this routing.
+- NAM/TONE3000 search-term derivation invoked as part of preset creation is also treated as a preset task and uses GPT-6 Luna, not the GPT-5.6 discussion model.
+
+### 3. Mandatory specialist consultation
+- Every new preset requires at least two successful, distinct technical specialist roles from at least two different external provider identities before GPT-6 Luna may return a final Tone Plan.
+- Specialists run sequentially, never in parallel. GPT-6 Luna issues one role request, waits for the provider result, evaluates it, and only then issues the next role.
+- Default specialist roles for an artist/amp-led request are Amp & Cabinet Specialist first and Effects Specialist second. Guitar & Input Specialist, Tone Calibration Specialist and Tone Critic remain conditional on the actual request and quality risks.
+- Gemini is the first provider priority. If the current role task fails, fallback is sequential: Groq, OpenRouter, then Cloudflare Workers AI. A failed provider is never reported as a successful specialist.
+- After a specialist succeeds, the provider cursor advances so the next specialist starts with the next provider in the chain. A provider that already succeeded for this preset is not reused for the second required specialist.
+- If the app cannot obtain two successful specialist roles from two different providers, it stops without producing or applying a Tone Plan. It must not fabricate research or specialist results.
+- Local same-tone delta refinements may remain Luna-only to avoid unnecessary token usage; they still use GPT-6 Luna, exact catalogue validation and the existing safe delta-patch rules.
+
+### 4. Activity UI
+- Discussion uses a normal chat typing bubble.
+- Preset creation uses Mission Control inside the conversation: GPT-6 Luna Chief/research/synthesis plus visible Gemini, Groq, OpenRouter and Cloudflare Workers AI status tiles.
+- Provider tiles reflect actual runtime state (standby, ready, working, fallback, completed or unavailable). Specialist activity is visibly sequential.
+- The Mission Control card remains visible on errors and shows that the operation stopped; no fake progress percentage or timer is used.
+- The existing editor apply path runs only after the exact original MG-30 Gen 2 catalogue validator accepts the Tone Plan.
+
+### 5. Protected boundaries
+- The implementation changes app-side AI routing/orchestration, the composer/AI activity UI, regression tests and this documentation only.
+- No Cloudflare Worker endpoint, request route, authentication secret, provider key or Worker deployment is changed by this implementation.
+- Original NUX MG-30 Gen 2 firmware 6.0.x remains the target, not MG-30 MKII.
+- NAM, TONE3000 OAuth/model transfer, NAM Slot 10, IR User/Third Party and IR Collection mappings, preset codec, MIDI mappings, USB-MIDI and native USB Audio code remain out of scope and must be preserved.
+- Physical Android and pedal acceptance tests are still required after installing the new APK. CI success alone does not prove hardware behavior.

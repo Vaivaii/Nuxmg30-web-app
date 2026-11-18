@@ -18,16 +18,18 @@ test('Restored AI Live Tone Assistant keeps the audio listening and local analys
   assert.match(ai, /requestAudioDiagnosis/);
 });
 
-test('ChatGPT replaces the former Cloudflare AI role while existing optional providers and SIWC remain', () => {
+test('ChatGPT conversation and preset modes are fixed to their task-specific Luna models', () => {
   const select = ai.match(/<select id="aiToneProviderSelect">[\s\S]*?<\/select>/)?.[0] || '';
-  for (const provider of ['chatgpt', 'auto', 'gemini', 'groq', 'openrouter', 'gpt', 'collab']) {
-    assert.ok(select.includes('value="' + provider + '"'), 'provider selector lost ' + provider);
-  }
-  assert.match(select, /value="cloudflare"/);
-  for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestChatGPT']) {
+  assert.match(select, /value="chatgpt" selected/);
+  assert.doesNotMatch(select, /value="auto"|value="gemini"|value="groq"|value="openrouter"|value="cloudflare"|value="collab"/);
+  assert.match(ai, /DISKUSI BIASA/);
+  assert.match(ai, /GPT-5\.6 Luna/);
+  assert.match(ai, /CREATE PRESET/);
+  assert.match(ai, /GPT-6 Luna/);
+  assert.match(ai, /Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+  for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestChatGPT', 'aiToneTestCloudflare']) {
     assert.ok(ai.includes(id), 'provider settings lost ' + id);
   }
-  assert.match(ai, /id="aiToneTestCloudflare"/);
 });
 
 test('ChatGPT SIWC runs through the native bridge rather than the Cloudflare AI proxy', () => {
@@ -47,10 +49,12 @@ test('ChatGPT model discovery does not depend on Cloud Account login', () => {
   assert.ok(body.indexOf("await refreshProviderModels('chatgpt',true)") < body.indexOf('getCloudAiStatus(true)'));
 });
 
-test('ChatGPT remains the selected primary and is not silently replaced by another provider', () => {
+test('ChatGPT task router cannot be changed to an external provider from the composer', () => {
   assert.match(ai, /let mode='chatgpt'/);
-  assert.match(ai, /const auto=mode==='auto'\|\|mode==='collab'\\|\\|ui\\.autoFallback\\.checked/);
-  assert.match(ai, /providerFallbackOrder\(primary='gemini'\)[\s\S]*?\['chatgpt',\.\.\.freePriority,'cloudflare'\]/);
+  assert.match(ai, /const next='chatgpt'/);
+  assert.match(ai, /if\(provider==='chatgpt'\)\{select\.value='__auto__';select\.disabled=true/);
+  assert.match(ai, /const toneTask=activityMode==='tone'/);
+  assert.match(ai, /GPT-5\.6 discussion \/ GPT-6 Luna preset/);
 });
 
 test('Restored conversation composer always wires the Send control', () => {

@@ -103,14 +103,14 @@ function parseJson(text){
 }
 
 export const TONE_SPECIALIST_ROLES=Object.freeze([
- 'tone_researcher','amp_cabinet_specialist','effects_specialist',
+ 'amp_cabinet_specialist','effects_specialist',
  'guitar_input_specialist','tone_calibration_specialist','tone_critic'
 ]);
 export function toneSpecialistToolDefinition(){
  return {
   type:'function',
   name:'delegate_tone_specialist',
-  description:'Delegate exactly one sequential task to one role-specialist. You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker. You may request another specialist only after receiving and evaluating the previous result. Never call multiple specialists in parallel. Choose only roles needed for this tone: Tone Researcher for deep musical/rig research; Amp & Cabinet Specialist for amp/cab matching; Effects Specialist for effects and signal-chain recommendations; Guitar & Input Specialist only when guitar/pickup/input materially affects the target; Tone Calibration Specialist for whole-chain balance; Tone Critic only when your quality gate detects uncertainty, conflict, or material risk. Maximum six specialist tasks total, and never repeat a role unless you explicitly need a focused re-check. Specialists do not communicate with each other. Each specialist is executed as a separate, focused request through the connected ChatGPT account; no Cloudflare Worker, API key, or external provider is required for this ChatGPT route.',
+  description:'Delegate exactly one sequential task to one external role-specialist. You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker. You perform initial musical/reference research yourself; Tone Researcher is not an external role. For every new preset, obtain at least two successful technical specialist roles from two different configured providers. Request one specialist, wait for its real provider result, evaluate it, then request the next different role. Never call multiple specialists in parallel. Available roles: Amp & Cabinet Specialist; Effects Specialist; Guitar & Input Specialist only when guitar/pickup/input materially affects the target; Tone Calibration Specialist for whole-chain balance; Tone Critic only when there is material uncertainty, conflict, or risk. Maximum six specialist tasks total. Gemini is first priority; failed tasks fall back sequentially to Groq, OpenRouter, then Cloudflare Workers AI. The app enforces different providers for the two required successful experts.',
   strict:true,
   parameters:{
    type:'object',
@@ -154,80 +154,58 @@ export async function requestChatGptToneSpecialist({bridge,model,role,system,use
  Object.defineProperty(result,'__aiModel',{value:response?.model||model,enumerable:false});
  return result;
 }
-export async function orchestrateChatGptTonePlan({bridge,model,input,instructions,runSpecialist,toolsEnabled=true,maxOutputTokens=1350,maxSpecialistCalls=6,requireFirstSpecialist=false,requireSuccessfulSpecialists=false}){
+export async function orchestrateChatGptTonePlan({bridge,model,input,instructions,runSpecialist,toolsEnabled=true,maxOutputTokens=1350,maxSpecialistCalls=6,requireFirstSpecialist=false,requireSuccessfulSpecialists=false,minSuccessfulSpecialists=0,minDistinctSpecialistProviders=0,onEvent=null}){
  if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable.');
  const initialInput=Array.isArray(input)?input.slice():[];
  const tools=toolsEnabled?[toneSpecialistToolDefinition()]:undefined;
- const usageBreakdown=[],specialistRoles=[],successfulSpecialistRoles=[];
+ const minSpecialists=Math.max(0,Math.min(6,Math.floor(Number(minSuccessfulSpecialists)||0)));
+ const minProviders=Math.max(0,Math.min(minSpecialists,Math.floor(Number(minDistinctSpecialistProviders)||0)));
+ const emit=event=>{if(typeof onEvent==='function'){try{onEvent(event);}catch{}}};
+ const usageBreakdown=[],specialistRoles=[],successfulSpecialistRoles=[],successfulSpecialistProviders=[];
+ emit({type:'chief_research',stage:'GPT-6 Luna is researching the requested tone.'});
  let response=await bridge.sendResponse({model,input:initialInput,instructions,maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})});
  let nextInput=initialInput.slice(),round=0;
  while(true){
-  const calls=Array.isArray(response?.toolCalls)?response.toolCalls:
-   (Array.isArray(response?.outputItems)?response.outputItems.filter(item=>item?.type==='function_call'):[]);
+  const calls=Array.isArray(response?.toolCalls)?response.toolCalls:(Array.isArray(response?.outputItems)?response.outputItems.filter(item=>item?.type==='function_call'):[]);
   const hasCalls=calls.length>0;
-  usageBreakdown.push({
-   stage:hasCalls?'ChatGPT Orchestrator · Sequential routing '+(round+1):'ChatGPT Orchestrator · Final synthesis',
-   model:response?.model||model,usage:response?.usage||null,
-   instructions:String(instructions||''),input:JSON.stringify(nextInput||[])
-  });
+  usageBreakdown.push({stage:hasCalls?'GPT-6 Luna · Sequential specialist routing '+(round+1):'GPT-6 Luna · Final synthesis',model:response?.model||model,usage:response?.usage||null,instructions:String(instructions||''),input:JSON.stringify(nextInput||[])});
   if(!hasCalls){
    if(round===0&&requireFirstSpecialist)throw new Error('GPT-6 Luna did not delegate a required specialist task. No Tone Plan was generated and no device changes were sent.');
+   if(successfulSpecialistRoles.length<minSpecialists)throw new Error('GPT-6 Luna completed only '+successfulSpecialistRoles.length+' of '+minSpecialists+' required specialist tasks. No Tone Plan was generated and no pedal changes were sent.');
+   if(successfulSpecialistProviders.length<minProviders)throw new Error('Only '+successfulSpecialistProviders.length+' distinct specialist provider(s) succeeded; '+minProviders+' are required. No Tone Plan was generated and no pedal changes were sent.');
+   emit({type:'chief_synthesis',stage:'GPT-6 Luna is reviewing specialist findings and synthesizing the Tone Plan.'});
    break;
   }
-  if(!toolsEnabled||calls.length!==1)throw new Error('The ChatGPT orchestrator must request exactly one specialist per turn. Parallel or disabled tool calls are rejected. No device changes were sent.');
-  if(round>=Math.max(1,Math.min(6,Number(maxSpecialistCalls)||6)))throw new Error('The ChatGPT orchestrator exceeded the six-specialist sequential task budget. No device changes were sent.');
+  if(!toolsEnabled||calls.length!==1)throw new Error('The GPT-6 Luna orchestrator must request exactly one specialist per turn. Parallel or disabled tool calls are rejected. No device changes were sent.');
+  if(round>=Math.max(1,Math.min(6,Number(maxSpecialistCalls)||6)))throw new Error('The GPT-6 Luna orchestrator exceeded the six-specialist sequential task budget. No device changes were sent.');
   const call=calls[0];
-  if(call?.name!=='delegate_tone_specialist'||!call.call_id)throw new Error('ChatGPT requested an unsupported MG-30 specialist tool. No device changes were sent.');
-  let args;
-  try{args=JSON.parse(String(call.arguments||''));}catch{throw new Error('ChatGPT returned invalid specialist task arguments. No device changes were sent.');}
+  if(call?.name!=='delegate_tone_specialist'||!call.call_id)throw new Error('GPT-6 Luna requested an unsupported MG-30 specialist tool. No device changes were sent.');
+  let args;try{args=JSON.parse(String(call.arguments||''));}catch{throw new Error('GPT-6 Luna returned invalid specialist task arguments. No device changes were sent.');}
   const role=String(args?.role||'');
-  if(!TONE_SPECIALIST_ROLES.includes(role))throw new Error('ChatGPT selected an unsupported MG-30 specialist role. No device changes were sent.');
-  if(specialistRoles.includes(role))throw new Error('ChatGPT repeated specialist role '+role+' without a distinct approved re-check. No device changes were sent.');
-  if(!Array.isArray(args.blockIds)||args.blockIds.length>4||typeof args.focus!=='string'||typeof args.brief!=='string'||typeof args.candidatePlan!=='string')
-   throw new Error('ChatGPT returned an incomplete specialist task contract. No device changes were sent.');
-  specialistRoles.push(role);
+  if(!TONE_SPECIALIST_ROLES.includes(role))throw new Error('GPT-6 Luna selected an unsupported MG-30 specialist role. No device changes were sent.');
+  if(specialistRoles.includes(role))throw new Error('GPT-6 Luna repeated specialist role '+role+' without a distinct approved re-check. No device changes were sent.');
+  if(!Array.isArray(args.blockIds)||args.blockIds.length>4||typeof args.focus!=='string'||typeof args.brief!=='string'||typeof args.candidatePlan!=='string')throw new Error('GPT-6 Luna returned an incomplete specialist task contract. No device changes were sent.');
+  specialistRoles.push(role);emit({type:'specialist_requested',role,round:round+1,stage:'GPT-6 Luna assigned '+role.replaceAll('_',' ')});
   let specialistResult;
-  try{
-   specialistResult=await runSpecialist(args);
-   if(!specialistResult||typeof specialistResult!=='object')throw new Error('Specialist returned no structured result.');
-  }catch(error){
-   specialistResult={ok:false,role,error:String(error?.message||error).slice(0,300),fallback:'All configured providers were tried for this same role task. Never claim that this specialist completed successfully.'};
-   if(requireSuccessfulSpecialists)throw new Error('Tone Architect specialist '+role.replaceAll('_',' ')+' failed across all configured provider fallbacks. No Tone Plan was generated and no pedal changes were sent. '+specialistResult.error);
-  }
-  if(specialistResult?.ok!==false)successfulSpecialistRoles.push(role);
-  const returnedItems=Array.isArray(response.outputItems)?response.outputItems.slice():[
-   {type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')}
-  ];
-  if(!returnedItems.some(item=>item?.type==='function_call'&&item?.call_id===call.call_id))
-   returnedItems.push({type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')});
-  nextInput.push(...returnedItems);
-  nextInput.push({type:'function_call_output',call_id:call.call_id,output:JSON.stringify(specialistResult).slice(0,12000)});
-  round++;
-  response=await bridge.sendResponse({
-   model,input:nextInput.slice(),
-   instructions:String(instructions||'')+'\n\nSEQUENTIAL SPECIALIST HANDOFF: You have received the latest specialist result. Evaluate it before deciding whether to call exactly one different specialist next. You may delegate only one task in this response, and only after reviewing all prior results. Never let specialists communicate directly. Tone Critic is conditional and should be called only when your quality gate identifies material uncertainty, conflict, or risk. Guitar & Input Specialist is conditional. If all required evidence is sufficient, stop delegation and return the final MG-30 Tone Plan JSON only. You remain the sole Chief and final decision authority.',
-   maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})
-  });
+  try{specialistResult=await runSpecialist(args);if(!specialistResult||typeof specialistResult!=='object')throw new Error('Specialist returned no structured result.');if(requireSuccessfulSpecialists&&specialistResult.ok===false)throw new Error(String(specialistResult.error||'Specialist did not complete successfully.'));}
+  catch(error){specialistResult={ok:false,role,error:String(error?.message||error).slice(0,300),fallback:'All configured providers were tried for this same role task. Never claim that this specialist completed successfully.'};if(requireSuccessfulSpecialists)throw new Error('Tone Architect specialist '+role.replaceAll('_',' ')+' failed across all configured provider fallbacks. No Tone Plan was generated and no pedal changes were sent. '+specialistResult.error);}
+  if(specialistResult?.ok!==false){successfulSpecialistRoles.push(role);const provider=String(specialistResult.provider||'').trim();if(provider&&!successfulSpecialistProviders.includes(provider))successfulSpecialistProviders.push(provider);emit({type:'specialist_completed',role,provider,round:round+1,stage:role.replaceAll('_',' ')+' completed by '+(provider||'configured provider')});}
+  else emit({type:'specialist_failed',role,round:round+1,stage:role.replaceAll('_',' ')+' failed'});
+  const returnedItems=Array.isArray(response.outputItems)?response.outputItems.slice():[{type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')}];
+  if(!returnedItems.some(item=>item?.type==='function_call'&&item?.call_id===call.call_id))returnedItems.push({type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')});
+  nextInput.push(...returnedItems);nextInput.push({type:'function_call_output',call_id:call.call_id,output:JSON.stringify(specialistResult).slice(0,12000)});round++;
+  const quotaPending=successfulSpecialistRoles.length<minSpecialists||successfulSpecialistProviders.length<minProviders;
+  const nextInstruction=quotaPending?'\n\nMANDATORY SPECIALIST QUOTA: Complete at least '+minSpecialists+' successful specialist roles using '+minProviders+' distinct external providers. Current successes: '+successfulSpecialistRoles.length+' roles and '+successfulSpecialistProviders.length+' providers. You MUST request exactly one different technical specialist role now; do not return the final Tone Plan until both minimums are met. Ensure the next specialist uses a provider identity not already successful. Luna performs the Tone Researcher responsibility herself; never delegate Tone Researcher.':'\n\nSEQUENTIAL SPECIALIST HANDOFF: Evaluate the latest result before any next action. The mandatory specialist/provider quota is met. You may now synthesize, or request another different specialist only when it materially improves confidence or addresses a real uncertainty. Never run specialists in parallel or let specialists communicate directly. Luna owns all initial musical/reference research; never delegate Tone Researcher. Tone Critic and Guitar & Input Specialist are conditional. Return the final MG-30 Tone Plan JSON only when your quality gate is satisfied. You remain the sole Chief and final decision authority.';
+  response=await bridge.sendResponse({model,input:nextInput.slice(),instructions:String(instructions||'')+nextInstruction,maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})});
  }
- if(requireFirstSpecialist&&!successfulSpecialistRoles.length)throw new Error('No required ChatGPT specialist completed successfully. No Tone Plan was generated and no device changes were sent.');
+ if(requireFirstSpecialist&&!successfulSpecialistRoles.length)throw new Error('No required GPT-6 Luna specialist completed successfully. No Tone Plan was generated and no device changes were sent.');
+ if(successfulSpecialistRoles.length<minSpecialists)throw new Error('The minimum of '+minSpecialists+' successful specialist tasks was not met. No Tone Plan was generated and no device changes were sent.');
+ if(successfulSpecialistProviders.length<minProviders)throw new Error('The minimum of '+minProviders+' distinct specialist providers was not met. No Tone Plan was generated and no device changes were sent.');
  const plan=parseJson(response?.text||'');
  const usageRows=usageBreakdown.filter(row=>row.usage);
- if(usageRows.length){
-  const usage={input_tokens:0,output_tokens:0,total_tokens:0};
-  for(const row of usageRows){
-   usage.input_tokens+=Number(row.usage.input_tokens??row.usage.prompt_tokens??0);
-   usage.output_tokens+=Number(row.usage.output_tokens??row.usage.completion_tokens??0);
-   usage.total_tokens+=Number(row.usage.total_tokens??((row.usage.input_tokens??row.usage.prompt_tokens??0)+(row.usage.output_tokens??row.usage.completion_tokens??0)));
-  }
-  Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});
- }
- Object.defineProperty(plan,'__aiModel',{value:response?.model||model,enumerable:false});
- Object.defineProperty(plan,'__aiUsageBreakdown',{value:usageBreakdown,enumerable:false});
- Object.defineProperty(plan,'__orchestratorCalls',{value:usageBreakdown.length,enumerable:false});
- Object.defineProperty(plan,'__specialistRoles',{value:specialistRoles.slice(),enumerable:false});
- Object.defineProperty(plan,'__successfulSpecialistRoles',{value:successfulSpecialistRoles.slice(),enumerable:false});
- if(specialistRoles.length)Object.defineProperty(plan,'__specialistRole',{value:specialistRoles[0],enumerable:false});
- return plan;
+ if(usageRows.length){const usage={input_tokens:0,output_tokens:0,total_tokens:0};for(const row of usageRows){usage.input_tokens+=Number(row.usage.input_tokens??row.usage.prompt_tokens??0);usage.output_tokens+=Number(row.usage.output_tokens??row.usage.completion_tokens??0);usage.total_tokens+=Number(row.usage.total_tokens??((row.usage.input_tokens??row.usage.prompt_tokens??0)+(row.usage.output_tokens??row.usage.completion_tokens??0)));}Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});}
+ Object.defineProperty(plan,'__aiModel',{value:response?.model||model,enumerable:false});Object.defineProperty(plan,'__aiUsageBreakdown',{value:usageBreakdown,enumerable:false});Object.defineProperty(plan,'__orchestratorCalls',{value:usageBreakdown.length,enumerable:false});Object.defineProperty(plan,'__specialistRoles',{value:specialistRoles.slice(),enumerable:false});Object.defineProperty(plan,'__successfulSpecialistRoles',{value:successfulSpecialistRoles.slice(),enumerable:false});Object.defineProperty(plan,'__successfulSpecialistProviders',{value:successfulSpecialistProviders.slice(),enumerable:false});
+ if(specialistRoles.length)Object.defineProperty(plan,'__specialistRole',{value:specialistRoles[0],enumerable:false});emit({type:'complete',stage:'GPT-6 Luna completed and validated the specialist handoffs.'});return plan;
 }
 function outputText(data){
  if(typeof data?.output_text==='string')return data.output_text;
@@ -386,10 +364,8 @@ export function selectChatGptAutoModel(models,task='discussion'){
  if(!rows.length)return '';
  const normalized=row=>String(row.id+' '+(row.name||'')).toLowerCase().replace(/[_ ]+/g,'-');
  const find=pattern=>rows.find(row=>pattern.test(normalized(row)))?.id||'';
- if(task==='tone-plan')return find(/gpt-6-luna/)||find(/gpt-6/)||'';
- return find(/gpt-5[.-]6-luna/)||
-  rows.filter(row=>/mini|nano|flash|lite|small/.test(normalized(row))).sort((a,b)=>normalized(a).localeCompare(normalized(b)))[0]?.id||
-  find(/gpt-5[.-]/)||rows[0].id;
+ if(task==='tone-plan')return find(/gpt-6-luna/)||'';
+ return find(/gpt-5[.-]6-luna/)||'';
 }
 
 export async function requestChatGptConversation({bridge,model,system,user,maxOutputTokens=520}){
@@ -645,7 +621,7 @@ async function init(){
  const audioStyle=document.createElement('style');audioStyle.id='aiToneAudioCss';
  audioStyle.textContent='.ai-tone-audio-panel{margin:0 0 12px;padding:13px;border:1px solid #3c4b32;border-radius:16px;background:linear-gradient(145deg,rgba(23,34,22,.88),rgba(13,19,15,.95))}.ai-tone-audio-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ai-tone-audio-head strong{display:block;color:#edf5e4;font-size:12px;letter-spacing:.07em}.ai-tone-audio-head small{display:block;margin-top:4px;color:#9daa93;font-size:10px}.ai-tone-audio-head small[data-state=connected]{color:#c5f36b}.ai-tone-audio-refresh{border:1px solid #3c4b32;border-radius:9px;padding:7px 10px;background:#141c14;color:#b9c7ad;font-size:10px;font-weight:750}.ai-tone-audio-modes{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:12px;padding:4px;border:1px solid #34402f;border-radius:11px;background:#0c110d}.ai-tone-audio-modes button{min-height:36px;border:0;border-radius:8px;background:transparent;color:#a6b09d;font-size:11px;font-weight:750}.ai-tone-audio-modes button.active{background:#c5f36b;color:#10150b}.ai-tone-audio-start{width:100%;min-height:45px;margin-top:10px;border:1px solid #c5f36b;border-radius:11px;background:#c5f36b;color:#10150b;font-size:13px;font-weight:850}.ai-tone-audio-start:disabled,.ai-tone-audio-refresh:disabled,.ai-tone-audio-modes button:disabled{opacity:.45}.ai-tone-audio-meter{display:flex;align-items:center;justify-content:center;gap:3px;height:35px;margin-top:9px;overflow:hidden}.ai-tone-audio-meter span{height:var(--audio-level,15%);flex:1;min-width:2px;border-radius:3px;background:#526b35;opacity:.6;transform:scaleY(.28);transform-origin:center;transition:height .12s,transform .12s,opacity .12s}.ai-tone-audio-meter.is-active span{transform:scaleY(1);opacity:1;background:#91c44d}.ai-tone-audio-meter.is-active span:nth-child(3n){background:#c5f36b}.ai-tone-audio-status{margin-top:5px;color:#bdc9b2;text-align:center;font-size:11px;line-height:1.45}.ai-tone-audio-status[data-state=error]{color:#ffd2a3}.ai-tone-audio-note{display:block;margin-top:8px;color:#7f8c77;font-size:9px;line-height:1.5}@media(max-width:380px){.ai-tone-audio-panel{padding:11px}.ai-tone-audio-head strong{font-size:11px}}';
 
- audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:calc(var(--ai-tone-max-height) - 62px);height:auto;padding:10px 13px 12px;overflow:hidden;overscroll-behavior:none}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-status-accessible{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.ai-tone-messages{display:flex;flex:0 1 auto;flex-direction:column;gap:9px;min-height:clamp(118px,21dvh,220px);max-height:min(48dvh,500px);height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{max-width:96%;flex:0 0 auto;font-size:14px;line-height:1.5}.ai-tone-activity{align-self:flex-start;display:flex;align-items:center;gap:9px;flex:0 0 auto;max-width:96%;padding:9px 12px;border:1px solid #536a39;border-radius:12px;background:#172316;color:#d8f4ac;font-size:12px;line-height:1.4}.ai-tone-activity:before{content:"";width:13px;height:13px;flex:0 0 13px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:10px 11px;border-radius:14px}.ai-tone-audio-head{min-height:25px}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:40px;margin-top:8px}.ai-tone-audio-meter{height:19px;margin-top:6px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.35}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:7px;margin-top:0;padding-top:2px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:54px;max-height:88px;height:54px;resize:none;overflow-y:auto;padding:11px 12px}.ai-tone-compose{flex:0 0 auto;margin-top:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.35}.ai-tone-provider-row{margin-bottom:10px}.ai-tone-nam-toolbar{margin:10px 0}.ai-tone-nam-wizard,.ai-tone-nam-results{max-height:40dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height);width:100%;border-radius:22px 22px 0 0}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 60px);padding:9px 12px calc(9px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:clamp(116px,20dvh,190px);max-height:48dvh;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:9px 10px}.ai-tone-audio-note{display:block}.ai-tone-prompt{min-height:50px;height:50px;max-height:76px}.ai-tone-composer>.ai-tone-hint{font-size:8px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh}.ai-tone-messages{min-height:90px;max-height:34dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:14px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:35px}.ai-tone-prompt{height:46px;min-height:46px}}';
+ audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:auto;min-height:0;max-height:var(--ai-tone-max-height);display:flex;flex-direction:column;overflow:hidden}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:calc(var(--ai-tone-max-height) - 62px);height:auto;padding:10px 13px 12px;overflow:hidden;overscroll-behavior:none}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-status-accessible{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.ai-tone-messages{display:flex;flex:0 1 auto;flex-direction:column;gap:9px;min-height:clamp(118px,21dvh,220px);max-height:min(48dvh,500px);height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{max-width:96%;flex:0 0 auto;font-size:14px;line-height:1.5}.ai-tone-activity{align-self:flex-start;display:flex;flex-direction:column;gap:8px;flex:0 0 auto;width:min(100%,440px);max-width:100%;padding:11px 12px;border:1px solid #536a39;border-radius:14px;background:#172316;color:#d8f4ac;font-size:12px;line-height:1.4}.ai-tone-activity.ai-tone-generic{display:flex;flex-direction:row;align-items:center;gap:9px;width:auto}.ai-tone-activity.ai-tone-generic:before{content:"";width:13px;height:13px;flex:0 0 13px;border:2px solid #526044;border-top-color:#c5f36b;border-radius:50%;animation:aiToneSpin .8s linear infinite}.ai-tone-discussion-label,.ai-tone-mission-head,.ai-tone-mission-provider>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.ai-tone-discussion-label strong,.ai-tone-mission-head strong{color:#f0f6e8;font-size:12px}.ai-tone-discussion-label span,.ai-tone-mission-live{font-size:9px;font-weight:800;letter-spacing:.6px;color:#b9ed70}.ai-tone-discussion-dots,.ai-tone-typing-dots{display:flex;align-items:center;gap:5px;height:12px}.ai-tone-discussion-dots i,.ai-tone-typing-dots i{width:6px;height:6px;border-radius:50%;background:#c5f36b;animation:aiToneTyping 1.1s ease-in-out infinite}.ai-tone-discussion-dots i:nth-child(2),.ai-tone-typing-dots i:nth-child(2){animation-delay:.16s}.ai-tone-discussion-dots i:nth-child(3),.ai-tone-typing-dots i:nth-child(3){animation-delay:.32s}.ai-tone-activity>small{color:#aebda4;font-size:10px}.ai-tone-mission-head>div{display:flex;flex-direction:column;gap:2px}.ai-tone-mission-head small{font-size:9px;letter-spacing:.7px;color:#aebda4;font-weight:800}.ai-tone-mission-chief{display:flex;align-items:center;gap:9px;padding:10px;border-radius:11px;background:#263927;border:1px solid #516b43}.ai-tone-mission-orb{width:25px;height:25px;flex:0 0 25px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e1f7b7,#8fbd59 45%,#344e2b 75%);box-shadow:0 0 0 4px #9dce5b22,0 0 14px #b9ed7055}.ai-tone-mission-chief>div{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}.ai-tone-mission-chief strong{font-size:11px;color:#ecf4e5}.ai-tone-mission-chief small{font-size:9px;color:#aebda4}.ai-tone-mission-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#aebda4;font-size:9px}.ai-tone-mission-team{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.ai-tone-mission-provider{min-width:0;padding:8px;border:1px solid #394a36;border-radius:9px;background:#1d2b1e}.ai-tone-mission-provider strong{font-size:10px;color:#e3ecdc}.ai-tone-mission-provider span{font-size:8px;font-weight:850;letter-spacing:.35px;color:#9eae93}.ai-tone-mission-provider small{display:block;margin-top:4px;color:#aab9a0;font-size:9px;line-height:1.3;overflow-wrap:anywhere}.ai-tone-mission-provider[data-state=working]{border-color:#b9ed70;background:#2b3d26}.ai-tone-mission-provider[data-state=working] span{color:#d5f4a5}.ai-tone-mission-provider[data-state=completed]{border-color:#5d8650}.ai-tone-mission-provider[data-state=completed] span{color:#b9ed70}.ai-tone-mission-provider[data-state=fallback],.ai-tone-activity.has-error{border-color:#895448}.ai-tone-mission-provider[data-state=fallback] span,.ai-tone-activity.has-error .ai-tone-mission-live{color:#ffab98}.ai-tone-mission-provider[data-state=unavailable]{opacity:.52}@keyframes aiToneSpin{to{transform:rotate(360deg)}}@keyframes aiToneTyping{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-3px);opacity:1}}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:10px 11px;border-radius:14px}.ai-tone-audio-head{min-height:25px}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:40px;margin-top:8px}.ai-tone-audio-meter{height:19px;margin-top:6px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.35}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:7px;margin-top:0;padding-top:2px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:54px;max-height:88px;height:54px;resize:none;overflow-y:auto;padding:11px 12px}.ai-tone-compose{flex:0 0 auto;margin-top:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.35}.ai-tone-provider-row{margin-bottom:10px}.ai-tone-nam-toolbar{margin:10px 0}.ai-tone-nam-wizard,.ai-tone-nam-results{max-height:40dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:auto;min-height:0;max-height:var(--ai-tone-max-height);width:100%;border-radius:22px 22px 0 0}.ai-tone-body{max-height:calc(var(--ai-tone-max-height) - 60px);padding:9px 12px calc(9px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:clamp(116px,20dvh,190px);max-height:48dvh;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:9px 10px}.ai-tone-audio-note{display:block}.ai-tone-prompt{min-height:50px;height:50px;max-height:76px}.ai-tone-composer>.ai-tone-hint{font-size:8px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh}.ai-tone-messages{min-height:90px;max-height:34dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:14px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:35px}.ai-tone-prompt{height:46px;min-height:46px}}';
 
 
  audioStyle.textContent += '.ai-tone-sheet{--ai-tone-max-height:min(94dvh,920px);height:var(--ai-tone-max-height);max-height:94dvh}.ai-tone-head{flex:0 0 auto}.ai-tone-head-actions{display:flex;align-items:center;gap:6px}.ai-tone-audio-toggle{font-size:19px;font-weight:850;min-width:42px}.ai-tone-audio-toggle.active{border-color:#c5f36b;color:#c5f36b;background:#c5f36b18}.ai-tone-body{position:relative;display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;height:auto;max-height:none;padding:10px 13px calc(10px + env(safe-area-inset-bottom,0px));overflow:hidden;overscroll-behavior:none}.ai-tone-messages{display:flex;flex:1 1 auto;flex-direction:column;gap:9px;min-height:0;max-height:none;height:auto;margin:0;padding:2px 2px 5px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.ai-tone-message{flex:0 0 auto}.ai-tone-audio-panel{flex:0 0 auto;margin:0;padding:9px 11px;border-radius:14px}.ai-tone-audio-panel[hidden]{display:none!important}.ai-tone-audio-head strong{font-size:11px}.ai-tone-audio-head small{font-size:10px}.ai-tone-audio-modes{margin-top:8px}.ai-tone-audio-modes button{min-height:33px}.ai-tone-audio-start{min-height:39px;margin-top:8px}.ai-tone-audio-meter{height:16px;margin-top:5px}.ai-tone-audio-status{font-size:10px;margin-top:3px}.ai-tone-audio-note{font-size:9px;margin-top:5px;line-height:1.3}.ai-tone-composer{display:flex;flex:0 0 auto;flex-direction:column;gap:6px;margin:0;padding-top:3px;background:linear-gradient(180deg,transparent,#101710 12%)}.ai-tone-prompt{flex:0 0 auto;min-height:50px;height:50px;max-height:76px;resize:none;overflow-y:auto;padding:10px 12px}.ai-tone-compose{flex:0 0 auto;margin:0}.ai-tone-composer>.ai-tone-hint{flex:0 0 auto;margin:0;font-size:9px;line-height:1.3}.ai-tone-settings{position:absolute;z-index:8;top:7px;left:12px;right:12px;max-height:calc(100dvh - 96px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 16px 35px #000b}.ai-tone-settings.on{display:block}.ai-tone-nam-panel{display:flex;flex-direction:column;gap:9px;margin:12px 0;padding:11px;border:1px solid #3c4b32;border-radius:13px;background:#111911}.ai-tone-nam-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ai-tone-nam-panel-head strong{display:block;color:#edf5e4;font-size:12px}.ai-tone-nam-panel-head small{display:block;margin-top:3px;color:#9daa93;font-size:10px}.ai-tone-nam-action{border:1px solid #536447;border-radius:10px;background:#182317;color:#c7d3bf;padding:9px 14px;font-size:11px;font-weight:850;letter-spacing:.03em}.ai-tone-nam-action.active{border-color:#c5f36b;background:#c5f36b;color:#10160b;box-shadow:0 0 0 1px #c5f36b35}.ai-tone-nam-gear-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.ai-tone-nam-gear-row .ai-tone-nam-choice{min-height:40px;border:1px solid #435438;border-radius:10px;background:#172017;color:#b9c7ad;font-size:11px;font-weight:800}.ai-tone-nam-gear-row .ai-tone-nam-choice.active{border-color:#c5f36b;background:#c5f36b;color:#10160b}.ai-tone-nam-mode-status{color:#96a28e;font-size:10px;line-height:1.4}.ai-tone-nam-mode-status[data-active=true]{color:#c5f36b}.ai-tone-nam-model.recommended{border-color:#8cad54;background:#182418}.ai-tone-nam-results{max-height:42dvh;overflow-y:auto;overscroll-behavior:contain}@media(max-width:520px){.ai-tone-sheet{--ai-tone-max-height:94dvh;height:94dvh;max-height:94dvh;width:100%;border-radius:22px 22px 0 0}.ai-tone-body{padding:9px 12px calc(8px + env(safe-area-inset-bottom,0px));gap:8px}.ai-tone-messages{min-height:0;gap:8px}.ai-tone-message{font-size:13px;padding:10px 12px}.ai-tone-audio-panel{padding:8px 9px}.ai-tone-audio-note{display:block}.ai-tone-prompt{height:49px;min-height:49px;max-height:72px}}@media(max-height:620px){.ai-tone-sheet{--ai-tone-max-height:96dvh;height:96dvh;max-height:96dvh}.ai-tone-audio-note{display:none}.ai-tone-audio-meter{height:12px}.ai-tone-audio-modes{margin-top:5px}.ai-tone-audio-start{min-height:34px}.ai-tone-prompt{height:43px;min-height:43px}}';
@@ -667,12 +643,12 @@ async function init(){
  sheet.innerHTML=[
  '<div class="ai-tone-head"><div><strong>✦ AI Live Tone Assistant</strong><small>Live editor control · Original MG-30 Gen 2</small></div><div class="ai-tone-head-actions"><button class="ai-tone-icon ai-tone-audio-toggle" id="aiToneAudioToggle" type="button" aria-label="Toggle Audio Listening" aria-controls="aiToneAudioPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v4 M6 6v12 M10 3v18 M14 8v8 M18 5v14 M22 10v4"/></svg></button> <button class="ai-tone-icon" id="aiToneSettingsToggle" type="button" aria-label="AI Settings">⚙</button> <button class="ai-tone-icon" id="aiToneClose" type="button" aria-label="Close AI Assistant">×</button></div></div>',
  '<div class="ai-tone-settings" id="aiToneSettings">'+
- '<details class="ai-tone-settings-section" id="aiToneProviderDetails"><summary><span><strong>AI Providers & ChatGPT Account</strong><small>ChatGPT uses your signed-in plan; existing providers remain available</small></span><b id="aiToneProviderSummary">Checking…</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>ChatGPT plan · SIWC</strong><span class="ai-tone-key-state" id="aiChatGPTKeyState">Checking ChatGPT account…</span></div><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Cloudflare Workers AI</strong><span class="ai-tone-key-state" id="aiCloudflareBindingState">Checking binding…</span></div></div>'+
- '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>ChatGPT is primary. Gemini → Groq → OpenRouter → Cloudflare Workers AI are sequential fallbacks. Tone Architect keeps Luna as Chief and assigns each specialist task to one configured provider.</small></span></label>'+
+ '<details class="ai-tone-settings-section" id="aiToneProviderDetails"><summary><span><strong>AI Providers & ChatGPT Account</strong><small>GPT-5.6 discussions · GPT-6 Luna presets · sequential specialist team</small></span><b id="aiToneProviderSummary">Checking…</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-key-grid"><div class="ai-tone-key-field"><strong>ChatGPT plan · SIWC</strong><span class="ai-tone-key-state" id="aiChatGPTKeyState">Checking ChatGPT account…</span></div><div class="ai-tone-key-field"><strong>OpenAI / GPT</strong><span class="ai-tone-key-state" id="aiOpenAiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Gemini</strong><span class="ai-tone-key-state" id="aiGeminiKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Groq</strong><span class="ai-tone-key-state" id="aiGroqKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>OpenRouter</strong><span class="ai-tone-key-state" id="aiOpenRouterKeyState">Checking…</span></div><div class="ai-tone-key-field"><strong>Cloudflare Workers AI</strong><span class="ai-tone-key-state" id="aiCloudflareBindingState">Checking binding…</span></div></div>'+
+ '<label class="ai-tone-fallback-toggle"><input id="aiToneAutoFallback" type="checkbox" checked><span><strong>Automatic fallback</strong><small>GPT-6 Luna performs the initial research and final synthesis. New presets require two different specialist providers in sequence: Gemini first, then Groq/OpenRouter/Cloudflare as fallback.</small></span></label>'+
  '<div class="ai-tone-setting-actions"><button class="primary" id="aiToneSaveKeys" type="button">Refresh Status</button><button id="aiToneRefreshModels" type="button">Refresh Models</button><button id="aiToneTestChatGPT" type="button">Test ChatGPT</button><button id="aiToneTestOpenAi" type="button">Test GPT</button><button id="aiToneTestGemini" type="button">Test Gemini</button><button id="aiToneTestGroq" type="button">Test Groq</button><button id="aiToneTestOpenRouter" type="button">Test OpenRouter</button><button id="aiToneTestCloudflare" type="button">Test Cloudflare Worker AI</button></div>'+
- '<p class="ai-tone-note">ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets. GPT-6 Luna is the Tone Architect Chief; each role-specialist runs as a separate sequential task on Gemini, Groq, OpenRouter, or Cloudflare Workers AI, with provider fallback for that same task. Tone Plans are validated against the original MG-30 Gen 2 catalogue before live MIDI changes.</p></div></details>'+
+ '<p class="ai-tone-note">GPT-5.6 Luna handles ordinary discussion. GPT-6 Luna is used only for preset creation and refinement: it performs the musical research, consults at least two different specialist providers sequentially, then validates the Tone Plan against the original MG-30 Gen 2 catalogue before any MIDI changes.</p></div></details>'+
  '<details class="ai-tone-settings-section" id="aiToneUsageDetails"><summary><span><strong>AI Usage & Token Monitor</strong><small>Session totals · model and agent breakdown</small></span><b id="aiToneUsageSummary">0 tokens</b></summary><div class="ai-tone-settings-section-body"><div class="ai-tone-usage-metrics"><div><strong id="aiToneUsageTotal">0</strong><small>Total tokens</small></div><div><strong id="aiToneUsageRequests">0</strong><small>AI requests</small></div></div><div class="ai-tone-usage-subtitle">By provider / model</div><div id="aiToneUsageProviderRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-subtitle">By task / agent + model</div><div id="aiToneUsageAgentRows" class="ai-tone-usage-rows"><p>No AI requests recorded in this session.</p></div><div class="ai-tone-usage-foot"><small>Provider counts are actual when available; otherwise marked as estimates. Reset only clears this local session display.</small><button type="button" id="aiToneUsageReset">Reset Session</button></div></div></details>'+
- '<div class="ai-tone-provider-row ai-tone-compact-provider-row"><label class="ai-tone-key-field"><small>AI Provider</small><select id="aiToneProviderSelect"><option value="chatgpt" selected>ChatGPT · signed-in plan (SIWC)</option><option value="auto">Auto · ChatGPT + optional free API fallback</option><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="cloudflare">Cloudflare Workers AI</option><option value="gpt">GPT · manual (may be paid)</option><option value="collab">Multi-AI · Free team</option></select></label><label class="ai-tone-key-field"><small id="aiToneActiveModelLabel">Model</small><select id="aiToneActiveModel" disabled><option value="">Connect ChatGPT or select a configured provider</option></select></label></div>'+
+ '<div class="ai-tone-routing-strip"><div><small>DISKUSI BIASA</small><strong>GPT-5.6 Luna</strong></div><div><small>CREATE PRESET</small><strong>GPT-6 Luna</strong></div><div><small>SPECIALIST</small><strong>Gemini → Groq → OpenRouter → Workers AI</strong></div></div><div hidden><select id="aiToneProviderSelect"><option value="chatgpt" selected>Task-based ChatGPT routing</option></select><label><span id="aiToneActiveModelLabel">Model by task</span><select id="aiToneActiveModel" disabled><option value="__auto__">GPT-5.6 discussion / GPT-6 Luna preset</option></select></label></div>'+
  '<div class="ai-tone-status ai-tone-status-accessible" id="aiToneStatus" data-state="idle" role="status" aria-live="polite" aria-busy="false">AI ready. MG-30 connection is required for live tone assistance.</div>'+
  '<section class="ai-tone-nam-panel" id="aiToneNamPanel"><div class="ai-tone-nam-panel-head"><div><strong>TONE3000 NAM</strong><small>Optional NAM search mode for amp captures</small></div><button class="ai-tone-nam-action" id="aiToneFindNam" type="button" aria-pressed="false">OFF</button></div><div class="ai-tone-nam-gear-row" role="group" aria-label="NAM capture type"><button class="ai-tone-nam-choice" type="button" data-ai-nam-gear="amp" aria-pressed="false">Amp Only</button><button class="ai-tone-nam-choice active" type="button" data-ai-nam-gear="amp-cab" aria-pressed="true">Amp + Cab</button></div><small class="ai-tone-nam-mode-status" id="aiToneNamModeStatus">TONE3000 NAM mode OFF · Built-in MG-30 amps remain selected by default.</small></section>'+
  '<div class="ai-tone-nam-wizard" id="aiToneNamWizard" hidden></div><div class="ai-tone-nam-results" id="aiToneNamResults" hidden></div></div><div class="ai-tone-scroll-area" id="aiToneScrollArea"><div class="ai-tone-body">',
@@ -687,11 +663,27 @@ async function init(){
  flushAiRuntimeErrors();
  const ui={status:$('aiToneStatus'),messages:$('aiToneMessages'),prompt:$('aiTonePrompt'),send:$('aiToneSend'),undo:$('aiToneUndo'),settings:$('aiToneSettings'),providerSelect:$('aiToneProviderSelect'),activeModel:$('aiToneActiveModel'),activeModelLabel:$('aiToneActiveModelLabel'),autoFallback:$('aiToneAutoFallback'),findNam:$('aiToneFindNam'),namWizard:$('aiToneNamWizard'),namResults:$('aiToneNamResults'),namModeStatus:$('aiToneNamModeStatus'),namGearButtons:sheet.querySelectorAll('[data-ai-nam-gear]'),providerSummary:$('aiToneProviderSummary'),usageSummary:$('aiToneUsageSummary'),usageTotal:$('aiToneUsageTotal'),usageRequests:$('aiToneUsageRequests'),usageProviders:$('aiToneUsageProviderRows'),usageAgents:$('aiToneUsageAgentRows'),usageReset:$('aiToneUsageReset'),audioToggle:$('aiToneAudioToggle'),audioPanel:$('aiToneAudioPanel'),audioDevice:$('aiToneAudioDevice'),audioRefresh:$('aiToneAudioRefresh'),audioStart:$('aiToneAudioStart'),audioStatus:$('aiToneAudioStatus'),audioMeter:$('aiToneAudioMeter'),audioModes:sheet.querySelectorAll('[data-ai-audio-mode]')};
  let mode='chatgpt',busy=false,last=null,namFlowActive=false,namImportBusy=false,namModeActive=false,namCaptureType='amp-cab',activeNamGear='',activeNamContext='',activeNamModelName='',pendingNamSelection=null,namSearchOnlyActive=false,namSearchPrompt='';const history=[],dialogueContext=[];
+ let activityMode='generic',toneMission=null;
+ const toneProviderLabels={gemini:'Gemini',groq:'Groq',openrouter:'OpenRouter',cloudflare:'Cloudflare Workers AI'};
+ const beginToneMission=(prompt,requiresExperts=true)=>{toneMission={prompt:String(prompt||''),chiefState:'researching',stage:'GPT-6 Luna sedang melakukan riset awal',completed:0,required:requiresExperts?2:0,providers:Object.fromEntries(Object.keys(toneProviderLabels).map(provider=>[provider,{state:'standby',role:'',detail:'Menunggu giliran'}]))};activityMode='tone';};
+ const updateToneMission=(patch={})=>{if(toneMission){Object.assign(toneMission,patch);renderActivity();}};
+ const updateToneMissionProvider=(provider,state,role='',detail='')=>{if(!toneMission||!toneMission.providers[provider])return;toneMission.providers[provider]={state,role:String(role||''),detail:String(detail||'')};if(state==='completed')toneMission.completed++;renderActivity();};
+ const renderToneMissionActivity=()=>{
+  if(!toneMission)return '<div>GPT-6 Luna sedang menyiapkan preset…</div>';
+  const error=ui.status.dataset.state==='error';
+  const stateLabel=error?'TERHENTI':toneMission.chiefState==='synthesizing'?'SINTESIS':toneMission.chiefState==='validating'?'VALIDASI':toneMission.chiefState==='applying'?'MENERAPKAN':'SEDANG BEKERJA';
+  const rows=Object.entries(toneMission.providers).map(([id,item])=>{const label={standby:'STANDBY',ready:'SIAP',working:'AKTIF',fallback:'FALLBACK',completed:'SELESAI',unavailable:'TIDAK TERSEDIA'}[item.state]||'MENUNGGU';return '<div class="ai-tone-mission-provider" data-state="'+esc(item.state)+'"><div><strong>'+esc(toneProviderLabels[id])+'</strong><span>'+label+'</span></div><small>'+esc(item.role?item.role.replaceAll('_',' '):item.detail||'Menunggu giliran')+'</small></div>';}).join('');
+  return '<div class="ai-tone-mission-head"><div><small>CREATE PRESET · MISSION CONTROL</small><strong>GPT-6 Luna · Chief</strong></div><span class="ai-tone-mission-live">'+stateLabel+'</span></div>'+'<div class="ai-tone-mission-chief" data-state="'+esc(toneMission.chiefState)+'"><span class="ai-tone-mission-orb"></span><div><strong>'+esc(toneMission.stage)+'</strong><small>Riset, keputusan dan sintesis dilakukan oleh GPT-6 Luna</small></div><span class="ai-tone-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>'+'<div class="ai-tone-mission-team">'+rows+'</div>'+'<div class="ai-tone-mission-foot"><span>Ahli berhasil: '+Number(toneMission.completed||0)+' / '+Number(toneMission.required||0)+'</span><span>Berjalan bergantian · bukan paralel</span></div>';
+ };
  const renderActivity=()=>{
   let activity=ui.messages.querySelector('.ai-tone-activity');
-  if(ui.status.dataset.state==='busy'){
-   if(!activity){activity=document.createElement('div');activity.className='ai-tone-activity';activity.setAttribute('role','status');}
-   activity.textContent=ui.status.textContent;
+  const isBusy=ui.status.dataset.state==='busy',keepFailedMission=activityMode==='tone'&&toneMission&&ui.status.dataset.state==='error';
+  if(isBusy||keepFailedMission){
+   if(!activity){activity=document.createElement('div');activity.setAttribute('role','status');}
+   activity.className='ai-tone-activity '+(activityMode==='discussion'?'ai-tone-discussion':activityMode==='tone'?'ai-tone-mission':'ai-tone-generic');
+   if(activityMode==='discussion')activity.innerHTML='<div class="ai-tone-discussion-label"><strong>GPT-5.6 Luna</strong><span>SEDANG MENGETIK</span></div><div class="ai-tone-discussion-dots" aria-hidden="true"><i></i><i></i><i></i></div><small>'+esc(ui.status.textContent)+'</small>';
+   else if(activityMode==='tone'){activity.innerHTML=renderToneMissionActivity();if(keepFailedMission)activity.classList.add('has-error');}
+   else activity.textContent=ui.status.textContent;
    if(!activity.isConnected)ui.messages.appendChild(activity);
    const scrollArea=$('aiToneScrollArea');if(scrollArea)scrollArea.scrollTop=scrollArea.scrollHeight;
   }else if(activity)activity.remove();
@@ -774,7 +766,7 @@ async function init(){
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.audioStart.disabled=busy||audioBusy||(!audioCaptureActive&&ui.audioDevice.dataset.state!=='connected');ui.audioModes.forEach(button=>button.disabled=busy||audioBusy||audioCaptureActive);ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
-const requested=v==='cloudflare'?'chatgpt':v;const next=['chatgpt','auto','gemini','groq','openrouter','gpt','collab'].includes(requested)?requested:'chatgpt';
+const next='chatgpt';
   mode=next;ui.providerSelect.value=next;autoProviderHealthCache.expires=0;
   renderActiveModelSelect();
   if(next!=='auto'&&next!=='collab')void refreshProviderModels(next,false);
@@ -1077,7 +1069,7 @@ const requested=v==='cloudflare'?'chatgpt':v;const next=['chatgpt','auto','gemin
    (stateText&&stateText!=='[]'?'CURRENT MG-30 EDITOR STATE (compact):\n'+stateText+'\n\n':'')+
    'LATEST USER MESSAGE:\n'+String(prompt||'').slice(0,500)+'\n\nAnswer this discussion turn naturally. No device changes.';
   let reply='';
-  if(mode==='chatgpt'){
+  {
    const credential=await secret('chatgpt');
    if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
    const model=await fastestReadyModel('chatgpt',credential,'discussion');
@@ -1104,9 +1096,6 @@ const requested=v==='cloudflare'?'chatgpt':v;const next=['chatgpt','auto','gemin
     logAiTokenUsage('chatgpt',attempt.model,attempt.stage,maxOutputTokens,system,attempt.input,logged,attempt.failed?new Error(attempt.reason||'ChatGPT request failed'):null);
    }
    reply=result.reply;
-  }else{
-   const result=await invokeWorkersAILightTask('tone-discussion',system,user,'answering your tone question',520);
-   reply=String(result?.reply||result?.answer||result?.response||'').trim();
   }
   if(!reply)throw new Error('AI returned an empty conversational response.');
   message('ai',reply);rememberConversation('assistant',reply);status('Conversation updated. No device parameters were changed.','success');
@@ -1192,7 +1181,7 @@ const providerModels={chatgpt:[],gpt:[],gemini:[],groq:[],openrouter:[],cloudfla
   const saved=String(localStorage.getItem(modelStorageKey(provider))||'');
   const models=providerModels[provider]||[];
   select.replaceChildren();
-  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent=provider==='gemini'?'Auto · Gemini 3.1 Flash Lite':provider==='chatgpt'?'Auto · light chat / GPT-6 tone build':'Auto · fastest available';select.append(autoOption);
+  const autoOption=document.createElement('option');autoOption.value='__auto__';autoOption.textContent=provider==='gemini'?'Auto · Gemini 3.1 Flash Lite':provider==='chatgpt'?'Task-based · GPT-5.6 discussion / GPT-6 Luna preset':'Auto · fastest available';select.append(autoOption);if(provider==='chatgpt'){select.value='__auto__';select.disabled=true;ui.activeModelLabel.textContent='Model by task';return;}
   if(models.length){
    for(const row of models){
     const option=document.createElement('option');option.value=row.id;
@@ -1375,7 +1364,7 @@ async function invokeProvider(provider,key,system,user,model,timeoutMs=90000,sta
   }
   const models=providerModels[provider]?.length?providerModels[provider]:await refreshProviderModels(provider,true);
   const manual=selectedModel(provider);
-  if(manual&&(!models.length||models.some(row=>row.id===manual)))return manual;
+  if(provider!=='chatgpt'&&manual&&(!models.length||models.some(row=>row.id===manual)))return manual;
 if(manual)localStorage.setItem('mg30-ai-model-manual-'+provider,'0');
 if(provider==='chatgpt'){
 const preferredId=selectChatGptAutoModel(models,task);
@@ -1491,11 +1480,6 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
  async function runToneSpecialistTask(args,context){
   const role=String(args?.role||'').trim();
   const roles={
-   tone_researcher:{
-    maxTokens:420,
-    output:'{"reference_profile":{"artist_or_song":"","era_or_production_context":"","sonic_character":[],"playing_dynamics":[]},"rig_evidence":[{"item":"","status":"confirmed|reported|inferred|unknown","basis":""}],"known_vs_inferred":{"known":[],"inferred":[]},"source_status":"user_supplied|model_knowledge|verified_external|mixed","confidence":0.0,"uncertainties":[]}',
-    purpose:'Perform deep musical and rig analysis for the requested artist/song/recording. Distinguish confirmed or user-supplied facts from reported details, model-knowledge inference and unknowns. Do not invent citations, URLs, studio credits, gear models or exact signal chains. This specialist API has no guaranteed live web browsing; never label model knowledge as externally verified.'
-   },
    amp_cabinet_specialist:{
     maxTokens:360,
     output:'{"recommendations":[{"id":"AMP","model":"exact catalogue model","reason":"short rationale","confidence":0.0}],"cabinet_observations":[],"alternatives":[],"limitations":[]}',
@@ -1531,7 +1515,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   const deviceContext=compactSpecialistDeviceContext(role,blockIds,context.catalog,context.snapshot,candidate);
   if(['amp_cabinet_specialist','effects_specialist','tone_calibration_specialist','tone_critic'].includes(role)&&!deviceContext.length)
    throw new Error('This specialist needs one to four valid MG-30 block IDs from the current catalogue.');
-  if(['tone_researcher','guitar_input_specialist'].includes(role)&&blockIds.length&&!deviceContext.length)
+  if(role==='guitar_input_specialist'&&blockIds.length&&!deviceContext.length)
    throw new Error('The supplied MG-30 block IDs are not present in the current catalogue.');
   const system='You are the '+role.replaceAll('_',' ')+' specialist for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' '+spec.purpose+' You are advisory only. ChatGPT is the orchestrator and final decision authority. Return compact JSON only using this shape: '+spec.output+' Keep the response within '+spec.maxTokens+' output tokens.';
   const user={
@@ -1544,30 +1528,40 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   };
   const requestText=JSON.stringify(user);
   const team=Array.isArray(context.providerTeam)?context.providerTeam:await resolveFreeProviderTeam();
-  if(!team.length)throw new Error('No Gemini, Groq, OpenRouter, or Cloudflare Workers AI provider is available for specialist execution.');
+  if(team.length<2)throw new Error('At least two distinct specialist providers must be configured for a new preset.');
+  const successfulProviders=Array.isArray(context.successfulProviders)?context.successfulProviders:[];
   const cursor=context.providerCursor&&typeof context.providerCursor==='object'?context.providerCursor:{value:0};
   const start=((Number(cursor.value)||0)%team.length+team.length)%team.length;
-  cursor.value=(start+1)%team.length;
-  const ordered=[...team.slice(start),...team.slice(0,start)],failures=[];
-  for(const member of ordered){
-   if(providerInCooldown(member.provider)){failures.push(member.provider+': temporary cooldown');continue;}
+  const providerOrder=[...team.slice(start),...team.slice(0,start)];
+  const ordered=providerOrder.filter(member=>!successfulProviders.includes(member.provider)),failures=[];
+  const expertNumber=successfulProviders.length+1;
+  updateToneMission({chiefState:'delegating',stage:'Specialist '+expertNumber+' · '+role.replaceAll('_',' ')});
+  for(let index=0;index<ordered.length;index++){
+   const member=ordered[index];
+   if(providerInCooldown(member.provider)){failures.push(member.provider+': temporary cooldown');updateToneMissionProvider(member.provider,'fallback',role,'Sedang cooldown; dilewati');continue;}
    try{
-    status(providerNames[member.provider]+' is executing '+role.replaceAll('_',' ')+'…','busy');
+    updateToneMissionProvider(member.provider,'working',role,'Menjalankan tugas ahli '+expertNumber);
+    status(providerNames[member.provider]+' is executing specialist '+expertNumber+' · '+role.replaceAll('_',' ')+'…','busy');
     const findings=await invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText,'specialist '+role,spec.maxTokens,member.model,role);
     const result={ok:true,role,provider:member.provider,model:findings.__aiModel||member.model,result:findings};
     if(findings.__aiUsage)Object.defineProperty(result,'__aiUsage',{value:findings.__aiUsage,enumerable:false});
     Object.defineProperty(result,'__aiModel',{value:findings.__aiModel||member.model,enumerable:false});
     logAiTokenUsage(member.provider,result.__aiModel,'specialist '+role,spec.maxTokens,system,requestText,result);
-    message('ai','Specialist '+role.replaceAll('_',' ')+' completed by '+providerNames[member.provider]+' · '+result.__aiModel+'.');
+    if(!successfulProviders.includes(member.provider))successfulProviders.push(member.provider);
+    cursor.value=(team.indexOf(member)+1)%team.length;
+    updateToneMissionProvider(member.provider,'completed',role,'Selesai · '+(result.__aiModel||member.model));
+    updateToneMission({chiefState:'reviewing',stage:'Luna menilai hasil ahli '+expertNumber});
     return result;
    }catch(error){
     noteProviderFailure(member.provider,error);
     logAiTokenUsage(member.provider,member.model,'specialist '+role,spec.maxTokens,system,requestText,null,error);
     failures.push(member.provider+': '+String(error?.message||error).slice(0,220));
-    message('ai',providerNames[member.provider]+' could not complete '+role.replaceAll('_',' ')+'. Trying the next configured specialist provider.');
+    updateToneMissionProvider(member.provider,'fallback',role,'Gagal; mencoba provider berikutnya');
+    const next=ordered[index+1];
+    if(next)status(providerNames[member.provider]+' gagal. Beralih ke '+providerNames[next.provider]+'…','busy');
    }
   }
-  throw new Error('All configured providers failed specialist '+role.replaceAll('_',' ')+'. '+failures.join(' | ').slice(0,900));
+  throw new Error('All unused specialist providers failed role '+role.replaceAll('_',' ')+'. '+failures.join(' | ').slice(0,900));
  }
  async function askNamAIJson(system,user,stage){
   const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
@@ -1585,7 +1579,8 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    const provider=order[index],key=await secret(providerKeyId(provider));
    if(providerInCooldown(provider)){missing.push(providerNames[provider]+' cooling down after a temporary limit');continue;}
    if(!key){if(provider===mode)throw new Error(providerNames[provider]+' API key has not been saved.');missing.push(providerNames[provider]+' Worker secret');continue;}
-   const model=await fastestReadyModel(provider,key,provider==='chatgpt'&&(/building|correcting|synthesizing/i.test(stage))?'tone-plan':'discussion');
+   const toneTask=activityMode==='tone'||/building|correcting|synthesizing|deriving TONE3000|choosing the closest NAM|selecting the closest A2/i.test(stage);
+   const model=await fastestReadyModel(provider,key,provider==='chatgpt'&&toneTask?'tone-plan':'discussion');
    if(!model){if(provider===mode)throw new Error('Select a model for '+providerNames[provider]+' in AI Settings.');missing.push(providerNames[provider]+' model');continue;}
    try{
     status(providerNames[provider]+' is '+stage+'…','busy');
@@ -1783,91 +1778,29 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();
   if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
   const localRefinement=Boolean(toneSession.intent&&isLocalToneRefinement(prompt));
-  const multiMode=shouldUseMultiAgent(prompt,localRefinement?'tone_refine':'tone_create',mode,localRefinement);
-  const namPlanGuard=activeNamContext
-   ?'\n\nAUTHORITATIVE AMP SOURCE: TONE3000 NAM is installed in MG-30 slot 10. Do not invent or claim any built-in AMP model. The app selects the NAM Slot 10 selection-only entry. Never write NAM internals.'
-   :'';
-  const deltaGuard=localRefinement
-   ?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.'
-   :'';
-  const system=systemPrompt(catalog,snapshot,false,multiMode?'':resolveArtistToneGuidance(prompt,conversation))+namPlanGuard+deltaGuard;
-  let first=null,team=[],leadMember=null,architectMember=null,toneIntent=toneSession.intent,hasArchitect=false,correctionUsed=false,namSearchTerms='';
-  if(multiMode){
-   team=await resolveFreeProviderTeam().catch(()=>[]);
-   if(!team.length){
-    throw new Error('No Gemini, Groq, or OpenRouter specialist is available for explicit Multi-AI mode. Switch to ChatGPT mode to use GPT-6 Luna and its connected role-specialist team.');
-   }else{
-   hasArchitect=team.length>=2&&!localRefinement;
-   if(hasArchitect){
-    const architect=await invokeFreeTeam(team,toneArchitectSystemPrompt(),
-     (conversation?'RECENT TONE DISCUSSION (oldest first):\n'+conversation+'\n\n':'')+'CURRENT USER REQUEST (authoritative action):\n'+prompt+(audioMetrics?'\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):''),
-     'defining the musical direction','',260);
-    architectMember=architect.member;
-    toneIntent=compactToneArchitectIntent(architect.result,prompt);
-    toneSession.intent=toneIntent;toneSession.architectProvider=architectMember.provider;toneSession.sourcePrompt=prompt;
-    message('ai','Tone Architect · '+providerNames[architectMember.provider]+': '+(toneIntent.summary||toneIntent.style||'Musical direction established.'));
-   }else if(localRefinement){
-    message('ai','Focused edit: reusing the saved musical intent and current pedal state. No duplicate Tone Architect call.');
-   }
-   const preferredLead=team.find(item=>item.provider!==architectMember?.provider&&item.provider!==toneSession.architectProvider)||team.find(item=>item.provider!==architectMember?.provider)||team[0];
-   const leadCandidates=[preferredLead,...team.filter(item=>item!==preferredLead)];
-   const leadSystem=system+'\n\n'+toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect);
-   const leadUser=hasArchitect
-    ?JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent,installed_nam:activeNamContext?String(activeNamContext).slice(0,300):null})
-    :userText(prompt,null,activeNamContext)+(toneIntent?'\n\nTONE INTENT STATE:\n'+JSON.stringify(toneIntent):'')+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   const lead=await invokeFreeTeam(leadCandidates,leadSystem,leadUser,'synthesizing the final Tone Plan',preferredLead?.provider||'',1350);
-   first=lead.result;leadMember=lead.member;namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
-   if(!toneIntent){
-    toneIntent=compactToneArchitectIntent(first,prompt);
-    toneSession.intent=toneIntent;toneSession.architectProvider='';toneSession.sourcePrompt=prompt;
-   }
-   if(!hasArchitect&&!localRefinement)message('ai','A single AI handled musical interpretation, gear selection and parameter generation in one request.');
-   }
-  }else{
-   const singleSystem=system+'\n\n'+toneLeadInstruction(toneIntent);
-   const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
-   if(mode==='chatgpt'||mode==='auto'){
-    const credential=await secret('chatgpt');
-    if(!credential)throw new Error('ChatGPT plan access is not connected. Open Device settings and connect your ChatGPT account.');
-    const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
-    const specialistEligible=shouldOfferToneSpecialist(prompt,localRefinement);
-    const chiefAvailable=isChatGptToneSpecialistAvailable({credential,model,bridge:window.MG30ChatGPTBridge});
-    const specialistProviderTeam=specialistEligible?await resolveFreeProviderTeam():[];
-    const specialistAvailable=specialistEligible&&chiefAvailable&&specialistProviderTeam.length>0;
-    if(specialistEligible&&!chiefAvailable)throw new Error('The connected ChatGPT account is not ready for GPT-6 Luna. No Tone Plan was generated and no pedal changes were sent.');
-    if(specialistEligible&&!specialistProviderTeam.length)throw new Error('No configured Gemini, Groq, OpenRouter, or Cloudflare Workers AI provider is available for the required Tone Architect specialist. No Tone Plan was generated.');
-    const specialistDispatchContext={providerTeam:specialistProviderTeam,providerCursor:{value:0}};
-    const orchestrationInstructions=singleSystem+'\\n\\nCHATGPT TONE ARCHITECT CONTRACT: You are GPT-6 Luna, the sole Chief Tone Architect, user-facing orchestrator and final decision-maker. The connected ChatGPT account executes the Chief only. When you call delegate_tone_specialist, the app sends that focused role task to an independently configured external provider (Gemini, Groq, OpenRouter, or Cloudflare Workers AI) through the authenticated AI task gateway; do not pretend to execute the specialist yourself. For artist-specific or complex new Tone Plan requests, you MUST delegate at least one relevant specialist before final synthesis. For a named artist or recording, start with Tone Researcher unless another role is materially more urgent. Delegate sequentially: request exactly one specialist, wait for its real provider/model result, evaluate it, then decide whether to request one different specialist. Never run specialists in parallel or let them communicate directly. The six roles are conditional: Tone Researcher for deep reference/rig analysis (distinguish known from inferred); Amp & Cabinet Specialist for exact catalogue amp/cab matching; Effects Specialist for relevant effects; Guitar & Input Specialist only when guitar/pickups/input matter; Tone Calibration Specialist for whole-chain balance; Tone Critic only when there is material uncertainty, conflict or risk. Maximum six specialist tasks total. If all provider fallbacks fail for a requested specialist, stop and return no Tone Plan. Never invent specialist results. The runtime catalogue and validator are authoritative; preserve NAM, IR, MIDI mapping and unrelated device state.';
-    first=await orchestrateChatGptTonePlan({
-     bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],
-     instructions:orchestrationInstructions,
-     toolsEnabled:specialistAvailable,
-     requireFirstSpecialist:specialistEligible,
-     maxOutputTokens:outputTokenBudgetForStage('building your Tone Plan'),
-     requireSuccessfulSpecialists:true,
-     runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot,model,...specialistDispatchContext})
-    });
-    if(Array.isArray(first.__aiUsageBreakdown)&&first.__aiUsageBreakdown.length){
-     for(const callUsage of first.__aiUsageBreakdown){
-      const callResult={};
-      if(callUsage.usage)Object.defineProperty(callResult,'__aiUsage',{value:{
-       input_tokens:Number(callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0),
-       output_tokens:Number(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0),
-       total_tokens:Number(callUsage.usage.total_tokens??((callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0)+(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0)))
-      },enumerable:false});
-      logAiTokenUsage('chatgpt',callUsage.model,callUsage.stage,outputTokenBudgetForStage('building your Tone Plan'),
-       callUsage.instructions,callUsage.input,callResult);
-     }
-    }else logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
-    if(Array.isArray(first.__specialistRoles)&&first.__specialistRoles.length)message('ai','GPT-6 Luna sequentially orchestrated: '+first.__specialistRoles.map(role=>role.replaceAll('_',' ')).join(' → ')+'. All specialist results were reviewed by the Chief before final synthesis.');
-   }else first=await askNamAIJson(singleSystem,singleUser,'building your Tone Plan');
-   namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
-   if(!localRefinement||!toneSession.intent){
-    toneSession.intent=compactToneArchitectIntent(first,prompt);
-    toneSession.sourcePrompt=prompt;
-   }
-  }
+  const namPlanGuard=activeNamContext?'\n\nAUTHORITATIVE AMP SOURCE: TONE3000 NAM is installed in MG-30 slot 10. Do not invent or claim any built-in AMP model. The app selects the NAM Slot 10 selection-only entry. Never write NAM internals.':'';
+  const deltaGuard=localRefinement?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.':'';
+  const system=systemPrompt(catalog,snapshot,false,resolveArtistToneGuidance(prompt,conversation))+namPlanGuard+deltaGuard;
+  const singleSystem=system+'\n\n'+toneLeadInstruction(toneSession.intent);
+  const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
+  const credential=await secret('chatgpt');
+  if(!credential)throw new Error('ChatGPT plan access is not connected. Connect your ChatGPT account; GPT-5.6 discussion and GPT-6 Luna preset creation both use this signed-in session.');
+  const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
+  const requiresExperts=!localRefinement;
+  let providerTeam=[];
+  if(requiresExperts){try{providerTeam=await resolveFreeProviderTeam();}catch(error){for(const provider of Object.keys(toneProviderLabels))updateToneMissionProvider(provider,'unavailable','',String(error?.message||'Provider unavailable').slice(0,110));throw error;}}
+  if(!requiresExperts){for(const provider of Object.keys(toneProviderLabels))updateToneMissionProvider(provider,'standby','','Tidak diperlukan untuk koreksi lokal');}
+  for(const provider of Object.keys(toneProviderLabels)){const available=providerTeam.some(item=>item.provider===provider);if(requiresExperts)updateToneMissionProvider(provider,available?'ready':'unavailable','',available?'Model siap; menunggu giliran':'Belum dikonfigurasi atau tidak tersedia');}
+  if(requiresExperts&&providerTeam.length<2)throw new Error('A new preset requires at least two configured external specialist providers. Gemini must be available first, plus at least one of Groq, OpenRouter, or Cloudflare Workers AI. No Tone Plan was generated and no pedal changes were sent.');
+  const specialistDispatchContext={providerTeam,successfulProviders:[],providerCursor:{value:0}};
+  const orchestrationInstructions=singleSystem+'\n\nGPT-6 LUNA TONE ARCHITECT CONTRACT: You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker for preset creation. FIRST do your own musical/reference research before delegating: infer the requested artist/song/era, sonic character, playing dynamics, likely rig context, evidence status, assumptions and uncertainties. Tone Researcher is YOUR responsibility and must NEVER be delegated. Do not invent sources, studio credits, exact rigs or citations; distinguish known, reported, inferred and unknown facts. Then, for every new preset, you MUST call at least TWO DIFFERENT technical specialist roles sequentially and receive successful results from TWO DIFFERENT external provider identities before final synthesis. Request exactly one specialist per turn, wait for its actual result, evaluate it, and only then request the next different role. For a typical artist lead preset, use Amp & Cabinet Specialist first and Effects Specialist second; reverse their order only when the request is primarily effects-focused. Guitar & Input Specialist is conditional on relevant guitar/pickup/input details; Tone Calibration Specialist is conditional on meaningful coupled gain/frequency/dynamic interactions; Tone Critic is conditional on material uncertainty, conflict or risk. Gemini is the first specialist provider. If Gemini fails, the same role task falls back sequentially to Groq, OpenRouter, and Cloudflare Workers AI. A second successful specialist MUST use a provider identity different from the first successful specialist; the app enforces this. Never run specialist generations in parallel, never delegate Tone Researcher, and never claim a failed provider completed a role. If fewer than two distinct specialist roles from two provider identities succeed, stop without a Tone Plan. You remain the only Chief and synthesize your own research plus the two specialist findings into the final MG-30 Tone Plan JSON. The exact MG-30 Gen 2 firmware 6.0.x catalogue and validator are authoritative; preserve NAM, IR, MIDI mappings and all unrelated device state.';
+  let first=await orchestrateChatGptTonePlan({bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],instructions:orchestrationInstructions,toolsEnabled:requiresExperts,requireFirstSpecialist:requiresExperts,maxSpecialistCalls:6,requireSuccessfulSpecialists:requiresExperts,minSuccessfulSpecialists:requiresExperts?2:0,minDistinctSpecialistProviders:requiresExperts?2:0,onEvent:event=>{if(event.type==='chief_research')updateToneMission({chiefState:'researching',stage:'GPT-6 Luna sedang melakukan riset awal'});else if(event.type==='specialist_requested')updateToneMission({chiefState:'delegating',stage:'Luna menugaskan ahli '+event.round+' · '+String(event.role||'').replaceAll('_',' ')});else if(event.type==='specialist_completed')updateToneMission({chiefState:'reviewing',stage:'Luna menilai hasil '+String(event.role||'').replaceAll('_',' ')});else if(event.type==='chief_synthesis')updateToneMission({chiefState:'synthesizing',stage:'GPT-6 Luna sedang menyatukan riset dan hasil dua ahli'});else if(event.type==='complete')updateToneMission({chiefState:'validating',stage:'Memeriksa parameter terhadap katalog MG-30 Gen 2'});},runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot,model,...specialistDispatchContext})});
+  let namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
+  if(Array.isArray(first.__aiUsageBreakdown)&&first.__aiUsageBreakdown.length){for(const callUsage of first.__aiUsageBreakdown){const callResult={};if(callUsage.usage)Object.defineProperty(callResult,'__aiUsage',{value:{input_tokens:Number(callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0),output_tokens:Number(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0),total_tokens:Number(callUsage.usage.total_tokens??((callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0)+(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0)))},enumerable:false});logAiTokenUsage('chatgpt',callUsage.model,callUsage.stage,outputTokenBudgetForStage('building your Tone Plan'),callUsage.instructions,callUsage.input,callResult);}}else logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
+  if(Array.isArray(first.__specialistRoles)&&first.__specialistRoles.length){const assignments=first.__specialistRoles.map((role,index)=>role.replaceAll('_',' ')+(first.__successfulSpecialistProviders?.[index]?' · '+providerNames[first.__successfulSpecialistProviders[index]]:''));message('ai','GPT-6 Luna completed its own research, then reviewed specialists in sequence: '+assignments.join(' → ')+'.');}
+  if(!localRefinement||!toneSession.intent){toneSession.intent=compactToneArchitectIntent(first,prompt);toneSession.sourcePrompt=prompt;}
   let validated;
+  updateToneMission({chiefState:'validating',stage:'Memeriksa blok dan parameter terhadap katalog MG-30 Gen 2'});
   try{validated=validateAiTonePlan(first,catalog);}
   catch(validationError){
    correctionUsed=true;
@@ -1885,36 +1818,9 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    });
    message('ai','The first proposal did not exactly match the MG-30 catalog. Requesting one focused correction for the affected blocks.');
    let corrected;
-   if(multiMode&&team.length){
-    const candidates=leadMember?[leadMember,...team.filter(item=>item!==leadMember)]:team;
-    corrected=(await invokeFreeTeam(candidates,correctionSystem,correctionUser,'correcting the catalog validation',leadMember?.provider||'',850)).result;
-   }else corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
+   corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
    try{validated=validateAiTonePlan(corrected,catalog);first=corrected;namSearchTerms=normalizeNamSearchTerms(corrected?.search_terms)||namSearchTerms;}
    catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
-  }
-  // At most three provider hops: Architect → Lead → either correction OR Reviewer.
-  if(multiMode&&hasArchitect&&team.length>=2&&!correctionUsed&&shouldInvokeCriticalReviewer(first)){
-   const reviewerCandidates=team.filter(item=>item.provider!==leadMember?.provider&&!providerInCooldown(item.provider));
-   if(reviewerCandidates.length){
-    try{
-     const ids=new Set((first.blocks||[]).map(block=>String(block?.id||'').toUpperCase()));
-     const reviewCatalog=catalog.filter(block=>ids.has(block.id));
-     const reviewSnapshot=snapshot.filter(block=>ids.has(block.id));
-     const reviewerSystem='You are an independent Critical Reviewer for a NUX MG-30 Gen 2 Tone Plan. Inspect musical coherence, coupled changes and catalog safety. Return one corrected complete Tone Plan JSON only. Use only the supplied proposal and affected-block catalogue; never invent IDs, parameters or unsupported models. Preserve NAM, IR, MIDI mappings, preset slot and unaffected blocks. No commentary.';
-     const reviewerUser=JSON.stringify({
-      tone_intent:toneSession.intent||null,
-      proposed_plan:first,
-      review_reason:String(first.review_reason||first.reviewReason||'Lead AI flagged a material conflict or coupled change.').slice(0,240),
-      affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)
-     });
-     const review=await invokeFreeTeam(reviewerCandidates,reviewerSystem,reviewerUser,'checking a material conflict or coupled change','',850);
-     const reviewedPlan=validateAiTonePlan(review.result,catalog);
-     validated=reviewedPlan;namSearchTerms=normalizeNamSearchTerms(review.result?.search_terms)||namSearchTerms;
-     message('ai','Critical Reviewer · '+providerNames[review.member.provider]+' checked the flagged trade-off. The reviewed plan passed the MG-30 catalog validator.');
-    }catch(reviewError){
-     message('ai','Critical Reviewer was unavailable or returned an invalid revision; the original Lead AI plan remains in use. '+(reviewError.message||reviewError));
-    }
-   }
   }
   if(namModeActive&&!activeNamContext){
    try{
@@ -1935,6 +1841,8 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   const conversation=conversationContextText();
   const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);
   const intent=classifyAssistantIntent(prompt,conversation);
+  activityMode=intent==='consultation'?'discussion':(intent==='tone_create'||intent==='tone_refine')?'tone':'generic';
+  toneMission=null;if(activityMode==='tone')beginToneMission(prompt,intent==='tone_create');
   const resumePendingTone=Boolean(pendingToneApply&&/\b(lanjutkan|terapkan|apply|pasang|kirim|continue|resume)\b/i.test(prompt));
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
   const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);
@@ -1983,7 +1891,8 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
     if(namResult?.pendingConnection||namResult?.pendingSelection)return;
     if(namResult?.preparedPlan)preparedPlan=namResult.preparedPlan;
    }
-   status(intent==='tone_refine'?'Diagnosing the current tone and preparing a focused correction…':'Preparing the MG-30 catalog and requesting an AI Tone Plan…','busy');
+   if(activityMode==='tone')updateToneMission({chiefState:'validating',stage:'Menyiapkan katalog MG-30 dan memanggil GPT-6 Luna'});
+   status(intent==='tone_refine'?'GPT-6 Luna is preparing a focused correction…':'GPT-6 Luna is building your preset…','busy');
    const plan=preparedPlan||await makePlan(prompt,bridge,audioMetricsForRequest,conversation);
    if(activeNamContext){
     const amp=bridge.getCatalog?.().find(block=>block.id==='AMP');
@@ -2001,6 +1910,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
     const guidance='Tone Plan berhasil disusun ChatGPT dan lolos validasi MG-30 Gen 2. Belum ada MIDI yang dikirim karena pedal belum tersambung.\\n\\n'+summary+'\\n\\nHubungkan MG-30 via USB-MIDI, lalu kirim “terapkan tone” atau “lanjutkan”. Rencana ini akan digunakan kembali tanpa memanggil AI lagi.';
     message('ai',guidance);rememberConversation('assistant',guidance);ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Tone Plan ready; waiting for USB-MIDI connection.','success');return;
    }
+   updateToneMission({chiefState:'applying',stage:'Tone Plan valid · memperbarui editor dan mengirim MIDI'});
    status('Tone Plan validated. Updating the editor and sending MIDI…','busy');
    const result=await bridge.applyPlan(plan);
    pendingToneApply=null;

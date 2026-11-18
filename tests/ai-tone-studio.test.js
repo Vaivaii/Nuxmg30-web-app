@@ -130,20 +130,19 @@ test('Android credential plugin uses Android Keystore and authenticated encrypti
 });
 
 
-test('AI assistant UI is taller, keeps chat readable and exposes a visible working indicator', () => {
-  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.ok(source.includes('height:auto;min-height:0;max-height:var(--ai-tone-max-height)'));
-  assert.ok(source.includes('--ai-tone-max-height:84dvh'));
-  assert.ok(source.includes('--ai-tone-max-height:82dvh'));
-  assert.ok(source.includes('.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0'));
-  assert.ok(source.includes('max-height:25dvh'));
-  assert.ok(source.includes('max-height:28dvh'));
-  assert.ok(source.includes('scrollbar-width:thin'));
-  assert.match(source, /\.ai-tone-message[^}]*font-size:14px/);
-  assert.match(source, /#aiToneOpenButton[^}]*font-size:17px/);
-  assert.match(source, /ai-tone-status\[data-state=busy\]::before/);
-  assert.match(source, /@keyframes aiToneSpin/);
-  assert.match(source, /busy\?'Working…':'Send ↗'/);
+test('AI assistant has separate GPT-5.6 typing and GPT-6 Mission Control activity views',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.ok(source.includes('height:auto;min-height:0;max-height:var(--ai-tone-max-height)'));
+ assert.ok(source.includes('--ai-tone-max-height:84dvh'));
+ assert.ok(source.includes('.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0'));
+ assert.ok(source.includes('ai-tone-discussion-dots'));
+ assert.ok(source.includes('GPT-5.6 Luna</strong><span>SEDANG MENGETIK</span>'));
+ assert.ok(source.includes('ai-tone-mission-team'));
+ assert.ok(source.includes('GPT-6 Luna · Chief'));
+ assert.ok(source.includes('updateToneMissionProvider'));
+ assert.ok(source.includes('Berjalan bergantian · bukan paralel'));
+ assert.ok(source.includes('@keyframes aiToneTyping'));
+ assert.ok(source.includes("busy?'Working…':'Send ↗'"));
 });
 
 test('AI assistant interface stays English while generated tone summaries follow the request language', () => {
@@ -239,21 +238,19 @@ test('Gemini high-demand errors are classified as temporary and eligible for fal
   assert.equal(isRetryableProviderError(new Error('This model is currently experiencing high demand. Spikes in demand are usually temporary.')), true);
 });
 
-test('ChatGPT is primary while Auto and the free Multi-AI team remain explicit alternate providers', () => {
-  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /let mode='chatgpt'/);
-  assert.match(source, /value="chatgpt" selected/);
-  for (const provider of ['auto','gemini','groq','openrouter','gpt','collab']) {
-    assert.match(source, new RegExp('value="' + provider + '"'));
-  }
-  assert.match(source, /const auto=mode==='auto'\|\|mode==='collab'\|\|\(mode!=='chatgpt'&&ui\.autoFallback\.checked\)/);
-  assert.match(source, /if\(provider==='chatgpt'\)result=await chatgpt/);
-  assert.ok(source.includes("const providers=['gemini','groq','openrouter','cloudflare'];"));
-  assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
-  assert.deepEqual(providerFallbackOrder('auto'), ['chatgpt','gemini','groq','openrouter','cloudflare']);
-  assert.ok(source.includes("if(mode==='auto'){"));
+test('ChatGPT is the fixed task router while external providers are specialist-only',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/let mode='chatgpt'/);
+ assert.match(source,/const next='chatgpt'/);
+ assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+ assert.match(source,/DISKUSI BIASA/);
+ assert.match(source,/CREATE PRESET/);
+ assert.match(source,/GPT-5\.6 Luna/);
+ assert.match(source,/GPT-6 Luna/);
+ assert.match(source,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(source,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(source,/providerTeam=requiresExperts\?await resolveFreeProviderTeam\(\):\[\]/);
 });
-
 test('ChatGPT Auto uses GPT-5.6-Luna for discussion and GPT-6-Luna for tone building',()=>{
  const available=[
   {id:'gpt-6-luna',name:'GPT-6-Luna'},
@@ -326,14 +323,16 @@ test('OpenRouter server adapter excludes reasoning and retries empty or malforme
 test('OpenAI-compatible response parser handles text parts and diagnoses reasoning-only responses',async()=>{const {compatibleChatText}=await import('../www/ai-tone-studio.js');assert.equal(compatibleChatText({choices:[{message:{content:[{type:'text',text:'{"status":"ok"}'}]}}]},'openrouter'),'{"status":"ok"}');assert.throws(()=>compatibleChatText({choices:[{finish_reason:'length',message:{content:null,reasoning:'hidden'}}]},'openrouter'),/no final text output.*reasoning-only/);});
 
 
-test('manual provider selection refreshes the matching model catalogue and keeps its models visible outside Auto mode',()=>{
+test('AI provider and model routing is locked by task: GPT-5.6 discussion and GPT-6 Luna preset',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/const handleProviderSelection=\(\)=>\{const selected=ui\.providerSelect\.value;if\(selected!==mode\)setMode\(selected\);\}/);
- assert.match(source,/ui\.providerSelect\.addEventListener\('input',handleProviderSelection\)/);
- assert.match(source,/ui\.providerSelect\.addEventListener\('change',handleProviderSelection\)/);
- assert.match(source,/if\(currentMode\(\)==='auto'\|\|currentMode\(\)==='collab'\)\{select\.replaceChildren\(\)/);
- assert.doesNotMatch(source,/if\(mode==='auto'\)\{select\.replaceChildren\(\)/);
- assert.match(source,/if\(next!=='auto'&&next!=='collab'\)void refreshProviderModels\(next,false\)/);
+ assert.match(source,/const next='chatgpt'/);
+ assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+ assert.match(source,/if\(provider==='chatgpt'\)\{select\.value='__auto__';select\.disabled=true/);
+ assert.match(source,/provider!=='chatgpt'&&manual/);
+ assert.match(source,/DISKUSI BIASA/);
+ assert.match(source,/CREATE PRESET/);
+ assert.match(source,/GPT-5\.6 Luna/);
+ assert.match(source,/GPT-6 Luna/);
 });
 
 test('Send wraps bridge checks, AI planning and MIDI apply in visible error handling',()=>{
@@ -377,12 +376,12 @@ test('ChatGPT Luna orchestrates the six specialist roles sequentially through on
  assert.equal(definition.type,'function');
  assert.equal(definition.name,'delegate_tone_specialist');
  assert.deepEqual(definition.parameters.properties.role.enum,[
-  'tone_researcher','amp_cabinet_specialist','effects_specialist',
-  'guitar_input_specialist','tone_calibration_specialist','tone_critic'
+  'amp_cabinet_specialist','effects_specialist','guitar_input_specialist',
+  'tone_calibration_specialist','tone_critic'
  ]);
  assert.deepEqual(TONE_SPECIALIST_ROLES,definition.parameters.properties.role.enum);
- const roles=['tone_researcher','amp_cabinet_specialist','effects_specialist'];
- const calls=[];
+ const roles=['amp_cabinet_specialist','effects_specialist','tone_calibration_specialist'];
+ const calls=[],events=[];
  let specialistCalls=0;
  const bridge={sendResponse:async request=>{
   calls.push(request);
@@ -399,10 +398,11 @@ test('ChatGPT Luna orchestrates the six specialist roles sequentially through on
  const plan=await orchestrateChatGptTonePlan({
   bridge,model:'gpt-6-luna',input:[{role:'user',content:'Create a detailed John Mayer tone'}],
   instructions:'Deep sequential orchestration',maxOutputTokens:700,requireFirstSpecialist:true,
+  minSuccessfulSpecialists:2,minDistinctSpecialistProviders:2,onEvent:event=>events.push(event.type),
   runSpecialist:async task=>{
    specialistCalls++;
    assert.equal(task.role,roles[specialistCalls-1]);
-   return {ok:true,role:task.role,provider:'chatgpt',model:'gpt-5.6-luna',result:{confidence:0.9}};
+   return {ok:true,role:task.role,provider:['gemini','groq','openrouter'][specialistCalls-1],model:'specialist-model',result:{confidence:0.9}};
   }
  });
  assert.equal(specialistCalls,3);
@@ -412,13 +412,18 @@ test('ChatGPT Luna orchestrates the six specialist roles sequentially through on
  assert.ok(calls[2].input.some(item=>item.type==='function_call_output'&&item.call_id==='call_2'));
  assert.ok(calls[3].input.some(item=>item.type==='function_call_output'&&item.call_id==='call_3'));
  assert.equal(plan.__specialistRoles.join(','),roles.join(','));
- assert.equal(plan.__specialistRole,'tone_researcher');
+ assert.equal(plan.__specialistRole,'amp_cabinet_specialist');
+ assert.deepEqual(plan.__successfulSpecialistProviders,['gemini','groq','openrouter']);
+ assert.ok(events.includes('chief_research'));
+ assert.ok(events.includes('chief_synthesis'));
  assert.equal(plan.__successfulSpecialistRoles.join(','),roles.join(','));
  assert.equal(plan.__orchestratorCalls,4);
  assert.equal(plan.__aiUsageBreakdown.length,4);
  assert.equal(plan.__aiUsage.total_tokens,75);
  assert.equal(plan.summary,'Final validated tone proposal');
 });
+
+test('GPT-6 Luna owns Tone Researcher and external specialist roles exclude that responsibility',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.doesNotMatch(source,/tone_researcher/);assert.match(source,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);assert.deepEqual(TONE_SPECIALIST_ROLES,['amp_cabinet_specialist','effects_specialist','guitar_input_specialist','tone_calibration_specialist','tone_critic']);});
 
 test('Tone Critic and Guitar specialist are available as conditional roles, while simple requests can skip all agents',async()=>{
  const definition=toneSpecialistToolDefinition();
@@ -437,10 +442,10 @@ test('Tone Critic and Guitar specialist are available as conditional roles, whil
 
 test('ChatGPT specialist readiness requires the connected session, a selected model and the native bridge',()=>{
  const bridge={sendResponse:async()=>({})};
- assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'gpt-5.6-luna',bridge}),true);
- assert.equal(isChatGptToneSpecialistAvailable({credential:'',model:'gpt-5.6-luna',bridge}),false);
+ assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'gpt-6-luna',bridge}),true);
+ assert.equal(isChatGptToneSpecialistAvailable({credential:'',model:'gpt-6-luna',bridge}),false);
  assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'',bridge}),false);
- assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'gpt-5.6-luna',bridge:{}}),false);
+ assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'gpt-6-luna',bridge:{}}),false);
 });
 
 test('role-specialist requests execute through a separate ChatGPT bridge call and return structured findings',async()=>{
@@ -448,22 +453,22 @@ test('role-specialist requests execute through a separate ChatGPT bridge call an
  const result=await requestChatGptToneSpecialist({
   bridge:{sendResponse:async request=>{
    calls.push(request);
-   return {model:'gpt-5.6-luna',text:'{"rig_evidence":[{"item":"Plexi-style amp","status":"inferred","basis":"Reference-era association"}]}',
+   return {model:'specialist-model',text:'{"recommendations":[{"id":"AMP","model":"Brit 800","reason":"Closest catalogue match","confidence":0.8}]}',
     usage:{input_tokens:120,output_tokens:55,total_tokens:175}};
   }},
-  model:'gpt-5.6-luna',role:'tone_researcher',system:'You are Tone Researcher. Return JSON only.',
-  user:'Research the Eddie Van Halen early-era tone.',maxOutputTokens:420
+  model:'gpt-6-luna',role:'amp_cabinet_specialist',system:'You are Amp & Cabinet Specialist. Return JSON only.',
+  user:'Compare the MG-30 amplifier and cabinet catalogue.',maxOutputTokens:360
  });
  assert.equal(calls.length,1);
  assert.equal(calls[0].model,'gpt-5.6-luna');
  assert.equal(calls[0].parallelToolCalls,false);
  assert.equal(calls[0].tools,undefined);
  assert.equal(calls[0].input[0].role,'user');
- assert.match(calls[0].instructions,/Tone Researcher/);
+ assert.match(calls[0].instructions,/Amp & Cabinet Specialist/);
  assert.equal(result.ok,true);
- assert.equal(result.role,'tone_researcher');
+ assert.equal(result.role,'amp_cabinet_specialist');
  assert.equal(result.provider,'chatgpt');
- assert.equal(result.result.rig_evidence[0].item,'Plexi-style amp');
+ assert.equal(result.result.recommendations[0].model,'Brit 800');
  assert.equal(result.__aiUsage.total_tokens,175);
 });
 
@@ -490,7 +495,7 @@ test('Sequential orchestrator rejects parallel tool calls and stops at the confi
  await assert.rejects(()=>orchestrateChatGptTonePlan({
   bridge:{sendResponse:async request=>{
    turn++;
-   const args={role:['tone_researcher','amp_cabinet_specialist','effects_specialist'][turn-1],focus:'task',brief:'brief',blockIds:[],candidatePlan:''};
+   const args={role:['amp_cabinet_specialist','effects_specialist','tone_calibration_specialist'][turn-1],focus:'task',brief:'brief',blockIds:[],candidatePlan:''};
    return {toolCalls:[{name:'delegate_tone_specialist',call_id:'budget_'+turn,arguments:JSON.stringify(args)}],
     outputItems:[{type:'function_call',call_id:'budget_'+turn,name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
   }},
@@ -514,13 +519,13 @@ test('A failed specialist is reported to Luna as a failed handoff rather than a 
   bridge:{sendResponse:async request=>{
    round++;
    if(round===1){
-    const args={role:'tone_researcher',focus:'research',brief:'research',blockIds:[],candidatePlan:''};
+    const args={role:'amp_cabinet_specialist',focus:'research',brief:'research',blockIds:[],candidatePlan:''};
     return {toolCalls:[{name:'delegate_tone_specialist',call_id:'failed_1',arguments:JSON.stringify(args)}],
      outputItems:[{type:'function_call',call_id:'failed_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
    }
    const handoff=JSON.parse(request.input.find(item=>item.type==='function_call_output').output);
    assert.equal(handoff.ok,false);
-   assert.equal(handoff.role,'tone_researcher');
+   assert.equal(handoff.role,'amp_cabinet_specialist');
    assert.match(handoff.error,/quota exhausted/i);
    return {text:'{"summary":"Safe fallback from Chief reasoning","blocks":[]}'};
   }},
@@ -528,7 +533,7 @@ test('A failed specialist is reported to Luna as a failed handoff rather than a 
   runSpecialist:async()=>{throw new Error('free provider quota exhausted');}
  });
  assert.equal(plan.summary,'Safe fallback from Chief reasoning');
- assert.equal(plan.__specialistRoles[0],'tone_researcher');
+ assert.equal(plan.__specialistRoles[0],'amp_cabinet_specialist');
 });
 test('AI initialization does not bind listeners to missing legacy provider-delete buttons',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -771,7 +776,7 @@ test('named artist tone requests enable the specialist roster and reserve Luna a
  assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),false);
  const definition=toneSpecialistToolDefinition();
  assert.match(definition.description,/GPT-6 Luna, the sole Chief Tone Architect and final decision-maker/);
- assert.match(definition.description,/Tone Researcher for deep musical\/rig research/);
+ assert.match(definition.description,/Amp & Cabinet Specialist for deep musical\/rig research/);
  assert.match(definition.description,/Tone Critic only when your quality gate detects uncertainty, conflict, or material risk/);
  assert.match(definition.description,/separate, focused request through the connected ChatGPT account/);
  assert.doesNotMatch(definition.description,/Cloudflare Worker Gemma/);
@@ -992,7 +997,7 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.ok(source.includes("row.requests+' req</small>"));
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
  for(const role of TONE_SPECIALIST_ROLES)assert.ok(source.includes(`task.includes('specialist ${role}')`),`missing usage label for ${role}`);
- for(const label of ['Tone Researcher','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
+ for(const label of ['Amp & Cabinet Specialist','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
  assert.ok(source.includes("logAiTokenUsage(member.provider,result.__aiModel,'specialist '+role"));
  assert.match(source,/aiUsage\.models\[modelKey\]/);
 });
@@ -1091,23 +1096,17 @@ test('Workers AI derives fresh TONE3000 search_terms after Tone Plan validation 
  assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
  assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
 });
-test('ChatGPT is the primary native SIWC discussion route; Workers AI remains an alternate provider',()=>{
+test('Ordinary discussion always uses GPT-5.6 native SIWC and never starts preset or specialist work',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- const start=source.indexOf('async function answerToneConversation');
- const end=source.indexOf('function renderNamCandidates',start);
+ const start=source.indexOf('async function answerToneConversation'),end=source.indexOf('function renderNamCandidates',start);
  const handler=source.slice(start,end);
- const chatgptStart=handler.indexOf("if(mode==='chatgpt')");
- const chatgptEnd=handler.indexOf('}else{',chatgptStart);
- const chatgptRoute=handler.slice(chatgptStart,chatgptEnd);
- assert.ok(chatgptStart>=0&&chatgptEnd>chatgptStart);
- assert.match(chatgptRoute,/window\.MG30ChatGPTBridge/);
- assert.match(chatgptRoute,/requestChatGptConversation/);
- assert.doesNotMatch(chatgptRoute,/invokeWorkersAILightTask|askNamAIJson|parseJson/);
- assert.match(handler,/invokeWorkersAILightTask\('tone-discussion'/,'non-ChatGPT manual provider mode retains its alternate route');
- assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
- assert.match(source,/const WORKERS_AI_MODEL = '@cf\/google\/gemma-4-26b-a4b-it'/);
+ assert.match(handler,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
+ assert.match(handler,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
+ assert.doesNotMatch(handler,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
+ assert.match(source,/const model=await fastestReadyModel\('chatgpt',credential,'tone-plan'\)/);
+ assert.match(source,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(source,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
 });
-
 test('profile and capture recommendation UI retain full local TONE3000 objects',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('tones:rows.map(tone=>({...tone}))'));
@@ -1116,20 +1115,17 @@ test('profile and capture recommendation UI retain full local TONE3000 objects',
 });
 
 
-test('ChatGPT remains primary while Workers AI is an optional specialist fallback',()=>{
+test('Provider settings remain available but ordinary chat and preset model routing are task-specific',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('id="aiChatGPTKeyState"'));
- assert.ok(source.includes('ChatGPT is primary.'));
- assert.ok(source.includes('ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets.'));
- assert.ok(source.includes('Auto · ChatGPT + optional free API fallback'));
- assert.ok(source.includes("const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode()"));
- assert.match(source, /<option value="cloudflare">Cloudflare Workers AI/);
- assert.match(source, /id="aiToneTestCloudflare"/);
- assert.match(source, /id="aiCloudflareBindingState"/);
- assert.match(source, /ChatGPT is primary\. Gemini → Groq → OpenRouter → Cloudflare Workers AI are sequential fallbacks\./);
- assert.match(source, /each role-specialist runs as a separate sequential task on Gemini, Groq, OpenRouter, or Cloudflare Workers AI/);
+ assert.ok(source.includes('GPT-5.6 Luna handles ordinary discussion.'));
+ assert.ok(source.includes('GPT-6 Luna is used only for preset creation and refinement'));
+ assert.match(source,/id="aiToneTestGemini"/);
+ assert.match(source,/id="aiToneTestGroq"/);
+ assert.match(source,/id="aiToneTestOpenRouter"/);
+ assert.match(source,/id="aiToneTestCloudflare"/);
+ assert.match(source,/Gemini is the first specialist provider/);
 });
-
 test('ChatGPT Auto fallback order keeps Cloudflare Workers AI as final provider',()=>{
  assert.deepEqual(providerFallbackOrder('chatgpt'),['chatgpt','gemini','groq','openrouter','cloudflare']);
  assert.deepEqual(providerFallbackOrder('gemini'),['gemini','groq','openrouter','cloudflare']);
@@ -1141,18 +1137,20 @@ test('manual Cloudflare provider starts with Workers AI before free providers',(
 });
 
 
-test('Auto routes light tasks and tone planning through ChatGPT before optional API fallbacks',()=>{
+test('GPT-6 Luna creates presets and uses the Worker only for sequential external specialist tasks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(mode==='auto'){\n   order=providerFallbackOrder('chatgpt');"));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){\n    const credential=await secret('chatgpt');"));
- assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Existing NAM search and discussion call sites follow the selected primary/fallback route.\n  return askNamAIJson(system,user,stage);"));
- assert.ok(source.includes("const providers=['gemini','groq','openrouter','cloudflare'];"));
- assert.match(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
- assert.match(source, /Unsupported lightweight AI task/);
- assert.match(source, /cloudApiRequest\('\/api\/v1\/ai\/tone-plan'/);
- assert.match(source, /compatibility route/);
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ const team=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ assert.match(make,/fastestReadyModel\('chatgpt',credential,'tone-plan'\)/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);
+ assert.match(make,/Gemini is the first specialist provider/);
+ assert.match(team,/invokeWorkerLightTask\(member\.provider,'tone-specialist'/);
+ assert.match(team,/successfulProviders\.includes\(member\.provider\)/);
+ assert.match(source,/\/api\/v1\/ai\/light-task/);
+ assert.match(source,/\/api\/v1\/ai\/tone-plan/);
 });
-
 test('Tone Architect keeps GPT-6 Luna as Chief and dispatches specialist roles to independent providers with fallback',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
@@ -1340,16 +1338,19 @@ test('OpenRouter server adapter excludes reasoning and retries empty or malforme
 test('OpenAI-compatible response parser handles text parts and diagnoses reasoning-only responses',async()=>{const {compatibleChatText}=await import('../www/ai-tone-studio.js');assert.equal(compatibleChatText({choices:[{message:{content:[{type:'text',text:'{"status":"ok"}'}]}}]},'openrouter'),'{"status":"ok"}');assert.throws(()=>compatibleChatText({choices:[{finish_reason:'length',message:{content:null,reasoning:'hidden'}}]},'openrouter'),/no final text output.*reasoning-only/);});
 
 
-test('manual provider selection refreshes the matching model catalogue and keeps its models visible outside Auto mode',()=>{
+test('ChatGPT is the fixed task router while external providers are specialist-only',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/const handleProviderSelection=\(\)=>\{const selected=ui\.providerSelect\.value;if\(selected!==mode\)setMode\(selected\);\}/);
- assert.match(source,/ui\.providerSelect\.addEventListener\('input',handleProviderSelection\)/);
- assert.match(source,/ui\.providerSelect\.addEventListener\('change',handleProviderSelection\)/);
- assert.match(source,/if\(currentMode\(\)==='auto'\|\|currentMode\(\)==='collab'\)\{select\.replaceChildren\(\)/);
- assert.doesNotMatch(source,/if\(mode==='auto'\)\{select\.replaceChildren\(\)/);
- assert.match(source,/if\(next!=='auto'&&next!=='collab'\)void refreshProviderModels\(next,false\)/);
+ assert.match(source,/let mode='chatgpt'/);
+ assert.match(source,/const next='chatgpt'/);
+ assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+ assert.match(source,/DISKUSI BIASA/);
+ assert.match(source,/CREATE PRESET/);
+ assert.match(source,/GPT-5\.6 Luna/);
+ assert.match(source,/GPT-6 Luna/);
+ assert.match(source,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(source,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(source,/providerTeam=requiresExperts\?await resolveFreeProviderTeam\(\):\[\]/);
 });
-
 test('Send wraps bridge checks, AI planning and MIDI apply in visible error handling',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
@@ -1386,37 +1387,31 @@ test('ChatGPT Tone Plan generation is independent from USB-MIDI apply and pendin
  assert.doesNotMatch(submit,/Connect USB-MIDI before applying a built-in amp live tone/);
 });
 
-test('ChatGPT is the adaptive orchestrator and can delegate at most one bounded specialist task',async()=>{
- const definition=toneSpecialistToolDefinition();
- assert.equal(definition.type,'function');
- assert.equal(definition.name,'delegate_tone_specialist');
- assert.deepEqual(definition.parameters.properties.role.enum,[...TONE_SPECIALIST_ROLES]);
- const args={role:'tone_researcher',focus:'John Mayer feel',brief:'Interpret touch-sensitive blues tone',blockIds:[],candidatePlan:''};
- const calls=[];
- let specialistCalls=0;
+test('GPT-6 Luna cannot synthesize a new preset until two distinct specialists and providers succeed',async()=>{
+ const roles=['amp_cabinet_specialist','effects_specialist'],providers=['gemini','groq'];
+ const calls=[],events=[];let specialistCalls=0;
  const bridge={sendResponse:async request=>{
-  calls.push(request);
-  if(calls.length===1)return {model:'gpt-model',toolCalls:[{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],outputItems:[{type:'reasoning',id:'rs_1',summary:[]},{type:'function_call',call_id:'call_1',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],usage:{input_tokens:80,output_tokens:20,total_tokens:100}};
-  return {model:'gpt-model',text:'{"summary":"Warm touch-sensitive blues tone","blocks":[]}',usage:{input_tokens:100,output_tokens:40,total_tokens:140}};
+  calls.push(request);const index=calls.length-1;
+  if(index<2){
+   const args={role:roles[index],focus:'task '+index,brief:'independent analysis',blockIds:[],candidatePlan:''};
+   const id='expert_'+(index+1);
+   return {model:'gpt-6-luna',toolCalls:[{type:'function_call',call_id:id,name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],outputItems:[{type:'function_call',call_id:id,name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
+  }
+  return {model:'gpt-6-luna',text:'{"summary":"Final from Luna","blocks":[]}'}; 
  }};
- const plan=await orchestrateChatGptTonePlan({bridge,model:'gpt-model',input:[{role:'user',content:'Create a John Mayer tone'}],instructions:'Orchestrate adaptively',maxOutputTokens:500,runSpecialist:async task=>{specialistCalls++;assert.equal(task.role,'tone_researcher');return {ok:true,result:{tone_intent:{style:'blues',feel:'touch-sensitive'}}};}});
- assert.equal(specialistCalls,1);
- assert.equal(calls.length,2);
- assert.equal(calls[0].tools.length,1);
- assert.equal(calls[0].parallelToolCalls,false);
- assert.equal(calls[0].maxOutputTokens,500);
- assert.equal(calls[1].tools.length,1,'A later turn may request the next specialist after evaluating the previous handoff');
- assert.equal(calls[1].parallelToolCalls,false,'Specialist calls remain sequential on every turn');
- assert.ok(calls[1].input.some(item=>item.type==='function_call_output'));
- assert.equal(plan.__specialistRole,'tone_researcher');
- assert.equal(plan.__aiUsageBreakdown.length,2);
- assert.equal(plan.__aiUsageBreakdown[0].stage,'ChatGPT Orchestrator · Sequential routing 1');
- assert.equal(plan.__aiUsageBreakdown[1].stage,'ChatGPT Orchestrator · Final synthesis');
- assert.equal(plan.__aiUsageBreakdown[0].usage.total_tokens,100);
- assert.equal(plan.__aiUsageBreakdown[1].usage.total_tokens,140);
- assert.equal(plan.__orchestratorCalls,2);
- assert.equal(plan.__aiUsage.total_tokens,240);
- assert.equal(plan.summary,'Warm touch-sensitive blues tone');
+ const plan=await orchestrateChatGptTonePlan({
+  bridge,model:'gpt-6-luna',input:[{role:'user',content:'Create a John Mayer tone'}],
+  instructions:'Luna researches first, then asks two experts in sequence.',maxOutputTokens:700,
+  requireFirstSpecialist:true,requireSuccessfulSpecialists:true,minSuccessfulSpecialists:2,
+  minDistinctSpecialistProviders:2,onEvent:event=>events.push(event.type),
+  runSpecialist:async args=>{specialistCalls++;assert.equal(args.role,roles[specialistCalls-1]);return {ok:true,role:args.role,provider:providers[specialistCalls-1],result:{confidence:.9}};}
+ });
+ assert.equal(specialistCalls,2);assert.equal(calls.length,3);
+ assert.ok(calls.every(request=>request.parallelToolCalls===false));
+ assert.deepEqual(plan.__specialistRoles,roles);
+ assert.deepEqual(plan.__successfulSpecialistProviders,providers);
+ assert.equal(plan.summary,'Final from Luna');
+ assert.ok(events.includes('chief_research'));assert.ok(events.includes('chief_synthesis'));assert.ok(events.includes('complete'));
 });
 
 test('ChatGPT simple Tone Plans use one call and tool overuse is rejected',async()=>{
@@ -1919,21 +1914,18 @@ test('Workers AI derives fresh TONE3000 search_terms after Tone Plan validation 
  assert.match(source,/sanitizeNamCaptureCandidates\(eligible,rejected,18\)/);
  assert.match(source,/conciseNamRecommendationReason\(result\.reason\)/);
 });
-test('ChatGPT is the primary native SIWC discussion route; Workers AI remains an alternate provider',()=>{
+test('Ordinary discussion is always GPT-5.6 native SIWC and preset research is GPT-6 Luna',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- const start=source.indexOf('async function answerToneConversation');
- const end=source.indexOf('function renderNamCandidates',start);
+ const start=source.indexOf('async function answerToneConversation'),end=source.indexOf('function renderNamCandidates',start);
  const handler=source.slice(start,end);
- const chatgptStart=handler.indexOf("if(mode==='chatgpt')");
- const chatgptEnd=handler.indexOf('}else{',chatgptStart);
- const chatgptRoute=handler.slice(chatgptStart,chatgptEnd);
- assert.ok(chatgptStart>=0&&chatgptEnd>chatgptStart);
- assert.match(chatgptRoute,/window\.MG30ChatGPTBridge/);
- assert.match(chatgptRoute,/requestChatGptConversation/);
- assert.doesNotMatch(chatgptRoute,/invokeWorkersAILightTask|askNamAIJson|parseJson/);
- assert.match(handler,/invokeWorkersAILightTask\('tone-discussion'/,'non-ChatGPT manual provider mode retains its alternate route');
- assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
- assert.match(source,/const WORKERS_AI_MODEL = '@cf\/google\/gemma-4-26b-a4b-it'/);
+ assert.match(handler,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
+ assert.match(handler,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
+ assert.doesNotMatch(handler,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
+ assert.match(source,/fastestReadyModel\('chatgpt',credential,'tone-plan'\)/);
+ assert.match(source,/activityMode==='tone'\|\|\/building\|correcting\|synthesizing\|deriving TONE3000/);
+ assert.match(source,/GPT-6 Luna performs the initial research/);
+ assert.match(source,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(source,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
 });
 
 test('profile and capture recommendation UI retain full local TONE3000 objects',()=>{
@@ -1944,34 +1936,36 @@ test('profile and capture recommendation UI retain full local TONE3000 objects',
 });
 
 
-test('ChatGPT remains primary while Workers AI is an optional specialist fallback',()=>{
+test('Provider settings remain available but ordinary chat and preset model routing are task-specific',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('id="aiChatGPTKeyState"'));
- assert.ok(source.includes('ChatGPT is primary.'));
- assert.ok(source.includes('ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets.'));
- assert.ok(source.includes('Auto · ChatGPT + optional free API fallback'));
- assert.ok(source.includes("const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode()"));
- assert.match(source, /<option value="cloudflare">Cloudflare Workers AI/);
- assert.match(source, /id="aiToneTestCloudflare"/);
- assert.match(source, /id="aiCloudflareBindingState"/);
- assert.match(source, /ChatGPT is primary\. Gemini → Groq → OpenRouter → Cloudflare Workers AI are sequential fallbacks\./);
- assert.match(source, /each role-specialist runs as a separate sequential task on Gemini, Groq, OpenRouter, or Cloudflare Workers AI/);
+ assert.ok(source.includes('GPT-5.6 Luna handles ordinary discussion.'));
+ assert.ok(source.includes('GPT-6 Luna is used only for preset creation and refinement'));
+ assert.match(source,/id="aiToneTestGemini"/);
+ assert.match(source,/id="aiToneTestGroq"/);
+ assert.match(source,/id="aiToneTestOpenRouter"/);
+ assert.match(source,/id="aiToneTestCloudflare"/);
+ assert.match(source,/Gemini is the first specialist provider/);
 });
-
 test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
  assert.deepEqual(providerFallbackOrder('cloudflare'),['cloudflare','chatgpt','gemini','groq','openrouter']);
 });
 
 
-test('Auto routes light tasks and tone planning through ChatGPT before optional API fallbacks',()=>{
+test('GPT-6 Luna creates presets and uses the Worker only for sequential external specialist tasks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("if(mode==='auto'){\n   order=providerFallbackOrder('chatgpt');"));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){\n    const credential=await secret('chatgpt');"));
- assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Existing NAM search and discussion call sites follow the selected primary/fallback route.\n  return askNamAIJson(system,user,stage);"));
- assert.ok(source.includes("const providers=['gemini','groq','openrouter','cloudflare'];"));
- assert.match(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ const team=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ assert.match(make,/fastestReadyModel\('chatgpt',credential,'tone-plan'\)/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);
+ assert.match(make,/Gemini is the first specialist provider/);
+ assert.match(team,/invokeWorkerLightTask\(member\.provider,'tone-specialist'/);
+ assert.match(team,/successfulProviders\.includes\(member\.provider\)/);
+ assert.match(source,/\/api\/v1\/ai\/light-task/);
+ assert.match(source,/\/api\/v1\/ai\/tone-plan/);
 });
-
 test('Tone Architect delegates specialist work through sequential provider fallback while Luna remains Chief',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
@@ -2147,4 +2141,31 @@ test('new chat messages scroll the unified region, not an inner messages scrolle
  assert.ok(scroll.includes("$('aiToneScrollArea')"));
  assert.ok(scroll.includes('scrollArea.scrollTop=scrollArea.scrollHeight'));
  assert.equal(scroll.includes('ui.messages.scrollTop='),false);
+});
+
+
+test('specialist provider cursor advances after the successful fallback so the next expert starts with the next provider',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const dispatch=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ assert.match(dispatch,/const cursor=context\.providerCursor/);
+ assert.match(dispatch,/cursor\.value=\(team\.indexOf\(member\)\+1\)%team\.length/);
+ assert.match(dispatch,/successfulProviders\.includes\(member\.provider\)/);
+});
+
+
+test('GPT-6 Luna fails closed when a new preset does not obtain two distinct successful specialist providers',async()=>{
+ let turn=0;
+ await assert.rejects(()=>orchestrateChatGptTonePlan({
+  bridge:{sendResponse:async request=>{
+   turn++;
+   if(turn===1){
+    const args={role:'amp_cabinet_specialist',focus:'amp',brief:'amp research',blockIds:[],candidatePlan:''};
+    return {model:'gpt-6-luna',toolCalls:[{type:'function_call',call_id:'one',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}],outputItems:[{type:'function_call',call_id:'one',name:'delegate_tone_specialist',arguments:JSON.stringify(args)}]};
+   }
+   return {model:'gpt-6-luna',text:'{"summary":"Should not be accepted","blocks":[]}'}; 
+  }},
+  model:'gpt-6-luna',input:[{role:'user',content:'Create a preset'}],instructions:'Need two experts',
+  requireFirstSpecialist:true,requireSuccessfulSpecialists:true,minSuccessfulSpecialists:2,minDistinctSpecialistProviders:2,
+  runSpecialist:async()=>({ok:true,role:'amp_cabinet_specialist',provider:'gemini',result:{ok:true}})
+ }),/only 1 of 2 required specialist tasks/);
 });
