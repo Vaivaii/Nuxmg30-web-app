@@ -1,5 +1,5 @@
 
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const WORKERS_AI_MODELS = [
   "@cf/google/gemma-4-26b-a4b-it",
   "@cf/openai/gpt-oss-20b",
@@ -154,6 +154,7 @@ async function listModels(provider, env) {
   return json({ ok: true, service: "nux-mg30-studio-api", workerVersion: VERSION, provider: config.api, models: modelRows(config.api, body) });
 }
 function extractJsonObject(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
   const text = String(value || "").trim();
   const a = text.indexOf("{"), b = text.lastIndexOf("}");
   if (a < 0 || b <= a) throw new Error("Provider did not return a JSON Tone Plan.");
@@ -197,6 +198,9 @@ function workersAiText(body) {
   if (typeof body === "string") return body;
   if (typeof body?.response === "string") return body.response;
   if (typeof body?.response?.text === "string") return body.response.text;
+  if (body?.response && typeof body.response === "object") return JSON.stringify(body.response);
+  if (typeof body?.result === "string") return body.result;
+  if (body?.result && typeof body.result === "object") return JSON.stringify(body.result);
   return chatText(body);
 }
 function normalizeWorkersAiUsage(body) {
@@ -247,9 +251,13 @@ async function generateWorkersAiJson(system, prompt, env, maxOutputTokens = 520,
   for (const model of candidates) {
     let usage = null;
     try {
-      const options = model === WORKERS_AI_MODEL
-        ? { messages, temperature: 0.2, max_completion_tokens: limit, chat_template_kwargs: { enable_thinking: false } }
-        : { messages, temperature: 0.2, max_tokens: limit };
+      const options = {
+        messages,
+        temperature: 0.2,
+        max_completion_tokens: limit,
+        response_format: { type: "json_object" },
+        ...(model === WORKERS_AI_MODEL ? { chat_template_kwargs: { enable_thinking: false } } : {})
+      };
       const body = await env.AI.run(model, options);
       usage = normalizeWorkersAiUsage(body);
       const tonePlan = extractJsonObject(workersAiText(body));
@@ -319,7 +327,7 @@ async function generateTonePlan(provider, model, system, prompt, env, requestedM
   try { return await request(false); }
   catch (error) {
     if ((isGroq && (error instanceof SyntaxError || error.failedGeneration || (error.status === 400 && /rejected the request/i.test(error.message)))) ||
-        (config.api === "openrouter" && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message)))) {
+        (config.api === "openrouter" && (error instanceof SyntaxError || /JSON Tone Plan|invalid response/i.test(error.message) || error.retryable))) {
       try { return await request(true); } catch (retryError) { throw retryError; }
     }
     throw error;
