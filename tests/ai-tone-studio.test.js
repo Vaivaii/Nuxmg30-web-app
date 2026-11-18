@@ -191,7 +191,7 @@ test('ChatGPT SIWC is fixed to GPT-5.6 discussion and GPT-6 Luna preset models',
  assert.match(source,/select\.value='__auto__';select\.disabled=true/);
  assert.match(source,/const preferredId=selectChatGptAutoModel\(models,task\)/);
  assert.match(source,/if\(task==='tone-plan'\)return find\(\/gpt-6-luna\/\)/);
- assert.match(source,/selectChatGptAutoModel\(models,'discussion'\)/);
+ assert.match(source,/return find\(\/gpt-5\[.-\]6-luna\/\)/);
  assert.match(source,/provider!=='chatgpt'&&manual/);
  assert.match(source,/\/api\/v1\/ai\/models/);
  assert.match(source,/cloudApiRequest/);
