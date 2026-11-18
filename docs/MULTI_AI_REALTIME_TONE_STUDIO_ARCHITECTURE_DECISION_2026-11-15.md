@@ -513,3 +513,14 @@ Work branch: \`feature/ai-efficiency-worker-nam-complete-tone-state\`.
 - Live TONE3000 search must be checked against the deployed Worker after deployment and valid Cloud Account + TONE3000 OAuth authentication.
 - Physical pedal checks remain necessary for: block OFF CC application, parameter readback match/quantization, failed-write rollback, NAM slot-10 preservation, and existing IR/MIDI workflows.
 - Readback verification applies to the currently active edit buffer/scene using the existing 0C/00 flow. It does not claim that all three scenes were rewritten or independently verified.
+
+
+---
+
+## Validation run for 2026-11-18 implementation
+
+- Added Worker contract tests for authenticated TONE3000 AI search, A2/gear filter forwarding, query expansion, result normalization, and rejection when the per-user OAuth header is absent (even when a Worker service key exists).
+- Added tests for new-preset complete-state versus partial refinement, expansion of omitted managed blocks to OFF, and mandatory active-buffer readback.
+- Added the new work branch to the Android CI push filter.
+- CI outcome: pending at the time this note was written.
+- Hardware and live deployed Worker outcome: not tested; no Worker deployment was issued.

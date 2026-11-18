@@ -396,7 +396,8 @@ async function proxyTone3000(request, env, url) {
   return json(body, upstream.status);
 }
 async function tone3000AiSearch(request, env, body) {
-  if (!toneAuth(request, env)) return json({ ok: false, error: "TONE3000 account authorization is required." }, 401);
+  const userOAuth = request.headers.get("X-TONE3000-Authorization") || "";
+  if (!/^Bearer\s+\S+$/i.test(userOAuth) || !toneAuth(request, env)) return json({ ok: false, error: "TONE3000 signed-in user authorization is required." }, 401);
   const query = String(body?.query || "").trim().replace(/\s+/g, " ").slice(0, 160);
   const gear = String(body?.gear || "amp-cab");
   if (query.length < 2) return json({ ok: false, error: "A TONE3000 amplifier search phrase is required." }, 400);

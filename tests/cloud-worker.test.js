@@ -139,7 +139,7 @@ test('TONE3000 AI search runs query expansion and A2 NAM filtering inside the au
     const noOAuth = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/ai-search', {
       method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: 'Fender Deluxe', gear: 'amp-cab' })
-    }), baseEnv);
+    }), { ...baseEnv, TONE3000_API_KEY: 'worker-service-secret' });
     assert.equal(noOAuth.status, 401);
     const response = await worker.fetch(new Request('https://studio.example.test/api/v1/tone3000/ai-search', {
       method: 'POST',
