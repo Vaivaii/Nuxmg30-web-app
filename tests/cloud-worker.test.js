@@ -27,13 +27,13 @@ test('standalone Worker parses and retains original auth health route with boole
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.version, '1.2.2');
-  assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, ai_light_task: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_ai_search: true, tone3000_download: true });
+  assert.equal(body.version, '1.2.5');
+  assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_light_task: true, ai_tone_plan: true, youtube_status: true, youtube_search: true, tone3000_ai_search: true, tone3000_proxy: true, tone3000_download: true });
   assert.equal(body.auth_configured, true);
   assert.deepEqual(body.secret_checks, {
     APP_LOGIN_USERNAME: true, APP_LOGIN_PASSWORD: true, APP_AUTH_SECRET: true,
     GEMINI_API_KEY: false, GROQ_API_KEY: false, OPENROUTER_API_KEY: false,
-    OPENAI_API_KEY: false, TONE3000_API_KEY: false, YOUTUBE_API_KEY: false, YOUTUBE_DATA_API_KEY: false, AI_BINDING: false
+    OPENAI_API_KEY: false, TONE3000_API_KEY: false, YOUTUBE_API_KEY: false, YOUTUBE_DATA_API_KEY: false, WORKERS_AI_BINDING: false
   });
   assert.equal(JSON.stringify(body).includes(APP_SECRET), false);
 });
@@ -83,7 +83,7 @@ test('provider status returns configured flags only after local JWT verification
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.workerVersion, '1.2.2');
+  assert.equal(body.workerVersion, '1.2.5');
   assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false, cloudflare: false });
   assert.equal(JSON.stringify(body).includes('secret-openai'), false);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://localhost');
