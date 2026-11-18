@@ -195,7 +195,7 @@ test('TONE3000 search broadens the AI phrase in Worker and defers Lite filtering
   const worker = readFileSync(new URL('../cloud-worker/worker.js', import.meta.url), 'utf8');
   assert.match(source, /cloudApiRequest\('\/api\/v1\/tone3000\/ai-search'/);
   assert.match(worker, /const candidates = \[\.\.\.new Set\(\[query, words\.length > 1 \? words\[words\.length - 1\] : "", ""\]\)\]/);
-  assert.match(worker, /format: "nam", architecture: "2"/);
+  assert.match(worker, /format: "nam",\\s*architecture: "2"/);
   assert.match(worker, /gear !== "amp" && gear !== "amp-cab"/);
   assert.match(worker, /tone3000_ai_search: true/);
   assert.match(tone3000, /deployed Cloudflare Worker is missing POST \/api\/v1\/tone3000\/ai-search/);
