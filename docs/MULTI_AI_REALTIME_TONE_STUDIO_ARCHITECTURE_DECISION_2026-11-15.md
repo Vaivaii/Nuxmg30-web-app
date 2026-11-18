@@ -276,3 +276,11 @@ This section supersedes prior provider-selection and external Tone Researcher as
 - Original NUX MG-30 Gen 2 firmware 6.0.x remains the target, not MG-30 MKII.
 - NAM, TONE3000 OAuth/model transfer, NAM Slot 10, IR User/Third Party and IR Collection mappings, preset codec, MIDI mappings, USB-MIDI and native USB Audio code remain out of scope and must be preserved.
 - Physical Android and pedal acceptance tests are still required after installing the new APK. CI success alone does not prove hardware behavior.
+
+
+### Implementation alignment follow-up — 2026-11-18
+- Removed the obsolete ChatGPT-as-specialist helper path; external specialist execution uses only the configured Gemini/Groq/OpenRouter/Workers AI provider pipeline.
+- Updated the remaining reusable Tone Architect instructions and token-usage labels so GPT-6 Luna is the preset Chief/researcher, with no legacy Lead AI / Preset Composer handoff wording.
+- Made specialist eligibility metadata consistent with the mandatory two-expert policy for every new preset. A local delta refinement can still bypass external specialists.
+- Mission Control's required-expert count now reflects actual create-vs-local-refinement behavior.
+- This follow-up does not add, alter or deploy any Cloudflare Worker endpoint, credential, authentication or route.

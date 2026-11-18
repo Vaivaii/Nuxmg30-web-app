@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect, isChatGptToneSpecialistAvailable, requestChatGptToneSpecialist } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -183,20 +183,18 @@ test('AI editor snapshot omits NAM internals and NAM mode triggers automatic imp
 });
 
 
-test('ChatGPT SIWC is the default AI provider and provider model options are dropdowns', () => {
-  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  assert.match(source, /let mode='chatgpt'/);
-  assert.match(source, /value="chatgpt" selected>ChatGPT · signed-in plan \(SIWC\)/);
-  for (const provider of ['auto','gemini','groq','openrouter','gpt','collab']) {
-    assert.match(source, new RegExp('value="' + provider + '"'));
-  }
-  assert.match(source, /id="aiToneActiveModel"/);
-  assert.match(source, /providerModels/);
-  assert.match(source, /listAiProviderModels/);
-  assert.match(source, /\/api\/v1\/ai\/models/);
-  assert.match(source, /cloudApiRequest/);
+test('ChatGPT SIWC is fixed to GPT-5.6 discussion and GPT-6 Luna preset models',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/let mode='chatgpt'/);
+ assert.match(source,/value="chatgpt" selected>Task-based ChatGPT routing/);
+ assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+ assert.match(source,/select\.value='__auto__';select\.disabled=true/);
+ assert.match(source,/selectChatGptAutoModel\(models,'tone-plan'\)/);
+ assert.match(source,/selectChatGptAutoModel\(models,'discussion'\)/);
+ assert.match(source,/provider!=='chatgpt'&&manual/);
+ assert.match(source,/\/api\/v1\/ai\/models/);
+ assert.match(source,/cloudApiRequest/);
 });
-
 test('AI fallback is free-first and GPT is only used after explicit manual selection', () => {
   assert.deepEqual(providerFallbackOrder('gemini'), ['gemini','groq','openrouter','cloudflare']);
   assert.deepEqual(providerFallbackOrder('groq'), ['groq','gemini','openrouter','cloudflare']);
@@ -249,7 +247,8 @@ test('ChatGPT is the fixed task router while external providers are specialist-o
  assert.match(source,/GPT-6 Luna/);
  assert.match(source,/minSuccessfulSpecialists:requiresExperts\?2:0/);
  assert.match(source,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
- assert.match(source,/providerTeam=requiresExperts\?await resolveFreeProviderTeam\(\):\[\]/);
+ assert.match(source,/let providerTeam=\[\]/);
+ assert.match(source,/resolveFreeProviderTeam\(\)/);
 });
 test('ChatGPT Auto uses GPT-5.6-Luna for discussion and GPT-6-Luna for tone building',()=>{
  const available=[
@@ -278,9 +277,13 @@ test('automatic model selection uses the model catalogue without spending genera
 test('Groq TPM and oversized-request errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Request too large: tokens per minute (TPM) Limit 8000, Requested 12508')),true);assert.equal(isRetryableProviderError(new Error('Please reduce your message size and try again')),true);});
 test('artist tone guidance differentiates Mayer, Petrucci and Satriani',async()=>{const {artistToneGuidance}=await import('../www/ai-tone-studio.js');const a=artistToneGuidance('John Mayer lead tone'),b=artistToneGuidance('John Petrucci lead tone'),c=artistToneGuidance('Joe Satriani lead tone');assert.match(a,/edge-of-breakup/);assert.match(b,/tight high gain/);assert.match(c,/expressive saturated/);assert.notEqual(a,b);assert.notEqual(b,c);});
 test('compact tuple tone context preserves discrete choices and drops irrelevant snapshot fields',async()=>{const {compactToneContext}=await import('../www/ai-tone-studio.js');const c=compactToneContext(catalog,[{id:'AMP',model:'Deluxe Rvb',enabled:true,parameters:{gain:30},extra:'drop'}]);assert.deepEqual(c.snapshot,[['AMP','Deluxe Rvb',1,{gain:30}]]);assert.deepEqual(c.catalog.find(x=>x[0]==='MOD')[2][0][3][1],['subd',[0,1]]);});
-test('provider model dropdown defaults to auto and permits explicit manual override',()=>{const s=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.match(s,/Auto · ChatGPT \+ optional free API fallback/);assert.match(s,/fastestReadyModel\(provider,key\)/);assert.match(s,/mg30-ai-model-manual-/);assert.doesNotMatch(s,/row.id,10000/);});
-
-
+test('provider and model selection cannot override task-based discussion and preset routing',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
+ assert.match(source,/provider==='chatgpt'\)\{select\.value='__auto__';select\.disabled=true/);
+ assert.match(source,/provider!=='chatgpt'&&manual/);
+ assert.match(source,/const next='chatgpt'/);
+});
 test('Groq length-of-messages errors are fallback eligible',()=>{assert.equal(isRetryableProviderError(new Error('Please reduce the length of the messages or completion.')),true);assert.equal(isRetryableProviderError(new Error('tokens per minute (TPM) Limit 8000, Requested 12508')),true);});
 test('TONE3000 metadata differentiates explicit boost/OD from unknown',async()=>{const {describeNamCaptureMetadata}=await import('../www/ai-tone-studio.js');const boosted=describeNamCaptureMetadata({name:'Lead amp',description:'Captured with Tube Screamer boost'},{name:'Mesa capture',description:'Overdrive pedal before amp'},'amp-cab');const clean=describeNamCaptureMetadata({name:'Clean direct',description:'No boost or overdrive used'},{name:'Clean capture'},'amp');const unknown=describeNamCaptureMetadata({name:'Studio NAM'},{name:'Capture 1'},'amp-cab');assert.match(boosted.driveMetadata,/mentions boost\/overdrive/);assert.match(clean.driveMetadata,/explicitly indicates no boost/);assert.match(unknown.driveMetadata,/does not specify/);});
 test('TONE3000 profile results and A2 capture choices render in conversation cards with explicit slot-10 confirmation',()=>{
@@ -335,26 +338,28 @@ test('AI provider and model routing is locked by task: GPT-5.6 discussion and GP
  assert.match(source,/GPT-6 Luna/);
 });
 
-test('Send wraps bridge checks, AI planning and MIDI apply in visible error handling',()=>{
+test('Send keeps planning errors visible and reports GPT-6 Luna preset progress',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
  assert.ok(submit.indexOf('try{')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
- assert.match(submit,/Preparing the MG-30 catalog and requesting an AI Tone Plan/);
+ assert.match(submit,/GPT-6 Luna is building your preset/);
  assert.match(submit,/await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
  assert.match(submit,/await bridge\.applyPlan\(plan\)/);
  assert.match(submit,/catch\(error\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
  assert.match(source,/aiToneSend'\)\.addEventListener\('click',\(\)=>\{void submit\(\)\.catch/);
 });
-
-
-
-test('Specialist tool schema is omitted for simple requests and enabled for named artist references only',()=>{
- assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),false);
+test('Every new preset, including simple clean presets, must consult two experts; local refinement may skip experts',()=>{
+ assert.equal(requiresToneArchitect('Buatkan tone clean sederhana'),true);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),true);
  assert.equal(shouldOfferToneSpecialist('Buatkan tone John Mayer'),true);
- assert.equal(shouldOfferToneSpecialist('Create a detailed dual-amp studio signal chain'),true);
- assert.equal(shouldOfferToneSpecialist('Buat delay sedikit lebih pendek',true),false);
+ assert.equal(shouldOfferToneSpecialist('Kurangi gain sedikit',true),false);
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(make,/const requiresExperts=!localRefinement/);
+ assert.match(make,/toolsEnabled:requiresExperts/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
 });
-
 test('ChatGPT Tone Plan generation is independent from USB-MIDI apply and pending plans are reused',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
@@ -423,8 +428,12 @@ test('ChatGPT Luna orchestrates the six specialist roles sequentially through on
  assert.equal(plan.summary,'Final validated tone proposal');
 });
 
-test('GPT-6 Luna owns Tone Researcher and external specialist roles exclude that responsibility',()=>{const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');assert.doesNotMatch(source,/tone_researcher/);assert.match(source,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);assert.deepEqual(TONE_SPECIALIST_ROLES,['amp_cabinet_specialist','effects_specialist','guitar_input_specialist','tone_calibration_specialist','tone_critic']);});
-
+test('GPT-6 Luna owns Tone Researcher and external specialist roles exclude that responsibility',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/tone_researcher/);
+ assert.match(source,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);
+ assert.deepEqual(TONE_SPECIALIST_ROLES,['amp_cabinet_specialist','effects_specialist','guitar_input_specialist','tone_calibration_specialist','tone_critic']);
+});
 test('Tone Critic and Guitar specialist are available as conditional roles, while simple requests can skip all agents',async()=>{
  const definition=toneSpecialistToolDefinition();
  assert.ok(definition.parameters.properties.role.enum.includes('guitar_input_specialist'));
@@ -438,49 +447,6 @@ test('Tone Critic and Guitar specialist are available as conditional roles, whil
  assert.equal(simple.__orchestratorCalls,1);
  assert.deepEqual(simple.__specialistRoles,[]);
  assert.equal(simple.summary,'Simple clean tone');
-});
-
-test('ChatGPT specialist readiness requires the connected session, a selected model and the native bridge',()=>{
- const bridge={sendResponse:async()=>({})};
- assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'gpt-6-luna',bridge}),true);
- assert.equal(isChatGptToneSpecialistAvailable({credential:'',model:'gpt-6-luna',bridge}),false);
- assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'',bridge}),false);
- assert.equal(isChatGptToneSpecialistAvailable({credential:'chatgpt-plan',model:'gpt-6-luna',bridge:{}}),false);
-});
-
-test('role-specialist requests execute through a separate ChatGPT bridge call and return structured findings',async()=>{
- const calls=[];
- const result=await requestChatGptToneSpecialist({
-  bridge:{sendResponse:async request=>{
-   calls.push(request);
-   return {model:'specialist-model',text:'{"recommendations":[{"id":"AMP","model":"Brit 800","reason":"Closest catalogue match","confidence":0.8}]}',
-    usage:{input_tokens:120,output_tokens:55,total_tokens:175}};
-  }},
-  model:'gpt-6-luna',role:'amp_cabinet_specialist',system:'You are Amp & Cabinet Specialist. Return JSON only.',
-  user:'Compare the MG-30 amplifier and cabinet catalogue.',maxOutputTokens:360
- });
- assert.equal(calls.length,1);
- assert.equal(calls[0].model,'gpt-5.6-luna');
- assert.equal(calls[0].parallelToolCalls,false);
- assert.equal(calls[0].tools,undefined);
- assert.equal(calls[0].input[0].role,'user');
- assert.match(calls[0].instructions,/Amp & Cabinet Specialist/);
- assert.equal(result.ok,true);
- assert.equal(result.role,'amp_cabinet_specialist');
- assert.equal(result.provider,'chatgpt');
- assert.equal(result.result.recommendations[0].model,'Brit 800');
- assert.equal(result.__aiUsage.total_tokens,175);
-});
-
-test('ChatGPT role-specialist rejects incomplete or nested-tool responses',async()=>{
- await assert.rejects(()=>requestChatGptToneSpecialist({
-  bridge:{sendResponse:async()=>({incomplete:true,incompleteReason:'max_output_tokens',text:''})},
-  model:'gpt-5.6-luna',role:'effects_specialist',system:'',user:'effects'
- }),/response was incomplete/);
- await assert.rejects(()=>requestChatGptToneSpecialist({
-  bridge:{sendResponse:async()=>({toolCalls:[{call_id:'nested',name:'delegate_tone_specialist'}]})},
-  model:'gpt-5.6-luna',role:'effects_specialist',system:'',user:'effects'
- }),/cannot delegate nested tools/);
 });
 
 test('Sequential orchestrator rejects parallel tool calls and stops at the configured specialist budget',async()=>{
@@ -567,16 +533,19 @@ test('HTML has no duplicate static IDs and AI interactive IDs are created exactl
 });
 
 
-test('Tone Architect is mandatory and hands compact musical intent to Lead AI', () => {
-  const architect = toneArchitectSystemPrompt();
-  const lead = toneLeadInstruction({ style: 'blues rock', feel: 'touch-sensitive' });
-  assert.match(architect, /Tone Architect/);
-  assert.match(architect, /do not choose device models/);
-  assert.match(lead, /Tone Architect has completed/);
-  assert.match(lead, /Gear Specialist and Parameter Engineer/);
-  assert.match(lead, /blues rock/);
+test('GPT-6 Luna is the sole Tone Architect Chief, researcher and preset decision-maker',()=>{
+ const architect=toneArchitectSystemPrompt();
+ const lead=toneLeadInstruction({style:'blues rock',feel:'touch-sensitive'});
+ assert.match(architect,/GPT-6 Luna, the sole Chief Tone Architect/);
+ assert.match(architect,/own the Tone Researcher responsibility/);
+ assert.match(architect,/at least two distinct technical specialist roles sequentially/);
+ assert.match(architect,/two different external provider identities/);
+ assert.match(lead,/GPT-6 LUNA · TONE ARCHITECT CHIEF/);
+ assert.match(lead,/sole researcher, orchestrator, preset engineer and final decision-maker/);
+ assert.match(lead,/blues rock/);
+ assert.match(lead,/Tone Researcher responsibility/);
+ assert.doesNotMatch(lead,/Lead AI \/ Preset Composer/);
 });
-
 test('Tone Architect intent is compact and missing confidence remains unknown', () => {
   const intent = compactToneArchitectIntent({
     tone_intent: {
@@ -622,21 +591,21 @@ test('live orchestration retains direct applyPlan MIDI path with no manual Apply
   assert.doesNotMatch(submit, /manual approval|confirm.*apply|Apply to Pedal/i);
 });
 
-test('Auto orchestration excludes paid GPT while existing Cloud API gateway remains the Tone Plan route', () => {
-  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  const auto = source.slice(source.indexOf('async function fastestReadyProviderOrder'), source.indexOf('async function testProvider'));
-  const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
-  const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
-  assert.match(auto, /const providers=\['gemini','groq','openrouter','cloudflare'\]/);
-  assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
-  assert.doesNotMatch(auto, /['\"]gpt['\"]|OPENAI_API_KEY|invokeProvider\('gpt'/);
-  assert.match(source, /GPT · manual \(may be paid\)/);
-  assert.match(source, /\/api\/v1\/ai\/tone-plan/);
-  assert.match(worker, /\/api\/v1\/ai\/tone-plan/);
-  assert.match(cloudApi, /CLOUD_API_BASE/);
+test('Tone Architect keeps GPT-6 Luna as Chief and dispatches technical specialists through distinct sequential providers',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
+ const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
+ assert.ok(source.includes("invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText"));
+ assert.match(specialist,/successfulProviders\.includes\(member\.provider\)/);
+ assert.match(specialist,/cursor\.value=\(team\.indexOf\(member\)\+1\)%team\.length/);
+ assert.match(make,/requireSuccessfulSpecialists:requiresExperts/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/GPT-6 LUNA TONE ARCHITECT CONTRACT/);
+ assert.doesNotMatch(specialist,/requestChatGptToneSpecialist\(/);
 });
-
-
 test('Tone Architect fallback text preserves the language of the user request', () => {
   const request = 'Buat tone blues yang hangat dengan gain rendah dan reverb tipis.';
   const intent = compactToneArchitectIntent({}, request);
@@ -767,37 +736,28 @@ test('one transient discussion stream error receives only one bounded retry',asy
  assert.equal(result.__aiUsageBreakdown[1].failed,false);
 });
 
-test('named artist tone requests enable the specialist roster and reserve Luna as final Chief',()=>{
+test('new preset requests use the technical specialist roster while Luna owns musical rig research',()=>{
  assert.equal(requiresToneArchitect('Buatkan tone John Mayer'),true);
  assert.equal(requiresToneArchitect('Create a Satriani lead tone'),true);
- assert.equal(requiresToneArchitect('Buatkan tone clean sederhana'),false);
- assert.equal(shouldOfferToneSpecialist('Buatkan tone John Mayer'),true);
- assert.equal(shouldOfferToneSpecialist('Buatkan tone seperti Eddie Van Halen'),true);
- assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),false);
  const definition=toneSpecialistToolDefinition();
  assert.match(definition.description,/GPT-6 Luna, the sole Chief Tone Architect and final decision-maker/);
- assert.match(definition.description,/Amp & Cabinet Specialist for deep musical\/rig research/);
- assert.match(definition.description,/Tone Critic only when your quality gate detects uncertainty, conflict, or material risk/);
- assert.match(definition.description,/separate, focused request through the connected ChatGPT account/);
- assert.doesNotMatch(definition.description,/Cloudflare Worker Gemma/);
+ assert.match(definition.description,/Tone Researcher is not an external role/);
+ assert.match(definition.description,/at least two successful technical specialist roles/);
+ assert.match(definition.description,/Gemini is first priority/);
+ assert.match(definition.description,/Amp & Cabinet Specialist/);
+ assert.match(definition.description,/Effects Specialist/);
  assert.deepEqual(definition.parameters.properties.role.enum,[...TONE_SPECIALIST_ROLES]);
 });
-
 test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route and all MIDI writes',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- const start=source.indexOf('async function answerToneConversation');
- const end=source.indexOf('function renderNamCandidates',start);
+ const start=source.indexOf('async function answerToneConversation'),end=source.indexOf('function renderNamCandidates',start);
  const discussion=source.slice(start,end);
- const chatgptStart=discussion.indexOf("if(mode==='chatgpt')");
- const chatgptEnd=discussion.indexOf("}else{",chatgptStart);
- const chatgptRoute=discussion.slice(chatgptStart,chatgptEnd);
- assert.ok(chatgptStart>=0&&chatgptEnd>chatgptStart);
- assert.match(chatgptRoute,/requestChatGptConversation/);
- assert.doesNotMatch(chatgptRoute,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
+ assert.match(discussion,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
+ assert.match(discussion,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
+ assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
  assert.match(discussion,/compactNamConversation\(conversation,1500\)/);
  assert.match(discussion,/slice\(0,900\)/);
 });
-
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
  assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
  assert.equal(classifyAssistantIntent('Buat preset John Mayer menggunakan NAM'),'tone_create');
@@ -882,14 +842,16 @@ test('recent conversation context is carried into audio diagnosis and Tone Plans
  assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
  assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
 });
-test('recent conversation is forwarded to Tone Architect, Lead AI and single-agent plan creation',()=>{
+test('recent conversation context is forwarded to GPT-6 Luna preset creation and kept bounded',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes('RECENT TONE DISCUSSION (oldest first)'));
- assert.ok(source.includes('conversation:compactNamConversation(conversation,1800)'));
- assert.ok(source.includes('userText(prompt,null,activeNamContext,conversation)'));
+ const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.ok(source.includes('const conversationContextText='));
+ assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
  assert.ok(source.includes('const conversationContextText=()=>dialogueContext.slice(-8)'));
  assert.ok(source.includes('while(dialogueContext.length>8)dialogueContext.shift()'));
- assert.ok(source.includes('resolveArtistToneGuidance(prompt,conversation)'));
+ assert.ok(plan.includes('userText(prompt,null,activeNamContext,conversation)'));
+ assert.ok(plan.includes('resolveArtistToneGuidance(prompt,conversation)'));
+ assert.ok(plan.includes("input:[{role:'user',content:singleUser}]"));
  assert.ok(source.includes('const keepToneSessionForContinuation='));
 });
 test('standalone NAM search and import stay in chat and never auto-create a preset',()=>{
@@ -975,13 +937,15 @@ test('provider cooldown marks rate limits and temporary upstream failures, not a
  assert.equal(shouldCooldownProvider({status:404,message:'Cloud API route not found'}),false);
  assert.equal(shouldCooldownProvider({status:401,message:'Unauthorized'}),false);
 });
-test('Tone Architect passes one compact state to Lead; correction and Reviewer only receive affected catalog blocks',()=>{
+test('GPT-6 Luna owns preset research and catalog correction remains limited to affected blocks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent,installed_nam:"));
- assert.ok(source.includes('toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect)'));
- assert.ok(source.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
- assert.ok(source.includes('affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)'));
- assert.ok(source.includes('!correctionUsed&&shouldInvokeCriticalReviewer(first)'));
+ const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.ok(plan.includes('GPT-6 LUNA TONE ARCHITECT CONTRACT'));
+ assert.ok(plan.includes('Tone Researcher is YOUR responsibility and must NEVER be delegated'));
+ assert.ok(plan.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
+ assert.ok(plan.includes('correcting the catalog validation'));
+ assert.ok(plan.includes('validation_error:String(validationError.message||validationError).slice(0,350)'));
+ assert.doesNotMatch(plan,/invokeFreeTeam\(/);
 });
 test('same-tone refinements request parameter deltas without regenerating a preset chain',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -1020,15 +984,17 @@ test('per-stage token limits are sent through Cloud API while usage is read only
 });
 
 
-test('Lead state-passing retains the current user request but excludes prior chat history and raw audio',()=>{
+test('GPT-6 Luna preset input carries the current request and bounded conversation but excludes raw audio',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
- assert.ok(plan.includes("state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent"));
+ assert.ok(plan.includes('const singleUser=userText(prompt,null,activeNamContext,conversation)'));
+ assert.ok(plan.includes("input:[{role:'user',content:singleUser}]"));
+ assert.ok(plan.includes('MEASURED USB AUDIO'));
+ assert.equal(plan.includes('audioBytes'),false);
+ assert.equal(plan.includes('audioBuffer'),false);
  assert.equal(plan.includes('RECENT CONVERSATION:'),false);
- assert.equal(plan.includes('MEASURED USB AUDIO'),true);
+ assert.ok(source.includes('RECENT CONVERSATION CONTEXT (chronological)'));
 });
-
-
 test('AI Settings uses compact provider and usage accordions while NAM controls remain visible',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('id="aiToneProviderDetails"'));
@@ -1151,19 +1117,21 @@ test('GPT-6 Luna creates presets and uses the Worker only for sequential externa
  assert.match(source,/\/api\/v1\/ai\/light-task/);
  assert.match(source,/\/api\/v1\/ai\/tone-plan/);
 });
-test('Tone Architect keeps GPT-6 Luna as Chief and dispatches specialist roles to independent providers with fallback',()=>{
+test('Tone Architect keeps GPT-6 Luna as Chief and dispatches technical specialists through distinct sequential providers',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
  const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
  assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
- assert.ok(source.includes("async function invokeWorkerLightTask(provider,task,system,user,stage"));
  assert.ok(source.includes("invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText"));
- assert.ok(source.includes("requireSuccessfulSpecialists:true"));
- assert.ok(source.includes("GPT-6 Luna, the sole Chief Tone Architect"));
+ assert.match(specialist,/successfulProviders\.includes\(member\.provider\)/);
+ assert.match(specialist,/cursor\.value=\(team\.indexOf\(member\)\+1\)%team\.length/);
+ assert.match(make,/requireSuccessfulSpecialists:requiresExperts/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/GPT-6 LUNA TONE ARCHITECT CONTRACT/);
  assert.doesNotMatch(specialist,/requestChatGptToneSpecialist\(/);
 });
-
-
 test('manual TONE3000 profile selection shows a persistent loading card and replaces it with A2 capture choices',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("if(item.type==='nam-captures-loading')"));
@@ -1349,28 +1317,31 @@ test('ChatGPT is the fixed task router while external providers are specialist-o
  assert.match(source,/GPT-6 Luna/);
  assert.match(source,/minSuccessfulSpecialists:requiresExperts\?2:0/);
  assert.match(source,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
- assert.match(source,/providerTeam=requiresExperts\?await resolveFreeProviderTeam\(\):\[\]/);
+ assert.match(source,/let providerTeam=\[\]/);
+ assert.match(source,/resolveFreeProviderTeam\(\)/);
 });
-test('Send wraps bridge checks, AI planning and MIDI apply in visible error handling',()=>{
+test('Send keeps planning errors visible and reports GPT-6 Luna preset progress',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
  assert.ok(submit.indexOf('try{')<submit.indexOf('const bridge=window.MG30AIToneBridge'));
- assert.match(submit,/Preparing the MG-30 catalog and requesting an AI Tone Plan/);
+ assert.match(submit,/GPT-6 Luna is building your preset/);
  assert.match(submit,/await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
  assert.match(submit,/await bridge\.applyPlan\(plan\)/);
  assert.match(submit,/catch\(error\)[\s\S]*message\('ai','Failed: '\+detail\)[\s\S]*status\('Failed: '\+detail,'error'\)/);
  assert.match(source,/aiToneSend'\)\.addEventListener\('click',\(\)=>\{void submit\(\)\.catch/);
 });
-
-
-
-test('Specialist tool schema is omitted for simple requests and enabled for named artist references only',()=>{
- assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),false);
+test('Every new preset, including simple clean presets, must consult two experts; local refinement may skip experts',()=>{
+ assert.equal(requiresToneArchitect('Buatkan tone clean sederhana'),true);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),true);
  assert.equal(shouldOfferToneSpecialist('Buatkan tone John Mayer'),true);
- assert.equal(shouldOfferToneSpecialist('Create a detailed dual-amp studio signal chain'),true);
- assert.equal(shouldOfferToneSpecialist('Buat delay sedikit lebih pendek',true),false);
+ assert.equal(shouldOfferToneSpecialist('Kurangi gain sedikit',true),false);
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(make,/const requiresExperts=!localRefinement/);
+ assert.match(make,/toolsEnabled:requiresExperts/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
 });
-
 test('ChatGPT Tone Plan generation is independent from USB-MIDI apply and pending plans are reused',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' async function undo(){'));
@@ -1455,16 +1426,19 @@ test('HTML has no duplicate static IDs and AI interactive IDs are created exactl
 });
 
 
-test('Tone Architect is mandatory and hands compact musical intent to Lead AI', () => {
-  const architect = toneArchitectSystemPrompt();
-  const lead = toneLeadInstruction({ style: 'blues rock', feel: 'touch-sensitive' });
-  assert.match(architect, /Tone Architect/);
-  assert.match(architect, /do not choose device models/);
-  assert.match(lead, /Tone Architect has completed/);
-  assert.match(lead, /Gear Specialist and Parameter Engineer/);
-  assert.match(lead, /blues rock/);
+test('GPT-6 Luna is the sole Tone Architect Chief, researcher and preset decision-maker',()=>{
+ const architect=toneArchitectSystemPrompt();
+ const lead=toneLeadInstruction({style:'blues rock',feel:'touch-sensitive'});
+ assert.match(architect,/GPT-6 Luna, the sole Chief Tone Architect/);
+ assert.match(architect,/own the Tone Researcher responsibility/);
+ assert.match(architect,/at least two distinct technical specialist roles sequentially/);
+ assert.match(architect,/two different external provider identities/);
+ assert.match(lead,/GPT-6 LUNA · TONE ARCHITECT CHIEF/);
+ assert.match(lead,/sole researcher, orchestrator, preset engineer and final decision-maker/);
+ assert.match(lead,/blues rock/);
+ assert.match(lead,/Tone Researcher responsibility/);
+ assert.doesNotMatch(lead,/Lead AI \/ Preset Composer/);
 });
-
 test('Tone Architect intent is compact and missing confidence remains unknown', () => {
   const intent = compactToneArchitectIntent({
     tone_intent: {
@@ -1510,21 +1484,21 @@ test('live orchestration retains direct applyPlan MIDI path with no manual Apply
   assert.doesNotMatch(submit, /manual approval|confirm.*apply|Apply to Pedal/i);
 });
 
-test('Auto orchestration excludes paid GPT while existing Cloud API gateway remains the Tone Plan route', () => {
-  const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
-  const auto = source.slice(source.indexOf('async function fastestReadyProviderOrder'), source.indexOf('async function testProvider'));
-  const worker = readFileSync(new URL('../cloud-worker/src/index.js', import.meta.url), 'utf8');
-  const cloudApi = readFileSync(new URL('../www/cloud-api.js', import.meta.url), 'utf8');
-  assert.match(auto, /const providers=\['gemini','groq','openrouter','cloudflare'\]/);
-  assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
-  assert.doesNotMatch(auto, /['\"]gpt['\"]|OPENAI_API_KEY|invokeProvider\('gpt'/);
-  assert.match(source, /GPT · manual \(may be paid\)/);
-  assert.match(source, /\/api\/v1\/ai\/tone-plan/);
-  assert.match(worker, /\/api\/v1\/ai\/tone-plan/);
-  assert.match(cloudApi, /CLOUD_API_BASE/);
+test('Tone Architect keeps GPT-6 Luna as Chief and dispatches technical specialists through distinct sequential providers',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
+ const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
+ assert.ok(source.includes("invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText"));
+ assert.match(specialist,/successfulProviders\.includes\(member\.provider\)/);
+ assert.match(specialist,/cursor\.value=\(team\.indexOf\(member\)\+1\)%team\.length/);
+ assert.match(make,/requireSuccessfulSpecialists:requiresExperts/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/GPT-6 LUNA TONE ARCHITECT CONTRACT/);
+ assert.doesNotMatch(specialist,/requestChatGptToneSpecialist\(/);
 });
-
-
 test('Tone Architect fallback text preserves the language of the user request', () => {
   const request = 'Buat tone blues yang hangat dengan gain rendah dan reverb tipis.';
   const intent = compactToneArchitectIntent({}, request);
@@ -1614,19 +1588,14 @@ test('ChatGPT discussion accepts plain prose through native SIWC without JSON pa
 
 test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route and all MIDI writes',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- const start=source.indexOf('async function answerToneConversation');
- const end=source.indexOf('function renderNamCandidates',start);
+ const start=source.indexOf('async function answerToneConversation'),end=source.indexOf('function renderNamCandidates',start);
  const discussion=source.slice(start,end);
- const chatgptStart=discussion.indexOf("if(mode==='chatgpt')");
- const chatgptEnd=discussion.indexOf("}else{",chatgptStart);
- const chatgptRoute=discussion.slice(chatgptStart,chatgptEnd);
- assert.ok(chatgptStart>=0&&chatgptEnd>chatgptStart);
- assert.match(chatgptRoute,/requestChatGptConversation/);
- assert.doesNotMatch(chatgptRoute,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
+ assert.match(discussion,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
+ assert.match(discussion,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
+ assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
  assert.match(discussion,/compactNamConversation\(conversation,1500\)/);
  assert.match(discussion,/slice\(0,900\)/);
 });
-
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
  assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
  assert.equal(classifyAssistantIntent('Buat preset John Mayer menggunakan NAM'),'tone_create');
@@ -1711,14 +1680,16 @@ test('recent conversation context is carried into audio diagnosis and Tone Plans
  assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
  assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
 });
-test('recent conversation is forwarded to Tone Architect, Lead AI and single-agent plan creation',()=>{
+test('recent conversation context is forwarded to GPT-6 Luna preset creation and kept bounded',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes('RECENT TONE DISCUSSION (oldest first)'));
- assert.ok(source.includes('conversation:compactNamConversation(conversation,1800)'));
- assert.ok(source.includes('userText(prompt,null,activeNamContext,conversation)'));
+ const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.ok(source.includes('const conversationContextText='));
+ assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
  assert.ok(source.includes('const conversationContextText=()=>dialogueContext.slice(-8)'));
  assert.ok(source.includes('while(dialogueContext.length>8)dialogueContext.shift()'));
- assert.ok(source.includes('resolveArtistToneGuidance(prompt,conversation)'));
+ assert.ok(plan.includes('userText(prompt,null,activeNamContext,conversation)'));
+ assert.ok(plan.includes('resolveArtistToneGuidance(prompt,conversation)'));
+ assert.ok(plan.includes("input:[{role:'user',content:singleUser}]"));
  assert.ok(source.includes('const keepToneSessionForContinuation='));
 });
 test('standalone NAM search and import stay in chat and never auto-create a preset',()=>{
@@ -1804,13 +1775,15 @@ test('provider cooldown marks rate limits and temporary upstream failures, not a
  assert.equal(shouldCooldownProvider({status:404,message:'Cloud API route not found'}),false);
  assert.equal(shouldCooldownProvider({status:401,message:'Unauthorized'}),false);
 });
-test('Tone Architect passes one compact state to Lead; correction and Reviewer only receive affected catalog blocks',()=>{
+test('GPT-6 Luna owns preset research and catalog correction remains limited to affected blocks',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.ok(source.includes("JSON.stringify({state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent,installed_nam:"));
- assert.ok(source.includes('toneLeadInstruction(hasArchitect?null:toneIntent,hasArchitect)'));
- assert.ok(source.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
- assert.ok(source.includes('affected_catalog:compactToneContext(reviewCatalog,reviewSnapshot)'));
- assert.ok(source.includes('!correctionUsed&&shouldInvokeCriticalReviewer(first)'));
+ const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.ok(plan.includes('GPT-6 LUNA TONE ARCHITECT CONTRACT'));
+ assert.ok(plan.includes('Tone Researcher is YOUR responsibility and must NEVER be delegated'));
+ assert.ok(plan.includes('affected_catalog:compactToneContext(affectedCatalog,affectedSnapshot)'));
+ assert.ok(plan.includes('correcting the catalog validation'));
+ assert.ok(plan.includes('validation_error:String(validationError.message||validationError).slice(0,350)'));
+ assert.doesNotMatch(plan,/invokeFreeTeam\(/);
 });
 test('same-tone refinements request parameter deltas without regenerating a preset chain',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -1838,15 +1811,17 @@ test('per-stage token limits are sent through Cloud API while usage is read only
 });
 
 
-test('Lead state-passing retains the current user request but excludes prior chat history and raw audio',()=>{
+test('GPT-6 Luna preset input carries the current request and bounded conversation but excludes raw audio',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
- assert.ok(plan.includes("state:'MG30_TONE_INTENT_V1',request:prompt,conversation:compactNamConversation(conversation,1800),intent:toneIntent"));
+ assert.ok(plan.includes('const singleUser=userText(prompt,null,activeNamContext,conversation)'));
+ assert.ok(plan.includes("input:[{role:'user',content:singleUser}]"));
+ assert.ok(plan.includes('MEASURED USB AUDIO'));
+ assert.equal(plan.includes('audioBytes'),false);
+ assert.equal(plan.includes('audioBuffer'),false);
  assert.equal(plan.includes('RECENT CONVERSATION:'),false);
- assert.equal(plan.includes('MEASURED USB AUDIO'),true);
+ assert.ok(source.includes('RECENT CONVERSATION CONTEXT (chronological)'));
 });
-
-
 test('AI Settings uses compact provider and usage accordions while NAM controls remain visible',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('id="aiToneProviderDetails"'));
@@ -1966,16 +1941,21 @@ test('GPT-6 Luna creates presets and uses the Worker only for sequential externa
  assert.match(source,/\/api\/v1\/ai\/light-task/);
  assert.match(source,/\/api\/v1\/ai\/tone-plan/);
 });
-test('Tone Architect delegates specialist work through sequential provider fallback while Luna remains Chief',()=>{
+test('Tone Architect keeps GPT-6 Luna as Chief and dispatches technical specialists through distinct sequential providers',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
+ const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
  assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
  assert.ok(source.includes("invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText"));
- assert.ok(source.includes("requireSuccessfulSpecialists:true"));
- assert.ok(source.includes("GPT-6 Luna, the sole Chief Tone Architect"));
+ assert.match(specialist,/successfulProviders\.includes\(member\.provider\)/);
+ assert.match(specialist,/cursor\.value=\(team\.indexOf\(member\)\+1\)%team\.length/);
+ assert.match(make,/requireSuccessfulSpecialists:requiresExperts/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+ assert.match(make,/GPT-6 LUNA TONE ARCHITECT CONTRACT/);
+ assert.doesNotMatch(specialist,/requestChatGptToneSpecialist\(/);
 });
-
-
 test('manual TONE3000 profile selection shows a persistent loading card and replaces it with A2 capture choices',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("if(item.type==='nam-captures-loading')"));
