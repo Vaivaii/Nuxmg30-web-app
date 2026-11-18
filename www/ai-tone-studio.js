@@ -665,8 +665,8 @@ async function init(){
   const error=ui.status.dataset.state==='error';
   const stateLabel=error?'STOPPED':toneMission.chiefState==='synthesizing'?'SYNTHESIZING':toneMission.chiefState==='validating'?'VALIDATING':toneMission.chiefState==='applying'?'APPLYING':'WORKING';
   const providerEntries=Object.entries(toneMission.providers);
-  const roleNames={amp_cabinet_specialist:'Amp & Cabinet',effects_specialist:'Effects',guitar_input_specialist:'Guitar & Input',tone_calibration_specialist:'Tone Calibration',tone_critic:'Tone Critic',tone_researcher:'Tone Research'};
-  const roleOrder=['amp_cabinet_specialist','effects_specialist','guitar_input_specialist','tone_calibration_specialist','tone_critic','tone_researcher'];
+  const roleNames={amp_cabinet_specialist:'Amp & Cabinet',effects_specialist:'Effects',guitar_input_specialist:'Guitar & Input',tone_calibration_specialist:'Tone Calibration',tone_critic:'Tone Critic'};
+  const roleOrder=['amp_cabinet_specialist','effects_specialist','guitar_input_specialist','tone_calibration_specialist','tone_critic'];
   const roles=[...new Set(providerEntries.map(([,item])=>item.role).filter(Boolean))].sort((a,b)=>roleOrder.indexOf(a)-roleOrder.indexOf(b));
   const roleRows=roles.map(role=>{
    const attempts=providerEntries.filter(([,item])=>item.role===role);
