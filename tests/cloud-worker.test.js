@@ -471,6 +471,3 @@ test('OpenRouter propagates transient upstream 502 without retrying an unsupport
     assert.deepEqual(calls[0].payload.response_format, { type: 'json_object' });
   } finally { globalThis.fetch = originalFetch; }
 });
-
-
-});
