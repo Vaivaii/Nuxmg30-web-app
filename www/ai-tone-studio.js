@@ -1454,9 +1454,18 @@ if($(stateId))$(stateId).textContent=provider==='chatgpt'?'Connected · ChatGPT 
   }catch(error){status(niceError(error,provider),'error');}
   finally{setBusy(false);}
  }
-async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){
-  // Existing NAM search and discussion call sites follow the selected primary/fallback route.
-  return askNamAIJson(system,user,stage);
+async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520){
+  // NAM query work is intentionally pinned to Workers AI; it must not consume GPT-6 Luna tokens.
+  try{
+   status('Cloudflare Workers AI is '+stage+'…','busy');
+   const result=await invokeWorkerLightTask('cloudflare',task,system,user,stage,maxOutputTokens,WORKERS_AI_MODEL);
+   logAiTokenUsage('cloudflare',result?.__aiModel||WORKERS_AI_MODEL,stage,maxOutputTokens,system,user,result);
+   return result;
+  }catch(error){
+   noteProviderFailure('cloudflare',error);
+   logAiTokenUsage('cloudflare',WORKERS_AI_MODEL,stage,maxOutputTokens,system,user,null,error);
+   throw error;
+  }
  }
  async function testWorkersAI(){
   setBusy(true);status('Testing Cloudflare Workers AI · Gemma 4…','busy');
@@ -1635,10 +1644,17 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
 }
  async function deriveNamSearchQuery(prompt,conversation=''){
   const system='You select search terms for the TONE3000 NAM catalog. The CURRENT USER TONE REQUEST is authoritative. Use recent conversation only to resolve ambiguity; never reuse a previous artist or amp search query when the current request names a different artist or target. Return JSON only: {"query":"short search phrase","reason":"brief reason in the same language as the USER REQUEST"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
-  const result=await invokeWorkersAILightTask('tone3000-search-terms',system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms',180);
-  const query=String(result?.query||'').trim().replace(/\s+/g,' ').slice(0,60);
-  if(query.length<2)throw new Error('AI could not derive useful amplifier search terms. Add an amplifier name or a clearer tone description.');
-  return {query,reason:String(result?.reason||'')};
+  try{
+   const result=await invokeWorkersAILightTask('tone3000-search-terms',system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms',180);
+   const query=String(result?.query||'').trim().replace(/\s+/g,' ').slice(0,60);
+   if(query.length<2)throw new Error('Workers AI returned no useful TONE3000 search phrase.');
+   return {query,reason:String(result?.reason||''),source:'workers-ai'};
+  }catch(error){
+   const query=fallbackNamSearchTerms(prompt);
+   if(query.length<2)throw error;
+   message('ai','Workers AI could not derive the NAM search phrase; using the local safe query fallback. '+String(error?.message||error).slice(0,180));
+   return {query,reason:'',source:'local-fallback'};
+  }
  }
  async function chooseNamTone(prompt,searchQuery,tones,conversation=''){
   const candidates=sanitizeNamProfileCandidates(tones,12);
@@ -1818,7 +1834,8 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   const deltaGuard=localRefinement?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.':'';
   const system=systemPrompt(catalog,snapshot,false,resolveArtistToneGuidance(prompt,conversation))+namPlanGuard+deltaGuard;
   const completePresetGuard=localRefinement?'\n\nLOCAL REFINEMENT: Return only requested delta blocks. Every unlisted managed block must remain unchanged.':'\n\nNEW PRESET: Return the catalog-valid blocks needed for this tone. The app will turn every other managed effect block OFF while preserving its exact current model. Do not touch IR, Send/Return, Volume, scene, preset slot, MIDI mappings or signal-chain order.';
-  const singleSystem=system+'\n\n'+toneLeadInstruction(toneSession.intent)+completePresetGuard;
+  const namSearchRoutingGuard=namModeActive&&!activeNamContext?'\n\nNAM SEARCH ROUTING: Do not generate, infer or include TONE3000 search_terms in this Tone Plan. A separate Cloudflare Workers AI light task will derive the compact TONE3000 catalog query from the current user request and relevant context. Spend your output budget on musical intent and the MG-30 preset only.':'';
+  const singleSystem=system+'\n\n'+toneLeadInstruction(toneSession.intent)+completePresetGuard+namSearchRoutingGuard;
   const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
   const credential=await secret('chatgpt');
   if(!credential)throw new Error('ChatGPT plan access is not connected. Connect your ChatGPT account; GPT-5.6 discussion and GPT-6 Luna preset creation both use this signed-in session.');
@@ -1832,7 +1849,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   const specialistDispatchContext={providerTeam,successfulProviders:[],providerCursor:{value:0}};
   const orchestrationInstructions=singleSystem+'\n\nGPT-6 LUNA TONE ARCHITECT CONTRACT: You are GPT-6 Luna, the sole Chief Tone Architect and final decision-maker for preset creation. FIRST do your own musical/reference research before delegating: infer the requested artist/song/era, sonic character, playing dynamics, likely rig context, evidence status, assumptions and uncertainties. Tone Researcher is YOUR responsibility and must NEVER be delegated. Do not invent sources, studio credits, exact rigs or citations; distinguish known, reported, inferred and unknown facts. Then, for every new preset, you MUST call at least TWO DIFFERENT technical specialist roles sequentially and receive successful results from TWO DIFFERENT external provider identities before final synthesis. Request exactly one specialist per turn, wait for its actual result, evaluate it, and only then request the next different role. For a typical artist lead preset, use Amp & Cabinet Specialist first and Effects Specialist second; reverse their order only when the request is primarily effects-focused. Guitar & Input Specialist is conditional on relevant guitar/pickup/input details; Tone Calibration Specialist is conditional on meaningful coupled gain/frequency/dynamic interactions; Tone Critic is conditional on material uncertainty, conflict or risk. Gemini is the first specialist provider. If Gemini fails, the same role task falls back sequentially to Groq, OpenRouter, and Cloudflare Workers AI. A second successful specialist MUST use a provider identity different from the first successful specialist; the app enforces this. Never run specialist generations in parallel, never delegate Tone Researcher, and never claim a failed provider completed a role. If fewer than two distinct specialist roles from two provider identities succeed, stop without a Tone Plan. You remain the only Chief and synthesize your own research plus the two specialist findings into the final MG-30 Tone Plan JSON. The exact MG-30 Gen 2 firmware 6.0.x catalogue and validator are authoritative; preserve NAM, IR, MIDI mappings and all unrelated device state.';
   let first=await orchestrateChatGptTonePlan({bridge:window.MG30ChatGPTBridge,model,input:[{role:'user',content:singleUser}],instructions:orchestrationInstructions,toolsEnabled:requiresExperts,requireFirstSpecialist:requiresExperts,maxSpecialistCalls:6,requireSuccessfulSpecialists:requiresExperts,minSuccessfulSpecialists:requiresExperts?2:0,minDistinctSpecialistProviders:requiresExperts?2:0,onEvent:event=>{if(event.type==='chief_research')updateToneMission({chiefState:'researching',stage:'GPT-6 Luna sedang melakukan riset awal',activeRole:'tone_architect'});else if(event.type==='specialist_requested')updateToneMission({chiefState:'delegating',stage:'Luna menugaskan ahli '+event.round+' · '+String(event.role||'').replaceAll('_',' '),activeRole:event.role||'tone_architect'});else if(event.type==='specialist_completed')updateToneMission({chiefState:'reviewing',stage:'Luna menilai hasil '+String(event.role||'').replaceAll('_',' '),activeRole:'tone_architect'});else if(event.type==='chief_synthesis')updateToneMission({chiefState:'synthesizing',stage:'GPT-6 Luna sedang menyatukan riset dan hasil dua ahli',activeRole:'tone_architect'});else if(event.type==='complete')updateToneMission({chiefState:'validating',stage:'Memeriksa parameter terhadap katalog MG-30 Gen 2',activeRole:'tone_architect'});},runSpecialist:args=>runToneSpecialistTask(args,{prompt,conversation,catalog,snapshot,model,...specialistDispatchContext})});
-  let namSearchTerms=normalizeNamSearchTerms(first?.search_terms);
+  let namSearchTerms='';
   if(Array.isArray(first.__aiUsageBreakdown)&&first.__aiUsageBreakdown.length){for(const callUsage of first.__aiUsageBreakdown){const callResult={};if(callUsage.usage)Object.defineProperty(callResult,'__aiUsage',{value:{input_tokens:Number(callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0),output_tokens:Number(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0),total_tokens:Number(callUsage.usage.total_tokens??((callUsage.usage.input_tokens??callUsage.usage.prompt_tokens??0)+(callUsage.usage.output_tokens??callUsage.usage.completion_tokens??0)))},enumerable:false});logAiTokenUsage('chatgpt',callUsage.model,callUsage.stage,outputTokenBudgetForStage('building your Tone Plan'),callUsage.instructions,callUsage.input,callResult);}}else logAiTokenUsage('chatgpt',first.__aiModel||model,'building your Tone Plan',outputTokenBudgetForStage('building your Tone Plan'),orchestrationInstructions,singleUser,first);
   if(Array.isArray(first.__specialistRoles)&&first.__specialistRoles.length){const assignments=first.__specialistRoles.map((role,index)=>role.replaceAll('_',' ')+(first.__successfulSpecialistProviders?.[index]?' · '+providerNames[first.__successfulSpecialistProviders[index]]:''));message('ai','GPT-6 Luna completed its own research, then reviewed specialists in sequence: '+assignments.join(' → ')+'.');}
   if(!localRefinement||!toneSession.intent){toneSession.intent=compactToneArchitectIntent(first,prompt);toneSession.sourcePrompt=prompt;}
@@ -1856,17 +1873,12 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
    message('ai','The first proposal did not exactly match the MG-30 catalog. Requesting one focused correction for the affected blocks.');
    let corrected;
    corrected=await askNamAIJson(correctionSystem,correctionUser,'correcting the catalog validation');
-   try{validated=validateAiTonePlan(corrected,catalog);first=corrected;namSearchTerms=normalizeNamSearchTerms(corrected?.search_terms)||namSearchTerms;}
+   try{validated=validateAiTonePlan(corrected,catalog);first=corrected;}
    catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
-  if(namModeActive&&!activeNamContext&&!namSearchTerms){
-   try{
-    const derivedSearch=await deriveNamSearchQuery(prompt,conversation);
-    namSearchTerms=normalizeNamSearchTerms(derivedSearch.query)||namSearchTerms;
-   }catch(error){
-    namSearchTerms=namSearchTerms||fallbackNamSearchTerms(prompt);
-    message('ai','AI TONE3000 search-term generation was unavailable; using the local safe search-term fallback. '+(error.message||error));
-   }
+  if(namModeActive&&!activeNamContext){
+   const derivedSearch=await deriveNamSearchQuery(prompt,conversation);
+   namSearchTerms=normalizeNamSearchTerms(derivedSearch.query)||fallbackNamSearchTerms(prompt);
   }
   validated.completePresetState=!localRefinement;
   if(namSearchTerms)Object.defineProperty(validated,'search_terms',{value:namSearchTerms,enumerable:false,configurable:false});
