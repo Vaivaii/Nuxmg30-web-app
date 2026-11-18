@@ -130,18 +130,22 @@ test('Android credential plugin uses Android Keystore and authenticated encrypti
 });
 
 
-test('AI assistant has separate GPT-5.6 typing and GPT-6 Mission Control activity views',()=>{
+test('AI assistant uses a music waveform and compact Studio Console Mission Control',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('height:auto;min-height:0;max-height:var(--ai-tone-max-height)'));
  assert.ok(source.includes('--ai-tone-max-height:84dvh'));
- assert.ok(source.includes('.ai-tone-messages{display:flex;flex-direction:column;gap:10px;min-height:0'));
- assert.ok(source.includes('ai-tone-discussion-dots'));
- assert.ok(source.includes('GPT-5.6 Luna</strong><span>SEDANG MENGETIK</span>'));
- assert.ok(source.includes('ai-tone-mission-team'));
+ assert.ok(source.includes('ai-tone-waveform'));
+ assert.ok(source.includes('GPT-5.6 Luna</strong><span>COMPOSING</span>'));
+ assert.ok(source.includes('ai-tone-mission-specialists'));
+ assert.ok(source.includes('Provider diagnostics'));
+ assert.ok(source.includes('<details class="ai-tone-diagnostics">'));
  assert.ok(source.includes('GPT-6 Luna · Chief'));
  assert.ok(source.includes('updateToneMissionProvider'));
- assert.ok(source.includes('Berjalan bergantian · bukan paralel'));
- assert.ok(source.includes('@keyframes aiToneTyping'));
+ assert.ok(source.includes('minSuccessfulSpecialists:requiresExperts?2:0'));
+ assert.ok(source.includes('@keyframes aiToneWave'));
+ assert.ok(source.includes('@keyframes aiTonePedalRock'));
+ assert.ok(source.includes('@keyframes aiToneAmpSway'));
+ assert.ok(source.includes('@media(prefers-reduced-motion:reduce)'));
  assert.ok(source.includes("busy?'Working…':'Send ↗'"));
 });
 
@@ -2195,4 +2199,20 @@ test('Cloud Account UI copy is English while preserving local-feature availabili
  assert.ok(source.includes('Cloud Account disconnected. Local features remain available.'));
  assert.ok(source.includes('Cloud is only used for online services.'));
  assert.equal(/Akun pribadi|Cloud Account aktif|Akun terhubung|Belum terhubung|Sesi berakhir|Menghubungkan|Memeriksa akun Cloud|Login gagal|Cloud hanya untuk layanan/i.test(source),false);
+});
+
+
+test('Mission Control moves complete instrument groups instead of independently floating parts',()=>{
+ const amp=toneMissionArtworkMarkup('amp_cabinet_specialist','working');
+ const pedal=toneMissionArtworkMarkup('effects_specialist','working');
+ assert.match(amp,/<g class="mission-object">[\s\S]*mission-cabinet[\s\S]*mission-speaker[\s\S]*<\/g>/);
+ assert.match(pedal,/<g class="mission-object">[\s\S]*mission-pedal-body[\s\S]*mission-pedal-knob[\s\S]*<\/g>/);
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/\.ai-tone-mission-art\[data-state=working\] \.mission-object\s*\{/);
+ assert.match(source,/\.ai-tone-mission-art\[data-state=working\] \.mission-object \*\{animation:none!important\}/);
+});
+
+test('Effects specialist receives a larger structured-output budget for its catalogue guidance',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/effects_specialist:\{\s*maxTokens:640/);
 });
