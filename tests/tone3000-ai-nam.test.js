@@ -195,7 +195,9 @@ test('TONE3000 search broadens the AI phrase in Worker and defers Lite filtering
   const worker = readFileSync(new URL('../cloud-worker/worker.js', import.meta.url), 'utf8');
   assert.match(source, /cloudApiRequest\('\/api\/v1\/tone3000\/ai-search'/);
   assert.match(worker, /const candidates = \[\.\.\.new Set\(\[query, words\.length > 1 \? words\[words\.length - 1\] : ""\]\)\]/);
-  assert.match(worker, /format: "nam", architecture: "2"/);
+  assert.match(worker, /format:\s*"nam",\s*architecture:\s*"2"/);
+  assert.match(worker, /const params = new URLSearchParams\(\{/);
+  assert.match(worker, /params\.set\("query", candidate\)/);
   assert.match(worker, /gear !== "amp" && gear !== "amp-cab"/);
   assert.doesNotMatch(worker.slice(worker.indexOf('async function tone3000AiSearch'), worker.indexOf('function toneOfficialHost')), /sizes.*lite/i);
 });
