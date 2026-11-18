@@ -1560,7 +1560,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   throw new Error('All configured providers failed specialist '+role.replaceAll('_',' ')+'. '+failures.join(' | ').slice(0,900));
  }
  async function askNamAIJson(system,user,stage){
-  const auto=mode==='auto'||mode==='collab'||ui.autoFallback.checked,missing=[];
+  const auto=mode==='auto'||mode==='collab'||(mode!=='chatgpt'&&ui.autoFallback.checked),missing=[];
   let order=[];
   if(mode==='auto'){
    order=providerFallbackOrder('chatgpt');
