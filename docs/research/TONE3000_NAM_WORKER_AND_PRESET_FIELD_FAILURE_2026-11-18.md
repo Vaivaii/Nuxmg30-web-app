@@ -79,3 +79,10 @@ Hasil: pencarian NAM dan penggunaan preset NAM **belum berhasil** menurut lapora
 Risiko/regresi: perubahan spekulatif dapat merusak NAM yang sudah berfungsi, transfer preset, IR, atau MIDI; pertahankan jalur yang sudah berhasil.
 Status: **terkonfirmasi sebagai laporan kegagalan pengguna; akar masalah belum diuji/terisolasi**.
 Langkah berikutnya: verifikasi deployment Worker aktual dan kumpulkan satu request/response pencarian yang gagal sebelum mengubah kode.
+
+
+## Correction — Worker deployment status clarified by user (2026-11-19)
+
+The earlier statement above that Worker 1.2.4 had not been deployed is superseded by the user's clarification: **the Cloudflare Worker has already been deployed by the user**. Do not assume it is undeployed and do not trigger another deployment as part of this app-side provider-routing task. The exact active deployment version was not independently queried in this investigation.
+
+The current implementation reuses the existing `/api/v1/ai/light-task` endpoint and its `tone3000-search-terms` task. This change does not modify or deploy Worker code.
