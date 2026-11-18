@@ -126,6 +126,181 @@ export function toneSpecialistToolDefinition(){
   }
  };
 }
+export async function orchestrateChatGptTonePlan({bridge,model,input,instructions,runSpecialist,toolsEnabled=true,maxOutputTokens=1350,maxSpecialistCalls=6,requireFirstSpecialist=false,requireSuccessfulSpecialists=false,minSuccessfulSpecialists=0,minDistinctSpecialistProviders=0,onEvent=null}){
+ if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable.');
+ const initialInput=Array.isArray(input)?input.slice():[];
+ const tools=toolsEnabled?[toneSpecialistToolDefinition()]:undefined;
+ const minSpecialists=Math.max(0,Math.min(6,Math.floor(Number(minSuccessfulSpecialists)||0)));
+ const minProviders=Math.max(0,Math.min(minSpecialists,Math.floor(Number(minDistinctSpecialistProviders)||0)));
+ const emit=event=>{if(typeof onEvent==='function'){try{onEvent(event);}catch{}}};
+ const usageBreakdown=[],specialistRoles=[],successfulSpecialistRoles=[],successfulSpecialistProviders=[];
+ emit({type:'chief_research',stage:'GPT-6 Luna is researching the requested tone.'});
+ let response=await bridge.sendResponse({model,input:initialInput,instructions,maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})});
+ let nextInput=initialInput.slice(),round=0;
+ while(true){
+  const calls=Array.isArray(response?.toolCalls)?response.toolCalls:(Array.isArray(response?.outputItems)?response.outputItems.filter(item=>item?.type==='function_call'):[]);
+  const hasCalls=calls.length>0;
+  usageBreakdown.push({stage:hasCalls?'GPT-6 Luna · Sequential specialist routing '+(round+1):'GPT-6 Luna · Final synthesis',model:response?.model||model,usage:response?.usage||null,instructions:String(instructions||''),input:JSON.stringify(nextInput||[])});
+  if(!hasCalls){
+   if(round===0&&requireFirstSpecialist)throw new Error('GPT-6 Luna did not delegate a required specialist task. No Tone Plan was generated and no device changes were sent.');
+   if(successfulSpecialistRoles.length<minSpecialists)throw new Error('GPT-6 Luna completed only '+successfulSpecialistRoles.length+' of '+minSpecialists+' required specialist tasks. No Tone Plan was generated and no pedal changes were sent.');
+   if(successfulSpecialistProviders.length<minProviders)throw new Error('Only '+successfulSpecialistProviders.length+' distinct specialist provider(s) succeeded; '+minProviders+' are required. No Tone Plan was generated and no pedal changes were sent.');
+   emit({type:'chief_synthesis',stage:'GPT-6 Luna is reviewing specialist findings and synthesizing the Tone Plan.'});
+   break;
+  }
+  if(!toolsEnabled||calls.length!==1)throw new Error('The GPT-6 Luna orchestrator must request exactly one specialist per turn. Parallel or disabled tool calls are rejected. No device changes were sent.');
+  if(round>=Math.max(1,Math.min(6,Number(maxSpecialistCalls)||6)))throw new Error('The GPT-6 Luna orchestrator exceeded the six-specialist sequential task budget. No device changes were sent.');
+  const call=calls[0];
+  if(call?.name!=='delegate_tone_specialist'||!call.call_id)throw new Error('GPT-6 Luna requested an unsupported MG-30 specialist tool. No device changes were sent.');
+  let args;try{args=JSON.parse(String(call.arguments||''));}catch{throw new Error('GPT-6 Luna returned invalid specialist task arguments. No device changes were sent.');}
+  const role=String(args?.role||'');
+  if(!TONE_SPECIALIST_ROLES.includes(role))throw new Error('GPT-6 Luna selected an unsupported MG-30 specialist role. No device changes were sent.');
+  if(specialistRoles.includes(role))throw new Error('GPT-6 Luna repeated specialist role '+role+' without a distinct approved re-check. No device changes were sent.');
+  if(!Array.isArray(args.blockIds)||args.blockIds.length>4||typeof args.focus!=='string'||typeof args.brief!=='string'||typeof args.candidatePlan!=='string')throw new Error('GPT-6 Luna returned an incomplete specialist task contract. No device changes were sent.');
+  specialistRoles.push(role);emit({type:'specialist_requested',role,round:round+1,stage:'GPT-6 Luna assigned '+role.replaceAll('_',' ')});
+  let specialistResult;
+  try{specialistResult=await runSpecialist(args);if(!specialistResult||typeof specialistResult!=='object')throw new Error('Specialist returned no structured result.');if(requireSuccessfulSpecialists&&specialistResult.ok===false)throw new Error(String(specialistResult.error||'Specialist did not complete successfully.'));}
+  catch(error){specialistResult={ok:false,role,error:String(error?.message||error).slice(0,300),fallback:'All configured providers were tried for this same role task. Never claim that this specialist completed successfully.'};if(requireSuccessfulSpecialists)throw new Error('Tone Architect specialist '+role.replaceAll('_',' ')+' failed across all configured provider fallbacks. No Tone Plan was generated and no pedal changes were sent. '+specialistResult.error);}
+  if(specialistResult?.ok!==false){successfulSpecialistRoles.push(role);const provider=String(specialistResult.provider||'').trim();if(provider&&!successfulSpecialistProviders.includes(provider))successfulSpecialistProviders.push(provider);emit({type:'specialist_completed',role,provider,round:round+1,stage:role.replaceAll('_',' ')+' completed by '+(provider||'configured provider')});}
+  else emit({type:'specialist_failed',role,round:round+1,stage:role.replaceAll('_',' ')+' failed'});
+  const returnedItems=Array.isArray(response.outputItems)?response.outputItems.slice():[{type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')}];
+  if(!returnedItems.some(item=>item?.type==='function_call'&&item?.call_id===call.call_id))returnedItems.push({type:'function_call',call_id:call.call_id,name:call.name,arguments:String(call.arguments||'{}')});
+  nextInput.push(...returnedItems);nextInput.push({type:'function_call_output',call_id:call.call_id,output:JSON.stringify(specialistResult).slice(0,12000)});round++;
+  const quotaPending=successfulSpecialistRoles.length<minSpecialists||successfulSpecialistProviders.length<minProviders;
+  const nextInstruction=quotaPending?'\n\nMANDATORY SPECIALIST QUOTA: Complete at least '+minSpecialists+' successful specialist roles using '+minProviders+' distinct external providers. Current successes: '+successfulSpecialistRoles.length+' roles and '+successfulSpecialistProviders.length+' providers. You MUST request exactly one different technical specialist role now; do not return the final Tone Plan until both minimums are met. Ensure the next specialist uses a provider identity not already successful. Luna performs the Tone Researcher responsibility herself; never delegate Tone Researcher.':'\n\nSEQUENTIAL SPECIALIST HANDOFF: Evaluate the latest result before any next action. The mandatory specialist/provider quota is met. You may now synthesize, or request another different specialist only when it materially improves confidence or addresses a real uncertainty. Never run specialists in parallel or let specialists communicate directly. Luna owns all initial musical/reference research; never delegate Tone Researcher. Tone Critic and Guitar & Input Specialist are conditional. Return the final MG-30 Tone Plan JSON only when your quality gate is satisfied. You remain the sole Chief and final decision authority.';
+  response=await bridge.sendResponse({model,input:nextInput.slice(),instructions:String(instructions||'')+nextInstruction,maxOutputTokens,parallelToolCalls:false,...(tools?{tools}:{})});
+ }
+ if(requireFirstSpecialist&&!successfulSpecialistRoles.length)throw new Error('No required GPT-6 Luna specialist completed successfully. No Tone Plan was generated and no device changes were sent.');
+ if(successfulSpecialistRoles.length<minSpecialists)throw new Error('The minimum of '+minSpecialists+' successful specialist tasks was not met. No Tone Plan was generated and no device changes were sent.');
+ if(successfulSpecialistProviders.length<minProviders)throw new Error('The minimum of '+minProviders+' distinct specialist providers was not met. No Tone Plan was generated and no device changes were sent.');
+ const plan=parseJson(response?.text||'');
+ const usageRows=usageBreakdown.filter(row=>row.usage);
+ if(usageRows.length){const usage={input_tokens:0,output_tokens:0,total_tokens:0};for(const row of usageRows){usage.input_tokens+=Number(row.usage.input_tokens??row.usage.prompt_tokens??0);usage.output_tokens+=Number(row.usage.output_tokens??row.usage.completion_tokens??0);usage.total_tokens+=Number(row.usage.total_tokens??((row.usage.input_tokens??row.usage.prompt_tokens??0)+(row.usage.output_tokens??row.usage.completion_tokens??0)));}Object.defineProperty(plan,'__aiUsage',{value:usage,enumerable:false});}
+ Object.defineProperty(plan,'__aiModel',{value:response?.model||model,enumerable:false});Object.defineProperty(plan,'__aiUsageBreakdown',{value:usageBreakdown,enumerable:false});Object.defineProperty(plan,'__orchestratorCalls',{value:usageBreakdown.length,enumerable:false});Object.defineProperty(plan,'__specialistRoles',{value:specialistRoles.slice(),enumerable:false});Object.defineProperty(plan,'__successfulSpecialistRoles',{value:successfulSpecialistRoles.slice(),enumerable:false});Object.defineProperty(plan,'__successfulSpecialistProviders',{value:successfulSpecialistProviders.slice(),enumerable:false});
+ if(specialistRoles.length)Object.defineProperty(plan,'__specialistRole',{value:specialistRoles[0],enumerable:false});emit({type:'complete',stage:'GPT-6 Luna completed and validated the specialist handoffs.'});return plan;
+}
+function outputText(data){
+ if(typeof data?.output_text==='string')return data.output_text;
+ const a=[];for(const item of data?.output||[])for(const c of item?.content||[])if(typeof c?.text==='string')a.push(c.text);
+ if(!a.length)throw new Error('GPT returned no text output.');return a.join('\n');
+}
+function geminiOutput(data){
+ const a=data?.candidates?.[0]?.content?.parts||[],s=a.map(x=>x?.text||'').filter(Boolean).join('\n');
+ if(!s)throw new Error('Gemini returned no text output.');return s;
+}
+function providerHttpError(data,status){
+ const api=data?.error||{},failed=api.failed_generation;
+ const detail=typeof failed==='string'?failed:failed&&typeof failed==='object'?[failed.reason,failed.message].filter(Boolean).join('; '):'';
+ const error=new Error(String(api.message||data?.message||('HTTP '+status))+(detail?' Details: '+detail.slice(0,360):''));
+ error.status=status;error.failedGeneration=Boolean(failed);error.providerErrorType=String(api.type||api.code||'');
+ return error;
+}
+async function postJson(url,options,timeoutMs=90000){
+ const ctl=new AbortController(),timer=window.setTimeout(()=>ctl.abort(),timeoutMs);
+ try{
+  const r=await fetch(url,{...options,signal:ctl.signal}),raw=await r.text();let data={};
+  try{data=raw?JSON.parse(raw):{}}catch{data={rawText:raw}}
+  if(!r.ok)throw providerHttpError(data,r.status);
+  return data;
+ }catch(e){if(e?.name==='AbortError')throw new Error('The AI request timed out after 90 seconds.');throw e;}
+ finally{window.clearTimeout(timer);}
+}
+export function compactToneContext(catalog,snapshot){const c=(catalog||[]).map(b=>[b.id,b.currentModel,(b.models||[]).map(m=>[m.name,m.kind||'',m.slot??'',(m.parameters||[]).map(p=>p.kind==='discrete'?[p.key,(p.choices||[]).map(x=>x.value)]:p.key)])]);const s=(snapshot||[]).map(b=>[b.id,b.model,b.enabled?1:0,b.parameters||{}]);return {catalog:c,snapshot:s};}
+export function describeNamCaptureMetadata(tone,model,gear='amp-cab'){const fields={toneName:String(tone?.name||tone?.title||''),creator:String(tone?.creator||tone?.username||''),toneDescription:String(tone?.description||''),makes:Array.isArray(tone?.makes)?tone.makes.map(x=>String(x?.name||x)).slice(0,6):[],tags:Array.isArray(tone?.tags)?tone.tags.map(x=>String(x?.name||x)).slice(0,8):[],modelName:String(model?.name||''),modelDescription:String(model?.description||''),architecture:String(model?.architecture_version??model?.architecture??'A2'),size:String(model?.size??'unspecified'),gear:String(gear)};const text=[fields.toneName,fields.toneDescription,fields.makes.join(' '),fields.tags.join(' '),fields.modelName,fields.modelDescription].join(' ').toLowerCase();const no=/\b(no|without|unboosted|clean[- ]only)\b.{0,35}\b(boost|overdrive|\bod\b|drive pedal)\b|\b(boost|overdrive|\bod\b|drive pedal)\b.{0,25}\b(not included|not used|none)\b/.test(text);const yes=/\b(boosted|boost|overdrive|overdrive pedal|tube screamer|klon|treble booster|drive pedal|\bod\b)\b/.test(text);fields.driveMetadata=no?'TONE3000 text explicitly indicates no boost/overdrive':yes?'TONE3000 text mentions boost/overdrive or a drive pedal':'TONE3000 metadata does not specify whether boost/overdrive is embedded';fields.driveConfidence=no||yes?'explicit metadata mention':'unknown';fields.source='TONE3000 tone/model description and catalogue tags';fields.summary=fields.modelName+' — '+fields.driveMetadata+'. '+(fields.modelDescription||fields.toneDescription||'No detailed capture description supplied by TONE3000.');return fields;}
+export function artistToneGuidance(prompt){const p=String(prompt||'').toLowerCase();if(/\b(john\s*mayer|mayer)\b/.test(p))return 'ARTIST TONE: John Mayer-inspired blues/pop lead. Prefer touch-sensitive clean to edge-of-breakup response, warm lows, present mids, restrained treble, subtle modulation, short/medium delay and tasteful spring/plate/hall reverb. Avoid high-gain metal voicing. This is a stylistic target, not a claim about exact studio gear.';if(/\b(john\s*petrucci|petrucci|dream\s*theater)\b/.test(p))return 'ARTIST TONE: John Petrucci / progressive-metal lead. Prefer tight high gain, controlled low end, focused upper mids, articulate sustain, noise control if available, lead delay and restrained reverb. Do not default to blues edge-of-breakup.';if(/\b(joe\s*satriani|satriani)\b/.test(p))return 'ARTIST TONE: Joe Satriani-inspired melodic rock lead. Prefer expressive saturated singing mids, smooth highs, sustain, rhythmic delay, subtle modulation and moderate reverb. Do not reuse a Petrucci metal or Mayer low-gain chain unchanged.';return 'ARTIST / STYLE INTENT: infer gain, dynamics, amp voicing and ambience from this request. Avoid a generic chain by default.';}
+export function resolveArtistToneGuidance(prompt,conversation=''){
+ const current=String(prompt||'');
+ const currentGuidance=artistToneGuidance(current);
+ const currentNamesTarget=/\b(john\s*mayer|john\s*petrucci|petrucci|satriani|dream\s*theater|jazz|blues|metal|country|funk|ambient|progressive rock)\b/i.test(current)
+  ||/\b(?:tone|preset|patch|sound|suara)\s+(?!ini\b|itu\b|tadi\b|tersebut\b|sekarang\b|baru\b|it\b|that\b|this\b|now\b)[\p{L}\d-]+(?:\s+[\p{L}\d-]+)?/iu.test(current);
+ if(currentNamesTarget||!isToneCreationFollowUp(current,conversation))return currentGuidance;
+ return artistToneGuidance(conversation)||currentGuidance;
+}
+export function responseLanguageInstruction(){
+ return 'LANGUAGE POLICY: Use Bahasa Indonesia by default for all natural-language responses. If the latest USER REQUEST is clearly written in English or another language, respond in the same language as the USER REQUEST. If the message is mixed or the language is unclear, use Bahasa Indonesia. This applies to summaries, explanations, diagnosis, recommendations, questions and follow-up conversation. Keep JSON keys, technical identifiers, exact device model names and UI labels unchanged.';
+}
+export function findDefaultGeminiModel(models){
+ const rows=Array.isArray(models)?models:[];
+ const match=rows.find(row=>/gemini[\s_-]*3[.]1[\s_-]*flash[\s_-]*lite/i.test(String(row?.id||'')+' '+String(row?.name||'')));
+ return match?String(match.id||''):'';
+}
+export function inferNamCaptureType(prompt,fallback='amp-cab'){
+ const value=String(prompt||'').toLowerCase();
+ if(/\b(amp\s*only|head\s*only|without\s+(a\s+)?cab(?:inet)?|no\s+cab(?:inet)?|amp\s+saja|tanpa\s+cab(?:inet)?|head\s+only)\b/i.test(value))return 'amp';
+ if(/\b(amp\s*(?:\+|and|plus)\s*cab(?:inet)?|head\s*(?:\+|and|plus)\s*cab(?:inet)?|with\s+(a\s+)?cab(?:inet)?|amp\s*\+\s*cab|amp\s+cabinet|head\s*\+\s*cab)\b/i.test(value))return 'amp-cab';
+ return fallback==='amp'?'amp':'amp-cab';
+}
+export function shouldAutoImportNamForTone(intent,namModeEnabled,hasInstalledNamContext){
+ if(!namModeEnabled)return false;
+ if(intent==='tone_create')return true;
+ return intent==='tone_refine'&&!hasInstalledNamContext;
+}
+export function estimateTokenCount(text){return Math.max(1,Math.ceil(String(text||'').length/4));}
+function compactNamText(value,maxLength=100){
+ if(value===null||value===undefined)return '';
+ if(typeof value==='string'||typeof value==='number'||typeof value==='boolean')return String(value).trim().slice(0,maxLength);
+ if(Array.isArray(value))return value.map(item=>compactNamText(item,40)).filter(Boolean).join(', ').slice(0,maxLength);
+ if(typeof value==='object')return compactNamText(value.name??value.label??value.title??value.value??'',maxLength);
+ return '';
+}
+export function sanitizeNamProfileCandidates(tones,limit=12){
+ return (Array.isArray(tones)?tones:[]).slice(0,Math.max(0,limit)).map(tone=>{
+  const item={id:String(tone?.id??tone?.tone_id??'')};
+  const name=compactNamText(tone?.title??tone?.name??tone?.tone_name,100);
+  const creator=compactNamText(tone?.creator??tone?.username,60);
+  const tags=(Array.isArray(tone?.tags)?tone.tags:[]).map(tag=>compactNamText(tag,32)).filter(Boolean).slice(0,8);
+  const description=compactNamText(tone?.description,100);
+  if(name)item.name=name;
+  if(creator)item.creator=creator;
+  if(tags.length)item.tags=tags;
+  if(description)item.description=description;
+  return item;
+ }).filter(item=>item.id);
+}
+export function sanitizeNamCaptureCandidates(models,rejected=[],limit=18){
+ const blocked=new Set((Array.isArray(rejected)?rejected:[]).map(id=>String(id)));
+ return (Array.isArray(models)?models:[]).filter(model=>!blocked.has(String(model?.id??''))).slice(0,Math.max(0,limit)).map(model=>{
+  const item={id:String(model?.id??model?.model_id??'')};
+  const name=compactNamText(model?.name,90);
+  const rawSize=model?.weights??model?.weight_count??model?.weightCount??model?.size;
+  const size=Array.isArray(rawSize)?rawSize.length:(rawSize&&typeof rawSize==='object'?(rawSize.count??rawSize.length??rawSize.weights??''):rawSize);
+  const notes=[model?.notes,model?.capture_notes,model?.gain_character,model?.gain,model?.cab_character,model?.cabinet_character,model?.cab,model?.cabinet,model?.description]
+   .map(value=>compactNamText(value,60)).filter(Boolean);
+  if(name)item.name=name;
+  if(size!==null&&size!==undefined&&size!=='')item.size=typeof size==='number'?size:compactNamText(size,40);
+  if(notes.length)item.notes=[...new Set(notes)].join('; ').slice(0,120);
+  return item;
+ }).filter(item=>item.id);
+}
+export function normalizeNamSearchTerms(value){
+ const raw=Array.isArray(value)?value.join(' '):String(value||'');
+ return raw.replace(/[\r\n]+/g,' ').replace(/[^\p{L}\p{N} .+_-]/gu,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean).slice(0,5).join(' ').slice(0,60);
+}
+export function conciseNamRecommendationReason(value){
+ const source=String(value||'').replace(/\s+/g,' ').trim();
+ if(!source)return '';
+ const sentences=(source.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[source]).slice(0,2).join(' ').trim();
+ return sentences.split(/\s+/).filter(Boolean).slice(0,30).join(' ').replace(/\s+([,.;!?])/g,'$1');
+}
+function fallbackNamSearchTerms(prompt){
+ const stop=new Set(['buat','buatkan','bikin','tolong','please','create','build','make','generate','design','guitar','gitar','tone','suara','sound','preset','profile','profil','amp','amplifier','yang','untuk','dengan','the','and','for','a','an','me','my']);
+ const words=String(prompt||'').replace(/[^\p{L}\p{N} .+_-]/gu,' ').split(/\s+/).filter(word=>word&&!stop.has(word.toLowerCase()));
+ return (words.length?words:String(prompt||'').split(/\s+/)).slice(0,5).join(' ').slice(0,60);
+}
+
+export function outputTokenBudgetForStage(stage){const v=String(stage||'').toLowerCase();if(v.includes('testing '))return 64;if(v.includes('deriving tone3000 search terms'))return 180;if(v.includes('choosing the closest nam tone')||v.includes('selecting the closest a2-lite capture'))return 320;if(v.includes('defining the musical direction'))return 260;if(v.includes('analyzing the captured mg-30 usb audio')||v.includes('answering your tone question'))return 520;if(v.includes('correcting the catalog validation')||v.includes('checking a material conflict'))return 850;if(v.includes('building your tone plan')||v.includes('synthesizing the final tone plan'))return 1350;return 700;}
+export function isComplexToneRequest(prompt){const v=String(prompt||'').toLowerCase();if(v.length>=240)return true;return /\b(dual[- ]amp|two amps|multi[- ]scene|multiple scenes|multi[- ]layer|layered tone|clean (?:and|\+) lead|rhythm and lead|verse and chorus|intro.*solo|switch(?:ing)? between|three different tones|blend(?:ed|ing)? (?:two|multiple)|hybrid rig|full arrangement|complex signal chain|studio production|detailed signal chain)\b/i.test(v);}
+
+export function selectChatGptAutoModel(models,task='discussion'){
+ const rows=(Array.isArray(models)?models:[]).filter(row=>row?.id);
+ if(!rows.length)return '';
+ const normalized=row=>String(row.id+' '+(row.name||'')).toLowerCase().replace(/[_ ]+/g,'-');
+ const find=pattern=>rows.find(row=>pattern.test(normalized(row)))?.id||'';
+ if(task==='tone-plan')return find(/gpt-6-luna/)||'';
+ return find(/gpt-5[.-]6-luna/)||'';
+}
+
+
 export async function requestChatGptConversation({bridge,model,system,user,maxOutputTokens=520}){
  if(!bridge?.sendResponse)throw new Error('ChatGPT native SIWC connection is unavailable. Open Device settings and connect your ChatGPT account.');
  const outputLimit=Math.max(256,Math.min(700,Math.floor(Number(maxOutputTokens)||520)));
