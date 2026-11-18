@@ -784,7 +784,7 @@ test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route
  assert.match(discussion,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
  assert.match(discussion,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
  assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
- assert.match(discussion,/compactNamConversation\(conversation,1500\)/);
+ assert.match(discussion,/compactNamConversation\(conversation,1000\)/);
  assert.match(discussion,/slice\(0,900\)/);
 });
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
@@ -1621,7 +1621,7 @@ test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route
  assert.match(discussion,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
  assert.match(discussion,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
  assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
- assert.match(discussion,/compactNamConversation\(conversation,1500\)/);
+ assert.match(discussion,/compactNamConversation\(conversation,1000\)/);
  assert.match(discussion,/slice\(0,900\)/);
 });
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
