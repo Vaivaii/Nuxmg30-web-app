@@ -434,21 +434,16 @@ test('GPT-6 Luna owns Tone Researcher and external specialist roles exclude that
  assert.match(source,/Tone Researcher is YOUR responsibility and must NEVER be delegated/);
  assert.deepEqual(TONE_SPECIALIST_ROLES,['amp_cabinet_specialist','effects_specialist','guitar_input_specialist','tone_calibration_specialist','tone_critic']);
 });
-test('Tone Critic and Guitar specialist are available as conditional roles, while simple requests can skip all agents',async()=>{
+test('technical specialist roles remain available; every new preset requires two successful experts',async()=>{
  const definition=toneSpecialistToolDefinition();
  assert.ok(definition.parameters.properties.role.enum.includes('guitar_input_specialist'));
  assert.ok(definition.parameters.properties.role.enum.includes('tone_critic'));
- let calls=0;
- const simple=await orchestrateChatGptTonePlan({
-  bridge:{sendResponse:async()=>{calls++;return {text:'{"summary":"Simple clean tone","blocks":[]}',model:'gpt-6-luna'};}},
-  model:'gpt-6-luna',input:[{role:'user',content:'Make a clean tone'}],instructions:'Keep it simple',toolsEnabled:false
- });
- assert.equal(calls,1);
- assert.equal(simple.__orchestratorCalls,1);
- assert.deepEqual(simple.__specialistRoles,[]);
- assert.equal(simple.summary,'Simple clean tone');
+ assert.equal(definition.parameters.properties.role.enum.includes('tone_researcher'),false);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone clean sederhana'),true);
+ assert.equal(shouldOfferToneSpecialist('Buatkan tone John Mayer'),true);
+ assert.equal(shouldOfferToneSpecialist('Kurangi gain sedikit',true),false);
+ assert.equal(shouldOfferToneSpecialist('Apa beda delay analog dan digital?'),false);
 });
-
 test('Sequential orchestrator rejects parallel tool calls and stops at the configured specialist budget',async()=>{
  await assert.rejects(()=>orchestrateChatGptTonePlan({
   bridge:{sendResponse:async()=>({toolCalls:[
@@ -953,7 +948,7 @@ test('same-tone refinements request parameter deltas without regenerating a pres
  assert.ok(source.includes('only changed blocks and only changed parameter keys'));
  assert.ok(source.includes('Do not regenerate the chain'));
 });
-test('token monitor separates provider-model usage and per-agent/model requests',()=>{
+test('token monitor attributes GPT-6 Luna Chief and each technical specialist to the actual provider/model',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('models:Object.create(null)'));
  assert.match(source,/const modelKey=String\(provider\)\+' · '\+String\(model\|\|'unknown model'\)/);
@@ -961,11 +956,10 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.ok(source.includes("row.requests+' req</small>"));
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
  for(const role of TONE_SPECIALIST_ROLES)assert.ok(source.includes(`task.includes('specialist ${role}')`),`missing usage label for ${role}`);
- for(const label of ['Amp & Cabinet Specialist','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
+ for(const label of ['GPT-6 Luna · Chief Tone Architect','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
  assert.ok(source.includes("logAiTokenUsage(member.provider,result.__aiModel,'specialist '+role"));
  assert.match(source,/aiUsage\.models\[modelKey\]/);
 });
-
 test('conversation memory is four recent turns and AI usage logging omits prompt contents',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('value.slice(0,1400)'));
