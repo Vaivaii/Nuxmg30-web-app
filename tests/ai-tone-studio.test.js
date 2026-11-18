@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect, toneMissionArtworkMarkup } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect, toneMissionArtworkMarkup, shouldRetryNoNamSpecialistError } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -2271,4 +2271,35 @@ test('Mission Control moves complete instrument groups instead of independently 
 test('Effects specialist receives a larger structured-output budget for its catalogue guidance',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.match(source,/effects_specialist:\{\s*maxTokens:640/);
+});
+
+ 
+test('NAM-OFF specialist retry is limited to transient Gemini/OpenRouter output failures',()=>{
+ const gemini503={status:503,message:'Provider is temporarily unavailable.'};
+ const router502={status:502,message:'Provider did not return a JSON Tone Plan.'};
+ const routerMalformed={status:502,message:'returned no structured JSON result'};
+ assert.equal(shouldRetryNoNamSpecialistError(gemini503,false,'gemini'),true);
+ assert.equal(shouldRetryNoNamSpecialistError(router502,false,'openrouter'),true);
+ assert.equal(shouldRetryNoNamSpecialistError(routerMalformed,false,'openrouter'),true);
+ assert.equal(shouldRetryNoNamSpecialistError(gemini503,true,'gemini'),false);
+ assert.equal(shouldRetryNoNamSpecialistError(router502,true,'openrouter'),false);
+ assert.equal(shouldRetryNoNamSpecialistError(gemini503,false,'groq'),false);
+ assert.equal(shouldRetryNoNamSpecialistError({status:429,message:'quota exceeded'},false,'gemini'),false);
+ assert.equal(shouldRetryNoNamSpecialistError({status:401,message:'unauthorized'},false,'openrouter'),false);
+});
+
+test('NAM-OFF specialist recovery keeps Gemini primary and does not alter NAM-ON execution',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const order=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
+ const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ const make=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
+ assert.match(order,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
+ assert.match(specialist,/shouldRetryNoNamSpecialistError\(error,context\.namModeEnabled,member\.provider\)/);
+ assert.match(specialist,/const retryBudget=Math\.min\(1024,spec\.maxTokens\+160\)/);
+ assert.match(specialist,/RECOVERY RETRY: The previous response was temporarily unavailable or was not a complete JSON object/);
+ assert.match(specialist,/return invoke\(true\)/);
+ assert.match(make,/namModeEnabled:Boolean\(namModeActive\)/);
+ assert.match(make,/resolveFreeProviderTeam\(\)/);
+ assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
+ assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
 });
