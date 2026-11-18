@@ -31,6 +31,7 @@ on:
       - feature/ai-tone-studio-mission-console-waveform-fix
       - feature/ai-efficiency-worker-nam-complete-tone-state
       - feature/worker-ai-nam-query-routing
+      - fix/no-nam-specialist-provider-order
       - feature/chatgpt-siwc-android
       - fix/ir-user-cut-scene-sync
       - release/mg30-studio-final-polish
