@@ -522,5 +522,5 @@ Work branch: \`feature/ai-efficiency-worker-nam-complete-tone-state\`.
 - Added Worker contract tests for authenticated TONE3000 AI search, A2/gear filter forwarding, query expansion, result normalization, and rejection when the per-user OAuth header is absent (even when a Worker service key exists).
 - Added tests for new-preset complete-state versus partial refinement, expansion of omitted managed blocks to OFF, and mandatory active-buffer readback.
 - Added the new work branch to the Android CI push filter.
-- CI outcome: pending at the time this note was written.
+- CI run #1086 (`44332435860`) on commit `15f2408a9c4daf9440ccc81fe43cd07873f17ae4`: **success**. JavaScript syntax validation passed; 673/673 tests passed; Capacitor Android initialization passed; Gradle `assembleDebug` succeeded; debug APK artifact uploaded (artifact ID `14439114283`, archive size 4,383,611 bytes, SHA-256 digest `d127a1781d38b742ab60abb5fbc5558a7cf3588f1a567af10a38afa3351d1975`).
 - Hardware and live deployed Worker outcome: not tested; no Worker deployment was issued.
