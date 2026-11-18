@@ -172,6 +172,9 @@ function workersAiText(body) {
   if (typeof body === "string") return body;
   if (typeof body?.response === "string") return body.response;
   if (typeof body?.response?.text === "string") return body.response.text;
+  if (body?.response && typeof body.response === "object") return JSON.stringify(body.response);
+  if (typeof body?.result === "string") return body.result;
+  if (body?.result && typeof body.result === "object") return JSON.stringify(body.result);
   return chatText(body);
 }
 function normalizeWorkersAiUsage(body) {
