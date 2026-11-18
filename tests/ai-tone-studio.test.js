@@ -242,7 +242,7 @@ test('ChatGPT is the fixed task router while external providers are specialist-o
  assert.match(source,/let mode='chatgpt'/);
  assert.match(source,/const next='chatgpt'/);
  assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
- assert.match(source,/DISKUSI BIASA/);
+ assert.doesNotMatch(source,/DISKUSI BIASA/);
  assert.match(source,/CREATE PRESET/);
  assert.match(source,/GPT-5\.6 Luna/);
  assert.match(source,/GPT-6 Luna/);
@@ -333,7 +333,7 @@ test('AI provider and model routing is locked by task: GPT-5.6 discussion and GP
  assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
  assert.match(source,/if\(provider==='chatgpt'\)\{select\.value='__auto__';select\.disabled=true/);
  assert.match(source,/provider!=='chatgpt'&&manual/);
- assert.match(source,/DISKUSI BIASA/);
+ assert.doesNotMatch(source,/DISKUSI BIASA/);
  assert.match(source,/CREATE PRESET/);
  assert.match(source,/GPT-5\.6 Luna/);
  assert.match(source,/GPT-6 Luna/);
@@ -1306,7 +1306,7 @@ test('ChatGPT is the fixed task router while external providers are specialist-o
  assert.match(source,/let mode='chatgpt'/);
  assert.match(source,/const next='chatgpt'/);
  assert.match(source,/Task-based · GPT-5\.6 discussion \/ GPT-6 Luna preset/);
- assert.match(source,/DISKUSI BIASA/);
+ assert.doesNotMatch(source,/DISKUSI BIASA/);
  assert.match(source,/CREATE PRESET/);
  assert.match(source,/GPT-5\.6 Luna/);
  assert.match(source,/GPT-6 Luna/);
