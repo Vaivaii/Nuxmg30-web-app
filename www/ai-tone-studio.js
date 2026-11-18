@@ -199,6 +199,10 @@ export async function requestChatGptConversation({bridge,model,system,user,maxOu
  Object.defineProperty(result,'__aiModel',{value:String(finalResponse?.model||model),enumerable:false});
  return result;
 }
+export function compactNamConversation(value,maxLength=600){
+ const source=String(value||'').replace(/\s+/g,' ').trim();
+ return source.length>maxLength?'…'+source.slice(-maxLength):source;
+}
 export function isToneCreationFollowUp(prompt,conversation=''){
  const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim();
  const context=String(conversation||'').toLowerCase();
