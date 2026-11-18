@@ -51,6 +51,7 @@ All `/api/v1/*` routes require the app JWT in `Authorization: Bearer <token>`, v
 - `POST /api/v1/ai/light-task` — authenticated JSON tasks for discussion, TONE3000 helpers, and role-scoped Tone Architect specialists. Supports Gemini, Groq, OpenRouter and Cloudflare Workers AI.
 - `GET /api/v1/youtube/status`
 - `GET /api/v1/youtube/search?q=...`
+- `POST /api/v1/tone3000/ai-search` — authenticated AI NAM catalogue search; requires the app JWT and the signed-in user's TONE3000 OAuth token.
 - `GET /api/v1/tone3000/proxy?path=...` — app-compatible restricted metadata proxy.
 - `GET /api/v1/tone3000/download?url=...` — app-compatible allow-listed model-file proxy.
 - `GET /api/v1/tone3000/tones/:id?architecture=2`
@@ -72,7 +73,7 @@ AI output remains an untrusted proposal. The app must run its existing original 
 ## Deployment verification
 
 After deploy:
-1. Open `https://nux-mg30-studio-api.vaivai851.workers.dev/health`; expect `service: "nux-mg30-studio-api"` and boolean secret checks.
+1. Open `https://nux-mg30-studio-api.vaivai851.workers.dev/health`; for this version expect `version: "1.2.5"`, `gateway_routes.tone3000_ai_search: true`, and boolean secret checks.
 2. Sign in through the app.
 3. Refresh AI provider status, list models and run one Tone Plan.
 4. Test YouTube search.
