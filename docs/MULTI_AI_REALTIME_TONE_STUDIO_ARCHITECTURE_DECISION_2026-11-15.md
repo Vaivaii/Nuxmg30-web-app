@@ -492,7 +492,7 @@ Work branch: \`feature/ai-efficiency-worker-nam-complete-tone-state\`.
 - Android client \`searchTone3000ForAI\` now calls that Worker endpoint. Existing profile-detail/model-list proxy, authenticated model download, A2-Lite validation, slot-10 import and transfer routines were intentionally left unchanged.
 - GPT-6 Luna now performs TONE3000 profile and downloadable A2-Lite capture selection from Worker-returned candidates. If Luna cannot select, the existing manual result/capture selection remains available.
 - GPT Tone Plan search terms are reused. The extra AI query-derivation request is now only attempted when the Tone Plan did not provide usable \`search_terms\`.
-- Recent conversation included in Tone Plan requests is capped at a compact 1,600-character relevant tail instead of forwarding the entire retained conversation.
+- Recent conversation included in Tone Plan requests is capped at a compact 1,200-character relevant tail; ordinary GPT-5.6 tone discussion is capped at 1,000 characters. The catalogue and live device snapshot are retained.
 - Tone Plans mark new preset creation with \`completePresetState=true\`; local refinements leave it false.
 - Before planning on a connected device, the bridge refreshes the active preset buffer via the existing readback path.
 - Before applying, the AI transaction takes a fresh active-buffer read while holding the device-operation lock. New presets expand to all nine AI-managed blocks (WAH, CMP, EFX, AMP, EQ, GATE, MOD, DLY, RVB). Omitted blocks retain their exact current model and are assigned OFF. Selected blocks default ON unless explicitly disabled. IR, Send/Return, Volume, scene/preset storage, and chain order remain outside this AI block plan.

@@ -464,7 +464,7 @@ function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const compact=compactToneContext(catalog,snapshot);
  return lines.join('\n')+'\n\nAPP CATALOG (compact):\n'+JSON.stringify(compact.catalog)+'\n\nCURRENT EDITOR (compact):\n'+JSON.stringify(compact.snapshot);
 }
-function userText(prompt,candidate,namContext,conversation=''){const recent=compactNamConversation(conversation,1600);return (recent?'RECENT RELEVANT CONVERSATION (compact):\n'+recent+'\n\n':'')+'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
+function userText(prompt,candidate,namContext,conversation=''){const recent=compactNamConversation(conversation,1200);return (recent?'RECENT RELEVANT CONVERSATION (compact):\n'+recent+'\n\n':'')+'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider) {
 if (provider === 'chatgpt') {
 try { const session = await window.MG30ChatGPTBridge?.getSession?.(); return session?.status === 'connected' && session?.sharing ? 'chatgpt-plan' : ''; }
@@ -1082,7 +1082,7 @@ const next='chatgpt';
    enabled:Boolean(block?.enabled),
    parameters:Object.fromEntries(Object.entries(block?.parameters||{}).slice(0,5).map(([key,value])=>[String(key).slice(0,24),value]))
   }));
-  const recent=compactNamConversation(conversation,1500);
+  const recent=compactNamConversation(conversation,1000);
   const stateText=JSON.stringify(compactState).slice(0,900);
   const user=(recent?'RECENT DISCUSSION:\n'+recent+'\n\n':'')+
    (stateText&&stateText!=='[]'?'CURRENT MG-30 EDITOR STATE (compact):\n'+stateText+'\n\n':'')+

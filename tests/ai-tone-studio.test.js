@@ -125,12 +125,14 @@ test('complete new preset apply expands missing managed blocks to OFF and verifi
   const ai = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
   assert.match(ai, /validated\.completePresetState=!localRefinement/);
   assert.match(ai, /bridge\.refreshSnapshot\(\)/);
+  assert.match(ai, /compactNamConversation\(conversation,1200\)/);
+  assert.match(ai, /compactNamConversation\(conversation,1000\)/);
   assert.match(html, /plan\.completePresetState\?BLOCKS\.slice\(0,9\)/);
   assert.match(html, /enabled:requested\.enabled===undefined\?true:requested\.enabled/);
   assert.match(html, /enabled:false,parameters:\{\}/);
   assert.match(html, /await readActiveBuffer\(\{preserveDraftName:true\}\)/);
   assert.match(html, /blockResults,verified:true/);
-  assert.match(html, /LOCAL REFINEMENT/);
+  assert.match(ai, /LOCAL REFINEMENT/);
   assert.match(ai, /delta blocks/);
 });
 
