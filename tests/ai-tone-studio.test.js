@@ -2179,8 +2179,9 @@ test('mission artwork sanitizes unknown role and animation-state values',()=>{
 test('AI shows an activity bubble immediately after the user sends a message',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("setBusy(true);message('user',prompt);status(activityMode==='discussion'"));
- assert.match(source,/ai-tone-discussion-dots/);
- assert.match(source,/ai-tone-mission-team/);
+ assert.match(source,/ai-tone-waveform/);
+ assert.doesNotMatch(source,/class="ai-tone-discussion-dots"/);
+ assert.match(source,/ai-tone-mission-specialists/);
 });
 
 test('AI Settings hides the redundant role/provider routing strip but retains provider and usage settings',()=>{
