@@ -30,6 +30,7 @@ on:
       - feature/ai-tone-ui-bubble-mission-cloud
       - feature/ai-tone-studio-mission-console-waveform-fix
       - feature/ai-efficiency-worker-nam-complete-tone-state
+      - fix/tone3000-nam-search-worker-1.2.5
       - feature/chatgpt-siwc-android
       - fix/ir-user-cut-scene-sync
       - release/mg30-studio-final-polish
