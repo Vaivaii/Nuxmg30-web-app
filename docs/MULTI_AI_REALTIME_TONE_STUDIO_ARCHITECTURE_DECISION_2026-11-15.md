@@ -584,3 +584,20 @@ Work branch: `feature/worker-ai-nam-query-routing`, based on `feature/worker-v1.
 - The exact user-deployed Worker version has not been queried; no redeployment was performed.
 
 **Status:** app-side NAM query routing is implemented and its focused tests pass; full regression/build acceptance remains blocked by the pre-existing Worker/test contract mismatch described above.
+
+
+### Final validation and APK result — 2026-11-19
+
+- GitHub Actions workflow run **#1106**, run ID `44361079866`, commit `54abcbb0a0b62f509d97f5d8e3d11277dd95cf8c`: **success**.
+- JavaScript syntax validation: passed.
+- Protocol regression suite: **674 passed, 0 failed**.
+- Capacitor Android project generation and USB Audio plugin initialization: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** (1m 25s).
+- APK artifact upload: passed.
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14456615183`.
+- APK extracted from the run artifact: `app-debug.apk`, 4,762,008 bytes.
+- Extracted APK SHA-256: `af573a612056c4bedc93e24987e83cd0086472e99fb6f66df9296733ebaa5108`.
+- Artifact ZIP SHA-256: `edba1613094d999d19f1f50cb2e943f0d4400e8cfa8f0f6e4f1579999e6ffe8b`.
+- ZIP integrity check and APK archive integrity check: passed.
+- The Worker source and Cloudflare deployment were not changed in this implementation; the build packages the updated Android client.
+- Physical MG-30 live NAM search/import and hardware validation remain separate acceptance checks; CI/build success does not claim those hardware checks were performed.
