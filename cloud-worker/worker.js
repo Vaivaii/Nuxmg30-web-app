@@ -1,5 +1,5 @@
 
-const VERSION = "1.2.4";
+const VERSION = "1.2.5";
 const WORKERS_AI_MODELS = [
   "@cf/google/gemma-4-26b-a4b-it",
   "@cf/openai/gpt-oss-20b",
@@ -424,7 +424,7 @@ async function tone3000AiSearch(request, env, body) {
   // Run catalogue search through the existing, allow-listed TONE3000 proxy.
   // The device/app does not need to implement query fallback or row normalization.
   const words = query.split(/\s+/).filter(Boolean);
-  const candidates = [...new Set([query, words.length > 1 ? words[words.length - 1] : ""])];
+  const candidates = [...new Set([query, words.length > 1 ? words[words.length - 1] : "", ""])];
   const attempts = [];
 
   for (const candidate of candidates) {
@@ -615,7 +615,7 @@ export default {
           ok: true, service: "nux-mg30-studio-api", version: VERSION,
           gateway_routes: {
             status: true, ai_providers: true, ai_models: true, ai_light_task: true, ai_tone_plan: true,
-            youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true
+            youtube_status: true, youtube_search: true, tone3000_ai_search: true, tone3000_proxy: true, tone3000_download: true
           },
           auth_configured: Boolean(String(env.APP_LOGIN_USERNAME || "").trim() && String(env.APP_LOGIN_PASSWORD || "").trim() && String(env.APP_AUTH_SECRET || "").trim()),
           secret_checks: {
