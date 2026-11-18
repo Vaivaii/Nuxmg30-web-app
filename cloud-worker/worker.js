@@ -216,19 +216,19 @@ function normalizeProviderUsage(body, api) {
   return {
     input_tokens: inputTokens,
     output_tokens: outputTokens,
-    prompt_tokens: inputTokens,
-    completion_tokens: outputTokens,
     total_tokens: totalTokens
   };
 }
 function mergeProviderUsage(...rows) {
   const values = rows.filter(Boolean);
   if (!values.length) return null;
-  const sum = key => {
-    const present = values.map(row => row[key]).filter(value => Number.isFinite(value));
+  const sum = (...keys) => {
+    const present = values.map(row => keys.map(key => row[key]).find(value => Number.isFinite(value)))
+      .filter(value => Number.isFinite(value));
     return present.length ? present.reduce((total, value) => total + value, 0) : null;
   };
-  const prompt_tokens = sum("prompt_tokens"), completion_tokens = sum("completion_tokens");
+  const prompt_tokens = sum("prompt_tokens", "input_tokens");
+  const completion_tokens = sum("completion_tokens", "output_tokens");
   const total_tokens = sum("total_tokens") ??
     (prompt_tokens !== null && completion_tokens !== null ? prompt_tokens + completion_tokens : null);
   return { prompt_tokens, completion_tokens, total_tokens };
