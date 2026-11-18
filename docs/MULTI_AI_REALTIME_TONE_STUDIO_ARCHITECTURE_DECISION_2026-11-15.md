@@ -348,3 +348,23 @@ Work is isolated on branch `feature/ai-tone-ui-bubble-mission-cloud`, based on `
 ### Validation
 - Five targeted UI regression tests were added for role-to-art mapping, safe artwork values, immediate activity visibility, Settings routing-strip removal and English Cloud UI copy.
 - CI/build results are pending at the time of this note. Do not distribute an APK unless the complete regression suite and Android build pass and the resulting artifact is verified.
+
+
+### Final automated validation — 2026-11-18
+
+Status: **GitHub Actions build and automated validation passed. Debug APK artifact downloaded and integrity checked. Physical device / original MG-30 acceptance is not claimed.**
+
+- Validated source/test commit: `6af03d6f7dc1dde05b6c6f9544fc69d707f536f8` on `feature/ai-tone-ui-bubble-mission-cloud`.
+- GitHub Actions run #1078: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44303918183 — **success**.
+- JavaScript syntax validation: passed.
+- Full project protocol/regression tests: **664 passed, 0 failed**.
+- Capacitor Android project generation and USB Audio plugin installation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** in 1m 17s.
+- Workflow artifact: `MG30-Studio-debug-APK`, artifact ID `14426334647`, ZIP size 4,379,068 bytes.
+- ZIP SHA-256: `94de320f6c551c5240dba8acb73a8ef018dc4d1cbb63f4122f0e01f39ec47c31`.
+- Extracted `app-debug.apk`: 4,756,832 bytes; identified by the host as an Android package with APK Signing Block.
+- APK ZIP integrity: `unzip -t` passed with no errors.
+- APK SHA-256: `9a8b052d4e529f5eda3b132164311b4e863d16abc4a557b31684e28054a57a3f`.
+- This is a **debug APK**, not a signed release package.
+- Compared with base `feature/tone-architect-six-agent-sequential`, the isolated branch changes only `.github/workflows/build-apk.yml`, this documentation file, `tests/ai-tone-studio.test.js`, `tests/chatgpt-si-wc-ui-preservation.test.js`, `www/ai-tone-studio.js` and `www/cloud-account.js`. No NAM/IR/MIDI/protocol/codec/native USB files are included in the diff.
+- User-facing acceptance still requires installing this APK on the user's Android phone and checking the screen layout/animations there. Original MG-30 Gen 2 hardware behavior must also be tested after install; CI does not emulate the phone, signed-in SIWC session or physical pedal.
