@@ -1,7 +1,7 @@
 # Multi-AI Real-Time Tone Studio — Architecture Decision
 Date: 2026-11-15
 Branch: feature/ai-live-tone-studio
-Status: **Architecture decision recorded; implementation not started**
+Status: **Architecture decision plus 2026-11-18 implementation changes recorded; CI and hardware verification pending**
 
 ## User-approved decisions
 
@@ -477,3 +477,39 @@ User authorized implementation after selecting Studio Console mockup Alternative
 - No NAM/TONE3000 transfer or slot mapping, IR User/Third Party/Collection transfer/storage mapping, MIDI mapping, preset/scene codec, USB-MIDI or native USB Audio source was changed.
 - Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
 - Physical Android UI/animation acceptance and real provider credential/model behavior still need user-side verification. Successful CI validates code/tests/build, not a physical MG-30 session or production provider quota/availability.
+
+
+---
+
+## Implementation — Worker-led NAM search, Luna selection, and complete preset state (2026-11-18)
+
+Work branch: \`feature/ai-efficiency-worker-nam-complete-tone-state\`.
+
+### Changes implemented in source
+
+- Cloudflare Worker version bumped from 1.2.1 to 1.2.2 in both synchronized source copies: \`cloud-worker/src/index.js\` and \`cloud-worker/worker.js\`.
+- Added authenticated \`POST /api/v1/tone3000/ai-search\`. It requires both the app account JWT and the user's TONE3000 OAuth bearer token. Search phrase expansion, A2 NAM search filters, candidate normalization, fallback query, and search metadata now run in the Worker.
+- Android client \`searchTone3000ForAI\` now calls that Worker endpoint. Existing profile-detail/model-list proxy, authenticated model download, A2-Lite validation, slot-10 import and transfer routines were intentionally left unchanged.
+- GPT-6 Luna now performs TONE3000 profile and downloadable A2-Lite capture selection from Worker-returned candidates. If Luna cannot select, the existing manual result/capture selection remains available.
+- GPT Tone Plan search terms are reused. The extra AI query-derivation request is now only attempted when the Tone Plan did not provide usable \`search_terms\`.
+- Recent conversation included in Tone Plan requests is capped at a compact 1,600-character relevant tail instead of forwarding the entire retained conversation.
+- Tone Plans mark new preset creation with \`completePresetState=true\`; local refinements leave it false.
+- Before planning on a connected device, the bridge refreshes the active preset buffer via the existing readback path.
+- Before applying, the AI transaction takes a fresh active-buffer read while holding the device-operation lock. New presets expand to all nine AI-managed blocks (WAH, CMP, EFX, AMP, EQ, GATE, MOD, DLY, RVB). Omitted blocks retain their exact current model and are assigned OFF. Selected blocks default ON unless explicitly disabled. IR, Send/Return, Volume, scene/preset storage, and chain order remain outside this AI block plan.
+- Local refinement remains delta-only: unlisted blocks and parameters are preserved.
+- No-op blocks are accepted and reported as unchanged rather than treated as errors.
+- After MIDI writes, the existing 0C/00 active-scene readback parser reloads device state and compares target model, ON/OFF state, and requested parameter values. A mismatch fails the apply operation and attempts rollback for changed blocks. Success returns per-block statuses (applied, disabled, unchanged) and \`verified=true\`.
+- UI reply reports readback verification and per-block ON/OFF status.
+
+### Protection boundaries
+
+- No MIDI CC values, block switch mappings, parameter mappings, preset codec, NAM transfer protocol, NAM slot-10 destination, IR User/Third Party/Collection pathways, USB-MIDI transfer protocol or native USB Audio paths were changed.
+- NAM A2-Lite download, payload extraction/validation and transfer remain on the previously validated client/native path. Worker is responsible for catalogue searching and data retrieval, not the physical transfer.
+- The Worker source is updated in the repository only. No production Cloudflare Worker deployment was performed in this implementation step.
+
+### Validation still required
+
+- CI JavaScript tests, syntax checks, Android debug build and artifact verification must complete.
+- Live TONE3000 search must be checked against the deployed Worker after deployment and valid Cloud Account + TONE3000 OAuth authentication.
+- Physical pedal checks remain necessary for: block OFF CC application, parameter readback match/quantization, failed-write rollback, NAM slot-10 preservation, and existing IR/MIDI workflows.
+- Readback verification applies to the currently active edit buffer/scene using the existing 0C/00 flow. It does not claim that all three scenes were rewritten or independently verified.

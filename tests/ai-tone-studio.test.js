@@ -108,6 +108,32 @@ test('AI UI has no Apply-to-Editor action and exposes compact provider/model dro
   assert.doesNotMatch(source, /Terapkan ke Editor|Apply to Editor/i);
 });
 
+test('new preset plans carry an explicit complete-state contract while refinements remain partial', () => {
+  const newPreset = validateAiTonePlan({
+    completePresetState: true,
+    blocks: [{ id: 'AMP', model: 'Deluxe Rvb', enabled: true, parameters: { gain: 38 } }]
+  }, catalog);
+  const refinement = validateAiTonePlan({
+    blocks: [{ id: 'AMP', model: 'Deluxe Rvb', parameters: { gain: 38 } }]
+  }, catalog);
+  assert.equal(newPreset.completePresetState, true);
+  assert.equal(refinement.completePresetState, false);
+});
+
+test('complete new preset apply expands missing managed blocks to OFF and verifies hardware readback', () => {
+  const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
+  const ai = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');
+  assert.match(ai, /validated\.completePresetState=!localRefinement/);
+  assert.match(ai, /bridge\.refreshSnapshot\(\)/);
+  assert.match(html, /plan\.completePresetState\?BLOCKS\.slice\(0,9\)/);
+  assert.match(html, /enabled:requested\.enabled===undefined\?true:requested\.enabled/);
+  assert.match(html, /enabled:false,parameters:\{\}/);
+  assert.match(html, /await readActiveBuffer\(\{preserveDraftName:true\}\)/);
+  assert.match(html, /blockResults,verified:true/);
+  assert.match(html, /LOCAL REFINEMENT/);
+  assert.match(ai, /delta blocks/);
+});
+
 test('live bridge keeps AI writes inside existing parameter CC path and excludes IR/NAM blocks', () => {
   const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
   const source = readFileSync(new URL('../www/ai-tone-studio.js', import.meta.url), 'utf8');

@@ -83,7 +83,7 @@ test('provider status returns configured flags only after local JWT verification
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
-  assert.equal(body.workerVersion, '1.2.1');
+  assert.equal(body.workerVersion, '1.2.2');
   assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false, cloudflare: false });
   assert.equal(JSON.stringify(body).includes('secret-openai'), false);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://localhost');
