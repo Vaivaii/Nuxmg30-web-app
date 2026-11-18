@@ -1339,7 +1339,17 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   if(!credential)throw new Error(providerNames[provider]+' is not configured or its Worker binding is inactive.');
   const model=String(modelOverride||await fastestReadyModel(provider,credential,'discussion')||'').trim();
   if(!model)throw new Error('No '+providerNames[provider]+' model is available for this task.');
-  const data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{provider,task,role,model,system,prompt:user,maxOutputTokens}});
+  let data;
+  try{
+   data=await cloudApiRequest('/api/v1/ai/light-task',{method:'POST',body:{provider,task,role,model,system,prompt:user,maxOutputTokens}});
+  }catch(error){
+   // Older deployed Workers may not recognize the newer lightweight task names.
+   // Retry only that exact compatibility error through the existing authenticated Tone Plan route.
+   if(error?.status!==400||!(/Unsupported lightweight AI task|Unsupported AI task/i.test(String(error?.message||''))))throw error;
+   const legacy=await cloudApiRequest('/api/v1/ai/tone-plan',{method:'POST',body:{provider,model,system,prompt:user,maxOutputTokens}});
+   if(!legacy?.tonePlan||typeof legacy.tonePlan!=='object'||Array.isArray(legacy.tonePlan))throw new Error(legacy?.error||providerNames[provider]+' returned no structured JSON result from the compatibility route.');
+   data={result:legacy.tonePlan,usage:legacy.usage,model:legacy.model||model};
+  }
   if(!data?.result||typeof data.result!=='object'||Array.isArray(data.result))throw new Error(data?.error||providerNames[provider]+' returned no structured JSON result.');
   const result={...data.result};
   if(data.usage&&typeof data.usage==='object')Object.defineProperty(result,'__aiUsage',{value:data.usage,enumerable:false,configurable:false});

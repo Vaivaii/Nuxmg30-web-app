@@ -1148,6 +1148,9 @@ test('Auto routes light tasks and tone planning through ChatGPT before optional 
  assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Existing NAM search and discussion call sites follow the selected primary/fallback route.\n  return askNamAIJson(system,user,stage);"));
  assert.ok(source.includes("const providers=['gemini','groq','openrouter','cloudflare'];"));
  assert.match(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
+ assert.match(source, /Unsupported lightweight AI task/);
+ assert.match(source, /cloudApiRequest\('\/api\/v1\/ai\/tone-plan'/);
+ assert.match(source, /compatibility route/);
 });
 
 test('Tone Architect keeps GPT-6 Luna as Chief and dispatches specialist roles to independent providers with fallback',()=>{
