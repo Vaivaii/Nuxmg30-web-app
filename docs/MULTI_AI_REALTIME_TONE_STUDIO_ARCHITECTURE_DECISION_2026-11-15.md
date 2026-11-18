@@ -562,3 +562,25 @@ Work branch: `feature/worker-ai-nam-query-routing`, based on `feature/worker-v1.
 - The build workflow now includes this feature branch.
 - CI, full regression tests, and Android debug build: pending at the time of this note.
 - No APK delivery or hardware acceptance is claimed until CI/build and the user's live NAM workflow have been checked.
+
+
+### Validation result — 2026-11-19
+
+- GitHub Actions run #1101, run ID `44358568489`, commit `11ba519b24093a7de9f1faba696f591ee3ce124d`: **failed at the full regression-test step**.
+- JavaScript syntax validation passed.
+- Test result: **665 passed, 9 failed** (674 total).
+- The new NAM-specific tests passed, including:
+  - app query helper pins the NAM query task to Cloudflare Workers AI;
+  - profile and A2-Lite capture selection remain assigned to GPT-6 Luna;
+  - NAM preset creation derives a separate query instead of reusing GPT `search_terms`;
+  - Worker `tone3000-search-terms` accepts the authenticated light-task request and enforces the 180-token ceiling.
+- All nine failures are in unchanged Worker/version/search tests, not in the changed NAM-routing tests:
+  - two assertions expect Worker `1.2.2` while the unchanged deployment entry `cloud-worker/worker.js` reports `1.2.4`;
+  - five assertions expect the older `tone-specialist` / provider behavior directly from `/api/v1/ai/light-task`, while the unchanged 1.2.4 entrypoint exposes the dedicated Workers AI task list and the app's existing compatibility path for specialist calls;
+  - one OpenRouter test expects retry on upstream HTTP 502, which the unchanged 1.2.4 entrypoint does not implement;
+  - one TONE3000 search test expects an older inline filter expression rather than the unchanged entrypoint's equivalent `URLSearchParams` construction.
+- Comparison against the source branch confirms the failing Worker and test files were not changed by this task; no Worker code was modified to mask these failures.
+- Because `npm test` failed, CI skipped Capacitor Android generation and Gradle `assembleDebug`. **No APK is claimed or delivered.**
+- The exact user-deployed Worker version has not been queried; no redeployment was performed.
+
+**Status:** app-side NAM query routing is implemented and its focused tests pass; full regression/build acceptance remains blocked by the pre-existing Worker/test contract mismatch described above.
