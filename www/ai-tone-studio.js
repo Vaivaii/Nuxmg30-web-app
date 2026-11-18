@@ -110,7 +110,7 @@ export function validateAiTonePlan(plan,catalog){
   if(!Object.keys(parameters).length&&modelName===block.currentModel&&p.enabled===undefined&&model.kind!=='nam-slot-selection')throw new Error('Block '+id+' has no changes.');
   blocks.push({id,model:modelName,enabled:p.enabled,parameters});
  }
- return {summary:String(plan.summary||'Tone updated by AI.').slice(0,420),blocks,notes:Array.isArray(plan.notes)?plan.notes.map(x=>String(x).slice(0,180)).slice(0,5):[]};
+ return {summary:String(plan.summary||'Tone updated by AI.').slice(0,420),blocks,notes:Array.isArray(plan.notes)?plan.notes.map(x=>String(x).slice(0,180)).slice(0,5):[],completePresetState:plan.completePresetState===true};
 }
 function parseJson(text){
  const s=String(text||'').trim(),a=s.indexOf('{'),b=s.lastIndexOf('}');
@@ -464,7 +464,7 @@ function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const compact=compactToneContext(catalog,snapshot);
  return lines.join('\n')+'\n\nAPP CATALOG (compact):\n'+JSON.stringify(compact.catalog)+'\n\nCURRENT EDITOR (compact):\n'+JSON.stringify(compact.snapshot);
 }
-function userText(prompt,candidate,namContext,conversation=''){return (conversation?'RECENT CONVERSATION CONTEXT (chronological):\n'+conversation+'\n\n':'')+'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
+function userText(prompt,candidate,namContext,conversation=''){const recent=compactNamConversation(conversation,1600);return (recent?'RECENT RELEVANT CONVERSATION (compact):\n'+recent+'\n\n':'')+'USER REQUEST:\n'+prompt+(namContext?'\n\nINSTALLED NAM CONTEXT:\n'+namContext:'')+(candidate?'\n\nGPT PROPOSAL TO REVIEW:\n'+JSON.stringify(candidate):'')+'\n\nReturn final JSON only.';}
 async function secret(provider) {
 if (provider === 'chatgpt') {
 try { const session = await window.MG30ChatGPTBridge?.getSession?.(); return session?.status === 'connected' && session?.sharing ? 'chatgpt-plan' : ''; }
@@ -1619,6 +1619,20 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   if(lastError)throw new Error('All configured fallback providers were unavailable. Last error: '+(lastError.message||lastError));
   throw new Error('No configured AI provider/model is available. Configure ChatGPT, Gemini, Groq, OpenRouter or the Cloudflare Workers AI binding. Missing: '+missing.join(', '));
  }
+async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
+  const credential=await secret('chatgpt');
+  if(!credential)throw new Error('ChatGPT/GPT-6 Luna is not connected; NAM candidates remain available for manual selection.');
+  const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
+  if(!model)throw new Error('No GPT-6 Luna model is available for NAM validation.');
+  const result=await requestChatGptConversation({
+   bridge:window.MG30ChatGPTBridge,model,system,user,maxOutputTokens
+  });
+  const parsed=parseJson(result.reply);
+  const usageResult={};
+  if(result.__aiUsage)Object.defineProperty(usageResult,'__aiUsage',{value:result.__aiUsage,enumerable:false});
+  logAiTokenUsage('chatgpt',result.__aiModel||model,stage,maxOutputTokens,system,user,usageResult);
+  return parsed;
+}
  async function deriveNamSearchQuery(prompt,conversation=''){
   const system='You select search terms for the TONE3000 NAM catalog. The CURRENT USER TONE REQUEST is authoritative. Use recent conversation only to resolve ambiguity; never reuse a previous artist or amp search query when the current request names a different artist or target. Return JSON only: {"query":"short search phrase","reason":"brief reason in the same language as the USER REQUEST"}. Extract 2–5 useful words focused on amplifier make/model or searchable amp family/style. For artist/song tone requests, infer a plausible amp family only when justified by the requested sound; do not claim an exact real-world rig. Do not use generic words like preset, guitar tone, live, or effects. Keep query under 60 characters.';
   const result=await invokeWorkersAILightTask('tone3000-search-terms',system,(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER TONE REQUEST:\n'+prompt,'deriving TONE3000 search terms',180);
@@ -1631,7 +1645,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   const system='Choose the single best TONE3000 NAM tone pack for the current user request. The CURRENT USER REQUEST is authoritative; recent conversation may clarify preferences but must never override a newly named artist, amp or target. Return JSON only: {"toneId":"123","reason":"alasan singkat Bahasa Indonesia"}. Select only an ID present in CANDIDATES. Prefer a direct amplifier make/model or clearly relevant amp family. If none are meaningfully relevant return {"toneId":"","reason":"tidak ada profil yang cukup relevan"}. Never invent tone details not present in the candidate fields. Write the reason in Bahasa Indonesia, 1–2 short sentences, maximum 30 words total. Keep the reason concise and factual.';
   const recent=compactNamConversation(conversation);
   const user=(recent?'RECENT CONVERSATION (compact):\\n'+recent+'\\n\\n':'')+'USER REQUEST:\\n'+prompt+'\\nAI SEARCH QUERY:\\n'+searchQuery+'\\nCANDIDATES (minified JSON):\\n'+JSON.stringify(candidates)+'\\nReturn only the requested JSON.';
-  const result=await invokeWorkersAILightTask('tone3000-profile-ranking',system,user,'choosing the closest NAM tone',320);
+  const result=await askLunaNamJson(system,user,'Luna validating TONE3000 NAM profile',256);
   const tone=tones.find(t=>String(t.id)===String(result?.toneId||''));
   if(!tone)throw new Error('No TONE3000 tone result was relevant enough for this request. Nothing was downloaded or written to the pedal.');
   return {tone,reason:conciseNamRecommendationReason(result.reason)};
@@ -1645,7 +1659,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   const system='Choose the best downloadable A2-Lite NAM capture for this TONE3000 profile and the current user request. The CURRENT USER REQUEST is authoritative. Return JSON only: {"modelId":"123","reason":"alasan singkat Bahasa Indonesia"}. Select only an ID present in CANDIDATES. Downloadable eligibility has already been checked by the app; never invent IDs or capture details. Compare size/weight information and any supplied gain/cab notes. Do not infer boost/OD or cab details when the notes are silent. Let the user override the AI choice in the capture picker. Actual downloaded-file validation is authoritative. Write the reason in Bahasa Indonesia, 1–2 short sentences, maximum 30 words total.';
   const recent=compactNamConversation(conversation);
   const user=(recent?'RECENT CONVERSATION (compact):\\n'+recent+'\\n\\n':'')+'USER REQUEST:\\n'+prompt+'\\nSELECTED TONE (minified JSON):\\n'+JSON.stringify(selectedTone)+'\\nCANDIDATES (minified JSON):\\n'+JSON.stringify(candidates)+'\\nREJECTED MODEL IDS:\\n'+JSON.stringify(rejected)+'\\nReturn only the requested JSON.';
-  const result=await invokeWorkersAILightTask('tone3000-capture-selection',system,user,'selecting the closest A2-Lite capture',320);
+  const result=await askLunaNamJson(system,user,'Luna validating A2-Lite capture',256);
   const model=models.find(m=>String(m.id)===String(result?.modelId||'')&&m.model_url);
   if(!model||rejected.includes(String(model.id)))throw new Error('AI did not select a valid downloadable candidate from this TONE3000 result.');
   return {model,reason:conciseNamRecommendationReason(result.reason)};
@@ -1793,13 +1807,18 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
   throw new Error(lastError?.message||'No available Gemini, Groq or OpenRouter provider completed the explicit Multi-AI task.');
  }
  async function makePlan(prompt,bridge,audioMetrics=null,conversation=''){
+  if(bridge.isConnected?.()){
+   if(typeof bridge.refreshSnapshot!=='function')throw new Error('MG-30 editor readback is unavailable. Connect again or update MG30 Studio before creating a preset.');
+   await bridge.refreshSnapshot();
+  }
   const catalog=bridge.getCatalog(),snapshot=bridge.getSnapshot();
   if(!catalog?.length)throw new Error('The MG-30 catalog is unavailable.');
   const localRefinement=Boolean(toneSession.intent&&isLocalToneRefinement(prompt));
   const namPlanGuard=activeNamContext?'\n\nAUTHORITATIVE AMP SOURCE: TONE3000 NAM is installed in MG-30 slot 10. Do not invent or claim any built-in AMP model. The app selects the NAM Slot 10 selection-only entry. Never write NAM internals.':'';
   const deltaGuard=localRefinement?'\n\nDELTA PATCH MODE: This is a focused edit to the CURRENT tone. Return only changed blocks and only changed parameter keys. Keep each block on its current exact model unless the user explicitly asks to change that model. Do not regenerate the chain, resend unaffected parameters, change NAM/IR/MIDI/scene/volume/preset data, or touch unrelated blocks. Use the current snapshot and preserve all other state.':'';
   const system=systemPrompt(catalog,snapshot,false,resolveArtistToneGuidance(prompt,conversation))+namPlanGuard+deltaGuard;
-  const singleSystem=system+'\n\n'+toneLeadInstruction(toneSession.intent);
+  const completePresetGuard=localRefinement?'\n\nLOCAL REFINEMENT: Return only requested delta blocks. Every unlisted managed block must remain unchanged.':'\n\nNEW PRESET: Return the catalog-valid blocks needed for this tone. The app will turn every other managed effect block OFF while preserving its exact current model. Do not touch IR, Send/Return, Volume, scene, preset slot, MIDI mappings or signal-chain order.';
+  const singleSystem=system+'\n\n'+toneLeadInstruction(toneSession.intent)+completePresetGuard;
   const singleUser=userText(prompt,null,activeNamContext,conversation)+(audioMetrics?'\n\nMEASURED USB AUDIO:\n'+formatToneAudioMetrics(audioMetrics):'');
   const credential=await secret('chatgpt');
   if(!credential)throw new Error('ChatGPT plan access is not connected. Connect your ChatGPT account; GPT-5.6 discussion and GPT-6 Luna preset creation both use this signed-in session.');
@@ -1840,7 +1859,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    try{validated=validateAiTonePlan(corrected,catalog);first=corrected;namSearchTerms=normalizeNamSearchTerms(corrected?.search_terms)||namSearchTerms;}
    catch(secondError){throw new Error('AI could not produce a catalog-valid Tone Plan after one correction. No MIDI changes were sent. '+secondError.message);}
   }
-  if(namModeActive&&!activeNamContext){
+  if(namModeActive&&!activeNamContext&&!namSearchTerms){
    try{
     const derivedSearch=await deriveNamSearchQuery(prompt,conversation);
     namSearchTerms=normalizeNamSearchTerms(derivedSearch.query)||namSearchTerms;
@@ -1849,6 +1868,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
     message('ai','AI TONE3000 search-term generation was unavailable; using the local safe search-term fallback. '+(error.message||error));
    }
   }
+  validated.completePresetState=!localRefinement;
   if(namSearchTerms)Object.defineProperty(validated,'search_terms',{value:namSearchTerms,enumerable:false,configurable:false});
   return validated;
  }
@@ -1918,8 +1938,8 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
     if(!installed)throw new Error('The imported NAM is not visible as a verified AMP slot-10 model. No preset changes were sent. Re-read the pedal slot metadata and try again.');
     const currentAmp=bridge.getSnapshot?.().find(block=>block.id==='AMP');
     const existing=plan.blocks.findIndex(block=>block.id==='AMP');
-    if(currentAmp?.model===installed.name&&currentAmp.enabled){if(existing>=0)plan.blocks.splice(existing,1);}
-    else{const ampChange={id:'AMP',model:installed.name,enabled:true,parameters:{}};if(existing>=0)plan.blocks[existing]=ampChange;else plan.blocks.unshift(ampChange);}
+    const ampChange={id:'AMP',model:installed.name,enabled:true,parameters:{}};
+    if(existing>=0)plan.blocks[existing]=ampChange;else plan.blocks.unshift(ampChange);
     plan.summary=(plan.summary||'AI tone')+' using the imported NAM capture in slot 10.';
    }
    if(!bridge.isConnected?.()){
@@ -1939,10 +1959,12 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    const appliedNotes=activeNamContext
     ?['The installed NAM capture remained the amp source; only validated non-NAM parameters were updated.']
     :plan.notes;
-   const reply=appliedSummary+'\nParameters sent to: '+result.blocks.join(', ')+(appliedNotes.length?'\n'+appliedNotes.join(' · '):'');
+   const statusLabels={applied:'Diterapkan',disabled:'Dimatikan',unchanged:'Tidak berubah',unverified:'Belum terverifikasi'};
+   const blockReport=(result.blockResults||[]).map(item=>item.id+' '+(item.enabled?'ON':'OFF')+' ('+(statusLabels[item.status]||item.status)+')').join(' · ');
+   const reply=appliedSummary+'\nReadback perangkat: '+(result.verified?'cocok dengan target':'belum terverifikasi')+'\nStatus blok: '+(blockReport||'tidak ada perubahan')+(appliedNotes.length?'\n'+appliedNotes.join(' · '):'');
    message('ai',reply);rememberConversation('assistant',reply);
    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
-   status(intent==='tone_refine'?'Tone refinement complete. Editor and MG-30 were updated through USB-MIDI.':'Done. Editor controls updated and MIDI commands sent. Play your guitar to audition the tone.','success');
+   status(result.verified?(intent==='tone_refine'?'Tone refinement applied and verified by MG-30 readback.':'Preset applied and verified by MG-30 readback.'):'Tone commands sent; device state is unverified.','success');
    if(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt)pendingNamSelection=null;
   }catch(error){const detail=String(error?.message||error).slice(0,1800);if(activityMode==='tone'&&toneMission){toneMission.error=detail;const quorumFailure=/All unused specialist providers failed role|requires at least two configured external specialist providers/i.test(detail);message('ai',quorumFailure?'Preset not created: the specialist team could not complete the required research. No Tone Plan was generated and no preset changes were applied.':'Preset creation stopped. Open Mission Control → Provider diagnostics for the reason.');status(quorumFailure?'Preset creation stopped: specialist quorum not reached.':'Preset creation failed. See Mission Control diagnostics.','error');}else{message('ai','Failed: '+detail);status('Failed: '+detail,'error');}}
   finally{setBusy(false);ui.undo.disabled=!last;}
