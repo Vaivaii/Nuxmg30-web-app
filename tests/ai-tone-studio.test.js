@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect, toneMissionArtworkMarkup } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -2143,4 +2143,56 @@ test('GPT-6 Luna fails closed when a new preset does not obtain two distinct suc
   requireFirstSpecialist:true,requireSuccessfulSpecialists:true,minSuccessfulSpecialists:2,minDistinctSpecialistProviders:2,
   runSpecialist:async()=>({ok:true,role:'amp_cabinet_specialist',provider:'gemini',result:{ok:true}})
  }),/only 1 of 2 required specialist tasks/);
+});
+
+
+test('mission artwork selects a matching animated illustration for each specialist role',()=>{
+ const cases=[
+  ['amp_cabinet_specialist','ai-tone-art-amp','Amp and cabinet specialist'],
+  ['effects_specialist','ai-tone-art-pedal','Effects pedal specialist'],
+  ['guitar_input_specialist','ai-tone-art-guitar','Guitar and input specialist'],
+  ['tone_calibration_specialist','ai-tone-art-meter','Tone calibration specialist'],
+  ['tone_critic','ai-tone-art-critic','Tone critic'],
+  ['tone_architect','ai-tone-art-chief','GPT-6 Luna tone architect']
+ ];
+ for(const [role,kind,label] of cases){
+  const markup=toneMissionArtworkMarkup(role,'working');
+  assert.ok(markup.startsWith('<svg '));
+  assert.ok(markup.includes(kind));
+  assert.ok(markup.includes('data-state="working"'));
+  assert.ok(markup.includes('aria-label="'+label+'"'));
+ }
+});
+
+test('mission artwork sanitizes unknown role and animation-state values',()=>{
+ const markup=toneMissionArtworkMarkup('<img src=x onerror=alert(1)>','<script>');
+ assert.ok(markup.includes('ai-tone-art-chief'));
+ assert.ok(markup.includes('data-state="standby"'));
+ assert.equal(markup.includes('<img'),false);
+ assert.equal(markup.includes('<script'),false);
+});
+
+test('AI shows an activity bubble immediately after the user sends a message',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/setBusy\\(true\\);message\\('user',prompt\\);status\\(activityMode==='discussion'/);
+ assert.match(source,/ai-tone-discussion-dots/);
+ assert.match(source,/ai-tone-mission-team/);
+});
+
+test('AI Settings hides the redundant role/provider routing strip but retains provider and usage settings',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.equal(source.includes('ai-tone-routing-strip'),false);
+ assert.equal(source.includes('DISKUSI BIASA'),false);
+ assert.equal(source.includes('CREATE PRESET</small><strong>GPT-6 Luna'),false);
+ assert.ok(source.includes('AI Providers & ChatGPT Account'));
+ assert.ok(source.includes('AI Usage & Token Monitor'));
+});
+
+test('Cloud Account UI copy is English while preserving local-feature availability notice',()=>{
+ const source=readFileSync(new URL('../www/cloud-account.js',import.meta.url),'utf8');
+ assert.ok(source.includes('A personal account for Cloud services.'));
+ assert.ok(source.includes('Cloud Account active'));
+ assert.ok(source.includes('Cloud Account disconnected. Local features remain available.'));
+ assert.ok(source.includes('Cloud is only used for online services.'));
+ assert.equal(/Akun pribadi|Cloud Account aktif|Akun terhubung|Belum terhubung|Sesi berakhir|Menghubungkan|Memeriksa akun Cloud|Login gagal|Cloud hanya untuk layanan/i.test(source),false);
 });
