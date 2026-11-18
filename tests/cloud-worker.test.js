@@ -284,6 +284,39 @@ test('authenticated AI light-task gateway executes Cloudflare Workers AI and ret
   assert.equal(calls.length, 1);
 });
 
+test('NAM search-term light-task executes on Workers AI with the 180-token task ceiling', async () => {
+  const calls = [];
+  const env = { ...baseEnv, AI: { run: async (model, options) => {
+    calls.push({ model, options });
+    return {
+      response: JSON.stringify({ query: 'Fender Vibroverb', reason: 'Amp family relevant to the requested blues voice.' }),
+      usage: { prompt_tokens: 21, completion_tokens: 12, total_tokens: 33 }
+    };
+  } } };
+  const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      task: 'tone3000-search-terms', provider: 'cloudflare',
+      model: '@cf/google/gemma-4-26b-a4b-it',
+      system: 'Return JSON only with query and reason.',
+      prompt: 'USER TONE REQUEST: Make a Stevie Ray Vaughan-inspired preset using NAM.',
+      maxOutputTokens: 240
+    })
+  }), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.task, 'tone3000-search-terms');
+  assert.equal(body.provider, 'cloudflare');
+  assert.equal(body.model, '@cf/google/gemma-4-26b-a4b-it');
+  assert.equal(body.maxOutputTokens, 180);
+  assert.equal(body.result.query, 'Fender Vibroverb');
+  assert.deepEqual(body.usage, { prompt_tokens: 21, completion_tokens: 12, total_tokens: 33 });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.max_completion_tokens, 180);
+  assert.equal(calls[0].options.chat_template_kwargs.enable_thinking, false);
+});
+
 test('AI light-task rejects invalid specialist roles and reports missing Workers AI binding', async () => {
   const invalidRole = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
     method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
