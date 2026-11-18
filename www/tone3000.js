@@ -533,8 +533,25 @@ async function searchTone3000ForAI(query, gear = 'amp-cab') {
     const rows = Array.isArray(body?.tones) ? body.tones : [];
     return Object.assign(rows, { searchMeta: body?.searchMeta || { requestedQuery: text, queriesTried: [], total: rows.length } });
   } catch (error) {
+    if (error.status === 404 && !error.upstreamStatus) {
+      throw new Error('The deployed Cloudflare Worker is missing POST /api/v1/tone3000/ai-search (HTTP 404). Deploy Worker v1.2.5, then retry NAM search. No pedal data was changed.');
+    }
+    if (error.status === 401 && error.upstreamStatus === 401) {
+      throw new Error('TONE3000 rejected the account OAuth token. Reconnect the TONE3000 account, then retry NAM search. No pedal data was changed.');
+    }
+    if (error.status === 401) {
+      throw new Error('Cloud Account authentication or the TONE3000 OAuth header was rejected by the Worker. Reconnect Cloud Account and TONE3000, then retry. No pedal data was changed.');
+    }
+    if (error.status === 403 && error.upstreamStatus === 403) {
+      throw new Error('TONE3000 denied full-catalog NAM search for this API client. Check API access with TONE3000 support; the app will not bypass service restrictions.');
+    }
+    if (error.status === 403) {
+      throw new Error('Cloudflare rejected the NAM search request (HTTP 403). Check Worker access policy and app authentication. No pedal data was changed.');
+    }
     if (error.status === 429) throw new Error('TONE3000 API search rate limit reached. Wait briefly and try again; no pedal changes were made.');
-    if (error.status === 403) throw new Error('TONE3000 denied this NAM search. Check the API client access tier; the app will not bypass service restrictions.');
+    if (error.upstreamStatus) {
+      throw new Error('TONE3000 NAM search failed with upstream HTTP ' + error.upstreamStatus + ': ' + (error.message || 'request rejected') + '. No pedal data was changed.');
+    }
     throw error;
   }
 }
