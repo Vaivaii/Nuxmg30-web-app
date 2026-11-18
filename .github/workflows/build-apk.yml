@@ -28,6 +28,7 @@ on:
       - feature/ai-live-tone-studio
       - feature/tone-architect-six-agent-sequential
       - feature/ai-tone-ui-bubble-mission-cloud
+      - feature/ai-tone-studio-mission-console-waveform-fix
       - feature/chatgpt-siwc-android
       - fix/ir-user-cut-scene-sync
       - release/mg30-studio-final-polish
