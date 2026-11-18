@@ -993,7 +993,7 @@ test('token monitor separates provider-model usage and per-agent/model requests'
  assert.match(source,/function aiAgentLabel\(stage,provider,model\)/);
  for(const role of TONE_SPECIALIST_ROLES)assert.ok(source.includes(`task.includes('specialist ${role}')`),`missing usage label for ${role}`);
  for(const label of ['Tone Researcher','Amp & Cabinet Specialist','Effects Specialist','Guitar & Input Specialist','Tone Calibration Specialist','Tone Critic'])assert.ok(source.includes(`agent='${label}'`),`missing display label ${label}`);
- assert.ok(source.includes("logAiTokenUsage('chatgpt',result.__aiModel,'specialist '+role"));
+ assert.ok(source.includes("logAiTokenUsage(member.provider,result.__aiModel,'specialist '+role"));
  assert.match(source,/aiUsage\.models\[modelKey\]/);
 });
 
@@ -1123,11 +1123,11 @@ test('ChatGPT replaces Workers AI as the active default provider and Cloudflare 
  assert.ok(source.includes('ChatGPT handles discussion, TONE3000 search/ranking and ordinary presets.'));
  assert.ok(source.includes('Auto · ChatGPT + optional free API fallback'));
  assert.ok(source.includes("const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode()"));
- assert.doesNotMatch(source, /<option value="cloudflare">Cloudflare Workers AI/);
+ assert.match(source, /<option value="cloudflare">Cloudflare Workers AI/);
  assert.match(source, /id="aiToneTestCloudflare"/);
  assert.match(source, /id="aiCloudflareBindingState"/);
- assert.doesNotMatch(source, /Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI/);
- assert.doesNotMatch(source, /Cloudflare Workers AI is first for light tasks/);
+ assert.match(source, /Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI/);
+ assert.match(source, /Cloudflare Workers AI is first for light tasks/);
 });
 
 test('ChatGPT Auto fallback order keeps Cloudflare Workers AI as final provider',()=>{
@@ -1146,8 +1146,8 @@ test('Auto routes light tasks and tone planning through ChatGPT before optional 
  assert.ok(source.includes("if(mode==='auto'){\n   order=providerFallbackOrder('chatgpt');"));
  assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){\n    const credential=await secret('chatgpt');"));
  assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Existing NAM search and discussion call sites follow the selected primary/fallback route.\n  return askNamAIJson(system,user,stage);"));
- assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
- assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
+ assert.ok(source.includes("const providers=['gemini','groq','openrouter','cloudflare'];"));
+ assert.match(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
 });
 
 test('Tone Architect keeps GPT-6 Luna as Chief and dispatches specialist roles to independent providers with fallback',()=>{
@@ -1156,7 +1156,7 @@ test('Tone Architect keeps GPT-6 Luna as Chief and dispatches specialist roles t
  const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
  assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
  assert.ok(source.includes("async function invokeWorkerLightTask(provider,task,system,user,stage"));
- assert.ok(source.includes("task:'tone-specialist'"));
+ assert.ok(source.includes("invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText"));
  assert.ok(source.includes("requireSuccessfulSpecialists:true"));
  assert.ok(source.includes("GPT-6 Luna, the sole Chief Tone Architect"));
  assert.doesNotMatch(specialist,/requestChatGptToneSpecialist\(/);
@@ -1969,14 +1969,13 @@ test('Auto routes light tasks and tone planning through ChatGPT before optional 
  assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
 });
 
-test('Auto complex tone requests stay on GPT-6 Luna; external provider team is explicit Collab only',()=>{
+test('Tone Architect delegates specialist work through sequential provider fallback while Luna remains Chief',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
- assert.match(team,/const providers=\['gemini','groq','openrouter'\]/);
- assert.ok(source.includes("return selectedMode==='collab'"));
- assert.ok(source.includes('async function resolveFreeProviderTeam()'));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){"));
- assert.doesNotMatch(team,/cloudflare/);
+ assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
+ assert.ok(source.includes("invokeWorkerLightTask(member.provider,'tone-specialist',system,requestText"));
+ assert.ok(source.includes("requireSuccessfulSpecialists:true"));
+ assert.ok(source.includes("GPT-6 Luna, the sole Chief Tone Architect"));
 });
 
 

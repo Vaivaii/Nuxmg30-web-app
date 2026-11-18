@@ -23,11 +23,11 @@ test('ChatGPT replaces the former Cloudflare AI role while existing optional pro
   for (const provider of ['chatgpt', 'auto', 'gemini', 'groq', 'openrouter', 'gpt', 'collab']) {
     assert.ok(select.includes('value="' + provider + '"'), 'provider selector lost ' + provider);
   }
-  assert.doesNotMatch(select, /value="cloudflare"/);
+  assert.match(select, /value="cloudflare"/);
   for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestChatGPT']) {
     assert.ok(ai.includes(id), 'provider settings lost ' + id);
   }
-  assert.doesNotMatch(ai, /id="aiToneTestCloudflare"/);
+  assert.match(ai, /id="aiToneTestCloudflare"/);
 });
 
 test('ChatGPT SIWC runs through the native bridge rather than the Cloudflare AI proxy', () => {
@@ -49,8 +49,8 @@ test('ChatGPT model discovery does not depend on Cloud Account login', () => {
 
 test('ChatGPT remains the selected primary and is not silently replaced by another provider', () => {
   assert.match(ai, /let mode='chatgpt'/);
-  assert.match(ai, /const auto=mode==='auto'\|\|mode==='collab'/);
-  assert.match(ai, /providerFallbackOrder\(primary='gemini'\)[\s\S]*?\['chatgpt',\.\.\.freePriority\]/);
+  assert.match(ai, /const auto=mode==='auto'\|\|mode==='collab'\\|\\|ui\\.autoFallback\\.checked/);
+  assert.match(ai, /providerFallbackOrder\(primary='gemini'\)[\s\S]*?\['chatgpt',\.\.\.freePriority,'cloudflare'\]/);
 });
 
 test('Restored conversation composer always wires the Send control', () => {
