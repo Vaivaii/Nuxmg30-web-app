@@ -24,7 +24,7 @@ test('ChatGPT conversation and preset modes are fixed to their task-specific Lun
   assert.doesNotMatch(select, /value="auto"|value="gemini"|value="groq"|value="openrouter"|value="cloudflare"|value="collab"/);
   assert.doesNotMatch(ai, /ai-tone-routing-strip|DISKUSI BIASA|<small>SPECIALIST<\/small>/);
   assert.match(ai, /GPT-5\.6 Luna/);
-  assert.match(ai, /CREATE PRESET/);
+  assert.doesNotMatch(ai, /CREATE PRESET/);
   assert.match(ai, /GPT-6 Luna/);
   assert.match(ai, /GPT-5\.6 discussion \/ GPT-6 Luna preset/);
   for (const id of ['aiToneTestOpenAi', 'aiToneTestGemini', 'aiToneTestGroq', 'aiToneTestOpenRouter', 'aiToneTestChatGPT', 'aiToneTestCloudflare']) {
