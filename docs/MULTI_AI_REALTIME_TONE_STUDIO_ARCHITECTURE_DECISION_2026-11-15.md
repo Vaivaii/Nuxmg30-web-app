@@ -434,3 +434,46 @@ Design direction to retain for the next authorized UI implementation:
 - Keep Mission Control's separate whole-object illustration animation requirements intact; this waveform is specifically for the chat typing indicator.
 
 This request complements the user-selected **Alternative B — Studio Console** Mission Control direction. Design note only; no source code, APK, provider logic, NAM, IR, MIDI or hardware behavior changed.
+
+---
+
+## Mission Control / waveform UI implementation and specialist-output recovery — 2026-11-18
+
+User authorized implementation after selecting Studio Console mockup Alternative B and requesting a waveform typing indicator.
+
+### Implemented UI
+- Replaced the three-dot GPT-5.6 typing indicator with a compact animated waveform labelled COMPOSING.
+- Redesigned GPT-6 Mission Control around the amplifier hero illustration, concise task context, specialist progress, compact role rows and expandable Provider diagnostics.
+- Removed the old large provider-tile presentation and obsolete CREATE PRESET activity label from the active mission view.
+- Specialist rows show role, provider actually running/completing it, and truthful queued/working/completed/retrying/failed states.
+- Verbose provider details and execution errors remain available in collapsed diagnostics; failures remain visible and are not converted to success.
+- Artwork is grouped as one SVG object assembly. Whole pedal / amp / guitar / meter / critic / chief groups receive restrained whole-object movement; internal details do not animate independently. Reduced-motion CSS disables animation.
+- Tone Researcher remains Luna's own research responsibility and is not exposed as an external specialist role in Mission Control.
+
+### Specialist provider-output fixes
+- Bumped both Worker source copies to version 1.2.1 and kept cloud-worker/worker.js and cloud-worker/src/index.js synchronized.
+- Cloudflare Workers AI requests now use JSON-object response mode and max-completion-token option; response extraction accepts structured object payloads as well as textual responses.
+- Existing Cloudflare model fallback can continue after malformed JSON rather than treating a returned object as a string.
+- OpenRouter retry classification now includes transient retryable upstream failures such as HTTP 502, in addition to malformed/non-JSON responses.
+- Increased Effects specialist output budget from 360 to 640 tokens to reduce truncation risk for catalogue-grounded structured output.
+- Failure chat response is concise; detailed error is retained in Mission Control diagnostics.
+- Fail-closed two-successful-role/two-distinct-provider quorum is unchanged. No Tone Plan is fabricated or applied when quorum is not reached.
+
+### Regression tests and CI
+- Added coverage for Cloudflare structured object JSON Mode response.
+- Added coverage for malformed Gemma JSON followed by configured model fallback.
+- Added coverage for OpenRouter transient HTTP 502 retry.
+- Updated UI preservation assertions for waveform and compact Mission Control.
+- Added tests asserting whole SVG object group animation and Effects specialist token budget.
+- Workflow now includes this feature branch.
+- GitHub Actions run #1082, run ID 44314742452, commit d8f5c106343ddf5bd3dee19598fb2220451cf43c: SUCCESS.
+- JavaScript/test suite: 669 passed, 0 failed.
+- Android Gradle assembleDebug: BUILD SUCCESSFUL.
+- Artifact MG30-Studio-debug-APK, artifact ID 14432445808, ZIP size 4,382,487 bytes; SHA-256 a4ec2de89c5fdca99fddea5da53a24f1f3fba9a2226f3da194d14a1967173ce9.
+- CI artifact URL: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44314742452/artifacts/14432445808
+- Build is a debug APK, not a signed release.
+
+### Scope protection / remaining acceptance
+- No NAM/TONE3000 transfer or slot mapping, IR User/Third Party/Collection transfer/storage mapping, MIDI mapping, preset/scene codec, USB-MIDI or native USB Audio source was changed.
+- Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
+- Physical Android UI/animation acceptance and real provider credential/model behavior still need user-side verification. Successful CI validates code/tests/build, not a physical MG-30 session or production provider quota/availability.
