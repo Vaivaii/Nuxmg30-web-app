@@ -132,7 +132,7 @@ test('TONE3000 AI search runs query expansion and A2 NAM filtering inside the au
   globalThis.fetch = async (url, options = {}) => {
     calls.push({ url: String(url), authorization: new Headers(options.headers).get('Authorization') });
     const target = new URL(String(url));
-    if (target.searchParams.get('query') === 'Deluxe') return jsonResponse({ data: [] });
+    if (target.searchParams.get('query') === 'Fender Deluxe') return jsonResponse({ data: [] });
     return jsonResponse({ data: [{ id: 42, title: 'Deluxe Reverb NAM', user: { username: 'capture-author' }, makes: [{ name: 'Fender' }], tags: [{ name: 'clean' }], a2_models_count: 3 }] });
   };
   try {

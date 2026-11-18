@@ -185,7 +185,8 @@ test('AI assistant interface stays English while generated tone summaries follow
   assert.match(source, /AI ready. MG-30 connection is required for live tone assistance/);
   assert.match(source, /Refresh Status/);
   assert.match(source, /Undo AI Changes/);
-  assert.match(source, /Parameters sent to:/);
+  assert.match(source, /Readback perangkat:/);
+  assert.match(source, /Status blok:/);
   assert.doesNotMatch(source, /Menunggu koneksi|Simpan API Key|Kirim ↗|Parameter dikirim|Undo gagal|berhasil merespons/);
 });
 
@@ -866,7 +867,7 @@ test('standalone NAM and consultation routes are separate from device-write oper
 test('recent conversation context is carried into audio diagnosis and Tone Plans',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('const conversationContextText='));
- assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
+ assert.ok(source.includes('RECENT DISCUSSION:') || source.includes('RECENT RELEVANT CONVERSATION (compact)'));
  assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
  assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
 });
@@ -874,7 +875,7 @@ test('recent conversation context is forwarded to GPT-6 Luna preset creation and
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
  assert.ok(source.includes('const conversationContextText='));
- assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
+ assert.ok(source.includes('RECENT DISCUSSION:') || source.includes('RECENT RELEVANT CONVERSATION (compact)'));
  assert.ok(source.includes('const conversationContextText=()=>dialogueContext.slice(-8)'));
  assert.ok(source.includes('while(dialogueContext.length>8)dialogueContext.shift()'));
  assert.ok(plan.includes('userText(prompt,null,activeNamContext,conversation)'));
@@ -1020,7 +1021,7 @@ test('GPT-6 Luna preset input carries the current request and bounded conversati
  assert.equal(plan.includes('audioBytes'),false);
  assert.equal(plan.includes('audioBuffer'),false);
  assert.equal(plan.includes('RECENT CONVERSATION:'),false);
- assert.ok(source.includes('RECENT CONVERSATION CONTEXT (chronological)'));
+ assert.ok(source.includes('RECENT RELEVANT CONVERSATION (compact)'));
 });
 test('AI Settings uses compact provider and usage accordions while NAM controls remain visible',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -1071,15 +1072,15 @@ test('TONE3000 chooser reasons are capped at two sentences and 30 words; chooser
  const reason=conciseNamRecommendationReason('Profil ini paling dekat dengan karakter clean yang diminta dan punya respons dinamis. Deskripsinya juga menyebut kabinet yang relevan. Kalimat ketiga harus dibuang.');
  assert.equal(reason.split(/\s+/).length<=30,true);
  assert.equal((reason.match(/[.!?]/g)||[]).length<=2,true);
- assert.equal(outputTokenBudgetForStage('choosing the closest NAM tone'),320);
- assert.equal(outputTokenBudgetForStage('selecting the closest A2-Lite capture'),320);
+ assert.match(readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8'),/Luna validating TONE3000 NAM profile',256/);
+ assert.match(readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8'),/Luna validating A2-Lite capture',256/);
 });
 
-test('Workers AI derives fresh TONE3000 search_terms after Tone Plan validation and reuses the prepared plan after import',()=>{
+test('GPT-6 Tone Plan search_terms are reused and Luna only derives a fallback query when absent',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
  assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
- assert.match(source,/if\(namModeActive&&!activeNamContext\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
+ assert.match(source,/if\(namModeActive&&!activeNamContext&&!namSearchTerms\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
  assert.match(source,/const searchTerms=normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)/);
  assert.match(source,/renderNamSearchResults\(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan\)/);
  assert.match(source,/preparedPlan=await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);
@@ -1703,7 +1704,7 @@ test('standalone NAM and consultation routes are separate from device-write oper
 test('recent conversation context is carried into audio diagnosis and Tone Plans',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('const conversationContextText='));
- assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
+ assert.ok(source.includes('RECENT DISCUSSION:') || source.includes('RECENT RELEVANT CONVERSATION (compact)'));
  assert.ok(source.includes('makePlan(prompt,bridge,audioMetricsForRequest,conversation)'));
  assert.ok(source.includes('requestAudioDiagnosis(prompt,audioMetricsForRequest,conversation)'));
 });
@@ -1711,7 +1712,7 @@ test('recent conversation context is forwarded to GPT-6 Luna preset creation and
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const plan=source.slice(source.indexOf('async function makePlan'),source.indexOf('async function submit'));
  assert.ok(source.includes('const conversationContextText='));
- assert.ok(source.includes('RECENT CONVERSATION CONTEXT'));
+ assert.ok(source.includes('RECENT DISCUSSION:') || source.includes('RECENT RELEVANT CONVERSATION (compact)'));
  assert.ok(source.includes('const conversationContextText=()=>dialogueContext.slice(-8)'));
  assert.ok(source.includes('while(dialogueContext.length>8)dialogueContext.shift()'));
  assert.ok(plan.includes('userText(prompt,null,activeNamContext,conversation)'));
@@ -1847,7 +1848,7 @@ test('GPT-6 Luna preset input carries the current request and bounded conversati
  assert.equal(plan.includes('audioBytes'),false);
  assert.equal(plan.includes('audioBuffer'),false);
  assert.equal(plan.includes('RECENT CONVERSATION:'),false);
- assert.ok(source.includes('RECENT CONVERSATION CONTEXT (chronological)'));
+ assert.ok(source.includes('RECENT RELEVANT CONVERSATION (compact)'));
 });
 test('AI Settings uses compact provider and usage accordions while NAM controls remain visible',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
@@ -1898,15 +1899,15 @@ test('TONE3000 chooser reasons are capped at two sentences and 30 words; chooser
  const reason=conciseNamRecommendationReason('Profil ini paling dekat dengan karakter clean yang diminta dan punya respons dinamis. Deskripsinya juga menyebut kabinet yang relevan. Kalimat ketiga harus dibuang.');
  assert.equal(reason.split(/\s+/).length<=30,true);
  assert.equal((reason.match(/[.!?]/g)||[]).length<=2,true);
- assert.equal(outputTokenBudgetForStage('choosing the closest NAM tone'),320);
- assert.equal(outputTokenBudgetForStage('selecting the closest A2-Lite capture'),320);
+ assert.match(readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8'),/Luna validating TONE3000 NAM profile',256/);
+ assert.match(readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8'),/Luna validating A2-Lite capture',256/);
 });
 
-test('Workers AI derives fresh TONE3000 search_terms after Tone Plan validation and reuses the prepared plan after import',()=>{
+test('GPT-6 Tone Plan search_terms are reused and Luna only derives a fallback query when absent',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/TONE3000 SEARCH TERMS:[\s\S]*search_terms/);
  assert.match(source,/invokeWorkersAILightTask\('tone3000-search-terms'/);
- assert.match(source,/if\(namModeActive&&!activeNamContext\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
+ assert.match(source,/if\(namModeActive&&!activeNamContext&&!namSearchTerms\)[\s\S]*deriveNamSearchQuery\(prompt,conversation\)/);
  assert.match(source,/const searchTerms=normalizeNamSearchTerms\(preparedPlan\?\.search_terms\)/);
  assert.match(source,/renderNamSearchResults\(rows,searchTerms,recommendation,'create',prompt,conversation,preparedPlan\)/);
  assert.match(source,/preparedPlan=await makePlan\(prompt,bridge,audioMetricsForRequest,conversation\)/);

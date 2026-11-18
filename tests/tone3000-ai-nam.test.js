@@ -188,14 +188,16 @@ test('ChatGPT plan access uses the native SIWC plugin and never sends ChatGPT to
 });
 
 
-test('TONE3000 search broadens the AI phrase once and defers Lite filtering to downloadable model metadata', () => {
+test('TONE3000 search broadens the AI phrase in Worker and defers Lite filtering to downloadable model metadata', () => {
   const start = tone3000.indexOf('async function searchTone3000ForAI');
   const end = tone3000.indexOf('async function loadTone3000ForAI', start);
   const source = tone3000.slice(start, end);
-  assert.match(source, /const queries=\[text,terms\.length>1\?terms\[terms\.length-1\]:''\]/);
-  assert.match(source, /format:'nam',architecture:'2'/);
-  assert.doesNotMatch(source, /sizes:'lite'/);
-  assert.match(source, /rowsReturned/);
+  const worker = readFileSync(new URL('../cloud-worker/worker.js', import.meta.url), 'utf8');
+  assert.match(source, /cloudApiRequest\('\/api\/v1\/tone3000\/ai-search'/);
+  assert.match(worker, /const candidates = \[\.\.\.new Set\(\[query, words\.length > 1 \? words\[words\.length - 1\] : ""\]\)\]/);
+  assert.match(worker, /format: "nam", architecture: "2"/);
+  assert.match(worker, /gear !== "amp" && gear !== "amp-cab"/);
+  assert.doesNotMatch(worker.slice(worker.indexOf('async function tone3000AiSearch'), worker.indexOf('function toneOfficialHost')), /sizes.*lite/i);
 });
 
 test('AI exposes TONE3000 zero-result query diagnostics and distinguishes catalogue emptiness from file validation', () => {
