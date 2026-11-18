@@ -284,3 +284,42 @@ This section supersedes prior provider-selection and external Tone Researcher as
 - Made specialist eligibility metadata consistent with the mandatory two-expert policy for every new preset. A local delta refinement can still bypass external specialists.
 - Mission Control's required-expert count now reflects actual create-vs-local-refinement behavior.
 - This follow-up does not add, alter or deploy any Cloudflare Worker endpoint, credential, authentication or route.
+
+
+---
+
+## Recovery of missing AI helpers and successful Android build — 2026-11-18
+
+Status: **Implementation and CI validation passed on the isolated feature branch. Debug APK artifact verified. Physical Android and original MG-30 hardware acceptance remain pending.**
+
+### Source recovery
+- The prior alignment commit had removed the exported ChatGPT specialist orchestrator and reusable AI/NAM helper functions from `www/ai-tone-studio.js`, while live code and regression tests still referenced them.
+- Restored `orchestrateChatGptTonePlan` with its sequential one-specialist-per-turn handling, maximum six task budget, mandatory successful-role quorum, distinct-provider quorum, failed-handoff handling, usage accounting and lifecycle events.
+- Restored the deleted shared parsing/provider utilities, compact MG-30 context, artist-tone guidance, model selection helper, token budgets, NAM candidate sanitizers and metadata helpers. The obsolete ChatGPT-as-specialist request path was not restored.
+- Restored the intent payload in `toneLeadInstruction()` so GPT-6 Luna receives the compact musical intent (for example style and playing feel), rather than losing it before preset synthesis.
+- The task router remains locked: ordinary discussion selects `gpt-5.6-luna`; preset creation selects `gpt-6-luna`. Luna performs initial musical/reference research itself and owns final synthesis.
+- New presets require at least two distinct specialist roles successfully completed by at least two different configured provider identities. Specialist generation calls run sequentially. Gemini is first; fallback for the same role task is Groq, OpenRouter, then Cloudflare Workers AI. The subsequent successful role uses a provider identity not already successful.
+- Local delta refinements retain the lightweight path and may skip external specialists. No endpoint, Worker source, auth secret, key, or deployment was changed.
+
+### Validation
+- Final source/test commit: `ae3bc8b22ee11e0a9fb45968cd5f2098428b5c50`.
+- GitHub Actions run #1069: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44292470903 — **success**.
+- JavaScript syntax validation: passed.
+- Protocol regression tests: **659 passed, 0 failed**.
+- Capacitor Android project generation and USB Audio plugin installation: passed.
+- Gradle `assembleDebug`: `BUILD SUCCESSFUL` (1m 33s).
+- Artifact: `MG30-Studio-debug-APK`, artifact ID `14421123769`; ZIP size 4,377,213 bytes.
+- Extracted APK: `app-debug.apk`, 4,754,216 bytes.
+- APK archive integrity: `unzip -t` passed; host identifies it as an Android package with APK Signing Block.
+- APK SHA-256: `a86f0ce18d49238426e2c72923f8c8e457a511ff20e69a42991e830b3efdbd61`.
+- The APK is a debug build, not a signed release package.
+
+### Protected boundaries
+- Diff relative to the pre-recovery six-agent branch base is limited to:
+  - `www/ai-tone-studio.js`
+  - `tests/ai-tone-studio.test.js`
+  - this architecture decision record
+- No changes to NAM/TONE3000 transfer paths, NAM Slot 10 mapping, IR User/Third Party/Collection import and storage mapping, MIDI CC/parameter mapping, preset/scene codec, USB-MIDI transfer or native USB Audio code.
+- Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MG-30 MKII.
+- CI does not prove real provider credentials, actual specialist quotas, native SIWC models available in the signed-in account, or physical pedal behavior. Those still require testing on the Android device and original MG-30.
+
