@@ -13,6 +13,7 @@ const safeText = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&'
 let backingObjectUrl = null;
 let recording = false;
 let recordingCaptureMode = 'normal';
+let toneAnalysisCapture = false;
 let takeNumber = 0;
 const takes = [];
 let selectedRenameIndex = -1;
@@ -369,6 +370,43 @@ async function stopGuitarRecording() {
   return savedTake;
 }
 
+async function inspectToneAnalysisInput() {
+  if (!isNative()) throw new Error('USB audio listening is available in the Android APK only.');
+  if (typeof MG30Audio.inspectDevices !== 'function') throw new Error('The native MG-30 audio bridge is unavailable.');
+  return MG30Audio.inspectDevices();
+}
+async function startToneAnalysisCapture(options = {}) {
+  if (!isNative()) throw new Error('USB audio listening is available in the Android APK only.');
+  if (recording || toneAnalysisCapture) throw new Error('Another USB audio recording is already active. Stop it before starting AI listening.');
+  const channelIndexMask = Math.max(1, Math.min(255, Math.round(Number(options.channelIndexMask) || 3)));
+  const result = await MG30Audio.startRecording({ prefer24Bit: true, captureMode: 'multichannel', channelIndexMask });
+  if (!result?.recording) throw new Error('Android did not confirm MG-30 USB audio capture.');
+  recording = true;
+  recordingCaptureMode = 'multichannel';
+  toneAnalysisCapture = true;
+  return result;
+}
+async function getToneAnalysisStats() {
+  if (!isNative() || !toneAnalysisCapture || !recording) return null;
+  return MG30Audio.getRecordingStats();
+}
+async function stopToneAnalysisCapture() {
+  if (!isNative() || !toneAnalysisCapture || !recording) return null;
+  try {
+    const take = await MG30Audio.stopRecording();
+    return take?.path ? { ...take, audioUrl: playbackPathFor(take) } : take;
+  } finally {
+    toneAnalysisCapture = false;
+    recording = false;
+    recordingCaptureMode = 'normal';
+  }
+}
+async function deleteToneAnalysisTake(path) {
+  if (!isNative() || typeof MG30Audio.deleteTake !== 'function' || !path) return false;
+  const result = await MG30Audio.deleteTake({ path: String(path) });
+  return Boolean(result?.deleted);
+}
+
 function parseYoutubeId(value) {
   try {
     const url = new URL(value.trim());
@@ -383,7 +421,7 @@ function parseYoutubeId(value) {
   return null;
 }
 window.NUXStudioInspectAudio = inspectAudio;
-window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, getRecordingStats, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor });
+window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, getRecordingStats, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor, inspectToneAnalysisInput, startToneAnalysis: startToneAnalysisCapture, getToneAnalysisStats, stopToneAnalysis: stopToneAnalysisCapture, deleteToneAnalysisTake });
 window.dispatchEvent(new Event('nux-studio-recorder-ready'));
 window.addEventListener('mg30-midi-connected', () => { void inspectAudio(); });
 $('audioCheckBtn')?.addEventListener('click', inspectAudio);

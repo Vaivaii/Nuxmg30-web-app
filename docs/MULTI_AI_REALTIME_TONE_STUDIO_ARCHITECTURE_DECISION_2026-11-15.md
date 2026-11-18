@@ -215,3 +215,21 @@ The Cloudflare Workers AI/Gemma role is no longer part of the active application
 - Updated SIWC preservation coverage to retain the native ChatGPT bridge, audio UI, model discovery, and composer wiring while recognizing that ChatGPT has replaced the former Workers AI role.
 - The initial rerun exposed stale assertions that still expected Cloudflare/Gemma to be active. Those assertions were updated to the corrected architecture; this is not evidence of a passing test run.
 - New CI run and complete regression/build verification are required after this correction. No APK is approved for delivery until CI is green and the final diff confirms protected NAM/IR/MIDI/protocol files are unchanged.
+
+
+## Regression recovery — provider-backed Tone Architect agents and USB Audio Listening (2026-11-18)
+
+### Tone Architect provider execution
+- GPT-6 Luna remains the sole Chief, orchestrator and final Tone Plan authority through the connected native ChatGPT SIWC bridge.
+- Each delegate_tone_specialist handoff becomes one authenticated /api/v1/ai/light-task request to a configured provider. The role prompt, MG-30 catalogue subset, JSON output contract and token budget are preserved if a provider fails and the task falls back to the next configured provider.
+- Specialist calls remain sequential. The starting provider rotates across the configured Gemini, Groq, OpenRouter and Cloudflare Workers AI team so provider activity is visible in the usage monitor. If all configured providers fail a requested specialist, no Tone Plan is produced or applied.
+- Ordinary Auto fallback order is ChatGPT → Gemini → Groq → OpenRouter → Cloudflare Workers AI. Cloudflare Workers AI remains the final fallback provider, and the settings page restores its binding-status indicator and explicit connectivity test button.
+- Worker source updates both cloud-worker/src/index.js and the deployment entry cloud-worker/worker.js. wrangler.toml declares [ai] binding = "AI". Worker deployment is separate and is not performed by the app build.
+
+### Audio Listening regression
+- Root cause: current www/main.js had dropped toneAnalysisCapture and dedicated Tone Analysis methods from window.NUXStudioRecorder. The AI panel still called inspectToneAnalysisInput, startToneAnalysis, getToneAnalysisStats, stopToneAnalysis and deleteToneAnalysisTake, so Audio Listening could not pass its initial device check.
+- Restore the known-good native wrapper methods in www/main.js and export them from the recorder bridge. Keep Quick Record and DAW recording separate. Do not modify native-android/MG30AudioPlugin.java, its AudioRecord settings, USB routing or channel-mask protocol.
+- Regression tests cover the restored recorder bridge and authenticated Worker task endpoints. Physical-device capture and real provider calls still need acceptance testing after the new APK and Worker deployment.
+
+### Validation status
+- CI validation is pending for this recovery commit. The previous APK does not contain these fixes and is not a deliverable for this recovery.

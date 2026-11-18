@@ -28,12 +28,12 @@ test('standalone Worker parses and retains original auth health route with boole
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
   assert.equal(body.version, '1.2.0');
-  assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true });
+  assert.deepEqual(body.gateway_routes, { status: true, ai_providers: true, ai_models: true, ai_tone_plan: true, ai_light_task: true, youtube_status: true, youtube_search: true, tone3000_proxy: true, tone3000_download: true });
   assert.equal(body.auth_configured, true);
   assert.deepEqual(body.secret_checks, {
     APP_LOGIN_USERNAME: true, APP_LOGIN_PASSWORD: true, APP_AUTH_SECRET: true,
     GEMINI_API_KEY: false, GROQ_API_KEY: false, OPENROUTER_API_KEY: false,
-    OPENAI_API_KEY: false, TONE3000_API_KEY: false, YOUTUBE_API_KEY: false, YOUTUBE_DATA_API_KEY: false
+    OPENAI_API_KEY: false, TONE3000_API_KEY: false, YOUTUBE_API_KEY: false, YOUTUBE_DATA_API_KEY: false, AI_BINDING: false
   });
   assert.equal(JSON.stringify(body).includes(APP_SECRET), false);
 });
@@ -84,7 +84,7 @@ test('provider status returns configured flags only after local JWT verification
   assert.equal(response.status, 200);
   assert.equal(body.service, 'nux-mg30-studio-api');
   assert.equal(body.workerVersion, '1.2.0');
-  assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false });
+  assert.deepEqual(body.providers, { gpt: true, gemini: true, groq: false, openrouter: false, cloudflare: false });
   assert.equal(JSON.stringify(body).includes('secret-openai'), false);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://localhost');
 });
@@ -213,6 +213,63 @@ test('AI auto fallback advances from Gemini to Groq and returns the successful p
   } finally { globalThis.fetch = originalFetch; }
 });
 
+
+test('authenticated AI light-task gateway executes Cloudflare Workers AI and returns provider usage', async () => {
+  const calls = [];
+  const env = { ...baseEnv, AI: { run: async (model, options) => {
+    calls.push({ model, options });
+    return { response: JSON.stringify({ findings: ['verified response'], confidence: 0.91 }), usage: { prompt_tokens: 23, completion_tokens: 11, total_tokens: 34 } };
+  } } };
+  const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone-specialist', role: 'tone_researcher', provider: 'cloudflare', model: '@cf/google/gemma-4-26b-a4b-it', system: 'Return JSON only.', prompt: 'Research this guitar reference.', maxOutputTokens: 420 })
+  }), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.task, 'tone-specialist');
+  assert.equal(body.role, 'tone_researcher');
+  assert.equal(body.provider, 'cloudflare');
+  assert.equal(body.model, '@cf/google/gemma-4-26b-a4b-it');
+  assert.deepEqual(body.result.findings, ['verified response']);
+  assert.deepEqual(body.usage, { prompt_tokens: 23, completion_tokens: 11, total_tokens: 34 });
+  assert.equal(calls.length, 1);
+});
+
+test('AI light-task rejects invalid specialist roles and reports missing Workers AI binding', async () => {
+  const invalidRole = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone-specialist', role: 'unknown_role', provider: 'cloudflare', system: 'x', prompt: 'y' })
+  }), baseEnv);
+  assert.equal(invalidRole.status, 400);
+  const unavailable = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'tone-specialist', role: 'tone_researcher', provider: 'cloudflare', system: 'Return JSON.', prompt: 'Run the task.' })
+  }), baseEnv);
+  assert.equal(unavailable.status, 503);
+});
+
+test('AI light-task executes focused Gemini role tasks through configured provider credentials', async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = '';
+  globalThis.fetch = async url => {
+    requestedUrl = String(url);
+    return jsonResponse({ candidates: [{ content: { parts: [{ text: JSON.stringify({ amp: 'Deluxe Rvb', confidence: 0.88 }) }] } }], usageMetadata: { promptTokenCount: 17, candidatesTokenCount: 9, totalTokenCount: 26 } });
+  };
+  try {
+    const response = await worker.fetch(new Request('https://studio.example.test/api/v1/ai/light-task', {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task: 'tone-specialist', role: 'amp_cabinet_specialist', provider: 'gemini', model: 'gemini-2.5-flash', system: 'Return JSON only.', prompt: 'Select exact MG-30 amp and cab.' })
+    }), { ...baseEnv, GEMINI_API_KEY: 'gemini-test-secret' });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.provider, 'gemini');
+    assert.equal(body.model, 'gemini-2.5-flash');
+    assert.equal(body.result.amp, 'Deluxe Rvb');
+    assert.deepEqual(body.usage, { input_tokens: 17, output_tokens: 9, total_tokens: 26 });
+    assert.ok(requestedUrl.includes('generativelanguage.googleapis.com'));
+  } finally { globalThis.fetch = originalFetch; }
+});
 
 test('TONE3000 optional Worker API secret is used only when the app sends no user OAuth header', async () => {
   const originalFetch = globalThis.fetch;

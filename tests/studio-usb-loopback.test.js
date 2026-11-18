@@ -149,6 +149,18 @@ test('Quick Record remains separate and passes multichannel mode without alterin
   assert.ok(main.includes('start: startGuitarRecording'));
 });
 
+test('AI Audio Listening native bridge is exposed independently from Quick Record and DAW capture', () => {
+  assert.ok(main.includes('let toneAnalysisCapture = false'));
+  assert.ok(main.includes('async function inspectToneAnalysisInput()'));
+  assert.ok(main.includes('async function startToneAnalysisCapture(options = {})'));
+  assert.ok(main.includes('async function getToneAnalysisStats()'));
+  assert.ok(main.includes('async function stopToneAnalysisCapture()'));
+  assert.ok(main.includes('async function deleteToneAnalysisTake(path)'));
+  assert.ok(main.includes('inspectToneAnalysisInput, startToneAnalysis: startToneAnalysisCapture'));
+  assert.ok(main.includes('getToneAnalysisStats, stopToneAnalysis: stopToneAnalysisCapture, deleteToneAnalysisTake'));
+  assert.ok(main.includes("captureMode: 'multichannel', channelIndexMask"));
+  assert.ok(main.includes('if (recording || toneAnalysisCapture)'));
+});
 test('Loopback is not mislabeled as USB Input 3/4; 3/4 is Wet Sync / Dry Out', () => {
   assert.ok(core.includes("id: 'usb-ch1-2-stereo'"));
   assert.ok(core.includes("label: 'MG-30 USB · Input 1–2 (Stereo + Host Loopback Mix)'"));

@@ -248,7 +248,7 @@ test('ChatGPT is primary while Auto and the free Multi-AI team remain explicit a
   }
   assert.match(source, /const auto=mode==='auto'\|\|mode==='collab'\|\|\(mode!=='chatgpt'&&ui\.autoFallback\.checked\)/);
   assert.match(source, /if\(provider==='chatgpt'\)result=await chatgpt/);
-  assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
+  assert.ok(source.includes("const providers=['gemini','groq','openrouter','cloudflare'];"));
   assert.ok(source.includes("order=providerFallbackOrder('chatgpt')"));
   assert.deepEqual(providerFallbackOrder('auto'), ['chatgpt','gemini','groq','openrouter']);
   assert.ok(source.includes("if(mode==='auto'){"));
@@ -1124,14 +1124,20 @@ test('ChatGPT replaces Workers AI as the active default provider and Cloudflare 
  assert.ok(source.includes('Auto · ChatGPT + optional free API fallback'));
  assert.ok(source.includes("const activeModelProvider=()=>currentMode()==='collab'?'gemini':currentMode()==='auto'?'chatgpt':currentMode()"));
  assert.doesNotMatch(source, /<option value="cloudflare">Cloudflare Workers AI/);
- assert.doesNotMatch(source, /id="aiToneTestCloudflare"/);
- assert.doesNotMatch(source, /id="aiCloudflareBindingState"/);
+ assert.match(source, /id="aiToneTestCloudflare"/);
+ assert.match(source, /id="aiCloudflareBindingState"/);
  assert.doesNotMatch(source, /Tone Plan fallback: Gemini → Groq → OpenRouter → Cloudflare Workers AI/);
  assert.doesNotMatch(source, /Cloudflare Workers AI is first for light tasks/);
 });
 
+test('ChatGPT Auto fallback order keeps Cloudflare Workers AI as final provider',()=>{
+ assert.deepEqual(providerFallbackOrder('chatgpt'),['chatgpt','gemini','groq','openrouter','cloudflare']);
+ assert.deepEqual(providerFallbackOrder('gemini'),['gemini','groq','openrouter','cloudflare']);
+ assert.deepEqual(providerFallbackOrder('groq'),['groq','gemini','openrouter','cloudflare']);
+});
+
 test('manual Cloudflare provider starts with Workers AI before free providers',()=>{
- assert.deepEqual(providerFallbackOrder('cloudflare'),['chatgpt','gemini','groq','openrouter']);
+ assert.deepEqual(providerFallbackOrder('cloudflare'),['cloudflare','chatgpt','gemini','groq','openrouter']);
 });
 
 
@@ -1139,19 +1145,21 @@ test('Auto routes light tasks and tone planning through ChatGPT before optional 
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes("if(mode==='auto'){\n   order=providerFallbackOrder('chatgpt');"));
  assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){\n    const credential=await secret('chatgpt');"));
- assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Legacy call-site name retained for compatibility; all active light tasks use the selected app AI route.\n  return askNamAIJson(system,user,stage);"));
+ assert.ok(source.includes("async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=520,_legacyForceWorkersAI=false){\n  // Existing NAM search and discussion call sites follow the selected primary/fallback route.\n  return askNamAIJson(system,user,stage);"));
  assert.ok(source.includes("const providers=['gemini','groq','openrouter'];"));
  assert.doesNotMatch(source, /cloudApiRequest\('\/api\/v1\/ai\/light-task'/);
 });
 
-test('Auto complex tone requests stay on GPT-6 Luna; external provider team is explicit Collab only',()=>{
+test('Tone Architect keeps GPT-6 Luna as Chief and dispatches specialist roles to independent providers with fallback',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const team=source.slice(source.indexOf('async function fastestReadyProviderOrder'),source.indexOf('async function testProvider'));
- assert.match(team,/const providers=\['gemini','groq','openrouter'\]/);
- assert.ok(source.includes("return selectedMode==='collab'"));
- assert.ok(source.includes('async function resolveFreeProviderTeam()'));
- assert.ok(source.includes("if(mode==='chatgpt'||mode==='auto'){"));
- assert.doesNotMatch(team,/cloudflare/);
+ const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ assert.match(team,/const providers=\['gemini','groq','openrouter','cloudflare'\]/);
+ assert.ok(source.includes("async function invokeWorkerLightTask(provider,task,system,user,stage"));
+ assert.ok(source.includes("task:'tone-specialist'"));
+ assert.ok(source.includes("requireSuccessfulSpecialists:true"));
+ assert.ok(source.includes("GPT-6 Luna, the sole Chief Tone Architect"));
+ assert.doesNotMatch(specialist,/requestChatGptToneSpecialist\(/);
 });
 
 

@@ -47,7 +47,8 @@ All `/api/v1/*` routes require the app JWT in `Authorization: Bearer <token>`, v
 - `GET /api/v1/status`
 - `GET /api/v1/ai/providers`
 - `GET /api/v1/ai/models?provider=gpt|gemini|groq|openrouter`
-- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Gemini, then Groq, then OpenRouter; explicit provider selection is also supported. OpenAI remains available as an explicit provider.
+- `POST /api/v1/ai/tone-plan` — `provider: "auto"` tries Gemini, Groq, OpenRouter, then Cloudflare Workers AI; explicit provider selection is also supported. OpenAI remains available as an explicit provider.
+- `POST /api/v1/ai/light-task` — authenticated JSON tasks for discussion, TONE3000 helpers, and role-scoped Tone Architect specialists. Supports Gemini, Groq, OpenRouter and Cloudflare Workers AI.
 - `GET /api/v1/youtube/status`
 - `GET /api/v1/youtube/search?q=...`
 - `GET /api/v1/tone3000/proxy?path=...` — app-compatible restricted metadata proxy.
@@ -86,3 +87,10 @@ A successful `/health` does not prove provider keys are valid. Live provider cal
 - The service-level TONE3000 credential is sent only to official TONE3000 hosts. It is not forwarded to external model/CDN hosts during redirects.
 - YouTube accepts `YOUTUBE_API_KEY` first, then falls back to the legacy `YOUTUBE_DATA_API_KEY`. When both exist, `YOUTUBE_API_KEY` takes precedence.
 - `/health` reports boolean presence flags for both YouTube variable names and `TONE3000_API_KEY`; it never returns secret values.
+
+
+## Workers AI binding and Tone Architect specialist dispatch
+
+GPT-6 Luna remains the Tone Architect Chief. Each specialist request is sent sequentially to a configured Gemini, Groq, OpenRouter, or Cloudflare Workers AI provider using the authenticated /api/v1/ai/light-task route. A fallback provider receives the same role, instructions and JSON schema. If every configured provider fails that specialist request, the app stops instead of fabricating a successful result or applying a Tone Plan.
+
+Cloudflare Workers AI requires [ai] binding = "AI" in wrangler.toml. Deploy Worker changes separately with npx wrangler deploy --config cloud-worker/wrangler.toml; the app build does not deploy Cloudflare Worker changes. The AI settings panel includes a Test Cloudflare Worker AI diagnostic button. Workers AI use may be subject to account-specific limits or charges; check Cloudflare account usage settings before production traffic.
