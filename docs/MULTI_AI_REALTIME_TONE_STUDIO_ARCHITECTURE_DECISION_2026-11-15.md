@@ -419,3 +419,18 @@ Design direction:
 - Retain reduced-motion accessibility.
 
 The previously recorded issue with effects-specialist provider failures remains open and separate from the visual redesign. No source code or APK was changed by this design selection.
+
+
+### AI typing indicator visual direction — 2026-11-18
+
+The user requested replacing the conventional chat typing bubble / three-dot indicator with a **waveform-style animation** to reinforce the music identity of NUX MG-30 Studio.
+
+Design direction to retain for the next authorized UI implementation:
+- Replace the generic typing dots/bubble with a compact animated waveform / equalizer motif in the assistant's in-progress chat state.
+- Use the app's existing dark green and lime palette; waveform bars should animate with a smooth, restrained rhythm (varying heights / sequential pulse), not a loading spinner or bouncing detached objects.
+- Label it clearly as the assistant composing/responding (e.g. "AI sedang menyusun respons" or localized equivalent) so users can distinguish active response generation from a stalled request.
+- This is a UI activity indicator, not a claim that actual audio is being played or measured.
+- Respect reduced-motion settings: provide a static waveform or gentle non-animated state.
+- Keep Mission Control's separate whole-object illustration animation requirements intact; this waveform is specifically for the chat typing indicator.
+
+This request complements the user-selected **Alternative B — Studio Console** Mission Control direction. Design note only; no source code, APK, provider logic, NAM, IR, MIDI or hardware behavior changed.
