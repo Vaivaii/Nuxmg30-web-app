@@ -2379,3 +2379,12 @@ test('Tone Plan and specialists receive exact MG-30 whitelist and the full avail
  assert.ok(specialist.includes('HARDWARE WHITELIST: use only exact block IDs and exact model names'));
  assert.ok(source.includes('aiPreparePlan(plan)'));
 });
+
+
+test('AI preset writer quantizes normalized hardware selectors such as DLY.subd before MIDI and readback verification',()=>{
+ const html=readFileSync(new URL('../www/index.html',import.meta.url),'utf8');
+ const prep=html.slice(html.indexOf('function aiPreparePlan'),html.indexOf('async function aiSendCC'));
+ assert.ok(prep.includes('value=quantizeParameterValue(key,value)'));
+ assert.ok(prep.indexOf('value=quantizeParameterValue(key,value)')<prep.indexOf('parameters.push({key,control,value,cc,rawValue:'));
+ assert.match(html,/subd:6/);
+});
