@@ -462,7 +462,7 @@ export function toneSnapshotFingerprint(snapshot){
 }
 export function toneProposalApprovalCommand(prompt){
  const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/[.!。]+$/,'');
- return /^(?:(?:setuju|approve|approved|yes|ya|oke|ok)(?:\s+(?:terapkan|apply|laksanakan|kirim))?|(?:terapkan|apply|laksanakan|kirim)(?:\s+(?:perubahan|proposal|rekomendasi|tweak|itu|ini|tadi))?|lanjutkan(?:\s+(?:perubahan|proposal))?)$/.test(value);
+ return /^(?:(?:setuju|approve|approved)(?:\s+(?:terapkan|apply|laksanakan|kirim))?|(?:terapkan|apply|laksanakan|kirim)(?:\s+(?:perubahan|proposal|rekomendasi|tweak|itu|ini|tadi))?|(?:apply|accept)\s+(?:changes|proposal|tweak)|lanjutkan(?:\s+(?:perubahan|proposal))?)$/.test(value);
 }
 export function toneProposalCancelCommand(prompt){
  return /^(?:batal|batalkan|jangan dulu|jangan diterapkan|cancel|discard|tolak proposal)[.!。]*$/i.test(String(prompt||'').trim());
@@ -2041,16 +2041,36 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   const prompt=ui.prompt.value.trim();
   if(!prompt){status('Enter a tone request first.','error');return;}
   const conversation=conversationContextText();
+  if(pendingToneProposal&&toneProposalCancelCommand(prompt)){
+   rememberConversation('user',prompt);message('user',prompt);
+   pendingToneProposal=null;
+   const reply='Usulan tweak dibatalkan. Tidak ada MIDI yang dikirim dan preset aktif tidak berubah.';
+   message('ai',reply);rememberConversation('assistant',reply);
+   ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Usulan dibatalkan.','idle');return;
+  }
+  if(pendingToneProposal&&toneProposalApprovalCommand(prompt)){
+   rememberConversation('user',prompt);message('user',prompt);
+   setBusy(true);status('Memeriksa ulang preset aktif sebelum menerapkan usulan…','busy');
+   try{
+    await applyPendingToneProposal(window.MG30AIToneBridge);
+    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+   }catch(error){
+    const detail=String(error?.message||error);
+    message('ai',detail);
+    status('Usulan belum diterapkan: '+detail,'error');
+   }finally{setBusy(false);ui.undo.disabled=!last;}
+   return;
+  }
   const contextualToneContinuation=isToneCreationFollowUp(prompt,conversation);
   const intent=classifyAssistantIntent(prompt,conversation);
-  activityMode=intent==='consultation'?'discussion':(intent==='tone_create'||intent==='tone_refine')?'tone':'generic';
-  toneMission=null;if(activityMode==='tone')beginToneMission(prompt,intent==='tone_create'||!isLocalToneRefinement(prompt));
+  activityMode=intent==='consultation'?'discussion':intent==='tone_create'?'tone':intent==='tone_refine'?'refinement':'generic';
+  toneMission=null;if(activityMode==='tone')beginToneMission(prompt,true);
   const resumePendingTone=Boolean(pendingToneApply&&/\b(lanjutkan|terapkan|apply|pasang|kirim|continue|resume)\b/i.test(prompt));
   const resumesImportedNamPlan=Boolean(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt);
   const keepToneSessionForContinuation=contextualToneContinuation&&Boolean(toneSession.sourcePrompt)&&conversation.includes(toneSession.sourcePrompt);
-  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation&&!resumePendingTone){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';pendingToneApply=null;}
+  if(intent==='tone_create'&&!resumesImportedNamPlan&&!keepToneSessionForContinuation&&!resumePendingTone){toneSession.intent=null;toneSession.architectProvider='';toneSession.sourcePrompt='';pendingToneApply=null;pendingToneProposal=null;}
   rememberConversation('user',prompt);
-  setBusy(true);message('user',prompt);status(activityMode==='discussion'?'GPT-5.6 Luna is thinking…':activityMode==='tone'?'GPT-6 Luna is preparing your preset…':'AI is processing your request…','busy');
+  setBusy(true);message('user',prompt);status(activityMode==='discussion'?'GPT-5.6 Luna is thinking…':activityMode==='tone'?'GPT-6 Luna is preparing your preset…':activityMode==='refinement'?'GPT-6 Luna is preparing a tweak proposal…':'AI is processing your request…','busy');
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
   try{
    if(audioCaptureActive){const captured=await finishAudioListening({askAi:false});if(captured)audioMetricsForRequest=captured;}
@@ -2066,6 +2086,16 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
    const bridge=window.MG30AIToneBridge;
    if(intent==='consultation'){await answerToneConversation(prompt,conversation,bridge);return;}
    if(!bridge)throw new Error('The MG-30 editor bridge is unavailable. Reload MG30 Studio.');
+   if(intent==='tone_refine'){
+    status('GPT-6 Luna is reading the active MG-30 preset and preparing a proposal…','busy');
+    const proposal=await makeToneRefinementProposal(prompt,bridge,conversation);
+    pendingToneProposal=proposal;
+    const proposalText=renderToneProposalText(proposal);
+    message('ai',proposalText);rememberConversation('assistant',proposalText);
+    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+    status('Usulan tweak siap. Menunggu persetujuan; belum ada MIDI yang dikirim.','success');
+    return;
+   }
    let preparedPlan=resumePendingTone?validateAiTonePlan(pendingToneApply,bridge.getCatalog?.()||[]):null;
    if(resumePendingTone&&!bridge.isConnected?.()){
     const guidance='Tone Plan sudah siap dan tidak perlu dibuat ulang. Hubungkan MG-30 melalui USB-MIDI, lalu kirim “terapkan tone” atau “lanjutkan”.';
