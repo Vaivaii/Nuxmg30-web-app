@@ -1145,7 +1145,7 @@ const next='chatgpt';
   message('ai',reply);rememberConversation('assistant',reply);status('Conversation updated. No device parameters were changed.','success');
   ui.prompt.value='';$('aiToneCount').textContent='0/1400';
  }
- function renderNamCandidates(detail){ function renderNamCandidates(detail){
+ function renderNamCandidates(detail){
   const tone=detail?.tone||{},models=Array.isArray(detail?.models)?detail.models:[];
   ui.namResults.hidden=false;ui.namWizard.hidden=true;
   ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>'+esc(tone.name||('TONE3000 tone '+detail.toneId))+'</strong><small>'+(tone.creator?'@'+esc(tone.creator)+' · ':'')+'AI destination: slot 10</small></div></div>'+
