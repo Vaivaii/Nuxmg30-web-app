@@ -126,7 +126,7 @@ test('complete new preset apply expands missing managed blocks to OFF and verifi
   assert.match(ai, /validated\.completePresetState=!localRefinement/);
   assert.match(ai, /bridge\.refreshSnapshot\(\)/);
   assert.match(ai, /compactNamConversation\(conversation,1200\)/);
-  assert.match(ai, /compactNamConversation\(conversation,1000\)/);
+  assert.match(ai, /compactNamConversation\(conversation,1400\)/);
   assert.match(html, /plan\.completePresetState\?BLOCKS\.slice\(0,9\)/);
   assert.match(html, /enabled:requested\.enabled===undefined\?true:requested\.enabled/);
   assert.match(html, /enabled:false,parameters:\{\}/);
@@ -784,8 +784,8 @@ test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route
  assert.match(discussion,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
  assert.match(discussion,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
  assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
- assert.match(discussion,/compactNamConversation\(conversation,1000\)/);
- assert.match(discussion,/slice\(0,900\)/);
+ assert.match(discussion,/compactNamConversation\(conversation,1400\)/);
+ assert.match(discussion,/compactToneContext\(catalog,snapshot\)/);
 });
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
  assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
@@ -858,7 +858,7 @@ test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only reque
 test('standalone NAM and consultation routes are separate from device-write operations',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('async function answerToneConversation'));
- assert.ok(source.includes('This is a DISCUSSION turn, not a Tone Plan request'));
+ assert.ok(source.includes('This is a DISCUSSION / TONE REVIEW turn'));
  assert.ok(source.includes("if(intent==='consultation')"));
  assert.ok(source.includes('async function searchNamCatalogForPrompt'));
  assert.ok(source.includes("if(intent==='nam_search')"));
@@ -1634,8 +1634,8 @@ test('ChatGPT discussion route bypasses Tone Plan JSON parser, Worker JSON route
  assert.match(discussion,/fastestReadyModel\('chatgpt',credential,'discussion'\)/);
  assert.match(discussion,/requestChatGptConversation\(\{bridge:window\.MG30ChatGPTBridge/);
  assert.doesNotMatch(discussion,/invokeWorkersAILightTask|askNamAIJson|parseJson|makePlan\(|applyPlan\(/);
- assert.match(discussion,/compactNamConversation\(conversation,1000\)/);
- assert.match(discussion,/slice\(0,900\)/);
+ assert.match(discussion,/compactNamConversation\(conversation,1400\)/);
+ assert.match(discussion,/AUTHORITATIVE LIVE MG-30 HARDWARE CATALOG/);
 });
 test('assistant classifies consultation, preset creation, refinement, audio analysis and NAM search',()=>{
  assert.equal(classifyAssistantIntent('Apa pengaruh Presence terhadap karakter amplifier?'),'consultation');
@@ -1708,7 +1708,7 @@ test('NAM capture type defaults to Amp + Cab and follows explicit Amp Only reque
 test('standalone NAM and consultation routes are separate from device-write operations',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('async function answerToneConversation'));
- assert.ok(source.includes('This is a DISCUSSION turn, not a Tone Plan request'));
+ assert.ok(source.includes('This is a DISCUSSION / TONE REVIEW turn'));
  assert.ok(source.includes("if(intent==='consultation')"));
  assert.ok(source.includes('async function searchNamCatalogForPrompt'));
  assert.ok(source.includes("if(intent==='nam_search')"));
@@ -2377,7 +2377,8 @@ test('Tone Plan and specialists receive exact MG-30 whitelist and the full avail
  assert.ok(specialistContext.includes('?models.map(model=>({name:model.name'));
  assert.doesNotMatch(specialistContext,/models\.slice\(0,24\)/);
  assert.ok(specialist.includes('HARDWARE WHITELIST: use only exact block IDs and exact model names'));
- assert.ok(source.includes('aiPreparePlan(plan)'));
+ const html=readFileSync(new URL('../www/index.html',import.meta.url),'utf8');
+ assert.ok(html.includes('aiPreparePlan(plan)'));
 });
 
 
