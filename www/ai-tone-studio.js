@@ -462,7 +462,7 @@ export function toneSnapshotFingerprint(snapshot){
 }
 export function toneProposalApprovalCommand(prompt){
  const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/[.!。]+$/,'');
- return /^(?:(?:setuju|approve|approved)(?:\s+(?:terapkan|apply|laksanakan|kirim))?|(?:terapkan|apply|laksanakan|kirim)(?:\s+(?:perubahan|proposal|rekomendasi|tweak|itu|ini|tadi))?|(?:apply|accept)\s+(?:changes|proposal|tweak)|lanjutkan(?:\s+(?:perubahan|proposal))?)$/.test(value);
+ return /^(?:(?:setuju|approve|approved)(?:\s+(?:terapkan|apply|laksanakan|kirim))?|(?:terapkan|apply|laksanakan|kirim)(?:\s+(?:perubahan|proposal|rekomendasi|tweak)(?:\s+(?:itu|ini|tadi))?|\s+(?:itu|ini|tadi))?|(?:apply|accept)\s+(?:changes|proposal|tweak)|lanjutkan(?:\s+(?:perubahan|proposal))?)$/.test(value);
 }
 export function toneProposalCancelCommand(prompt){
  return /^(?:batal|batalkan|jangan dulu|jangan diterapkan|cancel|discard|tolak proposal)[.!。]*$/i.test(String(prompt||'').trim());
