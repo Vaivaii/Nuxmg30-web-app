@@ -1973,13 +1973,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
    '\n\nCURRENT USER REQUEST:\n'+String(prompt||'').slice(0,700)+
    '\n\nReturn only a delta Tone Plan with one or more exact current block IDs and exact current models. Recommend only the smallest useful changes.';
   let raw;
-  try{
-   raw=await askLunaNamJson(system,user,'GPT-6 Luna proposing a focused current-tone refinement',720);
-  }catch(error){
-   logAiTokenUsage('chatgpt','gpt-6-luna','proposing a focused current-tone refinement',720,system,user,null,error);
-   throw error;
-  }
-  logAiTokenUsage('chatgpt',raw?.__aiModel||'gpt-6-luna','proposing a focused current-tone refinement',720,system,user,raw);
+  raw=await askLunaNamJson(system,user,'GPT-6 Luna proposing a focused current-tone refinement',720);
   let validated;
   try{
    validated=validateAiTonePlan(raw,catalog);
@@ -1992,7 +1986,6 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
     authoritative_catalog:compactToneContext(catalog,snapshot)
    });
    const corrected=await askLunaNamJson(correctionSystem,correctionUser,'correcting the focused tone refinement proposal',720);
-   logAiTokenUsage('chatgpt','gpt-6-luna','correcting the focused tone refinement proposal',720,correctionSystem,correctionUser,corrected);
    validated=validateAiTonePlan(corrected,catalog);
   }
   const currentById=new Map(snapshot.map(block=>[String(block?.id||'').toUpperCase(),block]));
