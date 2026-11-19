@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect, toneMissionArtworkMarkup, shouldRetryNoNamSpecialistError } from '../www/ai-tone-studio.js';
+import { isToneCreationFollowUp, resolveArtistToneGuidance, validateAiTonePlan, providerFallbackOrder, isRetryableProviderError, isLocalToneRefinement, compactToneArchitectIntent, shouldInvokeCriticalReviewer, toneArchitectSystemPrompt, toneLeadInstruction, responseLanguageInstruction, findDefaultGeminiModel, classifyAssistantIntent, inferNamCaptureType, shouldAutoImportNamForTone, estimateTokenCount, outputTokenBudgetForStage, shouldUseMultiAgent, isComplexToneRequest, shouldCooldownProvider, sanitizeNamProfileCandidates, sanitizeNamCaptureCandidates, normalizeNamSearchTerms, compactNamConversation, conciseNamRecommendationReason, orchestrateChatGptTonePlan, toneSpecialistToolDefinition, TONE_SPECIALIST_ROLES, shouldOfferToneSpecialist, requestChatGptConversation, selectChatGptAutoModel, requiresToneArchitect, toneMissionArtworkMarkup, shouldRetryNoNamSpecialistError, toneSnapshotFingerprint, toneProposalApprovalCommand, toneProposalCancelCommand } from '../www/ai-tone-studio.js';
 
 const catalog = [
   {
@@ -2302,4 +2302,80 @@ test('NAM-OFF specialist recovery keeps Gemini primary and does not alter NAM-ON
  assert.match(make,/resolveFreeProviderTeam\(\)/);
  assert.match(make,/minSuccessfulSpecialists:requiresExperts\?2:0/);
  assert.match(make,/minDistinctSpecialistProviders:requiresExperts\?2:0/);
+});
+
+
+test('review questions stay in discussion while imperative repair requests create proposal-only refinement flow',()=>{
+ assert.equal(classifyAssistantIntent('Apakah ada yang perlu diperbaiki?'),'consultation');
+ assert.equal(classifyAssistantIntent('Menurutmu ada yang perlu diperbaiki pada tone saya?'),'consultation');
+ assert.equal(classifyAssistantIntent('Apa yang kurang dari preset saya?'),'consultation');
+ assert.equal(classifyAssistantIntent('Coba perbaiki'),'tone_refine');
+ assert.equal(classifyAssistantIntent('Perbaiki jika preset saya tidak enak'),'tone_refine');
+ assert.equal(classifyAssistantIntent('Kurangi sedikit treble'),'tone_refine');
+ assert.equal(classifyAssistantIntent('Buatkan preset John Petrucci lead tone'),'tone_create');
+});
+
+test('tone proposal requires explicit approval or explicit cancel, not casual acknowledgement',()=>{
+ assert.equal(toneProposalApprovalCommand('SETUJU'),true);
+ assert.equal(toneProposalApprovalCommand('Terapkan rekomendasi tadi'),true);
+ assert.equal(toneProposalApprovalCommand('Apply changes'),true);
+ assert.equal(toneProposalApprovalCommand('Oke'),false);
+ assert.equal(toneProposalApprovalCommand('Ya'),false);
+ assert.equal(toneProposalApprovalCommand('Apakah ada yang perlu diperbaiki?'),false);
+ assert.equal(toneProposalCancelCommand('BATALKAN'),true);
+ assert.equal(toneProposalCancelCommand('Jangan dulu'),true);
+ assert.equal(toneProposalCancelCommand('Oke'),false);
+});
+
+test('tone snapshot fingerprint is stable for parameter key order and changes for any live value change',()=>{
+ const first=[
+  {id:'AMP',model:'Deluxe Rvb',enabled:true,parameters:{gain:35,bass:44}},
+  {id:'DLY',model:'Analog Delay',enabled:false,parameters:{time:30}}
+ ];
+ const same=[
+  {id:'AMP',model:'Deluxe Rvb',enabled:true,parameters:{bass:44,gain:35}},
+  {id:'DLY',model:'Analog Delay',enabled:false,parameters:{time:30}}
+ ];
+ const changed=[
+  {id:'AMP',model:'Deluxe Rvb',enabled:true,parameters:{bass:44,gain:36}},
+  {id:'DLY',model:'Analog Delay',enabled:false,parameters:{time:30}}
+ ];
+ assert.equal(toneSnapshotFingerprint(first),toneSnapshotFingerprint(same));
+ assert.notEqual(toneSnapshotFingerprint(first),toneSnapshotFingerprint(changed));
+});
+
+test('current-tone refinement is proposal-first, delta-only and guarded by live snapshot/catalog fingerprints',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const proposal=source.slice(source.indexOf('async function makeToneRefinementProposal'),source.indexOf('async function applyPendingToneProposal'));
+ const apply=source.slice(source.indexOf('async function applyPendingToneProposal'),source.indexOf('async function submit'));
+ const submit=source.slice(source.indexOf('async function submit'),source.indexOf('async function undo'));
+ const discussion=source.slice(source.indexOf('async function answerToneConversation'),source.indexOf('function renderNamCandidates'));
+ assert.match(proposal,/await bridge\\.refreshSnapshot\\(\\)/);
+ assert.match(proposal,/askLunaNamJson\\(system,user,'GPT-6 Luna proposing a focused current-tone refinement'/);
+ assert.match(proposal,/validateAiTonePlan\\(raw,catalog\\)/);
+ assert.match(proposal,/String\\(change\\.model\\|\\|''\\)!==String\\(current\\.model\\|\\|''\\)/);
+ assert.doesNotMatch(proposal,/invokeWorkerLightTask|runToneSpecialistTask|bridge\\.applyPlan/);
+ assert.match(apply,/toneSnapshotFingerprint\\(liveSnapshot\\)!==proposal\\.snapshotSignature/);
+ assert.match(apply,/toneCatalogFingerprint\\(liveCatalog\\)!==proposal\\.catalogSignature/);
+ assert.match(apply,/await bridge\\.applyPlan\\(plan\\)/);
+ assert.ok(submit.indexOf("if(intent==='tone_refine'){")<submit.indexOf("shouldAutoImportNamForTone(intent"));
+ assert.match(submit,/pendingToneProposal&&toneProposalApprovalCommand\\(prompt\\)/);
+ assert.match(submit,/applyPendingToneProposal\\(window\\.MG30AIToneBridge\\)/);
+ assert.match(submit,/pendingToneProposal&&toneProposalCancelCommand\\(prompt\\)/);
+ assert.match(discussion,/compactToneContext\\(catalog,snapshot\\)/);
+ assert.match(discussion,/Do not generate JSON, a Tone Plan, MIDI, or make device changes/);
+ assert.doesNotMatch(discussion,/askLunaNamJson|runToneSpecialistTask|bridge\\.applyPlan/);
+});
+
+test('Tone Plan and specialists receive exact MG-30 whitelist and the full available model list',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const planSystem=source.slice(source.indexOf('function systemPrompt'),source.indexOf('function userText'));
+ const specialistContext=source.slice(source.indexOf('function compactSpecialistDeviceContext'),source.indexOf('async function runToneSpecialistTask'));
+ const specialist=source.slice(source.indexOf('async function runToneSpecialistTask'),source.indexOf('async function askNamAIJson'));
+ assert.match(planSystem,/HARDWARE WHITELIST/);
+ assert.match(planSystem,/PARAMETER WHITELIST/);
+ assert.match(specialistContext,/\?models\\.map\\(model=>\\(\\{name:model\\.name/);
+ assert.doesNotMatch(specialistContext,/models\\.slice\\(0,24\\)/);
+ assert.match(specialist,/HARDWARE WHITELIST: use only exact block IDs and exact model names/);
+ assert.match(source,/aiPreparePlan\\(plan\\)/);
 });
