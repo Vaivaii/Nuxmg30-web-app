@@ -618,3 +618,18 @@ The follow-up implementation addresses two live MG-30 regressions: review questi
 Detailed implementation contract, regression cases, and hardware acceptance checklist: `docs/research/TONE_CONTEXT_HARDWARE_WHITELIST_AND_PROPOSAL_FIRST_2026-11-19.md`.
 
 CI status and APK details are recorded in that research note after successful build artifact verification. Physical MG-30 hardware acceptance remains separate from CI.
+
+
+### Final validation — hardware context and proposal-first flow — 2026-11-19
+
+- GitHub Actions run **#1116**, run ID `44465846388`, application source commit `f5caff9d247287e2ea7f36ce1635c7d318a2909b`: **success**.
+- JavaScript syntax validation: passed.
+- Protocol regression tests: **682 passed, 0 failed**.
+- Capacitor Android generation and USB Audio plugin initialization: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** in 1m 27s.
+- Artifact: `MG30-Studio-debug-APK`, ID `14502401276`.
+- Artifact ZIP SHA-256: `192775e836a60d9cfa60b68997a01c44050c2baa17600435aa5a6505609235f5`.
+- Extracted APK SHA-256: `c9ed12ea5f6a2496cfaee3a9a704a9700a80d0810a4e59047218884e90c482f5`.
+- Local ZIP and APK internal integrity checks: passed.
+- Detailed intent, live-catalogue whitelist, proposal approval, stale-state guard, selector quantization, protected integrations and hardware acceptance checklist are in `docs/research/TONE_CONTEXT_HARDWARE_WHITELIST_AND_PROPOSAL_FIRST_2026-11-19.md`.
+- The APK is a debug build. Physical MG-30 acceptance (new preset readback, discussion without writes, proposal approval, stale proposal rejection, NAM-on protection) remains to be tested by the user.
