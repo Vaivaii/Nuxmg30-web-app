@@ -2375,6 +2375,8 @@ test('Tone Plan and specialists receive exact MG-30 whitelist and the full avail
  assert.ok(planSystem.includes('HARDWARE WHITELIST'));
  assert.ok(planSystem.includes('PARAMETER WHITELIST'));
  assert.ok(specialistContext.includes('?models.map(model=>({name:model.name'));
+ assert.ok(specialistContext.includes('parameters:(model.parameters||[]).map(parameter=>parameter.kind===\'discrete\'?'));
+ assert.ok(specialistContext.includes('choices:(parameter.choices||[]).map(choice=>choice.value)'));
  assert.doesNotMatch(specialistContext,/models\.slice\(0,24\)/);
  assert.ok(specialist.includes('HARDWARE WHITELIST: use only exact block IDs and exact model names'));
  const html=readFileSync(new URL('../www/index.html',import.meta.url),'utf8');
