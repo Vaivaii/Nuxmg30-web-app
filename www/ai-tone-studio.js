@@ -1926,6 +1926,116 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   if(namSearchTerms)Object.defineProperty(validated,'search_terms',{value:namSearchTerms,enumerable:false,configurable:false});
   return validated;
  }
+
+ function toneCatalogFingerprint(catalog){
+  return JSON.stringify((Array.isArray(catalog)?catalog:[]).map(block=>({
+   id:String(block?.id||'').trim().toUpperCase(),
+   currentModel:String(block?.currentModel||''),
+   models:(block?.models||[]).map(model=>({
+    name:String(model?.name||''),kind:String(model?.kind||''),slot:model?.slot??null,
+    parameters:(model?.parameters||[]).map(parameter=>({
+     key:String(parameter?.key||''),kind:String(parameter?.kind||'range'),
+     choices:(parameter?.choices||[]).map(choice=>Number(choice.value))
+    }))
+   }))
+  })));
+ }
+ function renderToneProposalText(proposal){
+  const plan=proposal?.plan||{},baseline=proposal?.baselineSnapshot||[];
+  const rows=(plan.blocks||[]).map(block=>{
+   const id=String(block.id||'').toUpperCase();
+   const current=baseline.find(item=>String(item?.id||'').toUpperCase()===id);
+   const changes=Object.entries(block.parameters||{}).map(([key,value])=>{
+    const before=current?.parameters?.[key];
+    return key+': '+(before===undefined?'(nilai belum terbaca)':before)+' → '+value;
+   });
+   if(block.enabled!==undefined&&Boolean(block.enabled)!==Boolean(current?.enabled))changes.push('Status: '+(current?.enabled?'ON':'OFF')+' → '+(block.enabled?'ON':'OFF'));
+   return id+' · '+block.model+(changes.length?'\n  '+changes.join('\n  '):'');
+  });
+  const noteRows=Array.isArray(plan.notes)?plan.notes.filter(Boolean).map(note=>'• '+String(note)):[];
+  return 'USULAN TWEAK PRESET AKTIF\n'+String(plan.summary||'Perubahan kecil pada tone saat ini.')+
+   '\n\nPerubahan yang diusulkan:\n'+(rows.length?rows.join('\n\n'):'Tidak ada perubahan parameter yang tervalidasi.')+
+   (noteRows.length?'\n\nCatatan:\n'+noteRows.join('\n'):'')+
+   '\n\nBelum ada MIDI yang dikirim dan preset belum diubah.\nKetik SETUJU atau TERAPKAN PERUBAHAN untuk menerapkan usulan ini. Ketik BATALKAN untuk membuangnya.';
+ }
+ async function makeToneRefinementProposal(prompt,bridge,conversation=''){
+  if(!bridge?.isConnected?.())throw new Error('Hubungkan MG-30 melalui USB-MIDI dahulu agar saya dapat membaca preset aktif sebelum membuat usulan tweak.');
+  if(typeof bridge.refreshSnapshot!=='function')throw new Error('Readback MG-30 tidak tersedia. Tidak ada usulan yang dibuat.');
+  await bridge.refreshSnapshot();
+  const catalog=bridge.getCatalog?.()||[],snapshot=bridge.getSnapshot?.()||[];
+  if(!catalog.length||!snapshot.length)throw new Error('Katalog atau snapshot preset aktif MG-30 kosong. Sinkronkan perangkat sebelum meminta tweak.');
+  const baselineSnapshot=clone(snapshot),snapshotSignature=toneSnapshotFingerprint(baselineSnapshot),catalogSignature=toneCatalogFingerprint(catalog);
+  const system=systemPrompt(catalog,snapshot,false)+
+   '\n\nCURRENT PRESET REFINEMENT — PROPOSAL ONLY. You are GPT-6 Luna. Do not create a new preset, do not redesign the signal chain, and do not call external specialists. Evaluate only the currently active MG-30 edit buffer. Return a small delta Tone Plan proposal using the exact current block models. Keep all block models unchanged. Do not change block ON/OFF unless the user explicitly asks for it. Do not add, remove, reorder or replace blocks. Do not create new preset state. Every block ID, model name and parameter key must be copied exactly from the supplied live catalog. Every parameter must belong to that exact current model. If a parameter is not present, do not invent it. Preserve NAM/AMP slot 10, IR, Send/Return, Volume, scenes, MIDI mappings, signal-chain order, preset slot and all unrelated settings. Keep completePresetState false. The output is only a recommendation; no MIDI or device write will occur now. Include short Indonesian notes explaining each musical recommendation.';
+  const recent=compactNamConversation(conversation,1400);
+  const user=(recent?'RECENT TONE DISCUSSION:\n'+recent+'\n\n':'')+
+   'CURRENT PRESET BASELINE (authoritative live snapshot):\n'+JSON.stringify(snapshot)+
+   '\n\nCURRENT USER REQUEST:\n'+String(prompt||'').slice(0,700)+
+   '\n\nReturn only a delta Tone Plan with one or more exact current block IDs and exact current models. Recommend only the smallest useful changes.';
+  let raw;
+  try{
+   raw=await askLunaNamJson(system,user,'GPT-6 Luna proposing a focused current-tone refinement',720);
+  }catch(error){
+   logAiTokenUsage('chatgpt','gpt-6-luna','proposing a focused current-tone refinement',720,system,user,null,error);
+   throw error;
+  }
+  logAiTokenUsage('chatgpt',raw?.__aiModel||'gpt-6-luna','proposing a focused current-tone refinement',720,system,user,raw);
+  let validated;
+  try{
+   validated=validateAiTonePlan(raw,catalog);
+  }catch(error){
+   const correctionSystem=system+'\n\nCORRECTION: The previous proposal failed exact hardware catalogue validation. Return a corrected delta only. Use only exact current block IDs, exact current model names and parameter keys listed below. Do not change any model. Omit any unsupported or uncertain control. If there is no valid useful delta, return one safe supported small change or state the limitation in notes without fabricating a parameter.';
+   const correctionUser=JSON.stringify({
+    original_request:prompt,
+    validation_error:String(error?.message||error).slice(0,400),
+    invalid_proposal:raw,
+    authoritative_catalog:compactToneContext(catalog,snapshot)
+   });
+   const corrected=await askLunaNamJson(correctionSystem,correctionUser,'correcting the focused tone refinement proposal',720);
+   logAiTokenUsage('chatgpt','gpt-6-luna','correcting the focused tone refinement proposal',720,correctionSystem,correctionUser,corrected);
+   validated=validateAiTonePlan(corrected,catalog);
+  }
+  const currentById=new Map(snapshot.map(block=>[String(block?.id||'').toUpperCase(),block]));
+  for(const change of validated.blocks){
+   const id=String(change.id||'').toUpperCase(),current=currentById.get(id);
+   if(!current)throw new Error('Usulan menyentuh blok '+id+' yang tidak ada pada snapshot aktif.');
+   if(String(change.model||'')!==String(current.model||''))throw new Error('Usulan mencoba mengganti model '+id+'. Untuk menjaga preset aktif, tweak hanya boleh mengubah parameter pada model yang sedang digunakan.');
+   if(activeNamContext&&id==='AMP')throw new Error('AMP/NAM slot 10 dikunci selama tweak. Usulan tidak boleh mengubah sumber AMP NAM.');
+  }
+  if(validated.completePresetState)throw new Error('Proposal refinement tidak boleh menjadi preset lengkap.');
+  validated.completePresetState=false;
+  if(!validated.blocks.length)throw new Error('GPT-6 Luna tidak menemukan perubahan parameter yang valid untuk diusulkan.');
+  return {plan:validated,baselineSnapshot,snapshotSignature,catalogSignature,createdAt:Date.now(),prompt:String(prompt||'')};
+ }
+ async function applyPendingToneProposal(bridge){
+  const proposal=pendingToneProposal;
+  if(!proposal)throw new Error('Tidak ada usulan tweak yang menunggu persetujuan.');
+  if(!bridge?.isConnected?.())throw new Error('Hubungkan MG-30 via USB-MIDI dahulu. Usulan tetap tersimpan dan belum diterapkan.');
+  await bridge.refreshSnapshot();
+  const liveSnapshot=bridge.getSnapshot?.()||[],liveCatalog=bridge.getCatalog?.()||[];
+  if(toneSnapshotFingerprint(liveSnapshot)!==proposal.snapshotSignature){
+   pendingToneProposal=null;
+   throw new Error('Preset atau parameter pada MG-30 sudah berubah sejak usulan dibuat. Usulan lama dibatalkan agar tidak menimpa perubahan baru. Minta analisis/usulan baru dari preset yang sekarang.');
+  }
+  if(toneCatalogFingerprint(liveCatalog)!==proposal.catalogSignature){
+   pendingToneProposal=null;
+   throw new Error('Katalog hardware berubah sejak usulan dibuat. Usulan lama dibatalkan; buat usulan baru berdasarkan katalog terkini.');
+  }
+  const plan=validateAiTonePlan(proposal.plan,liveCatalog);
+  if(plan.completePresetState||plan.blocks.some(block=>{
+   const current=liveSnapshot.find(item=>String(item?.id||'').toUpperCase()===String(block.id||'').toUpperCase());
+   return !current||String(block.model||'')!==String(current.model||'')||(activeNamContext&&String(block.id).toUpperCase()==='AMP');
+  }))throw new Error('Usulan tidak lagi memenuhi aturan delta-only hardware. Tidak ada MIDI yang dikirim.');
+  const result=await bridge.applyPlan(plan);
+  pendingToneProposal=null;
+  last={before:result.before,after:result.after,blocks:result.blocks};
+  ui.undo.disabled=false;
+  const rows=(result.blockResults||[]).map(item=>item.id+' '+(item.enabled?'ON':'OFF')+' ('+item.status+')').join(' · ');
+  const reply='Usulan tweak telah diterapkan.\nReadback MG-30: '+(result.verified?'cocok dan terverifikasi':'belum terverifikasi')+'\n'+(rows||'Tidak ada blok berubah.');
+  message('ai',reply);rememberConversation('assistant',reply);
+  status(result.verified?'Tweak diterapkan dan diverifikasi melalui readback MG-30.':'Perintah tweak terkirim; readback belum terverifikasi.','success');
+  return result;
+ }
  async function submit(){
   if(busy)return;
   const prompt=ui.prompt.value.trim();
