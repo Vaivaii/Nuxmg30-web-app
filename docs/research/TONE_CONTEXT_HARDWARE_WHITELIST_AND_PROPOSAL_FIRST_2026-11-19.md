@@ -54,10 +54,15 @@ Branch: `feature/tone-context-proposal-first`
 GitHub Actions run **#1116**, run ID `44465846388`, head commit `f5caff9d247287e2ea7f36ce1635c7d318a2909b`:
 
 - JavaScript syntax validation: passed.
-- Protocol regression tests: passed (see workflow log for exact count).
+- Protocol regression tests: **682 passed, 0 failed**.
 - Capacitor Android project generation and USB Audio plugin initialization: passed.
-- Gradle `assembleDebug`: pending at the time this note was first written.
-- APK artifact and checksum: to be appended after successful artifact extraction and local integrity validation.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** in 1m 27s.
+- Artifact upload: passed; artifact `MG30-Studio-debug-APK`, ID `14502401276`.
+- Artifact ZIP size: 4,389,741 bytes; SHA-256: `192775e836a60d9cfa60b68997a01c44050c2baa17600435aa5a6505609235f5`.
+- Extracted `app-debug.apk`: 4,766,672 bytes; SHA-256: `c9ed12ea5f6a2496cfaee3a9a704a9700a80d0810a4e59047218884e90c482f5`.
+- Local ZIP integrity test: passed; APK file type and internal ZIP integrity test: passed.
+- This APK contains the application source at commit `f5caff9d247287e2ea7f36ce1635c7d318a2909b`. The later commits on this branch only add project documentation.
+- No Cloudflare Worker source or deployment change was part of this build.
 
 ## Hardware acceptance still required
 
