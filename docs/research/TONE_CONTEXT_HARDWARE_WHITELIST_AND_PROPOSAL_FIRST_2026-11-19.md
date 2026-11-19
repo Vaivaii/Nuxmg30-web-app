@@ -76,3 +76,15 @@ After installing the final APK, perform these checks on the original MG-30 Gen 2
 4. Approve with `SETUJU` or `TERAPKAN PERUBAHAN`. Confirm readback verification.
 5. Generate a proposal, manually change a device parameter, then approve the stale proposal. Confirm it is rejected and does not overwrite the manual change.
 6. Repeat discussion/refinement with NAM active. Confirm AMP/NAM slot 10, IR, and MIDI mappings remain unchanged.
+
+
+## Physical MG-30 acceptance — user-confirmed — 2026-11-19
+
+The user reports that **all hardware acceptance checks passed** on the installed APK:
+
+- NAM-OFF preset creation completed successfully.
+- Discussion/review of the active tone stayed in consultation mode and did not create a new preset.
+- Tone refinement produced a proposal first; applying the approved proposal worked.
+- The user reports all tested flows succeeded on the physical device.
+
+This closes the previously pending user-side hardware acceptance checklist for this build. Preserve the tested behavior as a regression baseline. Do not alter NAM, IR Collection, MIDI mappings, or the established provider routing without a separate explicit request.
