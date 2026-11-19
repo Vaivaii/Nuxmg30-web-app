@@ -1519,7 +1519,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    const models=(block.models||[]);
    const chosenName=String(proposedBlock?.model||current?.model||'');
    const selected=['amp_cabinet_specialist','effects_specialist'].includes(role)
-    ?models.map(model=>({name:model.name,kind:model.kind||'',slot:model.slot??null}))
+    ?models.map(model=>({name:model.name,kind:model.kind||'',slot:model.slot??null,parameters:(model.parameters||[]).map(parameter=>parameter.kind==='discrete'?{key:parameter.key,kind:'discrete',choices:(parameter.choices||[]).map(choice=>choice.value)}:{key:parameter.key,kind:'range',min:0,max:100})}))
     :models.filter(model=>model.name===chosenName).slice(0,1).map(model=>({
       name:model.name,kind:model.kind||'',slot:model.slot??null,
       parameters:(model.parameters||[]).map(parameter=>parameter.kind==='discrete'
