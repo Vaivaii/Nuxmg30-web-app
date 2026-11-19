@@ -5832,12 +5832,19 @@ function aiPreparePlan(plan){
   const controls=parameterControls(blockIndex,modelIndex).filter(control=>aiIsWritableControl(blockIndex,control));
   const allowed=new Map(controls.map(control=>[control.param,control])),parameters=[];
   for(const [key,raw] of Object.entries(proposed.parameters)){
-   const control=allowed.get(key),value=Number(raw);
+   const control=allowed.get(key);let value=Number(raw);
    if(!control)throw new Error('Parameter '+key+' tidak tersedia pada '+block.id+'/'+modelName+'.');
    if(!Number.isFinite(value))throw new Error('Nilai '+key+' bukan angka.');
    if(isDiscreteSwitch(control)){
     if(!control.choices?.some(choice=>Number(choice.value)===value))throw new Error('Pilihan '+value+' tidak valid untuk '+block.id+'.'+key+'.');
-   }else if(value<0||value>100)throw new Error('Nilai '+block.id+'.'+key+' harus 0–100.');
+   }else{
+    if(value<0||value>100)throw new Error('Nilai '+block.id+'.'+key+' harus 0–100.');
+    // MG-30 selectors such as SUBD are normalized to 0..100 in the editor,
+    // but the hardware stores only PARAMETER_MAX steps. Quantize before both
+    // writing and readback comparison so a value such as 52 does not target
+    // an unrepresentable midpoint when the actual stored selector value is 50.
+    value=quantizeParameterValue(key,value);
+   }
    if(!modelChanged&&!Object.prototype.hasOwnProperty.call(state.values,key))throw new Error('Nilai sebelumnya untuk '+block.id+'.'+key+' belum terbaca dari pedal. Sinkronkan preset lebih dulu agar Undo aman.');
    const cc=MIDI_PARAM_CC[blockIndex][control.ccIndex];
    parameters.push({key,control,value,cc,rawValue:isDiscreteSwitch(control)?value:encodeParameterValue(key,value)});
