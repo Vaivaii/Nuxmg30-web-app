@@ -601,3 +601,20 @@ Work branch: `feature/worker-ai-nam-query-routing`, based on `feature/worker-v1.
 - ZIP integrity check and APK archive integrity check: passed.
 - The Worker source and Cloudflare deployment were not changed in this implementation; the build packages the updated Android client.
 - Physical MG-30 live NAM search/import and hardware validation remain separate acceptance checks; CI/build success does not claim those hardware checks were performed.
+
+
+---
+
+## Tone context and proposal-first refinement checkpoint — 2026-11-19
+
+The follow-up implementation addresses two live MG-30 regressions: review questions being misclassified as preset actions, and hardware readback mismatch for discrete selector parameters such as `DLY.subd`.
+
+- Review questions now stay in GPT-5.6 discussion and include the current editor snapshot plus complete live catalogue; they cannot invoke specialists, create a Tone Plan, or write MIDI.
+- "Coba perbaiki" and other imperative refinements use GPT-6 Luna to produce a validated delta-only proposal from the current active preset. The user sees the recommendation first; explicit `SETUJU` / `TERAPKAN PERUBAHAN` is required before MIDI. A stale proposal is rejected if either the device snapshot or catalogue changes before approval.
+- New preset and specialist prompts now use exact device model/parameter whitelists. Amp & Cabinet and Effects specialists receive all available models and their exact writable parameter keys/discrete choices; the prior 24-model truncation is removed.
+- `aiPreparePlan` quantizes normalized discrete selectors with `quantizeParameterValue` before preparing the MIDI write and readback target. No CC mapping changes.
+- NAM-OFF recovery remains based on Gemini primary → Groq → OpenRouter → Cloudflare fallback. NAM query routing, Luna NAM profile/capture choices, slot-10 import, IR, MIDI, USB-MIDI and USB Audio remain protected.
+
+Detailed implementation contract, regression cases, and hardware acceptance checklist: `docs/research/TONE_CONTEXT_HARDWARE_WHITELIST_AND_PROPOSAL_FIRST_2026-11-19.md`.
+
+CI status and APK details are recorded in that research note after successful build artifact verification. Physical MG-30 hardware acceptance remains separate from CI.
