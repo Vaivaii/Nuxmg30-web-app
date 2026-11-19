@@ -421,10 +421,14 @@ export function classifyAssistantIntent(prompt,conversation=''){
  const audioTopic=/\b(audio|tone|suara|gitar|guitar|current|sekarang|ini|rekaman|recording)\b/i.test(value);
  const change=/\b(tweak|adjust|fix|improv(?:e|ement)|change|modify|reduce|increase|raise|lower|less|more|make it|kurangi|kurangin|tambah|naikkan|turunkan|ubah|perbaiki|haluskan|lembutkan|buat lebih|lebih\s+(hangat|gelap|terang|bright|lembut|sustain|gain|body|panjang|pendek)|kurang\s+(hangat|body|sustain|gain))\b/i.test(value);
  const toneProblem=/\b(too bright|too muddy|too harsh|too fizzy|too thin|too boomy|terlalu (tajam|bright|muddy|tipis|boomy|keras|terang)|kurang (hangat|body|sustain|gain)|berlebihan)\b/i.test(value);
- const question=/\b(apa|apakah|kenapa|mengapa|bagaimana|gimana|jelaskan|bedanya|perbedaan|what|why|how|explain|difference|does|do you|can you explain|should i)\b/i.test(value)||/[?？]$/.test(value);
+ const question=/\b(apa|apakah|kenapa|mengapa|bagaimana|gimana|jelaskan|bedanya|perbedaan|what|why|how|explain|difference|does|do you|can you explain|should i|menurutmu)\b/i.test(value)||/[?？]$/.test(value);
+ const reviewQuestion=question&&(
+  /\b(apakah|apa|menurutmu|menurut anda|what|anything|any|should i|do you think)\b[\s\S]{0,100}\b(ada|perlu|bisa|could|should|need|needs|to)\b[\s\S]{0,70}\b(diperbaiki|improv(?:e|ed|ement)|fix(?:ed)?|adjust(?:ed)?|tweak(?:ed)?|diubah|ditingkatkan|kurang|better)\b/i.test(value)||
+  /\b(apa yang kurang|apa kekurangannya|ada yang kurang|anything to improve|anything to fix|what could be improved|what needs improvement)\b/i.test(value)
+ );
  if(analysis&&audioTopic&&!change)return 'audio_analyze';
- if(change)return 'tone_refine';
- if(isToneCreationFollowUp(prompt,conversation))return 'tone_create';
+ if(reviewQuestion)return 'consultation';
+ if(change)return 'tone_refine'; if(isToneCreationFollowUp(prompt,conversation))return 'tone_create';
  if(question)return 'consultation';
  if(toneProblem)return 'tone_refine';
  if(/\b(create|generate|build|make|design|buat(?:kan)?|bikin)\b[\s\S]{0,45}\b(preset|tone|patch|sound|suara)\b|\b(preset|tone|patch)\b[\s\S]{0,35}\b(for|untuk|ala|inspired|inspired by|bergaya)\b/i.test(value))return 'tone_create';
@@ -447,6 +451,23 @@ export function shouldRetryNoNamSpecialistError(error,namModeEnabled,provider){
  if([500,502,503,504].includes(status))return true;
  return /provider did not return a json tone plan|returned no structured json result|does not contain a json tone plan|unexpected end of json input|invalid json response/i.test(String(error?.message||error||''));
 }
+export function toneSnapshotFingerprint(snapshot){
+ const rows=Array.isArray(snapshot)?snapshot:[];
+ return JSON.stringify(rows.map(block=>({
+  id:String(block?.id||'').trim().toUpperCase(),
+  model:String(block?.model||''),
+  enabled:Boolean(block?.enabled),
+  parameters:Object.fromEntries(Object.entries(block?.parameters||{}).sort(([a],[b])=>a.localeCompare(b)))
+ })));
+}
+export function toneProposalApprovalCommand(prompt){
+ const value=String(prompt||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/[.!。]+$/,'');
+ return /^(?:(?:setuju|approve|approved|yes|ya|oke|ok)(?:\s+(?:terapkan|apply|laksanakan|kirim))?|(?:terapkan|apply|laksanakan|kirim)(?:\s+(?:perubahan|proposal|rekomendasi|tweak|itu|ini|tadi))?|lanjutkan(?:\s+(?:perubahan|proposal))?)$/.test(value);
+}
+export function toneProposalCancelCommand(prompt){
+ return /^(?:batal|batalkan|jangan dulu|jangan diterapkan|cancel|discard|tolak proposal)[.!。]*$/i.test(String(prompt||'').trim());
+}
+
 function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  const lines=[
  'You are a live tone editor for the original NUX MG-30 Gen 2 firmware 6.0.x, never MKII.',
@@ -460,6 +481,8 @@ function systemPrompt(catalog,snapshot,review,toneGuidance=''){
  'Rotary/selector values are normalized 0..100. Discrete controls must use an exact numeric choice from the catalog.',
  'When changing model, include every writable parameter for that model. When keeping the current model, include only parameters to change.',
  'Never invent models, parameter names, effect identifiers, MIDI CC values or unsupported features.',
+ 'HARDWARE WHITELIST: The complete APP CATALOG below is the only source of valid block IDs, model names and writable parameter IDs. Copy every identifier exactly. Artist rigs, commercial amplifier names and external gear are musical references only, never MG-30 model names unless the exact name appears in this catalogue. If a requested sound has no exact or close catalogue option, select the closest exact listed model or explain the limitation; never fabricate a model.',
+ 'PARAMETER WHITELIST: Every parameter key must exist under the exact chosen model in APP CATALOG. Do not copy a key from another model in the same block. Do not infer an alias, dropdown choice, CC, block ID or value. If unsure, omit the change and explain it in notes.',
  'Never change IR/User/Third Party/Collection IR, NAM internal parameters, Send/Return, Volume, scene, preset slot, MIDI mapping or signal-chain order.',
  'The AMP catalog may expose NAM Slot 10 as a selection-only model. When installed NAM context is supplied, do not propose any AMP block; the application selects imported slot 10 deterministically. Never write NAM internal controls and never select NAM slots 1–9.',
  'Do not output MIDI, SysEx, preset bytes or import instructions. The app validates and writes parameter changes through its current editor path.',
@@ -785,7 +808,7 @@ async function init(){
    ui.usageAgents.innerHTML=renderUsageRows(aiUsage.tasks);
   };
  const toneSession={intent:null,architectProvider:'',sourcePrompt:''};
- let pendingToneApply=null;
+ let pendingToneApply=null,pendingToneProposal=null;
  const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>8)dialogueContext.shift();};
  const conversationContextText=()=>dialogueContext.slice(-8).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null;
@@ -1080,19 +1103,15 @@ const next='chatgpt';
  }
 
   async function answerToneConversation(prompt,conversation='',bridge=null){
-  const system='You are ChatGPT, the primary conversational guitar tone partner for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' This is a DISCUSSION turn, not a Tone Plan request. Answer in natural Indonesian prose (or the user language). Use the recent conversation to resolve short references such as “yang ini”, “kalau yang tadi”, and “bagaimana dengan itu”. Explain tone, amp, NAM, IR, EQ, effects, gain staging, dynamics and practical trade-offs. Do not return JSON, code, a preset, a Tone Plan, parameter commands or MIDI. Do not claim any settings changed. Do not call specialists for ordinary discussion. Ask at most one concise follow-up only when needed.';
+  const system='You are GPT-5.6 Luna, the conversational guitar-tone partner for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' This is a DISCUSSION / TONE REVIEW turn, never a preset-generation or device-edit request. Answer in natural prose. Use the recent discussion to understand which current preset and sound the user means. Read the supplied live MG-30 snapshot and exact hardware catalogue before recommending anything. When asked “apa yang perlu diperbaiki?”, evaluate the existing active block models, enabled states and current parameter values, then offer specific, modest recommendations using only parameter IDs that exist on the exact selected hardware models. Distinguish what can be inferred from the editor state from what would require an audio recording/listening test; never claim to have heard the tone unless audio evidence is supplied. Do not generate JSON, a Tone Plan, MIDI, or make device changes. Do not call specialists for discussion. Tell the user they can ask for a focused proposal when ready; changes require a separate explicit approval step.';
+  const catalog=bridge?.getCatalog?.()||[];
   const snapshot=bridge?.getSnapshot?.()||[];
-  const compactState=snapshot.slice(0,8).map(block=>({
-   id:String(block?.id||'').slice(0,12),
-   model:String(block?.model||'').slice(0,48),
-   enabled:Boolean(block?.enabled),
-   parameters:Object.fromEntries(Object.entries(block?.parameters||{}).slice(0,5).map(([key,value])=>[String(key).slice(0,24),value]))
-  }));
-  const recent=compactNamConversation(conversation,1000);
-  const stateText=JSON.stringify(compactState).slice(0,900);
+  const hardware=compactToneContext(catalog,snapshot);
+  const recent=compactNamConversation(conversation,1400);
+  const hardwareText=JSON.stringify(hardware);
   const user=(recent?'RECENT DISCUSSION:\n'+recent+'\n\n':'')+
-   (stateText&&stateText!=='[]'?'CURRENT MG-30 EDITOR STATE (compact):\n'+stateText+'\n\n':'')+
-   'LATEST USER MESSAGE:\n'+String(prompt||'').slice(0,500)+'\n\nAnswer this discussion turn naturally. No device changes.';
+   (hardwareText&&hardwareText!=='{}'?'AUTHORITATIVE LIVE MG-30 HARDWARE CATALOG + CURRENT EDITOR STATE (exact IDs, models, parameter whitelist and values):\n'+hardwareText+'\n\n':'')+
+   'LATEST USER MESSAGE:\n'+String(prompt||'').slice(0,700)+'\n\nAnswer as a tone discussion only. Make recommendations in prose; no device writes.';
   let reply='';
   {
    const credential=await secret('chatgpt');
@@ -1126,7 +1145,7 @@ const next='chatgpt';
   message('ai',reply);rememberConversation('assistant',reply);status('Conversation updated. No device parameters were changed.','success');
   ui.prompt.value='';$('aiToneCount').textContent='0/1400';
  }
- function renderNamCandidates(detail){
+ function renderNamCandidates(detail){ function renderNamCandidates(detail){
   const tone=detail?.tone||{},models=Array.isArray(detail?.models)?detail.models:[];
   ui.namResults.hidden=false;ui.namWizard.hidden=true;
   ui.namResults.innerHTML='<div class="ai-tone-nam-results-head"><div><strong>'+esc(tone.name||('TONE3000 tone '+detail.toneId))+'</strong><small>'+(tone.creator?'@'+esc(tone.creator)+' · ':'')+'AI destination: slot 10</small></div></div>'+
@@ -1500,7 +1519,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    const models=(block.models||[]);
    const chosenName=String(proposedBlock?.model||current?.model||'');
    const selected=['amp_cabinet_specialist','effects_specialist'].includes(role)
-    ?models.slice(0,24).map(model=>({name:model.name,kind:model.kind||'',slot:model.slot??null}))
+    ?models.map(model=>({name:model.name,kind:model.kind||'',slot:model.slot??null}))
     :models.filter(model=>model.name===chosenName).slice(0,1).map(model=>({
       name:model.name,kind:model.kind||'',slot:model.slot??null,
       parameters:(model.parameters||[]).map(parameter=>parameter.kind==='discrete'
@@ -1550,7 +1569,7 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    throw new Error('This specialist needs one to four valid MG-30 block IDs from the current catalogue.');
   if(role==='guitar_input_specialist'&&blockIds.length&&!deviceContext.length)
    throw new Error('The supplied MG-30 block IDs are not present in the current catalogue.');
-  const system='You are the '+role.replaceAll('_',' ')+' specialist for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' '+spec.purpose+' You are advisory only. ChatGPT is the orchestrator and final decision authority. Return compact JSON only using this shape: '+spec.output+' Keep the response within '+spec.maxTokens+' output tokens.';
+  const system='You are the '+role.replaceAll('_',' ')+' specialist for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' '+spec.purpose+' You are advisory only. ChatGPT is the orchestrator and final decision authority. HARDWARE WHITELIST: use only exact block IDs and exact model names present in device_context.models; never output a real-world/reference amp name as an MG-30 model name. If the closest device model is not listed, do not invent one; return an empty recommendation and explain the limitation. Never invent parameter IDs or values. Return compact JSON only using this shape: '+spec.output+' Keep the response within '+spec.maxTokens+' output tokens.';
   const user={
    current_request:String(context.prompt||'').slice(0,700),
    recent_context:compactNamConversation(context.conversation||'',900),
