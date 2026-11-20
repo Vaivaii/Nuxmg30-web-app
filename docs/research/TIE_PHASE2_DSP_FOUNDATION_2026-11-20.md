@@ -41,4 +41,16 @@ Direct USB/live capture, USB Loopback and internal DAW-track buffers are deliber
 - Source-adapter tests for saved Quick Record, imported audio decode, unsupported/empty/oversized sources, decoded-PCM memory guard and source errors.
 - UI contract tests ensuring only supported source paths are exposed and no AI/MIDI/device route is called.
 
-Build/test status is intentionally left pending in this implementation note until the latest CI run completes. Android device validation is also pending; CI success is not hardware validation.
+## CI Verification
+
+Final workflow run #1133 (run ID `44691252885`) completed successfully on source commit `4a3b8da6015bb1b13130657c02bf1ca2c4f6839e`:
+- **708 tests passed, 0 failed** (including the 25 Phase 2 tests).
+- JavaScript syntax validation passed.
+- Capacitor Android generation passed.
+- Gradle `assembleDebug` passed.
+- APK artifact upload passed; artifact ID `14608428105`.
+
+Extracted APK size: 4,780,817 bytes.  
+SHA-256: `2d2898a3546f5e03f814545b69485b28947465362c3ef797507d439f53819db5`.
+
+Android device validation is still pending; CI success is not hardware validation.
