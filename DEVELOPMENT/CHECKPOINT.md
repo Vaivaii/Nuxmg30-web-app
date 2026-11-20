@@ -775,3 +775,29 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Not yet accepted: physical original Gen 2 active-preset readback; all 12 order entries and bypass states; preset/Scene refresh; disconnected and incomplete data behavior on Android; actual NAM/IR slot/file identification; runtime error inspection.
 - Diagnostic limitation: clipping, noise, input/output level and headroom remain unavailable without measured audio data tied to the preset/session.
 - Do not claim Phase 4 fully device-accepted until the owner performs the physical pedal checks above. Do not start Phase 5 until the owner explicitly instructs it.
+
+
+## Phase 4 UI Refinement — Signal Chain & Configuration Review — 2026-11-21
+
+### Scope and implementation
+- Added compact horizontal Signal Chain pedalboard using shared MG30AIToneBridge snapshot and actual order. Pedal icons reuse the Editor's existing renderBlockIcon() SVG renderer, exposed read-only as window.MG30EditorBlockIcon.
+- Added Configuration Review entry and in-context detail view with Overview, Chain, Gain, Tone and Report tabs. It remains inside Tone Analysis / Signal Chain; no global navigation or extra Tone Analysis tab was added.
+- Review uses current snapshot and the existing completed PCM Analyzer result when available.
+- Gain displays PCM RMS and sample peak as measured dBFS for the selected PCM source only. Input/output reference, headroom and per-effect audio levels remain Not measured.
+- Tone uses existing Analyzer spectrum and bandEnergyPct. No decorative spectrum or generated values are used.
+- Report includes share summary. PDF export remains unavailable because no PDF export implementation/library exists; its control is disabled.
+- All review content is read-only. No MIDI, preset, NAM, IR or mapping write path was changed.
+
+### Files changed
+- www/index.html — Configuration Review markup, shared Editor SVG export, module registration.
+- www/tie-signal-chain-ui.js — compact pedalboard and Editor SVG reuse.
+- www/tie-analyzer-ui.js — read-only accessor for completed PCM Analyzer result.
+- www/tie-configuration-review-ui.js — new Configuration Review tabs and evidence-based rendering.
+- www/studio-daw.css — compact pedalboard and review page responsive styles.
+- DEVELOPMENT/CHECKPOINT.md — this record.
+
+### Validation pending
+- Automated regression tests and Android build are pending for this refinement.
+- Physical MG-30 Gen 2 and Android handset acceptance remain required.
+- PDF export is not implemented; share summary depends on Web Share or clipboard support.
+- No Phase 5 work is authorized or included.
