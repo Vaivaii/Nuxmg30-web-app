@@ -366,3 +366,16 @@ Run the entire project suite with `npm test` and build with `npm run android:bui
 ### Next action
 
 Install the verified run #1144 APK on the target Android device. Test one known PCM WAV with known source sample rate/channel layout and one real Quick Record WAV. Capture source metadata vs analysis PCM metadata, duration, FFT settings and numeric results. Exercise cancellation and a long-file/memory case; confirm no UI freeze and no DAW recording/playback regression. Record Android/WebView and test evidence here. Only close Phase 2 after those hardware acceptance checks pass.
+
+## Owner Device Confirmation — 2026-11-20
+
+- Owner reports that the run #1144 debug APK has been installed on the target Android device and **the application launches and works**.
+- This confirms installation and basic application startup/runtime on the owner's device.
+- Exact device model, Android/WebView version, tested TIE Analyzer source paths, imported WAV metadata/results, Quick Record analysis, cancellation, long-file memory behavior, and DAW playback/record regression have not yet been reported; these remain **NOT VERIFIED**.
+- Do not interpret the general "works" confirmation as proof that every Phase 2 hardware acceptance case passed.
+- Phase 2 status: **APK install/basic runtime confirmed by owner; DSP source-path and stress/lifecycle acceptance still pending**. Phase 3 remains gated.
+- Protected surfaces remain unchanged: original NUX MG-30 Gen 2 firmware 6.0.x (not MKII), MIDI mapping/protocol, NAM, IR collections/import mapping, presets and shared AI engine.
+
+### Next validation
+
+Ask the owner to confirm whether they have analyzed (1) a known PCM WAV through Analyzer and (2) an actual saved Quick Record WAV, and whether source/analysis sample-rate and channel metadata are displayed correctly. Then test cancellation, a longer recording, and DAW recording/playback coexistence before closing Phase 2.
