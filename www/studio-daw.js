@@ -2417,6 +2417,67 @@ function setDawPage(page) {
   }
 }
 
+function setStudioWorkspace(workspace) {
+  const selected = workspace === 'tone-analysis' ? 'tone-analysis' : 'jam-record';
+  const studio = $('page-studio');
+  if (!studio) return;
+  const activeMode = studio.querySelector('[data-studio-mode].active')?.dataset.studioMode || 'daw';
+
+  studio.querySelectorAll('[data-studio-workspace]').forEach((button) => {
+    const active = button.dataset.studioWorkspace === selected;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+
+  studio.querySelectorAll('[data-studio-workspace-panel]').forEach((panel) => {
+    let active = panel.dataset.studioWorkspacePanel === selected;
+    let display = 'none';
+    if (panel.dataset.studioWorkspacePanel === 'jam-record' && selected === 'jam-record') {
+      if (panel.classList.contains('studio-mode-tabs')) {
+        display = 'flex';
+      } else if (panel.id === 'studio-daw-workspace') {
+        active = activeMode === 'daw';
+        display = active ? 'flex' : 'none';
+      } else {
+        active = panel.dataset.studioModePanel === activeMode;
+        display = active ? 'block' : 'none';
+      }
+    } else if (panel.dataset.studioWorkspacePanel === 'tone-analysis' && selected === 'tone-analysis') {
+      display = 'block';
+    }
+    panel.hidden = !active;
+    panel.setAttribute('aria-hidden', String(!active));
+    // Inline !important display is required because the existing DAW mode uses
+    // its own explicit !important layout. Only visibility changes here; audio
+    // capture, playback, and the currently selected Jam/Record/DAW mode remain untouched.
+    panel.style.setProperty('display', display, 'important');
+  });
+
+  const title = $('studioWorkspaceTitle');
+  const status = $('studioWorkspaceStatus');
+  if (title) title.textContent = selected === 'tone-analysis' ? 'Tone Analysis' : 'Jamm & Record';
+  if (status) status.textContent = selected === 'tone-analysis' ? 'TIE · 5 Sections' : 'Mini DAW – 4 Track';
+  try { localStorage.setItem('mg30-studio-workspace', selected); } catch (_) {}
+  syncStudioPinnedControls();
+  window.requestAnimationFrame(() => syncStudioPinnedControls());
+}
+
+function setTiePage(page) {
+  const pages = ['analyzer', 'compare', 'signal-chain', 'intelligence', 'ai-consultant'];
+  const selected = pages.includes(page) ? page : 'analyzer';
+  document.querySelectorAll('[data-tie-page]').forEach((button) => {
+    const active = button.dataset.tiePage === selected;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('[data-tie-page-panel]').forEach((panel) => {
+    const active = panel.dataset.tiePagePanel === selected;
+    panel.hidden = !active;
+    panel.setAttribute('aria-hidden', String(!active));
+  });
+  try { localStorage.setItem('mg30-tie-last-page', selected); } catch (_) {}
+}
+
 function setStudioMode(mode) {
   const selected = ['jam', 'record', 'daw'].includes(mode) ? mode : 'daw';
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
@@ -2457,6 +2518,12 @@ function bindEvents() {
     if (event.target.closest('button[data-page="studio"]')) {
       window.requestAnimationFrame(syncStudioPinnedControls);
     }
+  });
+  document.querySelectorAll('[data-studio-workspace]').forEach((button) => {
+    button.addEventListener('click', () => setStudioWorkspace(button.dataset.studioWorkspace));
+  });
+  document.querySelectorAll('[data-tie-page]').forEach((button) => {
+    button.addEventListener('click', () => setTiePage(button.dataset.tiePage));
   });
   document.querySelectorAll('[data-studio-mode]').forEach((button) => {
     button.addEventListener('click', () => setStudioMode(button.dataset.studioMode));
@@ -2646,6 +2713,16 @@ async function initDaw() {
     if (['jam', 'record', 'daw'].includes(savedMode)) mode = savedMode;
   } catch (_) {}
   setStudioMode(mode);
+  let workspace = 'jam-record';
+  let tiePage = 'analyzer';
+  try {
+    const savedWorkspace = localStorage.getItem('mg30-studio-workspace');
+    if (['jam-record', 'tone-analysis'].includes(savedWorkspace)) workspace = savedWorkspace;
+    const savedTiePage = localStorage.getItem('mg30-tie-last-page');
+    if (['analyzer', 'compare', 'signal-chain', 'intelligence', 'ai-consultant'].includes(savedTiePage)) tiePage = savedTiePage;
+  } catch (_) {}
+  setTiePage(tiePage);
+  setStudioWorkspace(workspace);
   refreshQuickTakes();
   try {
     await openDatabase();
