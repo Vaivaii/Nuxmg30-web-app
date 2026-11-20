@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../www/index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../www/studio-daw.css", import.meta.url), "utf8");
 const ui = readFileSync(new URL("../www/tie-signal-chain-ui.js", import.meta.url), "utf8");
+const review = readFileSync(new URL("../www/tie-configuration-review-ui.js", import.meta.url), "utf8");
+const analyzer = readFileSync(new URL("../www/tie-analyzer-ui.js", import.meta.url), "utf8");
 
 test("Phase 4 Signal Chain panel replaces the generic preview with a live snapshot surface", () => {
   assert.ok(html.includes('id="tieChainFlow"'));
@@ -12,7 +14,7 @@ test("Phase 4 Signal Chain panel replaces the generic preview with a live snapsh
   assert.ok(html.includes('id="tieChainParameters"'));
   assert.ok(html.includes('id="tieChainDiagnostics"'));
   assert.ok(!html.includes("Live effect-block snapshot is not connected"));
-  assert.ok(html.includes('src="./tie-signal-chain-ui.js?v=phase4-1"'));
+  assert.ok(html.includes('src="./tie-signal-chain-ui.js?v=phase4-2"'));
 });
 
 test("Signal Chain Intelligence consumes the existing shared editor and preset reader", () => {

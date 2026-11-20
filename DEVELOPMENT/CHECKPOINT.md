@@ -809,3 +809,14 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Editor icon artwork is reused from renderBlockIcon(). The Editor's chain icon treatment uses the shared lime accent; category-specific colors were not invented because the Editor chain itself does not define a category color taxonomy.
 - The repository connector does not expose a direct local Node/Gradle execution action in this session. Full npm test, Vite/Capacitor build and Android assembleDebug remain unverified for these latest changes and must be run by CI or the project build environment before calling this refinement complete.
 - Latest source changes include commits 8576fbc, 2b79fe9, cbaf5af, f1074e5, aa47cbc, 4a1e9d5, e3e79e1, 9b57046 and b1ccea7 on feature/tone-intelligence-engine.
+
+
+### Build failure diagnosis and correction — 2026-11-21
+- Inspected GitHub Actions runs #1208 (`9b57046`) and #1209 (`b1ccea7`). Both stopped at workflow step **Run protocol regression tests**; Capacitor generation, Gradle `assembleDebug`, and APK upload were skipped. This was not a Gradle compilation failure.
+- The #1209 test log recorded 775 tests: 769 passed and 6 failed.
+- Root causes:
+  1. `tests/tie-signal-chain-intelligence.test.js` added Configuration Review checks but did not define the `review` and `analyzer` source strings. This caused five `ReferenceError` failures.
+  2. The same test still asserted the obsolete Signal Chain module cache token `phase4-1`; `www/index.html` had already advanced to `phase4-2`.
+  3. The new hidden-tab CSS used an additional `display:none!important`, which polluted a pre-existing Studio invariant test that checks the single `display:none!important` rule on the DAW playhead pseudo-element. Changed only the new `[hidden]` tab rule to `display:none`; the HTML hidden attribute and panel visibility behavior are preserved.
+- Fix scope is limited to tests and the new Configuration Review hidden-state style. No editor logic, protocol, MIDI mapping, preset path, NAM, IR, audio engine or DAW interaction was changed.
+- Awaiting a fresh workflow run to validate full test suite, Capacitor project generation and Android APK build. No build success is claimed yet.
