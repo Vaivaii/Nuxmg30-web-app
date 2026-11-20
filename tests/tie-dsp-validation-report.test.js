@@ -120,11 +120,12 @@ test("TIE DSP validation: deterministic fixture report", () => {
     dualTone[index] = 0.25 * Math.sin(2 * Math.PI * 440 * time) +
       0.25 * Math.sin(2 * Math.PI * 3000 * time);
   }
-  const dualResult = analyze(dualTone, { fftSize: 4096 });
+  const dualResult = analyze(dualTone, { fftSize: 8192 });
+  addNumeric("Dual-tone · combined RMS", 20 * Math.log10(0.25), dualResult.metrics.rmsDbfs, 0.02, "dBFS");
   const expectedToneDbfs = 20 * Math.log10(0.25);
   for (const frequency of [440, 3000]) {
     const peak = peakNear(dualResult, frequency, 2);
-    addNumeric("Dual-tone · " + frequency + " Hz component", expectedToneDbfs, peak.amplitudeDbfs, 1.5, "dBFS");
+    addNumeric("Dual-tone · " + frequency + " Hz component", expectedToneDbfs, peak.amplitudeDbfs, 0.1, "dBFS");
   }
 
   // Seeded uniform white noise: RMS is independently calculated from the source samples.
