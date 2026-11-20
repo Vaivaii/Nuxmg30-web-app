@@ -46,7 +46,7 @@ test("TIE Compare module is loaded only after its complete static workspace mark
   assert.ok(reportMarkupIndex !== -1 && notesMarkupIndex !== -1, "report and listening-note nodes must exist in the shipped HTML");
   assert.ok(moduleIndex > reportMarkupIndex && moduleIndex > notesMarkupIndex,
     "Compare module must execute after the complete Compare report markup has been parsed");
-  assert.equal((html.match(/<script type="module" src="\.\/tie-comparison-ui\.js"><\\/script>/g) || []).length, 1,
+  assert.equal(html.split(moduleTag).length - 1, 1,
     "Compare module must be included exactly once to avoid duplicate event bindings");
 });
 
