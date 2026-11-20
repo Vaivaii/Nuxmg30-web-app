@@ -176,7 +176,8 @@ test("TIE compare: report captures provenance, settings, gains, metrics and limi
   assert.equal(report.sources.a.label, "A");
   assert.equal(report.sources.b.selectedChannel, 0);
   assert.equal(report.sources.a.sourceSampleRateHz, 48000);
-  assert.equal(report.sources.a.sourceChannelCount, 1);
+  assert.equal(report.sources.a.sourceChannelCount, null);
+  assert.equal(report.sources.a.channelCount, 1);
   assert.equal(report.levelMatch.method, "rms-attenuation-only");
   assert.equal(report.settings.fftSize, 1024);
   assert.equal(report.spectrum.differenceDirection, "B minus A");
