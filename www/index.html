@@ -2009,8 +2009,8 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
   </div>
   <section id="studio-tone-analysis-workspace" class="tie-workspace" data-studio-workspace-panel="tone-analysis" hidden aria-hidden="true">
     <div class="tie-workspace-heading">
-      <div><span class="eyebrow">TONE INTELLIGENCE ENGINE</span><h3>Tone Analysis</h3><p>Fondasi workspace TIE. Setiap menu sudah memiliki tempatnya; pemrosesan audio dan integrasi berikutnya belum diaktifkan pada tahap ini.</p></div>
-      <span class="tie-phase-chip">PHASE 1 · SHELL</span>
+      <div><span class="eyebrow">TONE INTELLIGENCE ENGINE</span><h3>Tone Analysis</h3><p>Local audio analysis and matched A/B comparison for imported recordings and saved Quick Record takes.</p></div>
+      <span class="tie-phase-chip">PHASE 3 · COMPARE</span>
     </div>
     <nav class="tie-subnav" role="tablist" aria-label="Tone Analysis sections">
       <button type="button" data-tie-page="analyzer" class="active" role="tab" aria-selected="true">Analyzer</button>
@@ -2058,10 +2058,85 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
       </div>
       <small>Phase 2 source scope: imported files and saved Quick Record WAV only. Direct USB/live capture and internal DAW-track access remain unverified and are not advertised here.</small>
     </section>
-    <section class="tie-empty-state" data-tie-page-panel="compare" role="tabpanel" hidden>
-      <span class="tie-empty-kicker">02 / COMPARE</span><h4>Tone Comparison</h4>
-      <p>Tempat untuk membandingkan dua rekaman atau konfigurasi tone. Comparison engine dan pemilihan sumber belum diimplementasikan.</p>
-      <small>Belum ada sumber A/B yang dipilih.</small>
+    <section class="tie-empty-state tie-compare-page" data-tie-page-panel="compare" role="tabpanel" hidden>
+      <span class="tie-empty-kicker">02 / COMPARE</span><h4>Tone Comparison · A/B</h4>
+      <p>Compare two real recordings over a matched region. Sources are decoded and measured locally. Original files and Quick Record takes are never modified.</p>
+      <div class="tie-compare-slots">
+        <article class="tie-compare-slot">
+          <div class="tie-compare-slot-heading"><strong>Source A</strong><span>REFERENCE</span></div>
+          <label class="tie-analyzer-field" for="tieCompareSourceA">Audio source
+            <select id="tieCompareSourceA"><option value="">Choose a source</option></select>
+          </label>
+          <div class="tie-compare-source-actions">
+            <button class="tie-analyzer-import-btn" id="tieCompareImportA" type="button">＋ Import A</button>
+            <input id="tieCompareFileA" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose source A audio file">
+          </div>
+          <label class="tie-analyzer-field" for="tieCompareChannelA">Analysis channel
+            <select id="tieCompareChannelA" disabled><option value="0">Load source A first</option></select>
+          </label>
+        </article>
+        <article class="tie-compare-slot tie-compare-slot-b">
+          <div class="tie-compare-slot-heading"><strong>Source B</strong><span>COMPARISON</span></div>
+          <label class="tie-analyzer-field" for="tieCompareSourceB">Audio source
+            <select id="tieCompareSourceB"><option value="">Choose a source</option></select>
+          </label>
+          <div class="tie-compare-source-actions">
+            <button class="tie-analyzer-import-btn" id="tieCompareImportB" type="button">＋ Import B</button>
+            <input id="tieCompareFileB" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose source B audio file">
+          </div>
+          <label class="tie-analyzer-field" for="tieCompareChannelB">Analysis channel
+            <select id="tieCompareChannelB" disabled><option value="0">Load source B first</option></select>
+          </label>
+        </article>
+      </div>
+      <div class="tie-compare-settings">
+        <label class="tie-analyzer-field" for="tieCompareFftSize">FFT size
+          <select id="tieCompareFftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384">16384</option></select>
+        </label>
+        <label class="tie-analyzer-field" for="tieCompareOffsetMs">Manual B offset (ms)
+          <input id="tieCompareOffsetMs" type="number" min="-30000" max="30000" step="1" value="0">
+        </label>
+        <label class="tie-compare-check" for="tieCompareLevelMatch"><input id="tieCompareLevelMatch" type="checkbox"> RMS match (attenuation only)</label>
+      </div>
+      <div class="tie-compare-actions">
+        <button class="tie-analyzer-run-btn" id="tieCompareRunButton" type="button" disabled>Compare A / B</button>
+        <button class="tie-analyzer-cancel-btn" id="tieCompareCancelButton" type="button" hidden>Cancel</button>
+        <div class="tie-compare-preview-actions">
+          <button type="button" id="tieComparePlayA" disabled>▶ Play A</button>
+          <button type="button" id="tieComparePlayB" disabled>▶ Play B</button>
+          <button type="button" id="tieCompareStop" disabled>■ Stop</button>
+        </div>
+      </div>
+      <div id="tieCompareStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose two sources to compare. Imported audio and saved Quick Record takes are supported.</div>
+      <progress id="tieCompareProgress" class="tie-analysis-progress" max="100" value="0" hidden aria-label="Comparison progress"></progress>
+      <div id="tieCompareResults" class="tie-compare-results" hidden>
+        <div class="tie-compare-result-heading"><strong>Measured comparison</strong><small id="tieCompareSummary"></small></div>
+        <div class="tie-compare-metrics">
+          <div class="tie-compare-metric-head"><span>Metric</span><span>A</span><span>B</span><span>B − A</span></div>
+          <div class="tie-compare-metric-row"><strong>RMS (dBFS)</strong><span id="tieCompareRmsA">—</span><span id="tieCompareRmsB">—</span><span id="tieCompareRmsDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Sample peak (dBFS)</strong><span id="tieComparePeakA">—</span><span id="tieComparePeakB">—</span><span id="tieComparePeakDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Crest factor (dB)</strong><span id="tieCompareCrestA">—</span><span id="tieCompareCrestB">—</span><span id="tieCompareCrestDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Spectral centroid (Hz)</strong><span id="tieCompareCentroidA">—</span><span id="tieCompareCentroidB">—</span><span id="tieCompareCentroidDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>85% rolloff (Hz)</strong><span id="tieCompareRolloffA">—</span><span id="tieCompareRolloffB">—</span><span id="tieCompareRolloffDelta">—</span></div>
+        </div>
+        <div class="tie-chart-panel">
+          <div class="tie-chart-heading"><strong>Spectrum overlay</strong><small>A · lime / B · cyan · dBFS</small></div>
+          <canvas id="tieCompareOverlayCanvas" width="720" height="230" aria-label="A and B measured spectrum overlay"></canvas>
+        </div>
+        <div class="tie-chart-panel">
+          <div class="tie-chart-heading"><strong>Spectral difference</strong><small>B minus A · dB</small></div>
+          <canvas id="tieCompareDiffCanvas" width="720" height="210" aria-label="B minus A spectrum difference"></canvas>
+        </div>
+        <div class="tie-chart-panel">
+          <div class="tie-chart-heading"><strong>Dynamic comparison</strong><small>50 ms RMS windows · A lime / B cyan</small></div>
+          <canvas id="tieCompareDynamicCanvas" width="720" height="210" aria-label="A and B dynamic RMS comparison"></canvas>
+        </div>
+        <div class="tie-analysis-limitations">
+          <strong id="tieCompareReportMeta"></strong>
+          <div id="tieCompareLimitations"></div>
+        </div>
+      </div>
+      <small>Phase 3 v1 scope: imported recordings and saved Quick Record takes. Different analysis sample rates are rejected explicitly; automatic transient/cross-correlation alignment and integrated-loudness matching are not included.</small>
     </section>
     <section class="tie-empty-state" data-tie-page-panel="signal-chain" role="tabpanel" hidden>
       <span class="tie-empty-kicker">03 / SIGNAL CHAIN</span><h4>Signal Chain Intelligence</h4>
@@ -6116,7 +6191,7 @@ window.MG30AIToneBridge=Object.freeze({
 })();
 </script>
 <script type="module" src="./cloud-account.js"></script><script type="module" src="./chatgpt-account.js"></script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
   const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];
