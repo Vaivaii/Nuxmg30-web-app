@@ -820,3 +820,18 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
   3. The new hidden-tab CSS used an additional `display:none!important`, which polluted a pre-existing Studio invariant test that checks the single `display:none!important` rule on the DAW playhead pseudo-element. Changed only the new `[hidden]` tab rule to `display:none`; the HTML hidden attribute and panel visibility behavior are preserved.
 - Fix scope is limited to tests and the new Configuration Review hidden-state style. No editor logic, protocol, MIDI mapping, preset path, NAM, IR, audio engine or DAW interaction was changed.
 - Awaiting a fresh workflow run to validate full test suite, Capacitor project generation and Android APK build. No build success is claimed yet.
+
+
+### Successful regression and APK build — 2026-11-21 continuation
+- Corrective commit: `3454b52a85bea605d3dc964452ea565f092137ef` — fixes missing source declarations in Phase 4 tests, updates the Signal Chain module cache-token expectation to `phase4-2`, and removes only the unnecessary `!important` from the Configuration Review `[hidden]` rule.
+- GitHub Actions run #1210, run ID `44805494562`, on `feature/tone-intelligence-engine`; conclusion: **success**.
+- JavaScript syntax validation: passed.
+- Full `npm test`: **775 passed, 0 failed**.
+- Capacitor Android generation and USB audio plugin installation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 33s**.
+- APK artifact: `MG30-Studio-debug-APK.zip`, artifact ID `14662816964`, size 4,437,694 bytes, SHA-256 `2ff5c29252001c111764653655458e7feac31e8aa6088d91b37e83411fda38e2`.
+- Extracted APK: `app-debug.apk`, size 4,814,925 bytes, SHA-256 `c4fdf0eae5ecd5135e92047c167ffddefec9ca01ee3e4d4f43dc6ee9bab4f638`.
+- APK package inspected successfully. The bundled `assets/public/index.html` and Vite JS bundle both contain the Configuration Review content/entry surface and shared Editor SVG icon export.
+- The successful CI build proves compilation/package generation. It does not replace interactive acceptance on the owner's Android handset or original MG-30 Gen 2 firmware 6.0.x.
+- No protocol, MIDI mapping, NAM, IR, preset transfer, DSP/audio engine, or DAW runtime code was changed by the build correction.
+- Phase 4 device acceptance remains pending. Do not start Phase 5 without explicit owner instruction.
