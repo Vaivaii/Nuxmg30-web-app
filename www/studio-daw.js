@@ -2453,7 +2453,7 @@ function setStudioWorkspace(workspace) {
     panel.style.setProperty('display', display, 'important');
   });
 
-  const title = $('studioWorkspaceTitle');
+  const title = studio.querySelector('.studio-page-hero h2');
   const status = $('studioWorkspaceStatus');
   if (title) title.textContent = selected === 'tone-analysis' ? 'Tone Analysis' : 'Jamm & Record';
   if (status) status.textContent = selected === 'tone-analysis' ? 'TIE · 5 Sections' : 'Mini DAW – 4 Track';
