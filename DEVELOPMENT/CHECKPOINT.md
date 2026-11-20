@@ -14,7 +14,7 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 ## Current Phase
 
-**Phase 1 — Studio Workspace Shell: implemented. CI run #1120 passed (682/682 tests and Android Gradle APK build); final-HEAD regression run pending to include the new TIE-specific test.**
+**Phase 1 — Studio Workspace Shell: implemented and CI-validated. Final TIE run #1121 passed (683/683 tests, Capacitor generation, Gradle APK build and artifact upload).**
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 
@@ -123,3 +123,19 @@ Review Phase 1 shell and its CI/Android results. Scope PCM adapters, DSP, compar
 ## Last Updated
 
 2026-11-20
+
+
+## Phase 1 Final CI Verification — 2026-11-20
+
+This section is authoritative for Phase 1 and supersedes the earlier pending CI notes above.
+
+- CI run: #1121, run ID `44688873547`, conclusion `success`.
+- Source commit tested: `169dcb5090d75c9fdea9da995146c5240cc86872`.
+- JavaScript syntax validation: passed.
+- Test suite: **683 passed, 0 failed**. TIE workspace shell test passed as test 523.
+- Capacitor Android project generation: passed.
+- Android Gradle `assembleDebug`: passed.
+- APK artifact upload: passed; artifact ID `14606999111`.
+- Extracted APK: 4,769,296 bytes.
+- APK SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
+- Live Android device/runtime testing is still pending. Do not claim active-recording workspace switching was hardware tested.
