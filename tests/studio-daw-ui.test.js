@@ -58,6 +58,17 @@ test('Studio title and three mode tabs follow the approved mockup hierarchy', ()
   assert.ok(css.includes('min-height:42px!important'));
 });
 
+test('Studio exposes the TIE workspace shell and five empty-state sections', () => {
+  assert.ok(html.includes('data-studio-workspace="jam-record"'));
+  assert.ok(html.includes('data-studio-workspace="tone-analysis"'));
+  for (const page of ['analyzer', 'compare', 'signal-chain', 'intelligence', 'ai-consultant']) {
+    assert.ok(html.includes('data-tie-page="' + page + '"'), 'missing TIE tab: ' + page);
+    assert.ok(html.includes('data-tie-page-panel="' + page + '"'), 'missing TIE page: ' + page);
+  }
+  assert.ok(daw.includes('function setStudioWorkspace(workspace)'));
+  assert.ok(daw.includes('function setTiePage(page)'));
+});
+
 test('Studio transport remains available and Mixer is rendered on its dedicated page', () => {
   for (const id of ['dawPlay','dawStop','dawRecord','dawRewind','dawForward','dawMixer','dawUndo','dawRedo']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing Studio control: ' + id);
