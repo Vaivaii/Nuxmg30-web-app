@@ -16,7 +16,7 @@ test("TIE Compare DOM contract: every directly selected and dynamically rendered
   const counts = new Map();
   for (const id of htmlIds) counts.set(id, (counts.get(id) || 0) + 1);
 
-  const directSelectors = Array.from(ui.matchAll(/\\$\\("([^"]+)"\\)/g), (match) => match[1]);
+  const directSelectors = Array.from(ui.matchAll(/\$\("([^"]+)"\)/g), (match) => match[1]);
   const slotSelectors = Array.from(ui.matchAll(/(?:select|fileInput|importButton|channel): "(tieCompare[^"]+)"/g), (match) => match[1]);
   const metricSelectors = Array.from(ui.matchAll(/"(tieCompare(?:Rms|Peak|Crest|Centroid|Rolloff)(?:A|B|Delta))"/g), (match) => match[1]);
   const required = Array.from(new Set([...directSelectors, ...slotSelectors, ...metricSelectors]));
@@ -29,7 +29,7 @@ test("TIE Compare DOM contract: every directly selected and dynamically rendered
 
 test("TIE Compare does not write text into a selector that is absent from the current HTML", () => {
   const htmlIds = new Set(getIds(html));
-  const textContentTargets = Array.from(ui.matchAll(/\\$\\("([^"]+)"\\)\\.textContent\\s*=/g), (match) => match[1]);
+  const textContentTargets = Array.from(ui.matchAll(/\$\("([^"]+)"\)\.textContent\s*=/g), (match) => match[1]);
   for (const id of textContentTargets) {
     assert.ok(htmlIds.has(id), "missing textContent target: " + id);
   }
