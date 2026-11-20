@@ -2002,8 +2002,51 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
  </div>
 </section>
 <section id="page-studio" class="hidden studio-page">
-  <div class="studio-fixed-header"><div class="hero studio-page-hero studio-daw-hero"><div><div class="eyebrow">STUDIO</div><h2>Jamm &amp; Record</h2></div><span class="studio-daw-version">Mini DAW – 4 Track</span></div><div class="studio-mode-tabs" role="tablist" aria-label="Studio mode"><button type="button" data-studio-mode="jam">♫&nbsp; Jam</button><button type="button" data-studio-mode="record">♩&nbsp; Record</button><button type="button" data-studio-mode="daw" class="active" aria-selected="true">∿&nbsp; DAW</button></div></div>
-  <div class="studio-mode-panel" data-studio-mode-panel="jam" hidden><div class="panel studio-backing-panel">
+  <div class="studio-fixed-header"><div class="hero studio-page-hero studio-daw-hero"><div><div class="eyebrow">STUDIO</div><h2 id="studioWorkspaceTitle">Jamm &amp; Record</h2></div><span class="studio-daw-version" id="studioWorkspaceStatus">Mini DAW – 4 Track</span></div><div class="studio-mode-tabs" data-studio-workspace-panel="jam-record" role="tablist" aria-label="Jamm &amp; Record mode"><button type="button" data-studio-mode="jam">♫&nbsp; Jam</button><button type="button" data-studio-mode="record">♩&nbsp; Record</button><button type="button" data-studio-mode="daw" class="active" aria-selected="true">∿&nbsp; DAW</button></div></div>
+  <div class="studio-workspace-tabs" role="tablist" aria-label="Studio workspace">
+    <button type="button" data-studio-workspace="jam-record" class="active" role="tab" aria-selected="true">♫&nbsp; Jamm &amp; Record</button>
+    <button type="button" data-studio-workspace="tone-analysis" role="tab" aria-selected="false">◈&nbsp; Tone Analysis</button>
+  </div>
+  <section id="studio-tone-analysis-workspace" class="tie-workspace" data-studio-workspace-panel="tone-analysis" hidden aria-hidden="true">
+    <div class="tie-workspace-heading">
+      <div><span class="eyebrow">TONE INTELLIGENCE ENGINE</span><h3>Tone Analysis</h3><p>Fondasi workspace TIE. Setiap menu sudah memiliki tempatnya; pemrosesan audio dan integrasi berikutnya belum diaktifkan pada tahap ini.</p></div>
+      <span class="tie-phase-chip">PHASE 1 · SHELL</span>
+    </div>
+    <nav class="tie-subnav" role="tablist" aria-label="Tone Analysis sections">
+      <button type="button" data-tie-page="analyzer" class="active" role="tab" aria-selected="true">Analyzer</button>
+      <button type="button" data-tie-page="compare" role="tab" aria-selected="false">Compare</button>
+      <button type="button" data-tie-page="signal-chain" role="tab" aria-selected="false">Signal Chain</button>
+      <button type="button" data-tie-page="intelligence" role="tab" aria-selected="false">Intelligence</button>
+      <button type="button" data-tie-page="ai-consultant" role="tab" aria-selected="false">AI Consultant</button>
+    </nav>
+    <section class="tie-empty-state" data-tie-page-panel="analyzer" role="tabpanel">
+      <span class="tie-empty-kicker">01 / ANALYZER</span><h4>Audio Analyzer</h4>
+      <p>Workspace analyzer siap untuk tahap integrasi berikutnya. Belum ada PCM stream yang dianalisis, jadi belum ada spektrum, waveform, atau metrik terukur yang ditampilkan.</p>
+      <small>Belum ada analisis audio dijalankan.</small>
+    </section>
+    <section class="tie-empty-state" data-tie-page-panel="compare" role="tabpanel" hidden>
+      <span class="tie-empty-kicker">02 / COMPARE</span><h4>Tone Comparison</h4>
+      <p>Tempat untuk membandingkan dua rekaman atau konfigurasi tone. Comparison engine dan pemilihan sumber belum diimplementasikan.</p>
+      <small>Belum ada sumber A/B yang dipilih.</small>
+    </section>
+    <section class="tie-empty-state" data-tie-page-panel="signal-chain" role="tabpanel" hidden>
+      <span class="tie-empty-kicker">03 / SIGNAL CHAIN</span><h4>Signal Chain Intelligence</h4>
+      <p>Tempat untuk memeriksa susunan efek dan hubungan antarblok. Snapshot signal chain belum diambil dan belum ada diagnosis yang dijalankan.</p>
+      <small>Belum ada snapshot signal chain.</small>
+    </section>
+    <section class="tie-empty-state" data-tie-page-panel="intelligence" role="tabpanel" hidden>
+      <span class="tie-empty-kicker">04 / INTELLIGENCE</span><h4>Tone Intelligence</h4>
+      <p>Tempat untuk interpretasi teknis yang kelak menggabungkan pengukuran DSP dan konteks tone. Belum ada interpretasi atau rekomendasi yang dibuat.</p>
+      <small>Analysis dan reasoning belum aktif.</small>
+    </section>
+    <section class="tie-empty-state" data-tie-page-panel="ai-consultant" role="tabpanel" hidden>
+      <span class="tie-empty-kicker">05 / AI CONSULTANT</span><h4>AI Tone Consultant</h4>
+      <p>Tempat untuk konsultasi tone berbasis konteks Studio. Adapter konteks Studio belum terhubung dan belum ada permintaan ke AI provider yang dikirim dari sini.</p>
+      <small>Belum ada sesi konsultasi.</small>
+    </section>
+    <p class="tie-workspace-note">Jamm &amp; Record, Quick Record, dan Mini DAW tetap berada di workspace sebelah. Berpindah workspace hanya mengubah visibilitas UI; shell ini tidak membuat ulang audio engine atau mengubah rute perangkat.</p>
+  </section>
+  <div class="studio-mode-panel" data-studio-mode-panel="jam" data-studio-workspace-panel="jam-record" hidden><div class="panel studio-backing-panel">
     <div class="panel-head studio-compact-panel-head">
       <div><h3>Track 01 · Backing</h3><p>MP3 / WAV, or find a reference on YouTube.</p></div>
       <span class="track-number">01</span>
@@ -2047,7 +2090,7 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
     <p class="studio-footnote">Use YouTube as a play-along reference. Backing tracks must come from audio files you own or are authorized to use.</p>
   </div>
 
-  </div><div class="studio-mode-panel" data-studio-mode-panel="record" hidden><div class="panel studio-recorder-panel studio-recorder-compact">
+  </div><div class="studio-mode-panel" data-studio-mode-panel="record" data-studio-workspace-panel="jam-record" hidden><div class="panel studio-recorder-panel studio-recorder-compact">
     <div class="panel-head studio-compact-panel-head">
       <div><h3>Track 02 · Guitar</h3><p>Record directly from the MG-30 USB connection.</p></div>
       <span class="track-number track-number-lime">02</span>
@@ -2071,7 +2114,7 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
 
 
   </div>
-  <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw">
+  <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw" data-studio-workspace-panel="jam-record">
   <section id="dawTimelinePage" class="daw-subpage daw-timeline-page" data-daw-page-panel="timeline">
     <div class="daw-quick-toolbar">
       <div class="daw-quick-toolbar-primary">
