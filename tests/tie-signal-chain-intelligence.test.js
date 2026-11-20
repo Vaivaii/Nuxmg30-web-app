@@ -70,3 +70,47 @@ test("Phase 4 layout remains responsive and does not change the Studio shell", (
   assert.ok(html.includes('data-tie-page="analyzer"'));
   assert.ok(html.includes('data-tie-page="compare"'));
 });
+
+
+test("Configuration Review is an in-context five-tab page, not a new application navigation item", () => {
+  for (const tab of ["overview", "chain", "gain", "tone", "report"]) {
+    assert.ok(html.includes('data-tie-review-tab="' + tab + '"'));
+    assert.ok(html.includes('data-tie-review-panel="' + tab + '"'));
+  }
+  assert.ok(html.includes('id="tieOpenConfigurationReview"'));
+  assert.ok(html.includes('id="tieReviewBack"'));
+  assert.ok(html.includes('src="./tie-configuration-review-ui.js?v=phase4-1"'));
+  assert.ok(review.includes('function close()'));
+  assert.ok(review.includes('data-tie-page-panel'));
+});
+
+test("Signal Chain pedalboard reuses the Editor SVG renderer and actual snapshot order", () => {
+  assert.ok(html.includes("window.MG30EditorBlockIcon = renderBlockIcon"));
+  assert.ok(ui.includes("window.MG30EditorBlockIcon(block.id)"));
+  assert.ok(ui.includes("orderedBlocks(snapshot)"));
+  assert.ok(ui.includes("snapshot.order"));
+  assert.ok(ui.includes("tie-block-"));
+});
+
+test("Configuration Review never fabricates gain measurements or spectral results", () => {
+  assert.ok(review.includes('m?.rmsDbfs'));
+  assert.ok(review.includes('m?.samplePeakDbfs'));
+  assert.ok(review.includes('"Not measured"'));
+  assert.ok(review.includes('Headroom'));
+  assert.ok(review.includes('Per-block audio levels are not exposed'));
+  assert.ok(review.includes('No Analyzer spectrum available'));
+  assert.ok(review.includes('bandEnergyPct'));
+  assert.ok(review.includes('does not establish headroom'));
+});
+
+test("PDF export is explicitly unavailable and report share is a real host capability check", () => {
+  assert.ok(html.includes('id="tieReviewExportPdf" class="tie-review-primary" disabled'));
+  assert.ok(review.includes('navigator.share'));
+  assert.ok(review.includes('navigator.clipboard'));
+});
+
+test("PCM Analyzer exposes only the latest completed result without changing DSP processing", () => {
+  assert.ok(analyzer.includes('lastAnalysisResult = result'));
+  assert.ok(analyzer.includes('window.MG30TIEAnalyzerBridge = Object.freeze({ getResult: () => lastAnalysisResult })'));
+  assert.ok(review.includes('window.MG30TIEAnalyzerBridge?.getResult?.()'));
+});
