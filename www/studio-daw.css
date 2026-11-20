@@ -2795,7 +2795,6 @@
   border-color:#708d4c;background:#c5f36b12;color:#c5f36b;
 }
 #page-studio .tie-workspace{min-width:0;padding:0 0 14px}
-#page-studio .tie-workspace[hidden]{display:none!important}
 #page-studio .tie-workspace-heading{
   display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
   padding:13px 14px;margin:0 0 10px;border:1px solid #2d3a2e;border-radius:14px;
@@ -2824,7 +2823,6 @@
   min-height:210px;padding:20px 18px;border:1px solid #303c30;border-radius:15px;
   background:linear-gradient(145deg,#171e18,#101511);
 }
-#page-studio .tie-empty-state[hidden]{display:none!important}
 #page-studio .tie-empty-kicker{
   color:#c5f36b;font-size:9px;font-weight:850;letter-spacing:1.4px;
 }
