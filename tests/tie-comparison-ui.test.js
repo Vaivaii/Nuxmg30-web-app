@@ -25,6 +25,7 @@ test("TIE Compare DOM contract: every directly selected and dynamically rendered
     assert.equal(counts.get(id), 1, "Compare DOM element must exist exactly once: " + id);
   }
   assert.ok(required.includes("tieCompareProvenance"), "provenance output must be part of the rendered report");
+  assert.ok(ui.includes(' + "\\n" +'), "provenance entries must be separated by a real newline");
 });
 
 test("TIE Compare does not write text into a selector that is absent from the current HTML", () => {
