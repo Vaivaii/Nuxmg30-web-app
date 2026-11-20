@@ -2881,3 +2881,43 @@
 #page-studio .tie-analysis-limitations{padding:10px 11px;border:1px solid #55482d;border-radius:9px;background:#1e1a11;color:#d6c79f;font-size:9px;line-height:1.6}
 #page-studio .tie-analysis-limitations ul{margin:5px 0 0;padding-left:16px}
 @media(max-width:430px){#page-studio .tie-analyzer-page{padding:12px!important}#page-studio .tie-analyzer-control-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#page-studio .tie-analyzer-control-row .tie-analyzer-field{min-width:0}#page-studio .tie-analyzer-run-btn,#page-studio .tie-analyzer-cancel-btn{width:100%}#page-studio .tie-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#page-studio .tie-chart-heading{align-items:flex-start;flex-direction:column;gap:3px}#page-studio .tie-chart-heading small{text-align:left}#page-studio .tie-band-row{grid-template-columns:62px minmax(0,1fr) 38px}}
+
+/* TIE Phase 3 — comparison UI, isolated to the Compare sub-page. */
+#page-studio .tie-compare-page{min-height:0!important;padding:15px!important}
+#page-studio .tie-compare-page>p{max-width:760px}
+#page-studio .tie-compare-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:13px 0}
+#page-studio .tie-compare-slot{display:grid;align-content:start;gap:10px;min-width:0;padding:12px;border:1px solid #40513b;border-radius:12px;background:linear-gradient(145deg,#172219,#101611)}
+#page-studio .tie-compare-slot-b{border-color:#31505b}
+#page-studio .tie-compare-slot-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+#page-studio .tie-compare-slot-heading strong{color:#edf4e7;font-size:12px}
+#page-studio .tie-compare-slot-heading span{color:#8eaa7c;font-size:8px;font-weight:900;letter-spacing:1px}
+#page-studio .tie-compare-slot-b .tie-compare-slot-heading span{color:#67d8ef}
+#page-studio .tie-compare-source-actions{display:flex;gap:7px;align-items:center}
+#page-studio .tie-compare-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0;align-items:end}
+#page-studio .tie-compare-settings input[type="number"]{width:100%;height:37px;padding:0 10px;border:1px solid #384536;border-radius:9px;background:#0d140f;color:#e9f0e3;font:600 11px system-ui}
+#page-studio .tie-compare-check{display:flex;align-items:center;gap:7px;min-height:37px;color:#b5c1ad;font-size:10px;font-weight:750}
+#page-studio .tie-compare-check input{accent-color:#c5f36b}
+#page-studio .tie-compare-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0}
+#page-studio .tie-compare-preview-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+#page-studio .tie-compare-preview-actions button{min-height:35px;padding:7px 10px;border:1px solid #3b4937;border-radius:8px;background:#172119;color:#e4eddd;font-size:10px;font-weight:800}
+#page-studio .tie-compare-preview-actions button:disabled{opacity:.4}
+#page-studio .tie-compare-results.is-visible{display:grid;gap:10px;margin-top:13px}
+#page-studio .tie-compare-result-heading{display:grid;gap:4px}
+#page-studio .tie-compare-result-heading strong{color:#eaf3e1;font-size:12px}
+#page-studio .tie-compare-result-heading small{color:#8d9d85;font-size:9px;line-height:1.45}
+#page-studio .tie-compare-metrics{overflow-x:auto;border:1px solid #303d30;border-radius:10px;background:#111a13}
+#page-studio .tie-compare-metric-head,#page-studio .tie-compare-metric-row{display:grid;grid-template-columns:minmax(125px,1.7fr) repeat(3,minmax(64px,1fr));gap:7px;align-items:center;padding:9px 10px;border-bottom:1px solid #293629;font-size:9px}
+#page-studio .tie-compare-metric-head{color:#8b9a83;font-weight:850}
+#page-studio .tie-compare-metric-row:last-child{border-bottom:0}
+#page-studio .tie-compare-metric-row strong{color:#d8e5ce;font-size:9px}
+#page-studio .tie-compare-metric-row span{color:#e6f0dd;font:700 10px ui-monospace,monospace}
+#page-studio .tie-compare-metric-row span:last-child{color:#c5f36b}
+#page-studio #tieCompareOverlayCanvas,#page-studio #tieCompareDiffCanvas,#page-studio #tieCompareDynamicCanvas{display:block;width:100%;height:auto;border:1px solid #263227;border-radius:7px;background:#080e0a}
+@media(max-width:540px){
+ #page-studio .tie-compare-page{padding:12px!important}
+ #page-studio .tie-compare-slots{grid-template-columns:minmax(0,1fr)}
+ #page-studio .tie-compare-settings{grid-template-columns:minmax(0,1fr)}
+ #page-studio .tie-compare-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #page-studio #tieCompareRunButton{grid-column:1/-1}
+ #page-studio .tie-compare-preview-actions{grid-column:1/-1;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+}
