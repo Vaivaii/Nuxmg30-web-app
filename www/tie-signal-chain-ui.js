@@ -45,8 +45,8 @@ function renderFlow(snapshot){
   const label=block.known?escapeHtml(block.model||'Model not identified'):'Not read';
   const status=block.known?(block.enabled?'ON':'BYPASS'):'UNKNOWN';
   return (index?'<span class="tie-chain-arrow" aria-hidden="true">→</span>':'')+
-   '<button type="button" class="tie-chain-block '+(!block.known?'is-unknown ':'')+(block.known&&!block.enabled?'is-off':'')+'" data-tie-chain-block="'+block.index+'" aria-pressed="'+selected+'">'+
-   '<span class="tie-chain-block-icon">'+escapeHtml(block.icon||'◈')+'</span><strong>'+escapeHtml(block.id)+' · '+escapeHtml(BLOCK_NAMES[block.id]||block.id)+'</strong>'+
+   '<button type="button" class="tie-chain-block tie-block-'+escapeHtml(block.id.replace(/[^a-z0-9]/gi,''))+' '+(!block.known?'is-unknown ':'')+(block.known&&!block.enabled?'is-off':'')+'" data-tie-chain-block="'+block.index+'" aria-pressed="'+selected+'">'+
+   '<span class="tie-chain-block-icon">'+(window.MG30EditorBlockIcon?window.MG30EditorBlockIcon(block.id):'')+'</span><strong>'+escapeHtml(block.id)+' · '+escapeHtml(BLOCK_NAMES[block.id]||block.id)+'</strong>'+
    '<small>'+label+'</small><small>'+status+'</small></button>';
  }).join('');
  root.querySelectorAll('[data-tie-chain-block]').forEach(button=>button.addEventListener('click',()=>{
