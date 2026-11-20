@@ -86,7 +86,7 @@ test("Analyzer meter and comparison bands are presentation of existing productio
   assert.ok(analyzer.includes("metrics.bandEnergyPct"));
   assert.ok(engine.includes("resultA.metrics.bandEnergyPct"));
   assert.ok(engine.includes("resultB.metrics.bandEnergyPct"));
-  assert.ok(engine.includes("Grouped from the existing"));
+  assert.ok(engine.includes("Group the existing DSP relative-band measurements for presentation only."));
   assert.ok(!analyzer.includes("createDspAccumulator"));
   assert.ok(!compare.includes("createDspAccumulator"));
 });
