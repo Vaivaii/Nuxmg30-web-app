@@ -2843,3 +2843,41 @@
   #page-studio .studio-workspace-tabs button{min-height:36px;padding:6px 5px;font-size:10px}
   #page-studio .tie-empty-state{min-height:190px;padding:16px 14px}
 }
+
+/* TIE Phase 2 — offline source analysis, scoped to the Analyzer sub-page. */
+#page-studio .tie-analyzer-page{min-height:0!important;padding:15px!important}
+#page-studio .tie-analyzer-page>p{max-width:720px}
+#page-studio .tie-analyzer-source-row,#page-studio .tie-analyzer-control-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin:12px 0}
+#page-studio .tie-analyzer-field{display:grid;gap:5px;flex:1 1 170px;min-width:0;color:#a7b29f;font-size:10px;font-weight:800}
+#page-studio .tie-analyzer-field select{width:100%;min-width:0;height:37px;padding:0 10px;border:1px solid #384536;border-radius:9px;background:#0d140f;color:#e9f0e3;font:600 11px system-ui}
+#page-studio .tie-analyzer-field select:disabled{opacity:.55}
+#page-studio .tie-analyzer-import-btn,#page-studio .tie-analyzer-run-btn,#page-studio .tie-analyzer-cancel-btn{min-height:37px;padding:8px 12px;border:1px solid #3a4833;border-radius:9px;background:#1b251b;color:#e5efdc;font-size:10px;font-weight:850;white-space:nowrap}
+#page-studio .tie-analyzer-run-btn{background:#c5f36b;border-color:#c5f36b;color:#12170c}
+#page-studio .tie-analyzer-cancel-btn{border-color:#67413b;background:#2a1917;color:#ffb7a5}
+#page-studio .tie-analyzer-run-btn:disabled,#page-studio .tie-analyzer-import-btn:disabled{opacity:.45}
+#page-studio .tie-analysis-status{margin:10px 0 5px;padding:9px 11px;border:1px solid #29372b;border-radius:9px;background:#0e1510;color:#91a08d;font-size:10px;line-height:1.5}
+#page-studio .tie-analysis-status[data-state="error"]{border-color:#67413b;color:#ffb7a5}
+#page-studio .tie-analysis-status[data-state="success"]{border-color:#4a6638;color:#c6eca1}
+#page-studio .tie-analysis-progress{width:100%;height:5px;margin:7px 0 10px;accent-color:#c5f36b}
+#page-studio .tie-source-metadata.is-visible{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 12px}
+#page-studio .tie-source-metadata span{padding:5px 8px;border:1px solid #303c30;border-radius:7px;background:#121a14;color:#a6b39d;font-size:9px}
+#page-studio .tie-analysis-results.is-visible{display:grid;gap:9px;margin-top:12px}
+#page-studio .tie-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#page-studio .tie-metric-card{min-width:0;display:grid;gap:3px;padding:9px 10px;border:1px solid #303d30;border-radius:10px;background:#121a14}
+#page-studio .tie-metric-card small{color:#8d9b86;font-size:8px;font-weight:800;letter-spacing:.4px}
+#page-studio .tie-metric-card strong{overflow-wrap:anywhere;color:#eaf3e1;font:800 17px ui-monospace,monospace}
+#page-studio .tie-metric-card span{color:#74836e;font-size:8px}
+#page-studio .tie-chart-panel,#page-studio .tie-band-panel{min-width:0;padding:10px;border:1px solid #303c30;border-radius:12px;background:#101711}
+#page-studio .tie-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+#page-studio .tie-chart-heading strong{color:#e0ebd8;font-size:10px}
+#page-studio .tie-chart-heading small{color:#819078;font-size:8px;text-align:right}
+#page-studio #tieSpectrumCanvas,#page-studio #tieSpectrogramCanvas{display:block;width:100%;height:auto;border:1px solid #263227;border-radius:7px;background:#080e0a}
+#page-studio .tie-band-list{display:grid;gap:7px}
+#page-studio .tie-band-row{display:grid;grid-template-columns:74px minmax(0,1fr) 42px;align-items:center;gap:7px}
+#page-studio .tie-band-row label{color:#a7b29f;font-size:9px}
+#page-studio .tie-band-track{height:7px;overflow:hidden;border-radius:6px;background:#273126}
+#page-studio .tie-band-track span{display:block;height:100%;border-radius:6px;background:#b7e96b}
+#page-studio .tie-band-row strong{color:#dbe8d1;text-align:right;font:700 9px ui-monospace,monospace}
+#page-studio .tie-analysis-limitations{padding:10px 11px;border:1px solid #55482d;border-radius:9px;background:#1e1a11;color:#d6c79f;font-size:9px;line-height:1.6}
+#page-studio .tie-analysis-limitations ul{margin:5px 0 0;padding-left:16px}
+@media(max-width:430px){#page-studio .tie-analyzer-page{padding:12px!important}#page-studio .tie-analyzer-control-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#page-studio .tie-analyzer-control-row .tie-analyzer-field{min-width:0}#page-studio .tie-analyzer-run-btn,#page-studio .tie-analyzer-cancel-btn{width:100%}#page-studio .tie-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#page-studio .tie-chart-heading{align-items:flex-start;flex-direction:column;gap:3px}#page-studio .tie-chart-heading small{text-align:left}#page-studio .tie-band-row{grid-template-columns:62px minmax(0,1fr) 38px}}
