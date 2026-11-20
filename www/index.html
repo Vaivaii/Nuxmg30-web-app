@@ -2019,10 +2019,44 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
       <button type="button" data-tie-page="intelligence" role="tab" aria-selected="false">Intelligence</button>
       <button type="button" data-tie-page="ai-consultant" role="tab" aria-selected="false">AI Consultant</button>
     </nav>
-    <section class="tie-empty-state" data-tie-page-panel="analyzer" role="tabpanel">
+    <section class="tie-empty-state tie-analyzer-page" data-tie-page-panel="analyzer" role="tabpanel">
       <span class="tie-empty-kicker">01 / ANALYZER</span><h4>Audio Analyzer</h4>
-      <p>Workspace analyzer siap untuk tahap integrasi berikutnya. Belum ada PCM stream yang dianalisis, jadi belum ada spektrum, waveform, atau metrik terukur yang ditampilkan.</p>
-      <small>Belum ada analisis audio dijalankan.</small>
+      <p>Analyze an imported audio file or a saved Quick Record WAV. Audio is decoded and measured locally; original recordings are never modified or uploaded.</p>
+      <div class="tie-analyzer-source-row">
+        <label class="tie-analyzer-field" for="tieAudioSourceSelect">Audio source
+          <select id="tieAudioSourceSelect" aria-label="Audio source"><option value="">Import a file or select a saved Quick Record</option></select>
+        </label>
+        <button class="tie-analyzer-import-btn" id="tieImportAudioButton" type="button">＋ Import audio</button>
+        <input id="tieAudioFileInput" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose audio file">
+      </div>
+      <div class="tie-analyzer-control-row">
+        <label class="tie-analyzer-field" for="tieFftSize">FFT size
+          <select id="tieFftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384">16384</option></select>
+        </label>
+        <label class="tie-analyzer-field" for="tieChannelSelect">Input channel
+          <select id="tieChannelSelect" disabled><option value="0">Channel 1</option></select>
+        </label>
+        <button class="tie-analyzer-run-btn" id="tieAnalyzeButton" type="button" disabled>Analyze once</button>
+        <button class="tie-analyzer-cancel-btn" id="tieCancelAnalysisButton" type="button" hidden>Cancel</button>
+      </div>
+      <div id="tieAnalysisStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose an imported file or a saved Quick Record take to begin.</div>
+      <progress id="tieAnalysisProgress" class="tie-analysis-progress" max="100" value="0" hidden aria-label="Analysis progress"></progress>
+      <div id="tieSourceMetadata" class="tie-source-metadata" hidden></div>
+      <div id="tieAnalysisResults" class="tie-analysis-results" hidden>
+        <div class="tie-metric-grid">
+          <div class="tie-metric-card"><small>RMS</small><strong id="tieMetricRms">—</strong><span>dBFS</span></div>
+          <div class="tie-metric-card"><small>Sample peak</small><strong id="tieMetricPeak">—</strong><span>dBFS</span></div>
+          <div class="tie-metric-card"><small>Crest factor</small><strong id="tieMetricCrest">—</strong><span>dB</span></div>
+          <div class="tie-metric-card"><small>Spectral centroid</small><strong id="tieMetricCentroid">—</strong><span>Hz</span></div>
+          <div class="tie-metric-card"><small>85% rolloff</small><strong id="tieMetricRolloff">—</strong><span>Hz</span></div>
+          <div class="tie-metric-card"><small>Sample clipping</small><strong id="tieMetricClipping">—</strong><span>samples ≥ −0.009 dBFS</span></div>
+        </div>
+        <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Frequency spectrum</strong><small id="tieSpectrumDetails">Hann · one-sided amplitude · dBFS</small></div><canvas id="tieSpectrumCanvas" width="720" height="250" aria-label="Measured frequency spectrum"></canvas></div>
+        <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Spectrogram</strong><small>STFT · time flows downward · linear frequency</small></div><canvas id="tieSpectrogramCanvas" width="720" height="230" aria-label="Measured audio spectrogram"></canvas></div>
+        <div class="tie-band-panel"><div class="tie-chart-heading"><strong>Relative band energy</strong><small>Share of measured spectral power</small></div><div id="tieBandEnergy" class="tie-band-list"></div></div>
+        <div id="tieAnalysisLimitations" class="tie-analysis-limitations"></div>
+      </div>
+      <small>Phase 2 source scope: imported files and saved Quick Record WAV only. Direct USB/live capture and internal DAW-track access remain unverified and are not advertised here.</small>
     </section>
     <section class="tie-empty-state" data-tie-page-panel="compare" role="tabpanel" hidden>
       <span class="tie-empty-kicker">02 / COMPARE</span><h4>Tone Comparison</h4>
@@ -6082,7 +6116,7 @@ window.MG30AIToneBridge=Object.freeze({
 })();
 </script>
 <script type="module" src="./cloud-account.js"></script><script type="module" src="./chatgpt-account.js"></script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
   const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];
