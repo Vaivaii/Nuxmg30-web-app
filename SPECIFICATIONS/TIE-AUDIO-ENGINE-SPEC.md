@@ -167,3 +167,19 @@ consistent with existing app storage.
 -   Source disconnect and app lifecycle transitions recover safely.
 -   No false USB audio capability is displayed.
 -   Imported and saved recordings can be analyzed without live capture.
+
+
+## 12. Proposed Artist Tone Matching audio-source constraints — Planning Only
+
+Artist Tone Matching may analyse a user-selected recording using the existing import and Quick Record source adapters; it must not create a second audio ingestion or DSP pipeline.
+
+- Local import and analysis remain the default. Preserve source format/rate/channel/duration metadata and source provenance.
+- Label whether a recording is a guitar-only capture, a multi-track/stem, or a full mix. For a full mix, measurements include other instruments, vocals, room, mastering and production.
+- Do not claim that the guitar has been perfectly isolated unless a separately approved source-separation system is licensed and independently validated.
+- Any optional cloud separation must be opt-in, disclose destination/provider, data retention, terms, cost and whether raw audio leaves the device. Do not automatically upload selected audio to AI/search providers.
+- If source separation is not available or not appropriate, continue with full-mix limitations clearly visible or ask the user for an isolated DI/guitar recording.
+- Do not infer artist gear identity from a spectrum alone. Audio analysis, source-documented claims and AI estimates remain separate evidence classes.
+- Reuse the existing Audio Engine lifecycle rules. Navigation, cancellation, app backgrounding and source disconnect must release workers/resources.
+
+This is a planning constraint only. No live capture, source separation service or new provider is implemented by this specification update.
+
