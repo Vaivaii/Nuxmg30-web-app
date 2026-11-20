@@ -558,7 +558,7 @@ test('Build 327: Studio mode panels remain after the pinned header and retain in
   assert.ok(html.includes('data-studio-mode-panel="jam"'));
   assert.ok(html.includes('data-studio-mode-panel="record"'));
   assert.ok(html.includes('data-studio-mode-panel="daw"'));
-  assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
+  assert.ok(daw.includes("studio?.querySelectorAll('[data-studio-mode-panel]')"));
 });
 
 
@@ -715,7 +715,7 @@ test('DAW timeline toolbar buttons fit beside the clock without overlapping Sect
   assert.ok(daw.includes('.daw-section-menu-panel{left:auto!important;right:0!important;width:min(225px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;box-sizing:border-box!important}'));
   assert.ok(css.includes('flex:0 0 26px!important;width:26px!important;min-width:26px!important;height:34px!important;min-height:34px!important'));
   assert.ok(css.includes('gap:3px!important;min-width:0!important'));
-  assert.ok(html.includes('studio-daw.css?v=compact-daw-5'));
+  assert.ok(html.includes('studio-daw.css?v=studio-scroll-shell-1'));
   assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
   assert.equal((html.match(/id="daw(?:Undo|Redo|CursorStart|CursorEnd|NudgeLeft|NudgeRight)"/g)||[]).length,6);
 });
