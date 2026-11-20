@@ -2373,6 +2373,7 @@ function syncStudioPinnedControls() {
   // Read after updating dockBottom so the measured dock top includes the actual
   // bottom inset. The page scroll offset is added back by the pure fit helper.
   const pageRect = studioPage.getBoundingClientRect();
+  const contentScroll = $('studioContentScroll');
   const panelRect = timelinePanel.getBoundingClientRect();
   const dockRect = dock.getBoundingClientRect();
   const fit = computeStudioViewportFit({
@@ -2380,7 +2381,7 @@ function syncStudioPinnedControls() {
     navTop,
     dockHeight: dockRect.height || dock.offsetHeight,
     pageTop: pageRect.top,
-    pageScrollTop: studioPage.scrollTop,
+    pageScrollTop: contentScroll?.scrollTop ?? studioPage.scrollTop,
     timelinePanelTop: panelRect.top,
     minTimelineHeight: 320,
     maxTimelineHeight: 720,
@@ -2434,7 +2435,7 @@ function setStudioWorkspace(workspace) {
     let display = 'none';
     if (panel.dataset.studioWorkspacePanel === 'jam-record' && selected === 'jam-record') {
       if (panel.classList.contains('studio-mode-tabs')) {
-        display = 'flex';
+        display = 'grid';
       } else if (panel.id === 'studio-daw-workspace') {
         active = activeMode === 'daw';
         display = active ? 'flex' : 'none';
@@ -2443,7 +2444,7 @@ function setStudioWorkspace(workspace) {
         display = active ? 'block' : 'none';
       }
     } else if (panel.dataset.studioWorkspacePanel === 'tone-analysis' && selected === 'tone-analysis') {
-      display = 'block';
+      display = panel.classList.contains('tie-subnav') ? 'grid' : 'block';
     }
     panel.hidden = !active;
     panel.setAttribute('aria-hidden', String(!active));
@@ -2486,7 +2487,7 @@ function setStudioMode(mode) {
     button.setAttribute('aria-selected', String(active));
   });
   const studio = $('page-studio');
-  studio?.querySelectorAll(':scope > [data-studio-mode-panel]').forEach((panel) => {
+  studio?.querySelectorAll('[data-studio-mode-panel]').forEach((panel) => {
     const active = panel.dataset.studioModePanel === selected;
     panel.hidden = !active;
     panel.setAttribute('aria-hidden', String(!active));
@@ -2509,6 +2510,7 @@ function bindEvents() {
   syncStudioPinnedControls();
   mountTrackInputRoutingPanel();
   renderOutputRoutingPanel();
+  $('studioContentScroll')?.addEventListener('scroll', syncStudioPinnedControls, { passive: true });
   window.addEventListener('resize', syncStudioPinnedControls, { passive: true });
   window.addEventListener('orientationchange', syncStudioPinnedControls, { passive: true });
   window.addEventListener('pageshow', syncStudioPinnedControls, { passive: true });
