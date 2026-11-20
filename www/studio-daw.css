@@ -2921,3 +2921,7 @@
  #page-studio #tieCompareRunButton{grid-column:1/-1}
  #page-studio .tie-compare-preview-actions{grid-column:1/-1;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+#page-studio #tieCompareProvenance{white-space:pre-line;line-height:1.55}
+#page-studio .tie-compare-listening-notes{display:grid;gap:6px;color:#9eae95;font-size:9px;font-weight:850}
+#page-studio .tie-compare-listening-notes textarea{width:100%;min-height:62px;padding:9px 10px;border:1px solid #384536;border-radius:9px;background:#0d140f;color:#e9f0e3;font:500 11px/1.5 system-ui;resize:vertical}
