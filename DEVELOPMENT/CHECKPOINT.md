@@ -476,3 +476,11 @@ Install the Phase 3 APK and test Compare with actual imported WAV and saved Quic
 
 - No changes to original NUX MG-30 Gen 2 firmware protocol, USB-MIDI mapping, NAM, IR collection/import mapping, preset handling, shared AI engine or DAW transport.
 
+### Follow-up CI attempt — 2026-11-20
+
+- Run #1167 (44727221902) failed before Android generation because the newly added test assertion had an invalid JavaScript regular-expression literal. This was a test-only syntax defect; no app source files were changed by that attempt.
+- Corrected the test to count the exact module tag using string splitting instead of a regex.
+- Correction commit: `3ec2dae8c88573e35765d55dc6fa24c56852676b`.
+- Run #1168 (44727307912), source/test commit `3ec2dae8c88573e35765d55dc6fa24c56852676b`: dependency install, JS syntax validation, full protocol regression tests and Capacitor Android generation have passed. Gradle `assembleDebug` is still running; no APK artifact has been published yet.
+- Do not distribute the old run #1159 APK as the fix. Rebuilt artifact from a coherent HTML/JS commit is required.
+
