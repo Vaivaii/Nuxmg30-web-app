@@ -8,7 +8,7 @@ const ui = readFileSync(new URL("../www/tie-comparison-ui.js", import.meta.url),
 const engine = readFileSync(new URL("../www/tie-comparison-engine.js", import.meta.url), "utf8");
 
 function getIds(source) {
-  return Array.from(source.matchAll(/\\bid="([^"]+)"/g), (match) => match[1]);
+  return Array.from(source.matchAll(/id="([^"]+)"/g), (match) => match[1]);
 }
 
 test("TIE Compare DOM contract: every directly selected and dynamically rendered element exists exactly once", () => {
