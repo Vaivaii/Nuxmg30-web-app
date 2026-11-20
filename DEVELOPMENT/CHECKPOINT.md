@@ -448,3 +448,31 @@ Ask the owner to confirm whether they have analyzed (1) a known PCM WAV through 
 ### Phase 3 owner validation still required
 
 Install the Phase 3 APK and test Compare with actual imported WAV and saved Quick Record sources. Verify independent A/B source/channel selection, same and differing source lengths, manual positive/negative offsets, RMS matching and reported gains, spectrum overlay/difference, dynamic envelope, A/B audition and stop. Confirm Compare navigation does not interrupt DAW playback/recording. Record device/Android/WebView, results and failures before accepting Phase 3.
+
+## Phase 3 Compare DOM/Build Mismatch — 2026-11-20
+
+### Owner-reported Android failure
+
+- On the installed Phase 3 APK, pressing Compare A/B displays: `Cannot set properties of null (setting 'textContent')`.
+- The error is consistent with `renderMetrics()` writing report fields to DOM nodes that do not exist in the installed APK's HTML.
+- Confirmed release mismatch: APK run #1159 was built from application/test commit `055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa`; the current branch had advanced by nine commits. Those later commits modified both `www/tie-comparison-ui.js` and `www/index.html` to add report provenance (`tieCompareProvenance`) and listening notes (`tieCompareListeningNotes`). The already-installed run #1159 APK predates this matching HTML/JS change.
+- Current branch static HTML contains the report nodes exactly once and the Compare module script is included after the page markup. There is no evidence of a runtime DOM replacement/lifecycle race in the current static page structure. The failure is a stale/incoherent APK artifact, not a reason to add null guards.
+
+### Corrective action
+
+- Do not hide the failure with null checks. Keep the required report nodes mandatory.
+- Strengthened `tests/tie-comparison-ui.test.js` to assert that all JS-selected and report-rendered nodes exist exactly once, that the Compare module is included exactly once, and that it is loaded after the complete Compare markup. The pre-existing DOM contract checks remain mandatory.
+- New test commit: `636359aa2c48be61e56938dbe63123d7bcc49cad`.
+- Rebuild from the current branch head so `www/tie-comparison-ui.js` and `www/index.html` are shipped as one coherent release. Never ask the owner to continue testing the old run #1159 APK for this error.
+
+### Test coverage / evidence boundaries
+
+- Existing engine integration tests use generated but real Float32 PCM waveforms and run them through the production DSP accumulator, then verify measured spectrum, B-minus-A delta, dynamic envelope and RMS attenuation. These are deterministic synthetic audio fixtures, not dummy comparison results in the app.
+- Existing UI contract tests require the production source adapters (`loadImportedAudioFile`, `loadQuickRecordTake`) and the production DSP worker path; they do not substitute dummy audio data.
+- CI for the corrected current branch and a new Android APK is pending. No claim of successful full UI/device A/B behavior is made until the owner installs and tests the rebuilt artifact.
+- Device checks still required: both real imported WAV and saved Quick Record as A/B sources; FFT and overlay; spectral difference; RMS matching/gains; comparison report; Play A, Play B, Stop; and DAW record/playback regression.
+
+### Protected boundaries
+
+- No changes to original NUX MG-30 Gen 2 firmware protocol, USB-MIDI mapping, NAM, IR collection/import mapping, preset handling, shared AI engine or DAW transport.
+
