@@ -1,5 +1,6 @@
 const SUPPORTED_EXTENSIONS = new Set([".wav", ".wave", ".mp3", ".m4a", ".aac", ".ogg", ".opus", ".flac"]);
-const MAX_AUDIO_FILE_BYTES = 512 * 1024 * 1024;
+const MAX_AUDIO_FILE_BYTES = 128 * 1024 * 1024;
+const MAX_DECODED_PCM_BYTES = 128 * 1024 * 1024;
 
 function sourceError(code, message) {
   const error = new Error(message);
@@ -41,10 +42,14 @@ export function createPcmAudioFromDecodedBuffer(audioBuffer, sourceDetails = {})
   const sampleRateHz = Number(audioBuffer.sampleRate);
   const channelCount = Number(audioBuffer.numberOfChannels);
   const frameCount = Number(audioBuffer.length);
-  if (!Number.isFinite(sampleRateHz) || sampleRateHz <= 0 ||
-      !Number.isInteger(channelCount) || channelCount < 1 ||
+  if (!Number.isFinite(sampleRateHz) || sampleRateHz < 8000 || sampleRateHz > 384000 ||
+      !Number.isInteger(channelCount) || channelCount < 1 || channelCount > 8 ||
       !Number.isSafeInteger(frameCount) || frameCount < 1) {
-    throw sourceError("INVALID_PCM", "The decoded audio metadata is incomplete or invalid.");
+    throw sourceError("INVALID_PCM", "The decoded audio metadata is incomplete or outside the supported range.");
+  }
+  const decodedBytes = frameCount * channelCount * Float32Array.BYTES_PER_ELEMENT;
+  if (!Number.isSafeInteger(decodedBytes) || decodedBytes > MAX_DECODED_PCM_BYTES) {
+    throw sourceError("UNSUPPORTED_FORMAT", "The decoded PCM would exceed the 128 MB analysis memory limit. Use a shorter recording or a lower-channel-count file.");
   }
   const channels = [];
   for (let channel = 0; channel < channelCount; channel += 1) {
@@ -96,7 +101,7 @@ export async function loadImportedAudioFile(file, decodeAudioData) {
     throw sourceError("SOURCE_UNAVAILABLE", "Choose an audio file first.");
   }
   if (file.size > MAX_AUDIO_FILE_BYTES) {
-    throw sourceError("UNSUPPORTED_FORMAT", "This file is larger than the 512 MB safety limit.");
+    throw sourceError("UNSUPPORTED_FORMAT", "This file is larger than the 128 MB import safety limit.");
   }
   const extension = getExtension(file.name);
   if (!(String(file.type || "").startsWith("audio/")) && !SUPPORTED_EXTENSIONS.has(extension)) {
@@ -134,6 +139,9 @@ export async function loadQuickRecordTake(take, recorder, fetchImpl, decodeAudio
     throw sourceError("SOURCE_UNAVAILABLE", "The saved Quick Record WAV could not be read (HTTP " + (response?.status || "error") + ").");
   }
   const blob = await response.blob();
+  if (blob.size > MAX_AUDIO_FILE_BYTES) {
+    throw sourceError("UNSUPPORTED_FORMAT", "The saved recording exceeds the 128 MB analysis import limit.");
+  }
   return decodeAudioBlob(blob, {
     sourceId: "quick-record:" + take.path,
     sourceKind: "quick-record",
@@ -146,4 +154,5 @@ export async function loadQuickRecordTake(take, recorder, fetchImpl, decodeAudio
 export const TIE_AUDIO_SOURCE_CONSTANTS = Object.freeze({
   supportedExtensions: Object.freeze(Array.from(SUPPORTED_EXTENSIONS)),
   maxFileBytes: MAX_AUDIO_FILE_BYTES,
+  maxDecodedPcmBytes: MAX_DECODED_PCM_BYTES,
 });
