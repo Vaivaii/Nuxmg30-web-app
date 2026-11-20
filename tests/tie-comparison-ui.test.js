@@ -7,6 +7,34 @@ const css = readFileSync(new URL("../www/studio-daw.css", import.meta.url), "utf
 const ui = readFileSync(new URL("../www/tie-comparison-ui.js", import.meta.url), "utf8");
 const engine = readFileSync(new URL("../www/tie-comparison-engine.js", import.meta.url), "utf8");
 
+function getIds(source) {
+  return Array.from(source.matchAll(/\\bid="([^"]+)"/g), (match) => match[1]);
+}
+
+test("TIE Compare DOM contract: every directly selected and dynamically rendered element exists exactly once", () => {
+  const htmlIds = getIds(html);
+  const counts = new Map();
+  for (const id of htmlIds) counts.set(id, (counts.get(id) || 0) + 1);
+
+  const directSelectors = Array.from(ui.matchAll(/\\$\\("([^"]+)"\\)/g), (match) => match[1]);
+  const slotSelectors = Array.from(ui.matchAll(/(?:select|fileInput|importButton|channel): "(tieCompare[^"]+)"/g), (match) => match[1]);
+  const metricSelectors = Array.from(ui.matchAll(/"(tieCompare(?:Rms|Peak|Crest|Centroid|Rolloff)(?:A|B|Delta))"/g), (match) => match[1]);
+  const required = Array.from(new Set([...directSelectors, ...slotSelectors, ...metricSelectors]));
+
+  for (const id of required) {
+    assert.equal(counts.get(id), 1, "Compare DOM element must exist exactly once: " + id);
+  }
+  assert.ok(required.includes("tieCompareProvenance"), "provenance output must be part of the rendered report");
+});
+
+test("TIE Compare does not write text into a selector that is absent from the current HTML", () => {
+  const htmlIds = new Set(getIds(html));
+  const textContentTargets = Array.from(ui.matchAll(/\\$\\("([^"]+)"\\)\\.textContent\\s*=/g), (match) => match[1]);
+  for (const id of textContentTargets) {
+    assert.ok(htmlIds.has(id), "missing textContent target: " + id);
+  }
+});
+
 test("TIE Compare exposes independent A/B source, channel, alignment and audition controls", () => {
   for (const id of [
     "tieCompareSourceA", "tieCompareSourceB", "tieCompareFileA", "tieCompareFileB",
