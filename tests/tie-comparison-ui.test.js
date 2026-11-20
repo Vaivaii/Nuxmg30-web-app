@@ -118,3 +118,30 @@ test("TIE Compare does not create a second AI/device/MIDI path and styles stay s
   assert.ok(ui.includes("report.listeningNotes"));
   assert.ok(engine.includes("sourceChannelCount"));
 });
+
+
+test("TIE Compare redesign exposes view tabs, source swap and real measured band report", () => {
+  for (const view of ["spectrum", "difference", "dynamics", "harmonics"]) {
+    assert.ok(html.includes('data-tie-compare-view="' + view + '"'), "missing Compare view tab " + view);
+    assert.ok(html.includes('data-tie-compare-panel="' + view + '"'), "missing Compare view panel " + view);
+    assert.ok(ui.includes('"' + view + '"'), "Compare module must handle " + view);
+  }
+  assert.ok(html.includes('id="tieCompareSwapSources"'));
+  assert.ok(ui.includes("function swapSources()"));
+  assert.ok(ui.includes("tieCompareSwapSources"));
+  assert.ok(html.includes('id="tieCompareToneBands"'));
+  assert.ok(ui.includes("renderToneBandReport(report.toneBands || [])"));
+  assert.ok(engine.includes("resultA.metrics.bandEnergyPct"));
+  assert.ok(engine.includes("resultB.metrics.bandEnergyPct"));
+  assert.ok(!engine.includes("createDspAccumulator"));
+  assert.ok(css.includes("#page-studio .tie-tone-band-row"));
+});
+
+test("TIE AI Consultant opens the existing shared assistant rather than creating a parallel chat/provider", () => {
+  assert.ok(html.includes('id="tieOpenAiAssistant"'));
+  assert.ok(ui.includes('document.getElementById("aiToneOpenButton")'));
+  assert.ok(ui.includes("assistantTrigger.click()"));
+  assert.ok(!ui.includes("fetch("));
+  assert.ok(!ui.includes("cloudApiRequest"));
+  assert.ok(html.includes("existing MG30 Studio AI Assistant"));
+});
