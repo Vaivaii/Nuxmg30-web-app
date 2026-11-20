@@ -222,3 +222,15 @@ This section is authoritative for Phase 1 and supersedes the earlier pending CI 
 ### Next action
 
 Run `npm test` and `npm run android:build` on the branch head `bc7c7321345a30fc29b96620c3411e0893590f01` (or its checkpoint-only descendant), capture the actual CI run and APK artifact, then install it and manually test one known PCM WAV plus one actual saved Quick Record WAV on the target Android device. Record measured sample rate, channel count, duration, FFT settings, metrics and errors. Only then decide whether Phase 2 acceptance is met.
+
+
+## DSP Fixture Execution — 2026-11-20
+
+- Retrieved the committed DSP engine and DSP test logic from the feature branch and ran an isolated Node.js 22 test harness in the available container.
+- First run: 17/18 passed. The sweep test's initial assertion expected nonzero *rounded percentage* in the narrow 20–120 Hz sub-bass band; measured energy rounded to 0.0% even though the first STFT frame peaked at 316.4 Hz. This was a test expectation issue, not evidence of a DSP calculation defect.
+- Updated the sweep test to check the 120–400 Hz low band plus actual first/last spectrogram peak locations (first <1 kHz, last >6 kHz), while retaining the high-band and centroid checks.
+- Second isolated run: **18/18 passed, 0 failed** under Node.js v22. This covers the 11 existing DSP cases plus 7 added cases.
+- Test correction commit: `872696fb17f163cfc759c2cd41117d671c08553f`.
+- This isolated run is not the complete repository `npm test` suite, not GitHub Actions CI, and not an Android APK build. Those remain NOT RUN / NOT VERIFIED after the patch.
+- No Phase 2 closure: actual Android imported-WAV and saved Quick Record tests, memory/long-file profiling, complete repository test suite, and post-change APK build remain outstanding.
+- Latest verified code commits: engine fix `9eb0b81c8fa7c7de1677a183ddf220259562ceff`; DSP test fixtures `872696fb17f163cfc759c2cd41117d671c08553f`. (The earlier intermediate test commit `bc7c7321345a30fc29b96620c3411e0893590f01` was superseded by the sweep assertion correction.)
