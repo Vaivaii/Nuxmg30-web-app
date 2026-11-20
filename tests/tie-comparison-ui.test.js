@@ -55,4 +55,8 @@ test("TIE Compare does not create a second AI/device/MIDI path and styles stay s
   assert.ok(css.includes("#page-studio .tie-compare-slots"));
   assert.ok(css.includes("@media(max-width:540px)"));
   assert.ok(engine.includes("B minus A"));
+  assert.ok(ui.includes("tieCompareProvenance"));
+  assert.ok(ui.includes("tieCompareListeningNotes"));
+  assert.ok(ui.includes("report.listeningNotes"));
+  assert.ok(engine.includes("sourceChannelCount"));
 });
