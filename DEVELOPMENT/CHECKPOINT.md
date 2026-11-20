@@ -234,3 +234,40 @@ Run `npm test` and `npm run android:build` on the branch head `bc7c7321345a30fc2
 - This isolated run is not the complete repository `npm test` suite, not GitHub Actions CI, and not an Android APK build. Those remain NOT RUN / NOT VERIFIED after the patch.
 - No Phase 2 closure: actual Android imported-WAV and saved Quick Record tests, memory/long-file profiling, complete repository test suite, and post-change APK build remain outstanding.
 - Latest verified code commits: engine fix `9eb0b81c8fa7c7de1677a183ddf220259562ceff`; DSP test fixtures `872696fb17f163cfc759c2cd41117d671c08553f`. (The earlier intermediate test commit `bc7c7321345a30fc29b96620c3411e0893590f01` was superseded by the sweep assertion correction.)
+
+
+## Phase 2 Source Provenance & Validation Reporting — 2026-11-20
+
+### Remote changes on `feature/tone-intelligence-engine`
+
+- Fixed audio-source metadata provenance in `www/tie-audio-source.js`.
+  - Added a bounded RIFF/WAVE `fmt ` metadata reader for source sample rate, source channel count, bit depth and encoding.
+  - Original WAV metadata is captured before `decodeAudioData()`; parsed header values take precedence over Quick Record metadata hints.
+  - Kept decoded PCM / analysis sample rate and channel count distinct from source metadata.
+  - Added explicit `resamplingApplied` and `channelCountChanged` states. Non-WAV source rates remain unknown when no reliable source metadata is available; they are not guessed.
+- Updated `www/tie-analyzer-ui.js` to show Source rate, Analysis rate, Source channels, Analysis channels, and whether resampling occurred or could not be established.
+- Added source metadata tests in `tests/tie-audio-source.test.js` for RIFF/WAVE parsing, 44.1 kHz mono source decoded as 48 kHz stereo, Quick Record metadata fallback, and malformed headers.
+- Extended `tests/tie-analyzer-ui.test.js` to require explicit source-vs-analysis metadata labels.
+- Added `tests/tie-dsp-validation-report.test.js`. It emits a machine-readable report row per check with expected, actual, tolerance, error and PASS/FAIL status. Fixtures cover 440 Hz, 1 kHz at amplitudes 0.5 and 1.0, dual-tone, seeded white noise, digital silence, a 100 Hz–10 kHz sweep, and clipped sine.
+
+### Commits
+
+- `be81e0254588bf098761f82506ee9b485f7f4336` — preserve original vs decoded source metadata.
+- `53269cfa1b40eda309e2213ace24fb4c06a93f3c` — add source metadata and decoder mismatch tests.
+- `3bb45dfef5f5e5000e0c0c3b255ca5816cfbf732` — display source/analysis metadata explicitly in Analyzer.
+- `1c15c34942a5872f0f2d67a7acd28d049d7c50c3` — add UI metadata regression assertions.
+- `d274439ba3ae524f43acb054f80626316dd9b941` — add DSP validation report test.
+
+### Verification status
+
+- Remote branch head at the time of this checkpoint update: `d274439ba3ae524f43acb054f80626316dd9b941`.
+- The branch has source and test changes committed through the GitHub repository interface. The local checkout, local `git status`, and local uncommitted changes remain **NOT VERIFIED** because this session has remote GitHub access but no repository checkout.
+- The new automated tests and full repository `npm test` suite have **NOT RUN / NOT VERIFIED in this session**. The earlier CI run #1133 (708/708 and APK build success) predates these latest changes; it is not evidence for the new test files or metadata fix.
+- No new APK build is claimed for these commits. No physical Android test has been performed in this session.
+- Phase 2 remains **IN PROGRESS — NOT ACCEPTED**. In particular, imported WAV and a real saved Quick Record take still require installation and validation on the target Android device. Memory/long-file profiling and Android lifecycle behavior also remain open.
+- Direct USB/live analysis, DAW-track analysis, and USB Loopback source integration remain gated and must not be shown as available. USB-MIDI remains separate from PCM audio.
+- No changes were made to MIDI mapping, original Gen 2 firmware protocol, presets, NAM, IR, shared AI orchestration/provider/fallback, DAW audio transport, native capture/output plugins, or the five bottom navigation pages.
+
+### Next action
+
+Run the complete repository `npm test` suite and Android `assembleDebug` against the current branch head, inspect the test report and build logs, then install the resulting APK on the target Android device. Manually analyze (1) a known PCM WAV with a source sample rate/channel layout that can be checked and (2) an actual saved Quick Record WAV. Record source and analysis sample rates/channels, duration, FFT settings, measured values, error states and memory/lifecycle observations. Do not start Phase 3 until the updated automated suite/build and these target-device checks pass.
