@@ -245,3 +245,24 @@ test("TIE compare integration: gain-only difference is attenuated to the quieter
   assert.deepEqual(aSamples, originalA);
   assert.deepEqual(bSamples, originalB);
 });
+
+
+test("TIE compare report groups existing DSP band-energy percentages without recalculating the spectrum", () => {
+  const plan = createAlignedComparisonPlan(
+    makeSource("band-a", [sine(48000)]),
+    makeSource("band-b", [sine(48000)]),
+  );
+  const resultA = fakeAnalysis();
+  const resultB = fakeAnalysis();
+  resultA.metrics.bandEnergyPct = { subBass: 5, low: 15, lowMid: 20, mid: 25, highMid: 20, high: 15 };
+  resultB.metrics.bandEnergyPct = { subBass: 10, low: 10, lowMid: 15, mid: 30, highMid: 20, high: 15 };
+  const report = buildComparisonReport(plan, resultA, resultB);
+  assert.deepEqual(report.toneBands.map((band) => [band.id, band.a, band.b, band.deltaBMinusA]), [
+    ["low", 20, 20, 0],
+    ["mid", 45, 45, 0],
+    ["high", 35, 35, 0],
+  ]);
+  assert.equal(report.toneBands[0].range, "20–400 Hz");
+  assert.equal(report.toneBands[1].range, "400–3,000 Hz");
+  assert.equal(report.toneBands[2].range, "3,000–12,000 Hz");
+});
