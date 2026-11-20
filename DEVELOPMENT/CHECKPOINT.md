@@ -100,8 +100,11 @@ No native PCM capture/output, DAW engine, storage schema, DSP, AI provider/orche
 ## Build and Test Results
 
 - Phase 0 audit: no build/test commands executed; existing tests were inventoried only.
-- Phase 1 CI run #1120 (`c567dbbf02b539320d2a1afe50ac0f308ae3e9e8`): syntax validation passed; 682 tests passed, 0 failed; Capacitor Android generation passed; Gradle debug APK build and artifact upload passed.
-- This first successful run predates the additional TIE-only UI regression test added to `tests/studio-daw-ui.test.js`; a final-HEAD workflow run is pending.
+- Phase 1 CI run #1120: 682 tests passed, 0 failed; Capacitor generation and Gradle APK build passed.
+- Final TIE regression run #1121: **683 tests passed, 0 failed**, including the new TIE workspace test (test 523). Syntax checks, Capacitor project generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact: `MG30-Studio-debug-APK`, run ID `44688873547`, artifact ID `14606999111`.
+- Extracted APK size: 4,769,296 bytes. SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
+- Live Android device/runtime testing, including workspace switching during recording/playback, remains pending.
 
 ## Decisions and Constraints
 
