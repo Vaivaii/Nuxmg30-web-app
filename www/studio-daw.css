@@ -3789,3 +3789,12 @@
   #page-studio .tie-compare-metric-head,
   #page-studio .tie-compare-metric-row{grid-template-columns:minmax(60px,1.15fr) repeat(3,minmax(35px,1fr))!important}
 }
+
+
+/* Build #334: neutralize Android/WebView native chrome on the invisible playhead hit button.
+   Keep this invariant as the final Studio DAW cascade after all visual refinements. */
+#page-studio #dawTimelinePage #dawPlayheadHit::before,
+#page-studio #dawTimelinePage #dawPlayheadHit::after{
+  content:none!important;
+  display:none!important;
+}
