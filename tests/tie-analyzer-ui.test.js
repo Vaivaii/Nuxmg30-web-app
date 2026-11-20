@@ -26,6 +26,11 @@ test("TIE Analyzer exposes measured metrics and spectrum/spectrogram visualizati
   assert.ok(ui.includes("drawSpectrum(result.spectrum)"));
   assert.ok(ui.includes("drawSpectrogram(result.spectrogram)"));
   assert.ok(ui.includes("result.limitations"));
+  assert.ok(ui.includes('"Source rate"'));
+  assert.ok(ui.includes('"Analysis rate"'));
+  assert.ok(ui.includes('"Source channels"'));
+  assert.ok(ui.includes('"Analysis channels"'));
+  assert.ok(ui.includes('"Resampling"'));
 });
 
 test("TIE Analyzer uses a module worker and bounded chunk transfer rather than main-thread full-buffer FFT", () => {
