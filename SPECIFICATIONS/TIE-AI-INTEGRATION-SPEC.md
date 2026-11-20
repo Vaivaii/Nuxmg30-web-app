@@ -174,3 +174,21 @@ status components where appropriate.
 -   Cancellation and late-response handling are tested.
 -   Provider errors are normalized and user-readable.
 -   No false claims about audio analysis or device changes are produced.
+
+
+## 12. Proposed AI Tone Reconstruction contract — Planning Only
+
+AI Tone Reconstruction is a future constrained preset-authoring flow, not an implementation authorization. Detailed requirements are in `TIE-INTELLIGENCE-EXPANSION-SPEC.md` §5–6.
+
+- It must use this existing shared AI orchestration and provider fallback. Do not create another AI engine, model router, credential store or provider manager.
+- AI output is an untrusted candidate plan. Deterministic validators remain authoritative for the original MG-30 Gen 2 model/firmware, block identifiers, order/slot constraints, parameter identifiers, value types, ranges, steps, enums, scene rules and preset schema.
+- Only device blocks/models and parameter descriptors in the verified Gen 2 capability database may be emitted. Only actual available NAM and IR library entries may be referenced.
+- AI must not author raw SysEx, firmware commands, undocumented controls or a guessed preset binary. Route all changes through the existing validated parameter mapping, preset codec and device communication path.
+- If a requested amp/effect/cab/parameter is unavailable, offer an explicitly labelled closest supported alternative or report that it cannot be reconstructed. Never fabricate an effect or asset.
+- Output must include source Artist Tone Matching evidence, measurements, estimated attributes, confidence, alternatives, unsupported aspects and the capability database/version used.
+- Preview is a draft state, not a device write. Reuse existing Editor controls, Tone Comparison and preset manager for preview/A/B/revision/save/export.
+- Require explicit confirmation before device transfer or overwrite, use existing backup/undo and verify read-back when supported.
+- Preserve the original active preset and scene until user confirmation. An offline preview may not be represented as actual pedal output unless it was recorded from the verified MG-30 route.
+
+Acceptance requires valid Gen 2 preset/scene round-trips, zero unsupported block/parameter output, validated before/after A/B with real audio, user-confirmed device writes, and regression coverage for the existing shared AI fallback, Editor, NAM/IR, preset and MIDI paths.
+
