@@ -36,6 +36,35 @@ test("TIE Compare does not write text into a selector that is absent from the cu
   }
 });
 
+
+test("TIE Compare module is loaded only after its complete static workspace markup", () => {
+  const moduleTag = '<script type="module" src="./tie-comparison-ui.js"></script>';
+  const moduleIndex = html.indexOf(moduleTag);
+  const reportMarkupIndex = html.indexOf('id="tieCompareProvenance"');
+  const notesMarkupIndex = html.indexOf('id="tieCompareListeningNotes"');
+  assert.notEqual(moduleIndex, -1, "Compare module script must be included in the app document");
+  assert.ok(reportMarkupIndex !== -1 && notesMarkupIndex !== -1, "report and listening-note nodes must exist in the shipped HTML");
+  assert.ok(moduleIndex > reportMarkupIndex && moduleIndex > notesMarkupIndex,
+    "Compare module must execute after the complete Compare report markup has been parsed");
+  assert.equal((html.match(/<script type="module" src="\.\/tie-comparison-ui\.js"><\\/script>/g) || []).length, 1,
+    "Compare module must be included exactly once to avoid duplicate event bindings");
+});
+
+test("TIE Compare report outputs are all part of the same HTML/JS release contract", () => {
+  const reportOutputIds = [
+    "tieCompareSummary", "tieCompareProvenance", "tieCompareListeningNotes",
+    "tieCompareReportMeta", "tieCompareLimitations", "tieCompareResults",
+    "tieCompareOverlayCanvas", "tieCompareDiffCanvas", "tieCompareDynamicCanvas",
+  ];
+  for (const id of reportOutputIds) {
+    assert.equal((html.match(new RegExp('id="' + id + '"', "g")) || []).length, 1,
+      "release HTML must contain exactly one " + id);
+    assert.ok(ui.includes('$("#' + id + '")') || ui.includes('$("'+ id + '")') ||
+      ui.includes('id="' + id + '"') || ui.includes('"' + id + '"'),
+      "Compare UI must explicitly own report node " + id);
+  }
+});
+
 test("TIE Compare exposes independent A/B source, channel, alignment and audition controls", () => {
   for (const id of [
     "tieCompareSourceA", "tieCompareSourceB", "tieCompareFileA", "tieCompareFileB",
