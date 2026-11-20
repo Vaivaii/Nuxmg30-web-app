@@ -221,9 +221,18 @@ test("TIE DSP: 100 Hz to 10 kHz sweep populates low and high spectral bands", ()
     samples[index] = 0.5 * Math.sin(phase);
   }
   const result = analyzeInOneChunk(samples, sampleRate, { fftSize: 4096, hopSize: 1024 });
-  assert.ok(result.metrics.bandEnergyPct.subBass > 0);
+  assert.ok(result.metrics.bandEnergyPct.low > 0);
   assert.ok(result.metrics.bandEnergyPct.high > 0);
   assert.ok(result.spectrogram.rows.length > 1);
+  const peakFrequency = (row) => {
+    let peakBin = 1;
+    for (let bin = 2; bin < row.magnitudeDbfs.length; bin += 1) {
+      if (row.magnitudeDbfs[bin] > row.magnitudeDbfs[peakBin]) peakBin = bin;
+    }
+    return peakBin * (sampleRate / 4096);
+  };
+  assert.ok(peakFrequency(result.spectrogram.rows[0]) < 1000);
+  assert.ok(peakFrequency(result.spectrogram.rows[result.spectrogram.rows.length - 1]) > 6000);
   assert.ok(result.metrics.spectralCentroidHz > 3000);
 });
 
