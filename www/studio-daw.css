@@ -2776,3 +2776,72 @@
   height:var(--studio-timeline-panel-height,clamp(320px,calc(var(--studio-viewport-height,100dvh) - 560px),720px))!important;
   min-height:var(--studio-timeline-panel-height,clamp(320px,calc(var(--studio-viewport-height,100dvh) - 560px),720px))!important;
 }
+
+
+/* TIE Phase 1 — internal Studio workspaces. This is a UI shell only. */
+#page-studio .studio-workspace-tabs{
+  position:sticky;top:47px;z-index:41;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;
+  margin:0 0 10px;padding:4px;
+  border:1px solid #2c392d;border-radius:13px;background:#101612;
+}
+#page-studio .studio-workspace-tabs button{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-width:0;min-height:38px;padding:7px 9px;
+  border:1px solid transparent;border-radius:9px;background:transparent;
+  color:#9aa691;font-size:11px;font-weight:800;white-space:nowrap;
+}
+#page-studio .studio-workspace-tabs button.active{
+  border-color:#708d4c;background:#c5f36b12;color:#c5f36b;
+}
+#page-studio .tie-workspace{min-width:0;padding:0 0 14px}
+#page-studio .tie-workspace[hidden]{display:none!important}
+#page-studio .tie-workspace-heading{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  padding:13px 14px;margin:0 0 10px;border:1px solid #2d3a2e;border-radius:14px;
+  background:linear-gradient(145deg,#182119,#101612);
+}
+#page-studio .tie-workspace-heading h3{margin:4px 0;font-size:18px;letter-spacing:-.4px;color:#edf5e7}
+#page-studio .tie-workspace-heading p{max-width:540px;margin:0;color:#98a590;font-size:11px;line-height:1.5}
+#page-studio .tie-phase-chip{
+  flex:0 0 auto;padding:6px 8px;border:1px solid #58713c;border-radius:999px;
+  color:#c5f36b;background:#c5f36b0d;font-size:8px;font-weight:850;letter-spacing:.7px;
+}
+#page-studio .tie-subnav{
+  display:flex;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;
+  padding:3px 1px 9px;margin-bottom:5px;scrollbar-width:none;
+}
+#page-studio .tie-subnav::-webkit-scrollbar{display:none}
+#page-studio .tie-subnav button{
+  flex:0 0 auto;min-height:34px;padding:7px 11px;
+  border:1px solid #2d392d;border-radius:9px;background:#111812;
+  color:#98a58f;font-size:10px;font-weight:750;white-space:nowrap;
+}
+#page-studio .tie-subnav button.active{
+  border-color:#708d4c;background:#c5f36b12;color:#c5f36b;
+}
+#page-studio .tie-empty-state{
+  min-height:210px;padding:20px 18px;border:1px solid #303c30;border-radius:15px;
+  background:linear-gradient(145deg,#171e18,#101511);
+}
+#page-studio .tie-empty-state[hidden]{display:none!important}
+#page-studio .tie-empty-kicker{
+  color:#c5f36b;font-size:9px;font-weight:850;letter-spacing:1.4px;
+}
+#page-studio .tie-empty-state h4{margin:10px 0 6px;color:#edf4e7;font-size:17px;letter-spacing:-.3px}
+#page-studio .tie-empty-state p{max-width:620px;margin:0;color:#a1ac99;font-size:12px;line-height:1.65}
+#page-studio .tie-empty-state small{
+  display:inline-block;margin-top:18px;padding-top:10px;border-top:1px solid #2b372b;
+  color:#7f8b78;font-size:10px;
+}
+#page-studio .tie-workspace-note{
+  margin:11px 2px 0;color:#7f8d79;font-size:10px;line-height:1.55;
+}
+@media(max-width:430px){
+  #page-studio .tie-workspace-heading{padding:11px;gap:7px}
+  #page-studio .tie-workspace-heading h3{font-size:16px}
+  #page-studio .tie-workspace-heading p{font-size:10px}
+  #page-studio .tie-phase-chip{font-size:7px;padding:5px 6px}
+  #page-studio .studio-workspace-tabs button{min-height:36px;padding:6px 5px;font-size:10px}
+  #page-studio .tie-empty-state{min-height:190px;padding:16px 14px}
+}
