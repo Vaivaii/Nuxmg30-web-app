@@ -2,83 +2,107 @@
 
 ## Project
 
-MG30 Studio --- Tone Intelligence Engine (TIE)
+MG30 Studio — Tone Intelligence Engine (TIE)
 
-## Current Branch
+## Current Branch and Repository
 
-`feature/tone-intelligence-engine`
+- Repository: `Vaivaii/Nuxmg30-web-app`
+- Branch: `feature/tone-intelligence-engine`
+- Audit HEAD before documentation update: `b1c143f4ec8c9fb6e75085331ccfafa0547b616b`
+- Audit report commit: `3d10551c2392cfe6d5c7f0c867f9eec79f06ac5d`
+- Working tree: **NOT VERIFIED** — audit used GitHub remote source view; no local checkout/index access was available. Do not interpret this as a clean local working tree.
 
 ## Current Phase
 
-Phase 0 --- Repository Audit
+**Phase 0 — Repository Audit: completed (remote source audit).**
+
+The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
+
+## Documentation Reviewed
+
+- `MG30-Studio-Master-Roadmap-TIE-v1.0.md` — read in full (775 lines). The exact requested `MASTER-ROADMAP.md` path does not exist; this file is the roadmap present in the repository.
+- `SPECIFICATIONS/TIE-DSP-ENGINE-SPEC.md` — read in full.
+- `SPECIFICATIONS/TIE-AUDIO-ENGINE-SPEC.md` — read in full.
+- `SPECIFICATIONS/TIE-COMPARISON-SPEC.md` — read in full.
+- `SPECIFICATIONS/TIE-AI-INTEGRATION-SPEC.md` — read in full.
+- `SPECIFICATIONS/TIE-KNOWLEDGE-BASE-SPEC.md` — read in full.
+- `SPECIFICATIONS/TIE-TESTING-SPEC.md` — read in full.
+- `DEVELOPMENT/CHECKPOINT.md` — read in full before this update.
 
 ## Completed
 
--   [ ] Repository and branch audit
--   [ ] Working-tree and commit-base verification
--   [ ] Audio engine and audio-source audit
--   [ ] DSP architecture audit
--   [ ] AI provider, orchestration, and fallback audit
--   [ ] Preset, NAM, and IR data-schema audit
--   [ ] Existing DAW, USB Loopback, Input Gain, and MIDI compatibility
-    audit
+- [x] Verify repository and remote branch.
+- [x] Verify remote HEAD and compare against the original TIE branch base.
+- [x] Read the full roadmap and all six TIE specification documents.
+- [x] Audit framework, language, build system, app structure and five-tab navigation.
+- [x] Audit Studio DAW, IndexedDB, Web Audio playback, Quick Record integration and audio routes.
+- [x] Verify native USB PCM input capture uses Android AudioRecord.
+- [x] Distinguish PCM USB audio capture from the separate USB-MIDI control path.
+- [x] Audit existing local FFT/metrics module and DSP gaps.
+- [x] Audit AI orchestration, provider manager/Worker fallback, Cloud API and ChatGPT native bridge.
+- [x] Audit preset codec, runtime model/parameter catalogue, MIDI mapping, NAM and IR boundaries.
+- [x] Produce Phase 0 architecture map, gap analysis, risks, candidate file map and recommended sequence.
 
-## Pending
+## Important Verified Findings
 
--   [ ] Complete Phase 0 audit and document findings
--   [ ] TIE UI foundation
--   [ ] DSP engine
--   [ ] Audio analysis
--   [ ] A/B comparison
--   [ ] Signal Chain visualization
--   [ ] Shared AI integration
--   [ ] Knowledge Base
--   [ ] Testing, performance, and compatibility validation
+1. Native USB PCM capture exists in `native-android/MG30AudioPlugin.java` via Android `AudioRecord`; it is separate from `native-android/MG30MidiPlugin.java` and USB-MIDI.
+2. Studio DAW media/project storage uses IndexedDB database `mg30-studio-daw`; Web Audio decodes media to AudioBuffer. Quick Record WAV takes can be imported into the DAW via `window.NUXStudioRecorder.pathToUrl`.
+3. `www/ai-audio-analysis.js` already implements local FFT and RMS/peak/crest/centroid/rolloff/band-energy metrics. It is partial DSP, not a complete TIE engine.
+4. Existing AI infrastructure is in `www/ai-tone-studio.js`, `www/cloud-api.js`, `cloud-worker/worker.js` and ChatGPT native SIWC bridge. TIE must reuse it; do not create a second provider/orchestration engine.
+5. Device model/parameter whitelist and MIDI CC mapping are in `www/index.html`; `model-assets.js` is reference artwork/labels, not the authoritative writable catalogue.
+6. Five main navigation pages remain Editor, NAM & IR, Presets, Studio and Device. TIE navigation belongs inside Studio.
+7. Exact path `MASTER-ROADMAP.md` is missing; actual roadmap is `MG30-Studio-Master-Roadmap-TIE-v1.0.md`.
+8. No service-worker registration, PWA manifest, dedicated TIE DSP Worker/AudioWorklet, full spectrogram/compare engine, versioned analysis repository or TIE knowledge retrieval module was found in the audited tree.
 
-## Modified Files
+## Files Updated in This Audit
 
-None recorded yet. Update this section after each implementation
-session.
+- `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md` — new full audit report.
+- `DEVELOPMENT/CHECKPOINT.md` — updated status, findings, limitations and next action.
+
+No application source, UI, configuration, audio engine, DSP, AI provider, Worker, API key, MIDI, firmware communication, preset, NAM, IR or dependency files were modified. No build or test was run.
+
+## Pending / Not Verified
+
+- Local working tree and local uncommitted changes: not accessible through GitHub remote tools.
+- Live Android/WebView runtime version, permissions, USB route changes, full-duplex behavior and lifecycle: not tested in this audit.
+- Codec support matrix and direct Analyzer adapters for Quick Record/DAW/import: not fully verified.
+- DSP numerical correctness/performance, memory and battery baseline: not measured.
+- No TIE feature has been implemented.
+
+## Risks / Blockers
+
+- DAW capture/playback lifecycle could be disrupted if the Studio workspace remounts or owns a competing audio graph.
+- PCM buffers can be large; avoid copying full recordings and profile Android memory.
+- USB input/output routes are separate; endpoint discovery alone does not prove full-duplex behavior.
+- Existing USB-MIDI is not an audio source.
+- Current FFT metrics cannot be promoted to calibrated frequency response, THD or definitive fizz/noise diagnosis without methods and fixtures.
+- Editor and Studio must use one shared AI infrastructure while isolating task context and freshness.
+- Provider fallback priorities differ by task; preserve existing routing.
+- Local working-tree safety must be confirmed in the user's actual checkout before local operations.
 
 ## Build and Test Results
 
-Not yet recorded. Include exact commands, outcomes, and relevant
-environment details.
-
-## Known Issues and Blockers
-
-None recorded yet. Add verified issues only.
+- Phase 0 audit: no build/test commands executed.
+- Existing tests were inventoried, not run.
+- No build status is claimed.
 
 ## Decisions and Constraints
 
--   Do not begin implementation before the repository audit is complete.
--   Preserve existing MG-30 Gen 2 compatibility and working application
-    features.
--   Reuse the existing AI orchestration/provider infrastructure; do not
-    create a duplicate AI engine.
--   Do not change firmware protocol or MIDI behavior without evidence
-    and explicit review.
--   Do not claim a feature or test is complete without verification.
+- Target remains original NUX MG-30 Gen 2 firmware 6.0.x, not MKII.
+- Preserve editor, preset management, NAM, IR, MIDI CC mapping and device protocol.
+- Preserve AI Live Tone Assistant and all provider/fallback behavior.
+- Preserve Jamm, Quick Record, 4-track DAW, timeline, mixer, playback, USB Loopback, Input Gain and Device management.
+- Keep five bottom navigation tabs; Studio may contain internal workspaces.
+- One shared AI engine, two access points (Editor and Studio).
+- Local DSP first; only analyze real PCM and never display mock metrics as measured results.
+- Do not modify firmware protocol or MIDI implementation without evidence and explicit review.
+- No dependency addition without demonstrated need.
+- Do not begin Phase 1 until the owner reviews the Phase 0 report and explicitly approves.
 
 ## Next Action
 
-Audit the current repository and record the verified architecture,
-existing capabilities, risks, and recommended implementation sequence
-before changing source code.
+Owner review of `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. If approved, first proposed Phase 1 task is a minimal Studio workspace shell that keeps Jamm & Record mounted and adds empty-state Tone Analysis sub-navigation only. No DSP or AI integration in that first task.
 
 ## Last Updated
 
 2026-11-20
-
-------------------------------------------------------------------------
-
-## Update Instructions
-
-At the end of each development session, update this checkpoint with: 1.
-Current phase and completed/pending tasks. 2. Files changed and the
-purpose of each change. 3. Build and test commands with actual results.
-4. Known bugs, blockers, and unresolved questions. 5. Current branch and
-commit hash, if available. 6. One concrete next action.
-
-Keep this document factual. Do not mark tasks complete based only on
-plans or assumptions.
