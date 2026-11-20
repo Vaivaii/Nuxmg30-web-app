@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 let importedFile = null;
 let decodedSource = null;
 let activeAnalysis = null;
+let lastAnalysisResult = null;
 
 function setAnalyzerView(view) {
   const allowed = ["spectrum", "spectrogram", "meter", "harmonics"];
@@ -320,6 +321,8 @@ async function analyzeSelectedSource() {
     };
     setStatus("Starting local DSP worker…");
     const result = await runWorkerAnalysis(pcm, settings, controller.signal);
+    lastAnalysisResult = result;
+    window.dispatchEvent(new CustomEvent("mg30-tie-analysis-updated"));
     renderAnalysisResult(result);
     $("tieAnalysisProgress").value = 100;
     setStatus("Analysis complete. Measurements were calculated locally from the selected PCM source.", "success");
@@ -355,3 +358,5 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && act
 refreshSourceOptions();
 setAnalyzerView((() => { try { return localStorage.getItem("mg30-tie-analyzer-view") || "spectrum"; } catch (_) { return "spectrum"; } })());
 setBusy(false);
+
+window.MG30TIEAnalyzerBridge = Object.freeze({ getResult: () => lastAnalysisResult });
