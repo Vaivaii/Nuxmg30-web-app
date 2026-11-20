@@ -3255,10 +3255,10 @@ async function readActiveBuffer(options={}){
   const body=parts[sceneIndex]||parts[0];
   if(!body||body.length<220)throw new Error('Balasan Scene '+(sceneIndex+1)+' terlalu pendek ('+(body?body.length:0)+' byte). Format SysEx belum cocok.');
   const candidate=states.map(s=>({...s,values:{...s.values}})); 
-  let validModels=0;
+  let validModels=0,knownBlocks=[];
   for(let i=0;i<11;i++){
    const v=bitSlot(body,i),model=v&0x3F,modelIndex=deviceModelIndex(i,model);
-   if(modelIndex>=0){validModels++;candidate[i].model=modelIndex;candidate[i].on=(v&0x40)===0}
+   if(modelIndex>=0){validModels++;knownBlocks.push(i);candidate[i].model=modelIndex;candidate[i].on=(v&0x40)===0}
   }
   if(validModels<8){
    if(sceneIndex!==0)throw new Error('Data Scene '+(sceneIndex+1)+' belum cocok dengan layout GEN2 ('+validModels+'/11 model valid). State amp/pedal sebelumnya dipertahankan.');
@@ -3289,7 +3289,7 @@ async function readActiveBuffer(options={}){
    targetSlot=resolvedProgram;$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker();
   }
   activeSceneIndex=sceneIndex;$('sceneSelect').selectedIndex=sceneIndex;
-  signalChainReadbackMeta={programSlot:targetSlot,sceneIndex,presetName:hardwarePresetName||name||currentName(),readAt:new Date().toISOString(),source:'device-readback'};
+  signalChainReadbackMeta={programSlot:targetSlot,sceneIndex,knownBlocks:knownBlocks.slice(),presetName:hardwarePresetName||name||currentName(),readAt:new Date().toISOString(),source:'device-readback'};
   render();renderSceneButtons();
   if(options.preserveDraftName)$('presetName').value=preservedDraftName;
   persist();return name;
@@ -3311,6 +3311,7 @@ async function pollHardwareState(forceBuffer=false){
   const reportChanged=firstReport||programChanged||sceneReportChanged;
   if(!forceBuffer&&!reportChanged)return;
   const sceneChanged=status.scene!==activeSceneIndex;
+  if(programChanged||sceneChanged)signalChainReadbackMeta=null;
   // Do not let a stale scene response undo a just-issued scene switch. A program
   // change is handled separately and must still synchronize the hardware slot.
   if(lastSceneCommandAt&&Date.now()-lastSceneCommandAt<4000&&sceneChanged&&!programChanged)return;
@@ -3643,6 +3644,7 @@ function resetHardwareSceneSyncState(){
 let lastAnnouncedActivePresetSlot=null;
 function notifyActivePresetChanged(){
  if(!Number.isInteger(targetSlot)||targetSlot<0||targetSlot>127||lastAnnouncedActivePresetSlot===targetSlot)return;
+ if(signalChainReadbackMeta&&signalChainReadbackMeta.programSlot!==targetSlot)signalChainReadbackMeta=null;
  lastAnnouncedActivePresetSlot=targetSlot;
  window.dispatchEvent(new CustomEvent('mg30-active-preset-changed',{detail:{programSlot:targetSlot,presetLabel:slotName(targetSlot)}}));
 }
@@ -6248,7 +6250,7 @@ window.MG30AIToneBridge=Object.freeze({
   const order=Array.isArray(chainOrder)?chainOrder.slice():[];
   const blocks=BLOCKS.map((block,index)=>{
    const state=states[index]||{};
-   const modelKnown=source!=='none'&&(verified?index<11:true);
+   const modelKnown=source!=='none'&&(verified?signalChainReadbackMeta.knownBlocks.includes(index):true);
    const modelName=modelKnown?(block.models[state.model]?.[0]||''):'';
    const controls=modelKnown?parameterControls(index,state.model):[];
    const parameters=controls.map(control=>{
