@@ -223,7 +223,11 @@ function renderAnalysisResult(result) {
   $("tieSpectrumDetails").textContent = result.settings.fftSize + " FFT · Hann · " +
     result.spectrum.binWidthHz.toFixed(2) + " Hz/bin · channel " + (result.settings.channelIndex + 1);
   drawSpectrum(result.spectrum); drawSpectrogram(result.spectrogram); renderBandEnergy(metrics.bandEnergyPct);
-  const meterWidth = (value) => Math.max(0, Math.min(100, ((Math.max(-60, Math.min(0, Number(value) || -240)) + 60) / 60) * 100));
+  const meterWidth = (value) => {
+    const numeric = Number(value);
+    const dbfs = Number.isFinite(numeric) ? numeric : -240;
+    return Math.max(0, Math.min(100, ((Math.max(-60, Math.min(0, dbfs)) + 60) / 60) * 100));
+  };
   $("tieMeterRmsFill").style.width = meterWidth(metrics.rmsDbfs) + "%";
   $("tieMeterPeakFill").style.width = meterWidth(metrics.samplePeakDbfs) + "%";
   $("tieMeterRmsValue").textContent = formatDb(metrics.rmsDbfs) + " dBFS";
