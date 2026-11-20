@@ -3539,7 +3539,7 @@ async function connectMG30(options={}){
      const wasConnected=midiConnected;
      midiConnected=ok;
      if(ok!==wasConnected){
-      resetHardwareSceneSyncState();
+      resetHardwareSceneSyncState({preserveSignalChain:!ok});
       if(!ok)hardwareSyncBusy=false;
      }
      window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));
@@ -3632,8 +3632,8 @@ localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
 let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0,sceneStateRevision=0,externalSceneRefreshTimer=null;
 let targetSlot=0;
-function resetHardwareSceneSyncState(){
- signalChainReadbackMeta=null;
+function resetHardwareSceneSyncState(options={}){
+ if(!options.preserveSignalChain)signalChainReadbackMeta=null;
  sceneStateRevision++;
  activeSceneIndex=null;
  lastReportedSceneStatus=null;
