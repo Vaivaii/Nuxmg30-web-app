@@ -411,8 +411,11 @@ Ask the owner to confirm whether they have analyzed (1) a known PCM WAV through 
 - Initial Phase 3 CI run #1158 (44706933990) failed at npm test: 735 passed, 1 failed, 736 total. The failing expectation incorrectly treated an unknown original source channel count as 1. The implementation correctly preserves unknown source metadata as null while reporting decoded PCM channel count separately.
 - Test correction commit: 055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa.
 - Current verification run #1159 (44707156825) is on the corrected branch HEAD 055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa.
-- Current run has passed dependency installation, JavaScript syntax validation, full npm test, and Capacitor Android project generation. Gradle assembleDebug is still in progress; APK upload has not yet been reported.
-- Therefore Phase 3 is IMPLEMENTED — AUTOMATED TESTS PASS; ANDROID BUILD AND DEVICE ACCEPTANCE PENDING. Do not label Phase 3 complete until the current build is green and the owner has tested A/B in the app.
+- Current run #1159 completed successfully: dependency installation and JavaScript syntax validation passed; full npm test reports 736 passed, 0 failed, 0 cancelled, 0 skipped; Capacitor Android project generation passed; Gradle assembleDebug reports BUILD SUCCESSFUL; APK artifact upload passed.
+- APK artifact ID: 14615806714. Artifact ZIP size: 4,412,201 bytes. Artifact ZIP SHA-256: 8ee733be7802727aca5763b53c488645f237a493dee91582cfbc390c3246f5af.
+- Extracted APK: MG30-Studio-Phase3-run1159.apk. APK size: 4,790,241 bytes. APK SHA-256: cdf796a4e914848f18a8cfea764f59e288849ca5f9613f9a5e25ee88ebb0221d.
+- Run #1159 tested application source/test HEAD 055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa. The latest branch HEAD after appending this checkpoint is a documentation-only descendant (d23612c22c27a474e530247d57862029385acf2e); no application source/test changes were made after the tested commit.
+- Therefore Phase 3 is IMPLEMENTED — AUTOMATED TESTS AND ANDROID BUILD PASS; TARGET-DEVICE A/B AND REGRESSION ACCEPTANCE PENDING. Do not label Phase 3 complete until the owner has tested A/B in the app.
 
 ### Protected boundaries
 
@@ -427,3 +430,21 @@ Ask the owner to confirm whether they have analyzed (1) a known PCM WAV through 
 3. Confirm Compare navigation and audition do not disrupt DAW recording/playback; test cancellation and app background/foreground.
 4. Record owner device test outcome before accepting Phase 3.
 
+
+
+### Phase 3 Build Artifact — 2026-11-20
+
+- GitHub Actions run #1159: 44707156825 — success.
+- Tested application/test commit: 055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa.
+- Full test suite: 736 passed, 0 failed, 0 cancelled, 0 skipped.
+- Capacitor Android generation: passed.
+- Gradle assembleDebug: BUILD SUCCESSFUL.
+- Artifact ID: 14615806714.
+- Artifact ZIP size: 4,412,201 bytes; SHA-256: 8ee733be7802727aca5763b53c488645f237a493dee91582cfbc390c3246f5af.
+- Extracted APK size: 4,790,241 bytes; SHA-256: cdf796a4e914848f18a8cfea764f59e288849ca5f9613f9a5e25ee88ebb0221d.
+- Downloaded artifact archive was extracted and the APK path/size/hash verified in the active session.
+- APK file: MG30-Studio-Phase3-run1159.apk.
+
+### Phase 3 owner validation still required
+
+Install the Phase 3 APK and test Compare with actual imported WAV and saved Quick Record sources. Verify independent A/B source/channel selection, same and differing source lengths, manual positive/negative offsets, RMS matching and reported gains, spectrum overlay/difference, dynamic envelope, A/B audition and stop. Confirm Compare navigation does not interrupt DAW playback/recording. Record device/Android/WebView, results and failures before accepting Phase 3.
