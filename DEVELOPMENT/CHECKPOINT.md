@@ -14,7 +14,7 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 ## Current Phase
 
-**Phase 0 — Repository Audit: completed (remote source audit).**
+**Phase 1 — Studio Workspace Shell: implemented; initial CI compatibility failures were identified and corrected. Latest CI validation pending.**
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 
@@ -61,13 +61,29 @@ The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. I
 
 No application source, UI, configuration, audio engine, DSP, AI provider, Worker, API key, MIDI, firmware communication, preset, NAM, IR or dependency files were modified. No build or test was run.
 
+## Phase 1 — Studio Workspace Shell
+
+- [x] Add internal Jamm & Record / Tone Analysis workspace selector inside Studio.
+- [x] Keep Jam, Record and DAW content in its original DOM location; workspace switching changes visibility only and does not invoke the existing mode-switch handler.
+- [x] Add five TIE sub-pages: Analyzer, Compare, Signal Chain, Intelligence and AI Consultant. Each is an explicit empty state, not a simulated analysis result.
+- [x] Persist the chosen Studio workspace and TIE sub-page locally.
+- [x] Preserve the five main application navigation tabs.
+- [x] Add the TIE branch to the existing Android build workflow push filter.
+- [x] Add static UI regression coverage for both workspaces and all five TIE sections.
+- [ ] Confirm Android Gradle build and inspect APK artifact.
+- [ ] Validate Android runtime and switching while audio capture/playback is active.
+
+Files changed: `www/index.html`, `www/studio-daw.js`, `www/studio-daw.css`, `tests/studio-daw-ui.test.js`, `.github/workflows/build-apk.yml`, plus this checkpoint and `docs/research/TIE_PHASE1_STUDIO_WORKSPACE_SHELL_2026-11-20.md`.
+
+No native PCM capture/output, DAW engine, storage schema, DSP, AI provider/orchestration, Worker, MIDI, firmware protocol, preset codec, NAM or IR transfer code, or dependency was changed. Local working tree is not accessible through the remote GitHub interface and remains NOT VERIFIED.
+
 ## Pending / Not Verified
 
 - Local working tree and local uncommitted changes: not accessible through GitHub remote tools.
 - Live Android/WebView runtime version, permissions, USB route changes, full-duplex behavior and lifecycle: not tested in this audit.
 - Codec support matrix and direct Analyzer adapters for Quick Record/DAW/import: not fully verified.
 - DSP numerical correctness/performance, memory and battery baseline: not measured.
-- No TIE feature has been implemented.
+- Phase 1 implements the internal Studio workspace shell and five empty-state TIE pages; no DSP or AI integration has started.
 
 ## Risks / Blockers
 
@@ -101,7 +117,7 @@ No application source, UI, configuration, audio engine, DSP, AI provider, Worker
 
 ## Next Action
 
-Owner review of `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. If approved, first proposed Phase 1 task is a minimal Studio workspace shell that keeps Jamm & Record mounted and adds empty-state Tone Analysis sub-navigation only. No DSP or AI integration in that first task.
+Review Phase 1 shell and its CI/Android results. Scope PCM adapters, DSP, compare engine, signal-chain snapshots, knowledge retrieval, and Studio AI context as separate subsequent work; do not begin those integrations until the Phase 1 review is complete.
 
 ## Last Updated
 
