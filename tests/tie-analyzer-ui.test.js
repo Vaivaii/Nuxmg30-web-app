@@ -53,3 +53,21 @@ test("TIE Analyzer styles remain scoped to the existing Studio workspace", () =>
   assert.ok(css.includes("#page-studio #tieSpectrumCanvas"));
   assert.ok(css.includes("#page-studio #tieSpectrogramCanvas"));
 });
+
+
+test("TIE Analyzer visual tabs expose Spectrum, Spectrogram, Meter and an honest unmeasured Harmonics state", () => {
+  for (const view of ["spectrum", "spectrogram", "meter", "harmonics"]) {
+    assert.ok(html.includes('data-tie-analyzer-view="' + view + '"'), "missing Analyzer view tab " + view);
+    assert.ok(html.includes('data-tie-analyzer-panel="' + view + '"'), "missing Analyzer view panel " + view);
+    assert.ok(ui.includes('"' + view + '"'), "Analyzer module must handle " + view);
+  }
+  for (const id of ["tieMeterRmsFill", "tieMeterPeakFill", "tieMeterRmsValue", "tieMeterPeakValue", "tieQuickDiagnosisTitle", "tieQuickDiagnosisDetails"]) {
+    assert.ok(html.includes('id="' + id + '"'), "missing measured meter/diagnostic element " + id);
+    assert.ok(ui.includes('$("#' + id + '")') || ui.includes('$("' + id + '")'), "Analyzer must update " + id);
+  }
+  assert.ok(ui.includes("metrics.clipping.detected"));
+  assert.ok(ui.includes("metrics.clipping.sampleCount"));
+  assert.ok(html.includes("No harmonic peaks or THD values are inferred"));
+  assert.ok(css.includes("#page-studio .tie-view-tabs"));
+  assert.ok(css.includes("#page-studio .tie-level-meter-row"));
+});
