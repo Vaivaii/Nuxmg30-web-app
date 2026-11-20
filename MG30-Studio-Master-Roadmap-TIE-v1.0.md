@@ -773,3 +773,78 @@ Gunakan instruksi berikut ketika memulai pekerjaan baru:
 ------------------------------------------------------------------------
 
 **END OF MASTER ROADMAP & TECHNICAL SPECIFICATION**
+
+# 18. Proposed Intelligence Expansion Backlog — Planning Only
+
+This section records future product capabilities requested by the owner. It is **documentation and planning only**. It does not authorize implementation, create a new active phase, change the existing Phase 0–7 order, or start Phase 4.
+
+The detailed requirements are in `SPECIFICATIONS/TIE-INTELLIGENCE-EXPANSION-SPEC.md`.
+
+## 18.1 Preset & Scene Level Matching
+
+Goal: help users compare and reduce unwanted level jumps between presets and between scenes in one preset.
+
+Planned capabilities:
+
+- Measure comparable output level for each selected preset/scene using the same known DI/reference performance and controlled capture path wherever possible.
+- Report sample peak (dBFS), RMS (dBFS), and any future standards-based integrated loudness as distinct measurements with exact method, interval and provenance.
+- Calculate reference-relative level deltas and recommend compensation in dB.
+- Preview before/after and perform A/B using existing Tone Comparison.
+- Apply only to a verified original MG-30 Gen 2 output Level/Volume parameter that is proven to be serialized and supported for the relevant preset/scene.
+- Preserve amp gain, drive, EQ, dynamics, effects, NAM and IR. Require explicit user confirmation before a device write; retain backup/undo and read-back verification.
+
+Measurement dependency: the current DSP output is not a BS.1770 integrated-loudness or true-peak implementation. LUFS/LKFS must not be displayed until a separately validated ITU-R BS.1770-compliant implementation exists. ITU currently lists BS.1770-5 (11/2023) as the in-force main recommendation; EBU R 128 v5.0 (November 2023) refers to compliant programme-loudness measurement. These references are measurement methods, not an automatic guitar-preset target:
+
+- https://www.itu.int/rec/R-REC-BS.1770/en
+- https://tech.ebu.ch/publications/r128
+
+Dependencies: Phase 2 audio provenance and measurements; Phase 3 A/B; controlled MG-30 Gen 2 capture/replay; verified Gen 2 preset/scene schema and Level/Volume parameter database; existing preset manager, backup, MIDI/device writer and read-back path.
+
+## 18.2 Artist Tone Matching
+
+Goal: find and analyse a guitarist tone reference by artist, song, era, recording or tone description, and present grounded candidate characteristics.
+
+Planned capabilities:
+
+- Search artist/track/album/era and rig references (examples include John Mayer, Eric Johnson, Andy Timmons, Steve Vai and Mateus Asato).
+- Prefer artist/producer/engineer statements, official artist/manufacturer documentation, recording credits and credible named interviews. Preserve URL, publisher/author, publication date, applicability to song/era, attribution and confidence.
+- Analyse user-provided audio using existing local audio adapters and DSP when available.
+- Separate measured results, source-documented equipment, estimated amp/gain/EQ/dynamics/effect/delay/reverb/signal-chain hypotheses and actionable recommendations.
+- Report uncertainty, alternative explanations and what the source does not establish.
+- Clearly label full-mix analysis: guitar may not be isolated. Do not claim perfect guitar source separation unless a separately selected, licensed and validated system supports it.
+
+Dependencies: Phase 2 DSP/audio import; Phase 3 comparison; versioned TIE Knowledge Base; an approved external search/metadata provider with terms, attribution, limits and cost review; shared AI Engine. Cloud source separation is optional and requires an explicit privacy, consent, licensing and quality decision.
+
+## 18.3 AI Tone Reconstruction
+
+Goal: create a candidate original MG-30 Gen 2 preset/scene from an accepted Artist Tone Matching profile.
+
+Planned capabilities:
+
+- Build a constrained signal chain using only verified Gen 2 amplifier, cab, effect, NAM and IR identifiers that exist in the current device/library inventory.
+- Validate block ordering, slot constraints, parameter identifiers, value types, ranges, steps, enums, scene rules and firmware compatibility against a versioned Gen 2 capability database.
+- Generate an existing-format-compatible preset draft through the current preset schema/codec; no invented blocks, controls, NAM captures, IR files, SysEx or preset fields.
+- Preview, A/B compare, revise, save and export using existing Editor, Tone Comparison and preset paths.
+- Report approximated aspects, unavailable devices/blocks and low-confidence inferences.
+- Require explicit confirmation, backup/undo and validation before transfer or overwrite.
+
+Dependencies: approved Artist Tone Matching result; verified MG-30 Gen 2 effect/parameter database and preset codec; Signal Chain/device snapshot when needed; existing NAM/IR library; Phase 2 DSP, Phase 3 Compare, shared AI Engine/provider fallback, preset manager and existing device communication.
+
+## 18.4 Shared architecture and staging constraints
+
+All three proposals must reuse the existing DSP Engine, Audio Engine, Tone Comparison, Signal Chain Intelligence, verified MG-30 Gen 2 capability database, NAM/IR Library, shared AI Engine/provider fallback, and preset/device communication. Do not create duplicate providers, audio engines, effect databases or preset writers.
+
+Proposed dependency order (not an implementation phase and not an instruction to begin work):
+
+1. Audit Gen 2 parameter/scene/preset coverage and controlled capture feasibility.
+2. Qualify repeatable measurement and a strict sample-peak/RMS/true-peak/loudness contract.
+3. Select verified artist-reference/search providers and define evidence licensing/attribution.
+4. Design Level Matching preview, confirmation, backup and read-back.
+5. Design Artist Tone Matching evidence, local-audio analysis and confidence reporting.
+6. Design Reconstruction structured output, capability validation and preset round-trip.
+7. Obtain owner approval and device acceptance before any implementation.
+
+External API terms, rate limits, licensing, cost, privacy and data-retention requirements must be documented before a provider is selected. Full-mix limitations and optional source-separation limitations must remain explicit. Standardized LUFS/LKFS is not to be claimed until measurement conformance tests pass.
+
+**Authorization:** backlog/specification only. The owner must explicitly approve each implementation scope. Phase 4 Signal Chain Intelligence remains separately gated by the existing explicit-approval rule. None of these proposals starts automatically after this roadmap update.
+
