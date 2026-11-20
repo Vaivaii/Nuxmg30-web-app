@@ -371,9 +371,9 @@ Install the verified run #1144 APK on the target Android device. Test one known 
 
 - Owner reports that the run #1144 debug APK has been installed on the target Android device and **the application launches and works**.
 - This confirms installation and basic application startup/runtime on the owner's device.
-- Exact device model, Android/WebView version, tested TIE Analyzer source paths, imported WAV metadata/results, Quick Record analysis, cancellation, long-file memory behavior, and DAW playback/record regression have not yet been reported; these remain **NOT VERIFIED**.
+- Owner confirms that TIE Analyzer has also been tested on-device. Exact device model, Android/WebView version, which source path(s) were tested (imported WAV and/or saved Quick Record), displayed metadata/numeric results, cancellation, long-file memory behavior, and DAW playback/record regression have not yet been reported; those details remain **NOT VERIFIED**.
 - Do not interpret the general "works" confirmation as proof that every Phase 2 hardware acceptance case passed.
-- Phase 2 status: **APK install/basic runtime confirmed by owner; DSP source-path and stress/lifecycle acceptance still pending**. Phase 3 remains gated.
+- Phase 2 status: **APK install/basic runtime and a TIE Analyzer test are confirmed by owner; exact test evidence and stress/lifecycle acceptance remain pending**. Phase 3 remains gated.
 - Protected surfaces remain unchanged: original NUX MG-30 Gen 2 firmware 6.0.x (not MKII), MIDI mapping/protocol, NAM, IR collections/import mapping, presets and shared AI engine.
 
 ### Next validation
