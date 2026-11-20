@@ -14,7 +14,7 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 ## Current Phase
 
-**Phase 1 — Studio Workspace Shell: implemented; initial CI compatibility failures were identified and corrected. Latest CI validation pending.**
+**Phase 1 — Studio Workspace Shell: implemented. CI run #1120 passed (682/682 tests and Android Gradle APK build); final-HEAD regression run pending to include the new TIE-specific test.**
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 
@@ -70,7 +70,8 @@ No application source, UI, configuration, audio engine, DSP, AI provider, Worker
 - [x] Preserve the five main application navigation tabs.
 - [x] Add the TIE branch to the existing Android build workflow push filter.
 - [x] Add static UI regression coverage for both workspaces and all five TIE sections.
-- [ ] Confirm Android Gradle build and inspect APK artifact.
+- [x] CI run #1120: 682/682 tests passed; Capacitor generation and Gradle `assembleDebug` succeeded; APK artifact uploaded (run SHA `c567dbbf02b539320d2a1afe50ac0f308ae3e9e8`).
+- [ ] Run CI on final HEAD so the newly added TIE-specific test is included.
 - [ ] Validate Android runtime and switching while audio capture/playback is active.
 
 Files changed: `www/index.html`, `www/studio-daw.js`, `www/studio-daw.css`, `tests/studio-daw-ui.test.js`, `.github/workflows/build-apk.yml`, plus this checkpoint and `docs/research/TIE_PHASE1_STUDIO_WORKSPACE_SHELL_2026-11-20.md`.
@@ -98,9 +99,9 @@ No native PCM capture/output, DAW engine, storage schema, DSP, AI provider/orche
 
 ## Build and Test Results
 
-- Phase 0 audit: no build/test commands executed.
-- Existing tests were inventoried, not run.
-- No build status is claimed.
+- Phase 0 audit: no build/test commands executed; existing tests were inventoried only.
+- Phase 1 CI run #1120 (`c567dbbf02b539320d2a1afe50ac0f308ae3e9e8`): syntax validation passed; 682 tests passed, 0 failed; Capacitor Android generation passed; Gradle debug APK build and artifact upload passed.
+- This first successful run predates the additional TIE-only UI regression test added to `tests/studio-daw-ui.test.js`; a final-HEAD workflow run is pending.
 
 ## Decisions and Constraints
 
@@ -113,7 +114,7 @@ No native PCM capture/output, DAW engine, storage schema, DSP, AI provider/orche
 - Local DSP first; only analyze real PCM and never display mock metrics as measured results.
 - Do not modify firmware protocol or MIDI implementation without evidence and explicit review.
 - No dependency addition without demonstrated need.
-- Do not begin Phase 1 until the owner reviews the Phase 0 report and explicitly approves.
+- Do not begin the next TIE integration phase until the owner reviews Phase 1 and its final CI/device validation.
 
 ## Next Action
 
