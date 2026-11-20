@@ -141,3 +141,24 @@ differences. - Limitations/confounders. - Listening notes
 -   Comparison handles unequal lengths and channel counts safely.
 -   Results do not claim objective tone quality from isolated metrics.
 -   Existing DAW playback/recording remains unaffected.
+
+
+## 12. Proposed Preset & Scene Level Matching — Planning Only
+
+This section is a future extension proposal, not an implementation authorization. Detailed planning is in `TIE-INTELLIGENCE-EXPANSION-SPEC.md` §3.
+
+- Compare a named reference preset/scene and candidate preset/scene using the same DI/reference performance and repeatable capture route. Unrelated performances are not proof of preset-level difference.
+- Reuse the existing audio source adapters, DSP results, comparison plan/report and A/B audition. Do not add a second FFT, RMS or playback engine.
+- Preserve metric identity and units:
+  - Sample peak: dBFS, maximum decoded sample.
+  - RMS: dBFS over an explicitly recorded interval/channel policy.
+  - True peak: dBTP only after a separately validated oversampling estimator.
+  - Integrated loudness: LUFS/LKFS only after conformance to a stated ITU-R BS.1770 revision and corresponding test vectors. Never relabel RMS or peak as loudness.
+- The currently implemented Phase 2/3 DSP output does not establish compliant integrated loudness or true peak. Those descriptors remain unavailable until a separately approved estimator and test suite exist.
+- Level compensation must target only a proven original MG-30 Gen 2 output Level/Volume parameter that is supported in the relevant preset/scene serialization. Never adjust amp gain, drive, EQ, dynamics, NAM or IR to make levels appear equal.
+- If the Gen 2 database cannot prove a safe per-preset/per-scene output control, the feature must remain recommendation-only and must not write to the pedal.
+- Preview must show measured before/after result, delta, exact parameter and quantized proposed value. Reuse this specification's existing A/B source/provenance rules.
+- Require explicit user confirmation, backup/undo and device-state verification before any device write.
+
+Standards planning references: ITU-R BS.1770-5 (11/2023), listed by ITU as the in-force main revision, specifies programme loudness and true-peak algorithms; EBU R 128 v5.0 (11/2023) references compliant loudness measurement. These standards do not set a guitar-preset target or validate a particular MG-30 capture path. See https://www.itu.int/rec/R-REC-BS.1770/en and https://tech.ebu.ch/publications/r128.
+
