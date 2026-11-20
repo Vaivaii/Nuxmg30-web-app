@@ -36,7 +36,7 @@ The first workflow run detected two compatibility issues:
 1. An exact-string Studio heading regression assertion was broken by adding an ID to the existing heading.
 2. New redundant `display:none!important` CSS declarations interfered with a legacy Build 334 CSS assertion.
 
-Both changes were corrected without weakening or modifying the legacy assertions. A new TIE-specific static UI test was added. A follow-up CI run is pending confirmation.
+Both changes were corrected without weakening or modifying the legacy assertions. A new TIE-specific static UI test was added. CI run #1120 completed successfully: JavaScript syntax validation passed, all 682 tests passed, Capacitor Android project generation passed, Gradle `assembleDebug` passed, and the `MG30-Studio-debug-APK` artifact (4,392,767 bytes; run ID `44688752679`) was uploaded. This run used source commit `c567dbbf02b539320d2a1afe50ac0f308ae3e9e8`, before the added TIE-specific static UI test was committed. A final-HEAD workflow run is being triggered to include that test.
 
 Android Gradle build, APK artifact creation, and live Android runtime behavior (especially switching workspaces while recording/playback is active) remain unverified until the follow-up workflow run and device testing are complete.
 
