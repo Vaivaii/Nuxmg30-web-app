@@ -71,3 +71,10 @@ test("TIE Analyzer visual tabs expose Spectrum, Spectrogram, Meter and an honest
   assert.ok(css.includes("#page-studio .tie-view-tabs"));
   assert.ok(css.includes("#page-studio .tie-level-meter-row"));
 });
+
+
+test("TIE Analyzer level meter treats a measured 0 dBFS value as valid full scale", () => {
+  assert.ok(ui.includes("Number.isFinite(numeric) ? numeric : -240"));
+  assert.ok(ui.includes("Math.max(-60, Math.min(0, dbfs))"));
+  assert.ok(!ui.includes("Number(value) || -240"));
+});
