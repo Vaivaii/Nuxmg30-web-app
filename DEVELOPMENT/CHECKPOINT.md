@@ -190,3 +190,35 @@ This section is authoritative for Phase 1 and supersedes the earlier pending CI 
 - SHA-256: `2d2898a3546f5e03f814545b69485b28947465362c3ef797507d439f53819db5`.
 - Latest branch HEAD after this build contains only the two Phase 2 documentation updates; no application source changed after the tested commit.
 - Manual Android test of imported audio and saved Quick Record WAV is still pending. Do not mark live USB, DAW-track analysis or hardware lifecycle as tested.
+
+
+## Phase 2 DSP Validation Follow-up — 2026-11-20
+
+### Remote source changes
+
+- Updated `www/tie-dsp-engine.js` to validate that every chunk includes the required FFT overlap and does not exceed the remaining source frames.
+- Added a finalization invariant: the number of processed STFT frames must equal the expected frame count. Incomplete chunk overlap now fails with `INVALID_PCM` rather than silently returning a partial spectrum.
+- Expanded `tests/tie-dsp-engine.test.js` with seven deterministic cases:
+  - 440 Hz sine amplitude recovery.
+  - 1 kHz full-scale sine (amplitude 1.0) RMS/peak/crest validation.
+  - Dual-tone spectral component retention.
+  - Seeded white-noise RMS and finite-spectrum validation.
+  - 100 Hz–10 kHz frequency sweep band/spectrogram validation.
+  - Clipped sine sample-peak/clipping validation.
+  - Rejection of an intermediate chunk without FFT overlap.
+- Commits:
+  - `9eb0b81c8fa7c7de1677a183ddf220259562ceff` — DSP overlap/frame validation.
+  - `bc7c7321345a30fc29b96620c3411e0893590f01` — deterministic DSP fixtures.
+
+### Verification status after these changes
+
+- Source edits were committed to the remote branch using GitHub's repository interface.
+- Automated tests for these new changes have **NOT RUN / NOT VERIFIED** in this session. The available GitHub workflow-run lookup only exposes PR-associated runs and returned no run for the push commit; no local repository checkout or shell working tree is available in this session.
+- No new APK build result is claimed. The prior Phase 2 CI result (run #1133, 708/708 tests, APK build success) predates these two commits and does not validate them.
+- Local `git status`, local uncommitted changes, and the physical Android device remain inaccessible; working tree remains **NOT VERIFIED**.
+- Phase 2 remains **in progress**. Do not start Phase 3 until the updated tests/build are confirmed and the owner completes imported WAV + saved Quick Record testing on Android.
+- Protected surfaces remain unchanged by this TIE patch: Editor/MIDI, original Gen 2 firmware protocol, MIDI CC mapping, preset codec, NAM, IR, shared AI infrastructure, DAW/audio plugins and device routing.
+
+### Next action
+
+Run `npm test` and `npm run android:build` on the branch head `bc7c7321345a30fc29b96620c3411e0893590f01` (or its checkpoint-only descendant), capture the actual CI run and APK artifact, then install it and manually test one known PCM WAV plus one actual saved Quick Record WAV on the target Android device. Record measured sample rate, channel count, duration, FFT settings, metrics and errors. Only then decide whether Phase 2 acceptance is met.
