@@ -8,13 +8,14 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 - Repository: `Vaivaii/Nuxmg30-web-app`
 - Branch: `feature/tone-intelligence-engine`
+- Latest Phase 4 implementation HEAD before checkpoint update: `cc6a7715a28528bc8dd87632565b93e4c67ec238`.
 - Audit HEAD before documentation update: `b1c143f4ec8c9fb6e75085331ccfafa0547b616b`
 - Audit report commit: `3d10551c2392cfe6d5c7f0c867f9eec79f06ac5d`
 - Working tree: **NOT VERIFIED** — audit used GitHub remote source view; no local checkout/index access was available. Do not interpret this as a clean local working tree.
 
 ## Current Phase
 
-**Phase 2 — DSP Foundation: implementation and CI build validated. Run #1133 passed 708/708 tests and produced the debug APK; Android source-import testing remains pending.**
+**Phase 4 — Signal Chain Intelligence: read-only implementation delivered; automated regression suite passed in CI run #1200, with latest HEAD build run #1202 pending at checkpoint time. Physical MG-30 readback acceptance remains pending.**
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 
@@ -710,3 +711,67 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Intelligence additions are documentation-only.
 - **Do not start Phase 4, Preset & Scene Level Matching, Artist Tone Matching, AI Tone Reconstruction or any other feature implementation until the owner explicitly approves the next scope.**
 
+
+## Phase 4 — Signal Chain Intelligence (read-only implementation) — 2026-11-20
+
+### Scope implemented
+
+- [x] Replaced the former generic Signal Chain placeholder with a live, interactive block flow inside the existing Studio / Tone Analysis workspace.
+- [x] Reused the editor's shared MG30AIToneBridge, readActiveBuffer(), BLOCKS, states, chainOrder, parameterControls() and parameterValueForControl(); no second preset reader, preset codec, or MIDI transport was introduced.
+- [x] Added getSignalChainSnapshot() to the existing shared bridge. It exposes the current shared editor state, validated block identities, current model, bypass state, available parameters, current preset slot, Scene, chain order, and readback provenance.
+- [x] Added a read-only refresh action that calls the existing aiRefreshDeviceSnapshot() / readActiveBuffer() path and the existing read-only readSignalChainRoutingMode() request. No write packet is issued from the Signal Chain panel.
+- [x] Uses the existing preset buffer fields 94–105 for the 12-position chain order. The reader's existing model validation is retained; each block is marked known only if its own model ID was validated. VOL is not marked device-verified by the current 11-block model readback.
+- [x] Shows actual active block order, model, ON/BYPASS state and the parameters exposed by the selected model. Missing values are shown as “Not read”; invalid/unread blocks are not filled from sample data.
+- [x] Supports block selection and parameter inspection.
+- [x] Retains the last successful readback when the USB-MIDI device disconnects; invalidates it when a different program/Scene is detected or a different preset slot is selected.
+- [x] Adds NAM context from the active AMP model's existing NAM slot profile, including device ID and confidence note. IDs 60 and 61 are marked as observed in previous device-selection captures; other slot-ID associations remain explicitly provisional. The preset readback does not expose the original .nam filename.
+- [x] Adds IR context from the active IR model, existing mg30-user-ir-name label and existing mg30-ir-collection-preset-map assignment. This view does not import, rename, remap, select, or transfer an IR.
+- [x] Reads the existing local NAM Library through NUXNativeMidi.listModels() when that Android API is available; reports the count only and does not infer which file is currently loaded in a pedal slot.
+- [x] Adds a configuration-only gain-stacking hypothesis when the active AMP gain and EFX gain/drive controls are both at least 70/100 on the editor's normalized scale. The UI explicitly labels this as a heuristic, not a measured signal level.
+- [x] Withholds clipping, input/output level, true-peak, noise-floor and headroom diagnoses because the current preset snapshot does not provide calibrated per-stage audio measurements. No universal effect-order warning is asserted without a validated device rule.
+- [x] Adds navigation links to the existing DSP Analyzer and Tone Comparison sections; it does not duplicate their engines or claim to have analyzed a live signal.
+- [x] Adds responsive Signal Chain UI styles scoped to Studio.
+
+### Files changed
+
+- www/index.html — shared bridge extension, per-block readback validity tracking, readback invalidation/preservation, Phase 4 panel markup and module registration.
+- www/tie-signal-chain-ui.js — new Signal Chain rendering, read-only refresh, block detail, NAM/IR context and conservative diagnostics.
+- www/studio-daw.css — responsive Phase 4 styles scoped to #page-studio.
+- tests/tie-signal-chain-intelligence.test.js — new read-only snapshot, order, data provenance, NAM/IR, diagnostics and responsive UI regression tests.
+- tests/tie-studio-visual-redesign.test.js — updated the former static-preview assertion to cover the live shared-state Signal Chain panel.
+- DEVELOPMENT/CHECKPOINT.md — this Phase 4 record.
+
+### Commit history
+
+- fb99bbd56db2c831c5f5380217ddd23cea467946 — initial read-only Signal Chain UI and shared bridge.
+- a4b3ba8fa33cd9118b1bb445671a2a006d3aea38 — initial Phase 4 regression coverage.
+- c300b353fb41ba1a1b8d00b22061d99cc44129aa — per-block validation and stale snapshot handling.
+- bda8b1f486c59a52980b7f1805ff7617d149ddf6 — regression tests aligned to live panel.
+- 0024c20f1a463436341c850bfd1c4958269802a9 — retain last successful readback after disconnect.
+- cc6a7715a28528bc8dd87632565b93e4c67ec238 — tests for disconnect retention and invalidation.
+
+### Validation and build evidence
+
+- GitHub Actions run #1197 and #1198 initially failed because the first Phase 4 test pass had assertions that did not match the implementation and the old visual-redesign test still expected the retired static placeholder. These were corrected; no application feature was rolled back.
+- GitHub Actions run #1200: the full Node regression test step passed; Capacitor Android generation also passed; Gradle debug APK build was still running when this checkpoint text was prepared.
+- GitHub Actions run #1202 is the verification run for latest Phase 4 HEAD cc6a7715a28528bc8dd87632565b93e4c67ec238; status was queued/in progress when this checkpoint text was prepared.
+- No physical MG-30 Gen 2 was connected to this development session. Therefore actual active-preset readback, Scene changes, USB-MIDI disconnect/reconnect, and on-device NAM/IR identification have not been physically exercised here.
+- Android APK runtime interaction and WebView console inspection remain pending. A successful Gradle build is not a substitute for device acceptance.
+
+### Protected boundaries
+
+- No firmware protocol or MIDI CC mapping was changed.
+- No preset load/save/import/export codec or transfer path was changed.
+- No NAM file, NAM slot, NAM transfer or NAM selection was modified.
+- No IR User/Third Party or Collection mapping, slot data, WAV transfer or IR selection was modified.
+- No DAW, recording, playback, USB audio, USB MIDI or Phase 2/3 engine was modified.
+- The new panel has no device-write action; it only uses the existing readback and status-query methods.
+- Preset/Scene Level Matching, Artist Tone Matching and AI Tone Reconstruction remain roadmap-only and were not implemented.
+
+### Phase 4 acceptance status
+
+- Implemented: shared-state Signal Chain Reader, visual block flow, model parameter inspection, NAM/IR context, conservative configuration hypothesis, and Analyzer/Compare navigation.
+- Automated validation: regression tests passed on run #1200; latest HEAD verification is run #1202.
+- Not yet accepted: physical original Gen 2 active-preset readback; all 12 order entries and bypass states; preset/Scene refresh; disconnected and incomplete data behavior on Android; actual NAM/IR slot/file identification; runtime error inspection.
+- Diagnostic limitation: clipping, noise, input/output level and headroom remain unavailable without measured audio data tied to the preset/session.
+- Do not claim Phase 4 fully device-accepted until the owner performs the physical pedal checks above. Do not start Phase 5 until the owner explicitly instructs it.
