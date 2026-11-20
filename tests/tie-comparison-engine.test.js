@@ -7,6 +7,11 @@ import {
   createAlignedComparisonPlan,
   TieComparisonError,
 } from "../www/tie-comparison-engine.js";
+import {
+  createDspAccumulator,
+  finalizeDspAccumulator,
+  processDspChunk,
+} from "../www/tie-dsp-engine.js";
 
 function makeSource(id, channels, sampleRateHz = 48000) {
   const frameCount = channels[0].length;
@@ -50,6 +55,23 @@ function fakeAnalysis(fftSize = 1024, value = -12) {
       spectralRolloff85Hz: 5000,
     },
   };
+}
+
+function analyzePcm(samples, sourceId, fftSize = 2048) {
+  const sampleRateHz = 48000;
+  const metadata = {
+    sourceId,
+    sourceKind: "test-fixture",
+    label: sourceId,
+    sampleRateHz,
+    channelCount: 1,
+    frameCount: samples.length,
+    durationSeconds: samples.length / sampleRateHz,
+    sampleFormat: "Float32 PCM",
+  };
+  const accumulator = createDspAccumulator(metadata, { fftSize, hopSize: fftSize / 2, channelIndex: 0 });
+  processDspChunk(accumulator, samples, 0, samples.length);
+  return finalizeDspAccumulator(accumulator);
 }
 
 test("TIE compare: unequal lengths use only the matched overlapping duration", () => {
@@ -183,4 +205,43 @@ test("TIE compare: report captures provenance, settings, gains, metrics and limi
   assert.equal(report.spectrum.differenceDirection, "B minus A");
   assert.ok(report.dynamic.points.length > 0);
   assert.ok(report.limitations.some((item) => /brighter spectrum/i.test(item)));
+});
+
+
+test("TIE compare integration: identical real PCM in A and B yields near-zero spectral and dynamic deltas", () => {
+  const original = sine(48000, 0.35, 997);
+  const plan = createAlignedComparisonPlan(
+    makeSource("same-a", [original.slice()]),
+    makeSource("same-b", [original.slice()]),
+  );
+  const resultA = analyzePcm(plan.a.samples, "same-a");
+  const resultB = analyzePcm(plan.b.samples, "same-b");
+  const report = buildComparisonReport(plan, resultA, resultB);
+  const maxAbsDifference = Math.max(...report.spectrum.differenceDb.slice(1).map(Math.abs));
+  assert.ok(maxAbsDifference < 1e-6, "identical spectrum maximum delta: " + maxAbsDifference);
+  assert.ok(report.dynamic.points.every((point) => Math.abs(point.deltaDb) < 1e-6));
+});
+
+test("TIE compare integration: gain-only difference is attenuated to the quieter source without mutating PCM", () => {
+  const aSamples = sine(48000, 0.25, 1000);
+  const bSamples = sine(48000, 0.5, 1000);
+  const originalA = aSamples.slice();
+  const originalB = bSamples.slice();
+  const plan = createAlignedComparisonPlan(
+    makeSource("quiet-a", [aSamples]),
+    makeSource("loud-b", [bSamples]),
+    { levelMatch: "rms" },
+  );
+  const resultA = analyzePcm(plan.a.samples.map((sample) => sample * plan.a.gain), "quiet-a");
+  const matchedB = new Float32Array(plan.b.samples.length);
+  for (let i = 0; i < matchedB.length; i += 1) matchedB[i] = plan.b.samples[i] * plan.b.gain;
+  const resultB = analyzePcm(matchedB, "loud-b");
+  const report = buildComparisonReport(plan, resultA, resultB);
+  const maxAbsDifference = Math.max(...report.spectrum.differenceDb.slice(1).map(Math.abs));
+  assert.ok(maxAbsDifference < 0.2, "gain-matched spectrum delta: " + maxAbsDifference);
+  assert.ok(plan.a.gain <= 1 && plan.b.gain <= 1);
+  assert.equal(plan.a.gain, 1);
+  assert.ok(Math.abs(plan.b.gain - 0.5) < 1e-5);
+  assert.deepEqual(aSamples, originalA);
+  assert.deepEqual(bSamples, originalB);
 });
