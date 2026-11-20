@@ -484,3 +484,28 @@ Install the Phase 3 APK and test Compare with actual imported WAV and saved Quic
 - Run #1168 (44727307912), source/test commit `3ec2dae8c88573e35765d55dc6fa24c56852676b`: dependency install, JS syntax validation, full protocol regression tests and Capacitor Android generation have passed. Gradle `assembleDebug` is still running; no APK artifact has been published yet.
 - Do not distribute the old run #1159 APK as the fix. Rebuilt artifact from a coherent HTML/JS commit is required.
 
+## Phase 3 Compare DOM Fix — Build Verified — 2026-11-20
+
+### Final CI run #1168
+
+- Run ID: `44727307912`, conclusion: success.
+- Tested source/test commit: `3ec2dae8c88573e35765d55dc6fa24c56852676b`.
+- Full test suite: **742 passed, 0 failed, 0 cancelled, 0 skipped**.
+- JavaScript syntax validation: passed.
+- Capacitor Android generation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- APK artifact upload: passed.
+- Artifact ID: `14623723980`.
+- Artifact ZIP size: 4,412,189 bytes; SHA-256: `9665caaf1a34dd5af25bd2ad6685e3f0fa550b7c18e8567feb7060a0843d2006`.
+- Extracted APK: `MG30-Studio-Compare-DOM-fix-run1168.apk`.
+- APK size: 4,790,201 bytes; SHA-256: `e2743a2959f9213d030ba38296c1ff813b34c18d38939d98eb96370c9e73cff9`.
+- Verified the APK archive contains `assets/public/index.html` with `tieCompareProvenance` and `tieCompareListeningNotes`, and the bundled JavaScript contains the corresponding Compare UI selectors. This directly verifies the formerly mismatched DOM/JS pair is now shipped together.
+- Current branch head after documentation-only checkpoint commits is a descendant of the tested source/test commit; no application source or test code changed after CI run #1168.
+
+### Acceptance boundary
+
+- The stale run #1159 APK is superseded. Use only the run #1168 APK for further device verification.
+- Automated engine tests cover actual Float32 PCM fixtures processed by the production DSP accumulator and report builders; UI tests require real imported-file / Quick Record adapters and the production worker path.
+- Automated tests/build prove source contracts and packaging; they do not prove real-device audio decoding, Android WebView worker execution, audible Play A/B/Stop, or DAW co-existence. These remain pending owner validation.
+- Phase 3 remains **NOT COMPLETE — DOM/build mismatch corrected, 742 tests and Android APK build pass; physical-device end-to-end A/B and DAW regression pending**.
+
