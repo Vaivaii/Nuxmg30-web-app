@@ -30,3 +30,11 @@ Dokumen ini menetapkan rancangan dan acceptance criteria, bukan
 menyatakan bahwa fitur sudah ada. Codex harus mengaudit repository aktif
 sebelum implementasi, menyesuaikan nama modul dengan arsitektur aktual,
 dan tidak mengasumsikan dukungan audio USB dari koneksi USB MIDI.
+
+
+7. `TIE-INTELLIGENCE-EXPANSION-SPEC.md` — planning-only specification for Preset & Scene Level Matching, Artist Tone Matching and AI Tone Reconstruction, including evidence contracts, loudness measurement limits, Gen 2 compatibility, dependencies and approval gates.
+
+
+## Status of the Intelligence expansion
+
+The three capabilities listed in TIE-07 are proposed backlog items only. This document does not state that they are implemented or approved. Existing Phase 0–7 ordering remains unchanged; Phase 4 and all new feature work remain gated by explicit owner approval.
