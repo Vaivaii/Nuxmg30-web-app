@@ -246,6 +246,7 @@ export function buildComparisonReport(plan, resultA, resultB) {
       "Different lengths are compared only over the matched overlapping region.",
       "Differences between separate performances can include playing variation, pickup, guitar, input, room and recording differences.",
       "A brighter spectrum or higher RMS is not an objective rating of tone quality.",
+      "No AI interpretation is generated in this phase; measured facts and user-entered listening notes remain separate.",
     ],
   };
 }
