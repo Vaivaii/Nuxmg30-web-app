@@ -43,3 +43,13 @@ Android Gradle build, APK artifact creation, and live Android runtime behavior (
 ## Environment limitation
 
 Source changes were applied through GitHub remote repository operations. No local checkout was available, so the local working tree and any local uncommitted changes could not be inspected.
+
+
+## Final CI Verification — 2026-11-20
+
+- Run #1121 / ID `44688873547` completed successfully on source commit `169dcb5090d75c9fdea9da995146c5240cc86872`.
+- **683 tests passed, 0 failed**, including the TIE-specific workspace/sub-page static test.
+- JavaScript syntax validation, Capacitor Android project generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Artifact ID: `14606999111`; extracted APK size: 4,769,296 bytes.
+- APK SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
+- Live Android device/runtime testing, including switching workspaces during an active recording/playback, remains unverified.
