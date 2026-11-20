@@ -509,3 +509,81 @@ Install the Phase 3 APK and test Compare with actual imported WAV and saved Quic
 - Automated tests/build prove source contracts and packaging; they do not prove real-device audio decoding, Android WebView worker execution, audible Play A/B/Stop, or DAW co-existence. These remain pending owner validation.
 - Phase 3 remains **NOT COMPLETE — DOM/build mismatch corrected, 742 tests and Android APK build pass; physical-device end-to-end A/B and DAW regression pending**.
 
+## MG30 Studio Complete UI/UX Redesign — Pre-Phase 4 Milestone — 2026-11-20
+
+### Milestone status
+
+- Studio and all five TIE section presentations have been redesigned against the supplied six-panel master visual reference: deep charcoal / black-green surfaces, fine metallic-green borders, lime active states and glow, compact typographic hierarchy, icon-based segmented navigation, tight spacing and responsive Android-first layouts.
+- This is a UI/UX milestone only. **Phase 4 was not started.**
+- Build and automated regression are green on the latest source/test commit. Physical Android visual comparison, functional device acceptance and owner design approval are still pending.
+- Do not mark this design milestone approved/complete solely because CI is green. Stop at this checkpoint and wait for the owner's review.
+
+### Files changed
+
+Application source:
+- `www/index.html` — rebuilt Studio workspace selector and TIE navigation/panels. Analyzer now has Spectrum / Spectrogram / Meter / Harmonics views, a measured level panel, clipping-only quick diagnosis, and clear unsupported states. Compare now has compact independent A/B source slots, swap, view tabs, grouped Low/Mid/High report and listening notes. Signal Chain and Intelligence have honest unavailable/waiting states. AI Consultant CTA opens the existing shared AI Live Tone Assistant.
+- `www/studio-daw.css` — added scoped Studio/TIE visual tokens and responsive styles for the premium dark reference. Existing DAW Build #334 playhead appearance contract was retained at the end of the stylesheet.
+- `www/tie-analyzer-ui.js` — added Analyzer view switching and measured Meter/Quick Diagnosis presentation using existing DSP results. Corrected 0 dBFS meter handling so a valid numeric zero is not mistaken for missing data.
+- `www/tie-comparison-ui.js` — added Compare view switching, A/B source swap, grouped band display and an entry point to the existing shared AI assistant.
+- `www/tie-comparison-engine.js` — groups the already-produced DSP relative band-energy values into Low (20–400 Hz), Mid (400–3,000 Hz), High (3,000–12,000 Hz) for report presentation only. No FFT, RMS, spectrum, windowing or DSP processing algorithm was changed.
+
+Tests changed/added:
+- `tests/tie-analyzer-ui.test.js` — Analyzer views, measured level display, truthful Harmonics state and 0 dBFS full-scale meter mapping.
+- `tests/tie-comparison-ui.test.js` — Compare views, source swap, grouped report and shared AI entry point.
+- `tests/tie-comparison-engine.test.js` — verifies grouped Low/Mid/High values are calculated solely from the existing bandEnergyPct results.
+- `tests/tie-studio-visual-redesign.test.js` — new guardrails for five primary tabs, Studio workspace modes, all five TIE sections, no fabricated sessions/device values, shared AI assistant, mobile style scope and production measurement boundaries.
+
+No changes were made to `www/studio-daw.js`, DSP worker processing, native audio capture/output plugins, MIDI protocol/mapping, firmware handling, NAM, IR, preset codec/storage, AI provider orchestration/fallback or backend.
+
+### Visual and functional scope / evidence boundaries
+
+- Analyzer's Meter view is explicitly a display of a completed selected-source PCM measurement; it is **not** a live input meter. Live USB Loopback analysis and the reference's Live Analysis action are not added because a validated read-only live PCM source contract is not part of Phase 2. Existing direct USB capture is not repurposed for TIE.
+- Quick Diagnosis currently reports only the available sample-clipping count and states when the noise floor cannot be measured. It does not invent a Good/Bad tone grade, THD, fizz diagnosis or noise-floor value.
+- Harmonics views are presentational capability states only. No harmonic estimator/THD implementation exists in the current DSP result, so no harmonic values are fabricated.
+- Compare Low/Mid/High presentation aggregates existing measured relative energy; it is not a new DSP algorithm or subjective quality ranking.
+- Signal Chain's visual chain is a generic flow guide, explicitly labelled as not the current device configuration. No live MG-30 effect-block snapshot, effect parameter values, NAM/IR active-state diagnosis or block ordering is fabricated.
+- Intelligence shows requirements/waiting states only. It does not create technical findings without measurement and device evidence.
+- AI Consultant opens the existing `#aiToneOpenButton` and reuses the actual shared AI assistant/modal, provider orchestration and fallback. A second AI chat/provider architecture was not created. The compact context labels indicate where context would originate; they do not claim that a live device snapshot has been injected into this page.
+- No Recent Sessions list was added because no matching Studio recent-session source was found in the existing implementation. Existing DAW saved-project storage and `#dawSavedProjects` remain intact; no synthetic demo sessions are displayed.
+- The five bottom application navigation destinations (Editor, NAM & IR, Presets, Studio, Device) remain present.
+
+### Regression and Android build — latest run #1183
+
+- GitHub Actions run: #1183, ID `44764156881`, conclusion **success**.
+- Tested application/test commit: `262130caa82fdc92f363da3268962592588a36d4` (same as branch head when this checkpoint was written).
+- Full repository suite: **755 passed, 0 failed, 0 cancelled, 0 skipped**.
+- JavaScript syntax validation: passed.
+- Capacitor Android project generation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- APK artifact upload: passed.
+- Artifact ID: `14642991875`.
+- Artifact ZIP size: 4,423,726 bytes; SHA-256: `9a4ce235d150dec37f0b4895da72e42eb38f9e3995d969c6257b299a771c38ac`.
+- Extracted APK: `MG30-Studio-UX-Redesign-run1183.apk`.
+- APK size: 4,800,385 bytes; SHA-256: `678801f0da1c8ae36e024cc3bfefdc5dbcc196ecc93b2e0b8c0c35574194437d`.
+- APK package verification: ZIP contains `assets/public/index.html`, bundled application JS/CSS and `tie-dsp.worker`; inspected HTML confirms Analyzer diagnosis/meter, Compare A/B swap/band-report and AI CTA elements are included in the same APK package as their compiled JavaScript bundle.
+- Branch head at checkpoint: `262130caa82fdc92f363da3268962592588a36d4`.
+
+### Screenshot / device validation status
+
+- The APK was extracted and inspected. An attempt to render screenshot previews from its packaged assets was blocked by the managed Chromium environment policy for both localhost and file URLs (`ERR_BLOCKED_BY_ADMINISTRATOR`).
+- This session has no Android emulator or ADB connection. Therefore **no physical-device screenshot or real Android visual acceptance is claimed**. Do not label any mockup/render as a screenshot from the APK.
+- A screenshot set from the owner's Android device is still required to compare screen proportions, scroll behavior, text wrapping and clipping against the master reference. This is an external/device acceptance step, not covered by the 755 CI tests.
+
+### Phase 2 and Phase 3 status preserved
+
+- Phase 2: prior owner confirmation still stands — Analyzer works on both imported WAV and saved Quick Record with FFT, RMS, Peak and Crest Factor visible without errors. Stress/memory, cancellation, Android lifecycle, independent numerical fixture comparison on device and full DAW regression remain open. This redesign did not change Phase 2 DSP source or processing.
+- Phase 3: A/B engine/UI and the previous 742-test APK build remain valid as recorded above; the latest 755-test suite also reruns the repository's existing Phase 3 tests. The owner has not yet confirmed full physical A/B source selection, Compare results, RMS matching, swap, Play A, Play B, Stop and DAW record/playback coexistence on the current APK. Phase 3 remains **NOT DEVICE-ACCEPTED**.
+- This UI redesign does not close Phase 2 or Phase 3 acceptance gates and does not start Phase 4.
+
+### Remaining work before design approval
+
+1. Owner installs `MG30-Studio-UX-Redesign-run1183.apk` and inspects Studio/Jamm & Record, Analyzer, Compare, Signal Chain, Intelligence and AI Consultant against the master reference.
+2. Capture actual Android screenshots for those screens and note visual differences: content density, status/header height, five-tab fit, safe-area/scroll reserve, clipped labels, chart sizing, and bottom-nav clearance.
+3. Re-test Jam, Record, DAW Timeline, Mixer, Track Settings, Quick Record and backing playback.
+4. Re-test Analyzer with imported WAV and saved Quick Record; confirm measured Meter and Quick Diagnosis agree with selected PCM result, and Harmonics remains labelled unmeasured.
+5. Re-test Compare A/B using two real recordings, including source/channel swap, FFT, spectrum/difference/dynamics, RMS matching, report and Play A/B/Stop.
+6. Re-test existing shared AI assistant entry, Editor/MIDI connection, preset load/save, NAM and IR workflows.
+7. Fix any owner-reported visual or runtime discrepancy, rebuild and re-run the full suite before asking for final design approval.
+
+**Stop condition:** no Phase 4 / Signal Chain Intelligence implementation begins until the owner explicitly approves the redesigned UI.
+
