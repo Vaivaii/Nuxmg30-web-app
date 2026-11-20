@@ -104,11 +104,18 @@ function appendMetadataTag(holder, label, value) {
 }
 function renderSourceMetadata(metadata) {
   const holder = $("tieSourceMetadata"); holder.replaceChildren();
+  const sourceRate = Number(metadata.sourceSampleRateHz);
+  const sourceChannels = Number(metadata.sourceChannelCount);
   appendMetadataTag(holder, "Source", metadata.label);
   appendMetadataTag(holder, "Type", metadata.sourceKind);
   appendMetadataTag(holder, "Format", metadata.sourceFormat);
-  appendMetadataTag(holder, "Sample rate", metadata.sampleRateHz.toLocaleString() + " Hz");
-  appendMetadataTag(holder, "Channels", String(metadata.channelCount));
+  appendMetadataTag(holder, "Source rate", sourceRate > 0 ? sourceRate.toLocaleString() + " Hz" : "Not available");
+  appendMetadataTag(holder, "Analysis rate", metadata.sampleRateHz.toLocaleString() + " Hz");
+  appendMetadataTag(holder, "Source channels", Number.isInteger(sourceChannels) && sourceChannels > 0 ? String(sourceChannels) : "Not available");
+  appendMetadataTag(holder, "Analysis channels", String(metadata.channelCount));
+  appendMetadataTag(holder, "Resampling", metadata.resamplingApplied === null
+    ? "Not established"
+    : (metadata.resamplingApplied ? "Yes" : "No"));
   appendMetadataTag(holder, "Duration", metadata.durationSeconds.toFixed(2) + " s");
   holder.hidden = false; holder.classList.add("is-visible");
 }
