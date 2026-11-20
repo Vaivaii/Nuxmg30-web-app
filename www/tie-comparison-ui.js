@@ -85,7 +85,7 @@ function updateChannelOptions(slot, count) {
     addOption(select, String(index), "Channel " + (index + 1) + " · " + label);
   }
   select.value = String(Math.min(previous, count - 1));
-  select.disabled = false;
+  select.disabled = Boolean(activeCompareController);
 }
 
 async function decodeArrayBuffer(arrayBuffer) {
@@ -216,7 +216,7 @@ async function analyzeAlignedWindow(slot, planPart, frameCount, fftSize, signal,
       worker.postMessage({ type: "chunk", startFrame, coreFrameCount, samples: chunk }, [chunk.buffer]);
       const response = await waitForWorkerMessage(worker, "ack", signal);
       const percent = Math.round((response.processedFrames / response.totalFrames) * 100);
-      $("tieCompareProgress").value = Math.min(100, Math.round((progressOffset + percent) / 2));
+      $("tieCompareProgress").value = Math.min(100, Math.round(progressOffset === 0 ? percent / 2 : 50 + percent / 2));
       startFrame += coreFrameCount;
     }
     worker.postMessage({ type: "finish" });
@@ -456,6 +456,7 @@ async function playPreview(key) {
 }
 
 function clearSlot(slot) {
+  void stopPreview();
   slot.decoded = null;
   slot.decodedId = "";
   $(slot.channel).replaceChildren();
