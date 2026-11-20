@@ -33,6 +33,7 @@ on:
       - feature/worker-ai-nam-query-routing
       - fix/no-nam-specialist-provider-order
       - feature/tone-context-proposal-first
+      - feature/tone-intelligence-engine
       - feature/chatgpt-siwc-android
       - fix/ir-user-cut-scene-sync
       - release/mg30-studio-final-polish
