@@ -110,7 +110,7 @@ function renderSourceMetadata(metadata) {
   appendMetadataTag(holder, "Sample rate", metadata.sampleRateHz.toLocaleString() + " Hz");
   appendMetadataTag(holder, "Channels", String(metadata.channelCount));
   appendMetadataTag(holder, "Duration", metadata.durationSeconds.toFixed(2) + " s");
-  holder.hidden = false;
+  holder.hidden = false; holder.classList.add("is-visible");
 }
 function formatDb(value) {
   return Number.isFinite(value) ? (value <= -239.99 ? "−∞" : value.toFixed(1)) : "n/a";
@@ -212,7 +212,7 @@ function renderAnalysisResult(result) {
   const noise = document.createElement("li");
   noise.textContent = "Noise floor: unavailable — " + metrics.noiseFloor.reason;
   list.appendChild(noise); holder.appendChild(list);
-  $("tieAnalysisResults").hidden = false;
+  $("tieAnalysisResults").hidden = false; $("tieAnalysisResults").classList.add("is-visible");
 }
 function waitForWorkerMessage(worker, expectedType, signal, timeoutMs = 60000) {
   return new Promise((resolve, reject) => {
@@ -271,7 +271,7 @@ async function analyzeSelectedSource() {
   if (activeAnalysis || !getSelectedSourceId()) return;
   const controller = new AbortController(); activeAnalysis = controller;
   $("tieAnalysisProgress").hidden = false; $("tieAnalysisProgress").value = 0;
-  $("tieAnalysisResults").hidden = true; setBusy(true);
+  $("tieAnalysisResults").hidden = true; $("tieAnalysisResults").classList.remove("is-visible"); setBusy(true);
   try {
     const pcm = await loadSelectedSource();
     const settings = {
@@ -301,7 +301,7 @@ $("tieAudioFileInput")?.addEventListener("change", (event) => {
 });
 $("tieAudioSourceSelect")?.addEventListener("change", () => {
   decodedSource = null; $("tieAnalysisResults").hidden = true;
-  $("tieChannelSelect").disabled = true; $("tieSourceMetadata").hidden = true;
+  $("tieChannelSelect").disabled = true; $("tieSourceMetadata").hidden = true; $("tieSourceMetadata").classList.remove("is-visible");
   $("tieAnalyzeButton").disabled = !getSelectedSourceId();
 });
 $("tieChannelSelect")?.addEventListener("change", () => { $("tieAnalysisResults").hidden = true; });
