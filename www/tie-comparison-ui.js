@@ -19,6 +19,51 @@ let latestReport = null;
 let previewContext = null;
 let activePreview = null;
 
+function setCompareView(view) {
+  const allowed = ["spectrum", "difference", "dynamics", "harmonics"];
+  const selected = allowed.includes(view) ? view : "spectrum";
+  document.querySelectorAll("[data-tie-compare-view]").forEach((button) => {
+    const active = button.dataset.tieCompareView === selected;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.querySelectorAll("[data-tie-compare-panel]").forEach((panel) => {
+    const active = panel.dataset.tieComparePanel === selected;
+    panel.hidden = !active;
+    panel.setAttribute("aria-hidden", String(!active));
+  });
+  try { localStorage.setItem("mg30-tie-compare-view", selected); } catch (_) {}
+}
+
+function swapSources() {
+  if (activeCompareController) return;
+  const sourceA = $(slots.a.select).value;
+  const sourceB = $(slots.b.select).value;
+  const channelA = $(slots.a.channel).value;
+  const channelB = $(slots.b.channel).value;
+  [slots.a.file, slots.b.file] = [slots.b.file, slots.a.file];
+  [slots.a.decoded, slots.b.decoded] = [slots.b.decoded, slots.a.decoded];
+  [slots.a.decodedId, slots.b.decodedId] = [slots.b.decodedId, slots.a.decodedId];
+  refreshSlotOptions(slots.a);
+  refreshSlotOptions(slots.b);
+  $(slots.a.select).value = sourceB;
+  $(slots.b.select).value = sourceA;
+  for (const [slot, channelValue] of [[slots.a, channelB], [slots.b, channelA]]) {
+    if (slot.decoded) {
+      updateChannelOptions(slot, slot.decoded.metadata.channelCount);
+      const max = slot.decoded.metadata.channelCount - 1;
+      $(slot.channel).value = String(Math.min(Math.max(0, Number(channelValue) || 0), max));
+    } else {
+      $(slot.channel).replaceChildren();
+      addOption($(slot.channel), "0", "Load source first");
+      $(slot.channel).disabled = true;
+    }
+  }
+  clearComparison();
+  updateRunButton();
+  setStatus("Source A and B have been swapped. Run Compare again to refresh measurements.");
+}
+
 function setStatus(message, state = "") {
   const node = $("tieCompareStatus");
   if (!node) return;
@@ -329,6 +374,38 @@ function drawDynamicEnvelope(dynamic) {
   drawLine("bRmsDbfs", "#67d8ef");
 }
 
+function renderToneBandReport(bands) {
+  const holder = $("tieCompareToneBands");
+  holder.replaceChildren();
+  for (const band of bands) {
+    const row = document.createElement("div");
+    row.className = "tie-tone-band-row";
+    const name = document.createElement("strong");
+    name.textContent = band.label;
+    const makeLevel = (label, value, className) => {
+      const cell = document.createElement("div");
+      cell.className = "tie-tone-band-level " + className;
+      const track = document.createElement("span");
+      track.className = "tie-tone-band-track";
+      const fill = document.createElement("i");
+      fill.style.width = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) + "%" : "0%";
+      track.appendChild(fill);
+      const amount = document.createElement("small");
+      amount.textContent = Number.isFinite(value) ? value.toFixed(1) + "%" : "n/a";
+      cell.append(track, amount);
+      cell.setAttribute("aria-label", label + ": " + amount.textContent);
+      return cell;
+    };
+    const delta = document.createElement("span");
+    delta.className = "tie-tone-band-delta";
+    delta.textContent = Number.isFinite(band.deltaBMinusA)
+      ? (band.deltaBMinusA > 0 ? "+" : "") + band.deltaBMinusA.toFixed(1) + " pp"
+      : "n/a";
+    row.append(name, makeLevel("A", band.a, "is-a"), makeLevel("B", band.b, "is-b"), delta);
+    holder.appendChild(row);
+  }
+}
+
 function renderMetrics(report) {
   const ids = {
     rmsDbfs: ["tieCompareRmsA", "tieCompareRmsB", "tieCompareRmsDelta"],
@@ -375,6 +452,7 @@ function renderMetrics(report) {
     list.appendChild(item);
   }
   limitations.appendChild(list);
+  renderToneBandReport(report.toneBands || []);
   drawSpectrumOverlay(report.spectrum);
   drawSpectrumDifference(report.spectrum);
   drawDynamicEnvelope(report.dynamic);
@@ -497,6 +575,18 @@ for (const slot of Object.values(slots)) {
 }
 
 $("tieCompareRunButton").addEventListener("click", () => { void runComparison(); });
+$("tieCompareSwapSources").addEventListener("click", swapSources);
+document.querySelectorAll("[data-tie-compare-view]").forEach((button) => {
+  button.addEventListener("click", () => setCompareView(button.dataset.tieCompareView));
+});
+$("tieOpenAiAssistant").addEventListener("click", () => {
+  const assistantTrigger = document.getElementById("aiToneOpenButton");
+  if (!assistantTrigger) {
+    setStatus("The shared AI Tone Assistant is not available yet. Check the main AI assistant module.", "error");
+    return;
+  }
+  assistantTrigger.click();
+});
 $("tieCompareCancelButton").addEventListener("click", () => activeCompareController?.abort());
 $("tieComparePlayA").addEventListener("click", () => { void playPreview("a"); });
 $("tieComparePlayB").addEventListener("click", () => { void playPreview("b"); });
@@ -529,4 +619,5 @@ window.addEventListener("pagehide", () => {
   if (previewContext && previewContext.state !== "closed") void previewContext.close().catch(() => {});
 });
 refreshSources();
+setCompareView((() => { try { return localStorage.getItem("mg30-tie-compare-view") || "spectrum"; } catch (_) { return "spectrum"; } })());
 setBusy(false);
