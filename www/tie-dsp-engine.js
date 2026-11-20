@@ -165,12 +165,16 @@ export function processDspChunk(accumulator, inputSamples, startFrame, coreFrame
   const coreCount = Number(coreFrameCount);
   if (!Number.isSafeInteger(start) || start !== accumulator.lastChunkEnd ||
       !Number.isSafeInteger(coreCount) || coreCount < 1 ||
-      start + coreCount > accumulator.metadata.frameCount ||
-      inputSamples.length < coreCount) {
+      start + coreCount > accumulator.metadata.frameCount) {
     fail("INVALID_PCM", "PCM chunks must be ordered, contiguous, and within the source length.");
   }
   const fftSize = accumulator.settings.fftSize;
   const hopSize = accumulator.settings.hopSize;
+  const remainingFrames = accumulator.metadata.frameCount - start;
+  const requiredChunkLength = Math.min(coreCount + fftSize - hopSize, remainingFrames);
+  if (inputSamples.length < requiredChunkLength || inputSamples.length > remainingFrames) {
+    fail("INVALID_PCM", "Each PCM chunk must include the overlap needed for every FFT frame and must not extend beyond the source.");
+  }
   if (start % hopSize !== 0) {
     fail("INVALID_PCM", "PCM chunk boundaries must align to the selected FFT hop size.");
   }
@@ -234,6 +238,9 @@ export function finalizeDspAccumulator(accumulator) {
   }
   if (!accumulator.spectralFrames) {
     fail("BUFFER_TOO_SHORT", "The source did not contain a complete FFT frame.");
+  }
+  if (accumulator.spectralFrames !== accumulator.expectedFrames) {
+    fail("INVALID_PCM", "The PCM stream did not provide all expected overlapping FFT frames.");
   }
   const { metadata, settings, spectralFrames } = accumulator;
   const sampleRateHz = metadata.sampleRateHz;
