@@ -587,3 +587,126 @@ No changes were made to `www/studio-daw.js`, DSP worker processing, native audio
 
 **Stop condition:** no Phase 4 / Signal Chain Intelligence implementation begins until the owner explicitly approves the redesigned UI.
 
+## Studio UI Refinement & TIE Intelligence Expansion Planning — 2026-11-20
+
+### Status summary
+
+- The Studio shell refinement is implemented in the application source and the Android debug APK build succeeded.
+- The main shell order is now: Studio page heading → Jamm & Record / Tone Analysis workspace selector → mode/section selector → one content scroll region.
+- Jam / Record / DAW and Analyzer / Compare / Chain / Intel / AI selectors are siblings outside the content scroll region, so they remain visible while the content area scrolls.
+- TIE's duplicate internal heading (TONE INTELLIGENCE ENGINE / Tone Analysis / Measure · Compare · Understand / STUDIO ENGINE) was removed. The main Studio heading is the single page title.
+- Existing app theme tokens are reused for the Studio shell and TIE panel surfaces.
+- Three requested Intelligence capabilities are now documented in the roadmap and detailed specifications only. No feature implementation began.
+- **Phase 4 has not started. Stop and wait for explicit owner approval.**
+
+### Audit findings that drove the UI change
+
+Based on the owner-provided Android screenshots and current source:
+
+1. The previous markup placed the Jam / Record / DAW bar inside `.studio-fixed-header` before the workspace selector, reversing the requested hierarchy.
+2. The Studio page was the mobile page scroll container. As the user scrolled, the workspace selector and TIE section navigation moved out of view.
+3. The old sticky rules targeted the previous header/mode structure and were not suitable once workspace and section navigation needed to remain together.
+4. TIE displayed a second title/eyebrow/badge block above the five section tabs.
+5. The previous visual override hard-coded several Studio/TIE surface values independently of the base application's `--bg`, `--panel`, `--panel2`, `--line`, `--text`, `--muted` and `--lime` theme tokens.
+
+### Application files changed
+
+- `www/index.html`
+  - Reordered the Studio heading, two-workspace selector, Jam/Record/DAW selector and five-section TIE selector.
+  - Added one `#studioContentScroll` container around Tone Analysis and all Jam/Record/DAW content; dialogs remain outside the scroll region.
+  - Removed the duplicated TIE heading block and its duplicate inner navigation.
+  - Bumped the CSS cache tokens for the two updated stylesheets.
+- `www/studio-daw.js`
+  - Keeps workspace and mode selection functional after their markup moved.
+  - Uses the descendant mode-panel query because Jam/Record/DAW content is now inside `#studioContentScroll`.
+  - Updates DAW viewport-fit measurement to use the inner scroll container's scrollTop and recalculates pinned dock geometry when that content scrolls.
+- `www/ui-redesign.css`
+  - Defines the persistent Studio header/navigation stack and a single touch-friendly content scroll region.
+  - Uses aliases of the existing root theme tokens rather than defining a second color palette.
+  - Makes the heading/status badge responsive without shrinking the title excessively; selectors use bounded widths and visible wrapping.
+  - Keeps safe-area padding and bottom navigation separation in the scroll content.
+- `tests/studio-daw-ui.test.js`
+  - Updated the existing mode-panel and viewport-fit source contracts to the new DOM structure.
+  - Replaced obsolete sticky-wrapper assumptions with the actual shell structure.
+- `tests/studio-shell-refinement.test.js` (new)
+  - Covers shell order, single-scroll containment, global/bottom navigation placement, all five TIE panels, removal of the duplicate title, mode visibility, scroll geometry and shared color tokens.
+- `tests/mobile-scroll-viewport-layout.test.js`, `tests/nam-tone3000-width.test.js`, `tests/ui-motion.test.js`
+  - Updated stylesheet cache-token expectations because the CSS references were intentionally bumped.
+- No changes were made to `www/tie-dsp-engine.js`, `www/tie-dsp.worker.js`, `www/tie-comparison-engine.js`, `www/tie-analyzer-ui.js` or `www/tie-comparison-ui.js` in this refinement milestone. No new DSP, audio, MIDI, AI/provider or preset behavior was introduced.
+
+### UI refinement status by requirement
+
+| Requirement | Implementation status | Validation status |
+|---|---|---|
+| Studio heading/title/status badge responsive | Implemented with a non-clipping heading row and wrapping status badge | Static/contract tests pass; latest Android visual check pending |
+| Workspace selector before Jam/Record/DAW | Implemented | Automated DOM order test passes |
+| Workspace selector before five TIE sections | Implemented | Automated DOM order test passes |
+| Fixed header/workspace/section navigation while content scrolls | Implemented using shell siblings outside the single content scroller | CSS/DOM tests pass; device scrolling still needs owner check |
+| One content scroller for Jam/Record/DAW and Tone Analysis | Implemented as `#studioContentScroll` | Automated containment and viewport-fit tests pass |
+| Bottom content/safe-area clearance | Content scroller includes bottom safe-area reserve; existing app page/nav geometry retained; DAW dock fit uses inner scrollTop | Automated layout tests pass; device gesture/3-button check pending |
+| Existing app palette | Reused root CSS tokens in Studio/TIE shell; original lime accent retained | CSS token contract test passes |
+| Redundant TIE title block removed | Removed | APK HTML inspection confirms removal |
+| Five TIE sections retained | Analyzer, Compare, Chain, Intel, AI retained with existing panel IDs and controls | Automated structural contracts pass |
+| Five global tabs retained | Editor, NAM & IR, Presets, Studio, Device remain in place | Automated test and APK HTML inspection pass |
+
+### Regression and Android build evidence
+
+Final UI refinement CI run:
+
+- GitHub Actions run #1196, ID `44774525588`.
+- Application/test source commit: `cad744dbe5f4b944e57ea103a60e90c368904eb4`.
+- Full repository suite: **763 passed, 0 failed, 0 cancelled, 0 skipped**.
+- JavaScript syntax validation: passed.
+- Capacitor Android project generation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL**.
+- APK artifact upload: passed.
+- Artifact ID: `14650235316`.
+- Artifact ZIP size: 4,425,841 bytes; SHA-256: `a3ad5ea6551834fc2d7513f61957dae7bdb1a0ed5ee2f5afe3b18f426cf84294`.
+- Extracted APK: `MG30-Studio-StudioShell-Refinement-run1196.apk`.
+- APK size: 4,802,505 bytes; SHA-256: `49149b4f961fa042312645ddf5deffded4af1ac92103e326560560012ff91ed0`.
+- APK package was extracted and inspected. `assets/public/index.html` contains the workspace selector before the Jam mode selector, five-section TIE nav before `studioContentScroll`, and all five TIE page selectors. It also retains all five global navigation destinations, DAW playback/record/mixer/timeline control elements and the existing AI Consultant entry point.
+- The APK was built from the application/test commit above. Later branch commits after that build are documentation-only (roadmap/specification files); no app source or test code changed after the tested build.
+- Current branch head when this checkpoint was written: `562f27a4f5b713761f75c63f2d999bcf58967618`.
+
+### Device screenshot and interactive acceptance boundary
+
+- The screenshots attached with this task were inspected as evidence of the previous installed UI and used to identify the shell/navigation issues. They are not screenshots of run #1196.
+- No Android emulator or ADB connection is available in this environment; previous managed Chromium screenshot rendering was blocked by environment policy. **No screenshot of the newly built APK on a physical Android device is claimed.**
+- The package inspection proves the expected HTML structure is in the APK, not that every device viewport, touch gesture, safe-area mode or real playback path has been interactively accepted.
+- Owner device check still required for: switching workspace and its subnav; scrolling while each nav remains in place; full bottom-content access in Android gesture and 3-button navigation; header badge/text fit; Jam/Record/DAW controls; Analyzer and Compare real audio; Compare Play A/B/Stop; AI assistant launch; Editor/MIDI, presets, NAM/IR and DAW/Quick Record regression.
+
+### Intelligence expansion — documentation only
+
+The following requested proposals are now recorded. They are not implemented and are not added to the active Phase 0–7 execution sequence.
+
+- `MG30-Studio-Master-Roadmap-TIE-v1.0.md` — section 18 “Proposed Intelligence Expansion Backlog — Planning Only”.
+- `SPECIFICATIONS/TIE-INTELLIGENCE-EXPANSION-SPEC.md` (new, 380 lines) — detailed product/technical requirements, data/evidence classes, dependencies, API/privacy/licensing gates, risks, staged planning and acceptance criteria.
+- `SPECIFICATIONS/TIE-COMPARISON-SPEC.md` — planned Preset & Scene Level Matching contract; metric separation and verified Gen 2 output-level control constraints.
+- `SPECIFICATIONS/TIE-KNOWLEDGE-BASE-SPEC.md` — planned artist/recording/era evidence schema and confidence/provenance rules.
+- `SPECIFICATIONS/TIE-AI-INTEGRATION-SPEC.md` — planned constrained reconstruction contract, validation and explicit user approval; shared AI only.
+- `SPECIFICATIONS/TIE-AUDIO-ENGINE-SPEC.md` — planned audio-source and full-mix/source-separation limitations.
+- `SPECIFICATIONS/README.md` — index for the new planning spec.
+
+Planning details:
+
+1. Preset & Scene Level Matching separates sample peak (dBFS), RMS (dBFS), true peak (dBTP) and compliant integrated loudness (LUFS/LKFS); no unsupported loudness claim. It requires controlled/repeatable captures, verified original Gen 2 Level/Volume parameters, safe quantization, before/after and A/B preview, explicit confirmation, backup/undo and device verification.
+2. Artist Tone Matching uses verified source provenance for artist/song/era claims, optional user-provided audio through existing local adapters, and separates measured, documented, estimated and recommended content. It does not claim perfect guitar isolation from full mixes.
+3. AI Tone Reconstruction is a constrained candidate preset flow using only verified original Gen 2 blocks/parameters and actual NAM/IR inventory; deterministic schema validation, preview/A/B, existing preset codec and explicit transfer confirmation are mandatory. No duplicate AI/provider/preset architecture.
+
+The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128 v5.0 for future standards-based loudness planning. Neither standard provides an automatic guitar-preset target. References:
+- https://www.itu.int/rec/R-REC-BS.1770/en
+- https://tech.ebu.ch/publications/r128
+
+### Phase 2 and Phase 3 status
+
+- **Phase 2:** previous owner confirmation remains recorded: imported WAV and saved Quick Record analysis displayed FFT, RMS, Peak and Crest Factor without error. This UI shell refinement did not change Phase 2 DSP files or algorithms. Memory/stress, cancellation, Android lifecycle and new physical-device viewport acceptance remain outstanding.
+- **Phase 3:** the existing A/B engine, worker and source processing were not changed in this UI shell refinement. The 763-test suite passed and APK packaging succeeded. Real-device A/B end-to-end confirmation (source/channel selection, offset, RMS match, overlay/difference/dynamics/report, Play A/B/Stop and DAW coexistence) remains required on the current APK.
+- Neither Phase 2 nor Phase 3 is newly declared device-accepted by this documentation/build. No algorithm or protocol was changed.
+
+### Stop condition
+
+- The Studio UI refinement implementation and automated Android build milestone is complete.
+- Physical Android validation and owner review are pending.
+- Intelligence additions are documentation-only.
+- **Do not start Phase 4, Preset & Scene Level Matching, Artist Tone Matching, AI Tone Reconstruction or any other feature implementation until the owner explicitly approves the next scope.**
+
