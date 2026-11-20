@@ -271,3 +271,49 @@ Run `npm test` and `npm run android:build` on the branch head `bc7c7321345a30fc2
 ### Next action
 
 Run the complete repository `npm test` suite and Android `assembleDebug` against the current branch head, inspect the test report and build logs, then install the resulting APK on the target Android device. Manually analyze (1) a known PCM WAV with a source sample rate/channel layout that can be checked and (2) an actual saved Quick Record WAV. Record source and analysis sample rates/channels, duration, FFT settings, measured values, error states and memory/lifecycle observations. Do not start Phase 3 until the updated automated suite/build and these target-device checks pass.
+
+
+## Isolated Phase 2 Regression Validation — 2026-11-20 (latest)
+
+### Fixture issue found and corrected
+
+- Running the DSP test cases in a temporary Node.js 22 harness initially exposed one stale test fixture in `tests/tie-dsp-engine.test.js`.
+- The old out-of-order test submitted its first 24,000-frame core without the required FFT overlap. The DSP engine correctly rejected that first chunk, so the test never reached the intended second, out-of-order chunk.
+- Updated the first chunk to include 1,024 overlap frames while retaining a 24,000-frame core; the second chunk still uses the invalid start frame and is expected to fail with `INVALID_PCM`.
+- Correction commit: `401008028d2e69fc7257430c8c14a92d4e12c839`.
+
+### Tighter deterministic fixture tolerances
+
+- The 440 Hz amplitude report now uses FFT 8192 instead of 4096. At FFT 4096 the 440 Hz component fell 0.453 bin from the nearest bin and showed approximately 1.17 dB Hann-window scalloping loss; FFT 8192 reduced the observed loss to approximately 0.049 dB.
+- Tightened the 440 Hz amplitude tolerance to ±0.1 dBFS and frequency tolerance to one FFT bin (±5.859 Hz).
+- Dual-tone validation now uses FFT 8192, checks combined RMS as well as both component amplitudes, and uses ±0.1 dBFS component tolerance.
+- Report refinement commit: `f7a6950d642cb9f6b9311067bbb017121910c1c4`.
+
+### Executed isolated tests
+
+- Runtime: Node.js v22.16.0.
+- Harness command: `node --test /tmp/tie-isolated/tie-dsp-engine.test.js /tmp/tie-isolated/tie-audio-source.test.js /tmp/tie-isolated/tie-dsp-validation-report.test.js`.
+- Result: **32/32 test cases PASS, 0 FAIL**:
+  - DSP engine: 18/18.
+  - Audio-source adapter: 13/13.
+  - DSP validation report: 1/1 test, producing **23/23 numerical/behavioral rows PASS**.
+- The report includes expected value, actual value, tolerance, absolute error and PASS/FAIL for 440 Hz, 1 kHz at amplitudes 0.5 and 1.0, dual-tone, seeded white noise, digital silence, 100 Hz–10 kHz sweep and clipped sine.
+- Source metadata tests cover an actual synthetic RIFF/WAVE header for 44.1 kHz mono and a decoded analysis buffer at 48 kHz stereo, plus Quick Record metadata fallback and malformed headers.
+- `node --check` passed for the isolated DSP engine, DSP tests, source adapter, source tests and validation-report test files.
+- The files were executed in a temporary isolated harness assembled from the remote branch file contents; this was **not** a checked-out repository and did **not** run the project's full `npm test` command or UI static suite.
+
+### Current verification boundary
+
+- Latest code/test commit before this checkpoint update: `f7a6950d642cb9f6b9311067bbb017121910c1c4`.
+- Full repository `npm test`: **NOT RUN / NOT VERIFIED** in this session.
+- Current branch push-workflow run and its logs: **NOT VERIFIED** by the available GitHub Actions lookup.
+- Vite/Capacitor/Gradle APK build after these latest edits: **NOT RUN / NOT VERIFIED**.
+- Android install and physical-device tests of imported WAV and an actual saved Quick Record WAV: **NOT RUN / NOT VERIFIED**.
+- Memory/long-file profiling and Android Worker/audio lifecycle checks: **NOT PROVEN**.
+- Therefore Phase 2 remains **IN PROGRESS — NOT ACCEPTED**. Phase 3 is not started.
+- The earlier successful APK CI run #1133 (708/708) predates these latest changes and must not be used as proof of the current branch state.
+- Local repository `git status` remains **NOT VERIFIED**: no local working tree was available in this session.
+
+### Next action
+
+Run the entire project suite with `npm test` and build with `npm run android:build` from the current branch head. Confirm the pushed GitHub Actions result and APK artifact. Then install on the target Android device and test one known PCM WAV plus one actual Quick Record recording, recording source/analysis metadata, numerical results, UI responsiveness, memory use and cleanup. Phase 3 remains gated on those results.
