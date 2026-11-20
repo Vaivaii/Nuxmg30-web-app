@@ -801,3 +801,11 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Physical MG-30 Gen 2 and Android handset acceptance remain required.
 - PDF export is not implemented; share summary depends on Web Share or clipboard support.
 - No Phase 5 work is authorized or included.
+
+
+### Follow-up verification after implementation
+- Added regression coverage in tests/tie-signal-chain-intelligence.test.js for five-tab navigation, in-context back flow, Editor SVG reuse, measurement provenance, disabled PDF export and Analyzer-result access.
+- JavaScript syntax checks passed for tie-configuration-review-ui.js, tie-signal-chain-ui.js, tie-analyzer-ui.js and the updated Phase 4 test file.
+- Editor icon artwork is reused from renderBlockIcon(). The Editor's chain icon treatment uses the shared lime accent; category-specific colors were not invented because the Editor chain itself does not define a category color taxonomy.
+- The repository connector does not expose a direct local Node/Gradle execution action in this session. Full npm test, Vite/Capacitor build and Android assembleDebug remain unverified for these latest changes and must be run by CI or the project build environment before calling this refinement complete.
+- Latest source changes include commits 8576fbc, 2b79fe9, cbaf5af, f1074e5, aa47cbc, 4a1e9d5, e3e79e1, 9b57046 and b1ccea7 on feature/tone-intelligence-engine.
