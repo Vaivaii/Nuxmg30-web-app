@@ -317,3 +317,52 @@ Run the complete repository `npm test` suite and Android `assembleDebug` against
 ### Next action
 
 Run the entire project suite with `npm test` and build with `npm run android:build` from the current branch head. Confirm the pushed GitHub Actions result and APK artifact. Then install on the target Android device and test one known PCM WAV plus one actual Quick Record recording, recording source/analysis metadata, numerical results, UI responsiveness, memory use and cleanup. Phase 3 remains gated on those results.
+
+
+## Full Repository CI + APK Build Verified — 2026-11-20
+
+### GitHub Actions run #1144
+
+- Run ID: `44704232844`.
+- Event: `push`.
+- Branch: `feature/tone-intelligence-engine`.
+- Tested source commit: `f7a6950d642cb9f6b9311067bbb017121910c1c4`.
+- Conclusion: **success**.
+- Test command: `npm test`.
+- Result: **720 tests passed, 0 failed, 0 cancelled, 0 skipped**.
+- JavaScript syntax checks passed.
+- Capacitor Android project generation passed.
+- Android build command: `cd android && ./gradlew --no-daemon assembleDebug`.
+- Gradle result: **BUILD SUCCESSFUL**.
+- APK upload passed.
+
+### APK artifact
+
+- Artifact name: `MG30-Studio-debug-APK`.
+- Artifact ID: `14614795387`.
+- Artifact ZIP size: 4,404,162 bytes.
+- Artifact ZIP SHA-256: `172398784f627e5fdf7f1ba104695eaad5644efa99fdf12e5e535f9310e62aae`.
+- Extracted APK: `app-debug.apk`.
+- Extracted APK size: 4,781,645 bytes.
+- Extracted APK SHA-256: `a6ded1f15914b921e3ee1ef1dde9b2e73213fd445d30d4ce4cccf1808a4c2841`.
+- Downloaded artifact ZIP was verified to contain the APK; APK archive contains the built web bundle and TIE DSP worker asset.
+- The tested source commit is an ancestor of current branch HEAD. Subsequent commits up to the documentation update contain only checkpoint/research-document updates; no app source or test code changed after the CI-tested source commit.
+
+### What this proves
+
+- The full repository automated test suite passes on the tested source commit (720/720).
+- The source syntax checks, Capacitor generation and Android debug APK build pass.
+- The generated APK artifact was uploaded, downloaded and its archive/size/hash verified.
+
+### What this does not prove
+
+- No APK has been installed on the owner's physical Android device in this session.
+- Imported WAV and actual saved Quick Record playback/decode/analysis have not yet been manually verified on target Android/WebView.
+- Android Worker runtime, memory/long-file behavior, background/foreground transition and cancellation/resource cleanup remain not proven on device.
+- Direct DAW-track Analyzer source and direct USB/live Analyzer input remain out of scope/not integrated. USB-MIDI is not used as PCM audio.
+- No Phase 3 implementation has started. Phase 2 remains **IN PROGRESS — automated CI/build gate passed, hardware acceptance gate pending**.
+- Local checkout `git status` remains not verifiable through remote-only access.
+
+### Next action
+
+Install the verified run #1144 APK on the target Android device. Test one known PCM WAV with known source sample rate/channel layout and one real Quick Record WAV. Capture source metadata vs analysis PCM metadata, duration, FFT settings and numeric results. Exercise cancellation and a long-file/memory case; confirm no UI freeze and no DAW recording/playback regression. Record Android/WebView and test evidence here. Only close Phase 2 after those hardware acceptance checks pass.
