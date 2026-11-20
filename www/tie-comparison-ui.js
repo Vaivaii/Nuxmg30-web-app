@@ -355,7 +355,7 @@ function renderMetrics(report) {
     " → analysis " + source.sampleRateHz + " Hz / " + source.channelCount +
     " ch · selected channel " + (source.selectedChannel + 1);
   $("tieCompareProvenance").textContent =
-    "A: " + sourceSummary(report.sources.a) + "\\n" +
+    "A: " + sourceSummary(report.sources.a) + "\n" +
     "B: " + sourceSummary(report.sources.b);
   report.listeningNotes = $("tieCompareListeningNotes").value.trim();
   report.aiInterpretation = null;
