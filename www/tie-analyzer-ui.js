@@ -10,6 +10,22 @@ let importedFile = null;
 let decodedSource = null;
 let activeAnalysis = null;
 
+function setAnalyzerView(view) {
+  const allowed = ["spectrum", "spectrogram", "meter", "harmonics"];
+  const selected = allowed.includes(view) ? view : "spectrum";
+  document.querySelectorAll("[data-tie-analyzer-view]").forEach((button) => {
+    const active = button.dataset.tieAnalyzerView === selected;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.querySelectorAll("[data-tie-analyzer-panel]").forEach((panel) => {
+    const active = panel.dataset.tieAnalyzerPanel === selected;
+    panel.hidden = !active;
+    panel.setAttribute("aria-hidden", String(!active));
+  });
+  try { localStorage.setItem("mg30-tie-analyzer-view", selected); } catch (_) {}
+}
+
 function setStatus(message, state = "") {
   const node = $("tieAnalysisStatus");
   if (!node) return;
@@ -207,6 +223,17 @@ function renderAnalysisResult(result) {
   $("tieSpectrumDetails").textContent = result.settings.fftSize + " FFT · Hann · " +
     result.spectrum.binWidthHz.toFixed(2) + " Hz/bin · channel " + (result.settings.channelIndex + 1);
   drawSpectrum(result.spectrum); drawSpectrogram(result.spectrogram); renderBandEnergy(metrics.bandEnergyPct);
+  const meterWidth = (value) => Math.max(0, Math.min(100, ((Math.max(-60, Math.min(0, Number(value) || -240)) + 60) / 60) * 100));
+  $("tieMeterRmsFill").style.width = meterWidth(metrics.rmsDbfs) + "%";
+  $("tieMeterPeakFill").style.width = meterWidth(metrics.samplePeakDbfs) + "%";
+  $("tieMeterRmsValue").textContent = formatDb(metrics.rmsDbfs) + " dBFS";
+  $("tieMeterPeakValue").textContent = formatDb(metrics.samplePeakDbfs) + " dBFS";
+  $("tieQuickDiagnosisTitle").textContent = metrics.clipping.detected
+    ? "Sample clipping detected"
+    : "No sample clipping detected";
+  $("tieQuickDiagnosisDetails").textContent = metrics.clipping.detected
+    ? metrics.clipping.sampleCount.toLocaleString() + " samples reached the documented clipping threshold. Noise floor: " + (metrics.noiseFloor.available ? "measured" : "not available from this selection") + "."
+    : "Zero samples reached the documented clipping threshold. This does not establish overall tone quality; noise floor is " + (metrics.noiseFloor.available ? "measured" : "not available from this selection") + ".";
   const holder = $("tieAnalysisLimitations"); holder.replaceChildren();
   const intro = document.createElement("div");
   intro.textContent = "Measurement notes — " + result.spectralFrames + " STFT frames; " +
@@ -315,7 +342,12 @@ $("tieChannelSelect")?.addEventListener("change", () => { $("tieAnalysisResults"
 $("tieFftSize")?.addEventListener("change", () => { $("tieAnalysisResults").hidden = true; });
 $("tieAnalyzeButton")?.addEventListener("click", () => { void analyzeSelectedSource(); });
 $("tieCancelAnalysisButton")?.addEventListener("click", () => activeAnalysis?.abort());
+document.querySelectorAll("[data-tie-analyzer-view]").forEach((button) => {
+  button.addEventListener("click", () => setAnalyzerView(button.dataset.tieAnalyzerView));
+});
 window.addEventListener("mg30-studio-takes-updated", refreshSourceOptions);
 window.addEventListener("nux-studio-recorder-ready", refreshSourceOptions);
 document.addEventListener("visibilitychange", () => { if (document.hidden && activeAnalysis) activeAnalysis.abort(); });
-refreshSourceOptions(); setBusy(false);
+refreshSourceOptions();
+setAnalyzerView((() => { try { return localStorage.getItem("mg30-tie-analyzer-view") || "spectrum"; } catch (_) { return "spectrum"; } })());
+setBusy(false);
