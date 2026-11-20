@@ -3882,10 +3882,10 @@
 #page-studio .tie-chain-flow{display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scrollbar-width:thin;padding:10px 3px 12px;max-width:100%;-webkit-overflow-scrolling:touch}
 #page-studio .tie-chain-block{flex:0 0 70px;min-width:70px;min-height:76px;padding:7px 5px;align-items:center;text-align:center;gap:4px;border-radius:11px}
 #page-studio .tie-chain-block .tie-chain-block-icon{display:flex;width:28px;height:28px;align-items:center;justify-content:center}
-#page-studio .tie-chain-block .tie-chain-block-icon svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#page-studio .tie-chain-block .tie-chain-block-icon svg{width:22px;height:22px}
 #page-studio .tie-chain-block strong{font-size:9px;letter-spacing:.02em}#page-studio .tie-chain-block small{font-size:8px;line-height:1.2;max-width:100%;overflow-wrap:anywhere}
 #page-studio .tie-chain-block[aria-pressed=true]{border-color:#c5f36b;box-shadow:0 0 0 1px #c5f36b55,0 0 14px #c5f36b22}
-#page-studio .tie-chain-block.tie-block-WAH{color:#d18cff}#page-studio .tie-chain-block.tie-block-CMP{color:#71d5a2}#page-studio .tie-chain-block.tie-block-EFX{color:#42c9ef}#page-studio .tie-chain-block.tie-block-SR{color:#e3d64c}#page-studio .tie-chain-block.tie-block-GATE{color:#42d8d2}#page-studio .tie-chain-block.tie-block-AMP{color:#f17b70}#page-studio .tie-chain-block.tie-block-IR{color:#4fc8c0}#page-studio .tie-chain-block.tie-block-EQ{color:#9fcb65}#page-studio .tie-chain-block.tie-block-MOD{color:#b88be8}#page-studio .tie-chain-block.tie-block-DLY{color:#73b6ef}#page-studio .tie-chain-block.tie-block-RVB{color:#e5a1c4}#page-studio .tie-chain-block.tie-block-VOL{color:#b5c0b3}
+#page-studio .tie-chain-block{color:var(--lime)}
 #page-studio .tie-chain-toolbar{margin:8px 0;padding:10px 12px}
 #page-studio .tie-review-entry{display:flex;align-items:center;gap:10px;width:100%;min-height:58px;margin:12px 0 8px;padding:10px 12px;text-align:left;border:1px solid #708d4c;border-radius:13px;background:linear-gradient(110deg,#1b291b,#111a13);color:#eaf5e4}
 #page-studio .tie-review-entry-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border:1px solid #718e48;border-radius:9px;color:#c5f36b;font-size:20px}
