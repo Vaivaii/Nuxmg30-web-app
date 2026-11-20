@@ -46,14 +46,17 @@ test("TIE keeps all five sections with segmented icon navigation and unique pane
   assert.ok(css.includes("grid-template-columns:repeat(5,minmax(0,1fr))"));
 });
 
-test("Signal Chain and Intelligence redesigns do not invent device blocks or diagnostics", () => {
-  assert.ok(html.includes("Live effect-block snapshot is not connected"));
-  assert.ok(html.includes("not the current MG-30 configuration"));
-  assert.ok(html.includes("No diagnosis has been issued"));
-  assert.ok(html.includes("Noise floor"));
-  assert.ok(html.includes("AWAITING DEVICE SNAPSHOT"));
-  assert.ok(!html.includes("Deluxe Amp"));
+test("Signal Chain uses live shared preset state and never presents a generic flow as a device snapshot", () => {
+  assert.ok(html.includes('id="tieChainFlow"'));
+  assert.ok(html.includes('id="tieChainRefresh"'));
+  assert.ok(html.includes("getSignalChainSnapshot(){"));
+  assert.ok(html.includes("knownBlocks.includes(index)"));
+  assert.ok(html.includes("No device readback has been captured in this session."));
+  assert.ok(!html.includes("Live effect-block snapshot is not connected"));
   assert.ok(!html.includes("Preset: 02D"));
+  assert.ok(!html.includes("Deluxe Amp"));
+  assert.ok(analyzer.includes("metrics.rmsDbfs"));
+  assert.ok(compare.includes("assistantTrigger.click()"));
 });
 
 test("AI Consultant opens the existing shared assistant and uses no duplicate provider UI", () => {
