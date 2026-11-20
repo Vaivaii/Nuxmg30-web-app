@@ -232,7 +232,7 @@ test('IR Collection uses a bounded flex chain and a sibling fade without changin
 });
 
 test('Community .23 cache tokens point to the corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
+  assert.ok(html.includes('ui-redesign.css?v=studio-shell-refine-1'));
   assert.ok(html.includes('preset-library-ui.css?v=card-v5'));
 });
 
