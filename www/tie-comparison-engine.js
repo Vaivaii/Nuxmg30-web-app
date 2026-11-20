@@ -187,6 +187,23 @@ export function buildComparisonReport(plan, resultA, resultB) {
       deltaBMinusA: Number.isFinite(a) && Number.isFinite(b) ? b - a : null,
     };
   }
+  // Group the existing DSP relative-band measurements for presentation only.
+  // No new spectral calculation or DSP algorithm is introduced here.
+  const energyA = resultA.metrics.bandEnergyPct;
+  const energyB = resultB.metrics.bandEnergyPct;
+  const sumKnown = (energy, keys) => {
+    if (!energy || !keys.every((key) => Number.isFinite(energy[key]))) return null;
+    return keys.reduce((sum, key) => sum + energy[key], 0);
+  };
+  const toneBands = [
+    { id: "low", label: "Low", range: "20–400 Hz", keys: ["subBass", "low"] },
+    { id: "mid", label: "Mid", range: "400–3,000 Hz", keys: ["lowMid", "mid"] },
+    { id: "high", label: "High", range: "3,000–12,000 Hz", keys: ["highMid", "high"] },
+  ].map((band) => {
+    const a = sumKnown(energyA, band.keys);
+    const b = sumKnown(energyB, band.keys);
+    return { id: band.id, label: band.label, range: band.range, a, b, deltaBMinusA: a !== null && b !== null ? b - a : null };
+  });
   return {
     schemaVersion: 1,
     comparisonVersion: "1.0.0",
@@ -236,6 +253,7 @@ export function buildComparisonReport(plan, resultA, resultB) {
       spectrumScale: resultA.settings.spectrumScale,
     },
     metrics,
+    toneBands,
     spectrum,
     dynamic,
     limitations: [
