@@ -36,6 +36,8 @@ test("Signal chain ordering and bypass state are sourced from the shared preset 
 
 test("Unavailable device data and provisional NAM mapping are explicitly distinguished", () => {
   assert.ok(html.includes("knownBlocks.includes(index)"));
+  assert.ok(html.includes("preserveSignalChain:!ok"));
+  assert.ok(html.includes("if(programChanged||sceneChanged)signalChainReadbackMeta=null;"));
   assert.ok(html.includes("mappingEvidence:[60,61].includes(namProfile.id)?'observed-device-id':'provisional-slot-id'"));
   assert.ok(ui.includes("Device preset readback supplies the selected NAM slot ID, not the original .nam filename."));
   assert.ok(ui.includes("provisional-slot-id"));
