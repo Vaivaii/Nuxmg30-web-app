@@ -3716,3 +3716,357 @@ body.ir-collection-layout-fallback #page-nam .nam-ir-nam-pane > #namModelLibrary
   #page-studio .tie-nav-icon{font-size:16px!important}
   #page-studio .tie-panel{padding:10px!important}
 }
+
+
+/* Studio shell refinement — fixed navigation stack, one content scroller, shared app tokens. */
+@media(max-width:720px){
+  body > .app > #page-studio:not(.hidden){
+    position:relative!important;
+    display:flex!important;
+    flex:1 1 0!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+    box-sizing:border-box!important;
+  }
+}
+#page-studio{
+  --studio-shell-bg:var(--bg);
+  --studio-shell-panel:var(--panel);
+  --studio-shell-panel-2:var(--panel2);
+  --studio-shell-line:var(--line);
+  --studio-shell-text:var(--text);
+  --studio-shell-muted:var(--muted);
+  --studio-shell-accent:var(--lime);
+  display:flex!important;
+  min-width:0!important;
+  min-height:0!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+#page-studio[hidden],#page-studio.hidden{display:none!important}
+#page-studio > .studio-page-heading{
+  position:relative!important;
+  inset:auto!important;
+  z-index:3!important;
+  display:block!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:2px 0 8px!important;
+  overflow:visible!important;
+  background:var(--studio-shell-bg)!important;
+  border:0!important;
+  border-bottom:1px solid var(--studio-shell-line)!important;
+  box-shadow:none!important;
+  isolation:isolate!important;
+}
+#page-studio > .studio-page-heading > .studio-page-hero{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:3px 1px 5px!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+#page-studio > .studio-page-heading > .studio-page-hero > div:first-child{
+  display:block!important;
+  flex:1 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+#page-studio .studio-page-heading .eyebrow{
+  display:block!important;
+  margin:0 0 2px!important;
+  color:var(--studio-shell-accent)!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+  letter-spacing:1.8px!important;
+  white-space:nowrap!important;
+}
+#page-studio .studio-page-heading .studio-daw-hero h2{
+  display:block!important;
+  max-width:100%!important;
+  margin:0!important;
+  color:var(--studio-shell-text)!important;
+  font-size:clamp(20px,5.2vw,24px)!important;
+  line-height:1.14!important;
+  letter-spacing:-.55px!important;
+  font-weight:850!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  text-overflow:clip!important;
+}
+#page-studio .studio-page-heading .studio-daw-version{
+  display:inline-flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  justify-content:center!important;
+  max-width:42%!important;
+  min-width:0!important;
+  min-height:30px!important;
+  margin:0!important;
+  padding:6px 9px!important;
+  border:1px solid var(--studio-shell-line)!important;
+  border-radius:999px!important;
+  background:var(--studio-shell-panel)!important;
+  color:var(--studio-shell-muted)!important;
+  font-size:9px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  text-align:center!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+#page-studio > .studio-workspace-tabs{
+  position:relative!important;
+  inset:auto!important;
+  z-index:4!important;
+  display:grid!important;
+  flex:0 0 auto!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:4px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:8px 0 7px!important;
+  padding:4px!important;
+  border:1px solid var(--studio-shell-line)!important;
+  border-radius:13px!important;
+  background:var(--studio-shell-panel)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transform:none!important;
+}
+#page-studio > .studio-workspace-tabs button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  min-width:0!important;
+  min-height:39px!important;
+  margin:0!important;
+  padding:7px 6px!important;
+  border:1px solid transparent!important;
+  border-radius:9px!important;
+  background:transparent!important;
+  color:var(--studio-shell-muted)!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+}
+#page-studio > .studio-workspace-tabs button.active{
+  border-color:var(--studio-shell-accent)!important;
+  background:var(--studio-shell-panel-2)!important;
+  color:var(--studio-shell-accent)!important;
+  box-shadow:inset 0 0 0 1px #c5f36b22,0 0 12px #c5f36b12!important;
+}
+#page-studio .studio-workspace-icon{font-size:17px!important;line-height:1!important;color:currentColor!important}
+#page-studio > .studio-mode-tabs,
+#page-studio > .tie-subnav{
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  z-index:4!important;
+  display:grid!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 7px!important;
+  padding:4px!important;
+  border:1px solid var(--studio-shell-line)!important;
+  border-radius:13px!important;
+  background:var(--studio-shell-panel)!important;
+  box-shadow:none!important;
+  isolation:auto!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transform:none!important;
+}
+#page-studio > .studio-mode-tabs{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:4px!important;
+}
+#page-studio > .studio-mode-tabs button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  min-height:35px!important;
+  width:auto!important;
+  margin:0!important;
+  padding:6px 8px!important;
+  border:1px solid transparent!important;
+  border-radius:9px!important;
+  background:transparent!important;
+  color:var(--studio-shell-muted)!important;
+  font-size:10px!important;
+  line-height:1.15!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+}
+#page-studio > .studio-mode-tabs button.active{
+  border-color:var(--studio-shell-accent)!important;
+  background:var(--studio-shell-panel-2)!important;
+  color:var(--studio-shell-accent)!important;
+  box-shadow:inset 0 0 0 1px #c5f36b1c!important;
+}
+#page-studio > .tie-subnav{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:3px!important;
+  margin-bottom:7px!important;
+}
+#page-studio > .tie-subnav button{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  min-width:0!important;
+  min-height:45px!important;
+  margin:0!important;
+  padding:4px 2px!important;
+  border:1px solid transparent!important;
+  border-radius:9px!important;
+  background:transparent!important;
+  color:var(--studio-shell-muted)!important;
+  font-size:9px!important;
+  line-height:1.05!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+}
+#page-studio > .tie-subnav button.active{
+  border-color:var(--studio-shell-accent)!important;
+  background:var(--studio-shell-panel-2)!important;
+  color:var(--studio-shell-accent)!important;
+  box-shadow:inset 0 0 0 1px #c5f36b1c,0 0 12px #c5f36b10!important;
+}
+#page-studio .tie-nav-icon{font-size:17px!important;line-height:1!important;color:currentColor!important}
+#page-studio .studio-content-scroll{
+  position:relative!important;
+  display:block!important;
+  flex:1 1 0!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0 0 calc(18px + env(safe-area-inset-bottom,0px))!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:var(--studio-shell-line) transparent!important;
+  box-sizing:border-box!important;
+}
+#page-studio .studio-content-scroll::-webkit-scrollbar{width:3px!important}
+#page-studio .studio-content-scroll::-webkit-scrollbar-thumb{background:var(--studio-shell-line)!important;border-radius:4px!important}
+#page-studio .studio-content-scroll > [data-studio-workspace-panel]{
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+#page-studio .studio-content-scroll > [data-studio-workspace-panel][hidden]{display:none!important}
+#page-studio .tie-workspace{
+  min-width:0!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0 0 10px!important;
+  overflow:visible!important;
+}
+#page-studio .studio-mode-panel,
+#page-studio .studio-daw-workspace{
+  min-width:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#page-studio .tie-panel{
+  border-color:var(--studio-shell-line)!important;
+  background:var(--studio-shell-panel)!important;
+  box-shadow:inset 0 1px 0 #eff3e90a!important;
+}
+#page-studio .tie-chart-panel,
+#page-studio .tie-band-panel,
+#page-studio .tie-level-meter-panel,
+#page-studio .tie-compare-tone-report,
+#page-studio .tie-compare-slot,
+#page-studio .tie-feature-page,
+#page-studio .tie-ai-message-preview,
+#page-studio .tie-quick-diagnosis{
+  border-color:var(--studio-shell-line)!important;
+  background:var(--studio-shell-panel-2)!important;
+}
+#page-studio .tie-compare-slot-b{
+  border-color:var(--studio-shell-line)!important;
+  background:var(--studio-shell-panel-2)!important;
+}
+#page-studio .tie-analyzer-field select,
+#page-studio .tie-compare-settings input[type=number],
+#page-studio .tie-compare-listening-notes textarea{
+  border-color:var(--studio-shell-line)!important;
+  background:var(--studio-shell-bg)!important;
+  color:var(--studio-shell-text)!important;
+}
+#page-studio .tie-section-heading h4,
+#page-studio .tie-ai-identity h4,
+#page-studio .tie-section-heading strong{
+  color:var(--studio-shell-text)!important;
+}
+#page-studio .tie-capability-state,
+#page-studio .tie-intel-row,
+#page-studio .tie-signal-flow,
+#page-studio .tie-signal-flow>div,
+#page-studio .tie-ai-context,
+#page-studio .tie-ai-context>div{
+  border-color:var(--studio-shell-line)!important;
+  background:var(--studio-shell-panel-2)!important;
+}
+#page-studio .tie-scope-note,
+#page-studio .tie-compare-result-heading small,
+#page-studio .tie-ai-identity p,
+#page-studio .tie-ai-context small,
+#page-studio .tie-capability-state p{
+  color:var(--studio-shell-muted)!important;
+}
+@media(max-width:430px){
+  #page-studio > .studio-page-heading{padding-bottom:7px!important}
+  #page-studio > .studio-page-heading > .studio-page-hero{gap:7px!important}
+  #page-studio .studio-page-heading .studio-daw-hero h2{font-size:clamp(20px,5.2vw,22px)!important}
+  #page-studio .studio-page-heading .studio-daw-version{max-width:40%!important;padding:5px 7px!important;font-size:8px!important}
+  #page-studio > .studio-workspace-tabs{margin-top:7px!important;margin-bottom:6px!important}
+  #page-studio > .studio-workspace-tabs button{min-height:37px!important;padding:6px 4px!important;font-size:9.5px!important}
+  #page-studio > .studio-mode-tabs,
+  #page-studio > .tie-subnav{margin-bottom:6px!important}
+  #page-studio > .studio-mode-tabs button{min-height:34px!important;padding:5px 6px!important;font-size:9.5px!important}
+  #page-studio > .tie-subnav button{min-height:43px!important;font-size:8.5px!important}
+  #page-studio .tie-nav-icon{font-size:16px!important}
+  #page-studio .tie-panel{padding:10px!important}
+}
