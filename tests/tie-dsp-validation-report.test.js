@@ -94,14 +94,15 @@ test("TIE DSP validation: deterministic fixture report", () => {
   reportRows.length = 0;
 
   // 440 Hz, 0.5 amplitude: frequency bin placement and one-sided Hann amplitude.
-  const sine440 = analyze(sine(SAMPLE_RATE, 440, 0.5), { fftSize: 4096 });
+  const sine440 = analyze(sine(SAMPLE_RATE, 440, 0.5), { fftSize: 8192 });
   const peak440 = peakNear(sine440, 440);
   addNumeric("440 Hz sine · peak frequency", 440, peak440.frequencyHz, sine440.spectrum.binWidthHz, "Hz");
-  addNumeric("440 Hz sine · amplitude 0.5", 20 * Math.log10(0.5), peak440.amplitudeDbfs, 1.2, "dBFS");
+  addNumeric("440 Hz sine · amplitude 0.5 (8192 FFT, reduced scalloping)", 20 * Math.log10(0.5), peak440.amplitudeDbfs, 0.1, "dBFS");
 
   // 1 kHz at amplitude 0.5: RMS, peak, and crest factor.
   const sine1kHalf = analyze(sine(SAMPLE_RATE, 1000, 0.5), { fftSize: 4096 });
   const expectedHalfRms = 20 * Math.log10(0.5 / Math.sqrt(2));
+  addNumeric("1 kHz sine · amplitude 0.5 · peak frequency", 1000, peakNear(sine1kHalf, 1000).frequencyHz, sine1kHalf.spectrum.binWidthHz, "Hz");
   addNumeric("1 kHz sine · amplitude 0.5 · RMS", expectedHalfRms, sine1kHalf.metrics.rmsDbfs, 0.02, "dBFS");
   addNumeric("1 kHz sine · amplitude 0.5 · sample peak", 20 * Math.log10(0.5), sine1kHalf.metrics.samplePeakDbfs, 0.02, "dBFS");
   addNumeric("1 kHz sine · amplitude 0.5 · crest factor", 20 * Math.log10(Math.sqrt(2)), sine1kHalf.metrics.crestFactorDb, 0.02, "dB");
