@@ -14,7 +14,7 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 ## Current Phase
 
-**Phase 1 — Studio Workspace Shell: implemented and CI-validated. Final TIE run #1121 passed (683/683 tests, Capacitor generation, Gradle APK build and artifact upload).**
+**Phase 2 — DSP Foundation: implementation in progress; source adapters, chunked local DSP worker, Analyzer UI and deterministic tests have been added. CI/build verification pending.**
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 
@@ -71,12 +71,43 @@ No application source, UI, configuration, audio engine, DSP, AI provider, Worker
 - [x] Add the TIE branch to the existing Android build workflow push filter.
 - [x] Add static UI regression coverage for both workspaces and all five TIE sections.
 - [x] CI run #1120: 682/682 tests passed; Capacitor generation and Gradle `assembleDebug` succeeded; APK artifact uploaded (run SHA `c567dbbf02b539320d2a1afe50ac0f308ae3e9e8`).
-- [ ] Run CI on final HEAD so the newly added TIE-specific test is included.
+- [x] Final TIE UI regression test passed in CI run #1121 (test 523).
 - [ ] Validate Android runtime and switching while audio capture/playback is active.
 
 Files changed: `www/index.html`, `www/studio-daw.js`, `www/studio-daw.css`, `tests/studio-daw-ui.test.js`, `.github/workflows/build-apk.yml`, plus this checkpoint and `docs/research/TIE_PHASE1_STUDIO_WORKSPACE_SHELL_2026-11-20.md`.
 
 No native PCM capture/output, DAW engine, storage schema, DSP, AI provider/orchestration, Worker, MIDI, firmware protocol, preset codec, NAM or IR transfer code, or dependency was changed. Local working tree is not accessible through the remote GitHub interface and remains NOT VERIFIED.
+
+## Phase 2 — DSP Foundation (in progress)
+
+Roadmap scope is implemented initially for the two source paths that can be verified without changing device routing:
+
+- [x] Imported audio files: file picker, codec decode through Web Audio, original-format metadata retained.
+- [x] Saved Quick Record takes: read-only adapter using the existing `NUXStudioRecorder.listTakes()` and `pathToUrl()` API.
+- [x] Versioned Float32 PCM metadata contract and validation.
+- [x] Local FFT spectrum using Hann window and one-sided amplitude normalization.
+- [x] RMS, sample peak, crest factor, spectral centroid, 85% spectral rolloff, relative band energy and sample clipping count.
+- [x] STFT spectrogram frames, bounded to 256 rows.
+- [x] Chunked transfer to a Web Worker; source audio is not sent to an AI provider and is not mutated.
+- [x] Typed errors for unsupported/invalid audio sources and short PCM.
+- [x] Noise floor remains explicitly unavailable without a quiet-region estimator; true peak and THD are not reported.
+- [x] Initial deterministic DSP, source-adapter and UI contract tests added.
+- [ ] Final CI test/build verification.
+- [ ] Manual Android APK test with an imported WAV and an actual saved Quick Record take.
+- [ ] Memory/long-file test on target Android device.
+- [ ] DAW-track source adapter is not included; internal DAW media buffers do not yet expose a reviewed read-only public contract.
+- [ ] Direct USB/live input and USB Loopback are not included; their runtime/source semantics remain hardware-gated.
+
+### Phase 2 files added/changed
+
+- Added `www/tie-audio-source.js`.
+- Added `www/tie-dsp-engine.js`.
+- Added `www/tie-dsp.worker.js`.
+- Added `www/tie-analyzer-ui.js`.
+- Updated `www/index.html` and `www/studio-daw.css` for the Analyzer UI.
+- Added `tests/tie-dsp-engine.test.js`, `tests/tie-audio-source.test.js`, and `tests/tie-analyzer-ui.test.js`.
+
+No changes to native audio plugins, DAW engine or project schema, MIDI, firmware protocol, AI provider/Worker, NAM, IR, preset codec or package dependencies.
 
 ## Pending / Not Verified
 
@@ -121,7 +152,7 @@ No native PCM capture/output, DAW engine, storage schema, DSP, AI provider/orche
 
 ## Next Action
 
-Review Phase 1 shell and its CI/Android results. Scope PCM adapters, DSP, compare engine, signal-chain snapshots, knowledge retrieval, and Studio AI context as separate subsequent work; do not begin those integrations until the Phase 1 review is complete.
+Complete Phase 2 CI/build verification, install the resulting APK, then test an imported PCM WAV and a saved Quick Record WAV on the user's Android device. Record device/WebView details, source metadata, numerical outputs and memory behavior. Do not enable live USB or DAW-track analysis until those paths have their own verified read-only contracts.
 
 ## Last Updated
 
