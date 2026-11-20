@@ -2004,157 +2004,226 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
 <section id="page-studio" class="hidden studio-page">
   <div class="studio-fixed-header"><div class="hero studio-page-hero studio-daw-hero"><div><div class="eyebrow">STUDIO</div><h2>Jamm &amp; Record</h2></div><span class="studio-daw-version" id="studioWorkspaceStatus">Mini DAW – 4 Track</span></div><div class="studio-mode-tabs" data-studio-workspace-panel="jam-record" role="tablist" aria-label="Jamm &amp; Record mode"><button type="button" data-studio-mode="jam">♫&nbsp; Jam</button><button type="button" data-studio-mode="record">♩&nbsp; Record</button><button type="button" data-studio-mode="daw" class="active" aria-selected="true">∿&nbsp; DAW</button></div></div>
   <div class="studio-workspace-tabs" role="tablist" aria-label="Studio workspace">
-    <button type="button" data-studio-workspace="jam-record" class="active" role="tab" aria-selected="true">♫&nbsp; Jamm &amp; Record</button>
-    <button type="button" data-studio-workspace="tone-analysis" role="tab" aria-selected="false">◈&nbsp; Tone Analysis</button>
+    <button type="button" data-studio-workspace="jam-record" class="active" role="tab" aria-selected="true"><span class="studio-workspace-icon" aria-hidden="true">▥</span><span>Jamm &amp; Record</span></button>
+    <button type="button" data-studio-workspace="tone-analysis" role="tab" aria-selected="false"><span class="studio-workspace-icon" aria-hidden="true">∿</span><span>Tone Analysis</span></button>
   </div>
   <section id="studio-tone-analysis-workspace" class="tie-workspace" data-studio-workspace-panel="tone-analysis" hidden aria-hidden="true">
     <div class="tie-workspace-heading">
-      <div><span class="eyebrow">TONE INTELLIGENCE ENGINE</span><h3>Tone Analysis</h3><p>Local audio analysis and matched A/B comparison for imported recordings and saved Quick Record takes.</p></div>
-      <span class="tie-phase-chip">PHASE 3 · COMPARE</span>
+      <div><span class="eyebrow">TONE INTELLIGENCE ENGINE</span><h3>Tone Analysis</h3><p>Measure · Compare · Understand</p></div>
+      <span class="tie-phase-chip">STUDIO ENGINE</span>
     </div>
     <nav class="tie-subnav" role="tablist" aria-label="Tone Analysis sections">
-      <button type="button" data-tie-page="analyzer" class="active" role="tab" aria-selected="true">Analyzer</button>
-      <button type="button" data-tie-page="compare" role="tab" aria-selected="false">Compare</button>
-      <button type="button" data-tie-page="signal-chain" role="tab" aria-selected="false">Signal Chain</button>
-      <button type="button" data-tie-page="intelligence" role="tab" aria-selected="false">Intelligence</button>
-      <button type="button" data-tie-page="ai-consultant" role="tab" aria-selected="false">AI Consultant</button>
+      <button type="button" data-tie-page="analyzer" class="active" role="tab" aria-selected="true"><span class="tie-nav-icon" aria-hidden="true">∿</span><span>Analyzer</span></button>
+      <button type="button" data-tie-page="compare" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">⇄</span><span>Compare</span></button>
+      <button type="button" data-tie-page="signal-chain" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">⌁</span><span>Chain</span></button>
+      <button type="button" data-tie-page="intelligence" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">▤</span><span>Intel</span></button>
+      <button type="button" data-tie-page="ai-consultant" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">✧</span><span>AI</span></button>
     </nav>
-    <section class="tie-empty-state tie-analyzer-page" data-tie-page-panel="analyzer" role="tabpanel">
-      <span class="tie-empty-kicker">01 / ANALYZER</span><h4>Audio Analyzer</h4>
-      <p>Analyze an imported audio file or a saved Quick Record WAV. Audio is decoded and measured locally; original recordings are never modified or uploaded.</p>
-      <div class="tie-analyzer-source-row">
-        <label class="tie-analyzer-field" for="tieAudioSourceSelect">Audio source
+    <section class="tie-panel tie-analyzer-page" data-tie-page-panel="analyzer" role="tabpanel">
+      <div class="tie-section-heading">
+        <div><span class="tie-section-index">01 / ANALYZER</span><h4>Audio Analyzer</h4></div>
+        <span class="tie-live-indicator"><i></i> LOCAL DSP</span>
+      </div>
+      <div class="tie-source-toolbar">
+        <label class="tie-analyzer-field" for="tieAudioSourceSelect"><span>Audio source</span>
           <select id="tieAudioSourceSelect" aria-label="Audio source"><option value="">Import a file or select a saved Quick Record</option></select>
         </label>
-        <button class="tie-analyzer-import-btn" id="tieImportAudioButton" type="button">＋ Import audio</button>
+        <button class="tie-analyzer-import-btn" id="tieImportAudioButton" type="button"><span aria-hidden="true">＋</span> Import</button>
         <input id="tieAudioFileInput" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose audio file">
       </div>
       <div class="tie-analyzer-control-row">
-        <label class="tie-analyzer-field" for="tieFftSize">FFT size
+        <label class="tie-analyzer-field" for="tieFftSize"><span>FFT size</span>
           <select id="tieFftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384">16384</option></select>
         </label>
-        <label class="tie-analyzer-field" for="tieChannelSelect">Input channel
+        <label class="tie-analyzer-field" for="tieChannelSelect"><span>Channel</span>
           <select id="tieChannelSelect" disabled><option value="0">Channel 1</option></select>
         </label>
-        <button class="tie-analyzer-run-btn" id="tieAnalyzeButton" type="button" disabled>Analyze once</button>
+        <button class="tie-analyzer-run-btn" id="tieAnalyzeButton" type="button" disabled>▶ Analyze</button>
         <button class="tie-analyzer-cancel-btn" id="tieCancelAnalysisButton" type="button" hidden>Cancel</button>
       </div>
-      <div id="tieAnalysisStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose an imported file or a saved Quick Record take to begin.</div>
+      <div id="tieAnalysisStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose an imported audio file or a saved Quick Record take.</div>
       <progress id="tieAnalysisProgress" class="tie-analysis-progress" max="100" value="0" hidden aria-label="Analysis progress"></progress>
       <div id="tieSourceMetadata" class="tie-source-metadata" hidden></div>
       <div id="tieAnalysisResults" class="tie-analysis-results" hidden>
-        <div class="tie-metric-grid">
-          <div class="tie-metric-card"><small>RMS</small><strong id="tieMetricRms">—</strong><span>dBFS</span></div>
-          <div class="tie-metric-card"><small>Sample peak</small><strong id="tieMetricPeak">—</strong><span>dBFS</span></div>
-          <div class="tie-metric-card"><small>Crest factor</small><strong id="tieMetricCrest">—</strong><span>dB</span></div>
-          <div class="tie-metric-card"><small>Spectral centroid</small><strong id="tieMetricCentroid">—</strong><span>Hz</span></div>
-          <div class="tie-metric-card"><small>85% rolloff</small><strong id="tieMetricRolloff">—</strong><span>Hz</span></div>
-          <div class="tie-metric-card"><small>Sample clipping</small><strong id="tieMetricClipping">—</strong><span>samples ≥ −0.009 dBFS</span></div>
-        </div>
-        <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Frequency spectrum</strong><small id="tieSpectrumDetails">Hann · one-sided amplitude · dBFS</small></div><canvas id="tieSpectrumCanvas" width="720" height="250" aria-label="Measured frequency spectrum"></canvas></div>
-        <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Spectrogram</strong><small>STFT · time flows downward · linear frequency</small></div><canvas id="tieSpectrogramCanvas" width="720" height="230" aria-label="Measured audio spectrogram"></canvas></div>
-        <div class="tie-band-panel"><div class="tie-chart-heading"><strong>Relative band energy</strong><small>Share of measured spectral power</small></div><div id="tieBandEnergy" class="tie-band-list"></div></div>
+        <nav class="tie-view-tabs" role="tablist" aria-label="Analyzer views">
+          <button type="button" class="active" data-tie-analyzer-view="spectrum" role="tab" aria-selected="true">Spectrum</button>
+          <button type="button" data-tie-analyzer-view="spectrogram" role="tab" aria-selected="false">Spectrogram</button>
+          <button type="button" data-tie-analyzer-view="meter" role="tab" aria-selected="false">Meter</button>
+          <button type="button" data-tie-analyzer-view="harmonics" role="tab" aria-selected="false">Harmonics</button>
+        </nav>
+        <section class="tie-view-panel" data-tie-analyzer-panel="spectrum" role="tabpanel">
+          <div class="tie-chart-panel tie-chart-dominant">
+            <div class="tie-chart-heading"><strong>Frequency spectrum</strong><small id="tieSpectrumDetails">Hann · one-sided amplitude · dBFS</small></div>
+            <canvas id="tieSpectrumCanvas" width="720" height="280" aria-label="Measured frequency spectrum"></canvas>
+          </div>
+        </section>
+        <section class="tie-view-panel" data-tie-analyzer-panel="spectrogram" role="tabpanel" hidden>
+          <div class="tie-chart-panel">
+            <div class="tie-chart-heading"><strong>Spectrogram</strong><small>STFT · time flows downward · linear frequency</small></div>
+            <canvas id="tieSpectrogramCanvas" width="720" height="250" aria-label="Measured audio spectrogram"></canvas>
+          </div>
+        </section>
+        <section class="tie-view-panel" data-tie-analyzer-panel="meter" role="tabpanel" hidden>
+          <div class="tie-metric-grid">
+            <div class="tie-metric-card"><small>RMS</small><strong id="tieMetricRms">—</strong><span>dBFS</span></div>
+            <div class="tie-metric-card"><small>Sample peak</small><strong id="tieMetricPeak">—</strong><span>dBFS</span></div>
+            <div class="tie-metric-card"><small>Crest factor</small><strong id="tieMetricCrest">—</strong><span>dB</span></div>
+            <div class="tie-metric-card"><small>Spectral centroid</small><strong id="tieMetricCentroid">—</strong><span>Hz</span></div>
+            <div class="tie-metric-card"><small>85% rolloff</small><strong id="tieMetricRolloff">—</strong><span>Hz</span></div>
+            <div class="tie-metric-card"><small>Sample clipping</small><strong id="tieMetricClipping">—</strong><span>samples ≥ −0.009 dBFS</span></div>
+          </div>
+          <div class="tie-level-meter-panel">
+            <div class="tie-chart-heading"><strong>Measured level</strong><small>From selected PCM · not live input</small></div>
+            <div class="tie-level-meter-row"><span>RMS</span><div class="tie-level-track"><i id="tieMeterRmsFill"></i></div><strong id="tieMeterRmsValue">—</strong></div>
+            <div class="tie-level-meter-row"><span>Peak</span><div class="tie-level-track"><i id="tieMeterPeakFill"></i></div><strong id="tieMeterPeakValue">—</strong></div>
+          </div>
+          <div class="tie-band-panel"><div class="tie-chart-heading"><strong>Relative band energy</strong><small>Share of measured spectral power</small></div><div id="tieBandEnergy" class="tie-band-list"></div></div>
+          <div class="tie-quick-diagnosis" aria-live="polite">
+            <div class="tie-quick-icon" aria-hidden="true">⌁</div>
+            <div><small>QUICK DIAGNOSIS · MEASURED EVIDENCE</small><strong id="tieQuickDiagnosisTitle">Waiting for analysis</strong><p id="tieQuickDiagnosisDetails">No diagnostic is shown before an actual PCM analysis is complete.</p></div>
+          </div>
+        </section>
+        <section class="tie-view-panel" data-tie-analyzer-panel="harmonics" role="tabpanel" hidden>
+          <div class="tie-capability-state">
+            <span class="tie-capability-icon" aria-hidden="true">≋</span>
+            <div><strong>Harmonic analysis is not available in this DSP output</strong><p>No harmonic peaks or THD values are inferred from the current spectrum. This view will remain unavailable until a validated harmonic estimator is approved and tested.</p></div>
+            <span class="tie-capability-tag">NOT MEASURED</span>
+          </div>
+        </section>
         <div id="tieAnalysisLimitations" class="tie-analysis-limitations"></div>
       </div>
-      <small>Phase 2 source scope: imported files and saved Quick Record WAV only. Direct USB/live capture and internal DAW-track access remain unverified and are not advertised here.</small>
+      <small class="tie-scope-note">Source scope: imported files and saved Quick Record WAV only. Direct USB/live capture and DAW-track analysis are not connected to this Analyzer.</small>
     </section>
-    <section class="tie-empty-state tie-compare-page" data-tie-page-panel="compare" role="tabpanel" hidden>
-      <span class="tie-empty-kicker">02 / COMPARE</span><h4>Tone Comparison · A/B</h4>
-      <p>Compare two real recordings over a matched region. Sources are decoded and measured locally. Original files and Quick Record takes are never modified.</p>
+    <section class="tie-panel tie-compare-page" data-tie-page-panel="compare" role="tabpanel" hidden>
+      <div class="tie-section-heading">
+        <div><span class="tie-section-index">02 / COMPARE</span><h4>Tone Comparison</h4></div>
+        <span class="tie-live-indicator"><i></i> A / B ENGINE</span>
+      </div>
       <div class="tie-compare-slots">
-        <article class="tie-compare-slot">
-          <div class="tie-compare-slot-heading"><strong>Source A</strong><span>REFERENCE</span></div>
-          <label class="tie-analyzer-field" for="tieCompareSourceA">Audio source
-            <select id="tieCompareSourceA"><option value="">Choose a source</option></select>
+        <article class="tie-compare-slot tie-compare-slot-a">
+          <div class="tie-compare-slot-heading"><span class="tie-source-letter">A</span><div><strong>Reference</strong><small>Source A</small></div></div>
+          <label class="tie-analyzer-field" for="tieCompareSourceA"><span>Audio source</span>
+            <select id="tieCompareSourceA"><option value="">Choose source A</option></select>
           </label>
-          <div class="tie-compare-source-actions">
+          <div class="tie-compare-slot-footer">
             <button class="tie-analyzer-import-btn" id="tieCompareImportA" type="button">＋ Import A</button>
             <input id="tieCompareFileA" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose source A audio file">
+            <label class="tie-analyzer-field" for="tieCompareChannelA"><span>Channel</span><select id="tieCompareChannelA" disabled><option value="0">Load first</option></select></label>
           </div>
-          <label class="tie-analyzer-field" for="tieCompareChannelA">Analysis channel
-            <select id="tieCompareChannelA" disabled><option value="0">Load source A first</option></select>
-          </label>
         </article>
+        <button type="button" class="tie-compare-swap" id="tieCompareSwapSources" aria-label="Swap A and B sources" title="Swap A and B">⇄</button>
         <article class="tie-compare-slot tie-compare-slot-b">
-          <div class="tie-compare-slot-heading"><strong>Source B</strong><span>COMPARISON</span></div>
-          <label class="tie-analyzer-field" for="tieCompareSourceB">Audio source
-            <select id="tieCompareSourceB"><option value="">Choose a source</option></select>
+          <div class="tie-compare-slot-heading"><span class="tie-source-letter">B</span><div><strong>Comparison</strong><small>Source B</small></div></div>
+          <label class="tie-analyzer-field" for="tieCompareSourceB"><span>Audio source</span>
+            <select id="tieCompareSourceB"><option value="">Choose source B</option></select>
           </label>
-          <div class="tie-compare-source-actions">
+          <div class="tie-compare-slot-footer">
             <button class="tie-analyzer-import-btn" id="tieCompareImportB" type="button">＋ Import B</button>
             <input id="tieCompareFileB" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose source B audio file">
+            <label class="tie-analyzer-field" for="tieCompareChannelB"><span>Channel</span><select id="tieCompareChannelB" disabled><option value="0">Load first</option></select></label>
           </div>
-          <label class="tie-analyzer-field" for="tieCompareChannelB">Analysis channel
-            <select id="tieCompareChannelB" disabled><option value="0">Load source B first</option></select>
-          </label>
         </article>
       </div>
       <div class="tie-compare-settings">
-        <label class="tie-analyzer-field" for="tieCompareFftSize">FFT size
+        <label class="tie-analyzer-field" for="tieCompareFftSize"><span>FFT</span>
           <select id="tieCompareFftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384">16384</option></select>
         </label>
-        <label class="tie-analyzer-field" for="tieCompareOffsetMs">Manual B offset (ms)
+        <label class="tie-analyzer-field" for="tieCompareOffsetMs"><span>B offset · ms</span>
           <input id="tieCompareOffsetMs" type="number" min="-30000" max="30000" step="1" value="0">
         </label>
-        <label class="tie-compare-check" for="tieCompareLevelMatch"><input id="tieCompareLevelMatch" type="checkbox"> RMS match (attenuation only)</label>
+        <label class="tie-compare-check" for="tieCompareLevelMatch"><input id="tieCompareLevelMatch" type="checkbox"><span>RMS match <small>attenuation only</small></span></label>
       </div>
       <div class="tie-compare-actions">
-        <button class="tie-analyzer-run-btn" id="tieCompareRunButton" type="button" disabled>Compare A / B</button>
+        <button class="tie-analyzer-run-btn" id="tieCompareRunButton" type="button" disabled>⇄ Compare A / B</button>
         <button class="tie-analyzer-cancel-btn" id="tieCompareCancelButton" type="button" hidden>Cancel</button>
         <div class="tie-compare-preview-actions">
-          <button type="button" id="tieComparePlayA" disabled>▶ Play A</button>
-          <button type="button" id="tieComparePlayB" disabled>▶ Play B</button>
+          <button type="button" id="tieComparePlayA" disabled>▶ A</button>
+          <button type="button" id="tieComparePlayB" disabled>▶ B</button>
           <button type="button" id="tieCompareStop" disabled>■ Stop</button>
         </div>
       </div>
-      <div id="tieCompareStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose two sources to compare. Imported audio and saved Quick Record takes are supported.</div>
+      <div id="tieCompareStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose two audio sources to compare.</div>
       <progress id="tieCompareProgress" class="tie-analysis-progress" max="100" value="0" hidden aria-label="Comparison progress"></progress>
       <div id="tieCompareResults" class="tie-compare-results" hidden>
-        <div class="tie-compare-result-heading"><strong>Measured comparison</strong><small id="tieCompareSummary"></small><small id="tieCompareProvenance"></small></div>
+        <div class="tie-compare-result-heading"><div><strong>Tone Comparison · A vs B</strong><small id="tieCompareSummary"></small></div><small id="tieCompareProvenance"></small></div>
         <div class="tie-compare-metrics">
-          <div class="tie-compare-metric-head"><span>Metric</span><span>A</span><span>B</span><span>B − A</span></div>
-          <div class="tie-compare-metric-row"><strong>RMS (dBFS)</strong><span id="tieCompareRmsA">—</span><span id="tieCompareRmsB">—</span><span id="tieCompareRmsDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Sample peak (dBFS)</strong><span id="tieComparePeakA">—</span><span id="tieComparePeakB">—</span><span id="tieComparePeakDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Crest factor (dB)</strong><span id="tieCompareCrestA">—</span><span id="tieCompareCrestB">—</span><span id="tieCompareCrestDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Spectral centroid (Hz)</strong><span id="tieCompareCentroidA">—</span><span id="tieCompareCentroidB">—</span><span id="tieCompareCentroidDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>85% rolloff (Hz)</strong><span id="tieCompareRolloffA">—</span><span id="tieCompareRolloffB">—</span><span id="tieCompareRolloffDelta">—</span></div>
+          <div class="tie-compare-metric-head"><span>Metric</span><span>A</span><span>B</span><span>Δ B−A</span></div>
+          <div class="tie-compare-metric-row"><strong>RMS · dBFS</strong><span id="tieCompareRmsA">—</span><span id="tieCompareRmsB">—</span><span id="tieCompareRmsDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Peak · dBFS</strong><span id="tieComparePeakA">—</span><span id="tieComparePeakB">—</span><span id="tieComparePeakDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Crest · dB</strong><span id="tieCompareCrestA">—</span><span id="tieCompareCrestB">—</span><span id="tieCompareCrestDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Centroid · Hz</strong><span id="tieCompareCentroidA">—</span><span id="tieCompareCentroidB">—</span><span id="tieCompareCentroidDelta">—</span></div>
+          <div class="tie-compare-metric-row"><strong>Rolloff · Hz</strong><span id="tieCompareRolloffA">—</span><span id="tieCompareRolloffB">—</span><span id="tieCompareRolloffDelta">—</span></div>
         </div>
-        <div class="tie-chart-panel">
-          <div class="tie-chart-heading"><strong>Spectrum overlay</strong><small>A · lime / B · cyan · dBFS</small></div>
-          <canvas id="tieCompareOverlayCanvas" width="720" height="230" aria-label="A and B measured spectrum overlay"></canvas>
+        <nav class="tie-view-tabs" role="tablist" aria-label="Comparison views">
+          <button type="button" class="active" data-tie-compare-view="spectrum" role="tab" aria-selected="true">Spectrum</button>
+          <button type="button" data-tie-compare-view="difference" role="tab" aria-selected="false">Difference</button>
+          <button type="button" data-tie-compare-view="dynamics" role="tab" aria-selected="false">Dynamics</button>
+          <button type="button" data-tie-compare-view="harmonics" role="tab" aria-selected="false">Harmonics</button>
+        </nav>
+        <section class="tie-view-panel" data-tie-compare-panel="spectrum" role="tabpanel">
+          <div class="tie-chart-panel tie-chart-dominant"><div class="tie-chart-heading"><strong>Spectrum overlay</strong><small>A · lime / B · cyan · dBFS</small></div><canvas id="tieCompareOverlayCanvas" width="720" height="250" aria-label="A and B measured spectrum overlay"></canvas></div>
+        </section>
+        <section class="tie-view-panel" data-tie-compare-panel="difference" role="tabpanel" hidden>
+          <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Spectral difference</strong><small>B minus A · dB</small></div><canvas id="tieCompareDiffCanvas" width="720" height="230" aria-label="B minus A spectrum difference"></canvas></div>
+        </section>
+        <section class="tie-view-panel" data-tie-compare-panel="dynamics" role="tabpanel" hidden>
+          <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Dynamic comparison</strong><small>50 ms RMS windows · A lime / B cyan</small></div><canvas id="tieCompareDynamicCanvas" width="720" height="230" aria-label="A and B dynamic RMS comparison"></canvas></div>
+        </section>
+        <section class="tie-view-panel" data-tie-compare-panel="harmonics" role="tabpanel" hidden>
+          <div class="tie-capability-state"><span class="tie-capability-icon" aria-hidden="true">≋</span><div><strong>Harmonic comparison is not measured</strong><p>The current DSP output does not include a validated harmonic estimator. No harmonic or THD values are generated.</p></div><span class="tie-capability-tag">NOT MEASURED</span></div>
+        </section>
+        <div class="tie-compare-tone-report">
+          <div class="tie-chart-heading"><strong>Low · Mid · High balance</strong><small>Aggregated from measured relative band energy</small></div>
+          <div class="tie-tone-band-head"><span>Band</span><span>A</span><span>B</span><span>Δ</span></div>
+          <div id="tieCompareToneBands" class="tie-tone-bands"></div>
         </div>
-        <div class="tie-chart-panel">
-          <div class="tie-chart-heading"><strong>Spectral difference</strong><small>B minus A · dB</small></div>
-          <canvas id="tieCompareDiffCanvas" width="720" height="210" aria-label="B minus A spectrum difference"></canvas>
-        </div>
-        <div class="tie-chart-panel">
-          <div class="tie-chart-heading"><strong>Dynamic comparison</strong><small>50 ms RMS windows · A lime / B cyan</small></div>
-          <canvas id="tieCompareDynamicCanvas" width="720" height="210" aria-label="A and B dynamic RMS comparison"></canvas>
-        </div>
-        <label class="tie-compare-listening-notes" for="tieCompareListeningNotes">Listening notes (optional)
-          <textarea id="tieCompareListeningNotes" rows="3" placeholder="Describe what you hear when switching A/B. These notes are not measured DSP data."></textarea>
+        <label class="tie-compare-listening-notes" for="tieCompareListeningNotes"><span>Listening notes <small>Optional · subjective notes, separate from DSP results</small></span>
+          <textarea id="tieCompareListeningNotes" rows="2" placeholder="Describe what you hear when switching A/B…"></textarea>
         </label>
-        <div class="tie-analysis-limitations">
-          <strong id="tieCompareReportMeta"></strong>
-          <div id="tieCompareLimitations"></div>
-        </div>
+        <div class="tie-analysis-limitations"><strong id="tieCompareReportMeta"></strong><div id="tieCompareLimitations"></div></div>
       </div>
-      <small>Phase 3 v1 scope: imported recordings and saved Quick Record takes. Different analysis sample rates are rejected explicitly; automatic transient/cross-correlation alignment and integrated-loudness matching are not included.</small>
+      <small class="tie-scope-note">A/B uses imported recordings and saved Quick Record takes only. Alignment is manual; RMS matching is not LUFS matching.</small>
     </section>
-    <section class="tie-empty-state" data-tie-page-panel="signal-chain" role="tabpanel" hidden>
-      <span class="tie-empty-kicker">03 / SIGNAL CHAIN</span><h4>Signal Chain Intelligence</h4>
-      <p>Tempat untuk memeriksa susunan efek dan hubungan antarblok. Snapshot signal chain belum diambil dan belum ada diagnosis yang dijalankan.</p>
-      <small>Belum ada snapshot signal chain.</small>
+    <section class="tie-panel tie-feature-page" data-tie-page-panel="signal-chain" role="tabpanel" hidden>
+      <div class="tie-section-heading"><div><span class="tie-section-index">03 / SIGNAL CHAIN</span><h4>Signal Chain</h4></div><span class="tie-capability-tag">AWAITING DEVICE SNAPSHOT</span></div>
+      <div class="tie-signal-flow" aria-label="Generic MG-30 signal flow outline">
+        <div><small>IN</small><strong>Input</strong></div><i>→</i>
+        <div><small>FX</small><strong>Effects</strong></div><i>→</i>
+        <div><small>AMP</small><strong>Amp / NAM</strong></div><i>→</i>
+        <div><small>CAB</small><strong>IR / Cab</strong></div><i>→</i>
+        <div><small>OUT</small><strong>Output</strong></div>
+      </div>
+      <div class="tie-capability-state"><span class="tie-capability-icon" aria-hidden="true">⌁</span><div><strong>Live effect-block snapshot is not connected</strong><p>This is a signal-flow guide only, not the current MG-30 configuration. Effect order, parameter values, selected NAM and IR will appear here only when read from a verified Gen 2 device snapshot. No effect data is fabricated in this redesign.</p></div></div>
+      <div class="tie-section-actions"><span>Device target · MG-30 Gen 2</span><span>Read-only design preview</span></div>
     </section>
-    <section class="tie-empty-state" data-tie-page-panel="intelligence" role="tabpanel" hidden>
-      <span class="tie-empty-kicker">04 / INTELLIGENCE</span><h4>Tone Intelligence</h4>
-      <p>Tempat untuk interpretasi teknis yang kelak menggabungkan pengukuran DSP dan konteks tone. Belum ada interpretasi atau rekomendasi yang dibuat.</p>
-      <small>Analysis dan reasoning belum aktif.</small>
+    <section class="tie-panel tie-feature-page" data-tie-page-panel="intelligence" role="tabpanel" hidden>
+      <div class="tie-section-heading"><div><span class="tie-section-index">04 / INTELLIGENCE</span><h4>Technical Findings</h4></div><span class="tie-capability-tag">EVIDENCE FIRST</span></div>
+      <div class="tie-intel-grid">
+        <article class="tie-intel-row"><span class="tie-intel-icon">◉</span><div><strong>Clipping &amp; headroom</strong><small>Requires a completed PCM Analyzer result</small></div><b class="tie-intel-state">AWAITING</b></article>
+        <article class="tie-intel-row"><span class="tie-intel-icon">≈</span><div><strong>Noise floor</strong><small>Current arbitrary-program estimator is unavailable</small></div><b class="tie-intel-state">NOT MEASURED</b></article>
+        <article class="tie-intel-row"><span class="tie-intel-icon">⌁</span><div><strong>Gain staging</strong><small>Requires aligned input/output reference levels</small></div><b class="tie-intel-state">AWAITING</b></article>
+        <article class="tie-intel-row"><span class="tie-intel-icon">▤</span><div><strong>Spectral balance</strong><small>Can be described from Analyzer band-energy measurements; tone quality is not inferred from brightness alone</small></div><b class="tie-intel-state">AWAITING</b></article>
+      </div>
+      <div class="tie-capability-state"><span class="tie-capability-icon" aria-hidden="true">✧</span><div><strong>No diagnosis has been issued</strong><p>Findings and recommendations will be displayed only when their supporting measurements and device context exist. This page does not create sample values or infer a fault from an unmeasured signal chain.</p></div></div>
     </section>
-    <section class="tie-empty-state" data-tie-page-panel="ai-consultant" role="tabpanel" hidden>
-      <span class="tie-empty-kicker">05 / AI CONSULTANT</span><h4>AI Tone Consultant</h4>
-      <p>Tempat untuk konsultasi tone berbasis konteks Studio. Adapter konteks Studio belum terhubung dan belum ada permintaan ke AI provider yang dikirim dari sini.</p>
-      <small>Belum ada sesi konsultasi.</small>
+    <section class="tie-panel tie-ai-consultant" data-tie-page-panel="ai-consultant" role="tabpanel" hidden>
+      <div class="tie-ai-identity">
+        <div class="tie-ai-orb" aria-hidden="true"><span>✧</span></div>
+        <div><span class="tie-section-index">05 / AI CONSULTANT</span><h4>AI Tone Consultant</h4><p>Discuss measured tone, presets, NAM, IR and mix decisions with the existing MG30 Studio AI Assistant.</p></div>
+        <span class="tie-capability-tag">SHARED AI</span>
+      </div>
+      <div class="tie-ai-context">
+        <span>STUDIO CONTEXT</span>
+        <div><b>Preset</b><small>from Editor</small></div>
+        <div><b>NAM</b><small>from library / Editor</small></div>
+        <div><b>IR</b><small>from library / Editor</small></div>
+        <div><b>Signal chain</b><small>when device snapshot is available</small></div>
+      </div>
+      <div class="tie-ai-message-preview">
+        <span class="tie-ai-message-icon" aria-hidden="true">✧</span>
+        <div><strong>Ready to consult</strong><p>The live conversation, model selection, provider fallback and existing AI tools remain in the shared AI assistant. This panel opens that same assistant rather than creating a second chat or provider session.</p></div>
+      </div>
+      <button type="button" class="tie-ai-open-btn" id="tieOpenAiAssistant">✧ Open AI Tone Assistant <span>↗</span></button>
     </section>
     <p class="tie-workspace-note">Jamm &amp; Record, Quick Record, dan Mini DAW tetap berada di workspace sebelah. Berpindah workspace hanya mengubah visibilitas UI; shell ini tidak membuat ulang audio engine atau mengubah rute perangkat.</p>
   </section>
