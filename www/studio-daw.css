@@ -3832,3 +3832,47 @@
   display:none!important;
 }
 
+
+/* Phase 4 — Signal Chain Intelligence: live read-only preset inspection */
+#page-studio .tie-chain-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0 10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+#page-studio .tie-chain-preset-meta{display:grid;gap:4px;min-width:0}
+#page-studio .tie-chain-preset-meta strong{font-size:15px;color:var(--text)}
+#page-studio .tie-chain-preset-meta span{font-size:11px;color:var(--muted)}
+#page-studio .tie-chain-status{padding:10px 12px;border-radius:11px;background:var(--panel-2);color:var(--muted);font-size:12px;line-height:1.5}
+#page-studio .tie-chain-status.is-live{color:var(--success,#8fd5a8);border:1px solid color-mix(in srgb,var(--success,#8fd5a8) 32%,transparent)}
+#page-studio .tie-chain-status.is-warning{color:var(--warning,#e7bd72);border:1px solid color-mix(in srgb,var(--warning,#e7bd72) 32%,transparent)}
+#page-studio .tie-chain-flow{display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding:16px 2px 12px;scrollbar-width:thin}
+#page-studio .tie-chain-block{flex:0 0 118px;min-height:112px;text-align:left;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel);color:var(--text);display:flex;flex-direction:column;gap:7px;cursor:pointer}
+#page-studio .tie-chain-block[aria-pressed=true]{border-color:var(--accent,#a5d66d);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent,#a5d66d) 25%,transparent)}
+#page-studio .tie-chain-block.is-off{opacity:.58}
+#page-studio .tie-chain-block.is-unknown{border-style:dashed;opacity:.72}
+#page-studio .tie-chain-block .tie-chain-block-icon{font-size:20px;color:var(--accent,#a5d66d)}
+#page-studio .tie-chain-block strong{font-size:12px;letter-spacing:.06em}
+#page-studio .tie-chain-block small{font-size:10px;color:var(--muted);line-height:1.35}
+#page-studio .tie-chain-arrow{align-self:center;flex:0 0 auto;color:var(--muted);font-size:16px}
+#page-studio .tie-chain-detail-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:12px;margin-top:8px}
+#page-studio .tie-chain-card{min-width:0;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:15px}
+#page-studio .tie-chain-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+#page-studio .tie-chain-card-heading>div{min-width:0}
+#page-studio .tie-chain-card-heading span:first-child{font-size:9px;letter-spacing:.12em;color:var(--muted);font-weight:800}
+#page-studio .tie-chain-card-heading h5{margin:4px 0 0;font-size:15px;color:var(--text)}
+#page-studio .tie-chain-state{flex:0 0 auto;border-radius:999px;padding:5px 8px;background:var(--panel-2);color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.06em}
+#page-studio .tie-chain-parameters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#page-studio .tie-chain-param{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--panel-2);font-size:11px}
+#page-studio .tie-chain-param strong{font-size:11px;color:var(--text);text-align:right}
+#page-studio .tie-chain-param span{color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+#page-studio .tie-chain-context{display:grid;gap:9px}
+#page-studio .tie-chain-context-row{padding:10px;border-radius:10px;background:var(--panel-2);display:grid;gap:4px}
+#page-studio .tie-chain-context-row span{font-size:9px;color:var(--muted);letter-spacing:.08em;font-weight:800}
+#page-studio .tie-chain-context-row strong{font-size:12px;color:var(--text);overflow-wrap:anywhere}
+#page-studio .tie-chain-library{margin-top:10px;color:var(--muted);font-size:10px;line-height:1.5}
+#page-studio .tie-chain-diagnostics{margin-top:12px}
+#page-studio .tie-chain-diagnostic-list{display:grid;gap:9px}
+#page-studio .tie-chain-diagnostic{padding:11px 12px;border-radius:11px;background:var(--panel-2);border-left:3px solid var(--muted)}
+#page-studio .tie-chain-diagnostic.is-hypothesis{border-left-color:var(--warning,#e7bd72)}
+#page-studio .tie-chain-diagnostic strong{display:block;font-size:12px;color:var(--text);margin-bottom:4px}
+#page-studio .tie-chain-diagnostic p{margin:0;font-size:11px;line-height:1.5;color:var(--muted)}
+#page-studio .tie-chain-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#page-studio .tie-chain-links button{border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:transparent;color:var(--text);font-size:11px}
+#page-studio .tie-chain-empty{padding:18px;color:var(--muted);font-size:12px}
+@media(max-width:640px){#page-studio .tie-chain-detail-grid{grid-template-columns:1fr}#page-studio .tie-chain-toolbar{align-items:flex-start;flex-direction:column}#page-studio .tie-chain-toolbar #tieChainRefresh{width:100%}#page-studio .tie-chain-block{flex-basis:106px;min-height:106px}#page-studio .tie-chain-parameters{grid-template-columns:1fr}}

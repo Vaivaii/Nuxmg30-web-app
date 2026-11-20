@@ -2193,16 +2193,45 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
       <small class="tie-scope-note">A/B uses imported recordings and saved Quick Record takes only. Alignment is manual; RMS matching is not LUFS matching.</small>
     </section>
     <section class="tie-panel tie-feature-page" data-tie-page-panel="signal-chain" role="tabpanel" hidden>
-      <div class="tie-section-heading"><div><span class="tie-section-index">03 / SIGNAL CHAIN</span><h4>Signal Chain</h4></div><span class="tie-capability-tag">AWAITING DEVICE SNAPSHOT</span></div>
-      <div class="tie-signal-flow" aria-label="Generic MG-30 signal flow outline">
-        <div><small>IN</small><strong>Input</strong></div><i>→</i>
-        <div><small>FX</small><strong>Effects</strong></div><i>→</i>
-        <div><small>AMP</small><strong>Amp / NAM</strong></div><i>→</i>
-        <div><small>CAB</small><strong>IR / Cab</strong></div><i>→</i>
-        <div><small>OUT</small><strong>Output</strong></div>
+      <div class="tie-section-heading">
+        <div><span class="tie-section-index">03 / SIGNAL CHAIN</span><h4>Signal Chain Intelligence</h4></div>
+        <span id="tieChainSourceTag" class="tie-capability-tag">WAITING FOR PRESET STATE</span>
       </div>
-      <div class="tie-capability-state"><span class="tie-capability-icon" aria-hidden="true">⌁</span><div><strong>Live effect-block snapshot is not connected</strong><p>This is a signal-flow guide only, not the current MG-30 configuration. Effect order, parameter values, selected NAM and IR will appear here only when read from a verified Gen 2 device snapshot. No effect data is fabricated in this redesign.</p></div></div>
-      <div class="tie-section-actions"><span>Device target · MG-30 Gen 2</span><span>Read-only design preview</span></div>
+      <div class="tie-chain-toolbar">
+        <div class="tie-chain-preset-meta">
+          <strong id="tieChainPresetName">No preset snapshot</strong>
+          <span id="tieChainPresetContext">Connect the original MG-30 Gen 2 to read its active Scene.</span>
+        </div>
+        <button id="tieChainRefresh" class="btn primary" type="button">Read active preset</button>
+      </div>
+      <div id="tieChainStatus" class="tie-chain-status" role="status" aria-live="polite">No device readback has been captured in this session.</div>
+      <div id="tieChainFlow" class="tie-chain-flow" aria-label="Signal chain from current editor or device snapshot">
+        <div class="tie-chain-empty">The current effect order will appear after a preset readback or when a saved editor draft is available.</div>
+      </div>
+      <div class="tie-chain-detail-grid">
+        <section class="tie-chain-card">
+          <div class="tie-chain-card-heading"><div><span>SELECTED BLOCK</span><h5 id="tieChainSelectedTitle">No block selected</h5></div><span id="tieChainBlockState" class="tie-chain-state">—</span></div>
+          <div id="tieChainParameters" class="tie-chain-parameters"><p>Select an effect block to inspect the parameters available in its active model.</p></div>
+        </section>
+        <section class="tie-chain-card">
+          <div class="tie-chain-card-heading"><div><span>MODEL CONTEXT</span><h5>NAM &amp; IR</h5></div><span id="tieChainModelSource" class="tie-chain-state">NOT READ</span></div>
+          <div id="tieChainModelContext" class="tie-chain-context">
+            <p>Active amplifier model and cabinet/IR context will be shown when the preset state is available.</p>
+          </div>
+          <div id="tieChainLibraryContext" class="tie-chain-library">NAM Library and IR Collection links are read-only.</div>
+        </section>
+      </div>
+      <section class="tie-chain-card tie-chain-diagnostics">
+        <div class="tie-chain-card-heading"><div><span>CONFIGURATION REVIEW</span><h5>Potential issues &amp; gain staging</h5></div><span id="tieChainDiagnosticTag" class="tie-chain-state">NO MEASUREMENTS</span></div>
+        <div id="tieChainDiagnostics" class="tie-chain-diagnostic-list">
+          <p>Diagnostics require a verified preset snapshot. Audio clipping and noise measurements are not inferred from parameter values.</p>
+        </div>
+        <div class="tie-chain-links">
+          <button type="button" data-tie-open-analysis="analyzer">Open DSP Analyzer</button>
+          <button type="button" data-tie-open-analysis="compare">Open Tone Comparison</button>
+        </div>
+      </section>
+      <div class="tie-section-actions"><span>MG-30 original Gen 2 · read-only inspection</span><span>No device writes from this panel</span></div>
     </section>
     <section class="tie-panel tie-feature-page" data-tie-page-panel="intelligence" role="tabpanel" hidden>
       <div class="tie-section-heading"><div><span class="tie-section-index">04 / INTELLIGENCE</span><h4>Technical Findings</h4></div><span class="tie-capability-tag">EVIDENCE FIRST</span></div>
@@ -2767,6 +2796,7 @@ const MIC_POSITION_OPTIONS = ['CENTER','MIDDLE','EDGE'];
 
 const $=id=>document.getElementById(id);
 
+let signalChainReadbackMeta=null;
 let midiAccess=null, midiInput=null, midiOutput=null, midiConnected=false, midiConnectPending=false, lastMidiSend=0, midiChain=Promise.resolve(), pendingCC=new Map(), flushingCC=false, suppressProgramChangeUntil=0, signalChainRoutingMode=null, signalChainRoutingBusy=false, signalChainRoutingOrder=null;
 const MIDI_SW=[0,1,2,3,4,5,6,7,8,9,10,null];
 /* Default MG-30 CC map. The fourth compressor control is CC90; all other CCs are explicit. */
@@ -3259,6 +3289,7 @@ async function readActiveBuffer(options={}){
    targetSlot=resolvedProgram;$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker();
   }
   activeSceneIndex=sceneIndex;$('sceneSelect').selectedIndex=sceneIndex;
+  signalChainReadbackMeta={programSlot:targetSlot,sceneIndex,presetName:hardwarePresetName||name||currentName(),readAt:new Date().toISOString(),source:'device-readback'};
   render();renderSceneButtons();
   if(options.preserveDraftName)$('presetName').value=preservedDraftName;
   persist();return name;
@@ -3601,6 +3632,7 @@ localStorage.setItem('mg30-presets',JSON.stringify(presets));
 let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0,sceneStateRevision=0,externalSceneRefreshTimer=null;
 let targetSlot=0;
 function resetHardwareSceneSyncState(){
+ signalChainReadbackMeta=null;
  sceneStateRevision++;
  activeSceneIndex=null;
  lastReportedSceneStatus=null;
@@ -5201,7 +5233,7 @@ $('knobs').querySelectorAll('.dial-control').forEach(el=>{
 $('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(next-s.model)};$('blockQuickSelect').onchange=e=>{const state=states[selected],next=Number(e.target.value);if(state&&Number.isInteger(next)&&next>=0&&next<BLOCKS[selected].models.length&&next!==state.model)changeSelectedModel(next-state.model)};$('blockSwitch').onchange=e=>{s.on=e.target.checked;sendBlockSwitch(selected);renderChain();$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);renderModelVisual();persist()};$('presetName').oninput=()=>{$('statName').textContent=currentName();persist()}}
 function renderPresets(){let q=$('search').value.toLowerCase(),list=presets.filter(p=>p.name.toLowerCase().includes(q));$('presetCount').textContent=presets.length+' draft lokal';$('presetList').innerHTML=list.length?list.map(p=>'<div class="preset"><div><strong>'+escapeHtml(p.name)+'</strong><p>Draft lokal · slot '+slotName(p.targetSlot??0)+' · '+new Date(p.date).toLocaleString()+'</p></div><div class="preset-actions"><button class="btn" data-load="'+p.id+'">Muat</button><button class="btn" data-del="'+p.id+'">Hapus</button></div></div>').join(''):'<div class="empty">Belum ada draft lokal yang cocok. Buat preset baru atau pilih preset yang sudah tersimpan.</div>';$('presetList').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{let p=presets.find(x=>x.id===b.dataset.load);if(p){states=p.states;selected=p.selected??3;targetSlot=p.targetSlot??0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=p.name;renderSlotPicker();render();showPage('editor');toast('Draft dimuat')}});$('presetList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{presets=presets.filter(x=>x.id!==b.dataset.del);persist();renderPresets()})}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons()}
+function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons();window.dispatchEvent(new CustomEvent('mg30-signal-chain-state-changed',{detail:{source:signalChainReadbackMeta?'device-readback':'editor-state'}}))}
 function syncUserIRNameToCabinet(name){
  const value=String(name||activeUserIRName()||'').trim();
  if(!value)return;
@@ -6208,6 +6240,51 @@ async function aiRefreshDeviceSnapshot(){
 }
 window.MG30AIToneBridge=Object.freeze({
  isConnected:()=>Boolean(midiConnected&&midiInput&&midiOutput),
+ getSignalChainSnapshot(){
+  let draftAvailable=false;
+  try{const draft=JSON.parse(localStorage.getItem('mg30-draft')||'null');draftAvailable=Array.isArray(draft?.states)&&draft.states.length===BLOCKS.length;}catch{}
+  const verified=Boolean(signalChainReadbackMeta);
+  const source=verified?'device-readback':(draftAvailable?'editor-draft':'none');
+  const order=Array.isArray(chainOrder)?chainOrder.slice():[];
+  const blocks=BLOCKS.map((block,index)=>{
+   const state=states[index]||{};
+   const modelKnown=source!=='none'&&(verified?index<11:true);
+   const modelName=modelKnown?(block.models[state.model]?.[0]||''):'';
+   const controls=modelKnown?parameterControls(index,state.model):[];
+   const parameters=controls.map(control=>{
+    const value=parameterValueForControl(index,state,state.model,control);
+    return {key:control.param,label:control.label||control.param.toUpperCase(),value:value===undefined?null:value,available:true,discrete:isDiscreteSwitch(control),choices:control.choices||null};
+   });
+   const namProfile=index===3&&modelKnown?ampNamProfileForModelIndex(state.model):null;
+   const irBlock=index===9&&modelKnown;
+   let irCollectionSlot=0;
+   if(irBlock&&String(modelName).toLowerCase()==='third-party'){
+    try{const map=JSON.parse(localStorage.getItem('mg30-ir-collection-preset-map')||'{}');const slot=Number(map[String(targetSlot)]);if(Number.isInteger(slot)&&slot>=1&&slot<=24)irCollectionSlot=slot;}catch{}
+   }
+   let userIRName='';
+   try{userIRName=String(localStorage.getItem('mg30-user-ir-name')||'').trim();}catch{}
+   return {
+    index,id:block.id,icon:block.icon,known:modelKnown,enabled:modelKnown?Boolean(state.on):null,
+    model:modelName,parameters,
+    nam:namProfile?{slot:namProfile.slot,deviceId:namProfile.id,profileName:namProfile.name,filename:null,mappingEvidence:[60,61].includes(namProfile.id)?'observed-device-id':'provisional-slot-id'}:null,
+    ir:irBlock?{model:modelName,thirdParty:String(modelName).toLowerCase()==='third-party',userName:userIRName,collectionSlot:irCollectionSlot}:null
+   };
+  });
+  return {
+   connected:Boolean(midiConnected&&midiInput&&midiOutput),verified,source,
+   programSlot:Number.isInteger(targetSlot)?targetSlot:null,sceneIndex:Number.isInteger(activeSceneIndex)?activeSceneIndex:null,
+   presetName:signalChainReadbackMeta?.presetName||currentName(),readAt:signalChainReadbackMeta?.readAt||null,
+   order,blocks,
+   routing:Number.isInteger(signalChainRoutingMode)?{mode:signalChainRoutingMode,order:Array.isArray(signalChainRoutingOrder)?signalChainRoutingOrder.slice():null,verified:Array.isArray(signalChainRoutingOrder)}:null,
+   capabilities:{deviceParameterReadback:verified,namFilenameFromPresetReadback:false,irFilenameFromPresetReadback:false,deviceWritePerformed:false}
+  };
+ },
+ async refreshSignalChainSnapshot(){
+  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung via USB-MIDI; pembacaan preset aktif tidak tersedia.');
+  await aiRefreshDeviceSnapshot();
+  try{await readSignalChainRoutingMode();}catch(error){signalChainRoutingMode=null;signalChainRoutingOrder=null;}
+  return this.getSignalChainSnapshot();
+ },
  getCatalog:aiGetCatalog,
  getSnapshot:aiGetEditorSnapshot,
  async refreshSnapshot(){return aiRefreshDeviceSnapshot();},
@@ -6272,7 +6349,7 @@ window.MG30AIToneBridge=Object.freeze({
 })();
 </script>
 <script type="module" src="./cloud-account.js"></script><script type="module" src="./chatgpt-account.js"></script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./tie-signal-chain-ui.js?v=phase4-1"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
   const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];
