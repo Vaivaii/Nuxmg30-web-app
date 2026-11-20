@@ -2231,6 +2231,30 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
           <button type="button" data-tie-open-analysis="compare">Open Tone Comparison</button>
         </div>
       </section>
+
+      <button type="button" id="tieOpenConfigurationReview" class="tie-review-entry"><span class="tie-review-entry-icon">⌁</span><span><strong>Configuration Review</strong><small>Potential issues &amp; gain staging</small></span><span id="tieReviewEntryStatus">Awaiting data</span><b>›</b></button>
+      <section id="tieConfigurationReview" class="tie-review-page" hidden aria-label="Configuration Review">
+        <header class="tie-review-header"><button type="button" id="tieReviewBack" aria-label="Back">‹</button><h4>Configuration Review</h4><button type="button" id="tieReviewShare" aria-label="Share">↗</button></header>
+        <nav class="tie-review-tabs" role="tablist" aria-label="Configuration Review sections">
+          <button type="button" data-tie-review-tab="overview" class="active" role="tab" aria-selected="true">Overview</button><button type="button" data-tie-review-tab="chain" role="tab" aria-selected="false">Chain</button><button type="button" data-tie-review-tab="gain" role="tab" aria-selected="false">Gain</button><button type="button" data-tie-review-tab="tone" role="tab" aria-selected="false">Tone</button><button type="button" data-tie-review-tab="report" role="tab" aria-selected="false">Report</button>
+        </nav>
+        <div class="tie-review-content">
+          <section data-tie-review-panel="overview" role="tabpanel">
+            <div class="tie-review-preset"><strong id="tieReviewPresetName">No preset read</strong><small id="tieReviewPresetMeta">Connect MG-30 Gen 2 to inspect the active preset.</small><span id="tieReviewDeviceStatus">Not connected</span></div>
+            <article class="tie-review-card"><h5>Overall Configuration</h5><div id="tieReviewOverall" class="tie-review-overall">Analysis incomplete.</div></article>
+            <article class="tie-review-card"><h5>Ringkasan Pemeriksaan</h5><div id="tieReviewChecks" class="tie-review-checks"></div></article>
+            <article class="tie-review-card"><h5>Rekomendasi Utama</h5><div id="tieReviewRecommendations" class="tie-review-recommendations"></div></article>
+            <button type="button" id="tieReviewAnalyze" class="tie-review-primary">Run Available Analysis</button><small class="tie-review-note">Opens the existing local PCM Analyzer. It does not measure live pedal output.</small>
+          </section>
+          <section data-tie-review-panel="chain" role="tabpanel" hidden><article class="tie-review-card"><h5>Signal Chain Check</h5><div id="tieReviewChainFlow" class="tie-review-chain-flow"></div><div id="tieReviewChainChecks" class="tie-review-checks"></div><p id="tieReviewChainOrder" class="tie-review-order"></p></article></section>
+          <section data-tie-review-panel="gain" role="tabpanel" hidden>
+            <div class="tie-review-metrics"><article><small>PCM RMS</small><strong id="tieReviewRms">Not measured</strong><em>Measured dBFS</em></article><article><small>Sample Peak</small><strong id="tieReviewPeak">Not measured</strong><em>Measured dBFS</em></article><article><small>Headroom</small><strong id="tieReviewHeadroom">Not measured</strong><em>Input/output reference unavailable</em></article></div>
+            <article class="tie-review-card"><h5>Level per Block</h5><div id="tieReviewBlockLevels">Per-block audio levels are not measured.</div></article><article class="tie-review-card"><h5>Analysis &amp; Interpretation</h5><div id="tieReviewGainInterpretation"></div></article><article class="tie-review-card"><h5>Recommendation</h5><div id="tieReviewGainRecommendation"></div></article>
+          </section>
+          <section data-tie-review-panel="tone" role="tabpanel" hidden><article class="tie-review-card"><h5>Spectral Analysis</h5><canvas id="tieReviewSpectrum" width="720" height="190" aria-label="Measured audio spectrum"></canvas><small id="tieReviewSpectrumMeta">No Analyzer spectrum available.</small></article><div class="tie-review-tone-bands"><article><small>Low</small><strong id="tieReviewLow">—</strong></article><article><small>Mid</small><strong id="tieReviewMid">—</strong></article><article><small>High</small><strong id="tieReviewHigh">—</strong></article></div><article class="tie-review-card"><h5>Tone Balance Check</h5><div id="tieReviewToneChecks"></div></article></section>
+          <section data-tie-review-panel="report" role="tabpanel" hidden><article class="tie-review-card"><h5>Review Report</h5><div id="tieReviewReportChecks" class="tie-review-checks"></div><p id="tieReviewReportMeta"></p></article><button type="button" id="tieReviewExportPdf" class="tie-review-primary" disabled>Export Report (PDF) · Unavailable</button><small class="tie-review-note">PDF export is not implemented; no fake PDF is generated.</small><button type="button" id="tieReviewShareReport" class="tie-review-secondary">Share summary</button></section>
+        </div>
+      </section>
       <div class="tie-section-actions"><span>MG-30 original Gen 2 · read-only inspection</span><span>No device writes from this panel</span></div>
     </section>
     <section class="tie-panel tie-feature-page" data-tie-page-panel="intelligence" role="tabpanel" hidden>
@@ -4935,6 +4959,7 @@ function renderBlockIcon(blockId){
  };
  return '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">'+(shapes[blockId]||'<circle cx="16" cy="16" r="10"/>')+'</svg>';
 }
+window.MG30EditorBlockIcon = renderBlockIcon;
 function renderChain(){
  const holder=$('chain');
  const order=[...new Set((Array.isArray(chainOrder)?chainOrder:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<BLOCKS.length))];
@@ -6351,7 +6376,8 @@ window.MG30AIToneBridge=Object.freeze({
 })();
 </script>
 <script type="module" src="./cloud-account.js"></script><script type="module" src="./chatgpt-account.js"></script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./tie-signal-chain-ui.js?v=phase4-1"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./tie-signal-chain-ui.js?v=phase4-2"></script>
+  <script type="module" src="./tie-configuration-review-ui.js?v=phase4-1"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
   const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];
