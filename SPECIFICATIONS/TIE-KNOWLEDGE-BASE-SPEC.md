@@ -126,3 +126,22 @@ Keep content readable on Android. Avoid giant unstructured text blocks.
 -   Content can be updated independently of DSP and provider
     orchestration.
 -   License/attribution review is part of publishing.
+
+
+## 10. Proposed Artist Tone Matching evidence domain — Planning Only
+
+Artist Tone Matching is a proposed future consumer of this knowledge base, not an active implementation task. See `TIE-INTELLIGENCE-EXPANSION-SPEC.md` §4.
+
+Add versioned records for artist/track/album/era/recording-specific rig and tone claims. Preserve all existing provenance fields and add, where relevant:
+
+- Artist/band identity and verified aliases.
+- Recording, song, album, session, tour or era applicability; avoid assuming one rig applies to an entire career.
+- Claim scope (amp, cab/speaker, microphone, effect, NAM/IR, settings, order, guitar/pickups, recording/production chain).
+- Evidence class: primary artist/crew statement, official manufacturer/artist reference, named interview/recording credit, secondary source, or unverified lead.
+- Publication/access dates, author/publisher, URL, attribution/license notes, confidence and conflicting claims.
+- Whether the claim refers to the actual recording, a later live rig, a tour setup, a general endorsement or only an estimate.
+
+Prefer artist, producer, engineer and official manufacturer material; credible named interviews and recording credits are useful when primary sources are unavailable. Community posts may be search leads but cannot alone establish an exact chain. Store concise summaries and permitted metadata, not unlicensed full recordings, transcripts or manual text.
+
+The AI grounding contract must distinguish (1) source-documented gear, (2) measured user audio, (3) estimated tone/chain inference, and (4) recommendations. A full-mix analysis does not prove a guitar-only spectrum or exact rig. No source-separation claim is allowed without a separately validated and licensed capability. Unknowns and conflicting source statements must remain visible rather than being resolved by model guesswork.
+
