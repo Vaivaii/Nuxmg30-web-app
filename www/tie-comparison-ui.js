@@ -133,6 +133,7 @@ async function loadSlot(slot) {
 }
 
 function clearComparison() {
+  void stopPreview();
   latestPlan = null;
   latestReport = null;
   $("tieCompareResults").hidden = true;
@@ -347,6 +348,17 @@ function renderMetrics(report) {
     report.sources.a.label + " vs " + report.sources.b.label +
     " · " + report.alignment.matchedDurationSeconds.toFixed(2) + " s matched · " +
     report.settings.fftSize + " FFT / Hann";
+  const sourceSummary = (source) => source.label + " · " + source.sourceKind +
+    " · " + source.sourceFormat +
+    " · source " + (source.sourceSampleRateHz || "n/a") + " Hz / " +
+    (source.sourceChannelCount || "n/a") + " ch" +
+    " → analysis " + source.sampleRateHz + " Hz / " + source.channelCount +
+    " ch · selected channel " + (source.selectedChannel + 1);
+  $("tieCompareProvenance").textContent =
+    "A: " + sourceSummary(report.sources.a) + "\\n" +
+    "B: " + sourceSummary(report.sources.b);
+  report.listeningNotes = $("tieCompareListeningNotes").value.trim();
+  report.aiInterpretation = null;
   $("tieCompareReportMeta").textContent =
     "Measured " + new Date(report.measuredAt).toLocaleString() +
     " · Alignment: " + report.alignment.method +
@@ -492,6 +504,9 @@ $("tieCompareStop").addEventListener("click", () => { void stopPreview(); });
 $("tieCompareOffsetMs").addEventListener("change", clearComparison);
 $("tieCompareFftSize").addEventListener("change", clearComparison);
 $("tieCompareLevelMatch").addEventListener("change", clearComparison);
+$("tieCompareListeningNotes").addEventListener("input", () => {
+  if (latestReport) latestReport.listeningNotes = $("tieCompareListeningNotes").value.trim();
+});
 window.addEventListener("mg30-studio-takes-updated", refreshSources);
 window.addEventListener("nux-studio-recorder-ready", refreshSources);
 document.addEventListener("visibilitychange", () => {
