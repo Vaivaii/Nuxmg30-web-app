@@ -379,3 +379,51 @@ Install the verified run #1144 APK on the target Android device. Test one known 
 ### Next validation
 
 Ask the owner to confirm whether they have analyzed (1) a known PCM WAV through Analyzer and (2) an actual saved Quick Record WAV, and whether source/analysis sample-rate and channel metadata are displayed correctly. Then test cancellation, a longer recording, and DAW recording/playback coexistence before closing Phase 2.
+## Phase 3 — Tone Comparison / A-B (implementation under verification) — 2026-11-20
+
+### Scope delivered in the current branch
+
+- [x] Replace the Compare empty state with an operational A/B workspace inside the existing Tone Analysis sub-navigation; the five primary application tabs and Jamm & Record workspace structure remain in place.
+- [x] Independent A and B source slots support the same two Phase 2 source adapters only: imported audio files and saved Quick Record WAV takes.
+- [x] Independent channel selection per source.
+- [x] Explicit matched-overlap handling for unequal recording lengths.
+- [x] Manual alignment offset in milliseconds; positive offset means B begins later than A; negative offset means A begins later than B.
+- [x] Reject mismatched decoded analysis sample rates explicitly; no silent resampling is performed.
+- [x] Optional RMS level matching is attenuation-only and targets the quieter source. Report method and gain applied to both A and B. If either source is digital silence, matching is reported unavailable.
+- [x] Reuse the existing TIE DSP module worker for chunked analysis of the aligned region; original source PCM/audio files are not mutated.
+- [x] A/B preview uses isolated Web Audio buffer-source/gain nodes and does not change DAW transport state; preview stops on source change, visibility loss, page hide or leaving Compare.
+- [x] Results include metric comparison (RMS, sample peak, crest factor, spectral centroid, 85% rolloff), spectrum overlay, B-minus-A spectral difference, 50 ms windowed RMS envelope, provenance, alignment, settings, level-match gains, limitations and optional user listening notes.
+- [x] Report separates known source metadata from decoded analysis metadata. Unknown original source sample rate/channel/bit depth values remain null rather than being inferred from decoded PCM.
+- [x] Added comparison engine and UI contract tests.
+
+### Deliberate v1 limitations
+
+- Automatic transient and cross-correlation alignment are not implemented; manual alignment is the only active alignment method.
+- Integrated loudness / LUFS matching is not implemented. RMS matching is clearly labeled and never called LUFS.
+- Source kinds are limited to imported files and saved Quick Record recordings. Preset, NAM and IR assets must first be rendered through a valid equivalent audio path; they are not treated as audio recordings by themselves.
+- Different decoded analysis sample rates are rejected; no silent resampling.
+- No AI interpretation is produced in Phase 3; Studio AI/context integration belongs to Phase 5.
+- No direct USB/live PCM or DAW-track source adapter was added.
+- Long-file/memory behavior, Android audio lifecycle, A/B audition listening quality and actual DAW co-existence still require target-device verification.
+
+### CI history / current verification
+
+- Initial Phase 3 CI run #1158 (44706933990) failed at npm test: 735 passed, 1 failed, 736 total. The failing expectation incorrectly treated an unknown original source channel count as 1. The implementation correctly preserves unknown source metadata as null while reporting decoded PCM channel count separately.
+- Test correction commit: 055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa.
+- Current verification run #1159 (44707156825) is on the corrected branch HEAD 055ebc91490ea94a3bcb4cf821f3a2a0eb2aebaa.
+- Current run has passed dependency installation, JavaScript syntax validation, full npm test, and Capacitor Android project generation. Gradle assembleDebug is still in progress; APK upload has not yet been reported.
+- Therefore Phase 3 is IMPLEMENTED — AUTOMATED TESTS PASS; ANDROID BUILD AND DEVICE ACCEPTANCE PENDING. Do not label Phase 3 complete until the current build is green and the owner has tested A/B in the app.
+
+### Protected boundaries
+
+- No changes in this phase to NUX MG-30 Gen 2 firmware communication, USB-MIDI protocol or CC mappings.
+- No changes to NAM loading/slot operations, IR collection/import mapping, preset codec, shared AI provider/orchestration, native audio capture/output plugins or DAW recording/playback engine.
+- Comparison playback uses its own Web Audio audition graph and must be regression-tested against existing DAW recording/playback on device.
+
+### Next actions
+
+1. Confirm run #1159 Gradle assembleDebug and APK artifact upload succeed; record final artifact ID, APK size and SHA-256.
+2. Install the current branch APK and test A/B from imported WAV and/or saved Quick Record, including RMS match on/off, positive/negative offset, unequal duration, stereo/channel selection and A/B preview stop.
+3. Confirm Compare navigation and audition do not disrupt DAW recording/playback; test cancellation and app background/foreground.
+4. Record owner device test outcome before accepting Phase 3.
+
