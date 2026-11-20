@@ -19,7 +19,6 @@
 ## Compatibility boundaries
 
 No changes were made to:
-
 - Android native USB PCM capture or audio output plugins.
 - DAW engine, project schema, IndexedDB storage, transport, track routes or recording/playback implementation.
 - Existing FFT/DSP calculations.
@@ -32,24 +31,24 @@ The TIE views are navigation/empty-state scaffolding only. They do not capture o
 
 ## CI and validation
 
-The first workflow run detected two compatibility issues:
-1. An exact-string Studio heading regression assertion was broken by adding an ID to the existing heading.
-2. New redundant `display:none!important` CSS declarations interfered with a legacy Build 334 CSS assertion.
+The first CI run exposed two compatibility issues: an existing exact-string Studio heading assertion and a Build 334 CSS assertion. Both were corrected without weakening legacy tests or changing unrelated Studio behavior.
 
-Both changes were corrected without weakening or modifying the legacy assertions. A new TIE-specific static UI test was added. CI run #1120 completed successfully: JavaScript syntax validation passed, all 682 tests passed, Capacitor Android project generation passed, Gradle `assembleDebug` passed, and the `MG30-Studio-debug-APK` artifact (4,392,767 bytes; run ID `44688752679`) was uploaded. This run used source commit `c567dbbf02b539320d2a1afe50ac0f308ae3e9e8`, before the added TIE-specific static UI test was committed. A final-HEAD workflow run is being triggered to include that test.
+Final run **#1121** (run ID `44688873547`) completed successfully on source commit `169dcb5090d75c9fdea9da995146c5240cc86872`:
+- JavaScript syntax validation: passed.
+- Test suite: **683 passed, 0 failed**, including the TIE-specific workspace/sub-page test (test 523).
+- Capacitor Android project generation: passed.
+- Gradle `assembleDebug`: passed.
+- APK artifact upload: passed; artifact ID `14606999111`.
 
-Android Gradle build, APK artifact creation, and live Android runtime behavior (especially switching workspaces while recording/playback is active) remain unverified until the follow-up workflow run and device testing are complete.
+Extracted APK size: **4,769,296 bytes**.  
+APK SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
+
+The latest branch HEAD contains subsequent documentation/workflow-only commits; no app source changes were made after the validated source commit above. The latest branch tip was independently compared to the Phase 0 base.
+
+## Remaining validation
+
+Live Android device/runtime behavior remains unverified, especially switching between workspaces while a Quick Record or DAW recording/playback is active. Do not interpret CI success as hardware validation.
 
 ## Environment limitation
 
 Source changes were applied through GitHub remote repository operations. No local checkout was available, so the local working tree and any local uncommitted changes could not be inspected.
-
-
-## Final CI Verification — 2026-11-20
-
-- Run #1121 / ID `44688873547` completed successfully on source commit `169dcb5090d75c9fdea9da995146c5240cc86872`.
-- **683 tests passed, 0 failed**, including the TIE-specific workspace/sub-page static test.
-- JavaScript syntax validation, Capacitor Android project generation, Gradle `assembleDebug`, and artifact upload all passed.
-- Artifact ID: `14606999111`; extracted APK size: 4,769,296 bytes.
-- APK SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
-- Live Android device/runtime testing, including switching workspaces during an active recording/playback, remains unverified.
