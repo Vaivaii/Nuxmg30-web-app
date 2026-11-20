@@ -150,7 +150,7 @@ test("TIE DSP: source shorter than one FFT frame is rejected", () => {
 test("TIE DSP: out-of-order or overlapping chunks are rejected", () => {
   const samples = makeSine(48000, 48000);
   const accumulator = createDspAccumulator(makeMetadata(samples.length));
-  processDspChunk(accumulator, samples.subarray(0, 24000), 0, 24000);
+  processDspChunk(accumulator, samples.subarray(0, 25024), 0, 24000);
   assert.throws(
     () => processDspChunk(accumulator, samples.subarray(23000), 23000, 25000),
     (error) => error.code === "INVALID_PCM",
