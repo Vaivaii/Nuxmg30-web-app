@@ -14,7 +14,7 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 ## Current Phase
 
-**Phase 2 — DSP Foundation: implementation in progress; source adapters, chunked local DSP worker, Analyzer UI and deterministic tests have been added. CI/build verification pending.**
+**Phase 2 — DSP Foundation: implementation and CI build validated. Run #1133 passed 708/708 tests and produced the debug APK; Android source-import testing remains pending.**
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 
@@ -92,7 +92,7 @@ Roadmap scope is implemented initially for the two source paths that can be veri
 - [x] Typed errors for unsupported/invalid audio sources and short PCM.
 - [x] Noise floor remains explicitly unavailable without a quiet-region estimator; true peak and THD are not reported.
 - [x] Initial deterministic DSP, source-adapter and UI contract tests added.
-- [ ] Final CI test/build verification.
+- [x] Final CI test/build verification: run #1133 passed 708/708 tests, Capacitor generation and Gradle APK build.
 - [ ] Manual Android APK test with an imported WAV and an actual saved Quick Record take.
 - [ ] Memory/long-file test on target Android device.
 - [ ] DAW-track source adapter is not included; internal DAW media buffers do not yet expose a reviewed read-only public contract.
@@ -131,8 +131,10 @@ No changes to native audio plugins, DAW engine or project schema, MIDI, firmware
 ## Build and Test Results
 
 - Phase 0 audit: no build/test commands executed; existing tests were inventoried only.
-- Phase 1 CI run #1120: 682 tests passed, 0 failed; Capacitor generation and Gradle APK build passed.
-- Final TIE regression run #1121: **683 tests passed, 0 failed**, including the new TIE workspace test (test 523). Syntax checks, Capacitor project generation, Gradle `assembleDebug`, and artifact upload all passed.
+- Phase 1 final CI run #1121: 683 tests passed, 0 failed; Android APK build and artifact upload passed.
+- Phase 2 final CI run #1133 (`44691252885`): **708 tests passed, 0 failed**; syntax checks, Capacitor project generation, Gradle `assembleDebug`, and APK artifact upload all passed.
+- Phase 2 artifact: `MG30-Studio-debug-APK`, artifact ID `14608428105`, extracted APK size 4,780,817 bytes; SHA-256 `2d2898a3546f5e03f814545b69485b28947465362c3ef797507d439f53819db5`.
+- Phase 2 source commit tested: `4a3b8da6015bb1b13130657c02bf1ca2c4f6839e`; latest branch HEAD contains only subsequent checkpoint/worklog documentation changes, no application source changes.
 - Artifact: `MG30-Studio-debug-APK`, run ID `44688873547`, artifact ID `14606999111`.
 - Extracted APK size: 4,769,296 bytes. SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
 - Live Android device/runtime testing, including workspace switching during recording/playback, remains pending.
@@ -152,7 +154,7 @@ No changes to native audio plugins, DAW engine or project schema, MIDI, firmware
 
 ## Next Action
 
-Complete Phase 2 CI/build verification, install the resulting APK, then test an imported PCM WAV and a saved Quick Record WAV on the user's Android device. Record device/WebView details, source metadata, numerical outputs and memory behavior. Do not enable live USB or DAW-track analysis until those paths have their own verified read-only contracts.
+Install the Phase 2 APK and manually test (1) importing a known PCM WAV and (2) analyzing an actual saved Quick Record WAV. Record the displayed sample rate, channel count, duration, FFT settings, measured results and any decode/memory errors. Only after these pass should Phase 2 be closed and the next roadmap phase be started. Direct USB/live capture and DAW-track analysis remain separately gated.
 
 ## Last Updated
 
@@ -173,3 +175,18 @@ This section is authoritative for Phase 1 and supersedes the earlier pending CI 
 - Extracted APK: 4,769,296 bytes.
 - APK SHA-256: `2120c56678e47999d77bf340c05832265b3b8a23c723689ec4f8e63e0439d409`.
 - Live Android device/runtime testing is still pending. Do not claim active-recording workspace switching was hardware tested.
+
+
+## Phase 2 Final CI Verification — 2026-11-20
+
+- Workflow: #1133, run ID `44691252885`, conclusion `success`.
+- Tested application source commit: `4a3b8da6015bb1b13130657c02bf1ca2c4f6839e`.
+- Test suite: **708 passed, 0 failed** (25 new tests beyond the 683-test Phase 1 baseline).
+- JavaScript syntax validation: passed.
+- Capacitor Android project generation: passed.
+- Android Gradle `assembleDebug`: passed.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14608428105`.
+- Extracted APK size: 4,780,817 bytes.
+- SHA-256: `2d2898a3546f5e03f814545b69485b28947465362c3ef797507d439f53819db5`.
+- Latest branch HEAD after this build contains only the two Phase 2 documentation updates; no application source changed after the tested commit.
+- Manual Android test of imported audio and saved Quick Record WAV is still pending. Do not mark live USB, DAW-track analysis or hardware lifecycle as tested.
