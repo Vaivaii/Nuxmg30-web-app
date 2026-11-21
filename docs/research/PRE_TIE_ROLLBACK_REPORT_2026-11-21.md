@@ -51,5 +51,16 @@ No intended change to firmware protocol, USB-MIDI mapping, preset codec/serializ
 
 The Android build workflow retains only a branch push trigger needed to build/test this rollback; no TIE runtime feature is enabled.
 
-## Verification
-CI and regression status: **pending** at this report revision. Source-only CI cannot certify physical MG-30 Gen 2 firmware 6.0.x communication; retained Editor colour changes introduce no device writes.
+## Verification — complete CI #1223
+
+- Run #1223 / 44912486940 on source commit 9db494480d8004b68660a5163a8f5766188e2784: SUCCESS.
+- JavaScript syntax validation: passed.
+- Full regression suite: 686 passed, 0 failed.
+- Capacitor Android project generation and USB audio plugin installation: passed.
+- Gradle assembleDebug: BUILD SUCCESSFUL in 1m 31s.
+- APK artifact MG30-Studio-debug-APK, artifact ID 14710164136, archive size 4,390,531 bytes; archive SHA-256 51399d50427e6dfe79419f8d32f889671183587ca35da6c61eb6a471fd77e52a.
+- Standalone APK app-debug.apk, 4,767,220 bytes; SHA-256 828c060acae764a6468ff3a28a750abc9705c599778e9aacca90e75b77d35aff.
+- APK package inspection confirms original Studio Jamm & Record/DAW markup, no Tone Analysis route or TIE Analyzer import, and retained Editor category markup and colour CSS.
+- Run #1222 initially failed only because a Node test attempted to access the app-local escapeHtml function; the assertion was corrected without production-code changes. Run #1223 is green.
+- No physical Android handset or original NUX MG-30 Gen 2 firmware 6.0.x hardware test was performed. Source CI cannot certify those hardware behaviours.
+- Local workstation git status is inaccessible through the remote connector. No claim is made about workstation-only uncommitted changes.

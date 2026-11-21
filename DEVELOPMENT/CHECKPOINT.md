@@ -1071,3 +1071,50 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 4. Test refresh on hardware: connected success, disconnected, read failure, rapid taps; confirm fixed card height and no device write.
 5. Verify original MG-30 Gen 2 firmware 6.0.x and confirm NAM/IR Collection/MIDI workflows remain intact.
 6. Do not redesign Configuration Review details or move to another milestone until the owner explicitly approves Chain Overview.
+
+
+## Controlled rollback verification — completed CI #1223 — 2026-11-21
+
+### Final Git state
+- TIE is CANCELLED / DEFERRED by owner decision. No further TIE feature development is authorized.
+- Pre-TIE source baseline: 114305b7b927a8f63096e5760240b712ba4a7a9c.
+- First TIE application-code commit: 5292c7de40acd6a28305782aa782c97380cdb083.
+- Recovery branch: recovery/pre-tie-rollback-2026-11-21, preserving pre-rollback HEAD 1c0371ec438dbc33094af14009263aabd4ea18f4.
+- Controlled rollback commit: c9c6c8907742382f3d87406793782f7b8344fa34. No force push or reset was used.
+- Test assertion correction commit: 9db494480d8004b68660a5163a8f5766188e2784.
+- Current target branch HEAD at verification: 9db494480d8004b68660a5163a8f5766188e2784.
+- The current Git tree contains no www/tie-*.js runtime modules. TIE documentation and research records remain archived.
+
+### Restored application
+- www/index.html, www/studio-daw.css, www/studio-daw.js, www/ui-redesign.css and build configuration are restored from the pre-TIE baseline, with only the documented Editor category-colour exception and rollback CI branch trigger.
+- Studio is back to the original Jamm & Record / Jam / Record / DAW structure. Tone Analysis selector, TIE navigation, Configuration Review, Analyzer, Compare, Chain Intelligence and TIE Studio state/routing are absent.
+- Original AI Live Tone Assistant/provider integration, Editor, Presets, NAM & IR, Device, DAW, Quick Record and USB-audio-related source code are restored from the pre-TIE baseline rather than reimplemented.
+
+### Retained Editor colour exception
+- Editor block identity is attached with data-category from the actual block ID.
+- Retained tokens: WAH purple #c47bea; EFX cyan #31c6ec; S/R yellow #e6c84a; GATE turquoise #36d7c7; AMP red #ef5b58; IR cyan #36cbdc. CMP, EQ, MOD, DLY, RVB and VOL tokens are also retained.
+- Category mapping is scoped only to #page-editor .chain.
+- Existing SVG glyphs are reused. Category border/glyph colours, selected outline and bypass visibility are preserved.
+- No Tone Analysis route, TIE runtime bridge, readback, parameter mapping or new MIDI write path is retained for this visual exception.
+- Added tests/editor-signal-chain-category-colors.test.js covers category identity, all 12 tokens, SVG strokes, selected/bypass styles and restored Studio shell.
+
+### CI #1223 and APK
+- Run #1222 / 44912392655 initially failed 685/686 because the new test referenced the app-local escapeHtml function from Node test scope. The assertion was corrected; production code was unchanged.
+- Run #1223 / 44912486940 on source commit 9db4944: SUCCESS.
+- JavaScript syntax validation: PASS.
+- Full regression suite: 686 passed, 0 failed.
+- Capacitor Android project generation and USB audio plugin installation: PASS.
+- Gradle assembleDebug: BUILD SUCCESSFUL in 1m 31s.
+- APK artifact: MG30-Studio-debug-APK, artifact ID 14710164136, archive size 4,390,531 bytes; ZIP SHA-256 51399d50427e6dfe79419f8d32f889671183587ca35da6c61eb6a471fd77e52a.
+- Standalone APK app-debug.apk: 4,767,220 bytes; SHA-256 828c060acae764a6468ff3a28a750abc9705c599778e9aacca90e75b77d35aff.
+- APK inspection confirms the old Studio/Jamm & Record/DAW markup, no Tone Analysis/TIE Analyzer route, and Editor data-category markup plus category colour styles in the packaged assets.
+- No physical Android handset render test was performed.
+
+### Verification boundaries
+- GitHub remote tools do not expose the user's local working tree/index. Local git status and workstation-only uncommitted edits remain NOT VERIFIED and have not been intentionally touched.
+- No hardware test was performed on an original NUX MG-30 Gen 2 with firmware 6.0.x. MIDI/firmware/USB hardware compatibility is not claimed as physically verified by this rollback.
+- CI verifies source compilation, static regression and APK packaging. Actual interaction on a physical device for Editor parameter writes, presets, scenes, MIDI, NAM, IR, Device, DAW recording/playback, Quick Record and USB loopback remains outside this run.
+
+### Project state
+- Application rollback is complete and build-verified.
+- No new feature work should begin after this rollback unless the owner gives a new direction.
