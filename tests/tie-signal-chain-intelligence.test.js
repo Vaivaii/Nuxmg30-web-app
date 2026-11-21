@@ -99,7 +99,7 @@ test("Configuration Review never fabricates gain measurements or spectral result
   assert.ok(review.includes('metrics.samplePeakDbfs'));
   assert.ok(review.includes('Not measured'));
   assert.ok(review.includes('Headroom'));
-  assert.ok(review.includes('Per-block audio levels are not exposed'));
+  assert.ok(review.includes('Audio stage level not exposed'));
   assert.ok(review.includes('No Analyzer spectrum available'));
   assert.ok(review.includes('bandEnergyPct'));
   assert.ok(review.includes('does not establish headroom'));

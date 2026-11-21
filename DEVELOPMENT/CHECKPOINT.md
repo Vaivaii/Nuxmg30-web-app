@@ -899,3 +899,7 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Adjusted the read-only visual dial arc to use a 270-degree sweep that corresponds to the 0–100 editor parameter scale.
 - Updated the remaining Phase 4 regression assertions to match the full-page close handler and explicit Not measured provenance text.
 - Added JavaScript parse checks for both new browser UI modules to the focused regression suite. No browser runtime execution or hardware protocol changes are introduced by these checks.
+
+
+### Final assertion text alignment — 2026-11-21
+- Latest CI run passed JavaScript syntax validation and 787/788 tests. The remaining test expected the old sentence "Per-block audio levels are not exposed"; the reconstructed review renders the per-row label "Audio stage level not exposed" and Not measured. Updated the assertion to check the actual UI copy; no production behavior changed.
