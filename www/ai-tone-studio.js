@@ -119,6 +119,142 @@ function parseJson(text){
  return JSON.parse(s.slice(a,b+1));
 }
 
+export function extractAiProviderText(response){
+ if(typeof response==='string')return response.trim();
+ if(!response||typeof response!=='object')return '';
+ const direct=['text','output_text','reply','content'];
+ for(const key of direct){
+  const value=response[key];
+  if(typeof value==='string'&&value.trim())return value.trim();
+  if(Array.isArray(value)){
+   const parts=value.map(part=>{
+    if(typeof part==='string')return part;
+    if(typeof part?.text==='string')return part.text;
+    if(typeof part?.output_text==='string')return part.output_text;
+    if(typeof part?.content==='string')return part.content;
+    return '';
+   }).filter(Boolean);
+   if(parts.length)return parts.join('\n').trim();
+  }
+ }
+ const choice=response.choices?.[0];
+ const message=choice?.message||choice?.delta||{};
+ if(typeof message.content==='string'&&message.content.trim())return message.content.trim();
+ if(Array.isArray(message.content)){
+  const parts=message.content.map(part=>typeof part==='string'?part:typeof part?.text==='string'?part.text:typeof part?.output_text==='string'?part.output_text:'').filter(Boolean);
+  if(parts.length)return parts.join('\n').trim();
+ }
+ if(Array.isArray(response.output)){
+  const parts=[];
+  for(const item of response.output){
+   if(typeof item?.text==='string')parts.push(item.text);
+   for(const part of Array.isArray(item?.content)?item.content:[]){
+    if(typeof part?.text==='string')parts.push(part.text);
+    else if(typeof part?.output_text==='string')parts.push(part.output_text);
+   }
+  }
+  if(parts.length)return parts.join('\n').trim();
+ }
+ return '';
+}
+
+function findBalancedJsonValue(source){
+ const start=source.search(/[{\[]/);
+ if(start<0)return '';
+ const stack=[];
+ let quoted=false,escaped=false;
+ for(let index=start;index<source.length;index++){
+  const character=source[index];
+  if(quoted){
+   if(escaped){escaped=false;continue;}
+   if(character==='\\'){escaped=true;continue;}
+   if(character==='"')quoted=false;
+   continue;
+  }
+  if(character==='"'){quoted=true;continue;}
+  if(character==='{'||character==='['){stack.push(character);continue;}
+  if(character==='}'||character===']'){
+   const opening=stack.pop();
+   if((character==='}'&&opening!=='{')||(character===']'&&opening!=='['))return '';
+   if(!stack.length)return source.slice(start,index+1);
+  }
+ }
+ return '';
+}
+
+export function parseAiStructuredResponse(response){
+ if(response&&typeof response==='object'&&!Array.isArray(response)){
+  if(response.result&&typeof response.result==='object'&&!Array.isArray(response.result))return response.result;
+  if(response.tonePlan&&typeof response.tonePlan==='object'&&!Array.isArray(response.tonePlan))return response.tonePlan;
+  const hasTextEnvelope=['text','output_text','reply','content','choices','output'].some(key=>key in response);
+  if(!hasTextEnvelope)return response;
+ }
+ const raw=extractAiProviderText(response).replace(/^\uFEFF/,'').trim();
+ if(!raw){
+  const error=new Error('The AI provider returned an empty structured response.');
+  error.code='AI_EMPTY_RESPONSE';
+  throw error;
+ }
+ const fencePattern=new RegExp('\\x60{3}(?:json)?\\s*([\\s\\S]*?)\\x60{3}','gi');
+ const fenced=[...raw.matchAll(fencePattern)].map(match=>match[1].trim()).filter(Boolean);
+ const candidates=[...fenced,raw,findBalancedJsonValue(raw)].filter((value,index,array)=>value&&array.indexOf(value)===index);
+ let parseFailure=null;
+ for(const candidate of candidates){
+  try{
+   const parsed=JSON.parse(candidate);
+   if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))return parsed;
+   parseFailure=new Error('The structured response must be a JSON object.');
+  }catch(error){parseFailure=error;}
+ }
+ const error=new Error('The AI provider returned malformed or incomplete JSON. The DSP measurements are still available.');
+ error.code='AI_INVALID_JSON';
+ error.cause=parseFailure||undefined;
+ throw error;
+}
+
+export function normalizeAudioInterpretation(value){
+ let result=value;
+ if(typeof result==='string')result=parseAiStructuredResponse(result);
+ if(!result||typeof result!=='object'||Array.isArray(result)){
+  const error=new Error('The AI response does not match the audio-interpretation schema.');
+  error.code='AI_INVALID_SCHEMA';throw error;
+ }
+ const summary=typeof result.summary==='string'?result.summary.trim():
+  typeof result.interpretation==='string'?result.interpretation.trim():'';
+ const rawObservations=Array.isArray(result.observations)?result.observations:[];
+ const rawRecommendations=Array.isArray(result.recommendations)?result.recommendations:[];
+ const observations=rawObservations.slice(0,8).map(item=>{
+  if(typeof item==='string')return {area:'Observation',finding:item,evidence:'',confidence:null};
+  if(!item||typeof item!=='object'||Array.isArray(item))return null;
+  return {
+   area:String(item.area||'Observation').slice(0,80),
+   finding:String(item.finding||item.description||'').slice(0,700),
+   evidence:String(item.evidence||'').slice(0,500),
+   confidence:Number.isFinite(Number(item.confidence))?Math.max(0,Math.min(1,Number(item.confidence))):null
+  };
+ }).filter(item=>item&&item.finding);
+ const recommendations=rawRecommendations.slice(0,8).map(item=>{
+  if(typeof item==='string')return item.slice(0,600);
+  if(!item||typeof item!=='object'||Array.isArray(item))return null;
+  const action=String(item.action||item.recommendation||item.text||'').slice(0,500);
+  if(!action)return null;
+  return {
+   target:String(item.target||item.parameter||item.area||'').slice(0,100),
+   action,
+   reason:String(item.reason||'').slice(0,400),
+   evidence:String(item.evidence||'').slice(0,400)
+  };
+ }).filter(Boolean);
+ const rawLimitations=Array.isArray(result.limitations)?result.limitations:
+  typeof result.limitations==='string'?[result.limitations]:[];
+ const limitations=rawLimitations.filter(item=>typeof item==='string'&&item.trim()).slice(0,8).map(item=>item.trim().slice(0,500));
+ if(!summary){
+  const error=new Error('The AI response is missing the required interpretation summary.');
+  error.code='AI_INVALID_SCHEMA';throw error;
+ }
+ return {summary:summary.slice(0,1800),observations,recommendations,limitations};
+}
+
 export const TONE_SPECIALIST_ROLES=Object.freeze([
  'amp_cabinet_specialist','effects_specialist',
  'guitar_input_specialist','tone_calibration_specialist','tone_critic'
@@ -520,9 +656,7 @@ async function chatgpt(_credential, system, prompt, model) {
 const bridge = window.MG30ChatGPTBridge;
 if (!bridge?.sendResponse) throw new Error('ChatGPT native SIWC connection is unavailable. Open Device settings and connect your ChatGPT account.');
 const response = await bridge.sendResponse({ model, input: [{ role: 'user', content: String(prompt || '') }], instructions: String(system || ''), maxOutputTokens: 1350, parallelToolCalls: false });
-const text = String(response?.text || '').trim();
-if (!text) throw new Error('ChatGPT returned no text output.');
-const result = parseJson(text);
+const result = parseAiStructuredResponse(response);
 if(response?.usage&&typeof response.usage==='object')Object.defineProperty(result,'__aiUsage',{value:{
  input_tokens:Number(response.usage.input_tokens??response.usage.prompt_tokens??0),
  output_tokens:Number(response.usage.output_tokens??response.usage.completion_tokens??0),
