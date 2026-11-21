@@ -1059,10 +1059,10 @@ const next='chatgpt';
    '\\n\\nInterpret this report only. Do not infer missing measurements or send any device changes.';
   try{
    const result=await askNamAIJson(system,user,'interpreting local MG-30 DSP measurements');
-   status('AI interpretation complete. DSP values remain unchanged; no device parameters were changed.','success');
+   status('Audio analysis complete. AI interpretation complete. DSP values remain unchanged; no device parameters were changed.','success');
    return result;
   }catch(error){
-   status('AI interpretation failed: '+(error?.message||error),'error');
+   status('Audio analysis failed: AI interpretation unavailable — '+(error?.message||error),'error');
    throw error;
   }
  }
