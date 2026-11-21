@@ -2809,3 +2809,26 @@
 #page-editor .chain .block.off[data-category] .symbol{
   color:var(--editor-category,var(--lime))!important;opacity:.78!important;
 }
+
+/* Editor Signal Chain icons: bind the inline SVG itself to the shared category token.
+   The specificity intentionally outranks legacy Editor rules that force --lime on
+   .symbol and dim bypass blocks. SVG paths remain untouched; this is outline artwork. */
+body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol{
+  color:var(--editor-category,var(--lime))!important;
+}
+body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol svg{
+  color:var(--editor-category,var(--lime))!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category]{
+  opacity:.68!important;
+  filter:none!important;
+}
+body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category] .symbol{
+  color:var(--editor-category,var(--lime))!important;
+  opacity:.78!important;
+}
