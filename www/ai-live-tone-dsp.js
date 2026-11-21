@@ -406,6 +406,7 @@ export function toAiToneDspPayload(report, maxSpectrumBins = 96) {
     schemaVersion: report.schemaVersion,
     source: report.source,
     settings: report.settings,
+    measurementStatus: report.measurementStatus,
     metrics: report.metrics,
     spectrum: {
       status: report.spectrum.status,
