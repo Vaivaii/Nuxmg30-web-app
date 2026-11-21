@@ -983,7 +983,7 @@ const next='chatgpt';
   if(!audioDspSession||audioDspPollBusy||!audioCaptureActive)return;
   audioDspPollBusy=true;
   try{
-   const chunk=await recorder.readToneAnalysisPcmChunk?.({offsetBytes:audioDspOffsetBytes,maxBytes:49152});
+   const chunk=await recorder.readToneAnalysisPcmChunk?.({offsetBytes:audioDspOffsetBytes,maxBytes:196608});
    if(chunk&&Number(chunk.bytesRead)>0){
     if(Number(chunk.offsetBytes)!==audioDspOffsetBytes)throw new Error('USB PCM stream offset changed; live DSP stopped to avoid a discontinuous measurement.');
     const allChannels=decodePcm24Chunk(chunk.pcm24Base64,Number(chunk.channels)||audioDspSession.metadata.channelCount);
