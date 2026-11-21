@@ -1041,15 +1041,18 @@ const next='chatgpt';
   return rows.join('\n')||JSON.stringify(result);
  }
  async function requestAudioDiagnosis(question,metrics,conversation=''){
-  const system='You are a guitar tone listening assistant for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' The audio PCM was analyzed locally; you receive only objective measurements, never raw audio. Interpret the measurements cautiously: the capture uses MG-30 USB input channels 1–2, which may include a host-loopback mix and the result is affected by pickups, playing technique, guitar volume, gain staging and the performance. Do not claim you heard timbre details that these measurements cannot establish. Spectral centroid, rolloff and band percentages are evidence, not calibrated EQ targets. Do not recommend exact knob settings unless the user asks. This is read-only analysis: do not generate a preset, Tone Plan, block list, MIDI command or hardware change. Return JSON only: {"summary":"...","observations":[{"area":"...","finding":"...","evidence":"...","confidence":0.0}],"recommendations":["..."],"limitations":"..."}.'; 
-  const user=(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+'USER REQUEST:\n'+String(question||'Analisis tone gitar saya saat ini.')+'\n\nMEASURED USB AUDIO (local analysis):\n'+formatToneAudioMetrics(metrics)+'\n\nGive an evidence-based diagnosis only. No device changes.';
+  const payload=toAiToneDspPayload(metrics,96);
+  const system='You interpret a structured LOCAL DSP report for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' DSP has already measured the audio. You are NOT an audio measurement engine and must NEVER calculate, estimate, replace, or invent RMS, sample peak, crest factor, FFT bins, spectrum, frequency-band percentages, clipping, noise floor, dynamic range, latency, or any other DSP metric. Treat every field provenance/status literally: measured values are evidence; unavailable and not_measured fields must remain unavailable/not measured. The capture is from MG-30 USB input channels selected by the report and may contain a host-loopback mix. It describes the performance and signal path, not a calibrated amp-only frequency response. Explain likely tone characteristics only when supported by the supplied measurements; acknowledge that pickups, playing technique, guitar volume and gain staging affect the result. Do not claim to have heard timbre that cannot be derived from these measurements. Make practical EQ/parameter recommendations cautiously and tie each recommendation to specific measured evidence. This is READ ONLY: do not create a Tone Plan, preset, MIDI command, parameter write, or hardware change. Return JSON only with keys: summary (string), observations (array of {area,finding,evidence,confidence}), recommendations (array of {target,action,reason,evidence}), limitations (array of strings).';
+  const user=(conversation?'RECENT CONVERSATION:\\n'+conversation+'\\n\\n':'')+
+   'USER QUESTION:\\n'+String(question||'Explain this DSP analysis and suggest improvements.')+
+   '\\n\\nAUTHORITATIVE DSP REPORT (JSON; already measured locally):\\n'+JSON.stringify(payload)+
+   '\\n\\nInterpret this report only. Do not infer missing measurements or send any device changes.';
   try{
-   const result=await askNamAIJson(system,user,'analyzing the captured MG-30 USB audio');
-   const diagnosis=formatAudioDiagnosis(result);message('ai',diagnosis);rememberConversation('assistant',diagnosis);
-   status('Audio analysis complete. No device parameters were changed.','success');
+   const result=await askNamAIJson(system,user,'interpreting local MG-30 DSP measurements');
+   status('AI interpretation complete. DSP values remain unchanged; no device parameters were changed.','success');
    return result;
   }catch(error){
-   status('Audio analysis failed: '+(error?.message||error),'error');
+   status('AI interpretation failed: '+(error?.message||error),'error');
    throw error;
   }
  }
@@ -1059,31 +1062,39 @@ const next='chatgpt';
   audioCaptureActive=false;stopAudioTimers();audioBusy=true;
   ui.audioStart.disabled=true;ui.audioStart.textContent='Processing Audio…';
   ui.audioModes.forEach(button=>button.disabled=true);
-  setAudioMeter([],false);setAudioStatus('Stopping USB capture and preparing local analysis…','busy');
-  const recorder=window.NUXStudioRecorder;let take=null,metrics=null;
+  setAudioMeter([],false);setAudioStatus('Stopping USB capture and preparing local DSP analysis…','busy');
+  const recorder=window.NUXStudioRecorder;let take=null,metrics=null,interpretation=null,aiError='';
   try{
    take=await recorder.stopToneAnalysis();
    if(!take?.path)throw new Error('The MG-30 USB capture stopped without producing a WAV file.');
    if(!discard){
-    setAudioStatus('Analyzing captured audio locally…','busy');
+    setAudioStatus('Running shared local DSP over captured PCM…','busy');
     metrics=await decodeToneAnalysisTake(take);
-    metrics.measuredAt=Date.now();metrics.route='MG-30 USB input channels 1–2';
+    metrics.measuredAt=Date.now();
+    metrics.route='MG-30 USB input channels 1–2';
     lastAudioMetrics=metrics;
-    message('ai','Local USB audio measurements\n'+formatToneAudioMetrics(metrics));
     if(askAi){
-     try{await requestAudioDiagnosis('Analisis tone gitar saya berdasarkan hasil capture USB Audio MG-30 ini. Jangan ubah parameter perangkat.',metrics);}
-     catch(error){message('ai','Audio measurements were saved locally, but the AI diagnosis could not be completed: '+(error?.message||error));}
+     setAudioStatus('DSP complete · sending structured measurements to the existing AI provider…','busy');
+     try{
+      interpretation=await requestAudioDiagnosis('Analisis tone gitar saya berdasarkan hasil DSP USB Audio MG-30 ini. Jelaskan karakter yang didukung data dan berikan rekomendasi tanpa mengubah perangkat.',metrics);
+     }catch(error){aiError=String(error?.message||error); }
     }
-    setAudioStatus('Analysis complete. Ask a follow-up or request a tone correction.','success');
+    chatCard('audio-analysis',{report:metrics,interpretation,aiError});
+    rememberConversation('assistant','DSP analysis saved. RMS '+metrics.metrics.rmsDbfs+' dBFS; sample peak '+metrics.metrics.samplePeakDbfs+' dBFS. AI interpretation: '+(interpretation?.summary||aiError||'not requested')+'.');
+    setAudioStatus(interpretation?'DSP analysis and AI interpretation complete.':'DSP analysis complete; AI interpretation unavailable.','success');
+    setAudioPanelExpanded(false);
    }else{
-    lastAudioMetrics=null;setAudioStatus('Listening stopped. Temporary audio was discarded.','idle');
+    lastAudioMetrics=null;
+    setAudioStatus('Listening stopped. Temporary audio was discarded.','idle');
    }
   }catch(error){
-   setAudioStatus(error?.message||'USB audio analysis failed.','error');
-   message('ai','USB audio analysis failed: '+(error?.message||error));
+   setAudioStatus(error?.message||'USB audio DSP analysis failed.','error');
+   message('ai','USB audio DSP analysis failed: '+(error?.message||error));
    if(discard)lastAudioMetrics=null;
   }finally{
    if(take?.path){try{await recorder.deleteToneAnalysisTake(take.path);}catch(_){}}
+   audioDspSession=null;audioDspOffsetBytes=0;audioDspPollBusy=false;
+   if(ui.audioDspReadout){ui.audioDspReadout.hidden=true;ui.audioDspReadout.textContent='';}
    audioBusy=false;ui.audioModes.forEach(button=>button.disabled=false);
    ui.audioStart.textContent='Start Listening';await refreshAudioDeviceStatus();
   }
@@ -1098,30 +1109,49 @@ const next='chatgpt';
   try{
    const recorder=window.NUXStudioRecorder;
    if(!recorder?.startToneAnalysis)throw new Error('The native MG-30 USB audio capture bridge is unavailable. Rebuild and install the Android APK.');
+   if(typeof recorder.readToneAnalysisPcmChunk!=='function')throw new Error('The native PCM chunk reader is unavailable. Install the latest Android APK before using continuous Live DSP.');
    const ready=await refreshAudioDeviceStatus();
    if(!ready)throw new Error('MG-30 USB Audio input is not detected. Connect the pedal and refresh.');
    if(recorder.isRecording?.())throw new Error('Another USB Audio recording is already active. Stop Quick Record or the DAW recording first.');
    const opened=await recorder.startToneAnalysis({channelIndexMask:3});
    if(!opened?.recording)throw new Error('Android did not confirm MG-30 USB Audio capture.');
+   audioDspActiveMask=Number(opened.channelIndexMask)||3;
+   audioDspRequestedMask=Number(opened.requestedChannelIndexMask)||3;
+   const selectedChannelCount=audioDspRequestedMask.toString(2).replace(/0/g,'').length;
+   audioDspSession=createToneDspSession({
+    sampleRateHz:Number(opened.sampleRate)||48000,
+    channelCount:selectedChannelCount,
+    channelIndexMask:audioDspRequestedMask,
+    source:'NUX MG-30 USB Audio',
+    captureMode:audioMode==='live'?'live-listening':'analyze-once'
+   },{fftSize:2048,hopSize:1024});
+   audioDspOffsetBytes=0;audioDspPollBusy=false;
    audioCaptureActive=true;audioCaptureStartedAt=Date.now();
    ui.audioStart.textContent='Stop & Analyze';ui.audioStart.disabled=false;
    ui.audioModes.forEach(button=>button.disabled=true);setAudioMeter([],true);
-   setAudioStatus(audioMode==='once'?'Listening for 7 seconds… Play a short phrase or chord.':'Live Listening · Play freely, then press Stop & Analyze.','busy');
+   ui.audioDspReadout.hidden=false;ui.audioDspReadout.textContent='LOCAL DSP · waiting for the first PCM chunk…';
+   setAudioStatus(audioMode==='once'?'Listening for 7 seconds… Play a short phrase or chord.':'Live Listening · continuous local DSP active. Play freely, then press Stop & Analyze.','busy');
    audioPollTimer=window.setInterval(async()=>{
     try{
      const stats=await recorder.getToneAnalysisStats();
      if(!audioCaptureActive||!stats?.recording)return;
      const peaks=(stats.channelWaveforms||[]).flatMap(channel=>Array.isArray(channel.peaks)?channel.peaks:[]);
      const peak=Math.max(0,...peaks.map(Number));
-     const bars=Array.from({length:32},(_,index)=>Math.max(6,Math.min(100,Math.round((peak*100)+(index%5)*3))));
+     const bars=Array.from({length:32},(_,index)=>Math.max(6,Math.min(100,Math.round(peak*100))));
      setAudioMeter(bars,true);
+     await pumpLiveToneDsp(recorder);
      const seconds=Math.max(0,Number(stats.durationSeconds)||((Date.now()-audioCaptureStartedAt)/1000));
+     const progress=audioDspSession?getToneDspLiveSummary(audioDspSession):null;
      if(audioMode==='once')setAudioStatus('Listening · '+Math.max(0,Math.ceil(7-seconds))+' seconds remaining…','busy');
-     else setAudioStatus('Live Listening · '+seconds.toFixed(1)+' s captured','busy');
-    }catch(_){}
+     else setAudioStatus('Live Listening · '+seconds.toFixed(1)+' s · '+(progress?.spectralFrames||0)+' DSP FFT frames','busy');
+    }catch(error){
+     if(ui.audioDspReadout){ui.audioDspReadout.hidden=false;ui.audioDspReadout.textContent='DSP monitor issue · '+String(error?.message||error);}
+    }
    },220);
    audioCaptureTimer=window.setTimeout(()=>{void finishAudioListening({askAi:true});},audioMode==='once'?7000:120000);
   }catch(error){
+   audioDspSession=null;
+   ui.audioDspReadout.hidden=true;
    setAudioStatus(error?.message||'Could not start USB audio listening.','error');
    message('ai','Audio listening could not start: '+(error?.message||error));
    ui.audioStart.textContent='Start Listening';await refreshAudioDeviceStatus();
