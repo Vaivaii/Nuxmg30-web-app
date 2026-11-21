@@ -2460,3 +2460,26 @@ test('AI interpretation retry reuses the saved DSP report and never starts anoth
  assert.match(handler,/requestAudioDiagnosis/);
  assert.doesNotMatch(handler,/startToneAnalysis|decodeToneAnalysisTake|analyzeToneAudioSamples|stopToneAnalysis/);
 });
+
+
+test('AI Live Tone Assistant keeps DSP result while showing friendly interpretation retry and master-style spectrum icon',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/AI interpretation could not be completed\. Your DSP measurements are preserved/);
+ assert.match(source,/data-ai-dsp-retry/);
+ assert.match(source,/Retry AI Interpretation/);
+ assert.match(source,/<svg viewBox="0 0 24 24" role="img" aria-label="Audio spectrum"/);
+ assert.doesNotMatch(source,/<div class="ai-dsp-result-icon">∿<\/div>/);
+ assert.doesNotMatch(source,/esc\(data\.aiError/);
+});
+
+test('AI Live Tone composer has compact Send sizing and a viewport-aware auto-growing textarea',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ assert.match(source,/\.ai-tone-send\{[^}]*height:56px;min-height:56px;[^}]*min-width:90px/);
+ assert.match(source,/const resizeToneComposer=\\(\\)=>/);
+ assert.match(source,/ui\.prompt\.style\.height='auto'/);
+ assert.match(source,/ui\.prompt\.scrollHeight/);
+ assert.match(source,/ui\.prompt\.style\.overflowY=contentHeight>maxHeight\?'auto':'hidden'/);
+ assert.match(source,/window\.visualViewport\?\.addEventListener\('resize',resizeToneComposer/);
+ assert.match(source,/const clearToneComposer=\\(\\)=>/);
+ assert.match(source,/maxLength="1400"/);
+});
