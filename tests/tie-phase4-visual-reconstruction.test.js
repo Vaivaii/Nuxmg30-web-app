@@ -1,0 +1,109 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const html=readFileSync(new URL("../www/index.html",import.meta.url),"utf8");
+const css=readFileSync(new URL("../www/studio-daw.css",import.meta.url),"utf8");
+const ui=readFileSync(new URL("../www/tie-signal-chain-ui.js",import.meta.url),"utf8");
+const review=readFileSync(new URL("../www/tie-configuration-review-ui.js",import.meta.url),"utf8");
+const artwork=readFileSync(new URL("../www/pedal-reference-artwork.js",import.meta.url),"utf8");
+const analyzer=readFileSync(new URL("../www/tie-analyzer-ui.js",import.meta.url),"utf8");
+
+test("Signal Chain UI reuses the shared editor snapshot and original preset reader",()=>{
+  assert.ok(html.includes("getSignalChainSnapshot(){"));
+  assert.ok(html.includes("refreshSignalChainSnapshot(){"));
+  assert.ok(html.includes("await aiRefreshDeviceSnapshot()"));
+  assert.ok(html.includes("const chain=Array.from({length:12},(_,i)=>bitSlot(body,94+i))"));
+  assert.ok(html.includes("parameterControls(index,state.model)"));
+  assert.ok(ui.includes("window.MG30AIToneBridge"));
+  assert.ok(!ui.includes("sendBlockParam("));
+  assert.ok(!ui.includes("writeSignalChainRoutingMode("));
+});
+test("Pedalboard order, bypass and unknown states come from actual snapshot records",()=>{
+  assert.ok(html.includes("order,blocks,"));
+  assert.ok(html.includes("enabled:modelKnown?Boolean(state.on):null"));
+  assert.ok(ui.includes("orderedBlocks(snapshot)"));
+  assert.ok(ui.includes("snapshot.order"));
+  assert.ok(ui.includes("block.enabled?'ON':'BYPASS'"));
+});
+test("Category pedal glyphs use colored Editor SVG strokes rather than the default black fill",()=>{
+  assert.ok(html.includes("window.MG30EditorBlockIcon = renderBlockIcon;"));
+  assert.ok(html.includes("window.MG30EditorGearArtwork = renderGearSvg;"));
+  assert.ok(ui.includes("window.MG30EditorBlockIcon(block.id)"));
+  assert.ok(css.includes("fill:none!important;stroke:currentColor!important"));
+  for(const key of ["WAH","EFX","SR","GATE","AMP","IR"])assert.ok(css.includes(".tie-block-"+key));
+});
+test("Selected Block reuses actual local amp/pedal artwork and model parameter definitions",()=>{
+  assert.ok(ui.includes("window.MG30EditorGearArtwork(block.id,block.model)"));
+  assert.ok(artwork.includes("window.renderPedalReferenceSvg=function(blockId,modelName)"));
+  assert.ok(html.includes('id="tieChainSelectedArtwork"'));
+  assert.ok(ui.includes("function parameterMarkup(param)"));
+  assert.ok(ui.includes("tie-knob-discrete"));
+  assert.ok(ui.includes("Not read"));
+  assert.ok(!ui.includes("sendBlockParam("));
+});
+test("Configuration Review replaces Chain-page siblings and provides five internal tabs",()=>{
+  for(const tab of ["overview","chain","gain","tone","report"]){
+    assert.ok(html.includes('data-tie-review-tab="'+tab+'"'));
+    assert.ok(html.includes('data-tie-review-panel="'+tab+'"'));
+  }
+  assert.ok(html.includes('id="tieOpenConfigurationReview"'));
+  assert.ok(html.includes('id="tieReviewBack"'));
+  assert.ok(review.includes("function openReview()"));
+  assert.ok(review.includes("savedSiblingVisibility"));
+  assert.ok(review.includes("function closeReview()"));
+});
+test("Review mini pedalboard uses shared colored Editor SVG icons",()=>{
+  assert.ok(review.includes("renderMiniChain()"));
+  assert.ok(review.includes("window.MG30EditorBlockIcon(block.id)"));
+  assert.ok(review.includes("data-tie-review-target"));
+  assert.ok(css.includes(".tie-review-mini-pedal svg{"));
+});
+test("Gain metrics preserve measurement provenance and never fabricate stage levels",()=>{
+  assert.ok(review.includes("metrics?.rmsDbfs"));
+  assert.ok(review.includes("metrics?.samplePeakDbfs"));
+  assert.ok(review.includes("tieReviewHeadroom"));
+  assert.ok(review.includes("tieReviewOutput"));
+  assert.ok(review.includes("Not measured"));
+  assert.ok(review.includes("Audio stage level not exposed"));
+  assert.ok(html.includes('id="tieReviewRmsBar"'));
+});
+test("Tone graph uses the completed PCM Analyzer spectrum with frequency and dBFS grid",()=>{
+  assert.ok(review.includes("function drawSpectrum(result)"));
+  assert.ok(review.includes("spectrum.binWidthHz"));
+  assert.ok(review.includes("spectrum.nyquistHz"));
+  assert.ok(review.includes("No Analyzer spectrum available"));
+  assert.ok(review.includes("metrics?.bandEnergyPct"));
+  assert.ok(analyzer.includes("result.spectrum"));
+});
+test("Scene and preset comparison remain unavailable without multi-scene evidence",()=>{
+  assert.ok(review.includes("Cross-scene level comparison is not available"));
+  assert.ok(review.includes("Perbandingan antar-preset belum dijalankan"));
+  assert.ok(review.includes("sceneName(snapshot?.sceneIndex)"));
+  assert.ok(html.includes('id="tieReviewSceneBars"'));
+  assert.ok(!review.includes("estimatedSceneLevel"));
+});
+test("Report sharing is real and PDF export remains explicitly pending",()=>{
+  assert.ok(html.includes('id="tieReviewExportPdf" class="tie-review-primary" disabled'));
+  assert.ok(html.includes("PDF generation is not implemented"));
+  assert.ok(review.includes("navigator.share"));
+  assert.ok(review.includes("navigator.clipboard"));
+});
+test("Analyzer bridge is reused without changing the DSP engine",()=>{
+  assert.ok(analyzer.includes("lastAnalysisResult = result"));
+  assert.ok(analyzer.includes("window.MG30TIEAnalyzerBridge = Object.freeze({ getResult: () => lastAnalysisResult })"));
+  assert.ok(review.includes("window.MG30TIEAnalyzerBridge?.getResult?.()"));
+  assert.ok(!review.includes("createDspAccumulator("));
+});
+test("Original app shell and the five Tone Analysis destinations remain mounted",()=>{
+  for(const page of ["editor","nam","presets","studio","device"])assert.ok(html.includes('data-page="'+page+'"'));
+  for(const page of ["analyzer","compare","signal-chain","intelligence","ai-consultant"])assert.ok(html.includes('data-tie-page="'+page+'"'));
+});
+test("Readback and user library mappings are read-only in Signal Chain",()=>{
+  assert.ok(html.includes("mappingEvidence:[60,61].includes(namProfile.id)?'observed-device-id':'provisional-slot-id'"));
+  assert.ok(html.includes("mg30-ir-collection-preset-map"));
+  assert.ok(html.includes("mg30-user-ir-name"));
+  assert.ok(ui.includes("Third Party / User"));
+  assert.ok(!ui.includes("setItem("));
+  assert.ok(!ui.includes("writeSlot("));
+});

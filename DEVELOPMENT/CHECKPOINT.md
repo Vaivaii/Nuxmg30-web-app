@@ -835,3 +835,52 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - The successful CI build proves compilation/package generation. It does not replace interactive acceptance on the owner's Android handset or original MG-30 Gen 2 firmware 6.0.x.
 - No protocol, MIDI mapping, NAM, IR, preset transfer, DSP/audio engine, or DAW runtime code was changed by the build correction.
 - Phase 4 device acceptance remains pending. Do not start Phase 5 without explicit owner instruction.
+
+
+## Phase 4 — Complete Visual Reconstruction — 2026-11-21
+
+### Implementation scope
+- Rebuilt the Signal Chain Intelligence page around the supplied reference: compact horizontally scrollable colored pedal modules, visible connectors, selected-block details, right-aligned local model artwork and horizontal read-only parameter dials.
+- Reused the existing Editor model-art renderer through the exported read-only function window.MG30EditorGearArtwork. This renderer already uses the existing amp vector artwork and the local pedal reference renderer; it does not substitute random product photographs.
+- Reused the Editor effect SVG icon through window.MG30EditorBlockIcon and explicitly set category stroke/currentColor CSS so icons remain category-colored on dark backgrounds.
+- Rebuilt Configuration Review as a full in-context replacement page. Opening it hides the other Signal Chain page children; Back and Escape restore their previous visibility. The five internal tabs remain Overview, Chain, Gain, Tone and Report.
+- Overview now has the preset identity, overall status, navigable checks, active-Scene context, unavailable Scene/preset comparison bars and evidence-based recommendations.
+- Chain includes the colored mini pedalboard, actual block/model/bypass state and the existing read-only NAM/IR assignment context.
+- Gain only displays completed PCM Analyzer RMS/sample-peak data. Input/output reference, true peak, headroom and per-block audio levels remain Not measured.
+- Tone uses the completed PCM Analyzer spectrum and low/mid/high band-energy measurements; it does not synthesize random data.
+- Report offers the existing Web Share / clipboard capability when supported. PDF export remains disabled and documented as pending.
+- No new MIDI write path or DSP algorithm was introduced.
+
+### Asset and data mapping
+- Shared effect icon: renderBlockIcon() through window.MG30EditorBlockIcon.
+- Amplifier / model art: renderGearSvg() through window.MG30EditorGearArtwork.
+- Detailed pedal/IR illustrations: www/pedal-reference-artwork.js through window.renderPedalReferenceSvg().
+- Block order, enabled state, model and parameter data: existing MG30AIToneBridge snapshot.
+- Parameter catalog and control ordering: existing BLOCKS, parameterControls() and parameterValueForControl().
+- Audio measurements: latest completed MG30TIEAnalyzerBridge result only.
+
+### Files changed
+- www/index.html
+- www/tie-signal-chain-ui.js
+- www/tie-configuration-review-ui.js
+- www/studio-daw.css
+- tests/tie-phase4-visual-reconstruction.test.js
+- DEVELOPMENT/CHECKPOINT.md
+
+### Explicit limitations
+- Current snapshot exposes only the active Scene index, not audio-level measurements for each Scene. Scene comparison rows are intentionally empty and labelled Not measured.
+- Cross-preset comparison is not implemented because the current review snapshot contains only one active preset.
+- No calibrated device input/output capture, per-block signal-level meter, true-peak measurement or validated noise-floor measurement is exposed to this page.
+- PDF generation is not implemented; export stays disabled.
+- Physical Android portrait screenshot comparison and live original MG-30 Gen 2 firmware 6.0.x acceptance remain required before assigning a 90% visual-fidelity score.
+
+### Protected boundaries
+- No device protocol, MIDI CC mapping, preset codec, NAM transfer, IR transfer, User/Third Party import or IR Collection mapping was changed.
+- No AI provider orchestration, DSP engine, audio engine, Quick Record, DAW transport, loopback or device management code was changed.
+- Signal Chain and Configuration Review remain read-only and do not issue device writes.
+- Original NUX MG-30 Gen 2 remains the target; this is not an MKII change.
+
+### Validation
+- Added a focused Phase 4 visual reconstruction regression test covering shared artwork reuse, category-colored SVGs, read-only parameter dials, page replacement navigation, measured-vs-unmeasured provenance, Scene comparison limitations, Report sharing and regression boundaries.
+- CI results for this milestone must be appended after the next workflow run. The earlier workflow #1210 (775 tests plus debug APK build) predates this visual change and does not validate this milestone.
+- Do not claim the 90% visual target until the new APK is rendered on an Android portrait viewport and compared against the reference.
