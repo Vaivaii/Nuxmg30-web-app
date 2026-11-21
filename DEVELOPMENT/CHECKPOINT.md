@@ -907,3 +907,18 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 
 ### Gain-provenance assertion alignment — 2026-11-21
 - Aligned the legacy headroom-provenance assertion with the current Indonesian explanatory sentence rendered by Configuration Review. The review still states that selected PCM RMS/sample peak is not a live pedal measurement and does not establish headroom.
+
+
+### Successful Phase 4 visual reconstruction test and Android APK build — 2026-11-21
+- Final code/test commit: acf21f5718038fd32e6d8b66090241cdfb11fcaf.
+- GitHub Actions workflow #1215, run ID 44876652580, completed successfully on feature/tone-intelligence-engine.
+- JavaScript source validation: passed.
+- Focused Phase 4 tests and full regression suite: 790 passed, 0 failed.
+- Capacitor Android project generation and USB audio plugin installation: passed.
+- Gradle assembleDebug: BUILD SUCCESSFUL in 1m 7s.
+- APK artifact: MG30-Studio-debug-APK.zip, artifact ID 14696690107, archive size 4,445,073 bytes.
+- Extracted APK: app-debug.apk, size 4,823,201 bytes, SHA-256 1466dfe74a428fb90d9721cc70db9338c3903b04d0ff35cc1a35368541dcb8cb.
+- Bundled APK inspection confirmed the Configuration Review and Selected Block HTML surface, plus compiled JavaScript references for the selected artwork bridge and Tone Comparison route. The compiled stylesheet contains the new pedalboard and review mini-pedal selectors.
+- This verifies compilation and package contents, not a rendered Android screenshot. No emulator or owner handset screenshot was available in this run.
+- Visual fidelity target of 90% remains unscored pending screenshot comparison on an Android portrait viewport. Interactive acceptance against the original NUX MG-30 Gen 2 firmware 6.0.x also remains pending.
+- No firmware/protocol, MIDI CC, preset, NAM, IR User/Collection transfer/mapping, AI provider, DSP/audio, Quick Record, DAW or device-management code was changed.
