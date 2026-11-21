@@ -1003,6 +1003,21 @@ async function init(){
  const rememberConversation=(role,text)=>{const value=String(text||'').trim();if(!value)return;dialogueContext.push({role,text:value.slice(0,1400)});while(dialogueContext.length>8)dialogueContext.shift();};
  const conversationContextText=()=>dialogueContext.slice(-8).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null,audioDspSession=null,audioDspOffsetBytes=0,audioDspPollBusy=false,audioDspActiveMask=3,audioDspRequestedMask=3;
+ const resizeToneComposer=()=>{
+  const viewportHeight=Math.max(280,Number(window.visualViewport?.height||window.innerHeight||600));
+  const maxHeight=Math.max(88,Math.min(156,Math.floor(viewportHeight*0.26)));
+  ui.prompt.style.maxHeight=maxHeight+'px';
+  ui.prompt.style.height='auto';
+  const contentHeight=ui.prompt.scrollHeight;
+  const target=Math.max(52,Math.min(maxHeight,contentHeight+1));
+  ui.prompt.style.height=target+'px';
+  ui.prompt.style.overflowY=contentHeight>maxHeight?'auto':'hidden';
+ };
+ const clearToneComposer=()=>{
+  ui.prompt.value='';
+  $('aiToneCount').textContent='0/1400';
+  resizeToneComposer();
+ };
  const setBusy=v=>{busy=!!v;ui.send.disabled=busy;ui.send.textContent=busy?'Working…':'Send ↗';ui.prompt.disabled=busy;ui.findNam.disabled=busy||namImportBusy;ui.providerSelect.disabled=busy;ui.activeModel.disabled=busy||ui.activeModel.options.length===0;ui.autoFallback.disabled=busy;ui.undo.disabled=busy||!last;ui.audioStart.disabled=busy||audioBusy||(!audioCaptureActive&&ui.audioDevice.dataset.state!=='connected');ui.audioModes.forEach(button=>button.disabled=busy||audioBusy||audioCaptureActive);ui.namWizard.querySelectorAll('button').forEach(b=>b.disabled=busy);ui.namResults.querySelectorAll('button,select').forEach(b=>b.disabled=busy);};
  const setMode=v=>{
 const next='chatgpt';
@@ -1383,7 +1398,7 @@ const next='chatgpt';
   message('ai','TONE3000 found '+tones.length+' matching NAM profile(s). Choose a profile below to view its A2 captures. Nothing has been imported.');
   rememberConversation('assistant','TONE3000 profiles are ready. Choose a profile to view A2 captures.');
   status('NAM profiles are shown in the conversation. Select View A2 Captures to continue.','success');
-  ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+  clearToneComposer();;$('aiToneCount').textContent='0/1400';
  }
 
   async function answerToneConversation(prompt,conversation='',bridge=null){
@@ -1429,7 +1444,7 @@ const next='chatgpt';
   }
   if(!reply)throw new Error('AI returned an empty conversational response.');
   message('ai',reply);rememberConversation('assistant',reply);status('Conversation updated. No device parameters were changed.','success');
-  ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+  clearToneComposer();;$('aiToneCount').textContent='0/1400';
  }
  function renderNamCandidates(detail){
   const tone=detail?.tone||{},models=Array.isArray(detail?.models)?detail.models:[];
@@ -2358,14 +2373,14 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
    pendingToneProposal=null;
    const reply='Usulan tweak dibatalkan. Tidak ada MIDI yang dikirim dan preset aktif tidak berubah.';
    message('ai',reply);rememberConversation('assistant',reply);
-   ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Usulan dibatalkan.','idle');return;
+   clearToneComposer();;$('aiToneCount').textContent='0/1400';status('Usulan dibatalkan.','idle');return;
   }
   if(pendingToneProposal&&toneProposalApprovalCommand(prompt)){
    rememberConversation('user',prompt);message('user',prompt);
    setBusy(true);status('Memeriksa ulang preset aktif sebelum menerapkan usulan…','busy');
    try{
     await applyPendingToneProposal(window.MG30AIToneBridge);
-    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+    clearToneComposer();;$('aiToneCount').textContent='0/1400';
    }catch(error){
     const detail=String(error?.message||error);
     message('ai',detail);
@@ -2388,7 +2403,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
    if(audioCaptureActive){
     const captured=await finishAudioListening({askAi:intent==='audio_analyze',question:prompt,conversation});
     if(captured)audioMetricsForRequest=captured;
-    if(intent==='audio_analyze'){ui.prompt.value='';$('aiToneCount').textContent='0/1400';return;}
+    if(intent==='audio_analyze'){clearToneComposer();;$('aiToneCount').textContent='0/1400';return;}
    }
    if(intent==='nam_search'){await searchNamCatalogForPrompt(prompt,conversation);return;}
    if(intent==='audio_analyze'){
@@ -2414,7 +2429,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
     pendingToneProposal=proposal;
     const proposalText=renderToneProposalText(proposal);
     message('ai',proposalText);rememberConversation('assistant',proposalText);
-    ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+    clearToneComposer();;$('aiToneCount').textContent='0/1400';
     status('Usulan tweak siap. Menunggu persetujuan; belum ada MIDI yang dikirim.','success');
     return;
    }
@@ -2462,7 +2477,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
     pendingToneApply=plan;
     const summary=(plan.summary||'Tone Plan siap diterapkan.')+'\\nRencana blok: '+plan.blocks.map(block=>block.id+': '+block.model).join(', ');
     const guidance='Tone Plan berhasil disusun ChatGPT dan lolos validasi MG-30 Gen 2. Belum ada MIDI yang dikirim karena pedal belum tersambung.\\n\\n'+summary+'\\n\\nHubungkan MG-30 via USB-MIDI, lalu kirim “terapkan tone” atau “lanjutkan”. Rencana ini akan digunakan kembali tanpa memanggil AI lagi.';
-    message('ai',guidance);rememberConversation('assistant',guidance);ui.prompt.value='';$('aiToneCount').textContent='0/1400';status('Tone Plan ready; waiting for USB-MIDI connection.','success');return;
+    message('ai',guidance);rememberConversation('assistant',guidance);clearToneComposer();;$('aiToneCount').textContent='0/1400';status('Tone Plan ready; waiting for USB-MIDI connection.','success');return;
    }
    updateToneMission({chiefState:'applying',stage:'Tone Plan valid · memperbarui editor dan mengirim MIDI'});
    status('Tone Plan validated. Updating the editor and sending MIDI…','busy');
@@ -2479,7 +2494,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
    const blockReport=(result.blockResults||[]).map(item=>item.id+' '+(item.enabled?'ON':'OFF')+' ('+(statusLabels[item.status]||item.status)+')').join(' · ');
    const reply=appliedSummary+'\nReadback perangkat: '+(result.verified?'cocok dengan target':'belum terverifikasi')+'\nStatus blok: '+(blockReport||'tidak ada perubahan')+(appliedNotes.length?'\n'+appliedNotes.join(' · '):'');
    message('ai',reply);rememberConversation('assistant',reply);
-   ui.prompt.value='';$('aiToneCount').textContent='0/1400';
+   clearToneComposer();;$('aiToneCount').textContent='0/1400';
    status(result.verified?(intent==='tone_refine'?'Tone refinement applied and verified by MG-30 readback.':'Preset applied and verified by MG-30 readback.'):'Tone commands sent; device state is unverified.','success');
    if(pendingNamSelection?.imported&&pendingNamSelection.prompt===prompt)pendingNamSelection=null;
   }catch(error){const detail=String(error?.message||error).slice(0,1800);if(activityMode==='tone'&&toneMission){toneMission.error=detail;const quorumFailure=/All unused specialist providers failed role|requires at least two configured external specialist providers/i.test(detail);message('ai',quorumFailure?'Preset not created: the specialist team could not complete the required research. No Tone Plan was generated and no preset changes were applied.':'Preset creation stopped. Open Mission Control → Provider diagnostics for the reason.');status(quorumFailure?'Preset creation stopped: specialist quorum not reached.':'Preset creation failed. See Mission Control diagnostics.','error');}else{message('ai','Failed: '+detail);status('Failed: '+detail,'error');}}
@@ -2519,9 +2534,13 @@ $('aiToneTestGroq')?.addEventListener('click',()=>testProvider('groq'));$('aiTon
  const handleProviderSelection=()=>{const selected=ui.providerSelect.value;if(selected!==mode)setMode(selected);};
  ui.providerSelect.addEventListener('input',handleProviderSelection);
  ui.providerSelect.addEventListener('change',handleProviderSelection);
- $('aiToneSend').addEventListener('click',()=>{void submit().catch(error=>{const text=error?.message||String(error);message('ai','Failed: '+text);status('Failed: '+text,'error');setBusy(false);});});
- ui.prompt.addEventListener('input',()=>{$('aiToneCount').textContent=ui.prompt.value.length+'/1400';});
- ui.prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
+ $('aiToneSend').addEventListener('click',()=>{void submit().catch(error=>{const text=error?.message||String(error);message('ai','Failed: '+text);status('Failed: '+text,'error');setBusy(false);}).finally(resizeToneComposer);});
+ ui.prompt.addEventListener('input',()=>{$('aiToneCount').textContent=ui.prompt.value.length+'/1400';resizeToneComposer();});
+ ui.prompt.addEventListener('focus',()=>{window.requestAnimationFrame(resizeToneComposer);});
+ ui.prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();void submit().catch(error=>{const text=error?.message||String(error);message('ai','Failed: '+text);status('Failed: '+text,'error');setBusy(false);}).finally(resizeToneComposer);}});
+ window.addEventListener('resize',resizeToneComposer,{passive:true});
+ window.visualViewport?.addEventListener('resize',resizeToneComposer,{passive:true});
+ resizeToneComposer();
  
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on')&&!busy)closePanel();});
  window.addEventListener('mg30-midi-connection-state',e=>{if(!e.detail?.connected)status('USB-MIDI disconnected. TONE3000 search can still run; connect MG-30 before slot-10 import or live preset send.','idle');else if(!busy)status('MG-30 connected via USB-MIDI.','success');});
