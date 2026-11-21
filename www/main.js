@@ -390,6 +390,13 @@ async function getToneAnalysisStats() {
   if (!isNative() || !toneAnalysisCapture || !recording) return null;
   return MG30Audio.getRecordingStats();
 }
+async function readToneAnalysisPcmChunk(options = {}) {
+  if (!isNative() || !toneAnalysisCapture || typeof MG30Audio.readToneAnalysisPcmChunk !== 'function') return null;
+  return MG30Audio.readToneAnalysisPcmChunk({
+    offsetBytes: Math.max(0, Math.floor(Number(options.offsetBytes) || 0)),
+    maxBytes: Math.max(6144, Math.min(196608, Math.floor(Number(options.maxBytes) || 49152)))
+  });
+}
 async function stopToneAnalysisCapture() {
   if (!isNative() || !toneAnalysisCapture || !recording) return null;
   try {
@@ -421,7 +428,7 @@ function parseYoutubeId(value) {
   return null;
 }
 window.NUXStudioInspectAudio = inspectAudio;
-window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, getRecordingStats, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor, inspectToneAnalysisInput, startToneAnalysis: startToneAnalysisCapture, getToneAnalysisStats, stopToneAnalysis: stopToneAnalysisCapture, deleteToneAnalysisTake });
+window.NUXStudioRecorder = Object.freeze({ start: startGuitarRecording, stop: stopGuitarRecording, getRecordingStats, isRecording: () => recording, isNative, listTakes: () => takes.slice(), pathToUrl: playbackPathFor, inspectToneAnalysisInput, startToneAnalysis: startToneAnalysisCapture, getToneAnalysisStats, readToneAnalysisPcmChunk, stopToneAnalysis: stopToneAnalysisCapture, deleteToneAnalysisTake });
 window.dispatchEvent(new Event('nux-studio-recorder-ready'));
 window.addEventListener('mg30-midi-connected', () => { void inspectAudio(); });
 $('audioCheckBtn')?.addEventListener('click', inspectAudio);
