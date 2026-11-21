@@ -2,7 +2,7 @@ const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[char]));
-const state = { snapshot:null, selectedIndex:null, libraryStatus:'Not queried' };
+const state = { snapshot:null, selectedIndex:null, libraryStatus:'Not queried', refreshPromise:null, parameterSignature:'' };
 const BLOCK_NAMES = { WAH:'Wah',CMP:'Compressor',EFX:'Drive / EFX',AMP:'Amp / NAM',EQ:'EQ',GATE:'Noise Gate',MOD:'Modulation',DLY:'Delay',RVB:'Reverb',IR:'IR / Cabinet','S/R':'Send / Return',VOL:'Volume' };
 const CATEGORY_NAMES = { WAH:'WAH',CMP:'COMP',EFX:'EFX',AMP:'AMP',EQ:'EQ',GATE:'GATE',MOD:'MOD',DLY:'DELAY',RVB:'REVERB',IR:'IR','S/R':'S/R',VOL:'VOL' };
 function setText(id,value){const node=$(id);if(node)node.textContent=String(value??'');}
@@ -63,31 +63,73 @@ function renderFlow(snapshot){
   }));
 }
 function parameterMarkup(param){
+  const label=escapeHtml(param.label||param.key||'PARAMETER');
   if(param.discrete){
     const selected=param.value===null?null:(param.choices||[]).find(choice=>Number(choice.value)===Number(param.value));
-    return '<div class="tie-knob-discrete"><span>'+escapeHtml(param.label)+'</span><strong>'+escapeHtml(selected?selected.label:'Not read')+'</strong></div>';
+    return '<div class="tie-knob tie-knob-discrete"><label>'+label+'</label><output class="knob-value">'+escapeHtml(selected?selected.label:'Not read')+'</output></div>';
   }
-  if(param.value===null||!Number.isFinite(Number(param.value))){
-    return '<div class="tie-knob tie-knob-unread"><span class="tie-knob-dial"><i></i></span><label>'+escapeHtml(param.label)+'</label><output>Not read</output></div>';
-  }
-  const value=Math.max(0,Math.min(100,Number(param.value))),angle=-135+value*2.7;
-  return '<div class="tie-knob"><span class="tie-knob-dial" style="--tie-knob-angle:'+angle+'deg;--tie-knob-value:'+(value*.75)+'%"><i></i></span><label>'+escapeHtml(param.label)+'</label><output>'+value.toFixed(0)+'</output></div>';
+  const available=param.value!==null&&Number.isFinite(Number(param.value));
+  const value=available?Math.max(0,Math.min(100,Number(param.value))):0;
+  const angle=-135+value*2.7,fill=value*2.7;
+  return '<div class="knob tie-knob'+(available?'':' tie-knob-unread')+'"><label>'+label+'</label><div class="dial-control tie-dial-readonly" aria-hidden="true"><div class="dial" style="--fill:'+fill+'deg;--angle:'+angle+'deg"><span class="dial-needle"></span><span class="dial-cap"></span></div><output class="knob-value">'+(available?value.toFixed(0):'Not read')+'</output></div></div>';
+}
+function updateParameterPager(){
+  const viewport=$('tieChainParameters'),previous=$('tieChainParameterPrev'),next=$('tieChainParameterNext'),footer=$('tieChainParameterFooter'),dots=$('tieChainParameterDots');
+  if(!viewport)return;
+  const hasMore=viewport.children.length>5;
+  if(previous)previous.hidden=!hasMore;
+  if(next)next.hidden=!hasMore;
+  if(footer)footer.hidden=!hasMore;
+  if(dots&&hasMore&&!dots.children.length){
+    dots.innerHTML=[0,1,2].map(index=>'<button type="button" class="tie-parameter-dot'+(index===0?' active':'')+'" data-tie-parameter-position="'+index+'" aria-label="Parameter scroll position '+(index+1)+' of 3" aria-pressed="'+(index===0)+'"></button>').join('');
+    dots.querySelectorAll('[data-tie-parameter-position]').forEach(dot=>dot.addEventListener('click',()=>{
+      const max=Math.max(0,viewport.scrollWidth-viewport.clientWidth),position=Number(dot.dataset.tieParameterPosition)/2;
+      viewport.scrollTo({left:max*position,behavior:'smooth'});
+    }));
+  }else if(dots&&!hasMore)dots.innerHTML='';
+  if(!hasMore)return;
+  const max=Math.max(0,viewport.scrollWidth-viewport.clientWidth);
+  const position=max>0?Math.max(0,Math.min(1,viewport.scrollLeft/max)):0;
+  const active=Math.round(position*2);
+  dots?.querySelectorAll('[data-tie-parameter-position]').forEach(dot=>{
+    const selected=Number(dot.dataset.tieParameterPosition)===active;
+    dot.classList.toggle('active',selected);dot.setAttribute('aria-pressed',String(selected));
+  });
+  if(previous)previous.disabled=viewport.scrollLeft<=1;
+  if(next)next.disabled=viewport.scrollLeft>=max-1;
+}
+$('tieChainParameterPrev')?.addEventListener('click',()=>{
+  const viewport=$('tieChainParameters');if(viewport)viewport.scrollBy({left:-Math.max(80,viewport.clientWidth*.82),behavior:'smooth'});
+});
+$('tieChainParameterNext')?.addEventListener('click',()=>{
+  const viewport=$('tieChainParameters');if(viewport)viewport.scrollBy({left:Math.max(80,viewport.clientWidth*.82),behavior:'smooth'});
+});
+$('tieChainParameters')?.addEventListener('scroll',updateParameterPager,{passive:true});
+window.addEventListener('resize',updateParameterPager,{passive:true});
+if(typeof ResizeObserver==='function'){
+  const parameterRail=$('tieChainParameters');
+  if(parameterRail){const observer=new ResizeObserver(updateParameterPager);observer.observe(parameterRail);}
 }
 function renderDetails(){
   const block=currentBlock(),params=$('tieChainParameters'),artwork=$('tieChainSelectedArtwork');
   if(!block){
     setText('tieChainSelectedTitle','No block selected');setText('tieChainBlockState','—');const categoryTag=$('tieChainSelectedCategory');categoryTag.removeAttribute('data-category');categoryTag.textContent='BLOCK';setText('tieChainSelectedMeta','No selected model');
     $('tieChainSelectedData').innerHTML='<span>Model</span><strong>Not read</strong><span>Type</span><strong>Not read</strong><span>Status</span><strong>Not read</strong>';
-    artwork.innerHTML='<div class="tie-chain-empty">Select a known block to display its local model artwork.</div>';params.innerHTML='<p class="tie-chain-empty">No selected block.</p>';return;
+    artwork.innerHTML='<div class="tie-chain-empty">Select a known block to display its local model artwork.</div>';params.innerHTML='<p class="tie-chain-empty">No selected block.</p>';state.parameterSignature='';updateParameterPager();return;
   }
   const category=CATEGORY_NAMES[block.id]||block.id,model=block.known?(block.model||'Model not identified'):'Not read',type=BLOCK_NAMES[block.id]||block.id,status=block.known?(block.enabled?'ON':'BYPASS'):'UNKNOWN';
   setText('tieChainSelectedTitle',type+' — '+block.id);setText('tieChainBlockState',status);const categoryTag=$('tieChainSelectedCategory');categoryTag.dataset.category=block.id;const categoryIcon=window.MG30EditorBlockIcon?window.MG30EditorBlockIcon(block.id):'';categoryTag.innerHTML='<span class="tie-selected-category-icon" aria-hidden="true">'+categoryIcon+'</span><span>'+escapeHtml(category)+'</span>';setText('tieChainSelectedMeta',model);
   $('tieChainSelectedData').innerHTML='<span>Model</span><strong>'+escapeHtml(model)+'</strong><span>Type</span><strong>'+escapeHtml(type)+'</strong><span>Status</span><strong>'+escapeHtml(status)+'</strong>';
   const art=block.known&&window.MG30EditorGearArtwork?window.MG30EditorGearArtwork(block.id,block.model):'';
   artwork.innerHTML=art||'<div class="tie-art-unavailable"><span>MODEL ARTWORK</span><strong>'+escapeHtml(category)+'</strong><small>Artwork is not available for this selected model.</small></div>';
-  if(!block.known){params.innerHTML='<p class="tie-chain-empty">Block identity and parameters are not verified. Read the active preset from the device first.</p>';return;}
-  if(!block.parameters?.length){params.innerHTML='<p class="tie-chain-empty">No parameter controls are exposed for this model in the current Editor catalog.</p>';return;}
+  if(!block.known){params.innerHTML='<p class="tie-chain-empty">Block identity and parameters are not verified. Read the active preset from the device first.</p>';state.parameterSignature='';updateParameterPager();return;}
+  if(!block.parameters?.length){params.innerHTML='<p class="tie-chain-empty">No parameter controls are exposed for this model in the current Editor catalog.</p>';state.parameterSignature='';updateParameterPager();return;}
+  const signature=[block.index,block.id,block.model,(block.parameters||[]).map(param=>param.key).join(',')].join('|');
+  const resetRail=signature!==state.parameterSignature;
+  state.parameterSignature=signature;
   params.innerHTML=block.parameters.map(parameterMarkup).join('');
+  if(resetRail)params.scrollLeft=0;
+  updateParameterPager();
 }
 function row(label,value){return '<div class="tie-chain-context-row"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value||'Not available from current snapshot')+'</strong></div>';}
 function renderModelContext(snapshot){
@@ -136,12 +178,32 @@ async function refreshLibraryContext(){
   renderModelContext(state.snapshot);
 }
 async function refreshSnapshot(){
+  if(state.refreshPromise)return state.refreshPromise;
   const bridge=window.MG30AIToneBridge,button=$('tieChainRefresh');
-  if(!bridge?.refreshSignalChainSnapshot){setText('tieChainStatus','Shared MG-30 preset reader is not available.');return;}
-  button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='…';
-  try{const snapshot=await bridge.refreshSignalChainSnapshot();render(snapshot);setText('tieChainStatus','Active preset and Scene read successfully. Signal Chain view is read-only; no device write was performed.');$('tieChainStatus').className='tie-chain-status is-live';}
-  catch(error){setText('tieChainStatus',error?.message||String(error));$('tieChainStatus').className='tie-chain-status is-warning';}
-  finally{button.disabled=false;button.removeAttribute('aria-busy');button.textContent='↻';}
+  if(!bridge?.refreshSignalChainSnapshot){
+    const message='Pembaca preset aktif MG-30 tidak tersedia.';
+    setText('tieChainStatus',message);toast(message,2400,'tie');return null;
+  }
+  if(button){button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='…';}
+  setText('tieChainStatus','Membaca preset aktif dan Scene dari MG-30 Gen 2.');
+  state.refreshPromise=(async()=>{
+    try{
+      const snapshot=await bridge.refreshSignalChainSnapshot();
+      render(snapshot);
+      setText('tieChainStatus','Preset aktif dan Scene berhasil dibaca. Tampilan Chain tetap read-only; tidak ada penulisan ke perangkat.');
+      toast('Preset dan Scene aktif diperbarui',1900,'tie');
+      return snapshot;
+    }catch(error){
+      const message=error?.message||String(error);
+      setText('tieChainStatus','Refresh gagal: '+message);
+      toast(('Refresh gagal: '+message).slice(0,145),3200,'tie');
+      return null;
+    }finally{
+      if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='↻';}
+      state.refreshPromise=null;
+    }
+  })();
+  return state.refreshPromise;
 }
 $('tieChainRefresh')?.addEventListener('click',()=>void refreshSnapshot());
 document.querySelectorAll('[data-tie-open-analysis]').forEach(button=>button.addEventListener('click',()=>document.querySelector('[data-tie-page="'+button.dataset.tieOpenAnalysis+'"]')?.click()));

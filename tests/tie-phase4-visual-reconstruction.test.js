@@ -156,6 +156,50 @@ test("Selected Block identity chip includes the shared Editor glyph and category
   assert.ok(css.includes("#page-studio .tie-selected-category svg"));
 });
 
+
+test("Chain Overview uses Editor-native read-only rotary knob markup",()=>{
+  assert.ok(ui.includes("class=\"knob tie-knob"));
+  assert.ok(ui.includes("class=\"dial-control tie-dial-readonly\""));
+  assert.ok(ui.includes("class=\"dial\""));
+  assert.ok(ui.includes("class=\"dial-needle\""));
+  assert.ok(ui.includes("class=\"dial-cap\""));
+  assert.ok(ui.includes("class=\"knob-value\""));
+  assert.ok(!ui.includes("role=\"slider\""));
+  assert.ok(!ui.includes("sendBlockParam("));
+});
+test("Chain Overview parameter rail exposes five initial controls, arrows, swipe hint and position dots",()=>{
+  assert.ok(html.includes('id="tieChainParameterPrev"'));
+  assert.ok(html.includes('id="tieChainParameterNext"'));
+  assert.ok(html.includes('id="tieChainParameterDots"'));
+  assert.ok(html.includes('id="tieChainSwipeHint"'));
+  assert.ok(ui.includes("viewport.children.length>5"));
+  assert.ok(ui.includes("scrollWidth-viewport.clientWidth"));
+  assert.ok(css.includes("grid-auto-columns:calc((100% - 32px)/5)"));
+  assert.ok(css.includes("scroll-snap-type:x proximity"));
+});
+test("Chain Overview selected-block artwork and first-view composition remain model-data driven",()=>{
+  assert.ok(ui.includes("window.MG30EditorGearArtwork(block.id,block.model)"));
+  assert.ok(ui.includes("orderedBlocks(snapshot)"));
+  assert.ok(ui.includes("block.parameters.map(parameterMarkup)"));
+  assert.ok(html.includes('id="tieChainSelectedArtwork"'));
+  assert.ok(html.includes('class="tie-sr-only">No block selected</h5>'));
+});
+test("Chain Overview refresh reports through toast and never inserts a visible status banner",()=>{
+  assert.ok(html.includes('id="tieChainStatus" class="tie-sr-only"'));
+  assert.ok(ui.includes("if(state.refreshPromise)return state.refreshPromise"));
+  assert.ok(ui.includes("toast('Preset dan Scene aktif diperbarui',1900,'tie')"));
+  assert.ok(ui.includes("toast(('Refresh gagal: '+message).slice(0,145),3200,'tie')"));
+  assert.ok(!ui.includes("status.className='tie-chain-status is-live'"));
+  assert.ok(!ui.includes("status.className='tie-chain-status is-warning'"));
+  assert.ok(html.includes("!['preset','nam','ir','tie'].includes(scope)"));
+});
+test("Chain Overview keeps workspace selector, five Tone Analysis destinations and Configuration Review entry",()=>{
+  assert.ok(html.includes('data-studio-workspace="jam-record"'));
+  assert.ok(html.includes('data-studio-workspace="tone-analysis"'));
+  for(const page of ["analyzer","compare","signal-chain","intelligence","ai-consultant"])assert.ok(html.includes('data-tie-page="'+page+'"'));
+  assert.ok(html.includes('id="tieOpenConfigurationReview"'));
+});
+
 test("Gain overview uses the Input Level card label without presenting PCM RMS as a live pedal meter",()=>{
   assert.ok(html.includes("<small>Input Level</small>"));
   assert.ok(review.includes("PCM RMS, not live pedal input"));

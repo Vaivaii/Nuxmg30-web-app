@@ -2198,8 +2198,9 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
         <span id="tieChainSourceTag" class="tie-capability-tag">WAITING FOR PRESET STATE</span>
       </div>
       <div class="tie-chain-toolbar tie-preset-identity">
-        <span class="tie-preset-icon" aria-hidden="true">▦</span>
+        <span class="tie-preset-icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><rect x="4" y="4" width="24" height="24" rx="2.5"/><path d="M11 4v24M21 4v24M4 11h24M4 21h24"/></svg></span>
         <div class="tie-chain-preset-meta"><strong id="tieChainPresetName">No preset snapshot</strong><span id="tieChainPresetContext">Preset and Scene are not identified.</span></div>
+        <span class="tie-preset-divider" aria-hidden="true"></span>
         <div class="tie-preset-device"><strong id="tieChainDeviceName">MG-30 Gen2</strong><span id="tieChainDeviceStatus" class="tie-preset-device-status is-unavailable">Not connected</span></div>
         <button id="tieChainRefresh" class="tie-chain-refresh" type="button" aria-label="Read active preset" title="Read active preset">↻</button>
         <div id="tieChainStatus" class="tie-sr-only" role="status" aria-live="polite">No device readback has been captured in this session.</div>
@@ -2208,7 +2209,7 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
         <div class="tie-chain-empty">The current effect order will appear after a preset readback or when a saved editor draft is available.</div>
       </div>
       <section class="tie-selected-block tie-chain-card" aria-label="Selected effect block">
-        <div class="tie-chain-card-heading"><div><span>SELECTED BLOCK</span><h5 id="tieChainSelectedTitle">No block selected</h5></div><span id="tieChainBlockState" class="tie-chain-state">—</span></div>
+        <div class="tie-chain-card-heading"><div><span>SELECTED BLOCK</span><h5 id="tieChainSelectedTitle" class="tie-sr-only">No block selected</h5></div><span id="tieChainBlockState" class="tie-chain-state">—</span></div>
         <div class="tie-selected-block-layout">
           <div class="tie-selected-block-info">
             <div class="tie-selected-category-row"><span id="tieChainSelectedCategory" class="tie-selected-category">BLOCK</span><span id="tieChainSelectedMeta" class="tie-selected-model">Model and parameters are not read yet</span></div>
@@ -2217,10 +2218,18 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
           <div id="tieChainSelectedArtwork" class="tie-selected-artwork" aria-label="Local vector reference artwork"><div class="tie-chain-empty">Select a known block to display its local model artwork.</div></div>
         </div>
         <div class="tie-selected-parameters-heading"><span>KEY PARAMETERS</span><small>Read-only values from the existing editor snapshot</small></div>
-        <div id="tieChainParameters" class="tie-knob-grid"><p class="tie-chain-empty">Select an effect block to inspect the parameters exposed by its active model.</p></div>
+        <div class="tie-parameter-browser" aria-label="Read-only key parameters">
+          <button type="button" id="tieChainParameterPrev" class="tie-parameter-nav" aria-label="Previous parameters" hidden>‹</button>
+          <div id="tieChainParameters" class="tie-knob-grid" aria-label="Read-only model parameters"><p class="tie-chain-empty">Select an effect block to inspect the parameters exposed by its active model.</p></div>
+          <button type="button" id="tieChainParameterNext" class="tie-parameter-nav" aria-label="More parameters" hidden>›</button>
+        </div>
+        <div id="tieChainParameterFooter" class="tie-parameter-footer" hidden>
+          <div id="tieChainParameterDots" class="tie-parameter-dots" role="group" aria-label="Parameter scroll position"></div>
+          <span id="tieChainSwipeHint" class="tie-parameter-hint">Swipe for more parameters <b aria-hidden="true">⟶</b></span>
+        </div>
       </section>
       <button type="button" id="tieOpenConfigurationReview" class="tie-review-entry">
-        <span class="tie-review-entry-icon" aria-hidden="true">⌁</span><span><strong>Configuration Review</strong><small>Potential issues &amp; gain staging</small></span><span id="tieReviewEntryStatus">Awaiting data</span><b aria-hidden="true">›</b>
+        <span class="tie-review-entry-icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><path d="M8 10h16l-6-5M24 10l-6 5M24 22H8l6-5M8 22l6 5"/></svg></span><span><strong>Configuration Review</strong><small>Potential issues &amp; gain staging</small></span><span id="tieReviewEntryStatus">Awaiting data</span><b aria-hidden="true">›</b>
       </button>
       <section id="tieConfigurationReview" class="tie-review-page" hidden aria-label="Configuration Review">
         <header class="tie-review-header"><button type="button" id="tieReviewBack" aria-label="Back to Signal Chain Intelligence">‹</button><h4>Configuration Review</h4><button type="button" id="tieReviewShare" aria-label="Share Configuration Review">↗</button></header>
@@ -3740,7 +3749,7 @@ function changeSelectedModel(delta){
  }
 }
 function persist(){localStorage.setItem('mg30-presets',JSON.stringify(presets));localStorage.setItem('mg30-draft',JSON.stringify({name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex,targetSlot,chainOrder}));notifyActivePresetChanged();}
-function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
+function toast(s,duration=1900,scope=''){if(!['preset','nam','ir','tie'].includes(scope))return;const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
 
 function renderHardwarePreset(){
  const slot=$('hardwarePresetSlot'),name=$('hardwarePresetName'),source=$('hardwarePresetSource'),fav=$('favoritePresetBtn');
@@ -6415,7 +6424,7 @@ window.MG30AIToneBridge=Object.freeze({
 })();
 </script>
 <script type="module" src="./cloud-account.js"></script><script type="module" src="./chatgpt-account.js"></script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./tie-signal-chain-ui.js?v=phase4-3"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./tie-signal-chain-ui.js?v=phase4-4"></script>
   <script type="module" src="./tie-configuration-review-ui.js?v=phase4-2"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){

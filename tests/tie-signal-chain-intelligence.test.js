@@ -14,7 +14,7 @@ test("Phase 4 Signal Chain panel replaces the generic preview with a live snapsh
   assert.ok(html.includes('id="tieChainParameters"'));
   assert.ok(html.includes('id="tieChainDiagnostics"'));
   assert.ok(!html.includes("Live effect-block snapshot is not connected"));
-  assert.ok(html.includes('src="./tie-signal-chain-ui.js?v=phase4-3"'));
+  assert.ok(html.includes('src="./tie-signal-chain-ui.js?v=phase4-4"'));
 });
 
 test("Signal Chain Intelligence consumes the existing shared editor and preset reader", () => {
