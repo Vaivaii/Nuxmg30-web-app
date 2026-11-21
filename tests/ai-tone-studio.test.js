@@ -674,8 +674,11 @@ test('AI assistant keeps only conversation scrollable with a pinned audio card a
 test('audio diagnosis marks the AI request complete or failed after the final chat response',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const request=source.slice(source.indexOf('async function requestAudioDiagnosis'),source.indexOf('async function finishAudioListening'));
- assert.match(request, /status\('Audio analysis complete\..*'success'\)/);
- assert.match(request, /status\('Audio analysis failed:.*'error'\)/);
+ assert.match(request, /status\('AI interpretation complete\..*'success'\)/);
+ assert.match(request, /status\('AI interpretation failed:.*'error'\)/);
+ assert.match(request, /toAiToneDspPayload\(metrics,96\)/);
+ assert.match(request, /You are NOT an audio measurement engine/);
+ assert.match(request, /must NEVER calculate, estimate, replace, or invent/);
 });
 
 
