@@ -157,7 +157,7 @@ test('AI Audio Listening native bridge is exposed independently from Quick Recor
   assert.ok(main.includes('async function stopToneAnalysisCapture()'));
   assert.ok(main.includes('async function deleteToneAnalysisTake(path)'));
   assert.ok(main.includes('inspectToneAnalysisInput, startToneAnalysis: startToneAnalysisCapture'));
-  assert.ok(main.includes('getToneAnalysisStats, stopToneAnalysis: stopToneAnalysisCapture, deleteToneAnalysisTake'));
+  assert.ok(main.includes('getToneAnalysisStats, readToneAnalysisPcmChunk, stopToneAnalysis: stopToneAnalysisCapture, deleteToneAnalysisTake'));
   assert.ok(main.includes("captureMode: 'multichannel', channelIndexMask"));
   assert.ok(main.includes('if (recording || toneAnalysisCapture)'));
 });
