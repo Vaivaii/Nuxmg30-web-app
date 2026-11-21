@@ -27,6 +27,23 @@ test("Editor category colours cover SVG strokes, borders, selected glow and bypa
   assert.ok(css.includes(".chain .block.off[data-category]"));
   assert.ok(css.includes("opacity:.68!important"));
 });
+
+test("Inline SVG glyphs use the category token even when legacy Editor CSS forces lime on the wrapper",()=>{
+  const iconStart=html.indexOf("function renderBlockIcon(blockId){");
+  const iconEnd=html.indexOf("\\nfunction ",iconStart+10);
+  assert.ok(iconStart>=0,"inline SVG icon renderer must remain in place");
+  assert.ok(iconEnd>iconStart,"inline SVG renderer should be a bounded function");
+  const renderer=html.slice(iconStart,iconEnd);
+  assert.ok(renderer.includes("return '<svg viewBox=\\"0 0 32 32\\""),"keep the existing inline SVG artwork renderer");
+  const directSvgRule="body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol svg";
+  assert.ok(css.includes(directSvgRule),"category colour must be assigned directly to the SVG element with sufficient specificity");
+  assert.ok(css.includes("color:var(--editor-category,var(--lime))!important;"),"SVG currentColor must resolve from the shared category token");
+  assert.ok(css.includes("fill:none!important;"),"preserve transparent outline artwork");
+  assert.ok(css.includes("stroke:currentColor!important;"),"SVG outlines must follow the category color");
+  assert.ok(css.includes("body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category]"),"bypass state must keep category identity");
+  assert.ok(css.includes("opacity:.68!important;"),"bypass must be dimmed without becoming monochrome");
+});
+
 test("Studio is restored to original Jamm & Record modes without Tone Analysis routes",()=>{
   assert.ok(html.includes('class="studio-fixed-header"'));
   assert.ok(html.includes('class="studio-mode-tabs"'));
