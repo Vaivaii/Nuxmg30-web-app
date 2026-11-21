@@ -959,6 +959,46 @@ const next='chatgpt';
   if(audioPollTimer)window.clearInterval(audioPollTimer);
   audioCaptureTimer=0;audioPollTimer=0;
  }
+ function decodePcm24Chunk(base64,channelCount){
+  if(typeof atob!=='function')throw new Error('Base64 decoding is unavailable in this WebView.');
+  const raw=atob(String(base64||''));
+  const bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+  const frameBytes=channelCount*3;
+  if(!frameBytes||bytes.length%frameBytes!==0)throw new Error('Native PCM chunk is not aligned to complete 24-bit audio frames.');
+  const frames=bytes.length/frameBytes;
+  const channels=Array.from({length:channelCount},()=>new Float32Array(frames));
+  for(let frame=0;frame<frames;frame++){
+   for(let channel=0;channel<channelCount;channel++){
+    const offset=frame*frameBytes+channel*3;
+    let sample=bytes[offset]|(bytes[offset+1]<<8)|(bytes[offset+2]<<16);
+    if(sample&0x800000)sample|=0xff000000;
+    channels[channel][frame]=sample/8388608;
+   }
+  }
+  return channels;
+ }
+ async function pumpLiveToneDsp(recorder){
+  if(!audioDspSession||audioDspPollBusy||!audioCaptureActive)return;
+  audioDspPollBusy=true;
+  try{
+   const chunk=await recorder.readToneAnalysisPcmChunk?.({offsetBytes:audioDspOffsetBytes,maxBytes:49152});
+   if(chunk&&Number(chunk.bytesRead)>0){
+    if(Number(chunk.offsetBytes)!==audioDspOffsetBytes)throw new Error('USB PCM stream offset changed; live DSP stopped to avoid a discontinuous measurement.');
+    const allChannels=decodePcm24Chunk(chunk.pcm24Base64,Number(chunk.channels)||audioDspSession.metadata.channelCount);
+    const selected=selectUsbInputChannels(allChannels,audioDspActiveMask,audioDspRequestedMask);
+    processToneDspChunk(audioDspSession,selected);
+    audioDspOffsetBytes=Number(chunk.nextOffsetBytes)||audioDspOffsetBytes+Number(chunk.bytesRead);
+   }
+   const live=getToneDspLiveSummary(audioDspSession);
+   if(ui.audioDspReadout){
+    ui.audioDspReadout.hidden=false;
+    ui.audioDspReadout.textContent='LOCAL DSP · '+live.spectralFrames+' FFT frames · RMS '+(live.rmsDbfs===null?'—':live.rmsDbfs.toFixed(1)+' dBFS')+' · Peak '+(live.samplePeakDbfs===null?'—':live.samplePeakDbfs.toFixed(1)+' dBFS');
+   }
+  }catch(error){
+   if(ui.audioDspReadout){ui.audioDspReadout.hidden=false;ui.audioDspReadout.textContent='LIVE DSP PAUSED · '+String(error?.message||error);}
+  }finally{audioDspPollBusy=false;}
+ }
  async function decodeToneAnalysisTake(take){
   if(!take?.path)throw new Error('The MG-30 USB capture did not produce an audio file.');
   const url=take.audioUrl||window.NUXStudioRecorder?.pathToUrl?.(take);
