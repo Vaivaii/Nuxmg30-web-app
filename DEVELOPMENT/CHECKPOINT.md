@@ -997,3 +997,74 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 ### Android runtime availability note — 2026-11-21
 - The current execution environment has no `adb` command or Android emulator binary, so no automated handset/emulator installation or screenshot capture could be performed here.
 - User handset screenshot comparison and real MG-30 Gen 2 hardware acceptance remain pending; no 90% visual score is claimed.
+
+
+## Chain Overview — Strict Master Replication — CI #1221 successful — 2026-11-21
+
+### Milestone state
+- Phase 4 remains **IN PROGRESS**.
+- Current milestone: **CHAIN OVERVIEW VISUAL APPROVAL — PENDING**.
+- This commit/build is implementation and package verification only. It is not a claim of 100% pixel match or owner approval.
+- User's master image `1001023663.png` is 1024 × 1536 px (2:3). The image supplies raster dimensions only; DPR, Android/WebView logical viewport, font scale and safe-area insets remain unknown. Do not infer them.
+- Full master composition and landmark bounds are documented in `docs/research/TIE_CHAIN_OVERVIEW_MASTER_VISUAL_SPEC_2026-11-21.md`.
+
+### Chain Overview implementation
+- Reworked only the Chain Overview presentation and related refresh feedback:
+  - Preset identity: inline SVG preset icon, preset name/slot/Scene, device identity/status, vertical divider and compact refresh button.
+  - Actual ordered effect blocks use shared Editor category SVGs and category colour tokens, with master-specific compact tile geometry, connector arrows, selected and bypass states.
+  - Selected Block header now presents SELECTED BLOCK + ON/BYPASS; block category/model/type/state information remains sourced from the selected snapshot, with local Editor amplifier/pedal artwork at the right.
+  - Replaced TIE-specific pseudo-knob renderer with the Editor rotary dial element vocabulary: `.knob`, `.dial-control`, `.dial`, `.dial-needle`, `.dial-cap`, `.knob-value`. The TIE dials are read-only and have no parameter write handler or slider role.
+  - Initial rail is five columns wide. Previous/next controls, horizontal swipe and scroll position dots/hint are included when the selected model exposes more than five parameter controls. Data and order remain model-driven; no control values or blocks are fabricated.
+  - Configuration Review remains a compact entry action into the existing separate page; its detail tabs were not redesigned in this milestone.
+  - Existing Jamm & Record/Tone Analysis workspace selector and five Tone Analysis destinations remain unchanged.
+- Refresh still calls the existing `MG30AIToneBridge.refreshSignalChainSnapshot()` → existing active preset reader. No device-write call was added.
+- Refresh now has a single-flight promise guard, updates the current snapshot only after successful readback, reports via the shared toast and keeps the live region off-screen. Failure leaves the last rendered snapshot/layout in place and reports the error through toast/live region.
+- Added `tie` to the existing toast allow-list as a narrow opt-in scope; default toast suppression remains in place.
+- No changes to original MG-30 Gen 2 protocol, MIDI CC map, preset codec/transfer, NAM transfer, IR User/Third Party import, IR Collection mapping, DSP/audio engine, Quick Record, DAW transport, loopback or device management.
+
+### Files changed in the Chain Overview milestone
+- `docs/research/TIE_CHAIN_OVERVIEW_MASTER_VISUAL_SPEC_2026-11-21.md` — full master-derived visual specification and measured landmark map.
+- `www/index.html` — preset card markup, Selected Block header, five-knob pager structure, toast scope and Signal Chain module cache key.
+- `www/tie-signal-chain-ui.js` — Editor-native read-only knob markup, parameter paging state and safe refresh behavior.
+- `www/studio-daw.css` — Chain Overview-only styling for preset identity, pedalboard, selected block/artwork, knob rail/paging and entry card. DAW and global Editor styling untouched.
+- `tests/tie-phase4-visual-reconstruction.test.js` — master-layout, read-only dial, parameter rail and refresh assertions.
+- `tests/tie-signal-chain-intelligence.test.js` — module cache contract.
+- `tests/ui-motion.test.js` — shared toast allow-list contract.
+- `tests/studio-daw-ui.test.js` was not changed; its existing Build #334 cascade invariant was preserved.
+
+### Commit sequence
+- `090f4338cb4250fd576ea22b7c8bcdd173e3754c` — added `docs/research/TIE_CHAIN_OVERVIEW_MASTER_VISUAL_SPEC_2026-11-21.md`.
+- `ba773d3150c0ba26aa401694141a6bf0d202db24` — initial Chain Overview master replication implementation.
+- `360b7c7389fba78aa5d6fafc980ff977e911f66f` — preserved Build #334 DAW CSS invariant (no new `display:none!important` token in appended master CSS), updated toast regression contract.
+- This checkpoint update is based on source commit `360b7c7389fba78aa5d6fafc980ff977e911f66f`.
+
+### CI and APK
+- Run #1220 / `44909307995` on `ba773d3`: JavaScript validation passed; tests failed 798/800. The two failures were:
+  1. Existing Build #334 DAW regression requires exactly one additional `display:none!important` rule in its final CSS cascade; new hidden pager rules had increased that count.
+  2. Existing toast regression still expected the previous allow-list; it did not include the new explicit `tie` scope.
+- Both were corrected without changing DAW behavior or general toast defaults.
+- Run #1221 / `44909540598` on `360b7c7`: conclusion **SUCCESS**.
+- JavaScript source validation: passed.
+- Full regression suite: **800 passed, 0 failed**.
+- Deterministic DSP fixture report: **23 passed, 0 failed**.
+- Capacitor Android project generation and USB audio plugin installation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 28s**.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14708879745`, archive size 4,452,039 bytes; archive SHA-256 `1576b5a87a1429eddfb65a644d572391c91aac7f170de6a0bf681cc48f4aa980`.
+- Extracted standalone APK: `MG30-Studio-Chain-Overview-Refinement.apk`, size 4,829,857 bytes; SHA-256 `e38eb61114c2d08c626dfbc656a190340ab5e8dc523358f2f31eae4becc852b3`.
+- APK bundle inspection found the parameter previous/next IDs, dots, preset divider, readback success toast copy and master-specific CSS/HTML in the packaged public bundle.
+- Build validates compilation, regression and package contents only; it does not render the app or replace Android handset acceptance.
+
+### Visual acceptance — pending
+- The master reference raster is 1024 × 1536. No Android runtime screenshot from this APK was captured in this environment, and no pixel overlay/difference image has yet been produced.
+- Therefore: **100% visual match is NOT claimed; no numerical pixel-similarity score is assigned**.
+- Next comparison requires a screenshot from this exact APK on the user's Android handset with runtime viewport/DPR/font-scale/safe-area recorded. Compare after raster normalization to 1024 × 1536; retain an overlay and difference image and list remaining mismatches by region.
+- User's Android screenshot remains the visual acceptance evidence. This environment previously had no `adb` command or Android emulator binary.
+- Original NUX MG-30 Gen 2 firmware 6.0.x hardware readback/refresh testing remains pending.
+
+### Next actions / acceptance gate
+1. User installs `MG30-Studio-Chain-Overview-Refinement.apk`, opens Studio → Tone Analysis → Chain and provides a full 1024 × 1536 portrait screenshot.
+2. Record runtime viewport, DPR, visualViewport scale, font/display scale and safe-area/system bar measurements.
+3. Create a normalized overlay and difference image, identify every visible mismatch and refine only Chain Overview.
+4. Test refresh on hardware: connected success, disconnected, read failure, rapid taps; confirm fixed card height and no device write.
+5. Verify original MG-30 Gen 2 firmware 6.0.x and confirm NAM/IR Collection/MIDI workflows remain intact.
+6. Do not redesign Configuration Review details or move to another milestone until the owner explicitly approves Chain Overview.
