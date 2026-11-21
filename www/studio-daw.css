@@ -3916,18 +3916,18 @@
 #page-studio .tie-chain-block.is-off{opacity:.69;filter:saturate(.78)}
 #page-studio .tie-chain-block.is-unknown{border-style:dashed}
 #page-studio .tie-chain-arrow{flex:0 0 8px;align-self:center;color:#9aaa88;font-size:12px;text-align:center}
-#page-studio .tie-block-WAH,#page-studio .tie-mini-WAH,#page-studio .tie-selected-category[data-category="WAH"]{--tie-category:var(--effect-category-wah)}
-#page-studio .tie-block-EFX,#page-studio .tie-mini-EFX,#page-studio .tie-selected-category[data-category="EFX"]{--tie-category:var(--effect-category-efx)}
-#page-studio .tie-block-SR,#page-studio .tie-mini-SR,#page-studio .tie-selected-category[data-category="S/R"]{--tie-category:var(--effect-category-sr)}
-#page-studio .tie-block-GATE,#page-studio .tie-mini-GATE,#page-studio .tie-selected-category[data-category="GATE"]{--tie-category:var(--effect-category-gate)}
-#page-studio .tie-block-AMP,#page-studio .tie-mini-AMP,#page-studio .tie-selected-category[data-category="AMP"]{--tie-category:var(--effect-category-amp)}
-#page-studio .tie-block-IR,#page-studio .tie-mini-IR,#page-studio .tie-selected-category[data-category="IR"]{--tie-category:var(--effect-category-ir)}
-#page-studio .tie-block-CMP,#page-studio .tie-mini-CMP,#page-studio .tie-selected-category[data-category="CMP"]{--tie-category:var(--effect-category-cmp)}
-#page-studio .tie-block-EQ,#page-studio .tie-mini-EQ,#page-studio .tie-selected-category[data-category="EQ"]{--tie-category:var(--effect-category-eq)}
-#page-studio .tie-block-MOD,#page-studio .tie-mini-MOD,#page-studio .tie-selected-category[data-category="MOD"]{--tie-category:var(--effect-category-mod)}
-#page-studio .tie-block-DLY,#page-studio .tie-mini-DLY,#page-studio .tie-selected-category[data-category="DLY"]{--tie-category:var(--effect-category-dly)}
-#page-studio .tie-block-RVB,#page-studio .tie-mini-RVB,#page-studio .tie-selected-category[data-category="RVB"]{--tie-category:var(--effect-category-rvb)}
-#page-studio .tie-block-VOL,#page-studio .tie-mini-VOL,#page-studio .tie-selected-category[data-category="VOL"]{--tie-category:var(--effect-category-vol)}
+#page-editor .chain .block[data-category="WAH"],#page-studio .tie-block-WAH,#page-studio .tie-mini-WAH,#page-studio .tie-selected-category[data-category="WAH"]{--tie-category:var(--effect-category-wah)}
+#page-editor .chain .block[data-category="EFX"],#page-studio .tie-block-EFX,#page-studio .tie-mini-EFX,#page-studio .tie-selected-category[data-category="EFX"]{--tie-category:var(--effect-category-efx)}
+#page-editor .chain .block[data-category="S/R"],#page-studio .tie-block-SR,#page-studio .tie-mini-SR,#page-studio .tie-selected-category[data-category="S/R"]{--tie-category:var(--effect-category-sr)}
+#page-editor .chain .block[data-category="GATE"],#page-studio .tie-block-GATE,#page-studio .tie-mini-GATE,#page-studio .tie-selected-category[data-category="GATE"]{--tie-category:var(--effect-category-gate)}
+#page-editor .chain .block[data-category="AMP"],#page-studio .tie-block-AMP,#page-studio .tie-mini-AMP,#page-studio .tie-selected-category[data-category="AMP"]{--tie-category:var(--effect-category-amp)}
+#page-editor .chain .block[data-category="IR"],#page-studio .tie-block-IR,#page-studio .tie-mini-IR,#page-studio .tie-selected-category[data-category="IR"]{--tie-category:var(--effect-category-ir)}
+#page-editor .chain .block[data-category="CMP"],#page-studio .tie-block-CMP,#page-studio .tie-mini-CMP,#page-studio .tie-selected-category[data-category="CMP"]{--tie-category:var(--effect-category-cmp)}
+#page-editor .chain .block[data-category="EQ"],#page-studio .tie-block-EQ,#page-studio .tie-mini-EQ,#page-studio .tie-selected-category[data-category="EQ"]{--tie-category:var(--effect-category-eq)}
+#page-editor .chain .block[data-category="MOD"],#page-studio .tie-block-MOD,#page-studio .tie-mini-MOD,#page-studio .tie-selected-category[data-category="MOD"]{--tie-category:var(--effect-category-mod)}
+#page-editor .chain .block[data-category="DLY"],#page-studio .tie-block-DLY,#page-studio .tie-mini-DLY,#page-studio .tie-selected-category[data-category="DLY"]{--tie-category:var(--effect-category-dly)}
+#page-editor .chain .block[data-category="RVB"],#page-studio .tie-block-RVB,#page-studio .tie-mini-RVB,#page-studio .tie-selected-category[data-category="RVB"]{--tie-category:var(--effect-category-rvb)}
+#page-editor .chain .block[data-category="VOL"],#page-studio .tie-block-VOL,#page-studio .tie-mini-VOL,#page-studio .tie-selected-category[data-category="VOL"]{--tie-category:var(--effect-category-vol)}
 #page-studio .tie-selected-block{margin:7px 0 10px;padding:11px 12px 10px;border:1px solid #3b493c;border-radius:13px;background:linear-gradient(145deg,#18211c,#111814);color:#e9f0e5}
 #page-studio .tie-selected-block .tie-chain-card-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #page-studio .tie-selected-block .tie-chain-card-heading>div>span{color:#9eaf95;font-size:7px;font-weight:850;letter-spacing:.12em}

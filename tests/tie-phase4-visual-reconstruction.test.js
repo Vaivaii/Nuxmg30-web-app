@@ -130,7 +130,7 @@ test("Reference first view selects the known AMP block while preserving manual b
 test("Editor and both TIE pedalboards share one category color token map",()=>{
   for(const [id,token] of [["WAH","wah"],["EFX","efx"],["S/R","sr"],["GATE","gate"],["AMP","amp"],["IR","ir"],["CMP","cmp"],["EQ","eq"],["MOD","mod"],["DLY","dly"],["RVB","rvb"],["VOL","vol"]]){
     assert.ok(html.includes("--effect-category-"+token+":"),"missing root color token for "+id);
-    assert.ok(html.includes('data-category="'+escapeHtmlForTest(id)+'"')||id==="S/R","Editor chain must identify "+id);
+    assert.ok(css.includes('#page-editor .chain .block[data-category="'+(id==="SR"?"S/R":id)+'"]'),"Editor category mapping must include "+id);
     const safe=id.replace(/[^a-z0-9]/gi,"");
     assert.ok(css.includes(".tie-block-"+safe),"missing Signal Chain Intelligence category style for "+id);
     assert.ok(css.includes(".tie-mini-"+safe),"missing Configuration Review mini-chain style for "+id);
