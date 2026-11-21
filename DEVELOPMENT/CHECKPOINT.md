@@ -1118,3 +1118,28 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 ### Project state
 - Application rollback is complete and build-verified.
 - No new feature work should begin after this rollback unless the owner gives a new direction.
+
+## Controlled rollback verification — 2026-11-21
+
+- Owner decision: **TONE INTELLIGENCE ENGINE — CANCELLED / DEFERRED**. No further TIE feature development is authorized.
+- Pre-TIE application baseline: `114305b7b927a8f63096e5760240b712ba4a7a9c`; first TIE application-code commit: `5292c7de40acd6a28305782aa782c97380cdb083`.
+- Recovery branch: `recovery/pre-tie-rollback-2026-11-21`, captured at pre-rollback HEAD `1c0371ec438dbc33094af14009263aabd4ea18f4`.
+- Controlled rollback commit: `c9c6c8907742382f3d87406793782f7b8344fa34`.
+- Follow-up test-only fix: `9db494480d8004b68660a5163a8f5766188e2784`.
+- Final verified branch HEAD at CI completion: `9db494480d8004b68660a5163a8f5766188e2784`.
+- CI run #1223: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44912486940 — **SUCCESS**.
+  - JavaScript syntax validation: PASS.
+  - Regression suite: **686 passed, 0 failed**.
+  - Capacitor Android project generation + USB audio plugin: PASS.
+  - Gradle `assembleDebug`: **BUILD SUCCESSFUL** (1m 31s).
+  - APK artifact: `MG30-Studio-debug-APK.zip`, artifact ID `14710164136`, 4,390,531 bytes.
+  - Artifact ZIP SHA-256: `51399d50427e6dfe79419f8d32f889671183587ca35da6c61eb6a471fd77e52a`.
+- Extracted APK: `MG30-Studio-Pre-TIE-Rollback.apk`, 4,767,220 bytes.
+  - APK SHA-256: `828c060acae764a6468ff3a28a750abc9705c599778e9aacca90e75b77d35aff`.
+  - APK package inspection: compiled `index.html`, JS and CSS contain no `tie-analyzer-ui.js`, `tie-dsp-engine`, `data-tie-page`, `Tone Analysis` or `setStudioWorkspace` references.
+  - Compiled Editor CSS includes all six required colors: WAH `#c47bea`, EFX `#31c6ec`, S/R `#e6c84a`, GATE `#36d7c7`, AMP `#ef5b58`, IR `#36cbdc`; the remaining category mappings are also retained.
+  - Compiled Studio HTML retains Jamm and Record labels and the original workspace container.
+- Repository tree audit: no `www/tie-*` runtime modules remain. Historical TIE specification and research documents are preserved and marked/identified as archive material.
+- Test correction: CI #1222 exposed a bad test assertion (it evaluated page-local `escapeHtml` in the Node test process). The test was corrected to compare the source expression; no application behavior changed. CI #1223 then passed all tests.
+- Scope limitation: this CI validates source/build/regression only. Physical Android runtime, connected audio/MIDI hardware, and original NUX MG-30 Gen 2 firmware 6.0.x were not available for acceptance testing. Do not claim device-level verification from CI.
+- Local workstation `git status` remains unverified because only the remote GitHub repository interface was available. No local working-tree files were altered by the remote branch update.
