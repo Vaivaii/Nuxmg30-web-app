@@ -1586,7 +1586,7 @@ test('AI assistant keeps only conversation scrollable with a pinned audio card a
 test('audio diagnosis marks the AI request complete or failed after the final chat response',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const request=source.slice(source.indexOf('async function requestAudioDiagnosis'),source.indexOf('async function finishAudioListening'));
- assert.match(request, /status\('Audio analysis complete\..*'success'\)/);
+ assert.match(request, /status\('AI interpretation complete\..*'success'\)/);
  assert.match(request, /status\('Audio analysis failed:.*'error'\)/);
 });
 
@@ -2481,5 +2481,5 @@ test('AI Live Tone composer has compact Send sizing and a viewport-aware auto-gr
  assert.ok(source.includes("ui.prompt.style.overflowY=contentHeight>maxHeight?'auto':'hidden'"));
  assert.ok(source.includes("window.visualViewport?.addEventListener('resize',resizeToneComposer"));
  assert.ok(source.includes('const clearToneComposer=()=>'));
- assert.ok(source.includes('maxLength="1400"'));
+ assert.ok(source.includes('maxlength="1400"'));
 });
