@@ -679,7 +679,7 @@ test('audio diagnosis marks the AI request complete or failed after the final ch
  assert.match(request, /status\('AI interpretation could not be completed\..*'error'\)/);
  assert.match(request, /normalizeAudioInterpretation/);
  assert.match(request, /FORMAT RETRY/);
- assert.match(request, /Your DSP result is preserved/);
+ assert.match(request, /The DSP result is preserved/);
  assert.match(request, /toAiToneDspPayload\(metrics,96\)/);
  assert.match(request, /You are NOT an audio measurement engine/);
  assert.match(request, /must NEVER calculate, estimate, replace, or invent/);
@@ -2474,12 +2474,12 @@ test('AI Live Tone Assistant keeps DSP result while showing friendly interpretat
 
 test('AI Live Tone composer has compact Send sizing and a viewport-aware auto-growing textarea',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
- assert.match(source,/\.ai-tone-send\{[^}]*height:56px;min-height:56px;[^}]*min-width:90px/);
- assert.match(source,/const resizeToneComposer=\\(\\)=>/);
- assert.match(source,/ui\.prompt\.style\.height='auto'/);
- assert.match(source,/ui\.prompt\.scrollHeight/);
- assert.match(source,/ui\.prompt\.style\.overflowY=contentHeight>maxHeight\?'auto':'hidden'/);
- assert.match(source,/window\.visualViewport\?\.addEventListener\('resize',resizeToneComposer/);
- assert.match(source,/const clearToneComposer=\\(\\)=>/);
- assert.match(source,/maxLength="1400"/);
+ assert.ok(source.includes('.ai-tone-send{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:90px;max-width:112px;height:56px;min-height:56px;'));
+ assert.ok(source.includes('const resizeToneComposer=()=>'));
+ assert.ok(source.includes("ui.prompt.style.height='auto'"));
+ assert.ok(source.includes('ui.prompt.scrollHeight'));
+ assert.ok(source.includes("ui.prompt.style.overflowY=contentHeight>maxHeight?'auto':'hidden'"));
+ assert.ok(source.includes("window.visualViewport?.addEventListener('resize',resizeToneComposer"));
+ assert.ok(source.includes('const clearToneComposer=()=>'));
+ assert.ok(source.includes('maxLength="1400"'));
 });
