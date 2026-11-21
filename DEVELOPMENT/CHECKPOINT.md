@@ -943,3 +943,46 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - No runtime screenshot from an Android emulator/handset was captured in CI. The 90% visual-fidelity threshold remains unscored until the installed APK is compared at Android portrait viewport against the supplied reference.
 - Hardware readback acceptance remains to be performed on original NUX MG-30 Gen 2 firmware 6.0.x.
 - No changes to protocol, MIDI CC mapping, preset transfer, NAM, IR User/Third Party/Collection, AI provider orchestration, DSP engine, Audio Engine, DAW, Quick Record or device-management paths.
+
+## UI/UX refinement — shared Editor/TIE category colors and compact preset identity — 2026-11-21
+
+### Implementation
+- Phase 4 remains **IN PROGRESS — UI/UX REFINEMENT**. No Phase 4 completion/acceptance claim is made.
+- Promoted the existing Phase 4 category palette to 12 root CSS design tokens in `www/index.html`: WAH, CMP, EFX, AMP, EQ, GATE, MOD, DLY, RVB, IR, S/R and VOL.
+- Editor Signal Chain blocks now expose their actual block category via a DOM data attribute. The shared category tokens are applied to Editor pedal borders, SVG icon strokes, labels, selected outlines and bypass states.
+- Signal Chain Intelligence and Configuration Review mini-pedals now read the same shared token map; category colours no longer originate from a separate Studio-only palette.
+- Selected Block category identity now includes the same original Editor SVG glyph via `window.MG30EditorBlockIcon`.
+- Replaced the large Read Active Preset toolbar + standalone visible status block with one compact horizontal Preset Identity card: preset icon, name/slot/Scene, device identity/status and a small readback action.
+- Local Draft, connected live readback, last device readback and unavailable states remain differentiated. Readback is still the existing read-only refresh path.
+
+### Files changed
+- `www/index.html`
+- `www/tie-signal-chain-ui.js`
+- `www/studio-daw.css`
+- `tests/tie-phase4-visual-reconstruction.test.js`
+- `DEVELOPMENT/CHECKPOINT.md` (this section)
+
+### Commits
+- `4f1b4290e36462a2e062f591130f40ab238565d3` — initial shared category tokens, compact preset card, selected category icon and tests.
+- `2692246c240e66a02199ba4010a1a7baf155122a` — bind shared category token selectors to the Editor Signal Chain and correct the test contract.
+- `8b2370a3c8c8f138a51aef7134811608fa0136e9` — preserve the existing disconnected-device status phrase required by a legacy regression assertion.
+- Latest source HEAD before this checkpoint update: `8b2370a3c8c8f138a51aef7134811608fa0136e9`.
+
+### CI history and current verification
+- Run #1217 / `44885587913` on `4f1b429`: failed at protocol regression tests; 793/795 passed. The two failures were an undefined helper in the new test and a legacy disconnected-status copy assertion.
+- Run #1218 / `44885654009` on `2692246`: failed at protocol regression tests; 794/795 passed. The remaining failure was only the legacy disconnected-status phrase.
+- Run #1219 / `44885753607` on `8b2370a`: JavaScript syntax validation, protocol regression tests and Capacitor/USB-audio project generation all report **SUCCESS**. Gradle `assembleDebug` was still **IN PROGRESS** at checkpoint time; no APK artifact is yet claimed.
+- No APK from #1217 or #1218 exists because those runs stopped before Android package generation.
+- Android handset/emulator screenshot comparison was not run. The 90% visual-fidelity target remains unscored.
+
+### Regression boundaries
+- No changes to original MG-30 Gen 2 firmware communication, MIDI CC mapping, preset codec/transfer, NAM transfer, IR User/Third Party import, IR Collection mapping, AI provider/fallback, DSP/audio engines, Quick Record, DAW, USB loopback or device management.
+- The Signal Chain and Configuration Review pages remain read-only for device data. No device writes were added.
+- Local working-tree status remains **NOT VERIFIED** through the remote GitHub interface.
+
+### Next actions
+1. Confirm CI #1219 Gradle build and artifact upload conclusion; capture test count and APK artifact metadata only after run completion.
+2. If successful, download and inspect the newly produced APK and update this checkpoint with APK size/hash.
+3. Install on Android and capture the requested portrait screens to compare against both supplied references. Do not claim 90% fidelity until screenshot comparison.
+4. Verify original MG-30 Gen 2 firmware 6.0.x readback, disconnected/local-draft state and preservation of NAM/IR/MIDI workflows on hardware.
+5. Continue remaining visual gaps without closing Phase 4 until the owner explicitly accepts it.
