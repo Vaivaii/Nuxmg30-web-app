@@ -1004,7 +1004,8 @@ async function init(){
  const conversationContextText=()=>dialogueContext.slice(-8).map(turn=>(turn.role==='user'?'User':'Assistant')+': '+turn.text).join('\\n');
  let audioMode='once',audioCaptureActive=false,audioBusy=false,audioCaptureTimer=0,audioPollTimer=0,audioCaptureStartedAt=0,lastAudioMetrics=null,audioDspSession=null,audioDspOffsetBytes=0,audioDspPollBusy=false,audioDspActiveMask=3,audioDspRequestedMask=3;
  const resizeToneComposer=()=>{
-  const viewportHeight=Math.max(280,Number(window.visualViewport?.height||window.innerHeight||600));
+  const visualViewport=window.visualViewport;
+  const viewportHeight=Math.max(280,Number(visualViewport?.height||window.innerHeight||600));
   const maxHeight=Math.max(88,Math.min(156,Math.floor(viewportHeight*0.26)));
   ui.prompt.style.maxHeight=maxHeight+'px';
   ui.prompt.style.height='auto';
@@ -1012,6 +1013,13 @@ async function init(){
   const target=Math.max(52,Math.min(maxHeight,contentHeight+1));
   ui.prompt.style.height=target+'px';
   ui.prompt.style.overflowY=contentHeight>maxHeight?'auto':'hidden';
+  const sheetHeight=Math.min(920,Math.max(280,Math.floor(viewportHeight*0.94)));
+  sheet.style.height=sheetHeight+'px';
+  sheet.style.maxHeight=viewportHeight+'px';
+  const keyboardInset=visualViewport
+   ?Math.max(0,Number(window.innerHeight||viewportHeight)-viewportHeight-(Number(visualViewport.offsetTop)||0))
+   :0;
+  sheet.style.bottom=keyboardInset+'px';
  };
  const clearToneComposer=()=>{
   ui.prompt.value='';
