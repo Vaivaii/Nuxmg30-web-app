@@ -4249,7 +4249,7 @@ body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category] .sym
   overscroll-behavior-x:contain!important;touch-action:pan-x!important;-webkit-overflow-scrolling:touch!important;
   scrollbar-width:none!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-chain-flow::-webkit-scrollbar{display:none!important}
+#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-chain-flow::-webkit-scrollbar{width:0!important;height:0!important}
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-chain-block{
   display:flex!important;flex:0 0 58px!important;width:58px!important;min-width:58px!important;
   max-width:58px!important;min-height:64px!important;height:64px!important;max-height:64px!important;
@@ -4356,18 +4356,17 @@ body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category] .sym
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-selected-parameters-heading>span{
   color:#c5ed69!important;font-size:8px!important;font-weight:900!important;letter-spacing:.08em!important;white-space:nowrap!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-selected-parameters-heading>small{display:none!important}
+
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-browser{
   display:grid!important;grid-template-columns:22px minmax(0,1fr) 22px!important;
   align-items:center!important;gap:7px!important;width:100%!important;min-width:0!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-nav{
+#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-nav:not([hidden]){
   display:grid!important;place-items:center!important;width:22px!important;height:22px!important;
   min-width:22px!important;min-height:22px!important;padding:0!important;border:1px solid #395053!important;
   border-radius:50%!important;background:linear-gradient(145deg,#14272b,#0e1c20)!important;
   color:#d9e6e3!important;font-size:18px!important;font-weight:500!important;line-height:1!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-nav[hidden]{display:none!important}
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-nav:disabled{opacity:.62!important}
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-knob-grid{
   display:grid!important;grid-auto-flow:column!important;grid-auto-columns:calc((100% - 32px)/5)!important;
@@ -4377,7 +4376,7 @@ body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category] .sym
   overscroll-behavior-x:contain!important;touch-action:pan-x!important;-webkit-overflow-scrolling:touch!important;
   scroll-snap-type:x proximity!important;scrollbar-width:none!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-knob-grid::-webkit-scrollbar{display:none!important}
+#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-knob-grid::-webkit-scrollbar{width:0!important;height:0!important}
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-knob-grid>.knob{
   display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
   width:100%!important;min-width:0!important;min-height:74px!important;margin:0!important;padding:0!important;
@@ -4432,11 +4431,10 @@ body>.app>#page-editor>.signal-chain-panel .chain .block.off[data-category] .sym
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-knob-grid .tie-knob-discrete .knob-value{
   color:#d5e5dc!important;font-size:8px!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-footer{
+#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-footer:not([hidden]){
   position:relative!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;
   min-height:15px!important;margin:2px 0 0!important;padding:0 3px!important;
 }
-#page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-footer[hidden]{display:none!important}
 #page-studio .tie-panel.tie-feature-page[data-tie-page-panel="signal-chain"] .tie-parameter-dots{
   position:absolute!important;left:50%!important;top:50%!important;display:flex!important;align-items:center!important;
   justify-content:center!important;gap:8px!important;transform:translate(-50%,-50%)!important;

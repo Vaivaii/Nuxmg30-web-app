@@ -170,6 +170,7 @@ test("Chain Overview uses Editor-native read-only rotary knob markup",()=>{
 test("Chain Overview parameter rail exposes five initial controls, arrows, swipe hint and position dots",()=>{
   assert.ok(html.includes('id="tieChainParameterPrev"'));
   assert.ok(html.includes('id="tieChainParameterNext"'));
+  assert.ok(html.includes('<div class="tie-selected-parameters-heading"><span>KEY PARAMETERS</span></div>'));
   assert.ok(html.includes('id="tieChainParameterDots"'));
   assert.ok(html.includes('id="tieChainSwipeHint"'));
   assert.ok(ui.includes("viewport.children.length>5"));
