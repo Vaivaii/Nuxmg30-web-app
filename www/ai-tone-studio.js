@@ -738,7 +738,61 @@ async function init(){
   }else if(activity)activity.remove();
  };
  const status=(text,state)=>{ui.status.textContent=text;ui.status.dataset.state=state||'idle';ui.status.setAttribute('aria-busy',state==='busy'?'true':'false');renderActivity();};
+ const renderAudioAnalysisCard=item=>{
+  const data=item.data||{},report=data.report||{},metrics=report.metrics||{},interpretation=data.interpretation||null;
+  const measuredAt=report.measuredAt?new Date(report.measuredAt).toLocaleString('id-ID'):'Waktu tidak tersedia';
+  const value=(number,unit='')=>number===null||number===undefined||!Number.isFinite(Number(number))?'—':String(number)+unit;
+  const cell=(label,number,unit,state,reason='')=>{
+   const copy=state==='measured'?value(number,unit):state==='estimated'?value(number,unit):'—';
+   const stateLabel=state==='measured'?'Measured':state==='estimated'?'Estimated':state==='unavailable'?'Unavailable':'Not measured';
+   return '<div class="ai-dsp-metric"><small>'+esc(label)+'</small><strong>'+esc(copy)+'</strong><span data-state="'+esc(state||'not_measured')+'">'+stateLabel+'</span>'+(reason?'<em>'+esc(reason)+'</em>':'')+'</div>';
+  };
+  const bins=Array.isArray(report.spectrum?.bins)?report.spectrum.bins:[];
+  const bars=[];
+  const validBins=bins.filter(row=>Number(row.frequencyHz)>=20&&Number(row.frequencyHz)<=Math.min(20000,Number(report.spectrum?.nyquistHz)||20000));
+  const count=64;
+  for(let i=0;i<count;i++){
+   const low=20*Math.pow(1000,i/count),high=20*Math.pow(1000,(i+1)/count);
+   const values=validBins.filter(row=>Number(row.frequencyHz)>=low&&Number(row.frequencyHz)<high).map(row=>Number(row.magnitudeDbfs)).filter(Number.isFinite);
+   const level=values.length?Math.max(...values):-120;
+   const height=Math.max(2,Math.min(100,((level+96)/96)*100));
+   bars.push('<i style="--dsp-bar-height:'+height.toFixed(1)+'%"></i>');
+  }
+  const bands=metrics.bandsPct||{};
+  const bandText=[['Sub-bass',bands.subBass],['Low',bands.low],['Low-mid',bands.lowMid],['Mid',bands.mid],['High-mid',bands.highMid],['High',bands.high]]
+   .filter(row=>Number.isFinite(Number(row[1]))).map(row=>'<span>'+esc(row[0])+' <b>'+esc(row[1])+'%</b></span>').join('');
+  const observations=Array.isArray(interpretation?.observations)?interpretation.observations:[];
+  const recommendations=Array.isArray(interpretation?.recommendations)?interpretation.recommendations:[];
+  const limitationRows=[...(Array.isArray(report.analysis?.limitations)?report.analysis.limitations:[]),...(Array.isArray(interpretation?.limitations)?interpretation.limitations:interpretation?.limitations?[interpretation.limitations]:[])];
+  const observationHtml=observations.map(row=>'<li><strong>'+esc(row.area||'Observation')+'</strong><span>'+esc(row.finding||'')+'</span>'+(row.evidence?'<small>Evidence: '+esc(row.evidence)+'</small>':'')+'</li>').join('');
+  const recommendationHtml=recommendations.map(row=>{
+   if(typeof row==='string')return '<li>'+esc(row)+'</li>';
+   const action=String(row.action||row.recommendation||row.text||'');
+   const target=row.target||row.parameter||row.area||'';
+   return '<li>'+(target?'<strong>'+esc(target)+': </strong>':'')+esc(action)+(row.reason?'<small>'+esc(row.reason)+'</small>':'')+(row.evidence?'<small>DSP evidence: '+esc(row.evidence)+'</small>':'')+'</li>';
+  }).join('');
+  return '<section class="ai-dsp-result-card">'+
+   '<header class="ai-dsp-result-head"><div class="ai-dsp-result-icon">∿</div><div><strong>DSP Analysis Result</strong><small>'+esc(measuredAt)+' · '+esc(report.source?.durationSeconds??report.durationSeconds??'—')+' s capture</small></div><span>LOCAL DSP</span></header>'+
+   '<section class="ai-dsp-section"><h4>Key Measurements</h4><div class="ai-dsp-grid">'+
+    cell('RMS Level',metrics.rmsDbfs,' dBFS','measured')+
+    cell('Sample Peak',metrics.samplePeakDbfs,' dBFS','measured')+
+    cell('Crest Factor',metrics.crestFactorDb,' dB','measured')+
+    cell('Noise Floor',null,'','unavailable',metrics.noiseFloor?.reason||'No validated estimator')+
+    cell('Dynamic Range',null,'','not_measured',metrics.dynamicRange?.reason||'Not measured')+
+    cell('Latency',null,'','not_measured',metrics.latency?.reason||'Not measured')+
+   '</div><div class="ai-dsp-clipping" data-clipped="'+String(Boolean(metrics.clipping?.detected))+'"><span>Clipping detection</span><strong>'+(metrics.clipping?.detected?'Detected · '+Number(metrics.clipping.sampleCount||0)+' samples':'Not detected')+'</strong><small>Sample threshold '+esc(metrics.clipping?.threshold??0.999)+'</small></div></section>'+
+   '<section class="ai-dsp-section"><div class="ai-dsp-section-title"><h4>Spectrum Analysis</h4><span>'+esc(report.spectrum?.status==='measured'?'Measured FFT':'Unavailable')+'</span></div>'+
+    '<div class="ai-dsp-spectrum" role="img" aria-label="Measured FFT spectrum from MG-30 USB Audio">'+(bars.length?bars.join(''):'<span>Spectrum unavailable</span>')+'</div>'+
+    '<div class="ai-dsp-spectrum-axis"><span>20 Hz</span><span>160 Hz</span><span>630 Hz</span><span>2.5 kHz</span><span>10 kHz</span><span>'+esc(Math.round(Number(report.spectrum?.nyquistHz)||0))+' Hz</span></div>'+
+    '<div class="ai-dsp-band-list">'+bandText+'</div>'+
+    '<small class="ai-dsp-spectrum-note">Centroid '+esc(value(metrics.spectralCentroidHz,' Hz'))+' · 85% roll-off '+esc(value(metrics.rolloff85Hz,' Hz'))+' · '+esc(report.analysis?.fftFrames??0)+' FFT frames</small></section>'+
+   '<section class="ai-dsp-section"><h4>AI Interpretation</h4>'+(interpretation?'<p class="ai-dsp-summary">'+esc(interpretation.summary||'No summary returned.')+'</p>'+(observationHtml?'<ul class="ai-dsp-observations">'+observationHtml+'</ul>':''):'<p class="ai-dsp-summary">'+esc(data.aiError||'AI interpretation has not been requested. DSP measurements are available locally.')+'</p>')+'</section>'+
+   '<section class="ai-dsp-recommendations"><h4>✦ Recommendations</h4>'+(recommendationHtml?'<ul>'+recommendationHtml+'</ul>':'<p>No AI recommendations available.</p>')+'</section>'+
+   (limitationRows.length?'<section class="ai-dsp-limitations"><strong>Measurement & interpretation limits</strong><ul>'+limitationRows.map(row=>'<li>'+esc(row)+'</li>').join('')+'</ul></section>':'')+
+   '</section>';
+ };
  const renderNamChatCard=item=>{
+  if(item.type==='audio-analysis')return renderAudioAnalysisCard(item);
   const data=item.data||{},cardId=esc(data.cardId||'');
   if(item.type==='nam-profiles'){
    const rows=Array.isArray(data.tones)?data.tones:[];
