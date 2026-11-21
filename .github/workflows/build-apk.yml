@@ -33,7 +33,6 @@ on:
       - feature/worker-ai-nam-query-routing
       - fix/no-nam-specialist-provider-order
       - feature/tone-context-proposal-first
-      - feature/tone-intelligence-engine
       - feature/chatgpt-siwc-android
       - fix/ir-user-cut-scene-sync
       - release/mg30-studio-final-polish
@@ -42,6 +41,7 @@ on:
       - feature/editor-fixed-model-frame-scene-anchor
       - fix/editor-model-caption-visibility
       - fix/global-english-android-back
+      - feature/tone-intelligence-engine
     paths:
       - 'www/**'
       - 'tests/**'
@@ -94,5 +94,3 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
-
-# TIE Phase 1 final-HEAD verification trigger.

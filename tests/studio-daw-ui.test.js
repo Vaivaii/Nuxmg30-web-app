@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../www/studio-daw.css', import.meta.url), 'utf8');
-const shellCss = readFileSync(new URL('../www/ui-redesign.css', import.meta.url), 'utf8');
 const core = readFileSync(new URL('../www/studio-daw-core.js', import.meta.url), 'utf8');
 const daw = readFileSync(new URL('../www/studio-daw.js', import.meta.url), 'utf8');
 const main = readFileSync(new URL('../www/main.js', import.meta.url), 'utf8');
@@ -57,17 +56,6 @@ test('Studio title and three mode tabs follow the approved mockup hierarchy', ()
   assert.ok(css.includes('#page-studio .studio-daw-hero h2{'));
   assert.ok(css.includes('grid-template-columns:repeat(3,minmax(0,1fr))'));
   assert.ok(css.includes('min-height:42px!important'));
-});
-
-test('Studio exposes the TIE workspace shell and five empty-state sections', () => {
-  assert.ok(html.includes('data-studio-workspace="jam-record"'));
-  assert.ok(html.includes('data-studio-workspace="tone-analysis"'));
-  for (const page of ['analyzer', 'compare', 'signal-chain', 'intelligence', 'ai-consultant']) {
-    assert.ok(html.includes('data-tie-page="' + page + '"'), 'missing TIE tab: ' + page);
-    assert.ok(html.includes('data-tie-page-panel="' + page + '"'), 'missing TIE page: ' + page);
-  }
-  assert.ok(daw.includes('function setStudioWorkspace(workspace)'));
-  assert.ok(daw.includes('function setTiePage(page)'));
 });
 
 test('Studio transport remains available and Mixer is rendered on its dedicated page', () => {
@@ -194,7 +182,7 @@ test('timeline canvas extends as the playhead advances beyond the initial bars',
 
 
 test('Jam and Record modes explicitly hide the entire DAW workspace', () => {
-  assert.ok(daw.includes("studio?.querySelectorAll('[data-studio-mode-panel]')"));
+  assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
   assert.ok(daw.includes("panel.style.setProperty('display', active ? (panel.id === 'studio-daw-workspace' ? 'flex' : 'block') : 'none', 'important')"));
   assert.ok(css.includes('#page-studio #studio-daw-workspace[hidden]{display:none!important}'));
 });
@@ -408,7 +396,7 @@ test('Studio Timeline uses the inset-adjusted WebView viewport and measured dock
   assert.ok(daw.includes('document.documentElement.clientHeight || window.innerHeight || 0'));
   assert.ok(daw.includes('const pageRect = studioPage.getBoundingClientRect()'));
   assert.ok(daw.includes('const panelRect = timelinePanel.getBoundingClientRect()'));
-  assert.ok(daw.includes('pageScrollTop: contentScroll?.scrollTop ?? studioPage.scrollTop'));
+  assert.ok(daw.includes('pageScrollTop: studioPage.scrollTop'));
   assert.ok(daw.includes('window.visualViewport?.addEventListener(\'resize\', syncStudioPinnedControls'));
   assert.ok(daw.includes("studioPage.style.setProperty('--studio-viewport-height'"));
   assert.ok(daw.includes("workspace.style.setProperty('--studio-workspace-bottom-reserve'"));
@@ -418,13 +406,13 @@ test('Studio Timeline uses the inset-adjusted WebView viewport and measured dock
   assert.ok(css.includes('min-height:calc(var(--studio-viewport-height,100dvh) - 430px)!important'));
 });
 
-test('Studio navigation is a persistent shell above the single scrolling content area', () => {
-  assert.ok(shellCss.includes('#page-studio > .studio-page-heading{'));
-  assert.ok(shellCss.includes('#page-studio > .studio-workspace-tabs{'));
-  assert.ok(shellCss.includes('#page-studio > .studio-mode-tabs,'));
-  assert.ok(shellCss.includes('#page-studio > .tie-subnav'));
-  assert.ok(shellCss.includes('overflow-y:auto!important'));
-  assert.ok(shellCss.includes('overscroll-behavior-y:contain!important'));
+test('Jam / Record / DAW tabs remain pinned to the Studio scroll region below the fixed app header', () => {
+  assert.ok(css.includes('#page-studio>.studio-page-hero.studio-daw-hero{'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(css.includes('#page-studio>.studio-mode-tabs{'));
+  assert.ok(css.includes('top:0!important'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('z-index:205!important'));
   assert.ok(!daw.includes("const appHeader = document.querySelector('.top')"));
 });
 
@@ -459,11 +447,12 @@ test('Studio dock geometry is recalculated after selecting Studio from the main 
 });
 
 
-test('Studio shell header and workspace selectors are static siblings of the content scroller', () => {
-  assert.ok(shellCss.includes('#page-studio > .studio-page-heading > .studio-page-hero{'));
-  assert.ok(shellCss.includes('#page-studio > .studio-workspace-tabs{'));
-  assert.ok(shellCss.includes('position:relative!important'));
-  assert.ok(shellCss.includes('#page-studio .studio-content-scroll{'));
+test('Build 316: Studio mode tabs stick to the Studio scroll region, not the app header offset', () => {
+  assert.ok(css.includes('#page-studio>.studio-mode-tabs{'));
+  assert.ok(css.includes('top:0!important'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('#page-studio>.studio-page-hero.studio-daw-hero{'));
+  assert.ok(css.includes('position:relative!important'));
   assert.ok(!daw.includes("const appHeader = document.querySelector('.top')"));
   assert.ok(!daw.includes('studio-mode-tabs-top'));
 });
@@ -522,43 +511,27 @@ test('Build 321: Mixer fader is centered independently of the right-side VU mete
 });
 
 
-test('Studio hierarchy is header, workspace selector, section selector, then one content scroller', () => {
-  const start = html.indexOf('<section id="page-studio"');
-  const end = html.indexOf('<section id="page-device"', start);
-  const studioHtml = html.slice(start, end);
-  const header = studioHtml.indexOf('class="studio-page-heading"');
-  const workspace = studioHtml.indexOf('class="studio-workspace-tabs"');
-  const modes = studioHtml.indexOf('class="studio-mode-tabs"');
-  const tieNav = studioHtml.indexOf('class="tie-subnav"');
-  const content = studioHtml.indexOf('id="studioContentScroll"');
-  assert.ok(start >= 0 && end > start);
-  assert.ok(header >= 0 && header < workspace);
-  assert.ok(workspace < modes && modes < tieNav && tieNav < content);
-  assert.ok(!studioHtml.includes('class="studio-fixed-header"'));
-  assert.ok(!studioHtml.includes('class="tie-workspace-heading"'));
+test('Build 327: Studio title and Jam / Record / DAW selector share one pinned header wrapper', () => {
+  assert.match(html, /<section id="page-studio"[^>]*>[\s\S]*?<div class="studio-fixed-header">[\s\S]*?class="hero studio-page-hero studio-daw-hero"[\s\S]*?class="studio-mode-tabs"[\s\S]*?<\/div>\s*<div class="studio-mode-panel"/);
+  assert.ok(css.includes('#page-studio > .studio-fixed-header{'));
+  assert.ok(css.includes('position:sticky!important'));
+  assert.ok(css.includes('top:0!important'));
+  assert.ok(css.includes('z-index:230!important'));
 });
 
-test('Studio scroll shell encloses both Tone Analysis and all Jam / Record / DAW content', () => {
-  const studioStart = html.indexOf('<section id="page-studio"');
-  const studioEnd = html.indexOf('<section id="page-device"', studioStart);
-  const studioHtml = html.slice(studioStart, studioEnd);
-  const scrollStart = studioHtml.indexOf('<div id="studioContentScroll"');
-  const tieStart = studioHtml.indexOf('<section id="studio-tone-analysis-workspace"');
-  const dawStart = studioHtml.indexOf('id="studio-daw-workspace"');
-  const scrollEnd = studioHtml.indexOf('</div>\n</section>', dawStart);
-  assert.ok(scrollStart >= 0 && tieStart > scrollStart);
-  assert.ok(dawStart > tieStart);
-  assert.ok(scrollEnd > dawStart);
-  assert.ok(studioHtml.indexOf('<dialog id="dawStemDialog"') > scrollEnd);
-  assert.ok(daw.includes("pageScrollTop: contentScroll?.scrollTop ?? studioPage.scrollTop"));
-  assert.ok(daw.includes("studio?.querySelectorAll('[data-studio-mode-panel]')"));
+test('Build 327: Studio hero and mode tabs are not independently sticky or scrollable', () => {
+  assert.ok(css.includes('#page-studio > .studio-fixed-header > .studio-page-hero{'));
+  assert.ok(css.includes('#page-studio > .studio-fixed-header > .studio-mode-tabs{'));
+  assert.ok(css.includes('position:relative!important'));
+  assert.ok(css.includes('flex:0 0 auto!important'));
+  assert.ok(css.includes('background:#0b1012!important'));
 });
 
 test('Build 327: Studio mode panels remain after the pinned header and retain independent mode visibility', () => {
   assert.ok(html.includes('data-studio-mode-panel="jam"'));
   assert.ok(html.includes('data-studio-mode-panel="record"'));
   assert.ok(html.includes('data-studio-mode-panel="daw"'));
-  assert.ok(daw.includes("studio?.querySelectorAll('[data-studio-mode-panel]')"));
+  assert.ok(daw.includes("studio?.querySelectorAll(':scope > [data-studio-mode-panel]')"));
 });
 
 
@@ -715,7 +688,7 @@ test('DAW timeline toolbar buttons fit beside the clock without overlapping Sect
   assert.ok(daw.includes('.daw-section-menu-panel{left:auto!important;right:0!important;width:min(225px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;box-sizing:border-box!important}'));
   assert.ok(css.includes('flex:0 0 26px!important;width:26px!important;min-width:26px!important;height:34px!important;min-height:34px!important'));
   assert.ok(css.includes('gap:3px!important;min-width:0!important'));
-  assert.ok(html.includes('studio-daw.css?v=studio-scroll-shell-1'));
+  assert.ok(html.includes('studio-daw.css?v=compact-daw-5'));
   assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
   assert.equal((html.match(/id="daw(?:Undo|Redo|CursorStart|CursorEnd|NudgeLeft|NudgeRight)"/g)||[]).length,6);
 });
@@ -765,7 +738,7 @@ test('Compact DAW toolbar places history/navigation beside the clock and retains
   assert.ok(daw.includes('max-height:min(64vh,460px)!important'));
   assert.ok(daw.includes('#page-studio .daw-toolbar-fade-control{grid-template-columns:repeat(2,minmax(0,1fr))'));
   assert.ok(daw.includes('#page-studio .daw-quick-toolbar{gap:5px!important;padding:7px!important}'));
-  assert.ok(html.includes('studio-daw.css?v=studio-scroll-shell-1'));
+  assert.ok(html.includes('studio-daw.css?v=compact-daw-5'));
   const sectionStart = toolbar.indexOf('class="daw-action-menu daw-section-menu"');
   const sectionEnd = toolbar.indexOf('</details>', sectionStart);
   const section = toolbar.slice(sectionStart, sectionEnd);

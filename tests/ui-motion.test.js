@@ -49,7 +49,7 @@ test('reduced-motion preference disables app-wide motion', () => {
 });
 
 test('shared stylesheet cache token is bumped for the motion layer', () => {
-  assert.ok(html.includes('ui-redesign.css?v=studio-shell-refine-1'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
   assert.ok(!html.includes('ui-redesign.css?v=stable-ui-1'));
 });
 
@@ -204,8 +204,8 @@ test('IMAGE-based AMP and EFX keep artwork badge and Based on, but hide only cap
   assert.ok(!display.includes('return getModelBaseName(name)'));
   assert.ok(html.includes('MODEL_BASED_ON'));
 });
-test('floating toast is suppressed by default and opt-in only for preset, NAM, IR and TIE refresh',()=>{
-  assert.ok(html.includes("function toast(s,duration=1900,scope=''){if(!['preset','nam','ir','tie'].includes(scope))return;"));
+test('floating toast is suppressed by default and opt-in only for preset, NAM and IR synchronization',()=>{
+  assert.ok(html.includes("function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;"));
   assert.match(html,/toast\('Preset tersimpan; urutan signal chain diverifikasi',1900,'preset'\)/);
   assert.match(html,/toast\('Nama 10 slot NAM disinkronkan dari MG-30',1900,'nam'\)/);
   assert.match(html,/toast\('Preset imported and all three scenes verified',1900,'preset'\)/);

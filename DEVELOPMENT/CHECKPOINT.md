@@ -1,5 +1,8 @@
 # TIE Development Checkpoint
 
+> **CURRENT DECISION: CANCELLED / DEFERRED — 21 November 2026.** The TIE application implementation has been rolled back. All implementation notes below are historical audit records and are superseded by the controlled rollback report. The only retained TIE-era product change is the colourful Editor Signal Chain.
+
+
 ## Project
 
 MG30 Studio — Tone Intelligence Engine (TIE)
@@ -15,7 +18,7 @@ MG30 Studio — Tone Intelligence Engine (TIE)
 
 ## Current Phase
 
-**Phase 4 — Signal Chain Intelligence: read-only implementation delivered; automated regression suite passed in CI run #1200, with latest HEAD build run #1202 pending at checkpoint time. Physical MG-30 readback acceptance remains pending.**
+**CANCELLED / DEFERRED — owner decision 21 November 2026.** All earlier phase entries are historical and no further TIE implementation is authorized.
 
 The audit report is `docs/research/TIE_PHASE0_REPOSITORY_AUDIT_2026-11-20.md`. It records evidence, reusable modules, gaps, risks, likely files and recommended order. Read it before starting Phase 1.
 

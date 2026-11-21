@@ -183,7 +183,7 @@ test('IR Collection outer frame is a bounded flex column containing the inner sc
 });
 
 test('Community .23 WebView cache tokens are advanced for both corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=studio-shell-refine-1'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
   assert.ok(html.includes('preset-library-ui.css?v=card-v5'));
 });
 
@@ -232,7 +232,7 @@ test('IR Collection uses a bounded flex chain and a sibling fade without changin
 });
 
 test('Community .23 cache tokens point to the corrected layout stylesheets', () => {
-  assert.ok(html.includes('ui-redesign.css?v=studio-shell-refine-1'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
   assert.ok(html.includes('preset-library-ui.css?v=card-v5'));
 });
 

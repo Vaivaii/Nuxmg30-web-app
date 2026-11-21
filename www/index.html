@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="stylesheet" href="./studio-daw.css?v=studio-scroll-shell-1&phase4=3"><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title><link rel="stylesheet" href="./ctrl-editor.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1012"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="MG30 Studio — NUX MG-30 editor, USB audio recording, Camera2 video capture."><link rel="stylesheet" href="./studio-daw.css?v=compact-daw-5"><link rel="icon" type="image/svg+xml" href="./assets/mg30-studio-icon.svg"><title>MG30 Studio · NUX MG-30</title><link rel="stylesheet" href="./ctrl-editor.css">
 <style>
-:root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px;--effect-category-wah:#c47bea;--effect-category-cmp:#e3a84d;--effect-category-efx:#31c6ec;--effect-category-amp:#ef5b58;--effect-category-eq:#98c95b;--effect-category-gate:#36d7c7;--effect-category-mod:#6ea6ee;--effect-category-dly:#d78c58;--effect-category-rvb:#a68ce7;--effect-category-ir:#36cbdc;--effect-category-sr:#e6c84a;--effect-category-vol:#b5c2cb}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.signal-chain-panel .panel-head{align-items:flex-start}.signal-chain-copy{min-width:0;flex:1}.signal-chain-copy h3{font-size:16px;letter-spacing:-.25px}.signal-chain-copy p{max-width:440px;font-size:12px;line-height:1.45}.chain-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.chain-edit-toggle{min-width:82px;min-height:38px;padding:8px 10px;font-size:12px;font-weight:750;letter-spacing:0;white-space:nowrap}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;scrollbar-width:thin;scrollbar-color:#3b4930 transparent}.block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer;touch-action:pan-x;user-select:none;-webkit-user-select:none}.chain.reorder-mode .block{cursor:default;touch-action:pan-x;padding-top:40px;min-height:122px}.chain.reorder-mode .block:active{cursor:default}.block .drag-handle{position:absolute;right:6px;top:6px;display:flex;align-items:center;justify-content:center;height:25px;padding:0 6px;border:1px solid #3a4334;border-radius:7px;background:#20291b;color:var(--lime);font-size:10px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:grab;z-index:2;user-select:none;-webkit-user-select:none}.block .drag-handle:active{cursor:grabbing}.block.drop-target{border-color:var(--lime);box-shadow:0 0 0 2px #c5f36b55}.block.dragging{opacity:.22!important;transform:none!important;filter:saturate(.4);border-style:dashed;pointer-events:none}.block.drag-ghost{position:fixed!important;z-index:9999!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.03)!important;filter:none!important;box-shadow:0 18px 42px #0008,0 0 0 2px #c5f36b99!important;border-color:var(--lime)!important;transition:none!important;cursor:grabbing!important}.chain.reorder-mode .block.selected{border-color:var(--lime)}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.signal-chain-panel .panel-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.signal-chain-copy p{max-width:none;font-size:11px}.chain-head-actions{width:100%;justify-content:space-between}.chain-edit-toggle{min-width:88px;min-height:40px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}.chain-head-actions{gap:6px}.chain-edit-toggle{min-width:84px;padding:7px 9px}.signal-chain-panel .chip{font-size:10px;padding:6px 8px}}
+:root{color-scheme:dark;--bg:#0b0d0b;--panel:#141714;--panel2:#1b2019;--line:#2b3329;--text:#eff3e9;--muted:#8c9785;--lime:#c5f36b;--orange:#ffbd69;--radius:17px;--effect-category-wah:#c47bea;--effect-category-cmp:#e3a84d;--effect-category-efx:#31c6ec;--effect-category-amp:#ef5b58;--effect-category-eq:#98c95b;--effect-category-gate:#36d7c7;--effect-category-mod:#6ea6ee;--effect-category-dly:#d78c58;--effect-category-rvb:#a68ce7;--effect-category-ir:#36cbdc;--effect-category-sr:#e6c84a;--effect-category-vol:#b5c2cb;}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -10%,#283522 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{max-width:1200px;margin:auto;padding:16px 14px 34px}.top,.brand,.actions,.hero,.panel-head,.row,.block-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.top{margin-bottom:18px}.brand{justify-content:flex-start}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--lime);color:#11160b;font-weight:950}.brand h1{margin:0;font-size:18px;letter-spacing:-.6px}.brand p{margin:2px 0 0;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase}.pill,.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:6px}.btn{border:1px solid var(--line);background:#1b2019;color:var(--text);padding:10px 12px;border-radius:11px;font-weight:650;cursor:pointer}.btn:active{transform:scale(.98)}.btn.primary{background:var(--lime);border-color:var(--lime);color:#12170c}.btn.ghost{background:transparent}.nav{display:flex;gap:7px;overflow:auto;margin-bottom:16px}.nav button{white-space:nowrap;border:1px solid var(--line);background:#111410;color:var(--muted);padding:9px 13px;border-radius:10px}.nav button.active{color:var(--lime);border-color:#627d3b;background:#c5f36b0e}.hero{align-items:flex-end;margin:8px 2px 16px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:800;text-transform:uppercase}.hero h2{font-size:clamp(24px,5vw,34px);letter-spacing:-1.2px;margin:4px 0}.hero p{color:var(--muted);margin:0;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat,.panel,.block-card,.control{border:1px solid var(--line);background:linear-gradient(145deg,#171b16,#111410);border-radius:var(--radius)}.stat{padding:13px}.stat small{display:block;color:var(--muted);font-size:10px}.stat strong{display:block;font-size:18px;margin-top:4px}.panel{padding:15px;margin-bottom:14px}.panel-head{margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.signal-chain-panel .panel-head{align-items:flex-start}.signal-chain-copy{min-width:0;flex:1}.signal-chain-copy h3{font-size:16px;letter-spacing:-.25px}.signal-chain-copy p{max-width:440px;font-size:12px;line-height:1.45}.chain-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.chain-edit-toggle{min-width:82px;min-height:38px;padding:8px 10px;font-size:12px;font-weight:750;letter-spacing:0;white-space:nowrap}.chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;scrollbar-width:thin;scrollbar-color:#3b4930 transparent}.block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;border:1px solid #30382b;background:#171b15;color:var(--text);border-radius:13px;padding:11px;cursor:pointer;touch-action:pan-x;user-select:none;-webkit-user-select:none}.chain.reorder-mode .block{cursor:default;touch-action:pan-x;padding-top:40px;min-height:122px}.chain.reorder-mode .block:active{cursor:default}.block .drag-handle{position:absolute;right:6px;top:6px;display:flex;align-items:center;justify-content:center;height:25px;padding:0 6px;border:1px solid #3a4334;border-radius:7px;background:#20291b;color:var(--lime);font-size:10px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:grab;z-index:2;user-select:none;-webkit-user-select:none}.block .drag-handle:active{cursor:grabbing}.block.drop-target{border-color:var(--lime);box-shadow:0 0 0 2px #c5f36b55}.block.dragging{opacity:.22!important;transform:none!important;filter:saturate(.4);border-style:dashed;pointer-events:none}.block.drag-ghost{position:fixed!important;z-index:9999!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.03)!important;filter:none!important;box-shadow:0 18px 42px #0008,0 0 0 2px #c5f36b99!important;border-color:var(--lime)!important;transition:none!important;cursor:grabbing!important}.chain.reorder-mode .block.selected{border-color:var(--lime)}.block.selected{border-color:var(--lime);box-shadow:0 0 0 1px #c5f36b25}.block.off{opacity:.45}.block small{display:block;color:var(--muted);font-size:9px}.block b{display:block;font-size:12px;margin:7px 0 3px}.block .symbol{font-size:20px;color:var(--lime)}.editor{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.control{padding:15px;min-width:0}.row{margin:10px 0;justify-content:flex-start}.row label{font-size:11px;color:var(--muted);min-width:68px}.row select,.row input[type=text]{flex:1;min-width:0;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 10px;margin-top:16px}.knob{text-align:center;min-width:0}.dial{width:66px;height:66px;border-radius:50%;margin:0 auto 8px;background:conic-gradient(var(--lime) var(--fill,45%),#30382b 0);display:grid;place-items:center;position:relative}.dial:before{content:"";position:absolute;inset:6px;border-radius:50%;background:#151913;border:1px solid #343d2e}.dial b{z-index:1;font-size:13px}.knob label{display:block;color:#c3cbbb;font-size:10px}.knob input{width:100%;accent-color:var(--lime);margin-top:8px}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:12px;color:#c5cdbd}.switch{accent-color:var(--lime);width:19px;height:19px}.notice{border:1px solid #5b4828;background:#241e13;color:#dbc99e;border-radius:12px;padding:12px;font-size:11px;margin-top:12px}.notice b{color:var(--orange)}.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.preset:last-child{border:0}.preset p{margin:3px 0 0;color:var(--muted);font-size:10px}.preset strong{font-size:12px}.preset-actions{display:flex;gap:6px}.empty{padding:20px 0;color:var(--muted);font-size:12px}.hidden{display:none!important}.footer{text-align:center;color:#687360;font-size:10px;padding:10px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;background:var(--lime);color:#10150b;padding:11px 15px;border-radius:10px;font-weight:750;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:720px){.app{padding:12px 10px 26px}.editor{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero .btn{width:100%}.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:15px}.panel{padding:12px}.control{padding:12px}.signal-chain-panel .panel-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.signal-chain-copy p{max-width:none;font-size:11px}.chain-head-actions{width:100%;justify-content:space-between}.chain-edit-toggle{min-width:88px;min-height:40px}.block{flex-basis:92px}.pill{font-size:9px;padding:7px}.knobs{gap:14px 8px}}@media(max-width:380px){.brand h1{font-size:16px}.actions .btn{padding:8px;font-size:11px}.dial{width:58px;height:58px}.chain-head-actions{gap:6px}.chain-edit-toggle{min-width:84px;padding:7px 9px}.signal-chain-panel .chip{font-size:10px;padding:6px 8px}}
 .slot-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.slot-picker label{font-size:10px;color:var(--muted);font-weight:800}.slot-picker select{min-width:80px;background:#1b2019;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.slot-buttons{display:flex;gap:7px}.slot-btn{width:42px;height:40px;border:1px solid var(--line);background:#1b2019;color:var(--muted);border-radius:10px;font-weight:800}.slot-btn.active{background:var(--lime);border-color:var(--lime);color:#11160b}.slot-note{margin:12px 0 0;color:var(--muted);font-size:10px}
 /* MG30 Studio native-app UI; isolated to the APK web bundle. */
 .studio-app-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
@@ -172,7 +172,7 @@
 #connectMidi.usb-connect-btn.is-connecting{color:var(--lime);border-color:#849e4b;animation:mg30-usb-pulse .75s ease-in-out infinite alternate}
 @keyframes mg30-usb-pulse{from{opacity:.48}to{opacity:1}}
 @media(max-width:390px){.usb-header-status{min-width:64px}.usb-header-status strong,.usb-header-status small{font-size:9px}#connectMidi.usb-connect-btn{width:40px;height:40px;min-width:40px;min-height:40px;border-radius:11px}}
-</style><link rel="stylesheet" href="ui-redesign.css?v=studio-shell-refine-1"><link rel="stylesheet" href="preset-library-ui.css?v=card-v5"><style id="gear-visual-compact-override">
+</style><link rel="stylesheet" href="ui-redesign.css?v=stable-ui-8"><link rel="stylesheet" href="preset-library-ui.css?v=card-v5"><style id="gear-visual-compact-override">
 /* Higher-specificity local override: make every gear illustration visibly more compact. */
 #page-editor #modelVisual .gear-visual .gear-art{
   height:160px!important;
@@ -2002,340 +2002,8 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
  </div>
 </section>
 <section id="page-studio" class="hidden studio-page">
-  <div class="studio-page-heading">
-    <div class="hero studio-page-hero studio-daw-hero">
-      <div><div class="eyebrow">STUDIO</div><h2>Jamm &amp; Record</h2></div>
-      <span class="studio-daw-version" id="studioWorkspaceStatus">Mini DAW – 4 Track</span>
-    </div>
-  </div>
-  <div class="studio-workspace-tabs" role="tablist" aria-label="Studio workspace">
-    <button type="button" data-studio-workspace="jam-record" class="active" role="tab" aria-selected="true"><span class="studio-workspace-icon" aria-hidden="true">▥</span><span>Jamm &amp; Record</span></button>
-    <button type="button" data-studio-workspace="tone-analysis" role="tab" aria-selected="false"><span class="studio-workspace-icon" aria-hidden="true">∿</span><span>Tone Analysis</span></button>
-  </div>
-  <div class="studio-mode-tabs" data-studio-workspace-panel="jam-record" role="tablist" aria-label="Jamm &amp; Record mode">
-    <button type="button" data-studio-mode="jam">♫&nbsp; Jam</button>
-    <button type="button" data-studio-mode="record">♩&nbsp; Record</button>
-    <button type="button" data-studio-mode="daw" class="active" aria-selected="true">∿&nbsp; DAW</button>
-  </div>
-  <nav class="tie-subnav" data-studio-workspace-panel="tone-analysis" role="tablist" aria-label="Tone Analysis sections" hidden aria-hidden="true">
-    <button type="button" data-tie-page="analyzer" class="active" role="tab" aria-selected="true"><span class="tie-nav-icon" aria-hidden="true">∿</span><span>Analyzer</span></button>
-    <button type="button" data-tie-page="compare" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">⇄</span><span>Compare</span></button>
-    <button type="button" data-tie-page="signal-chain" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">⌁</span><span>Chain</span></button>
-    <button type="button" data-tie-page="intelligence" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">▤</span><span>Intel</span></button>
-    <button type="button" data-tie-page="ai-consultant" role="tab" aria-selected="false"><span class="tie-nav-icon" aria-hidden="true">✧</span><span>AI</span></button>
-  </nav>
-  <div id="studioContentScroll" class="studio-content-scroll">
-  <section id="studio-tone-analysis-workspace" class="tie-workspace" data-studio-workspace-panel="tone-analysis" hidden aria-hidden="true">
-    
-    <section class="tie-panel tie-analyzer-page" data-tie-page-panel="analyzer" role="tabpanel">
-      <div class="tie-section-heading">
-        <div><span class="tie-section-index">01 / ANALYZER</span><h4>Audio Analyzer</h4></div>
-        <span class="tie-live-indicator"><i></i> LOCAL DSP</span>
-      </div>
-      <div class="tie-source-toolbar">
-        <label class="tie-analyzer-field" for="tieAudioSourceSelect"><span>Audio source</span>
-          <select id="tieAudioSourceSelect" aria-label="Audio source"><option value="">Import a file or select a saved Quick Record</option></select>
-        </label>
-        <button class="tie-analyzer-import-btn" id="tieImportAudioButton" type="button"><span aria-hidden="true">＋</span> Import</button>
-        <input id="tieAudioFileInput" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose audio file">
-      </div>
-      <div class="tie-analyzer-control-row">
-        <label class="tie-analyzer-field" for="tieFftSize"><span>FFT size</span>
-          <select id="tieFftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384">16384</option></select>
-        </label>
-        <label class="tie-analyzer-field" for="tieChannelSelect"><span>Channel</span>
-          <select id="tieChannelSelect" disabled><option value="0">Channel 1</option></select>
-        </label>
-        <button class="tie-analyzer-run-btn" id="tieAnalyzeButton" type="button" disabled>▶ Analyze</button>
-        <button class="tie-analyzer-cancel-btn" id="tieCancelAnalysisButton" type="button" hidden>Cancel</button>
-      </div>
-      <div id="tieAnalysisStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose an imported audio file or a saved Quick Record take.</div>
-      <progress id="tieAnalysisProgress" class="tie-analysis-progress" max="100" value="0" hidden aria-label="Analysis progress"></progress>
-      <div id="tieSourceMetadata" class="tie-source-metadata" hidden></div>
-      <div id="tieAnalysisResults" class="tie-analysis-results" hidden>
-        <nav class="tie-view-tabs" role="tablist" aria-label="Analyzer views">
-          <button type="button" class="active" data-tie-analyzer-view="spectrum" role="tab" aria-selected="true">Spectrum</button>
-          <button type="button" data-tie-analyzer-view="spectrogram" role="tab" aria-selected="false">Spectrogram</button>
-          <button type="button" data-tie-analyzer-view="meter" role="tab" aria-selected="false">Meter</button>
-          <button type="button" data-tie-analyzer-view="harmonics" role="tab" aria-selected="false">Harmonics</button>
-        </nav>
-        <section class="tie-view-panel" data-tie-analyzer-panel="spectrum" role="tabpanel">
-          <div class="tie-chart-panel tie-chart-dominant">
-            <div class="tie-chart-heading"><strong>Frequency spectrum</strong><small id="tieSpectrumDetails">Hann · one-sided amplitude · dBFS</small></div>
-            <canvas id="tieSpectrumCanvas" width="720" height="280" aria-label="Measured frequency spectrum"></canvas>
-          </div>
-        </section>
-        <section class="tie-view-panel" data-tie-analyzer-panel="spectrogram" role="tabpanel" hidden>
-          <div class="tie-chart-panel">
-            <div class="tie-chart-heading"><strong>Spectrogram</strong><small>STFT · time flows downward · linear frequency</small></div>
-            <canvas id="tieSpectrogramCanvas" width="720" height="250" aria-label="Measured audio spectrogram"></canvas>
-          </div>
-        </section>
-        <section class="tie-view-panel" data-tie-analyzer-panel="meter" role="tabpanel" hidden>
-          <div class="tie-metric-grid">
-            <div class="tie-metric-card"><small>RMS</small><strong id="tieMetricRms">—</strong><span>dBFS</span></div>
-            <div class="tie-metric-card"><small>Sample peak</small><strong id="tieMetricPeak">—</strong><span>dBFS</span></div>
-            <div class="tie-metric-card"><small>Crest factor</small><strong id="tieMetricCrest">—</strong><span>dB</span></div>
-            <div class="tie-metric-card"><small>Spectral centroid</small><strong id="tieMetricCentroid">—</strong><span>Hz</span></div>
-            <div class="tie-metric-card"><small>85% rolloff</small><strong id="tieMetricRolloff">—</strong><span>Hz</span></div>
-            <div class="tie-metric-card"><small>Sample clipping</small><strong id="tieMetricClipping">—</strong><span>samples ≥ −0.009 dBFS</span></div>
-          </div>
-          <div class="tie-level-meter-panel">
-            <div class="tie-chart-heading"><strong>Measured level</strong><small>From selected PCM · not live input</small></div>
-            <div class="tie-level-meter-row"><span>RMS</span><div class="tie-level-track"><i id="tieMeterRmsFill"></i></div><strong id="tieMeterRmsValue">—</strong></div>
-            <div class="tie-level-meter-row"><span>Peak</span><div class="tie-level-track"><i id="tieMeterPeakFill"></i></div><strong id="tieMeterPeakValue">—</strong></div>
-          </div>
-          <div class="tie-band-panel"><div class="tie-chart-heading"><strong>Relative band energy</strong><small>Share of measured spectral power</small></div><div id="tieBandEnergy" class="tie-band-list"></div></div>
-          <div class="tie-quick-diagnosis" aria-live="polite">
-            <div class="tie-quick-icon" aria-hidden="true">⌁</div>
-            <div><small>QUICK DIAGNOSIS · MEASURED EVIDENCE</small><strong id="tieQuickDiagnosisTitle">Waiting for analysis</strong><p id="tieQuickDiagnosisDetails">No diagnostic is shown before an actual PCM analysis is complete.</p></div>
-          </div>
-        </section>
-        <section class="tie-view-panel" data-tie-analyzer-panel="harmonics" role="tabpanel" hidden>
-          <div class="tie-capability-state">
-            <span class="tie-capability-icon" aria-hidden="true">≋</span>
-            <div><strong>Harmonic analysis is not available in this DSP output</strong><p>No harmonic peaks or THD values are inferred from the current spectrum. This view will remain unavailable until a validated harmonic estimator is approved and tested.</p></div>
-            <span class="tie-capability-tag">NOT MEASURED</span>
-          </div>
-        </section>
-        <div id="tieAnalysisLimitations" class="tie-analysis-limitations"></div>
-      </div>
-      <small class="tie-scope-note">Source scope: imported files and saved Quick Record WAV only. Direct USB/live capture and internal DAW-track access remain unverified and are not connected to this Analyzer.</small>
-    </section>
-    <section class="tie-panel tie-compare-page" data-tie-page-panel="compare" role="tabpanel" hidden>
-      <div class="tie-section-heading">
-        <div><span class="tie-section-index">02 / COMPARE</span><h4>Tone Comparison</h4></div>
-        <span class="tie-live-indicator"><i></i> A / B ENGINE</span>
-      </div>
-      <div class="tie-compare-slots">
-        <article class="tie-compare-slot tie-compare-slot-a">
-          <div class="tie-compare-slot-heading"><span class="tie-source-letter">A</span><div><strong>Reference</strong><small>Source A</small></div></div>
-          <label class="tie-analyzer-field" for="tieCompareSourceA"><span>Audio source</span>
-            <select id="tieCompareSourceA"><option value="">Choose source A</option></select>
-          </label>
-          <div class="tie-compare-slot-footer">
-            <button class="tie-analyzer-import-btn" id="tieCompareImportA" type="button">＋ Import A</button>
-            <input id="tieCompareFileA" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose source A audio file">
-            <label class="tie-analyzer-field" for="tieCompareChannelA"><span>Channel</span><select id="tieCompareChannelA" disabled><option value="0">Load first</option></select></label>
-          </div>
-        </article>
-        <button type="button" class="tie-compare-swap" id="tieCompareSwapSources" aria-label="Swap A and B sources" title="Swap A and B">⇄</button>
-        <article class="tie-compare-slot tie-compare-slot-b">
-          <div class="tie-compare-slot-heading"><span class="tie-source-letter">B</span><div><strong>Comparison</strong><small>Source B</small></div></div>
-          <label class="tie-analyzer-field" for="tieCompareSourceB"><span>Audio source</span>
-            <select id="tieCompareSourceB"><option value="">Choose source B</option></select>
-          </label>
-          <div class="tie-compare-slot-footer">
-            <button class="tie-analyzer-import-btn" id="tieCompareImportB" type="button">＋ Import B</button>
-            <input id="tieCompareFileB" class="hidden" type="file" accept="audio/*,.wav,.wave,.mp3,.m4a,.aac,.ogg,.opus,.flac" aria-label="Choose source B audio file">
-            <label class="tie-analyzer-field" for="tieCompareChannelB"><span>Channel</span><select id="tieCompareChannelB" disabled><option value="0">Load first</option></select></label>
-          </div>
-        </article>
-      </div>
-      <div class="tie-compare-settings">
-        <label class="tie-analyzer-field" for="tieCompareFftSize"><span>FFT</span>
-          <select id="tieCompareFftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384">16384</option></select>
-        </label>
-        <label class="tie-analyzer-field" for="tieCompareOffsetMs"><span>B offset · ms</span>
-          <input id="tieCompareOffsetMs" type="number" min="-30000" max="30000" step="1" value="0">
-        </label>
-        <label class="tie-compare-check" for="tieCompareLevelMatch"><input id="tieCompareLevelMatch" type="checkbox"><span>RMS match <small>attenuation only</small></span></label>
-      </div>
-      <div class="tie-compare-actions">
-        <button class="tie-analyzer-run-btn" id="tieCompareRunButton" type="button" disabled>⇄ Compare A / B</button>
-        <button class="tie-analyzer-cancel-btn" id="tieCompareCancelButton" type="button" hidden>Cancel</button>
-        <div class="tie-compare-preview-actions">
-          <button type="button" id="tieComparePlayA" disabled>▶ A</button>
-          <button type="button" id="tieComparePlayB" disabled>▶ B</button>
-          <button type="button" id="tieCompareStop" disabled>■ Stop</button>
-        </div>
-      </div>
-      <div id="tieCompareStatus" class="tie-analysis-status" role="status" aria-live="polite">Choose two audio sources to compare.</div>
-      <progress id="tieCompareProgress" class="tie-analysis-progress" max="100" value="0" hidden aria-label="Comparison progress"></progress>
-      <div id="tieCompareResults" class="tie-compare-results" hidden>
-        <div class="tie-compare-result-heading"><div><strong>Tone Comparison · A vs B</strong><small id="tieCompareSummary"></small></div><small id="tieCompareProvenance"></small></div>
-        <div class="tie-compare-metrics">
-          <div class="tie-compare-metric-head"><span>Metric</span><span>A</span><span>B</span><span>Δ B−A</span></div>
-          <div class="tie-compare-metric-row"><strong>RMS · dBFS</strong><span id="tieCompareRmsA">—</span><span id="tieCompareRmsB">—</span><span id="tieCompareRmsDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Peak · dBFS</strong><span id="tieComparePeakA">—</span><span id="tieComparePeakB">—</span><span id="tieComparePeakDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Crest · dB</strong><span id="tieCompareCrestA">—</span><span id="tieCompareCrestB">—</span><span id="tieCompareCrestDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Centroid · Hz</strong><span id="tieCompareCentroidA">—</span><span id="tieCompareCentroidB">—</span><span id="tieCompareCentroidDelta">—</span></div>
-          <div class="tie-compare-metric-row"><strong>Rolloff · Hz</strong><span id="tieCompareRolloffA">—</span><span id="tieCompareRolloffB">—</span><span id="tieCompareRolloffDelta">—</span></div>
-        </div>
-        <nav class="tie-view-tabs" role="tablist" aria-label="Comparison views">
-          <button type="button" class="active" data-tie-compare-view="spectrum" role="tab" aria-selected="true">Spectrum</button>
-          <button type="button" data-tie-compare-view="difference" role="tab" aria-selected="false">Difference</button>
-          <button type="button" data-tie-compare-view="dynamics" role="tab" aria-selected="false">Dynamics</button>
-          <button type="button" data-tie-compare-view="harmonics" role="tab" aria-selected="false">Harmonics</button>
-        </nav>
-        <section class="tie-view-panel" data-tie-compare-panel="spectrum" role="tabpanel">
-          <div class="tie-chart-panel tie-chart-dominant"><div class="tie-chart-heading"><strong>Spectrum overlay</strong><small>A · lime / B · cyan · dBFS</small></div><canvas id="tieCompareOverlayCanvas" width="720" height="250" aria-label="A and B measured spectrum overlay"></canvas></div>
-        </section>
-        <section class="tie-view-panel" data-tie-compare-panel="difference" role="tabpanel" hidden>
-          <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Spectral difference</strong><small>B minus A · dB</small></div><canvas id="tieCompareDiffCanvas" width="720" height="230" aria-label="B minus A spectrum difference"></canvas></div>
-        </section>
-        <section class="tie-view-panel" data-tie-compare-panel="dynamics" role="tabpanel" hidden>
-          <div class="tie-chart-panel"><div class="tie-chart-heading"><strong>Dynamic comparison</strong><small>50 ms RMS windows · A lime / B cyan</small></div><canvas id="tieCompareDynamicCanvas" width="720" height="230" aria-label="A and B dynamic RMS comparison"></canvas></div>
-        </section>
-        <section class="tie-view-panel" data-tie-compare-panel="harmonics" role="tabpanel" hidden>
-          <div class="tie-capability-state"><span class="tie-capability-icon" aria-hidden="true">≋</span><div><strong>Harmonic comparison is not measured</strong><p>The current DSP output does not include a validated harmonic estimator. No harmonic or THD values are generated.</p></div><span class="tie-capability-tag">NOT MEASURED</span></div>
-        </section>
-        <div class="tie-compare-tone-report">
-          <div class="tie-chart-heading"><strong>Low · Mid · High balance</strong><small>Aggregated from measured relative band energy</small></div>
-          <div class="tie-tone-band-head"><span>Band</span><span>A</span><span>B</span><span>Δ</span></div>
-          <div id="tieCompareToneBands" class="tie-tone-bands"></div>
-        </div>
-        <label class="tie-compare-listening-notes" for="tieCompareListeningNotes"><span>Listening notes <small>Optional · subjective notes, separate from DSP results</small></span>
-          <textarea id="tieCompareListeningNotes" rows="2" placeholder="Describe what you hear when switching A/B…"></textarea>
-        </label>
-        <div class="tie-analysis-limitations"><strong id="tieCompareReportMeta"></strong><div id="tieCompareLimitations"></div></div>
-      </div>
-      <small class="tie-scope-note">A/B uses imported recordings and saved Quick Record takes only. Alignment is manual; RMS matching is not LUFS matching.</small>
-    </section>
-    <section class="tie-panel tie-feature-page" data-tie-page-panel="signal-chain" role="tabpanel" hidden>
-      <div class="tie-section-heading">
-        <div><span class="tie-section-index">03 / SIGNAL CHAIN</span><h4>Signal Chain Intelligence</h4></div>
-        <span id="tieChainSourceTag" class="tie-capability-tag">WAITING FOR PRESET STATE</span>
-      </div>
-      <div class="tie-chain-toolbar tie-preset-identity">
-        <span class="tie-preset-icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><rect x="4" y="4" width="24" height="24" rx="2.5"/><path d="M11 4v24M21 4v24M4 11h24M4 21h24"/></svg></span>
-        <div class="tie-chain-preset-meta"><strong id="tieChainPresetName">No preset snapshot</strong><span id="tieChainPresetContext">Preset and Scene are not identified.</span></div>
-        <span class="tie-preset-divider" aria-hidden="true"></span>
-        <div class="tie-preset-device"><strong id="tieChainDeviceName">MG-30 Gen2</strong><span id="tieChainDeviceStatus" class="tie-preset-device-status is-unavailable">Not connected</span></div>
-        <button id="tieChainRefresh" class="tie-chain-refresh" type="button" aria-label="Read active preset" title="Read active preset">↻</button>
-        <div id="tieChainStatus" class="tie-sr-only" role="status" aria-live="polite">No device readback has been captured in this session.</div>
-      </div>
-      <div class="tie-chain-flow" id="tieChainFlow" aria-label="Actual signal chain from the current editor or device snapshot">
-        <div class="tie-chain-empty">The current effect order will appear after a preset readback or when a saved editor draft is available.</div>
-      </div>
-      <section class="tie-selected-block tie-chain-card" aria-label="Selected effect block">
-        <div class="tie-chain-card-heading"><div><span>SELECTED BLOCK</span><h5 id="tieChainSelectedTitle" class="tie-sr-only">No block selected</h5></div><span id="tieChainBlockState" class="tie-chain-state">—</span></div>
-        <div class="tie-selected-block-layout">
-          <div class="tie-selected-block-info">
-            <div class="tie-selected-category-row"><span id="tieChainSelectedCategory" class="tie-selected-category">BLOCK</span><span id="tieChainSelectedMeta" class="tie-selected-model">Model and parameters are not read yet</span></div>
-            <div class="tie-selected-data-list" id="tieChainSelectedData"><span>Model</span><strong>Not read</strong><span>Type</span><strong>Not read</strong><span>Status</span><strong>Not read</strong></div>
-          </div>
-          <div id="tieChainSelectedArtwork" class="tie-selected-artwork" aria-label="Local vector reference artwork"><div class="tie-chain-empty">Select a known block to display its local model artwork.</div></div>
-        </div>
-        <div class="tie-selected-parameters-heading"><span>KEY PARAMETERS</span></div>
-        <div class="tie-parameter-browser" aria-label="Read-only key parameters">
-          <button type="button" id="tieChainParameterPrev" class="tie-parameter-nav" aria-label="Previous parameters" hidden>‹</button>
-          <div id="tieChainParameters" class="tie-knob-grid" aria-label="Read-only model parameters"><p class="tie-chain-empty">Select an effect block to inspect the parameters exposed by its active model.</p></div>
-          <button type="button" id="tieChainParameterNext" class="tie-parameter-nav" aria-label="More parameters" hidden>›</button>
-        </div>
-        <div id="tieChainParameterFooter" class="tie-parameter-footer" hidden>
-          <div id="tieChainParameterDots" class="tie-parameter-dots" role="group" aria-label="Parameter scroll position"></div>
-          <span id="tieChainSwipeHint" class="tie-parameter-hint">Swipe for more parameters <b aria-hidden="true">⟶</b></span>
-        </div>
-      </section>
-      <button type="button" id="tieOpenConfigurationReview" class="tie-review-entry">
-        <span class="tie-review-entry-icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><path d="M8 10h16l-6-5M24 10l-6 5M24 22H8l6-5M8 22l6 5"/></svg></span><span><strong>Configuration Review</strong><small>Potential issues &amp; gain staging</small></span><span id="tieReviewEntryStatus">Awaiting data</span><b aria-hidden="true">›</b>
-      </button>
-      <section id="tieConfigurationReview" class="tie-review-page" hidden aria-label="Configuration Review">
-        <header class="tie-review-header"><button type="button" id="tieReviewBack" aria-label="Back to Signal Chain Intelligence">‹</button><h4>Configuration Review</h4><button type="button" id="tieReviewShare" aria-label="Share Configuration Review">↗</button></header>
-        <nav class="tie-review-tabs" role="tablist" aria-label="Configuration Review sections">
-          <button type="button" data-tie-review-tab="overview" class="active" role="tab" aria-selected="true">Overview</button>
-          <button type="button" data-tie-review-tab="chain" role="tab" aria-selected="false">Chain</button>
-          <button type="button" data-tie-review-tab="gain" role="tab" aria-selected="false">Gain</button>
-          <button type="button" data-tie-review-tab="tone" role="tab" aria-selected="false">Tone</button>
-          <button type="button" data-tie-review-tab="report" role="tab" aria-selected="false">Report</button>
-        </nav>
-        <div class="tie-review-content">
-          <section data-tie-review-panel="overview" role="tabpanel">
-            <div class="tie-review-preset"><span class="tie-review-preset-icon" aria-hidden="true">▦</span><div><strong id="tieReviewPresetName">No preset read</strong><small id="tieReviewPresetMeta">Connect MG-30 Gen 2 to inspect the active preset.</small></div><span id="tieReviewDeviceStatus">Device data unavailable</span></div>
-            <article class="tie-review-card tie-review-overall-card">
-              <h5>Overall Configuration</h5>
-              <div class="tie-review-overall"><span id="tieReviewOverallIcon" class="tie-review-overall-icon" aria-hidden="true">i</span><div><strong id="tieReviewOverallTitle">Analysis incomplete</strong><p id="tieReviewOverall">No verified configuration review is available yet.</p></div></div>
-            </article>
-            <article class="tie-review-card"><h5>Ringkasan Pemeriksaan</h5><div id="tieReviewChecks" class="tie-review-checks"></div></article>
-            <article id="tieReviewSceneConsistency" class="tie-review-card tie-review-scene-card">
-              <div class="tie-review-card-heading"><div><span>PRESET &amp; SCENE CONSISTENCY</span><h5>Active Scene Status</h5></div><span id="tieReviewSceneStatus" class="tie-review-state">NOT MEASURED</span></div>
-              <div class="tie-review-scene-active"><span>Current Scene</span><strong id="tieReviewActiveScene">Not identified</strong></div>
-              <div id="tieReviewSceneBars" class="tie-review-scene-bars"></div>
-              <div class="tie-review-scene-limit" id="tieReviewSceneLimit">Cross-scene level comparison is not available from the current snapshot.</div>
-              <div class="tie-review-scene-limit" id="tieReviewPresetLimit">Cross-preset comparison has not been run.</div>
-            </article>
-            <article class="tie-review-card"><h5>Rekomendasi Utama</h5><ul id="tieReviewRecommendations" class="tie-review-recommendations"><li>Read the active preset and analyze a real PCM source to unlock supported checks.</li></ul></article>
-            <article class="tie-review-card tie-review-diagnostics-card">
-              <div class="tie-review-card-heading"><div><span>CONFIGURATION FINDINGS</span><h5>Potential issues</h5></div><span id="tieChainDiagnosticTag" class="tie-chain-state">NO DATA</span></div>
-              <div id="tieChainDiagnostics" class="tie-chain-diagnostic-list"><p>Diagnostics require an actual editor or device snapshot.</p></div>
-            </article>
-            <button type="button" id="tieReviewAnalyze" class="tie-review-primary">▷ Open DSP Analyzer</button>
-            <small class="tie-review-note">Opens the existing local PCM Analyzer. This action does not claim an analysis has already run.</small>
-            <button type="button" id="tieReviewCompare" class="tie-review-secondary">Open Tone Comparison</button>
-          </section>
-          <section data-tie-review-panel="chain" role="tabpanel" hidden>
-            <article class="tie-review-card">
-              <div class="tie-review-card-heading"><div><span>01 / SIGNAL PATH</span><h5>Signal Chain Check</h5></div><span id="tieReviewChainStatus" class="tie-review-state">NOT READ</span></div>
-              <p class="tie-review-description">Actual block order, model identity and bypass state from the shared Editor/device snapshot.</p>
-              <div id="tieReviewChainFlow" class="tie-review-chain-flow"></div><div id="tieReviewChainChecks" class="tie-review-checks"></div>
-              <p class="tie-review-order-label">Detail Signal Chain</p><p id="tieReviewChainOrder" class="tie-review-order">Signal chain order unavailable.</p>
-            </article>
-            <article class="tie-review-card">
-              <div class="tie-review-card-heading"><div><span>02 / MODEL CONTEXT</span><h5>NAM &amp; IR Assignment</h5></div><span id="tieChainModelSource" class="tie-review-state">NOT READ</span></div>
-              <div id="tieChainModelContext" class="tie-chain-context"><p>Read a preset to inspect the available NAM and IR assignment context.</p></div>
-              <div id="tieChainLibraryContext" class="tie-chain-library">NAM Library and IR Collection assignments are read-only.</div>
-            </article>
-          </section>
-          <section data-tie-review-panel="gain" role="tabpanel">
-            <div class="tie-review-analysis-heading"><span class="tie-review-analysis-icon">⌁</span><div><h5>Gain Staging Analysis</h5><p>PCM level, reference level and headroom availability.</p></div></div>
-            <div class="tie-review-metrics">
-              <article><small>Input Level</small><strong id="tieReviewRms">Not measured</strong><div class="tie-review-meter"><span id="tieReviewRmsBar"></span></div><em id="tieReviewRmsSource">No completed PCM analysis</em></article>
-              <article><small>Headroom</small><strong id="tieReviewHeadroom">Not measured</strong><div class="tie-review-meter is-unavailable"><span></span></div><em>Input/output reference unavailable</em></article>
-              <article><small>Output Level</small><strong id="tieReviewOutput">Not measured</strong><div class="tie-review-meter is-unavailable"><span></span></div><em>No calibrated pedal output capture</em></article>
-            </div>
-            <article class="tie-review-card"><div class="tie-review-card-heading"><div><span>LEVEL PER BLOCK</span><h5>Effect Stage Readout</h5></div><span class="tie-review-state">NOT MEASURED</span></div><p class="tie-review-description">Preset parameters are configuration values, not audio-level measurements. No per-block dB values are inferred.</p><div id="tieReviewBlockLevels" class="tie-review-block-levels"><p>Per-block audio levels are not exposed by the current preset reader.</p></div></article>
-            <article class="tie-review-card"><h5>Analysis &amp; Interpretation</h5><p id="tieReviewGainInterpretation">No completed PCM Analyzer result is available.</p></article>
-            <article class="tie-review-card"><h5>Recommendation</h5><p id="tieReviewGainRecommendation">No parameter adjustment is recommended without supporting measurements.</p></article>
-          </section>
-          <section data-tie-review-panel="tone" role="tabpanel" hidden>
-            <div class="tie-review-analysis-heading"><span class="tie-review-analysis-icon">≋</span><div><h5>Tone Configuration</h5><p>Measured spectrum and relative frequency-band distribution.</p></div></div>
-            <article class="tie-review-card"><div class="tie-review-card-heading"><div><span>PCM SPECTRUM</span><h5>Frequency Analysis</h5></div><span id="tieReviewToneStatus" class="tie-review-state">NOT MEASURED</span></div><canvas id="tieReviewSpectrum" width="720" height="230" aria-label="Measured PCM audio spectrum"></canvas><small id="tieReviewSpectrumMeta" class="tie-review-note">No Analyzer spectrum available.</small></article>
-            <div class="tie-review-tone-bands"><article><small>Low</small><strong id="tieReviewLow">—</strong></article><article><small>Mid</small><strong id="tieReviewMid">—</strong></article><article><small>High</small><strong id="tieReviewHigh">—</strong></article></div>
-            <article class="tie-review-card"><h5>Tone Checks</h5><div id="tieReviewToneChecks" class="tie-review-checks"></div></article>
-          </section>
-          <section data-tie-review-panel="report" role="tabpanel" hidden>
-            <article class="tie-review-card"><div class="tie-review-card-heading"><div><span>SUMMARY / EXPORT</span><h5>Review Report</h5></div><span id="tieReviewReportStatus" class="tie-review-state">PARTIAL</span></div><div id="tieReviewReportChecks" class="tie-review-checks"></div><p id="tieReviewReportMeta" class="tie-review-description"></p></article>
-            <button type="button" id="tieReviewExportPdf" class="tie-review-primary" disabled>⇩ Export Report (PDF) · Pending</button>
-            <small class="tie-review-note">PDF generation is not implemented in this build. No placeholder or empty PDF is produced.</small>
-            <button type="button" id="tieReviewShareReport" class="tie-review-secondary">↗ Share Review Summary</button>
-          </section>
-        </div>
-      </section>
-      <div class="tie-section-actions"><span>MG-30 original Gen 2 · read-only inspection</span><span>No device writes from this panel</span></div>
-    </section>
-    <section class="tie-panel tie-feature-page" data-tie-page-panel="intelligence" role="tabpanel" hidden>
-      <div class="tie-section-heading"><div><span class="tie-section-index">04 / INTELLIGENCE</span><h4>Technical Findings</h4></div><span class="tie-capability-tag">EVIDENCE FIRST</span></div>
-      <div class="tie-intel-grid">
-        <article class="tie-intel-row"><span class="tie-intel-icon">◉</span><div><strong>Clipping &amp; headroom</strong><small>Requires a completed PCM Analyzer result</small></div><b class="tie-intel-state">AWAITING</b></article>
-        <article class="tie-intel-row"><span class="tie-intel-icon">≈</span><div><strong>Noise floor</strong><small>Current arbitrary-program estimator is unavailable</small></div><b class="tie-intel-state">NOT MEASURED</b></article>
-        <article class="tie-intel-row"><span class="tie-intel-icon">⌁</span><div><strong>Gain staging</strong><small>Requires aligned input/output reference levels</small></div><b class="tie-intel-state">AWAITING</b></article>
-        <article class="tie-intel-row"><span class="tie-intel-icon">▤</span><div><strong>Spectral balance</strong><small>Can be described from Analyzer band-energy measurements; tone quality is not inferred from brightness alone</small></div><b class="tie-intel-state">AWAITING</b></article>
-      </div>
-      <div class="tie-capability-state"><span class="tie-capability-icon" aria-hidden="true">✧</span><div><strong>No diagnosis has been issued</strong><p>Findings and recommendations will be displayed only when their supporting measurements and device context exist. This page does not create sample values or infer a fault from an unmeasured signal chain.</p></div></div>
-    </section>
-    <section class="tie-panel tie-ai-consultant" data-tie-page-panel="ai-consultant" role="tabpanel" hidden>
-      <div class="tie-ai-identity">
-        <div class="tie-ai-orb" aria-hidden="true"><span>✧</span></div>
-        <div><span class="tie-section-index">05 / AI CONSULTANT</span><h4>AI Tone Consultant</h4><p>Discuss measured tone, presets, NAM, IR and mix decisions with the existing MG30 Studio AI Assistant.</p></div>
-        <span class="tie-capability-tag">SHARED AI</span>
-      </div>
-      <div class="tie-ai-context">
-        <span>STUDIO CONTEXT</span>
-        <div><b>Preset</b><small>from Editor</small></div>
-        <div><b>NAM</b><small>from library / Editor</small></div>
-        <div><b>IR</b><small>from library / Editor</small></div>
-        <div><b>Signal chain</b><small>when device snapshot is available</small></div>
-      </div>
-      <div class="tie-ai-message-preview">
-        <span class="tie-ai-message-icon" aria-hidden="true">✧</span>
-        <div><strong>Ready to consult</strong><p>The live conversation, model selection, provider fallback and existing AI tools remain in the shared AI assistant. This panel opens that same assistant rather than creating a second chat or provider session.</p></div>
-      </div>
-      <button type="button" class="tie-ai-open-btn" id="tieOpenAiAssistant">✧ Open AI Tone Assistant <span>↗</span></button>
-    </section>
-    <p class="tie-workspace-note">Jamm &amp; Record, Quick Record, dan Mini DAW tetap berada di workspace sebelah. Berpindah workspace hanya mengubah visibilitas UI; shell ini tidak membuat ulang audio engine atau mengubah rute perangkat.</p>
-  </section>
-  <div class="studio-mode-panel" data-studio-mode-panel="jam" data-studio-workspace-panel="jam-record" hidden><div class="panel studio-backing-panel">
+  <div class="studio-fixed-header"><div class="hero studio-page-hero studio-daw-hero"><div><div class="eyebrow">STUDIO</div><h2>Jamm &amp; Record</h2></div><span class="studio-daw-version">Mini DAW – 4 Track</span></div><div class="studio-mode-tabs" role="tablist" aria-label="Studio mode"><button type="button" data-studio-mode="jam">♫&nbsp; Jam</button><button type="button" data-studio-mode="record">♩&nbsp; Record</button><button type="button" data-studio-mode="daw" class="active" aria-selected="true">∿&nbsp; DAW</button></div></div>
+  <div class="studio-mode-panel" data-studio-mode-panel="jam" hidden><div class="panel studio-backing-panel">
     <div class="panel-head studio-compact-panel-head">
       <div><h3>Track 01 · Backing</h3><p>MP3 / WAV, or find a reference on YouTube.</p></div>
       <span class="track-number">01</span>
@@ -2379,7 +2047,7 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
     <p class="studio-footnote">Use YouTube as a play-along reference. Backing tracks must come from audio files you own or are authorized to use.</p>
   </div>
 
-  </div><div class="studio-mode-panel" data-studio-mode-panel="record" data-studio-workspace-panel="jam-record" hidden><div class="panel studio-recorder-panel studio-recorder-compact">
+  </div><div class="studio-mode-panel" data-studio-mode-panel="record" hidden><div class="panel studio-recorder-panel studio-recorder-compact">
     <div class="panel-head studio-compact-panel-head">
       <div><h3>Track 02 · Guitar</h3><p>Record directly from the MG-30 USB connection.</p></div>
       <span class="track-number track-number-lime">02</span>
@@ -2403,7 +2071,7 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
 
 
   </div>
-  <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw" data-studio-workspace-panel="jam-record">
+  <section id="studio-daw-workspace" class="studio-daw-workspace" data-studio-mode-panel="daw">
   <section id="dawTimelinePage" class="daw-subpage daw-timeline-page" data-daw-page-panel="timeline">
     <div class="daw-quick-toolbar">
       <div class="daw-quick-toolbar-primary">
@@ -2543,9 +2211,8 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
       <button type="button" data-daw-page="track-settings" role="tab" aria-selected="false"><span class="daw-subnav-icon">⚙</span><span>Track Settings</span></button>
     </div>
   </div>
-</div>
 </section>
-  <dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
+<dialog id="dawStemDialog" class="daw-dialog"><div class="daw-dialog-card"><div class="daw-dialog-title">Export Stems</div><p>Choose tracks. Each selected track becomes a separate WAV file inside one ZIP. Timeline alignment is preserved.</p><div id="dawStemChecklist" class="daw-stem-checklist"></div><div class="daw-dialog-actions"><button class="btn" type="button" id="dawStemCancel">Cancel</button><button class="btn primary" type="button" id="dawStemConfirm">Create ZIP</button></div></div></dialog>
   <dialog id="renameTakeDialog" class="studio-dialog">
     <form method="dialog" id="renameTakeForm">
       <div class="studio-dialog-title">Rename Recording</div>
@@ -2867,7 +2534,6 @@ const MIC_POSITION_OPTIONS = ['CENTER','MIDDLE','EDGE'];
 
 const $=id=>document.getElementById(id);
 
-let signalChainReadbackMeta=null;
 let midiAccess=null, midiInput=null, midiOutput=null, midiConnected=false, midiConnectPending=false, lastMidiSend=0, midiChain=Promise.resolve(), pendingCC=new Map(), flushingCC=false, suppressProgramChangeUntil=0, signalChainRoutingMode=null, signalChainRoutingBusy=false, signalChainRoutingOrder=null;
 const MIDI_SW=[0,1,2,3,4,5,6,7,8,9,10,null];
 /* Default MG-30 CC map. The fourth compressor control is CC90; all other CCs are explicit. */
@@ -3326,10 +2992,10 @@ async function readActiveBuffer(options={}){
   const body=parts[sceneIndex]||parts[0];
   if(!body||body.length<220)throw new Error('Balasan Scene '+(sceneIndex+1)+' terlalu pendek ('+(body?body.length:0)+' byte). Format SysEx belum cocok.');
   const candidate=states.map(s=>({...s,values:{...s.values}})); 
-  let validModels=0,knownBlocks=[];
+  let validModels=0;
   for(let i=0;i<11;i++){
    const v=bitSlot(body,i),model=v&0x3F,modelIndex=deviceModelIndex(i,model);
-   if(modelIndex>=0){validModels++;knownBlocks.push(i);candidate[i].model=modelIndex;candidate[i].on=(v&0x40)===0}
+   if(modelIndex>=0){validModels++;candidate[i].model=modelIndex;candidate[i].on=(v&0x40)===0}
   }
   if(validModels<8){
    if(sceneIndex!==0)throw new Error('Data Scene '+(sceneIndex+1)+' belum cocok dengan layout GEN2 ('+validModels+'/11 model valid). State amp/pedal sebelumnya dipertahankan.');
@@ -3360,7 +3026,6 @@ async function readActiveBuffer(options={}){
    targetSlot=resolvedProgram;$('bankSelect').value=String(Math.floor(targetSlot/4));renderSlotPicker();
   }
   activeSceneIndex=sceneIndex;$('sceneSelect').selectedIndex=sceneIndex;
-  signalChainReadbackMeta={programSlot:targetSlot,sceneIndex,knownBlocks:knownBlocks.slice(),presetName:hardwarePresetName||name||currentName(),readAt:new Date().toISOString(),source:'device-readback'};
   render();renderSceneButtons();
   if(options.preserveDraftName)$('presetName').value=preservedDraftName;
   persist();return name;
@@ -3382,7 +3047,6 @@ async function pollHardwareState(forceBuffer=false){
   const reportChanged=firstReport||programChanged||sceneReportChanged;
   if(!forceBuffer&&!reportChanged)return;
   const sceneChanged=status.scene!==activeSceneIndex;
-  if(programChanged||sceneChanged)signalChainReadbackMeta=null;
   // Do not let a stale scene response undo a just-issued scene switch. A program
   // change is handled separately and must still synchronize the hardware slot.
   if(lastSceneCommandAt&&Date.now()-lastSceneCommandAt<4000&&sceneChanged&&!programChanged)return;
@@ -3610,7 +3274,7 @@ async function connectMG30(options={}){
      const wasConnected=midiConnected;
      midiConnected=ok;
      if(ok!==wasConnected){
-      resetHardwareSceneSyncState({preserveSignalChain:!ok});
+      resetHardwareSceneSyncState();
       if(!ok)hardwareSyncBusy=false;
      }
      window.dispatchEvent(new CustomEvent('mg30-midi-connection-state',{detail:{connected:ok}}));
@@ -3703,8 +3367,7 @@ localStorage.setItem('mg30-presets',JSON.stringify(presets));
 
 let activeSceneIndex=0,sceneSwitchPending=false,copySceneBusy=false,hardwareSyncBusy=false,ctrlEditorBusy=false,presetImportBusy=false,presetExportBusy=false,hardwareSyncTimer=null,hardwareUiRefreshTimer=null,activeBufferReadPromise=null,sceneStatusReadPromise=null,lastReportedSceneStatus=null,lastReportedProgram=null,lastSceneCommandAt=0,sceneStateRevision=0,externalSceneRefreshTimer=null;
 let targetSlot=0;
-function resetHardwareSceneSyncState(options={}){
- if(!options.preserveSignalChain)signalChainReadbackMeta=null;
+function resetHardwareSceneSyncState(){
  sceneStateRevision++;
  activeSceneIndex=null;
  lastReportedSceneStatus=null;
@@ -3715,7 +3378,6 @@ function resetHardwareSceneSyncState(options={}){
 let lastAnnouncedActivePresetSlot=null;
 function notifyActivePresetChanged(){
  if(!Number.isInteger(targetSlot)||targetSlot<0||targetSlot>127||lastAnnouncedActivePresetSlot===targetSlot)return;
- if(signalChainReadbackMeta&&signalChainReadbackMeta.programSlot!==targetSlot)signalChainReadbackMeta=null;
  lastAnnouncedActivePresetSlot=targetSlot;
  window.dispatchEvent(new CustomEvent('mg30-active-preset-changed',{detail:{programSlot:targetSlot,presetLabel:slotName(targetSlot)}}));
 }
@@ -3749,7 +3411,7 @@ function changeSelectedModel(delta){
  }
 }
 function persist(){localStorage.setItem('mg30-presets',JSON.stringify(presets));localStorage.setItem('mg30-draft',JSON.stringify({name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex,targetSlot,chainOrder}));notifyActivePresetChanged();}
-function toast(s,duration=1900,scope=''){if(!['preset','nam','ir','tie'].includes(scope))return;const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
+function toast(s,duration=1900,scope=''){if(!['preset','nam','ir'].includes(scope))return;const el=$('toast');if(!el)return;el.textContent=appEnglishText(s);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),duration)}
 
 function renderHardwarePreset(){
  const slot=$('hardwarePresetSlot'),name=$('hardwarePresetName'),source=$('hardwarePresetSource'),fav=$('favoritePresetBtn');
@@ -5006,8 +4668,6 @@ function renderBlockIcon(blockId){
  };
  return '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">'+(shapes[blockId]||'<circle cx="16" cy="16" r="10"/>')+'</svg>';
 }
-window.MG30EditorBlockIcon = renderBlockIcon;
-window.MG30EditorGearArtwork = renderGearSvg;
 function renderChain(){
  const holder=$('chain');
  const order=[...new Set((Array.isArray(chainOrder)?chainOrder:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<BLOCKS.length))];
@@ -5308,7 +4968,7 @@ $('knobs').querySelectorAll('.dial-control').forEach(el=>{
 $('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(next-s.model)};$('blockQuickSelect').onchange=e=>{const state=states[selected],next=Number(e.target.value);if(state&&Number.isInteger(next)&&next>=0&&next<BLOCKS[selected].models.length&&next!==state.model)changeSelectedModel(next-state.model)};$('blockSwitch').onchange=e=>{s.on=e.target.checked;sendBlockSwitch(selected);renderChain();$('blockStatus').textContent=s.on?'ON':'OFF';$('blockStatus').classList.toggle('is-off',!s.on);renderModelVisual();persist()};$('presetName').oninput=()=>{$('statName').textContent=currentName();persist()}}
 function renderPresets(){let q=$('search').value.toLowerCase(),list=presets.filter(p=>p.name.toLowerCase().includes(q));$('presetCount').textContent=presets.length+' draft lokal';$('presetList').innerHTML=list.length?list.map(p=>'<div class="preset"><div><strong>'+escapeHtml(p.name)+'</strong><p>Draft lokal · slot '+slotName(p.targetSlot??0)+' · '+new Date(p.date).toLocaleString()+'</p></div><div class="preset-actions"><button class="btn" data-load="'+p.id+'">Muat</button><button class="btn" data-del="'+p.id+'">Hapus</button></div></div>').join(''):'<div class="empty">Belum ada draft lokal yang cocok. Buat preset baru atau pilih preset yang sudah tersimpan.</div>';$('presetList').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{let p=presets.find(x=>x.id===b.dataset.load);if(p){states=p.states;selected=p.selected??3;targetSlot=p.targetSlot??0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=p.name;renderSlotPicker();render();showPage('editor');toast('Draft dimuat')}});$('presetList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{presets=presets.filter(x=>x.id!==b.dataset.del);persist();renderPresets()})}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons();window.dispatchEvent(new CustomEvent('mg30-signal-chain-state-changed',{detail:{source:signalChainReadbackMeta?'device-readback':'editor-state'}}))}
+function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons()}
 function syncUserIRNameToCabinet(name){
  const value=String(name||activeUserIRName()||'').trim();
  if(!value)return;
@@ -6315,51 +5975,6 @@ async function aiRefreshDeviceSnapshot(){
 }
 window.MG30AIToneBridge=Object.freeze({
  isConnected:()=>Boolean(midiConnected&&midiInput&&midiOutput),
- getSignalChainSnapshot(){
-  let draftAvailable=false;
-  try{const draft=JSON.parse(localStorage.getItem('mg30-draft')||'null');draftAvailable=Array.isArray(draft?.states)&&draft.states.length===BLOCKS.length;}catch{}
-  const verified=Boolean(signalChainReadbackMeta);
-  const source=verified?'device-readback':(draftAvailable?'editor-draft':'none');
-  const order=Array.isArray(chainOrder)?chainOrder.slice():[];
-  const blocks=BLOCKS.map((block,index)=>{
-   const state=states[index]||{};
-   const modelKnown=source!=='none'&&(verified?signalChainReadbackMeta.knownBlocks.includes(index):true);
-   const modelName=modelKnown?(block.models[state.model]?.[0]||''):'';
-   const controls=modelKnown?parameterControls(index,state.model):[];
-   const parameters=controls.map(control=>{
-    const value=parameterValueForControl(index,state,state.model,control);
-    return {key:control.param,label:control.label||control.param.toUpperCase(),value:value===undefined?null:value,available:true,discrete:isDiscreteSwitch(control),choices:control.choices||null};
-   });
-   const namProfile=index===3&&modelKnown?ampNamProfileForModelIndex(state.model):null;
-   const irBlock=index===9&&modelKnown;
-   let irCollectionSlot=0;
-   if(irBlock&&String(modelName).toLowerCase()==='third-party'){
-    try{const map=JSON.parse(localStorage.getItem('mg30-ir-collection-preset-map')||'{}');const slot=Number(map[String(targetSlot)]);if(Number.isInteger(slot)&&slot>=1&&slot<=24)irCollectionSlot=slot;}catch{}
-   }
-   let userIRName='';
-   try{userIRName=String(localStorage.getItem('mg30-user-ir-name')||'').trim();}catch{}
-   return {
-    index,id:block.id,icon:block.icon,known:modelKnown,enabled:modelKnown?Boolean(state.on):null,
-    model:modelName,parameters,
-    nam:namProfile?{slot:namProfile.slot,deviceId:namProfile.id,profileName:namProfile.name,filename:null,mappingEvidence:[60,61].includes(namProfile.id)?'observed-device-id':'provisional-slot-id'}:null,
-    ir:irBlock?{model:modelName,thirdParty:String(modelName).toLowerCase()==='third-party',userName:userIRName,collectionSlot:irCollectionSlot}:null
-   };
-  });
-  return {
-   connected:Boolean(midiConnected&&midiInput&&midiOutput),verified,source,
-   programSlot:Number.isInteger(targetSlot)?targetSlot:null,sceneIndex:Number.isInteger(activeSceneIndex)?activeSceneIndex:null,
-   presetName:signalChainReadbackMeta?.presetName||currentName(),readAt:signalChainReadbackMeta?.readAt||null,
-   order,blocks,
-   routing:Number.isInteger(signalChainRoutingMode)?{mode:signalChainRoutingMode,order:Array.isArray(signalChainRoutingOrder)?signalChainRoutingOrder.slice():null,verified:Array.isArray(signalChainRoutingOrder)}:null,
-   capabilities:{deviceParameterReadback:verified,namFilenameFromPresetReadback:false,irFilenameFromPresetReadback:false,deviceWritePerformed:false}
-  };
- },
- async refreshSignalChainSnapshot(){
-  if(!midiConnected||!midiInput||!midiOutput)throw new Error('MG-30 belum terhubung via USB-MIDI; pembacaan preset aktif tidak tersedia.');
-  await aiRefreshDeviceSnapshot();
-  try{await readSignalChainRoutingMode();}catch(error){signalChainRoutingMode=null;signalChainRoutingOrder=null;}
-  return this.getSignalChainSnapshot();
- },
  getCatalog:aiGetCatalog,
  getSnapshot:aiGetEditorSnapshot,
  async refreshSnapshot(){return aiRefreshDeviceSnapshot();},
@@ -6424,8 +6039,7 @@ window.MG30AIToneBridge=Object.freeze({
 })();
 </script>
 <script type="module" src="./cloud-account.js"></script><script type="module" src="./chatgpt-account.js"></script>
-<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./tie-analyzer-ui.js"></script><script type="module" src="./tie-comparison-ui.js"></script><script type="module" src="./tie-signal-chain-ui.js?v=phase4-4"></script>
-  <script type="module" src="./tie-configuration-review-ui.js?v=phase4-2"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
+<script type="module" src="./english-ui.js"></script><script type="module" src="./main.js"></script><script type="module" src="./editor-viewport-fit.js"></script><script type="module" src="./studio-daw.js"></script><script type="module" src="./nam-model-library-ui.js?v=nam-library-1"></script><script type="module" src="./ctrl-editor.js"></script><script type="module" src="./mg30-preset-import.js"></script><script type="module" src="./mg30-preset-export.js"></script><script type="module" src="./preset-library-ui.js"></script><script type="module" src="./backup-restore-ui.js?v=full-backup-1"></script>
 <script>
 (function moveEditorReferenceStylesAfterBundledCss(){
   const styleIds=['editor-reference-final-v4','editor-reference-final-v5','editor-reference-final-v6','editor-reference-final-v7','editor-reference-final-v8','editor-reference-final-v9'];

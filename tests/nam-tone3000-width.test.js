@@ -47,7 +47,7 @@ test('TONE3000 selection keeps its original catalogue in the separate TONE3000 p
 });
 
 test('NAM/TONE3000 width fix is cache-busted without altering transfer sources', () => {
-  assert.ok(html.includes('ui-redesign.css?v=studio-shell-refine-1'));
+  assert.ok(html.includes('ui-redesign.css?v=stable-ui-8'));
   assert.ok(!html.includes('ui-redesign.css?v=stable-ui-2'));
   assert.ok(!html.includes('ui-redesign.css?v=motion-lite-2'));
   assert.ok(irTransfer.includes('function toggleModelTool(mode)'));

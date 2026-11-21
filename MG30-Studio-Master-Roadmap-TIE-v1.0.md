@@ -4,9 +4,11 @@
 
 ### Tone Intelligence Engine (TIE)
 
+> **ARCHIVED — CANCELLED / DEFERRED (21 November 2026).** This roadmap is retained as project history. The TIE implementation has been removed from the application; only the Editor's category-coloured Signal Chain is intentionally retained.
+
 **Dokumen:** Master Roadmap dan Spesifikasi Teknis\
 **Versi:** 1.0\
-**Status:** Proposed / Active Development Planning\
+**Status:** CANCELLED / DEFERRED — owner decision 21 November 2026\
 **Platform:** Android / PWA\
 **Target hardware:** NUX MG-30 Gen 2\
 **Tanggal:** 19 November 2026

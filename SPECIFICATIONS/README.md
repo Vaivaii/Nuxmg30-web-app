@@ -1,3 +1,5 @@
+> **ARCHIVED — CANCELLED / DEFERRED (21 November 2026).** The Tone Intelligence Engine was stopped by owner decision. The specifications below are preserved as historical design records only; they are not active implementation instructions or an approved future roadmap. The application has been restored to its pre-TIE code state, with the Editor's colourful category-based Signal Chain retained.
+
 # MG30 Studio --- TIE Technical Specification Pack
 
 Versi 1.0. Paket ini adalah dokumen teknis pendamping
