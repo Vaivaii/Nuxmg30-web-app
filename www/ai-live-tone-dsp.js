@@ -209,10 +209,29 @@ export function processToneDspChunk(session, channelData) {
 /** Lightweight live readout; it does not create a conversation message or finalize the session. */
 export function getToneDspLiveSummary(session) {
   const rms = session.sampleCount ? Math.sqrt(session.sumSquares / session.sampleCount) : 0;
+  let totalPower = 0, weightedFrequency = 0;
+  const binWidthHz = session.metadata.sampleRateHz / session.settings.fftSize;
+  const half = session.settings.fftSize >> 1;
+  const bandPower = Object.fromEntries(BAND_DEFINITIONS.map(([name]) => [name, 0]));
+  for (let bin = 1; bin <= half; bin += 1) {
+    const power = session.spectrumPower[bin];
+    const frequencyHz = bin * binWidthHz;
+    totalPower += power;
+    weightedFrequency += frequencyHz * power;
+    for (const [name, low, high] of BAND_DEFINITIONS) {
+      if (frequencyHz >= low && frequencyHz < high) bandPower[name] += power;
+    }
+  }
+  const bandTotal = Object.values(bandPower).reduce((sum, value) => sum + value, 0);
+  const liveBandsPct = Object.fromEntries(BAND_DEFINITIONS.map(([name]) => [
+    name, bandTotal > 0 ? Math.round((bandPower[name] / bandTotal) * 1000) / 10 : 0,
+  ]));
   return {
     durationSeconds: session.totalFrames / session.metadata.sampleRateHz,
     rmsDbfs: session.sampleCount ? Math.round(dbfs(rms) * 100) / 100 : null,
     samplePeakDbfs: session.sampleCount ? Math.round(dbfs(session.samplePeak) * 100) / 100 : null,
+    spectralCentroidHz: session.spectralFrames && totalPower > 0 ? Math.round(weightedFrequency / totalPower) : null,
+    bandsPct: liveBandsPct,
     spectralFrames: session.spectralFrames,
     sampleCount: session.sampleCount,
     clippingSamples: session.clippedSampleCount,
