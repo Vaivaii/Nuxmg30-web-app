@@ -7,7 +7,7 @@ const css=readFileSync(new URL("../www/studio-daw.css",import.meta.url),"utf8");
 const studio=readFileSync(new URL("../www/studio-daw.js",import.meta.url),"utf8");
 
 test("Editor Signal Chain exposes the real block category and preserves live state expressions",()=>{
-  assert.ok(html.includes('data-category="'+escapeHtml(b.id)+'"'));
+  assert.ok(html.includes(`data-category="'+escapeHtml(b.id)+'"`));
   assert.ok(html.includes("states[i].on?'● ON':'○ OFF'"));
   assert.ok(html.includes("i===selected?'selected ':'"));
   assert.ok(html.includes("chainOrder=order"));
