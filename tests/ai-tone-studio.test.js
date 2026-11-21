@@ -2430,6 +2430,7 @@ test('AI JSON parser classifies malformed or incomplete JSON without exposing ra
   error=>error.code==='AI_INVALID_JSON'&&!error.message.includes('Expected')&&Boolean(error.cause)
  );
  assert.throws(()=>parseAiStructuredResponse({text:'   '}),error=>error.code==='AI_EMPTY_RESPONSE');
+ assert.throws(()=>parseAiStructuredResponse({text:'{"summary":"partial"',finish_reason:'length'}),error=>error.code==='AI_INCOMPLETE_RESPONSE');
 });
 
 test('audio interpretation schema normalizes observations, object recommendations and string limitations',()=>{
