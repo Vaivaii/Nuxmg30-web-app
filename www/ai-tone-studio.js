@@ -880,20 +880,25 @@ const next='chatgpt';
  const closePanel=()=>{if(audioCaptureActive)void stopAudioListeningWithoutAnalysis();shade.classList.remove('on');sheet.classList.remove('on');open.classList.remove('ai-tone-open');open.setAttribute('aria-expanded','false');};
 
  const setAudioPanelExpanded=expanded=>{
+  let collapsePromise=Promise.resolve();
   if(expanded){
    ui.audioPanel.hidden=false;
    const openDock=()=>{if(!ui.audioPanel.hidden)ui.audioPanel.classList.add('is-open');};
    if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(openDock);else openDock();
   }else if(!ui.audioPanel.hidden){
    ui.audioPanel.classList.remove('is-open');
-   const finish=()=>{if(!ui.audioPanel.classList.contains('is-open'))ui.audioPanel.hidden=true;};
-   const onEnd=event=>{if(event.target===ui.audioPanel&&event.propertyName==='transform'){ui.audioPanel.removeEventListener('transitionend',onEnd);finish();}};
-   ui.audioPanel.addEventListener('transitionend',onEnd);
-   window.setTimeout(()=>{ui.audioPanel.removeEventListener('transitionend',onEnd);finish();},420);
+   collapsePromise=new Promise(resolve=>{
+    let settled=false;
+    const finish=()=>{if(settled)return;settled=true;if(!ui.audioPanel.classList.contains('is-open'))ui.audioPanel.hidden=true;resolve();};
+    const onEnd=event=>{if(event.target===ui.audioPanel&&event.propertyName==='transform'){ui.audioPanel.removeEventListener('transitionend',onEnd);finish();}};
+    ui.audioPanel.addEventListener('transitionend',onEnd);
+    window.setTimeout(()=>{ui.audioPanel.removeEventListener('transitionend',onEnd);finish();},420);
+   });
   }
   ui.audioToggle.classList.toggle('active',Boolean(expanded));
   ui.audioToggle.setAttribute('aria-expanded',String(Boolean(expanded)));
   if(expanded)void refreshAudioDeviceStatus();
+  return collapsePromise;
  };
  const syncSettingsTop=()=>{
   const header=sheet.querySelector('.ai-tone-head');
@@ -994,7 +999,7 @@ const next='chatgpt';
    const live=getToneDspLiveSummary(audioDspSession);
    if(ui.audioDspReadout){
     ui.audioDspReadout.hidden=false;
-    ui.audioDspReadout.textContent='LOCAL DSP · '+live.spectralFrames+' FFT frames · RMS '+(live.rmsDbfs===null?'—':live.rmsDbfs.toFixed(1)+' dBFS')+' · Peak '+(live.samplePeakDbfs===null?'—':live.samplePeakDbfs.toFixed(1)+' dBFS');
+    ui.audioDspReadout.textContent='LOCAL DSP · '+live.spectralFrames+' FFT frames · RMS '+(live.rmsDbfs===null?'—':live.rmsDbfs.toFixed(1)+' dBFS')+' · Peak '+(live.samplePeakDbfs===null?'—':live.samplePeakDbfs.toFixed(1)+' dBFS')+' · Centroid '+(live.spectralCentroidHz===null?'—':live.spectralCentroidHz+' Hz');
    }
   }catch(error){
    if(ui.audioDspReadout){ui.audioDspReadout.hidden=false;ui.audioDspReadout.textContent='LIVE DSP PAUSED · '+String(error?.message||error);}
@@ -1084,10 +1089,10 @@ const next='chatgpt';
       interpretation=await requestAudioDiagnosis('Analisis tone gitar saya berdasarkan hasil DSP USB Audio MG-30 ini. Jelaskan karakter yang didukung data dan berikan rekomendasi tanpa mengubah perangkat.',metrics);
      }catch(error){aiError=String(error?.message||error); }
     }
+    await setAudioPanelExpanded(false);
     chatCard('audio-analysis',{report:metrics,interpretation,aiError});
     rememberConversation('assistant','DSP analysis saved. RMS '+metrics.metrics.rmsDbfs+' dBFS; sample peak '+metrics.metrics.samplePeakDbfs+' dBFS. AI interpretation: '+(interpretation?.summary||aiError||'not requested')+'.');
     setAudioStatus(interpretation?'DSP analysis and AI interpretation complete.':'DSP analysis complete; AI interpretation unavailable.','success');
-    setAudioPanelExpanded(false);
    }else{
     lastAudioMetrics=null;
     setAudioStatus('Listening stopped. Temporary audio was discarded.','idle');
