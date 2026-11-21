@@ -207,3 +207,28 @@ Phase 6 — Regression and acceptance
 - UI and Editor/MIDI integration audit: complete.
 - Implementation: NOT STARTED.
 - Application code changed by this audit: NO.
+
+
+## 10. User clarification — capture is already working (2026-11-21)
+
+The project owner clarified that the existing AI Live Tone Assistant audio-capture feature is already implemented and has successfully captured audio on their setup. Treat capture as an existing, working capability for this development task.
+
+Correction to the recommended sequence in section 8:
+- Do NOT restart USB Audio capture development.
+- Do NOT make hardware capture acceptance a blocking Phase 1 for the requested DSP/AI change.
+- Preserve the existing capture implementation and its current route, permissions, channel selection, WAV handling, and stop/delete behavior. Do not refactor the native capture plugin unless a concrete regression is discovered during DSP integration.
+- The task is to change the analysis responsibility: DSP performs the actual audio measurements locally; AI receives only the DSP result and interprets it, explains it, and recommends changes.
+- The current local DSP helper is a starting point, not proof that all requested metrics are implemented correctly. Audit and extend its measurement math, provenance, and output schema without changing the capture path.
+- Analyze Once and Live Listening must share the same DSP implementation. The required work is a shared/chunk-capable DSP engine and session integration, not a new audio-capture system.
+- Existing AI provider/fallback architecture remains the only AI route. Do not create a second provider.
+- Any physical-device testing should be limited to regression confirmation that the existing successful capture path remains intact after DSP/UI changes, not a prerequisite to reimplement capture.
+
+Updated immediate next step:
+1. Lock the current working capture path as protected baseline.
+2. Define the DSP report schema and measurement methods/provenance.
+3. Implement and numerically test the shared local DSP engine.
+4. Feed only its structured output to the existing AI interpreter.
+5. Integrate Analyze Once / Live Listening session behavior and the master result card.
+6. Run regression tests and confirm capture, MIDI, NAM/IR, Presets, Studio/DAW, Device, provider, and Undo behavior remain intact.
+
+This clarification supersedes the "Phase 1 — Hardware capture acceptance" sequencing in section 8 where it conflicts with the owner's confirmed working capture. It does not claim that every DSP metric is already available or validated.
