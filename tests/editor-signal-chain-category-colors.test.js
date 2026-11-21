@@ -39,3 +39,13 @@ test("Studio is restored to original Jamm & Record modes without Tone Analysis r
   assert.ok(!css.includes("/* TIE Phase"));
   assert.ok(!studio.includes("function setStudioWorkspace("));
 });
+
+test("Editor category colour overrides legacy responsive icon colours without changing SVG artwork",()=>{
+  const htmlOverride="body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol{";
+  assert.ok(html.includes('<style id="editor-reference-final-v9">'));
+  assert.ok(html.includes(htmlOverride),"missing final-cascade category icon override");
+  assert.ok(html.includes("color:var(--editor-category,var(--lime))!important"),"icon must inherit the exact shared category token");
+  assert.ok(css.includes("fill:none!important;stroke:currentColor!important"),"line-art SVG must preserve transparent interiors and use currentColor strokes");
+  assert.ok(html.includes("renderBlockIcon(b.id)"),"existing SVG artwork renderer must remain in use");
+  assert.ok(!html.includes("filter:") || css.includes(".chain .block.off[data-category]"),"bypass styling remains scoped to category blocks");
+});
