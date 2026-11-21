@@ -1587,7 +1587,7 @@ test('audio diagnosis marks the AI request complete or failed after the final ch
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  const request=source.slice(source.indexOf('async function requestAudioDiagnosis'),source.indexOf('async function finishAudioListening'));
  assert.match(request, /status\('AI interpretation complete\..*'success'\)/);
- assert.match(request, /status\('Audio analysis failed:.*'error'\)/);
+ assert.match(request, /status\('AI interpretation could not be completed\..*'error'\)/);
 });
 
 
