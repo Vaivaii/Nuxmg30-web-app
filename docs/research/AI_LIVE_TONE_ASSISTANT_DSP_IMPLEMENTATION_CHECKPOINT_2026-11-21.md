@@ -120,3 +120,29 @@ The existing assistant test was updated to assert the strict DSP/AI boundary. Th
 - Android APK build: pending.
 - Physical-device verification of new bridge: pending.
 - Production-ready / complete: NOT CLAIMED.
+
+
+## Final CI and APK verification — 2026-11-21
+
+Final verified source commit: `794872a439bb3bc664c7109657211e135f06cbc6`
+GitHub Actions run: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44928336429
+
+- Workflow conclusion: SUCCESS.
+- JavaScript syntax validation: PASS.
+- Full Node regression suite: **695 passed, 0 failed**.
+- Capacitor Android project generation + native plugin installation: PASS.
+- Gradle assembleDebug: PASS.
+- APK upload: PASS.
+- Artifact: MG30-Studio-debug-APK, artifact ID `14716831233`, archive size 4,397,251 bytes.
+- Extracted APK: `app-debug.apk`, size 4,775,608 bytes.
+- Extracted APK SHA-256: `ffc3deaca30042493ffefaa06461708ab8cfa430083f2bf6f0566368773ff31c`.
+- The APK artifact was downloaded and its archive listing checked. It contains exactly one file, `app-debug.apk`.
+
+The CI build proves source compilation, regression tests, Android project generation and packaging. It does not prove the new live PCM chunk reader on the user's physical MG-30 Android setup. Physical-device verification remains required for:
+- PCM reader offsets advancing without growing backlog on the actual USB input.
+- Live DSP spectrum updates while playing.
+- final report equivalence between Analyze Once and Live Listening for the same PCM.
+- Existing USB Audio capture route remaining functional after APK installation.
+- No regressions in MIDI, Undo, NAM, IR, presets, DAW or Editor interactions.
+
+Current state: source tests and Android APK build are green; physical hardware confirmation is pending. Do not label the feature physically hardware-verified until that test is completed.
