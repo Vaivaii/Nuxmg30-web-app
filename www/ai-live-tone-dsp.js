@@ -296,6 +296,18 @@ export function finalizeToneDspSession(session) {
       pcmProvenance: "decoded local MG-30 USB Audio PCM",
     },
     settings: { ...session.settings, binWidthHz: Math.round(binWidthHz * 1000) / 1000 },
+    measurementStatus: {
+      rmsDbfs: "measured",
+      samplePeakDbfs: "measured",
+      crestFactorDb: "measured",
+      spectrum: "measured",
+      frequencyBands: "measured",
+      clipping: "measured",
+      noiseFloor: "unavailable",
+      dynamicRange: "not_measured",
+      latency: "not_measured",
+      truePeak: "not_measured",
+    },
     metrics: {
       rmsDbfs: Math.round(rmsDbfs * 100) / 100,
       samplePeakDbfs: Math.round(peakDbfs * 100) / 100,
