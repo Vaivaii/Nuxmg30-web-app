@@ -1086,7 +1086,7 @@ const next='chatgpt';
     if(askAi){
      setAudioStatus('DSP complete · sending structured measurements to the existing AI provider…','busy');
      try{
-      interpretation=await requestAudioDiagnosis('Analisis tone gitar saya berdasarkan hasil DSP USB Audio MG-30 ini. Jelaskan karakter yang didukung data dan berikan rekomendasi tanpa mengubah perangkat.',metrics);
+      interpretation=await requestAudioDiagnosis(String(options.question||'Analisis tone gitar saya berdasarkan hasil DSP USB Audio MG-30 ini. Jelaskan karakter yang didukung data dan berikan rekomendasi tanpa mengubah perangkat.'),metrics,String(options.conversation||''));
      }catch(error){aiError=String(error?.message||error); }
     }
     await setAudioPanelExpanded(false);
@@ -2203,7 +2203,11 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   setBusy(true);message('user',prompt);status(activityMode==='discussion'?'GPT-5.6 Luna is thinking…':activityMode==='tone'?'GPT-6 Luna is preparing your preset…':activityMode==='refinement'?'GPT-6 Luna is preparing a tweak proposal…':'AI is processing your request…','busy');
   let audioMetricsForRequest=lastAudioMetrics&&Date.now()-Number(lastAudioMetrics.measuredAt||0)<10*60*1000?lastAudioMetrics:null;
   try{
-   if(audioCaptureActive){const captured=await finishAudioListening({askAi:false});if(captured)audioMetricsForRequest=captured;}
+   if(audioCaptureActive){
+    const captured=await finishAudioListening({askAi:intent==='audio_analyze',question:prompt,conversation});
+    if(captured)audioMetricsForRequest=captured;
+    if(intent==='audio_analyze'){ui.prompt.value='';$('aiToneCount').textContent='0/1400';return;}
+   }
    if(intent==='nam_search'){await searchNamCatalogForPrompt(prompt,conversation);return;}
    if(intent==='audio_analyze'){
     if(!audioMetricsForRequest){
