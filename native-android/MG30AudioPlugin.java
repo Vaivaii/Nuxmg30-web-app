@@ -745,6 +745,48 @@ public class MG30AudioPlugin extends Plugin {
         return result;
     }
 
+    /**
+     * Read a bounded chunk of the active MG-30 analysis WAV while AudioRecord is running.
+     * This is an additive read-only bridge for local streaming DSP; it does not alter capture.
+     */
+    @PluginMethod
+    public void readToneAnalysisPcmChunk(PluginCall call) {
+        if (activeFile == null || !"multichannel".equalsIgnoreCase(activeCaptureMode) ||
+            activeChannels < 1 || activeChannels > 8) {
+            call.reject("Tidak ada file PCM MG-30 USB Audio untuk streaming DSP.");
+            return;
+        }
+        long offsetBytes = Math.max(0L, call.getLong("offsetBytes", 0L));
+        int frameBytes = activeChannels * 3;
+        int requestedBytes = Math.max(frameBytes, Math.min(196608, call.getInt("maxBytes", 49152)));
+        requestedBytes -= requestedBytes % frameBytes;
+        long availableBytes = Math.max(0L, activeFile.length() - 44L);
+        if (offsetBytes > availableBytes) offsetBytes = availableBytes - (availableBytes % frameBytes);
+        long readableBytes = Math.min((long) requestedBytes, Math.max(0L, availableBytes - offsetBytes));
+        readableBytes -= readableBytes % frameBytes;
+        byte[] pcm = new byte[(int) readableBytes];
+        try (RandomAccessFile input = new RandomAccessFile(activeFile, "r")) {
+            input.seek(44L + offsetBytes);
+            if (pcm.length > 0) input.readFully(pcm);
+            JSObject result = new JSObject();
+            result.put("offsetBytes", offsetBytes);
+            result.put("nextOffsetBytes", offsetBytes + readableBytes);
+            result.put("availableBytes", availableBytes);
+            result.put("bytesRead", readableBytes);
+            result.put("pcm24Base64", android.util.Base64.encodeToString(pcm, android.util.Base64.NO_WRAP));
+            result.put("sampleRate", activeSampleRate);
+            result.put("channels", activeChannels);
+            result.put("channelIndexMask", activeChannelIndexMask);
+            result.put("frameBytes", frameBytes);
+            result.put("recording", recording);
+            result.put("captureError", captureError);
+            call.resolve(result);
+        } catch (IOException error) {
+            call.reject("Gagal membaca chunk PCM lokal untuk DSP: " +
+                (error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage()));
+        }
+    }
+
     @PluginMethod
     public void getRecordingStats(PluginCall call) {
         JSObject result = new JSObject();
