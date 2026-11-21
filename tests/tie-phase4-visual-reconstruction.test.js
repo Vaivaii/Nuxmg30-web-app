@@ -61,7 +61,7 @@ test("Review mini pedalboard uses shared colored Editor SVG icons",()=>{
 });
 test("Gain metrics preserve measurement provenance and never fabricate stage levels",()=>{
   assert.ok(review.includes("metrics?.rmsDbfs"));
-  assert.ok(review.includes("metrics?.samplePeakDbfs"));
+  assert.ok(review.includes("metrics.samplePeakDbfs"));
   assert.ok(review.includes("tieReviewHeadroom"));
   assert.ok(review.includes("tieReviewOutput"));
   assert.ok(review.includes("Not measured"));
@@ -77,7 +77,7 @@ test("Tone graph uses the completed PCM Analyzer spectrum with frequency and dBF
   assert.ok(analyzer.includes("result.spectrum"));
 });
 test("Scene and preset comparison remain unavailable without multi-scene evidence",()=>{
-  assert.ok(review.includes("Cross-scene level comparison is not available"));
+  assert.ok(html.includes("Cross-scene level comparison is not available"));
   assert.ok(review.includes("Perbandingan antar-preset belum dijalankan"));
   assert.ok(review.includes("sceneName(snapshot?.sceneIndex)"));
   assert.ok(html.includes('id="tieReviewSceneBars"'));

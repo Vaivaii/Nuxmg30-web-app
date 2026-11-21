@@ -14,7 +14,7 @@ test("Phase 4 Signal Chain panel replaces the generic preview with a live snapsh
   assert.ok(html.includes('id="tieChainParameters"'));
   assert.ok(html.includes('id="tieChainDiagnostics"'));
   assert.ok(!html.includes("Live effect-block snapshot is not connected"));
-  assert.ok(html.includes('src="./tie-signal-chain-ui.js?v=phase4-2"'));
+  assert.ok(html.includes('src="./tie-signal-chain-ui.js?v=phase4-3"'));
 });
 
 test("Signal Chain Intelligence consumes the existing shared editor and preset reader", () => {
@@ -33,7 +33,7 @@ test("Signal chain ordering and bypass state are sourced from the shared preset 
   assert.ok(html.includes("enabled:modelKnown?Boolean(state.on):null"));
   assert.ok(ui.includes("orderedBlocks(snapshot)"));
   assert.ok(ui.includes("block.enabled?'ON':'BYPASS'"));
-  assert.ok(ui.includes("block.known?(block.enabled?'ACTIVE':'BYPASS'):'NOT READ'"));
+  assert.ok(ui.includes("block.known?(block.enabled?'ON':'BYPASS'):'UNKNOWN'"));
 });
 
 test("Unavailable device data and provisional NAM mapping are explicitly distinguished", () => {
@@ -41,7 +41,7 @@ test("Unavailable device data and provisional NAM mapping are explicitly disting
   assert.ok(html.includes("preserveSignalChain:!ok"));
   assert.ok(html.includes("if(programChanged||sceneChanged)signalChainReadbackMeta=null;"));
   assert.ok(html.includes("mappingEvidence:[60,61].includes(namProfile.id)?'observed-device-id':'provisional-slot-id'"));
-  assert.ok(ui.includes("Device preset readback supplies the selected NAM slot ID, not the original .nam filename."));
+  assert.ok(ui.includes("Preset readback supplies the selected NAM slot ID, not a verified .nam filename."));
   assert.ok(ui.includes("provisional-slot-id"));
   assert.ok(ui.includes("No verified device readback or saved editor draft is available."));
   assert.ok(ui.includes("Device disconnected · showing last successful readback"));
@@ -60,7 +60,7 @@ test("Diagnostics separate configuration hypotheses from measured clipping and n
   assert.ok(ui.includes("Potential stacked gain controls"));
   assert.ok(ui.includes("configuration heuristic, not a measured signal level"));
   assert.ok(ui.includes("Cannot confirm clipping"));
-  assert.ok(ui.includes("Clipping, headroom and noise diagnoses are therefore withheld."));
+  assert.ok(ui.includes("Clipping, headroom and noise diagnoses are withheld."));
   assert.ok(html.includes("Open DSP Analyzer"));
   assert.ok(html.includes("Open Tone Comparison"));
 });
@@ -81,7 +81,7 @@ test("Configuration Review is an in-context five-tab page, not a new application
   }
   assert.ok(html.includes('id="tieOpenConfigurationReview"'));
   assert.ok(html.includes('id="tieReviewBack"'));
-  assert.ok(html.includes('src="./tie-configuration-review-ui.js?v=phase4-1"'));
+  assert.ok(html.includes('src="./tie-configuration-review-ui.js?v=phase4-2"'));
   assert.ok(review.includes('function close()'));
   assert.ok(review.includes('data-tie-page-panel'));
 });
@@ -95,8 +95,8 @@ test("Signal Chain pedalboard reuses the Editor SVG renderer and actual snapshot
 });
 
 test("Configuration Review never fabricates gain measurements or spectral results", () => {
-  assert.ok(review.includes('m?.rmsDbfs'));
-  assert.ok(review.includes('m?.samplePeakDbfs'));
+  assert.ok(review.includes('metrics?.rmsDbfs'));
+  assert.ok(review.includes('metrics.samplePeakDbfs'));
   assert.ok(review.includes('"Not measured"'));
   assert.ok(review.includes('Headroom'));
   assert.ok(review.includes('Per-block audio levels are not exposed'));

@@ -884,3 +884,11 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Added a focused Phase 4 visual reconstruction regression test covering shared artwork reuse, category-colored SVGs, read-only parameter dials, page replacement navigation, measured-vs-unmeasured provenance, Scene comparison limitations, Report sharing and regression boundaries.
 - CI results for this milestone must be appended after the next workflow run. The earlier workflow #1210 (775 tests plus debug APK build) predates this visual change and does not validate this milestone.
 - Do not claim the 90% visual target until the new APK is rendered on an Android portrait viewport and compared against the reference.
+
+
+### CI correction after first visual reconstruction run — 2026-11-21
+- First CI run for visual reconstruction commit dff51db17cb1b81b5d70435af39f5d3b7cc43c7e passed JavaScript syntax validation but failed npm test: 778 passed, 10 failed.
+- Two pre-existing DAW toolbar tests require the established stylesheet cache token studio-scroll-shell-1. Preserved that token and appended the Phase 4 cache key instead; DAW layout/cache identity is not changed.
+- Updated six legacy Phase 4 assertions to match the intentional new UI labels/statuses and bumped module cache versions. Updated two new assertions so they verify the rendered measurement provenance and the actual HTML limitation copy.
+- No production DAW, MIDI, protocol, NAM, IR, Editor control or DSP implementation was changed as part of this test correction.
+- The next CI run must pass the full suite and Android APK build before the milestone can be called build-verified.
