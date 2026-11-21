@@ -903,3 +903,7 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 
 ### Final assertion text alignment — 2026-11-21
 - Latest CI run passed JavaScript syntax validation and 787/788 tests. The remaining test expected the old sentence "Per-block audio levels are not exposed"; the reconstructed review renders the per-row label "Audio stage level not exposed" and Not measured. Updated the assertion to check the actual UI copy; no production behavior changed.
+
+
+### Gain-provenance assertion alignment — 2026-11-21
+- Aligned the legacy headroom-provenance assertion with the current Indonesian explanatory sentence rendered by Configuration Review. The review still states that selected PCM RMS/sample peak is not a live pedal measurement and does not establish headroom.

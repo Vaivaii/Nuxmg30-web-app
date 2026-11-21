@@ -102,7 +102,7 @@ test("Configuration Review never fabricates gain measurements or spectral result
   assert.ok(review.includes('Audio stage level not exposed'));
   assert.ok(review.includes('No Analyzer spectrum available'));
   assert.ok(review.includes('bandEnergyPct'));
-  assert.ok(review.includes('does not establish headroom'));
+  assert.ok(review.includes('tidak menetapkan headroom'));
 });
 
 test("PDF export is explicitly unavailable and report share is a real host capability check", () => {
