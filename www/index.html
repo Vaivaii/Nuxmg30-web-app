@@ -1799,6 +1799,12 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
  min-height:0!important;max-height:none!important;margin:2px 0 0!important;padding:0!important;
  color:#879594!important;font-size:11px!important;line-height:1.2!important;
 }
+
+ /* Keep the Signal Chain SVG glyph on the same category colour as its pedal.
+    This deliberately outranks the legacy responsive lime/grey .symbol rules. */
+ body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol{
+  color:var(--editor-category,var(--lime))!important;
+ }
 </style>
 </head>
 <body><div class="app">
