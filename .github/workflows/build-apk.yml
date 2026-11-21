@@ -42,6 +42,7 @@ on:
       - fix/editor-model-caption-visibility
       - fix/global-english-android-back
       - feature/tone-intelligence-engine
+      - feature/ai-live-tone-dsp-interpreter-2026-11-21
     paths:
       - 'www/**'
       - 'tests/**'
