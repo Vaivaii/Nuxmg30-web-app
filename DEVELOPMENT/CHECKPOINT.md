@@ -1143,3 +1143,24 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Test correction: CI #1222 exposed a bad test assertion (it evaluated page-local `escapeHtml` in the Node test process). The test was corrected to compare the source expression; no application behavior changed. CI #1223 then passed all tests.
 - Scope limitation: this CI validates source/build/regression only. Physical Android runtime, connected audio/MIDI hardware, and original NUX MG-30 Gen 2 firmware 6.0.x were not available for acceptance testing. Do not claim device-level verification from CI.
 - Local workstation `git status` remains unverified because only the remote GitHub repository interface was available. No local working-tree files were altered by the remote branch update.
+
+## Editor Signal Chain icon category-colour fix — 2026-11-21
+
+### Audit finding
+- The Signal Chain artwork is generated as inline SVG by `renderBlockIcon(blockId)`; the SVG paths are line-art and the root SVG has no hard-coded fill/stroke colour.
+- The retained SVG rule uses `fill:none` and `stroke:currentColor`, so the artwork itself did not need to be modified.
+- The category token and border mapping were already correct in `studio-daw.css`.
+- Root cause: legacy responsive rules later in `www/index.html` set `#page-editor .chain .block .symbol` to `var(--lime)!important` and the OFF state to a grey colour. Those selectors had greater specificity than the earlier retained category-colour selector, leaving glyphs lime/grey while borders were category-coloured.
+
+### Narrow fix
+- Added one final-cascade rule inside `editor-reference-final-v9`:
+  `body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol { color:var(--editor-category,var(--lime))!important; }`
+- This selector deliberately outranks the legacy responsive lime/grey icon rules and uses the same `--editor-category` custom property already driving the pedal border.
+- Existing SVG path data, viewBox, dimensions, shape, fill transparency, stroke geometry, layout, pedal size, background, knobs, preset logic, MIDI, NAM/IR, and Studio/TIE rollback were not changed.
+- Selected and ON states retain category colour. OFF/bypass keeps category identity while the existing whole-block opacity treatment dims it.
+
+### Regression coverage and verification status
+- Updated `tests/editor-signal-chain-category-colors.test.js` to assert the final-cascade override, shared category token, existing transparent-fill/currentColor SVG treatment, and reuse of the original SVG renderer.
+- Source edits are committed to `feature/tone-intelligence-engine`; CI/build verification and a rendered Android screenshot are pending at the time of this checkpoint entry.
+- No physical MG-30 Gen 2 firmware 6.0.x hardware or Android emulator screenshot test is claimed.
+- Scope remains strictly Editor Signal Chain icon colour. No Tone Intelligence runtime was restored.
