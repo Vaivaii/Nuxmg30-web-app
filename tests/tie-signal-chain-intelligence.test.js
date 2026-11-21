@@ -82,7 +82,7 @@ test("Configuration Review is an in-context five-tab page, not a new application
   assert.ok(html.includes('id="tieOpenConfigurationReview"'));
   assert.ok(html.includes('id="tieReviewBack"'));
   assert.ok(html.includes('src="./tie-configuration-review-ui.js?v=phase4-2"'));
-  assert.ok(review.includes('function close()'));
+  assert.ok(review.includes('function closeReview()'));
   assert.ok(review.includes('data-tie-page-panel'));
 });
 
@@ -97,7 +97,7 @@ test("Signal Chain pedalboard reuses the Editor SVG renderer and actual snapshot
 test("Configuration Review never fabricates gain measurements or spectral results", () => {
   assert.ok(review.includes('metrics?.rmsDbfs'));
   assert.ok(review.includes('metrics.samplePeakDbfs'));
-  assert.ok(review.includes('"Not measured"'));
+  assert.ok(review.includes('Not measured'));
   assert.ok(review.includes('Headroom'));
   assert.ok(review.includes('Per-block audio levels are not exposed'));
   assert.ok(review.includes('No Analyzer spectrum available'));

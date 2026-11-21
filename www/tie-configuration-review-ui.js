@@ -158,6 +158,7 @@ $('tieReviewBack')?.addEventListener('click',closeReview);
 document.querySelectorAll('[data-tie-review-tab]').forEach(button=>button.addEventListener('click',()=>switchTab(button.dataset.tieReviewTab)));
 document.querySelectorAll('[data-tie-review-target]').forEach(button=>button.addEventListener('click',()=>navigate(button.dataset.tieReviewTarget)));
 $('tieReviewAnalyze')?.addEventListener('click',()=>{closeReview();document.querySelector('[data-tie-page="analyzer"]')?.click();});
+$('tieReviewCompare')?.addEventListener('click',()=>{closeReview();document.querySelector('[data-tie-page="compare"]')?.click();});
 $('tieReviewShare')?.addEventListener('click',shareReview);$('tieReviewShareReport')?.addEventListener('click',shareReview);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('tieConfigurationReview')?.hidden)closeReview();});
 window.addEventListener('mg30-tie-analysis-updated',render);

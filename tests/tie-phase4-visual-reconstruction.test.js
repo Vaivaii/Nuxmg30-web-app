@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { Script } from "node:vm";
 
 const html=readFileSync(new URL("../www/index.html",import.meta.url),"utf8");
 const css=readFileSync(new URL("../www/studio-daw.css",import.meta.url),"utf8");
@@ -106,4 +107,16 @@ test("Readback and user library mappings are read-only in Signal Chain",()=>{
   assert.ok(ui.includes("Third Party / User"));
   assert.ok(!ui.includes("setItem("));
   assert.ok(!ui.includes("writeSlot("));
+});
+
+
+test("Phase 4 browser modules parse as valid JavaScript before Android packaging",()=>{
+  assert.doesNotThrow(()=>new Script(ui,{filename:"tie-signal-chain-ui.js"}));
+  assert.doesNotThrow(()=>new Script(review,{filename:"tie-configuration-review-ui.js"}));
+});
+test("Configuration Review preserves a route into the existing Tone Comparison tab",()=>{
+  assert.ok(html.includes('id="tieReviewCompare"'));
+  assert.ok(html.includes("Open Tone Comparison"));
+  assert.ok(review.includes('tieReviewCompare'));
+  assert.ok(review.includes('data-tie-page="compare"'));
 });

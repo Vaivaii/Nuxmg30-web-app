@@ -60,7 +60,7 @@ function parameterMarkup(param){
     return '<div class="tie-knob tie-knob-unread"><span class="tie-knob-dial"><i></i></span><label>'+escapeHtml(param.label)+'</label><output>Not read</output></div>';
   }
   const value=Math.max(0,Math.min(100,Number(param.value))),angle=-135+value*2.7;
-  return '<div class="tie-knob"><span class="tie-knob-dial" style="--tie-knob-angle:'+angle+'deg;--tie-knob-value:'+value+'%"><i></i></span><label>'+escapeHtml(param.label)+'</label><output>'+value.toFixed(0)+'</output></div>';
+  return '<div class="tie-knob"><span class="tie-knob-dial" style="--tie-knob-angle:'+angle+'deg;--tie-knob-value:'+(value*.75)+'%"><i></i></span><label>'+escapeHtml(param.label)+'</label><output>'+value.toFixed(0)+'</output></div>';
 }
 function renderDetails(){
   const block=currentBlock(),params=$('tieChainParameters'),artwork=$('tieChainSelectedArtwork');

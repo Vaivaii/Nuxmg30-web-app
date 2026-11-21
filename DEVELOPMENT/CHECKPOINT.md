@@ -892,3 +892,10 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Updated six legacy Phase 4 assertions to match the intentional new UI labels/statuses and bumped module cache versions. Updated two new assertions so they verify the rendered measurement provenance and the actual HTML limitation copy.
 - No production DAW, MIDI, protocol, NAM, IR, Editor control or DSP implementation was changed as part of this test correction.
 - The next CI run must pass the full suite and Android APK build before the milestone can be called build-verified.
+
+
+### Follow-up compatibility and syntax-test correction — 2026-11-21
+- Kept a compact Open Tone Comparison action from Configuration Review to the already-existing Tone Analysis Compare tab so the page refresh does not remove the previous quick route into comparison.
+- Adjusted the read-only visual dial arc to use a 270-degree sweep that corresponds to the 0–100 editor parameter scale.
+- Updated the remaining Phase 4 regression assertions to match the full-page close handler and explicit Not measured provenance text.
+- Added JavaScript parse checks for both new browser UI modules to the focused regression suite. No browser runtime execution or hardware protocol changes are introduced by these checks.
