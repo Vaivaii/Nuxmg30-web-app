@@ -184,6 +184,14 @@ function findBalancedJsonValue(source){
 
 export function parseAiStructuredResponse(response){
  if(response&&typeof response==='object'&&!Array.isArray(response)){
+  const finishReason=String(response.finish_reason||response.finishReason||response.choices?.[0]?.finish_reason||'').toLowerCase();
+  const incompleteStatus=response.status==='incomplete'||response.incomplete===true||
+   /^(length|max_tokens|max_output_tokens|max_completion_tokens)$/.test(finishReason);
+  if(incompleteStatus){
+   const error=new Error('The AI provider response was incomplete and must be retried.');
+   error.code='AI_INCOMPLETE_RESPONSE';
+   throw error;
+  }
   if(response.result&&typeof response.result==='object'&&!Array.isArray(response.result))return response.result;
   if(response.tonePlan&&typeof response.tonePlan==='object'&&!Array.isArray(response.tonePlan))return response.tonePlan;
   const hasTextEnvelope=['text','output_text','reply','content','choices','output'].some(key=>key in response);
@@ -1223,7 +1231,7 @@ const next='chatgpt';
    try{
     result=await call(system,user);
    }catch(firstError){
-    if(!['AI_INVALID_JSON','AI_INVALID_SCHEMA','AI_EMPTY_RESPONSE'].includes(firstError?.code))throw firstError;
+    if(!['AI_INVALID_JSON','AI_INVALID_SCHEMA','AI_EMPTY_RESPONSE','AI_INCOMPLETE_RESPONSE'].includes(firstError?.code))throw firstError;
     const repairSystem=system+' FORMAT RETRY: The previous output did not satisfy the JSON parser/schema. Return a compact, syntactically valid JSON object. Keep the summary under 500 characters, at most four observations, at most four recommendations, and at most four limitations. Use ordinary JSON double-quoted strings; escape quotes and line breaks; do not use trailing commas or Markdown fences.';
     const repairUser=user+'\n\nFORMAT VALIDATION RETRY: Re-serialize the same interpretation in valid JSON only. Do not repeat or modify any DSP measurements.';
     result=await call(repairSystem,repairUser);
