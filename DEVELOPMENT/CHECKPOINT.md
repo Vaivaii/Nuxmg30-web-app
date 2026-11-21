@@ -928,3 +928,18 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Default Selected Block now prefers the known AMP block when it exists in the current snapshot, matching the supplied reference's first view and showing the matching local amplifier artwork/AMP parameter layout. Users can still select any other block manually.
 - Gain summary card label is aligned to Input Level while its value/provenance remains explicit: selected-file/Quick Record PCM RMS, not a live MG-30 input meter.
 - Added regression assertions for the AMP default-selection rule and the non-live PCM provenance label. The earlier successful run #1215 validates the immediately preceding commit; this visual refinement needs its own CI build.
+
+### Final visual refinement — CI #1216 successful — 2026-11-21
+- Final visual refinement commit: 8fd4b4f97365d10c325711c1e1c6d0b754ec2943.
+- Workflow #1216 / run 44877015322 completed with conclusion SUCCESS on branch feature/tone-intelligence-engine.
+- JavaScript syntax validation: passed.
+- Full regression suite: 792 tests passed, 0 failed.
+- Capacitor Android project generation and USB audio plugin installation: passed.
+- Gradle assembleDebug: BUILD SUCCESSFUL in 1m 18s.
+- APK artifact: MG30-Studio-debug-APK.zip, artifact ID 14696740827, 4,445,088 bytes; archive SHA-256 6c7e2746a78e4a0318c942147c44a4b0dcd76bada6473fdb95a4e1766a746cdc.
+- Extracted APK: app-debug.apk, 4,823,221 bytes; SHA-256 e4568ea1422c3ecd89c937079f6f05533d6aca02432b9644be5c1c883772c685.
+- APK bundle inspection confirms the new Configuration Review, Tone Comparison route, shared artwork bridge, category-colored pedalboard CSS, knob visuals, Input Level label and PCM RMS provenance are present in the packaged app.
+- First selected block now defaults to the known AMP block when available, so the initial Selected Block panel matches the provided reference; users can still select any other block manually.
+- No runtime screenshot from an Android emulator/handset was captured in CI. The 90% visual-fidelity threshold remains unscored until the installed APK is compared at Android portrait viewport against the supplied reference.
+- Hardware readback acceptance remains to be performed on original NUX MG-30 Gen 2 firmware 6.0.x.
+- No changes to protocol, MIDI CC mapping, preset transfer, NAM, IR User/Third Party/Collection, AI provider orchestration, DSP engine, Audio Engine, DAW, Quick Record or device-management paths.
