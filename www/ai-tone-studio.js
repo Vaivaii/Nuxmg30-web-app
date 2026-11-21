@@ -1186,18 +1186,32 @@ const next='chatgpt';
  }
  async function requestAudioDiagnosis(question,metrics,conversation=''){
   const payload=toAiToneDspPayload(metrics,96);
-  const system='You interpret a structured LOCAL DSP report for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' DSP has already measured the audio. You are NOT an audio measurement engine and must NEVER calculate, estimate, replace, or invent RMS, sample peak, crest factor, FFT bins, spectrum, frequency-band percentages, clipping, noise floor, dynamic range, latency, or any other DSP metric. Treat every field provenance/status literally: measured values are evidence; unavailable and not_measured fields must remain unavailable/not measured. The capture is from MG-30 USB input channels selected by the report and may contain a host-loopback mix. It describes the performance and signal path, not a calibrated amp-only frequency response. Explain likely tone characteristics only when supported by the supplied measurements; acknowledge that pickups, playing technique, guitar volume and gain staging affect the result. Do not claim to have heard timbre that cannot be derived from these measurements. Make practical EQ/parameter recommendations cautiously and tie each recommendation to specific measured evidence. This is READ ONLY: do not create a Tone Plan, preset, MIDI command, parameter write, or hardware change. Return JSON only with keys: summary (string), observations (array of {area,finding,evidence,confidence}), recommendations (array of {target,action,reason,evidence}), limitations (array of strings).';
-  const user=(conversation?'RECENT CONVERSATION:\\n'+conversation+'\\n\\n':'')+
-   'USER QUESTION:\\n'+String(question||'Explain this DSP analysis and suggest improvements.')+
-   '\\n\\nAUTHORITATIVE DSP REPORT (JSON; already measured locally):\\n'+JSON.stringify(payload)+
-   '\\n\\nInterpret this report only. Do not infer missing measurements or send any device changes.';
+  const system='You interpret a structured LOCAL DSP report for the original NUX MG-30 Gen 2 firmware 6.0.x (not MKII). '+responseLanguageInstruction()+' DSP has already measured the audio. You are NOT an audio measurement engine and must NEVER calculate, estimate, replace, or invent RMS, sample peak, crest factor, FFT bins, spectrum, frequency-band percentages, clipping, noise floor, dynamic range, latency, or any other DSP metric. Treat every field provenance/status literally: measured values are evidence; unavailable and not_measured fields must remain unavailable/not measured. The capture is from MG-30 USB input channels selected by the report and may contain a host-loopback mix. It describes the performance and signal path, not a calibrated amp-only frequency response. Explain likely tone characteristics only when supported by the supplied measurements; acknowledge that pickups, playing technique, guitar volume and gain staging affect the result. Do not claim to have heard timbre that cannot be derived from these measurements. Make practical EQ/parameter recommendations cautiously and tie each recommendation to specific measured evidence. This is READ ONLY: do not create a Tone Plan, preset, MIDI command, parameter write, or hardware change. Return one valid JSON object only. Required keys: summary (string), observations (array of objects with area, finding, evidence, confidence), recommendations (array of objects with target, action, reason, evidence), limitations (array of strings). No Markdown fences or text outside JSON.';
+  const user=(conversation?'RECENT CONVERSATION:\n'+conversation+'\n\n':'')+
+   'USER QUESTION:\n'+String(question||'Explain this DSP analysis and suggest improvements.')+
+   '\n\nAUTHORITATIVE DSP REPORT (JSON; already measured locally):\n'+JSON.stringify(payload)+
+   '\n\nInterpret this report only. Do not infer missing measurements or send any device changes.';
+  const call=async(systemPrompt,userPrompt)=>normalizeAudioInterpretation(
+   await askNamAIJson(systemPrompt,userPrompt,'interpreting local MG-30 DSP measurements')
+  );
   try{
-   const result=await askNamAIJson(system,user,'interpreting local MG-30 DSP measurements');
-   status('Audio analysis complete. AI interpretation complete. DSP values remain unchanged; no device parameters were changed.','success');
+   let result;
+   try{
+    result=await call(system,user);
+   }catch(firstError){
+    if(!['AI_INVALID_JSON','AI_INVALID_SCHEMA','AI_EMPTY_RESPONSE'].includes(firstError?.code))throw firstError;
+    const repairSystem=system+' FORMAT RETRY: The previous output did not satisfy the JSON parser/schema. Return a compact, syntactically valid JSON object. Keep the summary under 500 characters, at most four observations, at most four recommendations, and at most four limitations. Use ordinary JSON double-quoted strings; escape quotes and line breaks; do not use trailing commas or Markdown fences.';
+    const repairUser=user+'\n\nFORMAT VALIDATION RETRY: Re-serialize the same interpretation in valid JSON only. Do not repeat or modify any DSP measurements.';
+    result=await call(repairSystem,repairUser);
+   }
+   status('AI interpretation complete. DSP values remain unchanged; no device parameters were changed.','success');
    return result;
   }catch(error){
-   status('Audio analysis failed: AI interpretation unavailable — '+(error?.message||error),'error');
-   throw error;
+   status('AI interpretation could not be completed. The DSP result is preserved; you can retry the interpretation.','error');
+   const friendly=new Error('AI interpretation could not be formatted. Your DSP measurements are محفوظ and unchanged. Tap Retry AI Interpretation to try again.');
+   friendly.code=error?.code||'AI_INTERPRETATION_FAILED';
+   friendly.cause=error;
+   throw friendly;
   }
  }
  async function finishAudioListening(options={}){
@@ -1928,7 +1942,10 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
    }catch(error){
     lastError=error;noteProviderFailure(provider,error);
     const next=order.slice(index+1).find(candidate=>candidate!==provider&&!providerInCooldown(candidate));
-    if(!auto)throw new Error(niceError(error,provider));
+    if(!auto){
+     if(String(error?.code||'').startsWith('AI_'))throw error;
+     throw new Error(niceError(error,provider));
+    }
     if(mode==='auto'){autoProviderHealthCache.order=autoProviderHealthCache.order.filter(item=>item!==provider);autoProviderHealthCache.expires=Date.now()+45_000;}
     if(next){
      message('ai',providerNames[provider]+' failed ('+(error.message||error)+'). Switching to '+providerNames[next]+'.');
@@ -1936,7 +1953,11 @@ async function invokeWorkersAILightTask(task,system,user,stage,maxOutputTokens=5
     }
    }
   }
-  if(lastError)throw new Error('All configured fallback providers were unavailable. Last error: '+(lastError.message||lastError));
+  if(lastError){
+   const error=new Error('All configured fallback providers were unavailable. Last error: '+(lastError.message||lastError));
+   if(lastError.code)error.code=lastError.code;
+   throw error;
+  }
   throw new Error('No configured AI provider/model is available. Configure ChatGPT, Gemini, Groq, OpenRouter or the Cloudflare Workers AI binding. Missing: '+missing.join(', '));
  }
 async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
