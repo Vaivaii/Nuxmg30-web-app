@@ -32,7 +32,7 @@ function renderStatus(snapshot){
   if(snapshot.verified){
     tag.textContent=snapshot.connected?'LIVE FROM DEVICE':'LAST DEVICE READ';
     setDevice('MG-30 Gen2',snapshot.connected?'Connected':'Disconnected',snapshot.connected?'is-live':'is-warning');
-    if(status)status.textContent=(snapshot.connected?'Connected to MG-30 Gen 2':'Device disconnected; showing the last successful readback')+' · Preset '+slotLabel(snapshot)+' · Scene '+(snapshot.sceneIndex===null?'—':'ABC'[snapshot.sceneIndex])+' · Read '+(snapshot.readAt?new Date(snapshot.readAt).toLocaleTimeString():'time unavailable');
+    if(status)status.textContent=(snapshot.connected?'Connected to MG-30 Gen 2':'Device disconnected · showing last successful readback')+' · Preset '+slotLabel(snapshot)+' · Scene '+(snapshot.sceneIndex===null?'—':'ABC'[snapshot.sceneIndex])+' · Read '+(snapshot.readAt?new Date(snapshot.readAt).toLocaleTimeString():'time unavailable');
   }else if(snapshot.source==='editor-draft'){
     tag.textContent='LOCAL DRAFT';
     setDevice('Editor snapshot','Local Draft','is-warning');
