@@ -2398,3 +2398,65 @@ test('AI preset writer quantizes normalized hardware selectors such as DLY.subd 
  assert.ok(prep.indexOf('value=quantizeParameterValue(key,value)')<prep.indexOf('parameters.push({key,control,value,cc,rawValue:'));
  assert.match(html,/subd:6/);
 });
+
+
+test('AI provider response extraction supports ChatGPT text, OpenAI output arrays and compatible message envelopes',()=>{
+ assert.equal(extractAiProviderText({text:'{"summary":"direct"}'}),'{"summary":"direct"}');
+ assert.equal(extractAiProviderText({output_text:'{"summary":"output"}'}),'{"summary":"output"}');
+ assert.equal(extractAiProviderText({output:[{type:'message',content:[{type:'output_text',text:'{"summary":"array"}'}]}]}),'{"summary":"array"}');
+ assert.equal(extractAiProviderText({choices:[{message:{content:[{type:'text',text:'{"summary":"choice"}'}]}}]}),'{"summary":"choice"}');
+});
+
+test('AI JSON parser accepts fenced JSON, nested arrays and braces inside quoted strings',()=>{
+ const fence=String.fromCharCode(96).repeat(3);
+ const raw='Result follows:\n'+fence+'json\n{"summary":"The pickup label includes } and { characters","observations":[{"area":"Spectrum","finding":"Mid band elevated","evidence":"1.2 kHz"}],"recommendations":[{"target":"Presence","action":"Review presence gently"}],"limitations":["Not an amp-only response"]}\n'+fence;
+ const parsed=parseAiStructuredResponse({text:raw});
+ assert.equal(parsed.summary,'The pickup label includes } and { characters');
+ assert.equal(parsed.observations[0].finding,'Mid band elevated');
+ assert.equal(parsed.recommendations[0].target,'Presence');
+});
+
+test('AI JSON parser extracts a balanced object from provider preamble text',()=>{
+ const raw='Here is the interpretation:\n{"summary":"Balanced","observations":[{"area":"Low","finding":"Controlled","evidence":"Low-band ratio"}],"recommendations":[],"limitations":[]}';
+ const parsed=parseAiStructuredResponse(raw);
+ assert.equal(parsed.summary,'Balanced');
+ assert.equal(parsed.observations.length,1);
+});
+
+test('AI JSON parser classifies malformed or incomplete JSON without exposing raw parser exception text',()=>{
+ const fence=String.fromCharCode(96).repeat(3);
+ assert.throws(
+  ()=>parseAiStructuredResponse({text:fence+'json\n{"summary":"broken","observations":["one" "two"]}\n'+fence}),
+  error=>error.code==='AI_INVALID_JSON'&&!error.message.includes('Expected')&&Boolean(error.cause)
+ );
+ assert.throws(()=>parseAiStructuredResponse({text:'   '}),error=>error.code==='AI_EMPTY_RESPONSE');
+});
+
+test('audio interpretation schema normalizes observations, object recommendations and string limitations',()=>{
+ const normalized=normalizeAudioInterpretation({
+  summary:'Measured midrange is dominant.',
+  observations:[{area:'Frequency balance',finding:'Low band is stronger than mid band',evidence:'50.4% versus 15.7%',confidence:0.85}],
+  recommendations:[{target:'Low band',action:'Review the low-frequency balance',reason:'The measured band share is dominant',evidence:'50.4%'},'Listen again with guitar connected'],
+  limitations:'The capture includes the selected USB signal path.'
+ });
+ assert.equal(normalized.summary,'Measured midrange is dominant.');
+ assert.equal(normalized.observations[0].confidence,0.85);
+ assert.equal(normalized.recommendations[0].action,'Review the low-frequency balance');
+ assert.equal(normalized.recommendations[1],'Listen again with guitar connected');
+ assert.equal(normalized.limitations[0],'The capture includes the selected USB signal path.');
+});
+
+test('audio interpretation schema rejects non-object responses and missing summaries',()=>{
+ assert.throws(()=>normalizeAudioInterpretation([]),error=>error.code==='AI_INVALID_SCHEMA');
+ assert.throws(()=>normalizeAudioInterpretation({observations:[],recommendations:[]}),error=>error.code==='AI_INVALID_SCHEMA');
+});
+
+test('AI interpretation retry reuses the saved DSP report and never starts another capture',()=>{
+ const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
+ const retryAt=source.indexOf("const retryDsp=event.target.closest('[data-ai-dsp-retry]')");
+ const actionAt=source.indexOf("const view=event.target.closest('[data-ai-nam-view-captures]')",retryAt);
+ const handler=source.slice(retryAt,actionAt);
+ assert.match(handler,/item\.data\.report/);
+ assert.match(handler,/requestAudioDiagnosis/);
+ assert.doesNotMatch(handler,/startToneAnalysis|decodeToneAnalysisTake|analyzeToneAudioSamples|stopToneAnalysis/);
+});
