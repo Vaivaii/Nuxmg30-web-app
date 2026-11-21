@@ -1164,3 +1164,48 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Source edits are committed to `feature/tone-intelligence-engine`; CI/build verification and a rendered Android screenshot are pending at the time of this checkpoint entry.
 - No physical MG-30 Gen 2 firmware 6.0.x hardware or Android emulator screenshot test is claimed.
 - Scope remains strictly Editor Signal Chain icon colour. No Tone Intelligence runtime was restored.
+
+
+## AI Live Tone Assistant — DSP Interpretation & Composer Refinement — 2026-11-22
+
+### Scope and implementation
+- Continued work on the existing AI Live Tone Assistant on `feature/ai-live-tone-dsp-interpreter-2026-11-21`; this is a narrow repair/refinement, not a rebuild.
+- AI provider response parsing now normalizes supported response envelopes (plain text, OpenAI/ChatGPT choices, output-text arrays, and compatible content arrays) before parsing structured JSON.
+- Structured response parsing accepts JSON Markdown fences and provider preambles, extracts balanced nested object/array content without treating braces inside quoted strings as delimiters, and reports empty, malformed, or incomplete responses as classified AI errors.
+- Audio interpretation is schema-validated and normalized before rendering: summary, observations, recommendations, and limitations are handled as structured data. Provider-specific parsing errors are not shown raw in the user-facing interpretation card.
+- A compact format-retry is attempted only for malformed/empty/schema-invalid AI output. It reuses the already measured DSP report and does not re-run audio capture or measurement.
+- If AI interpretation still fails, the DSP result remains visible and a **Retry AI Interpretation** action reuses the saved report. No DSP metric is recalculated or invented.
+- DSP result icon changed from the generic wave glyph to inline SVG audio-spectrum bars.
+- Send button sizing is now compact (56 px high, constrained width) while retaining the lime accent and touch-friendly target.
+- Composer textarea now grows with its content, shrinks when text is removed, caps its height relative to the visible viewport, and scrolls internally after reaching the cap. Resize handling uses the native visual viewport where available; composer sheet positioning is adjusted to remain above the Android keyboard.
+- Existing 1400-character limit, Send action, Undo AI Changes action, and AI conversation flow remain in place.
+
+### Root cause found
+- The ChatGPT-specific response path assumed every provider response had a non-empty `response.text` property and immediately attempted `JSON.parse` on a substring bounded by the first opening and last closing brace.
+- That extraction assumption was too narrow for differing provider response envelopes and Markdown-wrapped JSON. It also did not safely distinguish balanced nested JSON from incomplete/truncated output.
+- The parser exception propagated into the AI Interpretation card, exposing a raw SyntaxError to the user even though the local DSP result had already been computed successfully.
+- Provider output can still be incomplete or malformed; this is now handled as an AI-only failure, preserving the measured DSP card and offering a retry from the saved report.
+
+### Files modified
+- `www/ai-tone-studio.js` — provider response extraction/JSON parsing, interpretation schema normalization and retry, friendly AI failure state with saved-report retry, spectrum SVG, Send styling, textarea auto-growth and viewport/keyboard resize behavior.
+- `tests/ai-tone-studio.test.js` — provider envelope parsing, fenced/nested JSON, malformed/empty output, schema validation, saved-report retry, DSP preservation, spectrum icon and composer layout regression coverage.
+- `DEVELOPMENT/CHECKPOINT.md` — this checkpoint entry.
+
+### Regression and build verification
+- Branch: `feature/ai-live-tone-dsp-interpreter-2026-11-21`.
+- Final verified source commit: `80f382fbb835ee7d933d9bb20dab4152309b75ba`.
+- GitHub Actions run **#1249**: SUCCESS — https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44931288081
+- JavaScript syntax validation: PASS.
+- Regression suite: **704 passed, 0 failed**.
+- Capacitor Android project generation and USB audio plugin installation: PASS.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** (1m 7s).
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14717377744`, ZIP size 4,401,134 bytes.
+- Downloaded artifact ZIP SHA-256: `fc3e6a9597cacda6102e6a760bf7ac9f83c0c33fe2b42e82bf2ccd400f5dd5db`.
+- Extracted `app-debug.apk`: 4,778,980 bytes; SHA-256 `2dfd29d4ab5309f0450a073c8a0b2edd98ef5dad32a6534b5ecc4f6897d7f18d`.
+
+### Verification boundaries / unchanged areas
+- No physical Android handset interaction test was performed; Android keyboard behavior is implemented using the native visual viewport path but still needs a real-device visual check.
+- No live request was run against the owner's configured AI provider credentials in this CI build; parser, schema, retry, and regression behavior are covered by automated tests, but provider account/network behavior remains to be verified on the configured installation.
+- No connected original NUX MG-30 Gen 2 firmware 6.0.x hardware test was performed.
+- DSP measurement algorithms, FFT, RMS, sample peak, crest factor, audio capture/input selection, Analyze Once, Live Listening, USB MIDI/protocol, editor, presets, NAM/IR, Undo AI Changes, Studio, and Mini DAW were not intentionally modified.
+- Tone Intelligence Engine (TIE) was not restored.
