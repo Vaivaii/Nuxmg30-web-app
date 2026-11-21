@@ -756,7 +756,7 @@ public class MG30AudioPlugin extends Plugin {
             call.reject("Tidak ada file PCM MG-30 USB Audio untuk streaming DSP.");
             return;
         }
-        long offsetBytes = Math.max(0L, call.getLong("offsetBytes", 0L));
+        long offsetBytes = Math.max(0L, call.getDouble("offsetBytes", 0.0).longValue());
         int frameBytes = activeChannels * 3;
         int requestedBytes = Math.max(frameBytes, Math.min(196608, call.getInt("maxBytes", 49152)));
         requestedBytes -= requestedBytes % frameBytes;
