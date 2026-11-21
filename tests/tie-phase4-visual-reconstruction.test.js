@@ -120,3 +120,13 @@ test("Configuration Review preserves a route into the existing Tone Comparison t
   assert.ok(review.includes('tieReviewCompare'));
   assert.ok(review.includes('data-tie-page="compare"'));
 });
+
+
+test("Reference first view selects the known AMP block while preserving manual block selection",()=>{
+  assert.ok(ui.includes("order.find(block=>block.id==='AMP'&&block.known)?.index"));
+  assert.ok(ui.includes("state.selectedIndex=Number(button.dataset.tieChainBlock)"));
+});
+test("Gain overview uses the Input Level card label without presenting PCM RMS as a live pedal meter",()=>{
+  assert.ok(html.includes("<small>Input Level</small>"));
+  assert.ok(review.includes("PCM RMS, not live pedal input"));
+});

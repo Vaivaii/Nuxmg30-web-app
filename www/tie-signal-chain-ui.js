@@ -114,7 +114,7 @@ function diagnostics(snapshot){
 function renderDetailsAndContext(snapshot){renderDetails();renderModelContext(snapshot);diagnostics(snapshot);}
 function render(snapshot){
   state.snapshot=snapshot;renderStatus(snapshot);renderFlow(snapshot);
-  if(state.selectedIndex===null||!snapshot?.blocks?.some(block=>block.index===state.selectedIndex))state.selectedIndex=orderedBlocks(snapshot).find(block=>block.known)?.index??null;
+  if(state.selectedIndex===null||!snapshot?.blocks?.some(block=>block.index===state.selectedIndex)){const order=orderedBlocks(snapshot);state.selectedIndex=order.find(block=>block.id==='AMP'&&block.known)?.index??order.find(block=>block.known)?.index??null;}
   renderDetailsAndContext(snapshot);
 }
 async function refreshLibraryContext(){

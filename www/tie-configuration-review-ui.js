@@ -123,7 +123,7 @@ function render(){
   renderMiniChain();
 
   $('tieReviewRms').textContent=Number.isFinite(metrics?.rmsDbfs)?metrics.rmsDbfs.toFixed(1)+' dBFS':'Not measured';
-  $('tieReviewRmsSource').textContent=result?(result.source?.label||'Selected PCM source')+' · PCM, not live pedal input':'No completed PCM analysis';
+  $('tieReviewRmsSource').textContent=result?(result.source?.label||'Selected PCM source')+' · PCM RMS, not live pedal input':'No completed PCM analysis';
   $('tieReviewRmsBar').style.width=Number.isFinite(metrics?.rmsDbfs)?Math.max(0,Math.min(100,((Math.max(-60,Math.min(0,metrics.rmsDbfs))+60)/60)*100))+'%':'0%';
   $('tieReviewHeadroom').textContent='Not measured';$('tieReviewOutput').textContent='Not measured';
   $('tieReviewBlockLevels').innerHTML=rowsForBlocks();

@@ -922,3 +922,9 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - This verifies compilation and package contents, not a rendered Android screenshot. No emulator or owner handset screenshot was available in this run.
 - Visual fidelity target of 90% remains unscored pending screenshot comparison on an Android portrait viewport. Interactive acceptance against the original NUX MG-30 Gen 2 firmware 6.0.x also remains pending.
 - No firmware/protocol, MIDI CC, preset, NAM, IR User/Collection transfer/mapping, AI provider, DSP/audio, Quick Record, DAW or device-management code was changed.
+
+
+### Reference first-view alignment — 2026-11-21
+- Default Selected Block now prefers the known AMP block when it exists in the current snapshot, matching the supplied reference's first view and showing the matching local amplifier artwork/AMP parameter layout. Users can still select any other block manually.
+- Gain summary card label is aligned to Input Level while its value/provenance remains explicit: selected-file/Quick Record PCM RMS, not a live MG-30 input meter.
+- Added regression assertions for the AMP default-selection rule and the non-live PCM provenance label. The earlier successful run #1215 validates the immediately preceding commit; this visual refinement needs its own CI build.
