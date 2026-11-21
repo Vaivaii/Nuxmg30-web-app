@@ -971,7 +971,14 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 ### CI history and current verification
 - Run #1217 / `44885587913` on `4f1b429`: failed at protocol regression tests; 793/795 passed. The two failures were an undefined helper in the new test and a legacy disconnected-status copy assertion.
 - Run #1218 / `44885654009` on `2692246`: failed at protocol regression tests; 794/795 passed. The remaining failure was only the legacy disconnected-status phrase.
-- Run #1219 / `44885753607` on `8b2370a`: JavaScript syntax validation, protocol regression tests and Capacitor/USB-audio project generation all report **SUCCESS**. Gradle `assembleDebug` was still **IN PROGRESS** at checkpoint time; no APK artifact is yet claimed.
+- Run #1219 / `44885753607` on source commit `8b2370a3c8c8f138a51aef7134811608fa0136e9`: conclusion **SUCCESS**.
+- JavaScript source validation: passed.
+- Full regression suite: **795 passed, 0 failed**. The deterministic DSP validation report also passed all 23 fixtures.
+- Capacitor Android project generation and USB audio plugin installation: passed.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL in 1m 29s**.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14700022174`, ZIP size 4,446,301 bytes; archive SHA-256 `6a41875a04691bbcc2267771373a9ea630a5e30a90551b813bfe8cecd5a3405f`.
+- Extracted APK: `MG30-Studio-Phase4-UI-Refinement.apk`, size 4,824,725 bytes; SHA-256 `539040db3c00407b9c3bce75ab39163686d4d4936bd7ffddd76591862c1d0463`.
+- APK package inspection confirmed compiled assets include the compact preset identity, device status field, shared selected-category icon and preserved disconnected-status contract.
 - No APK from #1217 or #1218 exists because those runs stopped before Android package generation.
 - Android handset/emulator screenshot comparison was not run. The 90% visual-fidelity target remains unscored.
 
@@ -981,8 +988,12 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Local working-tree status remains **NOT VERIFIED** through the remote GitHub interface.
 
 ### Next actions
-1. Confirm CI #1219 Gradle build and artifact upload conclusion; capture test count and APK artifact metadata only after run completion.
-2. If successful, download and inspect the newly produced APK and update this checkpoint with APK size/hash.
-3. Install on Android and capture the requested portrait screens to compare against both supplied references. Do not claim 90% fidelity until screenshot comparison.
-4. Verify original MG-30 Gen 2 firmware 6.0.x readback, disconnected/local-draft state and preservation of NAM/IR/MIDI workflows on hardware.
-5. Continue remaining visual gaps without closing Phase 4 until the owner explicitly accepts it.
+1. Install `MG30-Studio-Phase4-UI-Refinement.apk` on an Android handset and capture the Editor Signal Chain, Signal Chain Intelligence, Selected Block, Configuration Review Overview and all detail tabs at the reference portrait viewport.
+2. Run screenshot comparison against the supplied Editor and TIE references. Do not claim 90% fidelity until the comparison is actually performed.
+3. Verify the original MG-30 Gen 2 firmware 6.0.x readback, disconnected/local-draft state and preservation of NAM/IR/MIDI workflows on hardware.
+4. Review remaining screenshot mismatches and refine the UI in small milestones without closing Phase 4 until the owner explicitly accepts it.
+
+
+### Android runtime availability note — 2026-11-21
+- The current execution environment has no `adb` command or Android emulator binary, so no automated handset/emulator installation or screenshot capture could be performed here.
+- User handset screenshot comparison and real MG-30 Gen 2 hardware acceptance remain pending; no 90% visual score is claimed.
