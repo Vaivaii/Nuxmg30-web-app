@@ -197,6 +197,7 @@ export function processToneDspChunk(session, channelData) {
     }
     const frameRms = Math.sqrt(frameSumSquares / Math.max(1, frameSamples));
     session.frameRmsDbfs.push(dbfs(frameRms));
+    session.spectralFrames += 1;
     offset += hopSize;
   }
   session.carry = combined.map(input => input.subarray(offset).slice());
@@ -212,7 +213,7 @@ export function getToneDspLiveSummary(session) {
     durationSeconds: session.totalFrames / session.metadata.sampleRateHz,
     rmsDbfs: session.sampleCount ? Math.round(dbfs(rms) * 100) / 100 : null,
     samplePeakDbfs: session.sampleCount ? Math.round(dbfs(session.samplePeak) * 100) / 100 : null,
-    spectralFrames: session.spectralFrames + Math.max(0, Math.floor((session.totalFrames - session.settings.fftSize) / session.settings.hopSize) + 1 - session.spectralFrames),
+    spectralFrames: session.spectralFrames,
     sampleCount: session.sampleCount,
     clippingSamples: session.clippedSampleCount,
   };
