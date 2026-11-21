@@ -18,21 +18,32 @@ function orderedBlocks(snapshot){
   return result;
 }
 function renderStatus(snapshot){
-  const tag=$('tieChainSourceTag'),status=$('tieChainStatus');
-  if(!snapshot){tag.textContent='WAITING FOR PRESET STATE';status.textContent='The shared editor snapshot is not available yet.';status.className='tie-chain-status is-warning';return;}
+  const tag=$('tieChainSourceTag'),status=$('tieChainStatus'),deviceName=$('tieChainDeviceName'),deviceStatus=$('tieChainDeviceStatus');
+  const setDevice=(name,label,kind)=>{
+    if(deviceName)deviceName.textContent=name;
+    if(deviceStatus){deviceStatus.textContent=label;deviceStatus.className='tie-preset-device-status '+kind;}
+  };
+  if(!snapshot){
+    tag.textContent='WAITING FOR PRESET STATE';
+    if(status)status.textContent='The shared editor snapshot is not available yet.';
+    setDevice('MG-30 Gen2','Not connected','is-unavailable');
+    return;
+  }
   if(snapshot.verified){
     tag.textContent=snapshot.connected?'LIVE FROM DEVICE':'LAST DEVICE READ';
-    status.className='tie-chain-status is-live';
-    status.textContent=(snapshot.connected?'Connected to MG-30 Gen 2':'Device disconnected · showing last successful readback')+' · Preset '+slotLabel(snapshot)+' · Scene '+(snapshot.sceneIndex===null?'—':'ABC'[snapshot.sceneIndex])+' · Read '+(snapshot.readAt?new Date(snapshot.readAt).toLocaleTimeString():'time unavailable');
+    setDevice('MG-30 Gen2',snapshot.connected?'Connected':'Disconnected',snapshot.connected?'is-live':'is-warning');
+    if(status)status.textContent=(snapshot.connected?'Connected to MG-30 Gen 2':'Device disconnected; showing the last successful readback')+' · Preset '+slotLabel(snapshot)+' · Scene '+(snapshot.sceneIndex===null?'—':'ABC'[snapshot.sceneIndex])+' · Read '+(snapshot.readAt?new Date(snapshot.readAt).toLocaleTimeString():'time unavailable');
   }else if(snapshot.source==='editor-draft'){
-    tag.textContent='LOCAL DRAFT';status.className='tie-chain-status is-warning';
-    status.textContent='Showing the saved editor draft only. This is not verified against the connected pedal; model, parameter and bypass values may differ from the device.';
+    tag.textContent='LOCAL DRAFT';
+    setDevice('Editor snapshot','Local Draft','is-warning');
+    if(status)status.textContent='Showing the saved editor draft only. This is not verified against the connected pedal; model, parameter and bypass values may differ from the device.';
   }else{
-    tag.textContent='NO SNAPSHOT';status.className='tie-chain-status is-warning';
-    status.textContent='No verified device readback or saved editor draft is available. Connect MG-30 Gen 2 and read the active preset.';
+    tag.textContent='NO SNAPSHOT';
+    setDevice('MG-30 Gen2','Not verified','is-unavailable');
+    if(status)status.textContent='No verified device readback or saved editor draft is available. Connect MG-30 Gen 2 and read the active preset.';
   }
   setText('tieChainPresetName',snapshot.presetName||'Unnamed preset');
-  setText('tieChainPresetContext','Preset '+slotLabel(snapshot)+' · Scene '+(snapshot.sceneIndex===null?'Not identified':'ABC'[snapshot.sceneIndex])+' · '+(snapshot.verified?'Device readback':'Local editor draft'));
+  setText('tieChainPresetContext','Preset '+slotLabel(snapshot)+' · Scene '+(snapshot.sceneIndex===null?'Not identified':'ABC'[snapshot.sceneIndex]));
 }
 function renderFlow(snapshot){
   const root=$('tieChainFlow');if(!root)return;
@@ -65,12 +76,12 @@ function parameterMarkup(param){
 function renderDetails(){
   const block=currentBlock(),params=$('tieChainParameters'),artwork=$('tieChainSelectedArtwork');
   if(!block){
-    setText('tieChainSelectedTitle','No block selected');setText('tieChainBlockState','—');setText('tieChainSelectedCategory','BLOCK');setText('tieChainSelectedMeta','No selected model');
+    setText('tieChainSelectedTitle','No block selected');setText('tieChainBlockState','—');const categoryTag=$('tieChainSelectedCategory');categoryTag.removeAttribute('data-category');categoryTag.textContent='BLOCK';setText('tieChainSelectedMeta','No selected model');
     $('tieChainSelectedData').innerHTML='<span>Model</span><strong>Not read</strong><span>Type</span><strong>Not read</strong><span>Status</span><strong>Not read</strong>';
     artwork.innerHTML='<div class="tie-chain-empty">Select a known block to display its local model artwork.</div>';params.innerHTML='<p class="tie-chain-empty">No selected block.</p>';return;
   }
   const category=CATEGORY_NAMES[block.id]||block.id,model=block.known?(block.model||'Model not identified'):'Not read',type=BLOCK_NAMES[block.id]||block.id,status=block.known?(block.enabled?'ON':'BYPASS'):'UNKNOWN';
-  setText('tieChainSelectedTitle',type+' — '+block.id);setText('tieChainBlockState',status);setText('tieChainSelectedCategory',category);setText('tieChainSelectedMeta',model);
+  setText('tieChainSelectedTitle',type+' — '+block.id);setText('tieChainBlockState',status);const categoryTag=$('tieChainSelectedCategory');categoryTag.dataset.category=block.id;const categoryIcon=window.MG30EditorBlockIcon?window.MG30EditorBlockIcon(block.id):'';categoryTag.innerHTML='<span class="tie-selected-category-icon" aria-hidden="true">'+categoryIcon+'</span><span>'+escapeHtml(category)+'</span>';setText('tieChainSelectedMeta',model);
   $('tieChainSelectedData').innerHTML='<span>Model</span><strong>'+escapeHtml(model)+'</strong><span>Type</span><strong>'+escapeHtml(type)+'</strong><span>Status</span><strong>'+escapeHtml(status)+'</strong>';
   const art=block.known&&window.MG30EditorGearArtwork?window.MG30EditorGearArtwork(block.id,block.model):'';
   artwork.innerHTML=art||'<div class="tie-art-unavailable"><span>MODEL ARTWORK</span><strong>'+escapeHtml(category)+'</strong><small>Artwork is not available for this selected model.</small></div>';
@@ -127,10 +138,10 @@ async function refreshLibraryContext(){
 async function refreshSnapshot(){
   const bridge=window.MG30AIToneBridge,button=$('tieChainRefresh');
   if(!bridge?.refreshSignalChainSnapshot){setText('tieChainStatus','Shared MG-30 preset reader is not available.');return;}
-  button.disabled=true;button.textContent='Reading…';
+  button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='…';
   try{const snapshot=await bridge.refreshSignalChainSnapshot();render(snapshot);setText('tieChainStatus','Active preset and Scene read successfully. Signal Chain view is read-only; no device write was performed.');$('tieChainStatus').className='tie-chain-status is-live';}
   catch(error){setText('tieChainStatus',error?.message||String(error));$('tieChainStatus').className='tie-chain-status is-warning';}
-  finally{button.disabled=false;button.textContent='Read Active Preset';}
+  finally{button.disabled=false;button.removeAttribute('aria-busy');button.textContent='↻';}
 }
 $('tieChainRefresh')?.addEventListener('click',()=>void refreshSnapshot());
 document.querySelectorAll('[data-tie-open-analysis]').forEach(button=>button.addEventListener('click',()=>document.querySelector('[data-tie-page="'+button.dataset.tieOpenAnalysis+'"]')?.click()));

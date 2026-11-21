@@ -126,6 +126,36 @@ test("Reference first view selects the known AMP block while preserving manual b
   assert.ok(ui.includes("order.find(block=>block.id==='AMP'&&block.known)?.index"));
   assert.ok(ui.includes("state.selectedIndex=Number(button.dataset.tieChainBlock)"));
 });
+
+test("Editor and both TIE pedalboards share one category color token map",()=>{
+  for(const [id,token] of [["WAH","wah"],["EFX","efx"],["S/R","sr"],["GATE","gate"],["AMP","amp"],["IR","ir"],["CMP","cmp"],["EQ","eq"],["MOD","mod"],["DLY","dly"],["RVB","rvb"],["VOL","vol"]]){
+    assert.ok(html.includes("--effect-category-"+token+":"),"missing root color token for "+id);
+    assert.ok(html.includes('data-category="'+escapeHtmlForTest(id)+'"')||id==="S/R","Editor chain must identify "+id);
+    const safe=id.replace(/[^a-z0-9]/gi,"");
+    assert.ok(css.includes(".tie-block-"+safe),"missing Signal Chain Intelligence category style for "+id);
+    assert.ok(css.includes(".tie-mini-"+safe),"missing Configuration Review mini-chain style for "+id);
+  }
+  assert.ok(css.includes("body>.app>#page-editor>.signal-chain-panel .chain .block[data-category] .symbol"));
+  assert.ok(css.includes("color:var(--tie-category,var(--lime))!important"));
+  assert.ok(css.includes(".chain .block.off[data-category] .symbol"));
+});
+test("Preset identity uses one compact card with a small readback action and honest device state",()=>{
+  assert.ok(html.includes('class="tie-chain-toolbar tie-preset-identity"'));
+  assert.ok(html.includes('id="tieChainDeviceName"'));
+  assert.ok(html.includes('id="tieChainDeviceStatus"'));
+  assert.ok(html.includes('class="tie-sr-only" role="status"'));
+  assert.ok(html.includes('aria-label="Read active preset"'));
+  assert.ok(css.includes("#page-studio .tie-preset-identity"));
+  assert.ok(css.includes("#page-studio .tie-chain-refresh"));
+  assert.ok(ui.includes("snapshot.connected?'Connected':'Disconnected'"));
+  assert.ok(ui.includes("setDevice('Editor snapshot','Local Draft','is-warning')"));
+});
+test("Selected Block identity chip includes the shared Editor glyph and category identity",()=>{
+  assert.ok(ui.includes("window.MG30EditorBlockIcon(block.id)"));
+  assert.ok(ui.includes("categoryTag.dataset.category=block.id"));
+  assert.ok(css.includes("#page-studio .tie-selected-category svg"));
+});
+
 test("Gain overview uses the Input Level card label without presenting PCM RMS as a live pedal meter",()=>{
   assert.ok(html.includes("<small>Input Level</small>"));
   assert.ok(review.includes("PCM RMS, not live pedal input"));
