@@ -1438,7 +1438,7 @@ const next='chatgpt';
    const maxOutputTokens=outputTokenBudgetForStage('answering your tone question');
    let result;
    try{
-    result=await requestChatGptConversation({bridge:window.MG30ChatGPTBridge,model,system:String(system||'')+'\\n\\n'+responseLanguageInstruction(),user,maxOutputTokens});
+    result=await requestChatGptConversation({bridge:window.MG30ChatGPTBridge,model,system:String(system||'')+'\n\n'+responseLanguageInstruction(),user,maxOutputTokens});
    }catch(error){
     const attempts=Array.isArray(error?.__aiUsageBreakdown)?error.__aiUsageBreakdown:[];
     if(attempts.length){
@@ -1711,7 +1711,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   try{console.info('[MG30 AI TOKEN USAGE]',record);}catch{}
  }
  async function invokeWorkerLightTask(provider,task,system,user,stage,maxOutputTokens=520,modelOverride='',role=''){
-  system=String(system||'')+'\\n\\n'+responseLanguageInstruction();
+  system=String(system||'')+'\n\n'+responseLanguageInstruction();
   const credential=await secret(provider);
   if(!credential)throw new Error(providerNames[provider]+' is not configured or its Worker binding is inactive.');
   const model=String(modelOverride||await fastestReadyModel(provider,credential,'discussion')||'').trim();
@@ -1734,7 +1734,7 @@ function logAiTokenUsage(provider,model,stage,maxOutputTokens,system,user,result
   return result;
  }
 async function invokeProvider(provider,key,system,user,model,timeoutMs=90000,stage='AI request',maxOutputTokens=900){
-  system=String(system||'')+'\\n\\n'+responseLanguageInstruction();
+  system=String(system||'')+'\n\n'+responseLanguageInstruction();
   let result;
   try{
    if(provider==='chatgpt')result=await chatgpt(key,system,user,model);
@@ -2027,7 +2027,7 @@ async function askLunaNamJson(system,user,stage,maxOutputTokens=256){
   const model=await fastestReadyModel('chatgpt',credential,'tone-plan');
   if(!model)throw new Error('No GPT-6 Luna model is available for NAM validation.');
   const result=await requestChatGptConversation({
-   bridge:window.MG30ChatGPTBridge,model,system:String(system||'')+'\\n\\n'+responseLanguageInstruction(),user,maxOutputTokens
+   bridge:window.MG30ChatGPTBridge,model,system:String(system||'')+'\n\n'+responseLanguageInstruction(),user,maxOutputTokens
   });
   const parsed=parseJson(result.reply);
   const usageResult={};
