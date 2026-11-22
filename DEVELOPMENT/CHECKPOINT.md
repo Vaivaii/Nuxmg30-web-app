@@ -1253,3 +1253,33 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 ### Verification boundaries
 - The screenshot provides evidence of the oversized buttons; the code correction constrains each button independently. Final visual confirmation at the same Android viewport is still required.
 - Multilingual behavior is enforced through prompt policy and regression assertions; actual language switching and provider failover still require runtime requests using the user's configured credentials.
+
+
+## Signal Chain Selection & AI Composer Button Polish — 2026-11-22
+
+### Scope
+- Applied a narrow UI correction on `feature/ai-live-tone-dsp-interpreter-2026-11-21`.
+- Target remains the original NUX MG-30 Gen 2 firmware 6.0.x; no MKII-specific behavior was introduced.
+- No NAM, IR import/mapping, MIDI mapping/protocol, AI orchestration, provider/fallback logic, DSP, audio capture, FFT, spectrum calculation, textarea behavior, or Undo/Send action handlers were changed.
+
+### Signal Chain selection outline
+- Root cause: the selected category block used an outer box-shadow ring while the Signal Chain container uses `overflow:auto` and only a small top inset, allowing the outer ring to be clipped at the container edge.
+- Changed the selected category ring and its soft category-colour glow to inset shadows, keeping the visual selection inside the existing block bounds.
+- Retained category-specific border/icon colours, selected state, bypass treatment, original card sizing, spacing, horizontal scrolling, and reorder behavior.
+
+### AI Live Tone Assistant composer
+- Send target changed from 94 × 44 CSS px to 90 × 42 CSS px.
+- Undo height changed from 44 px to 42 px and horizontal padding from 12 px to 10 px.
+- Retained labels, icons, typography, accent colours, borders, radius, horizontal composer layout, counter position, disabled states, and action handlers.
+- Textarea markup, CSS, min-height, max-height, wrapping, dynamic resize function, viewport handling, and keyboard inset behavior are unchanged.
+
+### Files modified
+- `www/studio-daw.css` — inset selected-category outline/glow.
+- `www/ai-tone-studio.js` — independent Send/Undo dimensions only.
+- `tests/editor-signal-chain-category-colors.test.js` — regression assertions for inset selection ring and unchanged scroll/card footprint.
+- `tests/ai-tone-studio.test.js` — updated button dimension assertions while retaining dynamic textarea checks.
+- `DEVELOPMENT/CHECKPOINT.md` — this entry.
+
+### Test/build status
+- GitHub Actions build is expected to run on this branch push; results are pending.
+- No Android device visual test or physical original MG-30 Gen 2 firmware 6.0.x hardware test is claimed.

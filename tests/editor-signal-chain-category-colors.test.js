@@ -27,6 +27,14 @@ test("Editor category colours cover SVG strokes, borders, selected glow and bypa
   assert.ok(css.includes(".chain .block.off[data-category]"));
   assert.ok(css.includes("opacity:.68!important"));
 });
+test("Editor selected category outline stays inside blocks and preserves horizontal chain scrolling",()=>{
+  const selectedRule=css.slice(css.indexOf("#page-editor .chain .block.selected[data-category]"),css.indexOf("#page-editor .chain .block.off[data-category]"));
+  assert.ok(selectedRule.includes("box-shadow:inset 0 0 0 1px"),"selection ring must be inset to avoid overflow clipping");
+  assert.doesNotMatch(selectedRule,/box-shadow:\s*0 0 0 1px/,"selection ring must not expand outside the block");
+  assert.ok(html.includes(".chain{display:flex;gap:8px;overflow:auto;padding:2px 1px 10px;align-items:stretch;"),"horizontal scrolling and chain padding remain intact");
+  assert.ok(html.includes(".block{position:relative;flex:0 0 100px;text-align:left;min-height:108px;"),"pedal card footprint remains unchanged");
+});
+
 test("Studio is restored to original Jamm & Record modes without Tone Analysis routes",()=>{
   assert.ok(html.includes('class="studio-fixed-header"'));
   assert.ok(html.includes('class="studio-mode-tabs"'));

@@ -2482,9 +2482,9 @@ test('AI Live Tone Assistant keeps DSP result while showing friendly interpretat
 test('AI Live Tone composer keeps dynamic textarea intact and independently sizes Send and Undo buttons',()=>{
  const source=readFileSync(new URL('../www/ai-tone-studio.js',import.meta.url),'utf8');
  assert.ok(source.includes('#aiToneSend.ai-tone-send{'));
- assert.ok(source.includes('width:94px!important;min-width:94px!important;max-width:94px!important;height:44px!important;min-height:44px!important;max-height:44px!important;flex:0 0 94px!important;'));
+ assert.ok(source.includes('width:90px!important;min-width:90px!important;max-width:90px!important;height:42px!important;min-height:42px!important;max-height:42px!important;flex:0 0 90px!important;'));
  assert.ok(source.includes('#aiToneUndo.ai-tone-undo{'));
- assert.ok(source.includes('height:44px!important;min-height:44px!important;max-height:44px!important;flex:0 0 auto!important;'));
+ assert.ok(source.includes('height:42px!important;min-height:42px!important;max-height:42px!important;flex:0 0 auto!important;padding:0 10px!important;'));
  assert.ok(source.includes('const resizeToneComposer=()=>'));
  assert.ok(source.includes("ui.prompt.style.height='auto'"));
  assert.ok(source.includes('ui.prompt.scrollHeight'));

@@ -2802,8 +2802,8 @@
 }
 #page-editor .chain .block.selected[data-category]{
   border-color:var(--editor-category,var(--lime))!important;
-  box-shadow:0 0 0 1px var(--editor-category,var(--lime)),
-    0 0 13px color-mix(in srgb,var(--editor-category,var(--lime)) 22%,transparent)!important;
+  box-shadow:inset 0 0 0 1px var(--editor-category,var(--lime)),
+    inset 0 0 13px color-mix(in srgb,var(--editor-category,var(--lime)) 22%,transparent)!important;
 }
 #page-editor .chain .block.off[data-category]{opacity:.68!important;filter:none!important}
 #page-editor .chain .block.off[data-category] .symbol{
