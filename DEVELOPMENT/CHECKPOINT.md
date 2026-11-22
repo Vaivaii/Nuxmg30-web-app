@@ -1209,3 +1209,40 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - No connected original NUX MG-30 Gen 2 firmware 6.0.x hardware test was performed.
 - DSP measurement algorithms, FFT, RMS, sample peak, crest factor, audio capture/input selection, Analyze Once, Live Listening, USB MIDI/protocol, editor, presets, NAM/IR, Undo AI Changes, Studio, and Mini DAW were not intentionally modified.
 - Tone Intelligence Engine (TIE) was not restored.
+
+
+## Composer Button Correction & Multilingual AI — 2026-11-22
+
+### Scope
+- Applied a narrow refinement on `feature/ai-live-tone-dsp-interpreter-2026-11-21`.
+- Preserved the existing dynamic textarea implementation and its JavaScript resize function; no changes were made to textarea input, auto-grow, auto-shrink, wrapping, maximum-height calculation, internal scrolling, visualViewport listener, or Android keyboard inset handling.
+- No DSP, audio capture, Analyze Once, Live Listening, AI JSON parsing, provider credentials, MIDI, Editor, presets, NAM/IR, Undo action logic, Studio, or Mini DAW implementation was changed.
+
+### Composer corrections
+- Screenshot showed both composer action buttons rendering at roughly twice the intended visual height even though the existing component-level CSS specified 54–56 px.
+- Added narrowly scoped ID + class selectors for `#aiToneSend.ai-tone-send` and `#aiToneUndo.ai-tone-undo`, with explicit box sizing, fixed independent dimensions, zero vertical padding, and non-growing flex sizing to defeat broad button sizing rules without touching the composer parent or textarea.
+- Send target: 94 × 44 CSS px.
+- Undo target: natural content width × 44 CSS px; existing label, icon, colors, border, placement and event/disabled logic retained.
+- Existing textarea CSS and `resizeToneComposer()` implementation are unchanged.
+
+### Multilingual AI
+- Replaced the previous Indonesian-default instruction with a latest-user-message policy: AI-generated natural-language output follows the newest user message; mixed-language input follows its dominant language; unclear language falls back to English.
+- Fixed application UI labels remain English. DSP keys, enums, identifiers, model names, measurements and units remain unchanged.
+- Applied the language instruction centrally in the shared provider dispatcher and Workers AI lightweight-task dispatcher, so configured providers and automatic fallback paths receive the same policy.
+- Applied the same policy to the two direct ChatGPT conversation paths that bypass the shared provider dispatcher.
+- No translation API, new AI engine, provider, or fallback architecture was introduced.
+
+### Files modified
+- `www/ai-tone-studio.js` — targeted Send/Undo dimensions and shared latest-user-language policy across provider, worker, fallback and direct ChatGPT paths.
+- `tests/ai-tone-studio.test.js` — assertions for button dimensions, preserved dynamic textarea behavior, and multilingual policy/UI-language separation.
+- `DEVELOPMENT/CHECKPOINT.md` — this entry.
+
+### Test/build status
+- The first two CI attempts failed only because an older language-policy test still asserted the previous Indonesian-default behavior; the application source syntax and the remaining tests executed, with 702/704 passing on the first run and the same single stale assertion remaining on the second run.
+- Updated the remaining stale test expectation in commit `e6998851a8009e749ce2da35560d57aa0182565f`.
+- CI for that latest test correction has not yet been observed at checkpoint time. Do not treat the build or regression suite as passed until a run for the latest branch commit completes successfully.
+- No physical Android device visual test or live external-provider/fallback test has been performed yet.
+
+### Verification boundaries
+- The screenshot provides evidence of the oversized buttons; the code correction constrains each button independently. Final visual confirmation at the same Android viewport is still required.
+- Multilingual behavior is enforced through prompt policy and regression assertions; actual language switching and provider failover still require runtime requests using the user's configured credentials.
