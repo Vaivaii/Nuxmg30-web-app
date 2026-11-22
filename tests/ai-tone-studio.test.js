@@ -1558,11 +1558,14 @@ test('Tone Architect fallback text preserves the language of the user request', 
 });
 
 
-test('Bahasa Indonesia is the default AI response language and other user languages are followed',()=>{
+test('AI response language follows the latest user message while fixed application UI remains English',()=>{
  const policy=responseLanguageInstruction();
- assert.match(policy,/Bahasa Indonesia by default/);
- assert.match(policy,/same language as the USER REQUEST/);
- assert.match(toneArchitectSystemPrompt(),/Bahasa Indonesia by default/);
+ assert.match(policy,/LATEST USER MESSAGE/);
+ assert.match(policy,/same language/);
+ assert.match(policy,/mixed-language messages/);
+ assert.match(policy,/use English/);
+ assert.match(policy,/Fixed application UI labels remain English/);
+ assert.match(toneArchitectSystemPrompt(),/LATEST USER MESSAGE/);
 });
 
 test('Gemini automatic model is specifically Gemini 3.1 Flash Lite',()=>{
