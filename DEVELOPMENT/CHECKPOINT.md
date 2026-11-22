@@ -1240,7 +1240,14 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 ### Test/build status
 - The first two CI attempts failed only because an older language-policy test still asserted the previous Indonesian-default behavior; the application source syntax and the remaining tests executed, with 702/704 passing on the first run and the same single stale assertion remaining on the second run.
 - Updated the remaining stale test expectation in commit `e6998851a8009e749ce2da35560d57aa0182565f`.
-- CI for that latest test correction has not yet been observed at checkpoint time. Do not treat the build or regression suite as passed until a run for the latest branch commit completes successfully.
+- The corrected code/test commit was verified by GitHub Actions run **#1253**: SUCCESS — https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44979906317.
+- JavaScript syntax validation: PASS.
+- Protocol regression test step: PASS (the workflow completed successfully after the previously stale language-policy assertions were updated).
+- Capacitor Android project generation and USB audio plugin installation: PASS.
+- Gradle `assembleDebug`: SUCCESS.
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14737252087`, ZIP size 4,401,494 bytes.
+- Extracted `app-debug.apk`: 4,779,276 bytes; SHA-256 `d7243ed376627cfee89c97e5a667ff6e4f290e878847dc9ad9c1fa512cd83918`.
+- Build source commit: `e6998851a8009e749ce2da35560d57aa0182565f`.
 - No physical Android device visual test or live external-provider/fallback test has been performed yet.
 
 ### Verification boundaries
