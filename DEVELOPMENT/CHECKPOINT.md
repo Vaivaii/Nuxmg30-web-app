@@ -1281,5 +1281,14 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - `DEVELOPMENT/CHECKPOINT.md` — this entry.
 
 ### Test/build status
-- GitHub Actions build is expected to run on this branch push; results are pending.
+- GitHub Actions Build **#1254**: SUCCESS — https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/44984848885.
+- Build source commit: `715746b9e270f2df2a2387eeb5e3eb61d8986142`.
+- JavaScript syntax validation: PASS.
+- Regression suite: **705 passed, 0 failed**.
+- Capacitor Android project generation and USB audio plugin installation: PASS.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** (1m 21s).
+- APK artifact: `MG30-Studio-debug-APK`, artifact ID `14739585180`, ZIP size 4,401,458 bytes.
+- Downloaded artifact ZIP SHA-256: `8875c8529ff7ef95d0d9fb418cc8db10d01f0a3c4a8a3ba5c8ce944082b0156f` (matches GitHub artifact digest).
+- Extracted `app-debug.apk`: 4,779,264 bytes; SHA-256 `b1c5db7b07114e9ef2c08259a11fdf2d242c1beab801333c427d10738afe11f8`.
+- APK archive validation: PASS (`unzip -t`; Android APK recognized by `file`).
 - No Android device visual test or physical original MG-30 Gen 2 firmware 6.0.x hardware test is claimed.
