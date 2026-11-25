@@ -11,6 +11,8 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.provider.Settings;
+import android.location.LocationManager;
 import android.media.midi.MidiDevice;
 import android.media.midi.MidiDeviceInfo;
 import android.media.midi.MidiInputPort;
@@ -74,6 +76,60 @@ public class MG30BluetoothMidiPlugin extends Plugin {
         BluetoothManager bluetoothManager =
             (BluetoothManager) getContext().getSystemService(Context.BLUETOOTH_SERVICE);
         if (bluetoothManager != null) bluetoothAdapter = bluetoothManager.getAdapter();
+    }
+
+    @PluginMethod
+    public void getBluetoothState(PluginCall call) {
+        JSObject state = new JSObject();
+        state.put("available", bluetoothAdapter != null);
+        state.put("enabled", false);
+        state.put("bleScannerAvailable", false);
+        state.put("midiServiceAvailable", midiManager != null);
+        state.put("sdkInt", Build.VERSION.SDK_INT);
+        try {
+            if (bluetoothAdapter != null) {
+                state.put("enabled", bluetoothAdapter.isEnabled());
+                state.put("bleScannerAvailable", bluetoothAdapter.getBluetoothLeScanner() != null);
+            }
+        } catch (SecurityException error) {
+            state.put("permissionError", error.getMessage());
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            try {
+                LocationManager location = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+                boolean enabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.P
+                    ? location != null && (location.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                        location.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+                    : location != null && location.isLocationEnabled();
+                state.put("locationServicesEnabled", enabled);
+            } catch (Exception error) {
+                state.put("locationServicesEnabled", false);
+            }
+        } else {
+            state.put("locationServicesEnabled", true);
+        }
+        state.put("scanPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            getPermissionState("bluetoothScan") == PermissionState.GRANTED);
+        state.put("connectPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            getPermissionState("bluetoothConnect") == PermissionState.GRANTED);
+        state.put("legacyLocationPermissionGranted", Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ||
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+            getPermissionState("legacyBluetoothLocation") == PermissionState.GRANTED);
+        call.resolve(state);
+    }
+
+    @PluginMethod
+    public void openBluetoothSettings(PluginCall call) {
+        try {
+            Intent settings = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+            settings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(settings);
+            JSObject result = new JSObject();
+            result.put("opened", true);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Pengaturan Bluetooth Android tidak dapat dibuka: " + error.getMessage());
+        }
     }
 
     @PluginMethod
@@ -174,23 +230,39 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     }
 
     private void startBleScan(PluginCall call) {
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            call.reject("Bluetooth belum aktif. Aktifkan Bluetooth Android lalu coba pindai lagi.");
-            return;
-        }
-        if (midiManager == null) {
-            call.reject("Android MIDI service tidak tersedia pada perangkat ini.");
-            return;
-        }
-        bleScanner = bluetoothAdapter.getBluetoothLeScanner();
-        if (bleScanner == null) {
-            call.reject("BLE scanner tidak tersedia. Periksa dukungan Bluetooth Low Energy perangkat Android.");
-            return;
-        }
+        try {
+            if (bluetoothAdapter == null) {
+                call.reject("Bluetooth adapter tidak tersedia pada perangkat ini.");
+                return;
+            }
+            if (!bluetoothAdapter.isEnabled()) {
+                call.reject("Bluetooth Android masih OFF. Tekan Enable Bluetooth atau buka Bluetooth Settings.");
+                return;
+            }
+            if (midiManager == null) {
+                call.reject("Android MIDI service tidak tersedia pada perangkat ini.");
+                return;
+            }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                LocationManager location = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+                boolean locationEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    ? location != null && location.isLocationEnabled()
+                    : location != null && (location.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                        location.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+                if (!locationEnabled) {
+                    call.reject("Layanan Lokasi Android harus aktif untuk BLE scan pada Android versi ini. Aktifkan Location lalu pindai lagi.");
+                    return;
+                }
+            }
+            bleScanner = bluetoothAdapter.getBluetoothLeScanner();
+            if (bleScanner == null) {
+                call.reject("BLE scanner tidak tersedia. Pastikan perangkat mendukung Bluetooth Low Energy.");
+                return;
+            }
 
-        stopBleScanInternal();
-        discoveredDevices.clear();
-        scanCallback = new ScanCallback() {
+            stopBleScanInternal();
+            discoveredDevices.clear();
+            scanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 publishDevice(result);
@@ -233,9 +305,14 @@ public class MG30BluetoothMidiPlugin extends Plugin {
             result.put("durationMs", durationMs);
             call.resolve(result);
         } catch (SecurityException error) {
-            call.reject("Izin Bluetooth belum diberikan: " + error.getMessage());
+            call.reject("Izin Nearby devices/Bluetooth belum diberikan: " + error.getMessage());
         } catch (Exception error) {
-            call.reject("Tidak dapat memulai BLE scan: " + error.getMessage());
+            call.reject("Tidak dapat memulai BLE scan: " + error.getClass().getSimpleName() + ": " + error.getMessage());
+        }
+        } catch (SecurityException error) {
+            call.reject("Akses Bluetooth ditolak Android: " + error.getMessage());
+        } catch (Exception error) {
+            call.reject("BLE scan gagal sebelum dimulai: " + error.getClass().getSimpleName() + ": " + error.getMessage());
         }
     }
 
