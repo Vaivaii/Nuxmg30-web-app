@@ -43,6 +43,7 @@ Base commit: `f37024b5b51ce1bba0ecbb4dc4bd19e05a53db58`
 
 ## Validation completed
 
+- Added `.github/workflows/wireless-midi-bridge-ci.yml` to run the repository regression suite and an Android debug APK build on pushes to this feature branch and pull requests targeting it. A workflow definition is present; its first hosted run has not yet been observed.
 - Added `tests/midi-bridge-routing.test.js` with 5 Node tests.
 - The 5 routing tests passed in an isolated Node.js 22.16.0 test run:
   - default passthrough
@@ -57,6 +58,7 @@ Base commit: `f37024b5b51ce1bba0ecbb4dc4bd19e05a53db58`
 - A full repository `npm test` and Vite build have not been run from a checked-out working tree in this environment.
 - Android Gradle/APK build has not been run because an Android SDK is not installed in this environment.
 - No physical Chocolate Plus or MG-30 device is connected here. BLE scan, physical connection, MIDI timing, feedback/display behavior, and reconnection remain hardware QA tasks.
+- Manifest permission insertion now compares exact `android:name` attributes so `BLUETOOTH_SCAN` cannot accidentally mask the legacy `BLUETOOTH` entry.
 - Android API behavior and permissions must still be confirmed on the target phone/Android version.
 - This work does not claim that the bridge has passed physical pedal QA or that an APK is ready to install.
 
