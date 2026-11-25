@@ -61,6 +61,7 @@ test('MIDI action controls have unique IDs and remain on their respective pages'
 test('Bluetooth activation uses the Android system consent dialog', () => {
   assert.match(html, /id="enableAndroidBluetooth"/);
   assert.match(html, /id="openBluetoothSettings"/);
+  assert.match(html, /id="openAppPermissionSettings"/);
   assert.match(html, /id="bleMidiMessage"/);
   assert.match(bridge, /requestEnableBluetooth\(\)/);
   assert.match(plugin, /BluetoothAdapter\.ACTION_REQUEST_ENABLE/);
