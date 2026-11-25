@@ -134,6 +134,17 @@ if (Capacitor.isNativePlatform()) {
   window.NUXNativeMidi = {
     available: true,
     isConnected: () => connected,
+    injectInput(data, metadata = {}) {
+      const bytes = Array.from(data || [], value => Number(value) & 0xFF);
+      if (!bytes.length) return false;
+      // Feed external controller MIDI into the same virtual input port used by
+      // handleMG30MidiMessage(), without pretending it arrived from the pedal.
+      dispatchMessage(bytes);
+      window.dispatchEvent(new CustomEvent('mg30-midi-external-input', {
+        detail: { source: metadata.source || 'external-midi', bytes, name: metadata.name || '' }
+      }));
+      return true;
+    },
     async connect(options = {}) {
       if (connected && outputPort) {
         return { input: inputPort, output: outputPort, access: accessShim, deviceName: liveDeviceName };
