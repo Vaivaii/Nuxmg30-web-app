@@ -104,11 +104,13 @@ async function connectUsb() {
 }
 
 async function scanBleDevices(options = {}) {
+  await listenersReady;
   if (!nativePlatform) throw new Error('BLE MIDI native hanya tersedia di aplikasi Android.');
   return BleMidi.scanBleDevices({ durationMs: options.durationMs || 10000 });
 }
 
 async function connectBleDevice(address) {
+  await listenersReady;
   const result = await BleMidi.connectBleDevice({ address });
   bleConnected = true;
   window.dispatchEvent(new CustomEvent('mg30ble-midi-connection', { detail: result }));
@@ -116,6 +118,7 @@ async function connectBleDevice(address) {
 }
 
 async function disconnectBleDevice() {
+  await listenersReady;
   await BleMidi.disconnectBleDevice({});
   bleConnected = false;
   window.dispatchEvent(new CustomEvent('mg30ble-midi-connection', {
