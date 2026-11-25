@@ -103,6 +103,12 @@ async function connectUsb() {
   return result;
 }
 
+async function requestEnableBluetooth() {
+  await listenersReady;
+  if (!nativePlatform) throw new Error('Aktivasi Bluetooth Android hanya tersedia di aplikasi Android.');
+  return BleMidi.requestEnableBluetooth({});
+}
+
 async function scanBleDevices(options = {}) {
   await listenersReady;
   if (!nativePlatform) throw new Error('BLE MIDI native hanya tersedia di aplikasi Android.');
@@ -183,6 +189,7 @@ window.MG30NativeMidi = {
   connectUsb,
   sendUsb,
   scanBleDevices,
+  requestEnableBluetooth,
   connectBleDevice,
   disconnectBleDevice,
   configureBridge,
