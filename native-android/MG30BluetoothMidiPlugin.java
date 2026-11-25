@@ -40,6 +40,7 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @CapacitorPlugin(
@@ -78,43 +79,65 @@ public class MG30BluetoothMidiPlugin extends Plugin {
         if (bluetoothManager != null) bluetoothAdapter = bluetoothManager.getAdapter();
     }
 
+    private boolean hasPermission(String alias) {
+        try {
+            return getPermissionState(alias) == PermissionState.GRANTED;
+        } catch (Exception error) {
+            return false;
+        }
+    }
+
     @PluginMethod
     public void getBluetoothState(PluginCall call) {
         JSObject state = new JSObject();
-        state.put("available", bluetoothAdapter != null);
-        state.put("enabled", false);
-        state.put("bleScannerAvailable", false);
-        state.put("midiServiceAvailable", midiManager != null);
-        state.put("sdkInt", Build.VERSION.SDK_INT);
         try {
+            state.put("available", bluetoothAdapter != null);
+            state.put("enabled", false);
+            state.put("bleScannerAvailable", false);
+            state.put("midiServiceAvailable", midiManager != null);
+            state.put("sdkInt", Build.VERSION.SDK_INT);
+
             if (bluetoothAdapter != null) {
-                state.put("enabled", bluetoothAdapter.isEnabled());
-                state.put("bleScannerAvailable", bluetoothAdapter.getBluetoothLeScanner() != null);
+                try {
+                    state.put("enabled", bluetoothAdapter.isEnabled());
+                    state.put("bleScannerAvailable", bluetoothAdapter.getBluetoothLeScanner() != null);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && hasPermission("bluetoothConnect")) {
+                        Set<BluetoothDevice> bonded = bluetoothAdapter.getBondedDevices();
+                        state.put("bondedDeviceCount", bonded == null ? 0 : bonded.size());
+                    }
+                } catch (SecurityException error) {
+                    state.put("permissionError", error.getMessage());
+                }
             }
-        } catch (SecurityException error) {
-            state.put("permissionError", error.getMessage());
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            try {
-                LocationManager location = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-                boolean enabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.P
-                    ? location != null && (location.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                        location.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
-                    : location != null && location.isLocationEnabled();
-                state.put("locationServicesEnabled", enabled);
-            } catch (Exception error) {
-                state.put("locationServicesEnabled", false);
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                try {
+                    LocationManager location = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+                    boolean enabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.P
+                        ? location != null && (location.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                            location.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+                        : location != null && location.isLocationEnabled();
+                    state.put("locationServicesEnabled", enabled);
+                } catch (Exception error) {
+                    state.put("locationServicesEnabled", false);
+                    state.put("locationDiagnostic", error.getMessage());
+                }
+            } else {
+                state.put("locationServicesEnabled", true);
             }
-        } else {
-            state.put("locationServicesEnabled", true);
+
+            state.put("scanPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                hasPermission("bluetoothScan"));
+            state.put("connectPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                hasPermission("bluetoothConnect"));
+            state.put("legacyLocationPermissionGranted", Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ||
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                hasPermission("legacyBluetoothLocation"));
+            state.put("diagnosticsOk", true);
+        } catch (Exception error) {
+            state.put("diagnosticsOk", false);
+            state.put("diagnosticError", error.getClass().getSimpleName() + ": " + error.getMessage());
         }
-        state.put("scanPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-            getPermissionState("bluetoothScan") == PermissionState.GRANTED);
-        state.put("connectPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-            getPermissionState("bluetoothConnect") == PermissionState.GRANTED);
-        state.put("legacyLocationPermissionGranted", Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ||
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-            getPermissionState("legacyBluetoothLocation") == PermissionState.GRANTED);
         call.resolve(state);
     }
 
@@ -153,9 +176,12 @@ public class MG30BluetoothMidiPlugin extends Plugin {
             call.reject("Bluetooth tidak tersedia pada perangkat Android ini.");
             return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
-            requestPermissionForAlias("bluetoothConnect", call, "onBluetoothEnablePermissionResult");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
+            try {
+                requestPermissionForAlias("bluetoothConnect", call, "onBluetoothEnablePermissionResult");
+            } catch (Exception error) {
+                call.reject("Permintaan izin Nearby devices gagal: " + error.getMessage());
+            }
             return;
         }
         launchBluetoothEnableRequest(call);
@@ -164,8 +190,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     @PermissionCallback
     private void onBluetoothEnablePermissionResult(PluginCall call) {
         if (call == null) return;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
             call.reject("Izin Nearby devices diperlukan untuk memeriksa dan mengaktifkan Bluetooth.");
             return;
         }
@@ -222,13 +247,12 @@ public class MG30BluetoothMidiPlugin extends Plugin {
 
     private boolean ensureScanPermissions(PluginCall call) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (getPermissionState("bluetoothScan") != PermissionState.GRANTED ||
-                getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+            if (!hasPermission("bluetoothScan") || !hasPermission("bluetoothConnect")) {
                 requestPermissionForAliases(new String[] { "bluetoothScan", "bluetoothConnect" }, call, "onScanPermissionResult");
                 return false;
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            getPermissionState("legacyBluetoothLocation") != PermissionState.GRANTED) {
+            !hasPermission("legacyBluetoothLocation")) {
             requestPermissionForAlias("legacyBluetoothLocation", call, "onScanPermissionResult");
             return false;
         }
@@ -241,7 +265,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
                 getPermissionState("bluetoothConnect") == PermissionState.GRANTED;
         }
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-            getPermissionState("legacyBluetoothLocation") == PermissionState.GRANTED;
+            hasPermission("legacyBluetoothLocation");
     }
 
     private void startBleScan(PluginCall call) {
@@ -277,6 +301,9 @@ public class MG30BluetoothMidiPlugin extends Plugin {
 
             stopBleScanInternal();
             discoveredDevices.clear();
+            // A controller may already be paired in Android Settings and may not
+            // advertise while idle. Include known M-VAVE/FootCtrlPlus bonded devices.
+            publishBondedMidiControllers();
             scanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
@@ -328,6 +355,49 @@ public class MG30BluetoothMidiPlugin extends Plugin {
             call.reject("Akses Bluetooth ditolak Android: " + error.getMessage());
         } catch (Exception error) {
             call.reject("BLE scan gagal sebelum dimulai: " + error.getClass().getSimpleName() + ": " + error.getMessage());
+        }
+    }
+
+    private void publishBondedMidiControllers() {
+        if (bluetoothAdapter == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) return;
+            Set<BluetoothDevice> bonded = bluetoothAdapter.getBondedDevices();
+            if (bonded == null) return;
+            for (BluetoothDevice device : bonded) {
+                if (device == null) continue;
+                String name = "";
+                String address = "";
+                try {
+                    name = device.getName();
+                    address = device.getAddress();
+                } catch (SecurityException ignored) {
+                    continue;
+                }
+                String normalized = name == null ? "" : name.toLowerCase(java.util.Locale.ROOT);
+                boolean likelyController = normalized.contains("chocolate") ||
+                    normalized.contains("footctrl") || normalized.contains("m-vave") ||
+                    normalized.contains("mvave");
+                if (!likelyController || address == null || address.isEmpty()) continue;
+                discoveredDevices.put(address, device);
+                JSObject event = new JSObject();
+                event.put("address", address);
+                event.put("name", name);
+                event.put("rssi", 0);
+                event.put("bonded", true);
+                event.put("isChocolatePlus", normalized.contains("chocolate") ||
+                    normalized.contains("footctrlplus"));
+                event.put("source", "android-bonded-device");
+                notifyListeners("bleMidiDeviceFound", event);
+            }
+        } catch (SecurityException error) {
+            JSObject diagnostic = new JSObject();
+            diagnostic.put("message", "Tidak dapat membaca perangkat Bluetooth yang sudah dipasangkan: " + error.getMessage());
+            notifyListeners("bleMidiScanError", diagnostic);
+        } catch (Exception error) {
+            JSObject diagnostic = new JSObject();
+            diagnostic.put("message", "Gagal membaca daftar Bluetooth paired: " + error.getMessage());
+            notifyListeners("bleMidiScanError", diagnostic);
         }
     }
 
