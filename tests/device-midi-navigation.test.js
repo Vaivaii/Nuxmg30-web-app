@@ -95,7 +95,7 @@ test('Bluetooth UI click handlers are directly bound and native calls have timeo
 });
 
 test('Android BLE diagnostics are fail-safe and scan includes paired FootCtrlPlus devices', () => {
-  assert.match(plugin, /private boolean hasPermission\(String alias\)/);
+  assert.match(plugin, /private boolean hasPermissionStateGranted\\(String alias\\)/);
   assert.match(plugin, /call\.resolve\(state\);[\s\S]*?public void openAppPermissionSettings/);
   assert.match(plugin, /publishBondedMidiControllers\(\)/);
   assert.match(plugin, /normalized\.contains\("footctrlplus"\)/);
