@@ -16,6 +16,7 @@ mkdirSync(javaDir, { recursive: true });
 copyFileSync(resolve(root, 'native-android/MG30AudioPlugin.java'), resolve(javaDir, 'MG30AudioPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30AudioOutputPlugin.java'), resolve(javaDir, 'MG30AudioOutputPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30MidiPlugin.java'), resolve(javaDir, 'MG30MidiPlugin.java'));
+copyFileSync(resolve(root, 'native-android/MG30BluetoothMidiPlugin.java'), resolve(javaDir, 'MG30BluetoothMidiPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30DawFilesPlugin.java'), resolve(javaDir, 'MG30DawFilesPlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30SecureStorePlugin.java'), resolve(javaDir, 'MG30SecureStorePlugin.java'));
 copyFileSync(resolve(root, 'native-android/MG30ChatGPTPlugin.java'), resolve(javaDir, 'MG30ChatGPTPlugin.java'));
@@ -47,6 +48,7 @@ const mainActivityLines = [
   '        registerPlugin(MG30AudioPlugin.class);',
   '        registerPlugin(MG30AudioOutputPlugin.class);',
   '        registerPlugin(MG30MidiPlugin.class);',
+  '        registerPlugin(MG30BluetoothMidiPlugin.class);',
   '        registerPlugin(MG30DawFilesPlugin.class);',
   '        registerPlugin(MG30SecureStorePlugin.class);',
   '        registerPlugin(MG30ChatGPTPlugin.class);',
@@ -110,7 +112,13 @@ let manifest = readFileSync(manifestPath, 'utf8');
 const requiredEntries = [
   ['android.permission.INTERNET', '    <uses-permission android:name="android.permission.INTERNET" />'],
   ['android.permission.RECORD_AUDIO', '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'],
-  ['android.hardware.usb.host', '    <uses-feature android:name="android.hardware.usb.host" android:required="false" />']
+  ['android.hardware.usb.host', '    <uses-feature android:name="android.hardware.usb.host" android:required="false" />'],
+  ['android.permission.BLUETOOTH_SCAN', '    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />'],
+  ['android.permission.BLUETOOTH_CONNECT', '    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />'],
+  ['android.permission.BLUETOOTH', '    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />'],
+  ['android.permission.BLUETOOTH_ADMIN', '    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />'],
+  ['android.permission.ACCESS_FINE_LOCATION', '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />'],
+  ['android.hardware.bluetooth_le', '    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />']
 ];
 for (const [marker, entry] of requiredEntries) {
   if (!manifest.includes(marker)) manifest = manifest.replace(/(<manifest\b[^>]*>)/, '$1\n' + entry);
