@@ -231,8 +231,12 @@ public class MG30BluetoothMidiPlugin extends Plugin {
 
     @PluginMethod
     public void scanBleDevices(PluginCall call) {
-        if (!ensureScanPermissions(call)) return;
-        startBleScan(call);
+        try {
+            if (!ensureScanPermissions(call)) return;
+            startBleScan(call);
+        } catch (Exception error) {
+            call.reject("Tidak dapat meminta izin BLE scan: " + error.getClass().getSimpleName() + ": " + error.getMessage());
+        }
     }
 
     @PermissionCallback
@@ -246,23 +250,27 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     }
 
     private boolean ensureScanPermissions(PluginCall call) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!hasPermission("bluetoothScan") || !hasPermission("bluetoothConnect")) {
-                requestPermissionForAliases(new String[] { "bluetoothScan", "bluetoothConnect" }, call, "onScanPermissionResult");
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (!hasPermission("bluetoothScan") || !hasPermission("bluetoothConnect")) {
+                    requestPermissionForAliases(new String[] { "bluetoothScan", "bluetoothConnect" }, call, "onScanPermissionResult");
+                    return false;
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                !hasPermission("legacyBluetoothLocation")) {
+                requestPermissionForAlias("legacyBluetoothLocation", call, "onScanPermissionResult");
                 return false;
             }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !hasPermission("legacyBluetoothLocation")) {
-            requestPermissionForAlias("legacyBluetoothLocation", call, "onScanPermissionResult");
+            return true;
+        } catch (Exception error) {
+            call.reject("Permintaan izin Nearby devices gagal: " + error.getMessage());
             return false;
         }
-        return true;
     }
 
     private boolean scanPermissionsGranted() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return getPermissionState("bluetoothScan") == PermissionState.GRANTED &&
-                getPermissionState("bluetoothConnect") == PermissionState.GRANTED;
+            return hasPermission("bluetoothScan") && hasPermission("bluetoothConnect");
         }
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
             hasPermission("legacyBluetoothLocation");
@@ -467,8 +475,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     @PermissionCallback
     private void onConnectPermissionResult(PluginCall call) {
         if (call == null) return;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
             call.reject("Izin Nearby devices diperlukan untuk terhubung ke controller MIDI.");
             return;
         }
@@ -476,8 +483,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     }
 
     private boolean ensureConnectPermission(PluginCall call) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
             requestPermissionForAlias("bluetoothConnect", call, "onConnectPermissionResult");
             return false;
         }
