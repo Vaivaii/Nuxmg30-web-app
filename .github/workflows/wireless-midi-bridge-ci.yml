@@ -55,6 +55,8 @@ jobs:
           node --check scripts/init-android.mjs
           node --check native-midi-bridge.js
           node --check native-midi-routing.js
+          node --check www/native-midi-bridge.js
+          node --check www/native-midi-routing.js
 
       - name: Run regression suite
         run: npm test
