@@ -90,12 +90,9 @@ public class MG30BluetoothMidiPlugin extends Plugin {
 
     private boolean ensureScanPermissions(PluginCall call) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (getPermissionState("bluetoothScan") != PermissionState.GRANTED) {
-                requestPermissionForAlias("bluetoothScan", call, "onScanPermissionResult");
-                return false;
-            }
-            if (getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
-                requestPermissionForAlias("bluetoothConnect", call, "onScanPermissionResult");
+            if (getPermissionState("bluetoothScan") != PermissionState.GRANTED ||
+                getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+                requestPermissionForAliases(new String[] { "bluetoothScan", "bluetoothConnect" }, call, "onScanPermissionResult");
                 return false;
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
