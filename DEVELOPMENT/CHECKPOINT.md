@@ -1354,3 +1354,19 @@ CI at checkpoint time:
 - Wireless Bridge CI run #39: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45648967703 (regression tests passed; APK build in progress).
 
 Runtime verification still required: after installing the APK, press several Chocolate Plus footswitches and compare Android BLE receiver packet count with Editor MIDI input count. CI cannot prove live Bluetooth reception.
+
+### Final Build #1255 verification — completed 2026-11-25
+
+- GitHub Actions run **#1255**: SUCCESS — https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45649017811.
+- Source commit built: `e06c16f7e670858a3ab20c132a4caab83724a8ef`.
+- Regression tests: **722 passed, 0 failed**.
+- Capacitor Android generation: PASS.
+- Gradle `assembleDebug`: **BUILD SUCCESSFUL** in 1m 22s.
+- APK artifact ID: `15039955004`, name `MG30-Studio-debug-APK`, ZIP size 4,420,166 bytes.
+- APK artifact ZIP SHA-256: `8ffaaa278c8dbd891f6519386cc3b4f82c6ba1c61ca77f165cb2b35094d3be2f` (matches GitHub artifact digest).
+- Extracted APK: `MG30-Studio-Wireless-MIDI-build-1255.apk`, size 4,797,676 bytes.
+- Extracted APK SHA-256: `086cf1b514fc688e3a2d95425b3353f70b42f608ec6f91aedad5d992e6df7f8b`.
+- APK archive validation: PASS (`unzip -t`).
+- Packaged asset verification: `assets/public/index.html` contains `bleMidiNativeRxStatus`; bundled `assets/public/assets/index-B_Gp0P5j.js` contains `bleMidiReceiveStats`, `receivedPacketCount`, and the Android receive-status rendering text.
+- Physical Chocolate Plus / Android hardware reception is not validated by CI. Owner should confirm with Chocolate Plus in H mode and no charger: press several footswitches and compare Android BLE receiver packet/byte count with Editor MIDI input count.
+- No original MG-30 USB MIDI mapping/protocol, custom CC assignments, NAM, IR, preset, DSP or audio-capture code was modified.
