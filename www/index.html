@@ -2325,6 +2325,7 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
     <div class="device-midi-actions">
      <button class="btn primary" id="enableAndroidBluetooth" type="button">Enable Bluetooth</button>
      <button class="btn" id="openBluetoothSettings" type="button">Open Bluetooth Settings</button>
+     <button class="btn" id="openAppPermissionSettings" type="button">App Permissions</button>
     </div>
     <div id="bleMidiMessage" class="notice" role="status" aria-live="polite">Checking Android Bluetooth state…</div>
     <div class="switch-row"><span>BLE controller</span><span id="bleMidiStatus" class="chip">Not connected</span></div>
@@ -5130,6 +5131,7 @@ function openMidiSubpage(page){
  if(!pages[page])return;
  $('midiCenterHome').classList.add('hidden');
  document.querySelectorAll('.midi-subpage').forEach(el=>el.classList.toggle('hidden',el.id!==pages[page]));
+ if(page==='bluetooth')window.dispatchEvent(new CustomEvent('mg30-open-bluetooth-midi'));
 }
 function showPage(p){
  document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));
