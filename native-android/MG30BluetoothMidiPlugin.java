@@ -119,6 +119,21 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void openAppPermissionSettings(PluginCall call) {
+        try {
+            Intent settings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            settings.setData(android.net.Uri.fromParts("package", getContext().getPackageName(), null));
+            settings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(settings);
+            JSObject result = new JSObject();
+            result.put("opened", true);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Pengaturan izin aplikasi Android tidak dapat dibuka: " + error.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void openBluetoothSettings(PluginCall call) {
         try {
             Intent settings = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
