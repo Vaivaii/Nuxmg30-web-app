@@ -188,3 +188,63 @@ Remaining hardware QA:
 - If scan still returns no devices, capture the visible `bleMidiMessage` and `BLE controller` status. Do not claim physical BLE discovery or two-way MIDI routing until the actual controller and original NUX MG-30 are tested.
 - No NAM, IR, preset SysEx, or existing editor MIDI mapping files were changed.
 
+## BLE MIDI input into editor + Bluetooth diagnostics recovery — Run #35
+
+User's latest screenshot still showed "Checking Android Bluetooth state…" and static Bluetooth status/buttons, while the Chocolate Plus could be manually enabled/connected at the OS level but its MIDI messages did not update the editor. Two concrete implementation gaps were identified and corrected.
+
+### Root causes found
+
+1. The native state diagnostic queried Capacitor permission state outside a full exception guard. An exception from the permission state check could leave the PluginCall unresolved, which left the UI on its initial "Checking…" label. Bluetooth methods also needed stronger rejection/timeout handling.
+2. The BLE input handler previously forwarded packets only to the MG-30 USB output. It did not inject received BLE packets into the virtual input port consumed by the existing editor's `handleMG30MidiMessage()`. Therefore BLE could connect without the editor receiving PC/CC events.
+3. Scanning relied only on live advertisements. A controller already paired manually in Android Bluetooth Settings might not be included in the new advertisement results.
+
+### Changes made
+
+- `native-android/MG30BluetoothMidiPlugin.java`
+  - Added safe runtime permission-state helper `hasPermissionStateGranted` (renamed to avoid a method-name collision with Capacitor's inherited `Plugin.hasPermission(String)`).
+  - Reworked `getBluetoothState` to always resolve a diagnostic state object, including adapter enabled state, scanner/MIDI-service availability, SDK version, permission state, and diagnostic error details.
+  - Wrapped BLE scan permission requests and permission callbacks so errors reject the PluginCall with a useful message instead of leaving the UI pending.
+  - Added `publishBondedMidiControllers`, which adds already-paired controller devices whose names contain Chocolate, FootCtrl, FootCtrlPlus, M-VAVE, or MVAVE to the in-app BLE device list before scanning live advertisements.
+  - Kept Android `MidiManager.openBluetoothDevice` for the actual BLE-MIDI input/output ports.
+- `www/native-midi.js`
+  - Added `NUXNativeMidi.injectInput(data, metadata)`, which dispatches external MIDI into the same virtual USB-MIDI input port that the editor already consumes. It does not alter the USB connection or SysEx/preset transfer code.
+- `www/native-midi-bridge.js`
+  - BLE messages now have two independent paths:
+    1. Inject mapped PC/CC and other MIDI bytes into editor input.
+    2. Forward messages to MG-30 USB output only when USB is connected and passthrough permits it.
+  - Editor input is not blocked when the MG-30 USB output is disconnected.
+  - The Editor input counter increments only when `injectInput` confirms the packet was delivered.
+  - Added native-call timeouts, exception-safe listener registration, explicit direct click bindings for all Bluetooth buttons, and visible diagnostics when state/permissions/scan calls fail.
+- `www/index.html`
+  - Added the `Editor MIDI input` status row showing received message count and last PC/CC data.
+  - Clarified controller mode: set Chocolate Plus to H mode, power on, pair as FootCtrlPlus/Chocolate Plus if required, then scan/select it inside MG30 Studio.
+- `tests/device-midi-navigation.test.js`
+  - Added checks for external MIDI injection, the independent BLE→Editor and BLE→USB paths, direct Bluetooth button bindings, timeout/diagnostic handling, and paired FootCtrlPlus fallback.
+- No NAM, IR User/Third Party, IR Collection import/transfer, preset SysEx, or existing editor MIDI mapping tables were changed.
+
+### Final verified build — Run #35
+
+- Workflow: [45630312537](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45630312537) — **success**.
+- Code/test commit: `1619183e0762bc51303ab950222df80939740e5f`.
+- Regression suite: **721 passed, 0 failed**.
+- JavaScript/Android generator syntax: passed.
+- Android debug APK: `BUILD SUCCESSFUL in 1m 32s`; `assembleDebug` and artifact upload passed.
+- Artifact ID: `15030089034`; ZIP `MG30-Studio-BLE-Editor-Input-Fix.zip` (4,418,380 bytes).
+- Extracted APK: `MG30-Studio-BLE-Editor-Input-Fix.apk` (4,796,140 bytes).
+- APK SHA-256: `a8e5163e9a8e7696679a2f3770aab38b8fe96c87c339b222eff2d945031850b8`.
+- APK inspection confirms:
+  - Packaged HTML includes the `Editor MIDI input` status row and Bluetooth/App Permissions controls.
+  - Bundled JavaScript includes `injectInput`, `editorDelivered`, and timeout diagnostics.
+  - DEX includes `MG30BluetoothMidi`, `publishBondedMidiControllers`, `getBluetoothState`, and `hasPermissionStateGranted`.
+
+### Physical test still required
+
+Build, automated tests, APK contents, and native plugin packaging are verified. The user's phone/controller/pedal cannot be operated from this build environment, so physical Bluetooth scan, BLE connection, and message reception are not yet certified. After installing this APK, verify in order:
+1. Device → MIDI → Bluetooth MIDI should replace "Checking…" with Bluetooth ON/OFF or a visible diagnostic.
+2. Tap Scan MIDI Devices. If FootCtrlPlus is already paired in Android Settings, it should appear as a paired entry; otherwise a live BLE advertisement should appear.
+3. Select FootCtrlPlus/Chocolate Plus. The BLE status must show Connected.
+4. Press a footswitch assigned to Program Change or CC. The `Editor MIDI input` row must increment and show the received PC/CC.
+5. With USB MG-30 connected, verify the same message is also forwarded to the pedal when passthrough is enabled.
+
+A BLE connection state by itself does not prove MIDI data is flowing; use the editor input counter as the receive-side evidence.
+
