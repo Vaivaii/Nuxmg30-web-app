@@ -2322,7 +2322,11 @@ body>.app>#page-editor>.editor>.main-editor-card .editor-heading.is-nam-profile 
    <div class="midi-subpage-head"><button type="button" class="btn ghost" data-midi-back>← MIDI Center</button><div><div class="eyebrow">MIDI / WIRELESS</div><h3>Bluetooth MIDI</h3><p>Connect M-VAVE Chocolate Plus using BLE MIDI.</p></div></div>
    <div class="panel" id="bleMidiBridgePanel">
     <div class="panel-head"><div><h3>Android Bluetooth</h3><p>Enable Bluetooth through the Android system consent dialog.</p></div><span id="androidBluetoothStatus" class="chip">Not checked</span></div>
-    <button class="btn primary" id="enableAndroidBluetooth" type="button">Enable Bluetooth</button>
+    <div class="device-midi-actions">
+     <button class="btn primary" id="enableAndroidBluetooth" type="button">Enable Bluetooth</button>
+     <button class="btn" id="openBluetoothSettings" type="button">Open Bluetooth Settings</button>
+    </div>
+    <div id="bleMidiMessage" class="notice" role="status" aria-live="polite">Checking Android Bluetooth state…</div>
     <div class="switch-row"><span>BLE controller</span><span id="bleMidiStatus" class="chip">Not connected</span></div>
     <div class="panel-head" style="margin-top:15px"><div><h3>MIDI Devices</h3><p>Find nearby Bluetooth MIDI controllers.</p></div><span class="chip">BLE MIDI</span></div>
     <div class="device-midi-actions"><button class="btn primary" id="scanBleMidi" type="button">Scan MIDI Devices</button><button class="btn" id="disconnectBleMidi" type="button">Disconnect BLE</button></div>
