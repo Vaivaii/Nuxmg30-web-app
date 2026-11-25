@@ -100,9 +100,21 @@ No IR, NAM, preset, or device SysEx write sequence was modified by this branch's
 - Added an Android Bluetooth activation button. The native plugin requests the Android `BLUETOOTH_CONNECT` permission when required and launches `BluetoothAdapter.ACTION_REQUEST_ENABLE` through Capacitor's Activity Result callback. User approval remains required; scanning is still a separate explicit action.
 - Added `tests/device-midi-navigation.test.js` to cover tabs, the four detail pages, unique action IDs, legacy bridge controls, the Bluetooth activation intent, and mapping separation.
 - Static source audit: 92 HTML IDs found, no duplicate IDs, and all `$('...')` references resolve to an element.
-- GitHub Actions run #10 for commit `9244890714eb54366661ac61a916e76940af3e29`: JS/Android-generator syntax and regression tests passed; Android debug APK build was still running at the time this note was written. Final build/artifact status must be appended after CI completion.
+- GitHub Actions run #10 for code commit `9244890714eb54366661ac61a916e76940af3e29`: **success**. JS/Android-generator syntax, Vite build, regression suite, Android debug build, and artifact upload all passed.
 
 ### Protected areas
 
 No changes were made to NAM import/processing, User/Third Party IR import, IR Collection import, preset SysEx transfer, or the existing editor MIDI mapping tables. This is a Device UI/navigation change plus an additive Android Bluetooth permission/activation method; it is not physical hardware validation.
+
+### Final build and artifact — Run #10
+
+- Workflow run: [45619413468](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45619413468) — **success**.
+- Built code commit: `9244890714eb54366661ac61a916e76940af3e29`.
+- Regression suite: **717 passed, 0 failed**.
+- Vite production build: successful.
+- Android Gradle: `BUILD SUCCESSFUL in 1m 32s`; task `assembleDebug`.
+- GitHub Actions artifact ID: `15024037893`; archive `MG30-Studio-Device-MIDI-Submenu-Debug.zip` (4,408,603 bytes).
+- Extracted APK: `MG30-Studio-Device-MIDI-Submenu-Debug.apk` (4,785,088 bytes).
+- APK SHA-256: `2781f330ecbb297bd40089acf6f5e36163433fc8267694cdfa9f76c59119326a`.
+- The APK is a debug build. This confirms compilation and packaging only; the Android consent dialog, BLE discovery, Chocolate Plus routing, and physical MG-30 behavior still require testing on the target phone/controller/pedal.
 
