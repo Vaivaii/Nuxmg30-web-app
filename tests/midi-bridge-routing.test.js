@@ -29,5 +29,5 @@ test('custom-only mode drops unrelated messages but retains mapped CC', () => {
 });
 
 test('invalid byte values are rejected before sending', () => {
-  assert.throws(() => normalizeMidiBytes([0xB0, 130, 1]), TypeError);
+  assert.throws(() => normalizeMidiBytes([0xB0, 256, 1]), TypeError);
 });
