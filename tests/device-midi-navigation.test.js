@@ -50,7 +50,8 @@ test('MIDI action controls have unique IDs and remain on their respective pages'
   for (const id of ids) assert.equal(countId(id), 1, id + ' must exist exactly once');
   const usb = html.slice(html.indexOf('id="midiUsbPage"'), html.indexOf('id="midiBluetoothPage"'));
   const routingPage = html.slice(html.indexOf('id="midiRoutingPage"'), html.indexOf('id="midiMappingPage"'));
-  const mappingPage = html.slice(html.indexOf('id="midiMappingPage"'), html.indexOf('</div>', html.indexOf('id="midiMappingPage"')));
+  const mappingStart = html.indexOf('id="midiMappingPage"');
+  const mappingPage = html.slice(mappingStart, html.indexOf('id="page-backup"', mappingStart));
   assert.match(usb, /id="connectMidiDevice"/);
   assert.match(routingPage, /id="blePassthrough"/);
   assert.match(routingPage, /id="bleFeedback"/);
