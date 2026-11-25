@@ -109,6 +109,17 @@ test('original passthrough and custom CC mapping are isolated from editor MIDI m
   assert.match(html, /Existing MG-30 editor MIDI mappings are not overwritten/);
 });
 
+
+test('Android BLE packet counters and disconnect callback are wired', () => {
+  assert.equal((html.match(/id="bleMidiNativeRxStatus"/g) || []).length, 1);
+  assert.match(bridge, /bleMidiReceiveStats/);
+  assert.match(bridge, /updateNativeReceiveStatus/);
+  assert.match(plugin, /receivedPacketCount\+\+/);
+  assert.match(plugin, /registerDeviceCallback\(midiDeviceCallback, mainHandler\)/);
+  assert.match(plugin, /public void onDeviceRemoved\(MidiDeviceInfo info\)/);
+  assert.match(plugin, /unregisterDeviceCallback\(midiDeviceCallback\)/);
+});
+
 test('editor shortcut opens the live Device MIDI tab', () => {
   assert.match(html, /openDeviceFromEditor[^\n]*setDeviceTab\('midi'\)/);
 });
