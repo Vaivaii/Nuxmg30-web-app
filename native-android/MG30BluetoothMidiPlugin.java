@@ -1,6 +1,7 @@
 package com.vaivaii.mg30studio;
 
 import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -9,6 +10,7 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.Intent;
 import android.media.midi.MidiDevice;
 import android.media.midi.MidiDeviceInfo;
 import android.media.midi.MidiInputPort;
@@ -18,6 +20,8 @@ import android.media.midi.MidiReceiver;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+
+import androidx.activity.result.ActivityResult;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -70,6 +74,63 @@ public class MG30BluetoothMidiPlugin extends Plugin {
         BluetoothManager bluetoothManager =
             (BluetoothManager) getContext().getSystemService(Context.BLUETOOTH_SERVICE);
         if (bluetoothManager != null) bluetoothAdapter = bluetoothManager.getAdapter();
+    }
+
+    @PluginMethod
+    public void requestEnableBluetooth(PluginCall call) {
+        if (bluetoothAdapter == null) {
+            call.reject("Bluetooth tidak tersedia pada perangkat Android ini.");
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+            requestPermissionForAlias("bluetoothConnect", call, "onBluetoothEnablePermissionResult");
+            return;
+        }
+        launchBluetoothEnableRequest(call);
+    }
+
+    @PermissionCallback
+    private void onBluetoothEnablePermissionResult(PluginCall call) {
+        if (call == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            getPermissionState("bluetoothConnect") != PermissionState.GRANTED) {
+            call.reject("Izin Nearby devices diperlukan untuk memeriksa dan mengaktifkan Bluetooth.");
+            return;
+        }
+        launchBluetoothEnableRequest(call);
+    }
+
+    private void launchBluetoothEnableRequest(PluginCall call) {
+        try {
+            if (bluetoothAdapter.isEnabled()) {
+                JSObject state = new JSObject();
+                state.put("enabled", true);
+                state.put("alreadyEnabled", true);
+                call.resolve(state);
+                return;
+            }
+            Intent request = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(call, request, "onBluetoothEnableResult");
+        } catch (SecurityException error) {
+            call.reject("Izin Bluetooth belum tersedia: " + error.getMessage());
+        } catch (Exception error) {
+            call.reject("Dialog aktivasi Bluetooth tidak dapat dibuka: " + error.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void onBluetoothEnableResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        try {
+            boolean enabled = bluetoothAdapter != null && bluetoothAdapter.isEnabled();
+            JSObject state = new JSObject();
+            state.put("enabled", enabled);
+            state.put("accepted", result != null && result.getResultCode() == Activity.RESULT_OK);
+            call.resolve(state);
+        } catch (SecurityException error) {
+            call.reject("Tidak dapat memeriksa status Bluetooth: " + error.getMessage());
+        }
     }
 
     @PluginMethod
