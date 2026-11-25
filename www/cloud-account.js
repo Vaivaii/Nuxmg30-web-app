@@ -134,9 +134,10 @@
       <div class="notice" style="margin-top:12px">
         Cloud is only used for online services. USB-MIDI, local presets, NAM, IR, and MIDI remain available without signing in or an internet connection.
       </div>`;
-    const hero = page.querySelector(":scope > .hero");
-    if (hero?.nextSibling) page.insertBefore(panel, hero.nextSibling);
-    else page.appendChild(panel);
+    const overview = $("deviceOverviewView") || page;
+    const anchor = overview.querySelector(".device-usb-audio-card");
+    if (anchor) overview.insertBefore(panel, anchor);
+    else overview.appendChild(panel);
     $("mg30CloudLoginBtn").addEventListener("click", login);
     $("mg30CloudPassword").addEventListener("keydown", e => {
       if (e.key === "Enter") login();
