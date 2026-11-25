@@ -53,6 +53,18 @@ Base commit: `f37024b5b51ce1bba0ecbb4dc4bd19e05a53db58`
   - rejection of out-of-range byte values
 - JavaScript syntax checks passed for the bridge module and pure routing helper in the isolated local check.
 
+## Latest build verification — Run #3
+
+- Commit: `2394dcead4d2f50a785604f438392ff788340baf`
+- GitHub Actions run: [45617496295](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45617496295) — **success**
+- Root cause fixed: `MidiDevice.close()` in the exception handler could throw checked `IOException`; the exception handler now closes the device inside its own guarded try/catch and preserves close failures as suppressed exceptions.
+- Full repository test suite: **710 passed, 0 failed**.
+- Android debug build: `BUILD SUCCESSFUL`, `assembleDebug`.
+- Uploaded artifact: `MG30-Studio-Wireless-MIDI-Bridge-Debug.zip` (4,408,086 bytes; artifact ID `15023376578`).
+- Extracted debug APK: `MG30-Studio-Wireless-MIDI-Bridge-Debug.apk` (4,784,552 bytes).
+- Extracted APK SHA-256: `71c0f0f4116857a2641ec54baa14401b7342eed717035ba2d030ea83ec5fb694`.
+- This is a **debug APK** built by CI. It is not a signed public-release APK and has not been installed or physically tested against Chocolate Plus and the MG-30.
+
 ## Not yet validated
 
 - A full repository `npm test` and Vite build have not been run from a checked-out working tree in this environment.
