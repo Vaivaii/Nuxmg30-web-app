@@ -8,6 +8,7 @@ const accountCloud = readFileSync(new URL('../www/cloud-account.js', import.meta
 const bridge = readFileSync(new URL('../www/native-midi-bridge.js', import.meta.url), 'utf8');
 const routing = readFileSync(new URL('../www/native-midi-routing.js', import.meta.url), 'utf8');
 const main = readFileSync(new URL('../www/main.js', import.meta.url), 'utf8');
+const nativeMidi = readFileSync(new URL('../www/native-midi.js', import.meta.url), 'utf8');
 const plugin = readFileSync(new URL('../native-android/MG30BluetoothMidiPlugin.java', import.meta.url), 'utf8');
 
 function countId(id) {
@@ -44,7 +45,7 @@ test('MIDI action controls have unique IDs and remain on their respective pages'
     'deviceStatus', 'midiSupport', 'sysexStatus', 'connectMidiDevice',
     'readBuffer', 'checkMidi', 'goBackup', 'enableAndroidBluetooth',
     'scanBleMidi', 'disconnectBleMidi', 'bleMidiStatus', 'blePassthrough',
-    'bleFeedback', 'bridgeRouteStatus', 'bridgeCcSource', 'bridgeCcTarget',
+    'bleFeedback', 'bridgeRouteStatus', 'bridgeCcSource', 'bridgeCcTarget', 'bleMidiInputStatus',
     'saveBridgeMapping', 'clearBridgeMapping'
   ];
   for (const id of ids) assert.equal(countId(id), 1, id + ' must exist exactly once');
@@ -74,6 +75,31 @@ test('BLE MIDI bridge is loaded by the actual mobile app and routes to the exist
   assert.match(bridge, /output/);
   assert.match(bridge, /usbInput\.addEventListener\('midimessage'/);
   assert.match(bridge, /NativeBle\.sendBleMidi/);
+});
+
+test('BLE MIDI messages are injected into the editor virtual input independently of USB output', () => {
+  assert.match(nativeMidi, /injectInput\(data, metadata = \{\}\)/);
+  assert.match(nativeMidi, /dispatchMessage\(bytes\)/);
+  assert.match(bridge, /window\.NUXNativeMidi\?\.injectInput/);
+  assert.match(bridge, /BLE input has two independent destinations/);
+  assert.match(bridge, /const editorPackets = routeControllerPacket\(bytes, \{ \.\.\.config, passthrough: true \}\)/);
+  assert.match(bridge, /if \(!window\.NUXNativeMidi\?\.isConnected\?\.\(\)\)/);
+  assert.match(html, /id="bleMidiInputStatus"/);
+});
+
+test('Bluetooth UI click handlers are directly bound and native calls have timeouts', () => {
+  assert.match(bridge, /function bindButton\(id, handler\)/);
+  assert.match(bridge, /bindButton\('openAppPermissionSettings', openAndroidAppPermissionSettings\)/);
+  assert.match(bridge, /withTimeout\(NativeBle\.getBluetoothState/);
+  assert.match(bridge, /Bluetooth diagnostics failed:/);
+});
+
+test('Android BLE diagnostics are fail-safe and scan includes paired FootCtrlPlus devices', () => {
+  assert.match(plugin, /private boolean hasPermission\(String alias\)/);
+  assert.match(plugin, /call\.resolve\(state\);[\s\S]*?public void openAppPermissionSettings/);
+  assert.match(plugin, /publishBondedMidiControllers\(\)/);
+  assert.match(plugin, /normalized\.contains\("footctrlplus"\)/);
+  assert.match(plugin, /return hasPermission\("bluetoothScan"\) && hasPermission\("bluetoothConnect"\)/);
 });
 
 test('original passthrough and custom CC mapping are isolated from editor MIDI mapping', () => {
