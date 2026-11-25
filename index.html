@@ -636,6 +636,10 @@ $('saveBridgeMapping').onclick=()=>{
 $('clearBridgeMapping').onclick=()=>{$('bridgeCcSource').value='';$('bridgeCcTarget').value='';applyBridgeUiConfig();toast('Custom CC mapping dihapus')};
 $('blePassthrough').onchange=applyBridgeUiConfig;
 $('bleFeedback').onchange=applyBridgeUiConfig;
+window.addEventListener('mg30native-midi-ready',()=>{
+  $('midiSupport').textContent='Android native MIDI';
+  applyBridgeUiConfig();
+});
 window.addEventListener('mg30ble-midi-device-found',event=>renderBleMidiDevice(event.detail));
 window.addEventListener('mg30ble-midi-connection',event=>{
   const state=event.detail||{};
