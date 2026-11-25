@@ -10,6 +10,9 @@ let bleConnected = false;
 let bleName = '';
 let receivedByEditor = 0;
 let forwardedToUsb = 0;
+let bleRxPacketCount = 0;
+let bleRxByteCount = 0;
+let bleLastReceiveTimeMs = 0;
 let config = { passthrough: true, feedback: true, ccMap: null };
 
 function status(message) {
@@ -48,8 +51,35 @@ function currentState() {
     bleName,
     receivedByEditor,
     forwardedToUsb,
+    bleRxPacketCount,
+    bleRxByteCount,
+    bleLastReceiveTimeMs,
     config: { ...config }
   };
+}
+function updateNativeReceiveStatus(stats = {}) {
+  if (Number.isFinite(Number(stats.receivedPacketCount))) {
+    bleRxPacketCount = Number(stats.receivedPacketCount);
+  }
+  if (Number.isFinite(Number(stats.receivedByteCount))) {
+    bleRxByteCount = Number(stats.receivedByteCount);
+  }
+  if (Number.isFinite(Number(stats.lastReceiveTimeMs))) {
+    bleLastReceiveTimeMs = Number(stats.lastReceiveTimeMs);
+  }
+  const node = document.getElementById('bleMidiNativeRxStatus');
+  if (!node) return;
+  const connected = typeof stats.connected === 'boolean' ? stats.connected : bleConnected;
+  if (!connected) {
+    node.textContent = bleRxPacketCount
+      ? 'Disconnected · last RX ' + bleRxPacketCount + ' packet(s)'
+      : 'Not connected';
+  } else if (bleRxPacketCount > 0) {
+    node.textContent = 'Android received ' + bleRxPacketCount + ' packet(s) · ' + bleRxByteCount + ' byte(s)';
+    if (bleLastReceiveTimeMs > 0) node.title = 'Last MIDI packet: ' + new Date(bleLastReceiveTimeMs).toLocaleTimeString();
+  } else {
+    node.textContent = 'Connected · waiting for MIDI packet';
+  }
 }
 function updateInputStatus(bytes, sourceName = bleName) {
   receivedByEditor += 1;
@@ -168,17 +198,32 @@ async function routeBleToUsb(payload) {
 
 if (nativeAndroid) {
   registerNativeListener('bleMidiDeviceFound', device => emit('mg30-wireless-midi-device-found', device));
-  registerNativeListener('bleMidiData', payload => { void routeBleToUsb(payload); });
+  registerNativeListener('bleMidiData', payload => {
+    updateNativeReceiveStatus(payload);
+    void routeBleToUsb(payload);
+  });
+  registerNativeListener('bleMidiReceiveStats', stats => updateNativeReceiveStatus(stats));
   registerNativeListener('bleMidiScanFinished', state => emit('mg30-wireless-midi-scan-finished', state));
   registerNativeListener('bleMidiScanError', error => emit('mg30-wireless-midi-scan-error', error));
   registerNativeListener('bleMidiConnectionChanged', state => {
     bleConnected = Boolean(state?.connected);
     bleName = state?.name || '';
-    emit('mg30-wireless-midi-connection', { connected: bleConnected, name: bleName });
+    if (bleConnected) {
+      bleRxPacketCount = 0;
+      bleRxByteCount = 0;
+      bleLastReceiveTimeMs = 0;
+    }
+    updateNativeReceiveStatus({
+      connected: bleConnected,
+      receivedPacketCount: state?.receivedPacketCount,
+      receivedByteCount: state?.receivedByteCount,
+      lastReceiveTimeMs: state?.lastReceiveTimeMs
+    });
+    emit('mg30-wireless-midi-connection', { connected: bleConnected, name: bleName, reason: state?.reason || '' });
     if (bleConnected && window.NUXNativeMidi?.isConnected?.()) void attachUsbFeedback();
     status(bleConnected
-      ? 'BLE connected: ' + (bleName || 'Bluetooth MIDI') + '. Incoming messages are routed to the editor.'
-      : 'Bluetooth MIDI disconnected.');
+      ? 'BLE connected: ' + (bleName || 'Bluetooth MIDI') + '. Press a pedal switch to verify MIDI receive.'
+      : 'Bluetooth MIDI disconnected.' + (state?.reason ? ' ' + state.reason : ''));
   });
   window.addEventListener('mg30-native-midi-state', event => {
     if (event.detail?.connected) {
