@@ -14,8 +14,11 @@ function emit(name, detail) {
   window.dispatchEvent(new CustomEvent(name, { detail }));
 }
 function status(message) {
+  const copy = String(message || '');
   const node = document.getElementById('bridgeRouteStatus');
-  if (node) node.textContent = message;
+  const visible = document.getElementById('bleMidiMessage');
+  if (node) node.textContent = copy;
+  if (visible) visible.textContent = copy;
 }
 function currentState() {
   return {
@@ -106,9 +109,17 @@ if (nativeAndroid) {
 
 window.MG30WirelessMidi = Object.freeze({
   available: nativeAndroid,
+  async getBluetoothState() {
+    if (!nativeAndroid) throw new Error('Bluetooth MIDI is available only in the Android app.');
+    return NativeBle.getBluetoothState({});
+  },
   async requestEnableBluetooth() {
     if (!nativeAndroid) throw new Error('Bluetooth MIDI is available only in the Android app.');
     return NativeBle.requestEnableBluetooth({});
+  },
+  async openBluetoothSettings() {
+    if (!nativeAndroid) throw new Error('Bluetooth settings are available only in the Android app.');
+    return NativeBle.openBluetoothSettings({});
   },
   async scan(options = {}) {
     if (!nativeAndroid) throw new Error('BLE MIDI is available only in the Android app.');
@@ -205,6 +216,103 @@ function renderDevice(device) {
     }
   };
 }
+async function refreshBluetoothState() {
+  const chip = document.getElementById('androidBluetoothStatus');
+  if (!nativeAndroid) {
+    if (chip) chip.textContent = 'Android app required';
+    return null;
+  }
+  try {
+    const state = await window.MG30WirelessMidi.getBluetoothState();
+    if (chip) chip.textContent = state.enabled ? 'Bluetooth ON' : 'Bluetooth OFF';
+    const details = [];
+    if (!state.available) details.push('Bluetooth adapter is unavailable on this device.');
+    if (state.permissionError) details.push('Bluetooth permission: ' + state.permissionError);
+    if (state.sdkInt < 31 && !state.locationServicesEnabled) details.push('Turn on Android Location services before BLE scan.');
+    if (state.enabled && !state.bleScannerAvailable) details.push('Android BLE scanner is unavailable.');
+    if (details.length) status(details.join(' '));
+    return state;
+  } catch (error) {
+    if (chip) chip.textContent = 'Status unavailable';
+    status('Unable to read Android Bluetooth state: ' + (error?.message || error));
+    return null;
+  }
+}
+
+async function enableAndroidBluetooth() {
+  const chip = document.getElementById('androidBluetoothStatus');
+  const button = document.getElementById('enableAndroidBluetooth');
+  if (button) button.disabled = true;
+  if (chip) chip.textContent = 'Checking permission…';
+  status('Requesting Android Nearby devices permission and Bluetooth activation…');
+  try {
+    const result = await window.MG30WirelessMidi.requestEnableBluetooth();
+    const state = await refreshBluetoothState();
+    if (state?.enabled || result?.enabled) {
+      if (chip) chip.textContent = 'Bluetooth ON';
+      status('Bluetooth is enabled. You can now scan for Chocolate Plus.');
+    } else {
+      if (chip) chip.textContent = 'Bluetooth OFF';
+      status('Bluetooth was not enabled. Use Open Bluetooth Settings, turn it ON, then return here.');
+    }
+  } catch (error) {
+    if (chip) chip.textContent = 'Permission needed';
+    status('Android did not open the Bluetooth activation prompt: ' + (error?.message || error) +
+      '. Use Open Bluetooth Settings below, enable Bluetooth, then return and scan.');
+  } finally {
+    if (button) button.disabled = !nativeAndroid;
+  }
+}
+
+async function openAndroidBluetoothSettings() {
+  status('Opening Android Bluetooth settings…');
+  try {
+    await window.MG30WirelessMidi.openBluetoothSettings();
+    status('Turn Bluetooth ON in Android Settings, then return to MG30 Studio.');
+  } catch (error) {
+    status('Cannot open Android Bluetooth settings: ' + (error?.message || error));
+  }
+}
+
+async function scanBleMidiDevices() {
+  const list = document.getElementById('bleMidiDeviceList');
+  const bleStatus = document.getElementById('bleMidiStatus');
+  const scan = document.getElementById('scanBleMidi');
+  if (list) list.replaceChildren();
+  if (bleStatus) bleStatus.textContent = 'Checking Bluetooth…';
+  if (scan) scan.disabled = true;
+  try {
+    const state = await refreshBluetoothState();
+    if (!state?.enabled) throw new Error('Bluetooth Android is OFF. Enable it first, then scan again.');
+    if (state.sdkInt < 31 && !state.locationServicesEnabled) {
+      throw new Error('Turn on Android Location services before scanning BLE devices on this Android version.');
+    }
+    if (bleStatus) bleStatus.textContent = 'Scanning for 12 seconds…';
+    status('Scanning nearby BLE MIDI devices. Make sure Chocolate Plus is powered on and in BLE MIDI mode.');
+    await window.MG30WirelessMidi.scan({ durationMs: 12000 });
+  } catch (error) {
+    if (bleStatus) bleStatus.textContent = 'Scan failed';
+    status(error?.message || String(error));
+  } finally {
+    if (scan) scan.disabled = !nativeAndroid;
+  }
+}
+
+document.addEventListener('click', event => {
+  const target = event.target?.closest?.('#enableAndroidBluetooth, #openBluetoothSettings, #scanBleMidi');
+  if (!target) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (target.id === 'enableAndroidBluetooth') void enableAndroidBluetooth();
+  else if (target.id === 'openBluetoothSettings') void openAndroidBluetoothSettings();
+  else if (target.id === 'scanBleMidi') void scanBleMidiDevices();
+}, true);
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) void refreshBluetoothState();
+});
+window.addEventListener('focus', () => { void refreshBluetoothState(); });
+
 function bindUi() {
   const enable = document.getElementById('enableAndroidBluetooth');
   const scan = document.getElementById('scanBleMidi');
@@ -215,33 +323,12 @@ function bindUi() {
   const clear = document.getElementById('clearBridgeMapping');
   const androidStatus = document.getElementById('androidBluetoothStatus');
   const bleStatus = document.getElementById('bleMidiStatus');
-  if (enable) {
-    enable.disabled = !nativeAndroid;
-    enable.addEventListener('click', async () => {
-      if (androidStatus) androidStatus.textContent = 'Requesting permission…';
-      try {
-        const result = await window.MG30WirelessMidi.requestEnableBluetooth();
-        if (androidStatus) androidStatus.textContent = result.enabled ? 'Bluetooth ON' : 'Bluetooth remains OFF';
-        if (!result.enabled) status('Bluetooth was not enabled. Approve the Android dialog, then scan again.');
-      } catch (error) {
-        if (androidStatus) androidStatus.textContent = 'Unavailable';
-        status(error?.message || String(error));
-      }
-    });
-  }
-  if (scan) {
-    scan.disabled = !nativeAndroid;
-    scan.addEventListener('click', async () => {
-      const list = document.getElementById('bleMidiDeviceList');
-      if (list) list.replaceChildren();
-      if (bleStatus) bleStatus.textContent = 'Scanning…';
-      try { await window.MG30WirelessMidi.scan({ durationMs: 12000 }); }
-      catch (error) {
-        if (bleStatus) bleStatus.textContent = 'Scan failed';
-        status(error?.message || String(error));
-      }
-    });
-  }
+  if (enable) enable.disabled = !nativeAndroid;
+  const openSettings = document.getElementById('openBluetoothSettings');
+  if (openSettings) openSettings.disabled = !nativeAndroid;
+  if (scan) scan.disabled = !nativeAndroid;
+  refreshBluetoothState();
+
   if (disconnect) disconnect.addEventListener('click', async () => {
     try {
       await window.MG30WirelessMidi.disconnect();
@@ -281,12 +368,14 @@ function bindUi() {
   });
   window.addEventListener('mg30-wireless-midi-scan-finished', event => {
     if (bleStatus && !bleStatus.textContent.startsWith('Connected')) {
-      bleStatus.textContent = Number(event.detail?.found || 0) + ' device(s) found';
+      const found = Number(event.detail?.found || 0);
+      bleStatus.textContent = found + ' device(s) found';
+      status(found ? found + ' BLE device(s) found. Select the controller to connect.' : 'No BLE devices found. Wake Chocolate Plus, enable BLE MIDI mode, and scan again.');
     }
   });
   window.addEventListener('mg30-wireless-midi-scan-error', event => {
-    if (bleStatus) bleStatus.textContent = 'Scan failed';
-    status(event.detail?.message || 'Bluetooth LE scan failed.');
+    if (bleStatus) bleStatus.textContent = 'Scan failed · code ' + (event.detail?.errorCode ?? '?');
+    status(event.detail?.message || 'Bluetooth LE scan failed. Check Nearby devices permission and Android Bluetooth settings.');
   });
   window.addEventListener('mg30-native-midi-state', event => {
     const connected = Boolean(event.detail?.connected);
