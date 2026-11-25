@@ -79,7 +79,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
         if (bluetoothManager != null) bluetoothAdapter = bluetoothManager.getAdapter();
     }
 
-    private boolean hasPermission(String alias) {
+    private boolean hasPermissionStateGranted(String alias) {
         try {
             return getPermissionState(alias) == PermissionState.GRANTED;
         } catch (Exception error) {
@@ -101,7 +101,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
                 try {
                     state.put("enabled", bluetoothAdapter.isEnabled());
                     state.put("bleScannerAvailable", bluetoothAdapter.getBluetoothLeScanner() != null);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && hasPermission("bluetoothConnect")) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && hasPermissionStateGranted("bluetoothConnect")) {
                         Set<BluetoothDevice> bonded = bluetoothAdapter.getBondedDevices();
                         state.put("bondedDeviceCount", bonded == null ? 0 : bonded.size());
                     }
@@ -127,12 +127,12 @@ public class MG30BluetoothMidiPlugin extends Plugin {
             }
 
             state.put("scanPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                hasPermission("bluetoothScan"));
+                hasPermissionStateGranted("bluetoothScan"));
             state.put("connectPermissionGranted", Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                hasPermission("bluetoothConnect"));
+                hasPermissionStateGranted("bluetoothConnect"));
             state.put("legacyLocationPermissionGranted", Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ||
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-                hasPermission("legacyBluetoothLocation"));
+                hasPermissionStateGranted("legacyBluetoothLocation"));
             state.put("diagnosticsOk", true);
         } catch (Exception error) {
             state.put("diagnosticsOk", false);
@@ -176,7 +176,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
             call.reject("Bluetooth tidak tersedia pada perangkat Android ini.");
             return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermissionStateGranted("bluetoothConnect")) {
             try {
                 requestPermissionForAlias("bluetoothConnect", call, "onBluetoothEnablePermissionResult");
             } catch (Exception error) {
@@ -190,7 +190,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     @PermissionCallback
     private void onBluetoothEnablePermissionResult(PluginCall call) {
         if (call == null) return;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermissionStateGranted("bluetoothConnect")) {
             call.reject("Izin Nearby devices diperlukan untuk memeriksa dan mengaktifkan Bluetooth.");
             return;
         }
@@ -252,12 +252,12 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     private boolean ensureScanPermissions(PluginCall call) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (!hasPermission("bluetoothScan") || !hasPermission("bluetoothConnect")) {
+                if (!hasPermissionStateGranted("bluetoothScan") || !hasPermissionStateGranted("bluetoothConnect")) {
                     requestPermissionForAliases(new String[] { "bluetoothScan", "bluetoothConnect" }, call, "onScanPermissionResult");
                     return false;
                 }
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                !hasPermission("legacyBluetoothLocation")) {
+                !hasPermissionStateGranted("legacyBluetoothLocation")) {
                 requestPermissionForAlias("legacyBluetoothLocation", call, "onScanPermissionResult");
                 return false;
             }
@@ -270,10 +270,10 @@ public class MG30BluetoothMidiPlugin extends Plugin {
 
     private boolean scanPermissionsGranted() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return hasPermission("bluetoothScan") && hasPermission("bluetoothConnect");
+            return hasPermissionStateGranted("bluetoothScan") && hasPermissionStateGranted("bluetoothConnect");
         }
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-            hasPermission("legacyBluetoothLocation");
+            hasPermissionStateGranted("legacyBluetoothLocation");
     }
 
     private void startBleScan(PluginCall call) {
@@ -369,7 +369,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     private void publishBondedMidiControllers() {
         if (bluetoothAdapter == null) return;
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermissionStateGranted("bluetoothConnect")) return;
             Set<BluetoothDevice> bonded = bluetoothAdapter.getBondedDevices();
             if (bonded == null) return;
             for (BluetoothDevice device : bonded) {
@@ -475,7 +475,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     @PermissionCallback
     private void onConnectPermissionResult(PluginCall call) {
         if (call == null) return;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermissionStateGranted("bluetoothConnect")) {
             call.reject("Izin Nearby devices diperlukan untuk terhubung ke controller MIDI.");
             return;
         }
@@ -483,7 +483,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     }
 
     private boolean ensureConnectPermission(PluginCall call) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermission("bluetoothConnect")) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasPermissionStateGranted("bluetoothConnect")) {
             requestPermissionForAlias("bluetoothConnect", call, "onConnectPermissionResult");
             return false;
         }
