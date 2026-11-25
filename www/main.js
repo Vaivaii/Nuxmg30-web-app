@@ -2,6 +2,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import './native-midi.js';
+import './native-midi-bridge.js';
 import './tone3000.js';
 import './ir-transfer.js';
 import { cloudApiRequest } from './cloud-api.js';
