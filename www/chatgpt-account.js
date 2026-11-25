@@ -179,9 +179,10 @@ function mount() {
       <button class="btn" id="mg30ChatGPTUsageBtn" type="button">Manage usage ↗</button>
     </div>
   `;
-  const hero = page.querySelector(':scope > .hero');
-  if (hero?.nextSibling) page.insertBefore(panel, hero.nextSibling);
-  else page.prepend(panel);
+  const overview = $('deviceOverviewView') || page;
+  const anchor = overview.querySelector('.device-usb-audio-card');
+  if (anchor) overview.insertBefore(panel, anchor);
+  else overview.appendChild(panel);
 
   $('mg30ChatGPTLoginBtn').addEventListener('click', () => void signIn(false));
   $('mg30ChatGPTAddBtn').addEventListener('click', () => void signIn(true));
