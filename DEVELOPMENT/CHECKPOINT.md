@@ -1292,3 +1292,39 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Extracted `app-debug.apk`: 4,779,264 bytes; SHA-256 `b1c5db7b07114e9ef2c08259a11fdf2d242c1beab801333c427d10738afe11f8`.
 - APK archive validation: PASS (`unzip -t`; Android APK recognized by `file`).
 - No Android device visual test or physical original MG-30 Gen 2 firmware 6.0.x hardware test is claimed.
+
+
+## BLE MIDI Investigation — 2026-11-25
+
+### User-visible symptom
+
+The Device & Settings screenshot shows:
+- BLE controller label: Connected · FootCtrlPlus.
+- Status text says incoming messages are routed to the editor.
+- Editor MIDI input counter remains at 0 messages.
+- MG-30 USB MIDI is separately shown as Connected.
+Earlier screenshot evidence in this conversation showed 40 received MIDI messages and Program Change 3, but later screenshot showed 0.
+
+### Source and Build #1254 audit
+
+Audited the branch source at the checkpoint revision and the exact Build #1254 APK available in the project workspace.
+
+1. The BLE UI in the user's screenshot is **not present** in the audited `www/index.html` or the Build #1254 APK's `assets/public` payload. Exact labels searched: `Bluetooth MIDI`, `FootCtrlPlus`, `Incoming messages are routed`, `Editor MIDI input`, `Scan MIDI Devices`, and `BLE connected`. None are present in the compiled APK.
+2. `www/native-midi.js` exposes a single virtual input/output pair named `NUX MG-30`. Its `NUXNativeMidi.connect()` chooses a MIDI device whose name/product matches MG-30 or NUX; it does not select FootCtrlPlus as a separate controller input.
+3. `native-android/MG30MidiPlugin.java` currently has one active `MidiDevice`/input/output session. Its `listDevices()` enumerates Android `MidiManager.getDevices()`; its `connect()` calls `openDevice()`, and it closes the previous active connection before opening another. It does not implement BLE scanning or call `MidiManager.openBluetoothDevice()`.
+4. `scripts/init-android.mjs` registers MG30 Audio, Audio Output, MIDI, DAW Files, Secure Store, and ChatGPT plugins. No dedicated BLE MIDI plugin or Bluetooth permission setup is present in that build script.
+5. Build #1254 APK SHA-256 verified in the workspace: `b1c5db7b07114e9ef2c08259a11fdf2d242c1beab801333c427d10738afe11f8`. The screenshot's BLE panel strings are absent from its packaged public web assets.
+
+### Technical interpretation
+
+The source currently audited does not contain the BLE controller screen/routing code shown in the screenshot. Therefore the 0-message symptom cannot honestly be traced to an exact BLE callback in this source revision. The screenshot likely comes from a different/newer APK or a source revision that has not been committed to this branch; identify that exact build/source before patching.
+
+Android's documented MIDI path for BLE is `MidiManager.openBluetoothDevice(BluetoothDevice, ...)`; after an app opens the BLE MIDI device it appears to apps as a `MidiDevice`. The current plugin does not implement that open path. Reference: https://developer.android.com/reference/android/media/midi/MidiManager#openBluetoothDevice(android.bluetooth.BluetoothDevice,android.media.midi.MidiManager.OnDeviceOpenedListener,android.os.Handler)
+
+Do not interpret BLE GATT/connected status or Android PAIRING as proof that MIDI notifications/messages are arriving. Keep connection state and received-message count as separate signals.
+
+### Safety / next action
+
+- No application source, Bluetooth, USB-MIDI, preset mapping, NAM, IR, or MIDI CC mapping files were changed in this investigation.
+- No code fix or APK build was made.
+- Before making a fix, obtain the version/build identifier or APK actually displaying the BLE panel, and inspect the corresponding source. Do not modify the known-good MG-30 USB MIDI route or MIDI mappings.
