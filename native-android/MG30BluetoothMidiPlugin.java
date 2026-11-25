@@ -186,6 +186,10 @@ public class MG30BluetoothMidiPlugin extends Plugin {
         try {
             address = device.getAddress();
             name = device.getName();
+            if ((name == null || name.trim().isEmpty()) &&
+                result.getScanRecord() != null) {
+                name = result.getScanRecord().getDeviceName();
+            }
         } catch (SecurityException error) {
             return;
         }
