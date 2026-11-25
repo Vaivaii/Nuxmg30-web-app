@@ -68,6 +68,11 @@ public class MG30BluetoothMidiPlugin extends Plugin {
     private MidiInputPort appToControllerPort;
     private MidiOutputPort controllerToAppPort;
     private MidiReceiver midiReceiver;
+    private MidiManager.DeviceCallback midiDeviceCallback;
+    private int activeMidiDeviceId = -1;
+    private long receivedPacketCount = 0;
+    private long receivedByteCount = 0;
+    private long lastReceiveTimeMs = 0;
     private String activeAddress = "";
     private String activeName = "";
 
@@ -77,6 +82,33 @@ public class MG30BluetoothMidiPlugin extends Plugin {
         BluetoothManager bluetoothManager =
             (BluetoothManager) getContext().getSystemService(Context.BLUETOOTH_SERVICE);
         if (bluetoothManager != null) bluetoothAdapter = bluetoothManager.getAdapter();
+        if (midiManager != null) {
+            midiDeviceCallback = new MidiManager.DeviceCallback() {
+                @Override
+                public void onDeviceRemoved(MidiDeviceInfo info) {
+                    if (info != null && activeMidiDeviceId >= 0 && info.getId() == activeMidiDeviceId) {
+                        closeBleConnection("Android reported that the Bluetooth MIDI device was removed.");
+                    }
+                }
+            };
+            try { midiManager.registerDeviceCallback(midiDeviceCallback, mainHandler); }
+            catch (RuntimeException error) {
+                JSObject diagnostic = new JSObject();
+                diagnostic.put("reason", "MIDI device lifecycle callback unavailable: " + error.getMessage());
+                notifyListeners("bleMidiLifecycleWarning", diagnostic);
+            }
+        }
+    }
+
+    private void emitReceiveStats(String reason) {
+        JSObject stats = new JSObject();
+        stats.put("connected", activeMidiDevice != null && controllerToAppPort != null);
+        stats.put("deviceName", activeName);
+        stats.put("receivedPacketCount", receivedPacketCount);
+        stats.put("receivedByteCount", receivedByteCount);
+        stats.put("lastReceiveTimeMs", lastReceiveTimeMs);
+        if (reason != null && !reason.isEmpty()) stats.put("reason", reason);
+        notifyListeners("bleMidiReceiveStats", stats);
     }
 
     private boolean hasPermissionStateGranted(String alias) {
@@ -505,7 +537,8 @@ public class MG30BluetoothMidiPlugin extends Plugin {
             if (bluetoothDevice == null) bluetoothDevice = bluetoothAdapter.getRemoteDevice(address);
             final BluetoothDevice selected = bluetoothDevice;
             stopBleScanInternal();
-            closeBleConnection();
+            closeBleConnection("Replacing the previous Bluetooth MIDI session.");
+            synchronized (this) { receivedPacketCount = 0; receivedByteCount = 0; lastReceiveTimeMs = 0; }
 
             midiManager.openBluetoothDevice(selected, device -> {
                 if (device == null) {
@@ -530,6 +563,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
                     }
 
                     activeMidiDevice = device;
+                    activeMidiDeviceId = info.getId();
                     appToControllerPort = input;
                     controllerToAppPort = output;
                     activeAddress = selected.getAddress();
@@ -543,13 +577,27 @@ public class MG30BluetoothMidiPlugin extends Plugin {
                     midiReceiver = new MidiReceiver() {
                         @Override
                         public void onSend(byte[] message, int offset, int count, long timestamp) {
+                            if (message == null || count <= 0) return;
+                            long packetCount, byteCount;
+                            long receivedAt = System.currentTimeMillis();
+                            synchronized (MG30BluetoothMidiPlugin.this) {
+                                receivedPacketCount++;
+                                receivedByteCount += count;
+                                lastReceiveTimeMs = receivedAt;
+                                packetCount = receivedPacketCount;
+                                byteCount = receivedByteCount;
+                            }
                             JSArray bytes = new JSArray();
                             for (int i = offset; i < offset + count; i++) bytes.put(message[i] & 0xFF);
                             JSObject payload = new JSObject();
                             payload.put("data", bytes);
                             payload.put("address", activeAddress);
                             payload.put("deviceName", activeName);
+                            payload.put("receivedPacketCount", packetCount);
+                            payload.put("receivedByteCount", byteCount);
+                            payload.put("lastReceiveTimeMs", receivedAt);
                             notifyListeners("bleMidiData", payload);
+                            emitReceiveStats("");
                         }
                     };
                     output.connect(midiReceiver);
@@ -562,6 +610,7 @@ public class MG30BluetoothMidiPlugin extends Plugin {
                     connected.put("outputPort", 0);
                     call.resolve(connected);
                     notifyListeners("bleMidiConnectionChanged", connected);
+                    emitReceiveStats("BLE MIDI port opened; waiting for incoming controller data.");
                 } catch (Exception error) {
                     try {
                         device.close();
@@ -613,40 +662,48 @@ public class MG30BluetoothMidiPlugin extends Plugin {
 
     @PluginMethod
     public void disconnectBleDevice(PluginCall call) {
-        closeBleConnection();
+        closeBleConnection("Disconnected by user.");
         JSObject result = new JSObject();
         result.put("connected", false);
         call.resolve(result);
     }
 
-    private void closeBleConnection() {
-        if (controllerToAppPort != null) {
-            try {
-                if (midiReceiver != null) controllerToAppPort.disconnect(midiReceiver);
-                controllerToAppPort.close();
-            } catch (IOException ignored) { }
-        }
-        if (appToControllerPort != null) {
-            try { appToControllerPort.close(); } catch (IOException ignored) { }
-        }
-        if (activeMidiDevice != null) {
-            try { activeMidiDevice.close(); } catch (IOException ignored) { }
-        }
+    private void closeBleConnection(String reason) {
+        MidiOutputPort outputToClose = controllerToAppPort;
+        MidiInputPort inputToClose = appToControllerPort;
+        MidiDevice deviceToClose = activeMidiDevice;
+        MidiReceiver receiverToDetach = midiReceiver;
         controllerToAppPort = null;
         appToControllerPort = null;
         activeMidiDevice = null;
+        activeMidiDeviceId = -1;
         midiReceiver = null;
         activeAddress = "";
         activeName = "";
+        if (outputToClose != null) {
+            try { if (receiverToDetach != null) outputToClose.disconnect(receiverToDetach); outputToClose.close(); }
+            catch (IOException ignored) { }
+        }
+        if (inputToClose != null) { try { inputToClose.close(); } catch (IOException ignored) { } }
+        if (deviceToClose != null) { try { deviceToClose.close(); } catch (IOException ignored) { } }
         JSObject state = new JSObject();
         state.put("connected", false);
+        state.put("reason", reason == null ? "" : reason);
+        state.put("receivedPacketCount", receivedPacketCount);
+        state.put("receivedByteCount", receivedByteCount);
+        state.put("lastReceiveTimeMs", lastReceiveTimeMs);
         notifyListeners("bleMidiConnectionChanged", state);
+        emitReceiveStats(reason);
     }
 
     @Override
     protected void handleOnDestroy() {
         stopBleScanInternal();
-        closeBleConnection();
+        closeBleConnection("MG30 Studio activity destroyed.");
+        if (midiManager != null && midiDeviceCallback != null) {
+            try { midiManager.unregisterDeviceCallback(midiDeviceCallback); } catch (Exception ignored) { }
+            midiDeviceCallback = null;
+        }
         super.handleOnDestroy();
     }
 }
