@@ -29,6 +29,12 @@ test('legacy bridge controls remain wired and custom CC config uses its existing
   assert.match(html, /function applyBridgeUiConfig\(\)/);
 });
 
+test('USB MIDI controls and backup action have a single binding target each', () => {
+  for (const id of ['connectMidiDevice', 'readBuffer', 'checkMidi', 'goBackup']) {
+    assert.equal((html.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1, id + ' must exist exactly once');
+  }
+});
+
 test('Android Bluetooth activation asks the user through the system enable intent', () => {
   assert.match(html, /id="enableAndroidBluetooth"/);
   assert.match(bridge, /requestEnableBluetooth/);
