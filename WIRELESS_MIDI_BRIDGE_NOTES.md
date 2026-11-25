@@ -118,3 +118,34 @@ No changes were made to NAM import/processing, User/Third Party IR import, IR Co
 - APK SHA-256: `2781f330ecbb297bd40089acf6f5e36163433fc8267694cdfa9f76c59119326a`.
 - The APK is a debug build. This confirms compilation and packaging only; the Android consent dialog, BLE discovery, Chocolate Plus routing, and physical MG-30 behavior still require testing on the target phone/controller/pedal.
 
+## Critical packaging correction — live Device page source
+
+- The actual Capacitor app does **not** package the repository-root `index.html`.
+- `vite.config.js` sets `root: 'www'`, and `capacitor.config.ts` sets `webDir: 'dist'`. Therefore, the live Android UI is built from `www/index.html` and its modules.
+- The initial Device submenu pass was mistakenly applied to the unused root `index.html`. The successful Run #10 APK therefore did not contain the visible Device tabs shown in the agreed wireframe. The user's screenshot correctly exposed that packaging/source mistake. Do not use Run #10 as the Device submenu delivery.
+- Corrected implementation is now in the live app sources:
+  - `www/index.html`: two horizontal Device tabs, Overview and MIDI; MIDI Center tiles; distinct USB MIDI, Bluetooth MIDI, Routing, and Mapping subpages.
+  - `www/chatgpt-account.js` and `www/cloud-account.js`: account cards mount inside Overview so they no longer appear above/replace the tab navigation. ChatGPT panel remains before Cloud panel.
+  - `www/native-midi-bridge.js` + `www/native-midi-routing.js`: BLE-MIDI controller input routes to the existing `window.NUXNativeMidi` USB output; USB MIDI input can feed back to BLE when enabled. Custom CC mapping is saved separately under `mg30-wireless-midi-bridge`.
+  - `www/main.js`: imports the BLE bridge into the actual mobile build.
+  - `native-android/MG30BluetoothMidiPlugin.java`: adds user-consented `BluetoothAdapter.ACTION_REQUEST_ENABLE` flow using Capacitor Activity Result callback.
+  - `.github/workflows/wireless-midi-bridge-ci.yml`: CI path filter now includes `www/**`.
+- Device Overview keeps ChatGPT, Cloud, USB Audio, YouTube Cloud configuration, NAM device reader, and backup access. USB MIDI connection actions now live under MIDI → USB MIDI.
+- MIDI Routing contains the existing passthrough and feedback toggles. MIDI Mapping contains only the bridge Custom CC controls and a protected Original MIDI information section.
+- Live HTML audit: 353 source IDs, **0 duplicates**. The account modules target `deviceOverviewView`.
+- No changes were made to NAM processing/import, User/Third Party IR, IR Collection import/transfer, preset SysEx transfer, or existing editor MIDI mapping tables.
+
+### Correct live-app build — Run #16
+
+- Workflow: [45621993912](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45621993912) — **success**.
+- Built source commit: `87232efe2dc58679252970f0e176a61b850d41a2`.
+- Regression suite: **718 passed, 0 failed**.
+- JavaScript and Android generator syntax checks: success.
+- Vite production build: success from `www/` into `dist/`.
+- Android Gradle: `BUILD SUCCESSFUL in 1m 33s`; `assembleDebug`.
+- Artifact ID: `15025112002`; ZIP `MG30-Studio-Live-Device-MIDI-Submenu.zip` (4,413,001 bytes).
+- Extracted APK: `MG30-Studio-Live-Device-MIDI-Submenu.apk` (4,791,340 bytes).
+- APK SHA-256: `d72c457665fd833a886b282e3fcfb38228c2d408410d97bae83563bc65f38226`.
+- APK archive inspection confirms the packaged `assets/public/index.html` contains `deviceTabOverview`, `deviceTabMidi`, `midiCenterHome`, and `midiBluetoothPage`; its JS bundle contains `MG30BluetoothMidi`, `bleMidiDeviceFound`, and `requestEnableBluetooth`.
+- This verifies the proper live UI and plugin are packaged. It does not verify the app installed on the user's phone, Bluetooth consent UI behavior, physical BLE discovery, or two-way routing on Chocolate Plus + original MG-30 hardware. Those remain physical-device QA tasks.
+
