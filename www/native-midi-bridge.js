@@ -182,7 +182,7 @@ function renderDevice(device) {
   if (!device?.address) return;
   const list = document.getElementById('bleMidiDeviceList');
   if (!list) return;
-  let button = list.querySelector('[data-address="' + CSS.escape(device.address) + '"]');
+  let button = [...list.children].find(item => item.dataset.address === device.address);
   if (!button) {
     button = document.createElement('button');
     button.type = 'button';
