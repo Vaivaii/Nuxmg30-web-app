@@ -69,7 +69,7 @@ test('BLE MIDI bridge is loaded by the actual mobile app and routes to the exist
   assert.match(main, /import '\.\/native-midi-bridge\.js'/);
   assert.match(bridge, /window\.NUXNativeMidi\.connect\(\)/);
   assert.match(bridge, /output/);
-  assert.match(bridge, /input\.addEventListener\('midimessage'/);
+  assert.match(bridge, /usbInput\.addEventListener\('midimessage'/);
   assert.match(bridge, /NativeBle\.sendBleMidi/);
 });
 
