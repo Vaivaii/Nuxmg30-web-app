@@ -121,6 +121,10 @@ window.MG30WirelessMidi = Object.freeze({
     if (!nativeAndroid) throw new Error('Bluetooth settings are available only in the Android app.');
     return NativeBle.openBluetoothSettings({});
   },
+  async openAppPermissionSettings() {
+    if (!nativeAndroid) throw new Error('App permission settings are available only in the Android app.');
+    return NativeBle.openAppPermissionSettings({});
+  },
   async scan(options = {}) {
     if (!nativeAndroid) throw new Error('BLE MIDI is available only in the Android app.');
     return NativeBle.scanBleDevices({ durationMs: options.durationMs || 12000 });
@@ -273,6 +277,15 @@ async function openAndroidBluetoothSettings() {
     status('Cannot open Android Bluetooth settings: ' + (error?.message || error));
   }
 }
+async function openAndroidAppPermissionSettings() {
+  status('Opening MG30 Studio app permissions…');
+  try {
+    await window.MG30WirelessMidi.openAppPermissionSettings();
+    status('Allow Nearby devices permission for MG30 Studio, then return and scan again.');
+  } catch (error) {
+    status('Cannot open app permission settings: ' + (error?.message || error));
+  }
+}
 
 async function scanBleMidiDevices() {
   const list = document.getElementById('bleMidiDeviceList');
@@ -283,7 +296,8 @@ async function scanBleMidiDevices() {
   if (scan) scan.disabled = true;
   try {
     const state = await refreshBluetoothState();
-    if (!state?.enabled) throw new Error('Bluetooth Android is OFF. Enable it first, then scan again.');
+    if (!state?.available) throw new Error('This Android device does not expose a Bluetooth adapter.');
+    if (!state?.enabled && !state?.permissionError) throw new Error('Bluetooth Android is OFF. Enable it first, then scan again.');
     if (state.sdkInt < 31 && !state.locationServicesEnabled) {
       throw new Error('Turn on Android Location services before scanning BLE devices on this Android version.');
     }
@@ -299,12 +313,13 @@ async function scanBleMidiDevices() {
 }
 
 document.addEventListener('click', event => {
-  const target = event.target?.closest?.('#enableAndroidBluetooth, #openBluetoothSettings, #scanBleMidi');
+  const target = event.target?.closest?.('#enableAndroidBluetooth, #openBluetoothSettings, #openAppPermissionSettings, #scanBleMidi');
   if (!target) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   if (target.id === 'enableAndroidBluetooth') void enableAndroidBluetooth();
   else if (target.id === 'openBluetoothSettings') void openAndroidBluetoothSettings();
+  else if (target.id === 'openAppPermissionSettings') void openAndroidAppPermissionSettings();
   else if (target.id === 'scanBleMidi') void scanBleMidiDevices();
 }, true);
 
@@ -326,6 +341,8 @@ function bindUi() {
   if (enable) enable.disabled = !nativeAndroid;
   const openSettings = document.getElementById('openBluetoothSettings');
   if (openSettings) openSettings.disabled = !nativeAndroid;
+  const appSettings = document.getElementById('openAppPermissionSettings');
+  if (appSettings) appSettings.disabled = !nativeAndroid;
   if (scan) scan.disabled = !nativeAndroid;
   refreshBluetoothState();
 
@@ -357,6 +374,7 @@ function bindUi() {
     status('Custom CC mapping cleared.');
   });
   applyUiConfig();
+  window.addEventListener('mg30-open-bluetooth-midi', () => { void refreshBluetoothState(); });
   window.addEventListener('mg30-wireless-midi-device-found', event => renderDevice(event.detail));
   window.addEventListener('mg30-wireless-midi-connection', event => {
     const connected = Boolean(event.detail?.connected);
