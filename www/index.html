@@ -5107,6 +5107,26 @@ document.addEventListener('keydown',event=>{
   setEditorParameterDockExpanded(false);
  }
 });
+function setDeviceTab(tab){
+ const overview=tab!=='midi';
+ $('deviceOverviewView').classList.toggle('hidden',!overview);
+ $('deviceMidiView').classList.toggle('hidden',overview);
+ $('deviceTabOverview').classList.toggle('active',overview);
+ $('deviceTabMidi').classList.toggle('active',!overview);
+ $('deviceTabOverview').setAttribute('aria-selected',String(overview));
+ $('deviceTabMidi').setAttribute('aria-selected',String(!overview));
+ if(!overview)showMidiCenter();
+}
+function showMidiCenter(){
+ $('midiCenterHome').classList.remove('hidden');
+ document.querySelectorAll('.midi-subpage').forEach(el=>el.classList.add('hidden'));
+}
+function openMidiSubpage(page){
+ const pages={usb:'midiUsbPage',bluetooth:'midiBluetoothPage',routing:'midiRoutingPage',mapping:'midiMappingPage'};
+ if(!pages[page])return;
+ $('midiCenterHome').classList.add('hidden');
+ document.querySelectorAll('.midi-subpage').forEach(el=>el.classList.toggle('hidden',el.id!==pages[page]));
+}
 function showPage(p){
  document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
@@ -5114,10 +5134,11 @@ function showPage(p){
  if(dock)dock.classList.toggle('hidden',p!=='editor');
  if(p!=='editor')setEditorParameterDockExpanded(false);
  if(p==='presets')renderPresets();
+ if(p==='device')setDeviceTab('overview');
 }
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
-document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('search').oninput=renderPresets;$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let ok='requestMIDIAccess'in navigator;$('midiSupport').textContent=ok?'API tersedia':'Tidak tersedia';toast(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API')};$('midiSupport').textContent=('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia';
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('deviceTabOverview').onclick=()=>setDeviceTab('overview');$('deviceTabMidi').onclick=()=>setDeviceTab('midi');document.querySelectorAll('[data-midi-open]').forEach(b=>b.onclick=()=>openMidiSubpage(b.dataset.midiOpen));document.querySelectorAll('[data-midi-back]').forEach(b=>b.onclick=showMidiCenter);$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('search').oninput=renderPresets;$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let ok='requestMIDIAccess'in navigator;$('midiSupport').textContent=ok?'API tersedia':'Tidak tersedia';toast(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API')};$('midiSupport').textContent=('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia';
 
 function renderNamProfile(profile){
  const holder=$("namProfileResult");if(!holder)return;
@@ -5343,7 +5364,7 @@ if(presetJumpDialog){
  presetJumpDialog.addEventListener('cancel',()=> $('presetJumpTrigger')?.setAttribute('aria-expanded','false'));
  presetJumpDialog.addEventListener('click',event=>{if(event.target===presetJumpDialog)togglePresetJumpMenu(false)});
 }
-initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m?.open&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
+initSceneCopyUI();$('chainEditToggle').onclick=()=>setChainEditMode(!chainEditMode);$('presetJumpTrigger').onclick=()=>togglePresetJumpMenu();document.addEventListener('click',e=>{const m=$('presetJumpMenu'),t=$('presetJumpTrigger');if(m?.open&&!m.contains(e.target)&&!t.contains(e.target))togglePresetJumpMenu(false)});$('readNamSlotsBtn').onclick=scanNamDeviceSlots;$('copyNamSlotsBtn').onclick=copyNamSlotScan;renderNamSlotScan();initSlotPicker();$('openDeviceFromEditor').onclick=()=>{showPage('device');setDeviceTab('midi');showMidiCenter()};$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=()=>connectMG30();$('connectMidiDevice').onclick=connectMG30;
 function autoConnectMG30FromUsb(deviceInfo=null){
  if(!window.NUXNativeMidi?.available||midiConnected||midiConnectPending)return;
  if(deviceInfo){
@@ -6121,10 +6142,11 @@ window.MG30AIToneBridge=Object.freeze({
 (function mergeNamAndIr(){
   const namReader=document.getElementById('namDeviceReaderPanel');
   const devicePage=document.getElementById('page-device');
-  const deviceAnchor=devicePage?.querySelector('.device-youtube-api-panel')||devicePage?.querySelector('#tone3000SettingsMount');
-  if(namReader&&devicePage){
+  const overview=document.getElementById('deviceOverviewView')||devicePage;
+  const deviceAnchor=overview?.querySelector('.device-youtube-api-panel')||overview?.querySelector('#tone3000SettingsMount');
+  if(namReader&&overview){
     namReader.classList.add('device-nam-reader');
-    if(deviceAnchor)devicePage.insertBefore(namReader,deviceAnchor);else devicePage.appendChild(namReader);
+    if(deviceAnchor)overview.insertBefore(namReader,deviceAnchor);else overview.appendChild(namReader);
   }
   const navIr=document.querySelector('.nav button[data-page="ir-import"]');
   if(navIr)navIr.remove();
