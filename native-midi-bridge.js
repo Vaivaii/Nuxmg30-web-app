@@ -10,6 +10,7 @@ let bleConnected = false;
 let bridgeConfig = { passthrough: true, feedback: true, ccMap: null };
 let usbListenerHandle = null;
 let bleListenerHandle = null;
+let listenersReady = Promise.resolve();
 
 const midiInputListeners = new Set();
 const midiInput = {
@@ -93,6 +94,7 @@ function routeUsbToController(data) {
 }
 
 async function connectUsb() {
+  await listenersReady;
   const result = await UsbMidi.connect({});
   usbConnected = true;
   midiInput.state = 'connected';
@@ -186,6 +188,6 @@ window.MG30NativeMidi = {
 };
 
 if (nativePlatform) {
-  attachNativeListeners();
+  listenersReady = attachNativeListeners();
   window.dispatchEvent(new CustomEvent('mg30native-midi-ready'));
 }
