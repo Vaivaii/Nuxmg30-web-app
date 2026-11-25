@@ -1292,3 +1292,48 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Extracted `app-debug.apk`: 4,779,264 bytes; SHA-256 `b1c5db7b07114e9ef2c08259a11fdf2d242c1beab801333c427d10738afe11f8`.
 - APK archive validation: PASS (`unzip -t`; Android APK recognized by `file`).
 - No Android device visual test or physical original MG-30 Gen 2 firmware 6.0.x hardware test is claimed.
+
+
+## Wireless BLE MIDI — Source Audit 2026-11-25
+
+### Source identification
+
+- The user's Device > MIDI > Bluetooth MIDI screenshot matches the source on branch `feature/wireless-midi-bridge-2026-11-25`, not the separately audited `feature/ai-live-tone-dsp-interpreter-2026-11-21` branch.
+- Matching UI elements are in `www/index.html`: Bluetooth MIDI, FootCtrlPlus/Chocolate Plus guidance, BLE controller state, Editor MIDI input count, and BLE device scan list.
+- Native Android implementation: `native-android/MG30BluetoothMidiPlugin.java`.
+- JavaScript route: `www/native-midi-bridge.js`.
+- `scripts/init-android.mjs` copies and registers `MG30BluetoothMidiPlugin` and adds Android Bluetooth permissions.
+- Build workflow `.github/workflows/build-apk.yml` does not list `feature/wireless-midi-bridge-2026-11-25` under push-triggered branches; a push to this branch alone will not automatically build an APK unless workflow_dispatch is used.
+
+### Message path verified in source
+
+1. Android calls `MidiManager.openBluetoothDevice()`.
+2. The plugin opens BLE MIDI input/output ports and connects a `MidiReceiver` to the BLE device output port.
+3. Native `MidiReceiver.onSend()` emits Capacitor event `bleMidiData`.
+4. `www/native-midi-bridge.js` receives `bleMidiData`, normalizes MIDI bytes and calls `routeControllerPacket()`.
+5. It passes editor packets to `window.NUXNativeMidi.injectInput()`; a successful injection increments `Editor received N message(s)`.
+6. USB forwarding is a separate leg and is not required for the editor input counter to increment.
+
+### Root-cause / confidence assessment
+
+- The screenshot's combination of `BLE controller: Connected` and `Editor MIDI input: 0 messages received` does not mean MIDI packets are flowing. In this source, Connected is set from the one-time `bleMidiConnectionChanged` event after `openBluetoothDevice()` succeeds.
+- The native plugin does **not** register a `MidiManager.DeviceCallback` and has no `onDeviceRemoved` / `onDeviceStatusChanged` handler for a later BLE MIDI device loss. The UI can therefore retain a stale Connected state after the underlying MIDI device disappears or stops being available.
+- The JS receive counter advances only after native `MidiReceiver.onSend()` emits `bleMidiData` and the JS listener successfully injects a packet. Therefore the user's 0 counter places the current failure before or at that native receive callback, not in the custom CC mapper or MG-30 editor mapping.
+- Native BLE input and USB passthrough are deliberately separate. `routeBleToUsb()` tries editor input even if USB MG-30 is disconnected. Do not change USB MIDI or mapping to address a zero BLE input count.
+- Android's MIDI documentation confirms that BLE devices are opened through `MidiManager.openBluetoothDevice()`, and incoming data is received by connecting a `MidiReceiver` to `MidiDevice.openOutputPort()`. References: https://developer.android.com/reference/android/media/midi/MidiManager#openBluetoothDevice(android.bluetooth.BluetoothDevice,android.media.midi.MidiManager.OnDeviceOpenedListener,android.os.Handler) and https://developer.android.com/reference/android/media/midi/package-summary#using-midi-over-bluetooth-le
+- Android's `MidiManager.DeviceCallback` supports device-added/removed/status callbacks; the audited BLE plugin does not currently use them. Reference: https://developer.android.com/reference/android/media/midi/MidiManager.DeviceCallback
+
+### Candidate repair (not yet applied)
+
+- Add native BLE MIDI device lifecycle monitoring and publish actual connected/disconnected/status transitions, so UI state cannot remain falsely Connected after link/device loss.
+- Add a native receive counter / last-packet timestamp at `MidiReceiver.onSend()` and surface it separately from editor-delivered count. This will distinguish no BLE packets at Android from a JS/editor routing failure.
+- Review BLE port initialization order against Android BLE MIDI lifecycle guidance, using a device-status transition before declaring the input path ready.
+- Keep `NUXNativeMidi.injectInput()`, the standard USB MIDI path, MIDI CC mapping, and original MG-30 program/control mappings unchanged.
+- No application source, native plugin, MIDI mapping, NAM, IR, or UI code was changed during this audit; no APK was built.
+
+### User evidence
+
+- Earlier screenshot in this conversation showed Editor received 14 messages, then 40 messages and Program Change 3 with one packet forwarded to MG-30 USB.
+- Latest screenshot shows BLE status Connected while Editor MIDI input remains at 0.
+- This establishes that the message route worked previously and that the present symptom is intermittent; it does not by itself distinguish a Chocolate Plus transmission pause from an Android BLE MIDI device/link loss.
+
