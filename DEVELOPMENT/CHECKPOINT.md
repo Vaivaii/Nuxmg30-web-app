@@ -1337,3 +1337,20 @@ The roadmap references ITU-R BS.1770-5 (listed by ITU as in-force) and EBU R 128
 - Latest screenshot shows BLE status Connected while Editor MIDI input remains at 0.
 - This establishes that the message route worked previously and that the present symptom is intermittent; it does not by itself distinguish a Chocolate Plus transmission pause from an Android BLE MIDI device/link loss.
 
+
+## BLE MIDI receive telemetry implementation — 2026-11-25
+
+Implemented on `feature/wireless-midi-bridge-2026-11-25`:
+- `native-android/MG30BluetoothMidiPlugin.java`: count actual non-empty `MidiReceiver.onSend()` packets/bytes, timestamp last receive, publish `bleMidiReceiveStats`, and listen for `MidiManager.DeviceCallback.onDeviceRemoved` to clear stale BLE state. Native lifecycle callback is unregistered on plugin destroy.
+- `www/native-midi-bridge.js`: display native BLE receive packet/byte count separately from Editor input delivery count. Existing virtual input injection and USB forwarding retained.
+- `www/index.html`: Android BLE receiver diagnostic row.
+- `tests/device-midi-navigation.test.js`: regression assertions for separate BLE receive counter and device removal lifecycle.
+- `.github/workflows/build-apk.yml`: enabled APK workflow on this wireless-MIDI branch.
+
+Protection: no MG-30 USB MIDI mapping/protocol, custom CC values, NAM, IR, preset, DSP, or audio-capture logic changed.
+
+CI at checkpoint time:
+- Android build workflow run #1255: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45649017811 (Gradle build in progress).
+- Wireless Bridge CI run #39: https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45648967703 (regression tests passed; APK build in progress).
+
+Runtime verification still required: after installing the APK, press several Chocolate Plus footswitches and compare Android BLE receiver packet count with Editor MIDI input count. CI cannot prove live Bluetooth reception.
