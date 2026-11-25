@@ -88,3 +88,21 @@ Base commit: `f37024b5b51ce1bba0ecbb4dc4bd19e05a53db58`
 ## Current safety note
 
 No IR, NAM, preset, or device SysEx write sequence was modified by this branch's MIDI bridge work. Keep hardware tests limited to safe MIDI controls until routing and feedback are confirmed. Back up pedal presets before testing any unrelated write/import operation.
+
+## Device & MIDI submenu implementation — 2026-11-25
+
+- Implemented on the isolated wireless branch `feature/wireless-midi-bridge-2026-11-25`; the base/working branch was not edited.
+- Reworked Device & Settings into two horizontal tabs: `Overview` and `MIDI`.
+- Overview retains the connection summary, compatibility notice, and Backup & Restore entry. USB connection actions are placed only in the USB MIDI detail page.
+- MIDI Center now opens four distinct detail pages: USB MIDI, Bluetooth MIDI, MIDI Routing, and MIDI Mapping.
+- Moved original MIDI passthrough and two-way feedback toggles to MIDI Routing.
+- Moved source-CC/target-CC configuration to the separate MIDI Mapping page. It continues using the existing `mg30-wireless-midi-bridge` local-storage key and the bridge's existing configuration method. Existing editor MIDI mapping tables were not edited.
+- Added an Android Bluetooth activation button. The native plugin requests the Android `BLUETOOTH_CONNECT` permission when required and launches `BluetoothAdapter.ACTION_REQUEST_ENABLE` through Capacitor's Activity Result callback. User approval remains required; scanning is still a separate explicit action.
+- Added `tests/device-midi-navigation.test.js` to cover tabs, the four detail pages, unique action IDs, legacy bridge controls, the Bluetooth activation intent, and mapping separation.
+- Static source audit: 92 HTML IDs found, no duplicate IDs, and all `$('...')` references resolve to an element.
+- GitHub Actions run #10 for commit `9244890714eb54366661ac61a916e76940af3e29`: JS/Android-generator syntax and regression tests passed; Android debug APK build was still running at the time this note was written. Final build/artifact status must be appended after CI completion.
+
+### Protected areas
+
+No changes were made to NAM import/processing, User/Third Party IR import, IR Collection import, preset SysEx transfer, or the existing editor MIDI mapping tables. This is a Device UI/navigation change plus an additive Android Bluetooth permission/activation method; it is not physical hardware validation.
+
