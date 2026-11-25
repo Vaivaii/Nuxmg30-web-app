@@ -180,7 +180,7 @@ function mount() {
     </div>
   `;
   const overview = $('deviceOverviewView') || page;
-  const anchor = overview.querySelector('.device-usb-audio-card');
+  const anchor = overview.querySelector('#mg30CloudPanel') || overview.querySelector('.device-usb-audio-card');
   if (anchor) overview.insertBefore(panel, anchor);
   else overview.appendChild(panel);
 
