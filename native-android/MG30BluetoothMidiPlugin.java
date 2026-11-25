@@ -334,7 +334,11 @@ public class MG30BluetoothMidiPlugin extends Plugin {
                     call.resolve(connected);
                     notifyListeners("bleMidiConnectionChanged", connected);
                 } catch (Exception error) {
-                    device.close();
+                    try {
+                        device.close();
+                    } catch (IOException closeError) {
+                        error.addSuppressed(closeError);
+                    }
                     call.reject("Gagal membuka port Bluetooth MIDI: " + error.getMessage());
                 }
             }, mainHandler);
