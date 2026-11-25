@@ -41,6 +41,42 @@
     padding:4px!important;
   }
 }
+</style><style id="device-settings-submenu-style">
+#page-device .device-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:5px;margin:0 0 14px;border:1px solid var(--line);border-radius:14px;background:#101512}
+#page-device .device-tab{min-height:43px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font-weight:750;font-size:13px}
+#page-device .device-tab.active{background:#c5f36b12;border-color:#627d3b;color:var(--lime)}
+#page-device .device-tab-view{min-width:0}
+#page-device .device-tab-view.hidden,#page-device .midi-subpage.hidden{display:none!important}
+#page-device .device-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+#page-device .device-action-grid .btn{min-width:0;min-height:42px}
+#page-device .midi-center-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:3px 2px 14px}
+#page-device .midi-center-heading h3{font-size:21px;letter-spacing:-.6px;margin:3px 0}
+#page-device .midi-center-heading p,#page-device .midi-subpage-head p{margin:0;color:var(--muted);font-size:11px}
+#page-device .midi-center-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+#page-device .midi-tile{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-height:142px;padding:14px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#171d19,#111612);color:var(--text);text-align:left}
+#page-device .midi-tile:active{transform:scale(.985)}
+#page-device .midi-tile-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#c5f36b12;color:var(--lime);font-size:21px}
+#page-device .midi-tile strong{font-size:13px}
+#page-device .midi-tile small{color:var(--muted);font-size:10px;line-height:1.4}
+#page-device .midi-tile-link{margin-top:auto;color:var(--lime);font-size:10px;font-weight:750}
+#page-device .midi-subpage-head{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:2px 0 14px}
+#page-device .midi-subpage-head>div h3{font-size:22px;margin:3px 0;letter-spacing:-.7px}
+#page-device .ble-device-list{display:grid;gap:8px;margin-top:12px}
+#page-device .ble-device-list .btn{text-align:left;overflow-wrap:anywhere}
+#page-device .switch-help{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:400}
+#page-device .midi-route-flow{display:grid;grid-template-columns:1fr;gap:8px;margin:2px 0 15px}
+#page-device .midi-route-node{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#111713}
+#page-device .midi-route-node>span{display:grid;place-items:center;width:35px;height:35px;border-radius:10px;background:#c5f36b12;color:var(--lime);font-size:20px}
+#page-device .midi-route-node strong{font-size:12px}
+#page-device .midi-route-node small{margin-left:auto;color:var(--muted);font-size:10px}
+#page-device .midi-route-arrow{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--lime);font-size:20px}
+#page-device .midi-route-arrow small{font-size:9px;color:var(--muted)}
+#page-device .mapping-fields{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:9px}
+#page-device .mapping-fields label{display:grid;gap:6px;color:var(--muted);font-size:11px}
+#page-device .mapping-fields input{width:100%;min-width:0;padding:11px;border:1px solid var(--line);border-radius:9px;background:#111713;color:var(--text)}
+#page-device .mapping-arrow{padding-bottom:10px;color:var(--lime);font-size:18px}
+#page-device .mapping-status{display:block;margin-top:10px;color:var(--muted);font-size:11px}
+@media(max-width:390px){#page-device .midi-center-grid{gap:7px}#page-device .midi-tile{padding:11px;min-height:136px}#page-device .device-action-grid{gap:7px}#page-device .device-action-grid .btn{font-size:11px;padding:9px 8px}}
 </style></head>
 <body><div class="app">
 <header class="top"><div class="brand"><div class="logo">NUX</div><div><h1>MG-30 <span class="gen2-label">GEN2</span></h1><p>WEB EDITOR · TONE WORKSPACE</p></div></div><div class="actions"><button class="btn primary" id="connectMidi">Hubungkan</button><span class="pill"><span class="dot"></span>Offline draft</span><button class="btn" id="resetBtn">Reset</button></div></header>
@@ -52,32 +88,120 @@
 <div class="editor"><div class="control main-editor-card"><div class="panel-head"><div><h3 id="editorTitle">AMP · Deluxe Rvb</h3><p id="editorSub">Pilih model dan atur parameter</p></div><label class="block-toggle" title="Aktifkan atau bypass blok"><span id="blockStatus">ON</span><input class="switch" id="blockSwitch" type="checkbox" checked aria-label="Aktifkan blok"></label></div><div id="modelVisual" class="model-visual-stage"></div><div class="row model-select-row"><span class="model-row-label">MODEL</span><div class="model-stepper"><button type="button" class="model-step" id="modelPrev" aria-label="Model sebelumnya" title="Model sebelumnya">‹</button><strong id="modelCurrentName">Deluxe Rvb</strong><button type="button" class="model-step" id="modelNext" aria-label="Model berikutnya" title="Model berikutnya">›</button></div><select id="modelSelect" class="hidden" aria-hidden="true" tabindex="-1"></select></div><div id="knobs" class="knobs"></div><div class="scene-bar"><div class="scene-bar-head"><strong>Scenes</strong><small>Pilih karakter tone</small></div><div id="sceneButtons" class="scene-buttons"></div><div class="scene-note">Pemilihan tampilan scene tersimpan lokal; pemetaan perintah scene hardware belum diverifikasi.</div></div><div class="row preset-name-row"><label for="presetName">Nama draft</label><input type="text" id="presetName" value="Draft 01A"></div><select id="sceneSelect" class="hidden" aria-hidden="true" tabindex="-1"><option>A · Clean</option><option>B · Rhythm</option><option>C · Lead</option></select></div>
 <details class="control quick-panel"><summary><span>Quick actions & informasi</span><small>Draft lokal · Ekspor · Status fitur</small></summary><div class="quick-panel-body"><button class="btn" id="duplicateBtn">⧉ Duplikat preset</button> <button class="btn" id="exportBtn">↧ Ekspor JSON</button><div class="notice"><b>Catatan kompatibilitas.</b> Perubahan model dan slider tetap menggunakan jalur MIDI yang sudah ada. Pemetaan parameter firmware GEN2 belum diverifikasi sepenuhnya.</div><div class="switch-row"><span>Draft tersimpan otomatis</span><span class="chip">LOCAL</span></div><div class="switch-row"><span>Hardware GEN2</span><span class="chip">BELUM DIVERIFIKASI</span></div></div></details></div></section>
 <section id="page-presets" class="hidden"><div class="hero"><div><div class="eyebrow">Library / 02</div><h2>Preset library.</h2><p>Draft lokal buatanmu sendiri. Data preset hardware hanya tersedia setelah pembacaan perangkat.</p></div><button class="btn primary" id="newPresetBtn">＋ Preset baru</button></div><div class="panel slot-panel"><div class="panel-head"><div><h3>Preset hardware · NUX MG-30</h3><p>Pilih slot hardware, muat ke aplikasi, atau simpan perubahan ke slot tujuan.</p></div><span class="chip" id="slotLabel">01A</span></div><div class="slot-picker"><label for="bankSelect">BANK</label><select id="bankSelect"></select><div class="slot-buttons" id="slotButtons"></div></div><p class="slot-note">128 slot · 32 bank × A/B/C/D. Muat membaca konfigurasi edit buffer; Simpan ke MG-30 menulis dan memverifikasi slot tujuan.</p><button class="btn" id="loadSlot">Pilih di pedal & sinkronkan</button><p class="slot-note" id="operationStatus">Belum terhubung. Tekan Hubungkan MG-30 sebelum membaca atau menyimpan preset.</p></div><div class="panel"><div class="panel-head"><div><h3>Preset library</h3><p id="presetCount">0 draft lokal</p></div><input id="search" placeholder="Cari preset…" style="max-width:145px;background:#1b2019;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);min-width:0"></div><div id="presetList"></div></div></section>
-<section id="page-studio" class="hidden"><div class="hero"><div><div class="eyebrow">STUDIO / 03</div><h2>Studio</h2><p>Ruang multitrack disiapkan untuk tahap recording berikutnya.</p></div><span class="chip studio-coming">UI PREVIEW · RECORDING BELUM AKTIF</span></div><div class="panel studio-panel"><div class="studio-toolbar"><div><strong>Project baru</strong><small>44.1 kHz · Draft lokal</small></div><div class="studio-badges"><span class="chip">120 BPM</span><span class="chip">4/4</span></div></div><div class="track-list"><div class="track-row"><div class="track-label"><b>1</b><span>♬</span><strong>Guitar 1</strong><small>Audio track</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-green" aria-label="Contoh visual waveform"></div></div><div class="track-row"><div class="track-label"><b>2</b><span>♬</span><strong>Guitar 2</strong><small>Audio track</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-blue" aria-label="Contoh visual waveform"></div></div><div class="track-row"><div class="track-label"><b>3</b><span>♫</span><strong>Backing</strong><small>Audio track</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-purple" aria-label="Contoh visual waveform"></div></div><div class="track-row"><div class="track-label"><b>4</b><span>♧</span><strong>Click</strong><small>Metronome</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-neutral" aria-label="Contoh visual waveform"></div></div></div><button class="btn add-track" disabled>＋ Tambah track · segera hadir</button><div class="studio-transport"><span class="timecode">00:00.00</span><div class="transport-buttons"><button disabled>◀</button><button class="record-control" disabled>●</button><button disabled>▶</button><button disabled>↻</button></div><small>Preview antarmuka saja · belum merekam audio</small></div></div></section><section id="page-device" class="hidden"><div class="hero"><div><div class="eyebrow">DEVICE / 04</div><h2>Device & Settings</h2><p>Status koneksi, kontrol MIDI, dan keamanan data.</p></div></div><div class="panel"><div class="panel-head"><div><h3>Status koneksi</h3><p>Android menggunakan native MIDI; Web build memerlukan browser dan hardware yang kompatibel.</p></div><span class="chip">SAFE MODE</span></div><div class="switch-row"><span>Koneksi perangkat</span><span id="deviceStatus" class="chip">Belum terhubung</span></div><div class="switch-row"><span>Browser Web MIDI API</span><span id="midiSupport" class="chip">Memeriksa…</span></div><div class="switch-row"><span>USB MIDI hardware</span><span class="chip">Belum diuji</span></div><div class="switch-row"><span>SysEx read / write</span><span id="sysexStatus" class="chip">Menunggu koneksi</span></div><button class="btn primary" id="connectMidiDevice">Hubungkan / pilih ulang perangkat</button> <button class="btn" id="readBuffer">Baca buffer aktif</button><button class="btn" id="checkMidi">Periksa dukungan browser</button><button class="btn backup-link" id="goBackup">▣ Backup & Restore</button><div class="notice"><b>Penting:</b> Android memakai Android MIDI service untuk USB dan BLE MIDI. Web build memakai Web MIDI API. Target perangkat adalah NUX MG-30 original Gen 2 firmware 6.0.x, bukan MG-30 MKII; semua jalur perangkat tetap perlu diuji pada pedal fisik.</div></div>
-<div class="panel" id="bleMidiBridgePanel" style="margin-top:14px">
-  <div class="panel-head"><div><h3>Wireless MIDI Bridge</h3><p>Chocolate Plus BLE MIDI ↔ Android ↔ NUX MG-30 USB MIDI</p></div><span class="chip">BETA</span></div>
-  <div class="switch-row"><span>BLE controller</span><span id="bleMidiStatus" class="chip">Belum terhubung</span></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
-    <button class="btn primary" id="scanBleMidi">Cari Chocolate Plus</button>
-    <button class="btn" id="disconnectBleMidi">Putuskan BLE</button>
+<section id="page-studio" class="hidden"><div class="hero"><div><div class="eyebrow">STUDIO / 03</div><h2>Studio</h2><p>Ruang multitrack disiapkan untuk tahap recording berikutnya.</p></div><span class="chip studio-coming">UI PREVIEW · RECORDING BELUM AKTIF</span></div><div class="panel studio-panel"><div class="studio-toolbar"><div><strong>Project baru</strong><small>44.1 kHz · Draft lokal</small></div><div class="studio-badges"><span class="chip">120 BPM</span><span class="chip">4/4</span></div></div><div class="track-list"><div class="track-row"><div class="track-label"><b>1</b><span>♬</span><strong>Guitar 1</strong><small>Audio track</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-green" aria-label="Contoh visual waveform"></div></div><div class="track-row"><div class="track-label"><b>2</b><span>♬</span><strong>Guitar 2</strong><small>Audio track</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-blue" aria-label="Contoh visual waveform"></div></div><div class="track-row"><div class="track-label"><b>3</b><span>♫</span><strong>Backing</strong><small>Audio track</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-purple" aria-label="Contoh visual waveform"></div></div><div class="track-row"><div class="track-label"><b>4</b><span>♧</span><strong>Click</strong><small>Metronome</small><div class="track-mini"><span>M</span><span>S</span></div></div><div class="waveform wave-neutral" aria-label="Contoh visual waveform"></div></div></div><button class="btn add-track" disabled>＋ Tambah track · segera hadir</button><div class="studio-transport"><span class="timecode">00:00.00</span><div class="transport-buttons"><button disabled>◀</button><button class="record-control" disabled>●</button><button disabled>▶</button><button disabled>↻</button></div><small>Preview antarmuka saja · belum merekam audio</small></div></div></section><section id="page-device" class="hidden">
+  <div class="hero device-page-hero">
+    <div><div class="eyebrow">DEVICE / 04</div><h2>Device &amp; Settings</h2><p>Perangkat, konektivitas, dan konfigurasi MIDI.</p></div>
   </div>
-  <div id="bleMidiDeviceList" style="display:grid;gap:8px"></div>
-  <div class="notice" style="margin-top:12px">Nyalakan Chocolate Plus dan aktifkan mode BLE-MIDI. Pilih perangkat dari hasil pemindaian. Untuk mengontrol pedal, hubungkan MG-30 melalui USB OTG pada aplikasi ini.</div>
-  <div class="switch-row"><label for="blePassthrough"><b>Teruskan MIDI asli</b><small style="display:block;opacity:.7">Pesan yang tidak dipetakan diteruskan tanpa perubahan</small></label><input id="blePassthrough" type="checkbox" checked></div>
-  <div class="switch-row"><label for="bleFeedback"><b>Feedback dua arah</b><small style="display:block;opacity:.7">Kirim data/feedback MG-30 kembali ke controller</small></label><input id="bleFeedback" type="checkbox" checked></div>
-  <div style="border-top:1px solid var(--line);padding-top:12px;margin-top:8px">
-    <b>Custom CC mapping</b>
-    <p style="font-size:12px;opacity:.72;margin:5px 0 10px">CC sumber dari Chocolate Plus dialihkan ke CC tujuan MG-30. CC lain tetap mengikuti opsi passthrough.</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <label style="font-size:12px">CC sumber <input id="bridgeCcSource" type="number" min="0" max="127" inputmode="numeric" placeholder="0–127" style="width:76px;margin-left:4px"></label>
-      <span>→</span>
-      <label style="font-size:12px">CC tujuan <input id="bridgeCcTarget" type="number" min="0" max="127" inputmode="numeric" placeholder="0–127" style="width:76px;margin-left:4px"></label>
-      <button class="btn" id="saveBridgeMapping">Simpan mapping</button>
-      <button class="btn" id="clearBridgeMapping">Hapus mapping</button>
+  <div class="device-tabs" role="tablist" aria-label="Device sections">
+    <button type="button" class="device-tab active" id="deviceTabOverview" role="tab" aria-selected="true">▦ <span>Overview</span></button>
+    <button type="button" class="device-tab" id="deviceTabMidi" role="tab" aria-selected="false">♫ <span>MIDI</span></button>
+  </div>
+
+  <div id="deviceOverviewView" class="device-tab-view">
+    <div class="panel">
+      <div class="panel-head"><div><h3>Status koneksi</h3><p>Ringkasan koneksi perangkat dan dukungan MIDI.</p></div><span class="chip">SAFE MODE</span></div>
+      <div class="switch-row"><span>Koneksi perangkat</span><span id="deviceStatus" class="chip">Belum terhubung</span></div>
+      <div class="switch-row"><span>Browser / Android MIDI</span><span id="midiSupport" class="chip">Memeriksa…</span></div>
+      <div class="switch-row"><span>USB MIDI hardware</span><span id="usbMidiHardwareStatus" class="chip">Belum diuji</span></div>
+      <div class="switch-row"><span>SysEx read / write</span><span id="sysexStatus" class="chip">Menunggu koneksi</span></div>
     </div>
-    <small id="bridgeCcMapStatus" style="display:block;opacity:.72;margin-top:8px">Belum ada mapping CC khusus.</small>
+    <div class="panel">
+      <div class="panel-head"><div><h3>Device tools</h3><p>Akses tindakan perangkat yang sudah tersedia.</p></div></div>
+      <div class="device-action-grid">
+        <button class="btn primary" id="connectMidiDevice">Hubungkan / pilih ulang perangkat</button>
+        <button class="btn" id="readBuffer">Baca buffer aktif</button>
+        <button class="btn" id="checkMidi">Periksa dukungan MIDI</button>
+        <button class="btn backup-link" id="goBackup">▣ Backup &amp; Restore</button>
+      </div>
+      <div class="notice"><b>Kompatibilitas:</b> target perangkat adalah NUX MG-30 original Gen 2 firmware 6.0.x, bukan MG-30 MKII. Semua jalur perangkat tetap perlu diuji pada pedal fisik.</div>
+    </div>
   </div>
-  <div id="bridgeRouteStatus" class="notice" style="margin-top:12px">Bridge belum aktif. USB MIDI dan BLE MIDI dapat disambungkan terpisah.</div>
-</div></section>
+
+  <div id="deviceMidiView" class="device-tab-view hidden">
+    <div id="midiCenterHome">
+      <div class="midi-center-heading"><div><div class="eyebrow">DEVICE / MIDI</div><h3>MIDI Center</h3><p>Kelola koneksi, alur data, dan perintah controller.</p></div><span class="chip">USB + BLE</span></div>
+      <div class="midi-center-grid">
+        <button type="button" class="midi-tile" data-midi-open="usb"><span class="midi-tile-icon">⌁</span><strong>USB MIDI</strong><small>NUX MG-30 connection and device status</small><span class="midi-tile-link">Open settings →</span></button>
+        <button type="button" class="midi-tile" data-midi-open="bluetooth"><span class="midi-tile-icon">ᛒ</span><strong>Bluetooth MIDI</strong><small>Pair a wireless BLE MIDI controller</small><span class="midi-tile-link">Open settings →</span></button>
+        <button type="button" class="midi-tile" data-midi-open="routing"><span class="midi-tile-icon">⇄</span><strong>MIDI Routing</strong><small>Passthrough and two-way feedback</small><span class="midi-tile-link">Open settings →</span></button>
+        <button type="button" class="midi-tile" data-midi-open="mapping"><span class="midi-tile-icon">☷</span><strong>MIDI Mapping</strong><small>Custom CC assignment for controller</small><span class="midi-tile-link">Open settings →</span></button>
+      </div>
+      <div class="panel midi-connection-summary">
+        <div class="panel-head"><div><h3>Connection overview</h3><p>Ringkasan dua transport MIDI.</p></div></div>
+        <div class="switch-row"><span>NUX MG-30 · USB</span><span id="midiCenterUsbStatus" class="chip">Status belum tersedia</span></div>
+        <div class="switch-row"><span>Chocolate Plus · BLE</span><span id="midiCenterBleStatus" class="chip">Belum terhubung</span></div>
+      </div>
+    </div>
+
+    <div id="midiUsbPage" class="midi-subpage hidden">
+      <div class="midi-subpage-head"><button type="button" class="btn ghost" data-midi-back>← MIDI Center</button><div><div class="eyebrow">MIDI / CONNECTION</div><h3>USB MIDI</h3><p>Hubungkan MG-30 melalui USB OTG.</p></div></div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>NUX MG-30</h3><p>Android native MIDI / Web MIDI API</p></div><span class="chip">USB</span></div>
+        <div class="switch-row"><span>Device connection</span><span id="midiUsbDetailStatus" class="chip">Belum terhubung</span></div>
+        <div class="switch-row"><span>SysEx read / write</span><span id="midiUsbSysexStatus" class="chip">Menunggu koneksi</span></div>
+        <div class="device-action-grid">
+          <button class="btn primary" id="connectMidiDevice">Hubungkan / pilih ulang perangkat</button>
+          <button class="btn" id="readBuffer">Baca buffer aktif</button>
+          <button class="btn" id="checkMidi">Periksa dukungan MIDI</button>
+        </div>
+        <div class="notice">Gunakan kabel USB OTG yang mendukung data. Prosedur preset dan SysEx existing tidak diubah oleh halaman ini.</div>
+      </div>
+    </div>
+
+    <div id="midiBluetoothPage" class="midi-subpage hidden">
+      <div class="midi-subpage-head"><button type="button" class="btn ghost" data-midi-back>← MIDI Center</button><div><div class="eyebrow">MIDI / WIRELESS</div><h3>Bluetooth MIDI</h3><p>Hubungkan M-VAVE Chocolate Plus melalui BLE MIDI.</p></div></div>
+      <div class="panel" id="bleMidiBridgePanel">
+        <div class="panel-head"><div><h3>Android Bluetooth</h3><p>Aktifkan radio Bluetooth melalui persetujuan sistem Android.</p></div><span id="androidBluetoothStatus" class="chip">Belum diperiksa</span></div>
+        <button class="btn primary" id="enableAndroidBluetooth">Aktifkan Bluetooth</button>
+        <div class="switch-row"><span>BLE controller</span><span id="bleMidiStatus" class="chip">Belum terhubung</span></div>
+        <div class="panel-head" style="margin-top:15px"><div><h3>MIDI Devices</h3><p>Temukan controller BLE MIDI di sekitar ponsel.</p></div><span class="chip">BLE MIDI</span></div>
+        <div class="device-action-grid">
+          <button class="btn primary" id="scanBleMidi">Scan MIDI Devices</button>
+          <button class="btn" id="disconnectBleMidi">Putuskan BLE</button>
+        </div>
+        <div id="bleMidiDeviceList" class="ble-device-list"></div>
+        <div class="notice">Nyalakan Chocolate Plus dan aktifkan mode BLE-MIDI. Pilih perangkat dari hasil pemindaian. Untuk mengontrol pedal, hubungkan MG-30 melalui USB OTG pada aplikasi ini.</div>
+        <div class="switch-row"><span>USB MIDI MG-30</span><span id="bluetoothUsbStatus" class="chip">Belum terhubung</span></div>
+      </div>
+    </div>
+
+    <div id="midiRoutingPage" class="midi-subpage hidden">
+      <div class="midi-subpage-head"><button type="button" class="btn ghost" data-midi-back>← MIDI Center</button><div><div class="eyebrow">MIDI / DATA FLOW</div><h3>MIDI Routing</h3><p>Atur jalur komunikasi antara controller dan pedal.</p></div></div>
+      <div class="panel">
+        <div class="midi-route-flow">
+          <div class="midi-route-node"><span>ᛒ</span><strong>Chocolate Plus</strong><small>BLE MIDI</small></div>
+          <div class="midi-route-arrow">⇅ <small>MG30 Studio bridge</small></div>
+          <div class="midi-route-node"><span>⌁</span><strong>NUX MG-30</strong><small>USB MIDI</small></div>
+        </div>
+        <div class="switch-row"><label for="blePassthrough"><b>Original MIDI passthrough</b><small class="switch-help">Pesan yang tidak dipetakan diteruskan tanpa perubahan.</small></label><input id="blePassthrough" type="checkbox" checked></div>
+        <div class="switch-row"><label for="bleFeedback"><b>Feedback dua arah</b><small class="switch-help">Kirim data/feedback MG-30 kembali ke controller.</small></label><input id="bleFeedback" type="checkbox" checked></div>
+        <div id="bridgeRouteStatus" class="notice">Bridge belum aktif. USB MIDI dan BLE MIDI dapat disambungkan terpisah.</div>
+      </div>
+    </div>
+
+    <div id="midiMappingPage" class="midi-subpage hidden">
+      <div class="midi-subpage-head"><button type="button" class="btn ghost" data-midi-back>← MIDI Center</button><div><div class="eyebrow">MIDI / ASSIGNMENTS</div><h3>MIDI Mapping</h3><p>Pengaturan Custom CC terpisah dari original MIDI.</p></div></div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Custom CC Mapping</h3><p>Alihkan CC sumber Chocolate Plus ke CC tujuan MG-30.</p></div><span class="chip">CUSTOM</span></div>
+        <div class="mapping-fields">
+          <label>CC sumber<input id="bridgeCcSource" type="number" min="0" max="127" inputmode="numeric" placeholder="0–127"></label>
+          <span class="mapping-arrow">→</span>
+          <label>CC tujuan<input id="bridgeCcTarget" type="number" min="0" max="127" inputmode="numeric" placeholder="0–127"></label>
+        </div>
+        <div class="device-action-grid">
+          <button class="btn primary" id="saveBridgeMapping">Simpan mapping</button>
+          <button class="btn" id="clearBridgeMapping">Hapus mapping</button>
+        </div>
+        <small id="bridgeCcMapStatus" class="mapping-status">Belum ada mapping CC khusus.</small>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Original MIDI</h3><p>Perilaku dan pemetaan lama dipertahankan.</p></div><span class="chip">PROTECTED</span></div>
+        <div class="switch-row"><span>Original passthrough</span><span class="chip">Dikelola di Routing</span></div>
+        <div class="notice">Custom CC Mapping disimpan pada konfigurasi Wireless MIDI Bridge yang terpisah. Tabel mapping MIDI editor existing tidak ditulis ulang.</div>
+      </div>
+    </div>
+  </div>
+</section>
 <section id="page-backup" class="hidden"><div class="hero"><div><div class="eyebrow">SAFETY / BACKUP</div><h2>Backup & Restore</h2><p>Ekspor atau impor draft preset dalam JSON.</p></div><button class="btn" id="backToDevice">← Device & Settings</button></div><div class="panel"><div class="panel-head"><div><h3>Backup lokal</h3><p>File ini bukan dump preset hardware.</p></div></div><button class="btn primary" id="backupBtn">Ekspor semua preset</button> <label class="btn" for="importFile">Impor JSON</label><input class="hidden" type="file" id="importFile" accept=".json,application/json"><div class="notice"><b>Catatan:</b> backup berisi format kerja prototipe MG30 Studio. Simpan file di tempat aman.</div></div></section>
 <div class="footer">MG-30 Web Editor · Draft lokal · Fitur perangkat tetap dalam tahap pengujian</div></div><div id="toast" class="toast"></div>
 <script type="module" src="/native-midi-bridge.js"></script>
@@ -584,10 +708,13 @@ $('modelSelect').onchange=e=>{const next=+e.target.value;changeSelectedModel(nex
 function renderPresets(){let q=$('search').value.toLowerCase(),list=presets.filter(p=>p.name.toLowerCase().includes(q));$('presetCount').textContent=presets.length+' draft lokal';$('presetList').innerHTML=list.length?list.map(p=>'<div class="preset"><div><strong>'+escapeHtml(p.name)+'</strong><p>Draft lokal · slot '+slotName(p.targetSlot??0)+' · '+new Date(p.date).toLocaleString()+'</p></div><div class="preset-actions"><button class="btn" data-load="'+p.id+'">Muat</button><button class="btn" data-del="'+p.id+'">Hapus</button></div></div>').join(''):'<div class="empty">Belum ada draft lokal yang cocok. Simpan draft setelah mengatur model dan parameter.</div>';$('presetList').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{let p=presets.find(x=>x.id===b.dataset.load);if(p){states=p.states;selected=p.selected??3;targetSlot=p.targetSlot??0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=p.name;renderSlotPicker();render();showPage('editor');toast('Draft dimuat')}});$('presetList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{presets=presets.filter(x=>x.id!==b.dataset.del);persist();renderPresets()})}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function render(){renderChain();renderEditor();renderPresets();$('statName').textContent=currentName();$('statChanged').textContent=changed.size;renderSlotPicker();renderHardwarePreset();renderSceneButtons()}
-function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets()}
+function setDeviceTab(tab){const overview=tab!=='midi';$('deviceOverviewView').classList.toggle('hidden',!overview);$('deviceMidiView').classList.toggle('hidden',overview);$('deviceTabOverview').classList.toggle('active',overview);$('deviceTabMidi').classList.toggle('active',!overview);$('deviceTabOverview').setAttribute('aria-selected',String(overview));$('deviceTabMidi').setAttribute('aria-selected',String(!overview));if(!overview)showMidiCenter()}
+function showMidiCenter(){ $('midiCenterHome').classList.remove('hidden');document.querySelectorAll('.midi-subpage').forEach(el=>el.classList.add('hidden')); }
+function openMidiSubpage(page){const ids={usb:'midiUsbPage',bluetooth:'midiBluetoothPage',routing:'midiRoutingPage',mapping:'midiMappingPage'};if(!ids[page])return;$('midiCenterHome').classList.add('hidden');document.querySelectorAll('.midi-subpage').forEach(el=>el.classList.toggle('hidden',el.id!==ids[page]));}
+function showPage(p){document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='page-'+p));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));if(p==='presets')renderPresets();if(p==='device')setDeviceTab('overview')}
 function download(name,obj){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 function savePreset(){presets.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:currentName(),date:new Date().toISOString(),targetSlot,selected,states:JSON.parse(JSON.stringify(states))});persist();renderPresets();toast('Draft preset tersimpan')}
-document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('saveBtn').onclick=savePreset;$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('saveBtn').onclick=savePreset;$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('backupBtn').onclick=()=>download('mg30-studio-backup.json',presets);$('search').oninput=renderPresets;$('importFile').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());presets=Array.isArray(d)?d:[...presets,{id:String(Date.now()),name:d.name||'Imported preset',date:new Date().toISOString(),states:d.states||states,selected:d.selected||3}];persist();renderPresets();toast('Impor selesai')}catch{toast('File JSON tidak valid')}e.target.value=''};$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let native=!!window.MG30NativeMidi?.isNative,ok=native||('requestMIDIAccess'in navigator);$('midiSupport').textContent=native?'Android native MIDI':(ok?'API tersedia':'Tidak tersedia');toast(native?'Android native MIDI tersedia':(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API'))};$('midiSupport').textContent=window.MG30NativeMidi?.isNative?'Android native MIDI':(('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia');
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('deviceTabOverview').onclick=()=>setDeviceTab('overview');$('deviceTabMidi').onclick=()=>setDeviceTab('midi');document.querySelectorAll('[data-midi-open]').forEach(b=>b.onclick=()=>openMidiSubpage(b.dataset.midiOpen));document.querySelectorAll('[data-midi-back]').forEach(b=>b.onclick=showMidiCenter);$('saveBtn').onclick=savePreset;$('newPresetBtn').onclick=()=>{$('presetName').value='New Preset';states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();render();showPage('editor');persist()};$('saveBtn').onclick=savePreset;$('duplicateBtn').onclick=()=>{$('presetName').value=currentName()+' Copy';savePreset()};$('exportBtn').onclick=()=>download('mg30-draft.json',{name:currentName(),selected,states,scene:$('sceneSelect').selectedIndex});$('backupBtn').onclick=()=>download('mg30-studio-backup.json',presets);$('search').oninput=renderPresets;$('importFile').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());presets=Array.isArray(d)?d:[...presets,{id:String(Date.now()),name:d.name||'Imported preset',date:new Date().toISOString(),states:d.states||states,selected:d.selected||3}];persist();renderPresets();toast('Impor selesai')}catch{toast('File JSON tidak valid')}e.target.value=''};$('resetBtn').onclick=()=>{if(confirm('Reset draft saat ini? Preset tersimpan tidak dihapus.')){states=BLOCKS.map((b,i)=>({model:0,on:i!==4&&i!==8,values:{}}));selected=3;changed.clear();$('presetName').value='Draft '+slotName();render();persist();toast('Draft direset')}};$('checkMidi').onclick=()=>{let native=!!window.MG30NativeMidi?.isNative,ok=native||('requestMIDIAccess'in navigator);$('midiSupport').textContent=native?'Android native MIDI':(ok?'API tersedia':'Tidak tersedia');$('usbMidiHardwareStatus').textContent=native?'Android native MIDI':(ok?'Web MIDI API':'Tidak tersedia');toast(native?'Android native MIDI tersedia':(ok?'Web MIDI API terdeteksi':'Browser ini tidak menyediakan Web MIDI API'))};$('midiSupport').textContent=window.MG30NativeMidi?.isNative?'Android native MIDI':(('requestMIDIAccess'in navigator)?'API tersedia':'Tidak tersedia');
 function loadBridgeUiConfig(){
   try{
     const saved=JSON.parse(localStorage.getItem('mg30-wireless-midi-bridge')||'{}');
@@ -618,6 +745,7 @@ function renderBleMidiDevice(device){
     catch(error){$('bleMidiStatus').textContent='Gagal terhubung';toast(error.message)}
   };
 }
+$('enableAndroidBluetooth').onclick=async()=>{if(!window.MG30NativeMidi?.isNative){toast('Aktifkan Bluetooth melalui pengaturan sistem pada perangkat Android.');return}const status=$('androidBluetoothStatus');status.textContent='Meminta persetujuan…';try{const result=await window.MG30NativeMidi.requestEnableBluetooth();status.textContent=result.enabled?'Bluetooth aktif':'Bluetooth tetap nonaktif';toast(result.enabled?'Bluetooth aktif. Sekarang pindai controller MIDI.':'Bluetooth belum diaktifkan. Kamu dapat mencoba lagi kapan saja.')}catch(error){status.textContent='Tidak dapat mengaktifkan';toast(error.message||'Permintaan Bluetooth gagal.')}};
 $('scanBleMidi').onclick=async()=>{
   if(!window.MG30NativeMidi?.isNative){toast('BLE MIDI memerlukan aplikasi Android MG30 Studio.');return}
   $('bleMidiDeviceList').innerHTML='';$('bleMidiStatus').textContent='Memindai Bluetooth…';
@@ -637,17 +765,17 @@ $('clearBridgeMapping').onclick=()=>{$('bridgeCcSource').value='';$('bridgeCcTar
 $('blePassthrough').onchange=applyBridgeUiConfig;
 $('bleFeedback').onchange=applyBridgeUiConfig;
 window.addEventListener('mg30native-midi-ready',()=>{
-  $('midiSupport').textContent='Android native MIDI';
+  $('midiSupport').textContent='Android native MIDI';$('usbMidiHardwareStatus').textContent='Android native MIDI';$('midiCenterUsbStatus').textContent='Android native MIDI';
   applyBridgeUiConfig();
 });
 window.addEventListener('mg30ble-midi-device-found',event=>renderBleMidiDevice(event.detail));
 window.addEventListener('mg30ble-midi-connection',event=>{
   const state=event.detail||{};
-  $('bleMidiStatus').textContent=state.connected?'Terhubung · '+(state.name||'Bluetooth MIDI'):'Terputus';
+  $('bleMidiStatus').textContent=state.connected?'Terhubung · '+(state.name||'Bluetooth MIDI'):'Terputus';$('midiCenterBleStatus').textContent=state.connected?'Terhubung':'Belum terhubung';
   if(state.connected)$('bridgeRouteStatus').textContent=midiConnected?'BLE ↔ USB aktif. MIDI dua arah siap.':'BLE tersambung; hubungkan MG-30 USB OTG untuk mengontrol pedal.';
 });
 window.addEventListener('mg30native-usb-state',event=>{
-  const state=event.detail||{},bridge=window.MG30NativeMidi?.getState?.();
+  const state=event.detail||{},bridge=window.MG30NativeMidi?.getState?.();$('midiCenterUsbStatus').textContent=state.connected?'Connected':'Disconnected';$('midiUsbDetailStatus').textContent=state.connected?'Terhubung':'Belum terhubung';$('usbMidiHardwareStatus').textContent=state.connected?'Terhubung':'Terputus';$('bluetoothUsbStatus').textContent=state.connected?'Terhubung':'Belum terhubung';
   if(state.connected&&bridge?.bleConnected)$('bridgeRouteStatus').textContent='BLE ↔ USB aktif. MIDI dua arah siap.';
   else if(state.connected)$('bridgeRouteStatus').textContent='USB MIDI MG-30 tersambung. Hubungkan Chocolate Plus untuk mengaktifkan bridge.';
   else if(bridge?.bleConnected)$('bridgeRouteStatus').textContent='BLE tersambung; USB MG-30 terputus.';
@@ -661,5 +789,5 @@ window.addEventListener('mg30ble-midi-scan-finished',event=>{
 });
 window.addEventListener('mg30native-midi-error',event=>{const d=event.detail||{};console.warn('[MG30 MIDI Bridge]',d);$('bridgeRouteStatus').textContent=(d.message||'MIDI bridge error')+(d.error?': '+d.error:'')});
 loadBridgeUiConfig();
-initSlotPicker();$('openDeviceFromEditor').onclick=()=>showPage('device');$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=connectMG30;$('connectMidiDevice').onclick=connectMG30;$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
+initSlotPicker();$('openDeviceFromEditor').onclick=()=>{showPage('device');setDeviceTab('midi');showMidiCenter()};$('goBackup').onclick=()=>showPage('backup');$('prevHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+127)%128,false);$('nextHardwarePreset').onclick=()=>selectHardwareSlot((targetSlot+1)%128,false);$('favoritePresetBtn').onclick=()=>{if(favoriteSlots.has(targetSlot))favoriteSlots.delete(targetSlot);else favoriteSlots.add(targetSlot);localStorage.setItem('mg30-favorite-slots',JSON.stringify([...favoriteSlots]));renderHardwarePreset();toast(favoriteSlots.has(targetSlot)?'Preset ditandai favorit':'Preset dihapus dari favorit')};$('backToDevice').onclick=()=>showPage('device');$('connectMidi').onclick=connectMG30;$('connectMidiDevice').onclick=connectMG30;$('readBuffer').onclick=async()=>{try{setDeviceStatus('Membaca buffer aktif…');const n=await readActiveBuffer();setDeviceStatus('Buffer dibaca'+(n?': '+n:''));toast('Model dan parameter preset disinkronkan')}catch(e){setDeviceStatus('Gagal membaca buffer');toast(e.message)}};$('loadSlot').onclick=()=>selectHardwareSlot(targetSlot,false);$('saveDeviceBtn').onclick=saveToDevice;try{let d=JSON.parse(localStorage.getItem('mg30-draft')||'null');if(d){targetSlot=Number.isInteger(d.targetSlot)?Math.max(0,Math.min(127,d.targetSlot)):0;$('bankSelect').value=String(Math.floor(targetSlot/4));$('presetName').value=d.name||'Draft '+slotName();if(Array.isArray(d.states)&&d.states.length===BLOCKS.length)states=d.states;if(Array.isArray(d.chainOrder)&&d.chainOrder.length===BLOCKS.length)chainOrder=d.chainOrder;selected=Math.min(d.selected??3,BLOCKS.length-1);if(d.scene!==undefined)$('sceneSelect').selectedIndex=d.scene;renderSlotPicker()}}catch{}render();
 </script></body></html>
