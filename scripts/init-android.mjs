@@ -121,7 +121,7 @@ const requiredEntries = [
   ['android.hardware.bluetooth_le', '    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />']
 ];
 for (const [marker, entry] of requiredEntries) {
-  if (!manifest.includes(marker)) manifest = manifest.replace(/(<manifest\b[^>]*>)/, '$1\n' + entry);
+  if (!manifest.includes('android:name=\"' + marker + '\"')) manifest = manifest.replace(/(<manifest\\b[^>]*>)/, '$1\\n' + entry);
 }
 manifest = manifest.replace(/<application\b[^>]*>/, tag => {
   const clean = tag.replace(/\sandroid:icon="[^"]*"/g, '').replace(/\sandroid:roundIcon="[^"]*"/g, '');
