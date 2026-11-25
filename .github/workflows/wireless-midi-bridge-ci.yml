@@ -6,6 +6,7 @@ on:
       - feature/wireless-midi-bridge-2026-11-25
     paths:
       - 'index.html'
+      - 'www/**'
       - 'native-android/**'
       - 'native-midi-*.js'
       - 'tests/**'
