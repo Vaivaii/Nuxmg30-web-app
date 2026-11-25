@@ -149,3 +149,42 @@ No changes were made to NAM import/processing, User/Third Party IR import, IR Co
 - APK archive inspection confirms the packaged `assets/public/index.html` contains `deviceTabOverview`, `deviceTabMidi`, `midiCenterHome`, and `midiBluetoothPage`; its JS bundle contains `MG30BluetoothMidi`, `bleMidiDeviceFound`, and `requestEnableBluetooth`.
 - This verifies the proper live UI and plugin are packaged. It does not verify the app installed on the user's phone, Bluetooth consent UI behavior, physical BLE discovery, or two-way routing on Chocolate Plus + original MG-30 hardware. Those remain physical-device QA tasks.
 
+## Bluetooth activation + BLE scan correction — Run #25
+
+User screenshot showed Device → MIDI → Bluetooth MIDI rendering, but tapping Enable Bluetooth did not visibly update status or open a system prompt, and Scan MIDI Devices did not produce usable feedback. The status bar in the screenshot showed a Bluetooth icon, so the adapter may already have been ON; Android's `ACTION_REQUEST_ENABLE` correctly does not show an enable dialog when Bluetooth is already enabled.
+
+Implemented on the live Android sources:
+
+- `native-android/MG30BluetoothMidiPlugin.java`
+  - Added `getBluetoothState` to report adapter availability, enabled state, BLE scanner, Android MIDI service, SDK version, runtime permission state, and legacy Location Services state.
+  - Added `openBluetoothSettings` using Android `Settings.ACTION_BLUETOOTH_SETTINGS`.
+  - Added `openAppPermissionSettings` using Android app details settings so a user can grant Nearby devices permissions after a denial.
+  - Kept `BluetoothAdapter.ACTION_REQUEST_ENABLE` with the Capacitor Activity Result callback and runtime `BLUETOOTH_CONNECT` permission.
+  - Hardened BLE scan startup so adapter/scanner/location/permission failures return visible errors rather than escaping before the plugin call resolves.
+  - On Android 11 and below, explicitly requires Location Services to be enabled for BLE scanning.
+- `www/native-midi-bridge.js`
+  - Added Android state refresh on page entry, visibility return, and focus.
+  - Added robust delegated click handling for Enable Bluetooth, Open Bluetooth Settings, App Permissions, and Scan MIDI Devices.
+  - When adapter status cannot be read due to missing `BLUETOOTH_CONNECT`, scan still invokes the native scan path so the plugin can request runtime `BLUETOOTH_SCAN` + `BLUETOOTH_CONNECT` instead of incorrectly short-circuiting.
+  - Added direct, visible scan/error messages and a no-device-found hint.
+- `www/index.html`
+  - Added visible `Open Bluetooth Settings` and `App Permissions` controls plus a live status/error region.
+  - Refreshes Android Bluetooth state whenever the Bluetooth MIDI subpage is opened.
+- `tests/device-midi-navigation.test.js` and CI syntax checks cover the new UI, native methods, and permission-recovery path.
+
+Verification — workflow [Run #25](https://github.com/Vaivaii/Nuxmg30-web-app/actions/runs/45626970541):
+- Source commit: `db690a9bc53d5cf18ecdc59ccd9656645c19f80e`.
+- Regression tests: **718 passed, 0 failed**.
+- JS / Android generator syntax checks: passed.
+- Android debug APK: `BUILD SUCCESSFUL in 1m 16s`; artifact upload succeeded.
+- Artifact ID: `15029265691`, ZIP size 4,415,537 bytes.
+- Extracted APK: `MG30-Studio-Bluetooth-Permission-Fix.apk`, 4,793,860 bytes.
+- APK SHA-256: `d5d81c475dc386ea9bf8686959eaf622d240632008a0b8d458b625087f08e9bf`.
+- Inspected APK archive: packaged HTML contains `openBluetoothSettings`, `openAppPermissionSettings`, `bleMidiMessage`; bundled JS contains `getBluetoothState`, `requestEnableBluetooth`, and `openAppPermissionSettings`.
+
+Remaining hardware QA:
+- The APK build and static regression suite are verified, but this environment cannot operate the user's Android radio or physically scan the user's M-VAVE Chocolate Plus.
+- On the phone, verify that Bluetooth status changes to ON/OFF when opening the page; grant Nearby devices permission if Android asks; if permission was denied permanently, use App Permissions and allow Nearby devices; then scan with Chocolate Plus awake and BLE MIDI mode active.
+- If scan still returns no devices, capture the visible `bleMidiMessage` and `BLE controller` status. Do not claim physical BLE discovery or two-way MIDI routing until the actual controller and original NUX MG-30 are tested.
+- No NAM, IR, preset SysEx, or existing editor MIDI mapping files were changed.
+
