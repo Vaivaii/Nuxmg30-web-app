@@ -115,11 +115,13 @@ async function routeBleToUsb(payload) {
   let editorDelivered = false;
   for (const packet of editorPackets) {
     if (window.NUXNativeMidi?.injectInput) {
-      editorDelivered = window.NUXNativeMidi.injectInput(packet, {
+      const delivered = window.NUXNativeMidi.injectInput(packet, {
         source: 'BLE MIDI',
         name: payload?.deviceName || bleName
-      }) || editorDelivered;
-      updateInputStatus(packet, payload?.deviceName || bleName);
+      });
+      editorDelivered = Boolean(delivered) || editorDelivered;
+      if (delivered) updateInputStatus(packet, payload?.deviceName || bleName);
+      else status('BLE message received, but the editor input port rejected it.');
     } else {
       status('BLE message received, but editor MIDI input bridge is not initialized.');
     }
